@@ -1,0 +1,19 @@
+tasks:
+  a:
+    deps: ['b']
+    inputs: ['a.txt']
+  b:
+    deps: ['c']
+    inputs: ['b.txt']
+  c:
+    deps: ['d']
+    inputs: ['c.txt']
+  d:
+    deps: ['e']
+    inputs: ['d.txt']
+  e:
+    inputs: ['e.txt']
+
+  # No relationship
+  z:
+    inputs: ['z.txt']

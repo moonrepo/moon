@@ -6,6 +6,9 @@
 
 - If you renamed a project using the `id` setting in `moon.yml`, you can no longer reference that
   project in dependencies and targets using its original ID.
+- Refactored the `moon query tasks` command.
+  - CLI options have been replaced with new task based options, instead of being project based.
+  - Now utilizes the new task graph and affected tracker.
 
 #### 🚀 Updates
 
@@ -13,12 +16,18 @@
 - Resolved the `disallowRunInCiMismatch` experiment and you can no longer have a CI based task
   depend on a non-CI based task.
 - Added a new task graph, that enables new granular based functionality for task related features.
-- Added Python tier 3 support.
-  - Will download and install Python into the toolchain when a `version` is configured.
-  - Will parse the `requirements.txt` to resolve and install dependencies.
-  - Added a `python.version` setting to `.moon/toolchain.yml`.
-  - Added a `toolchain.python` setting to `moon.yml`.
-  - Updated `moon bin` commands to support Python.
+  - Added a new `moon task-graph` command.
+  - Can now control the depth of upstream (dependencies) and downstream (dependents).
+  - Affected information now tracks based on dependent graph connections.
+  - Added `--upstream` and `--downstream` options to `moon query tasks`.
+- Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`,
+  `$vcsRevision`, `$workingDir`
+- Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
+
+#### 🐞 Fixes
+
+- Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing
+  direct relationships.
 
 ## 1.29.4
 

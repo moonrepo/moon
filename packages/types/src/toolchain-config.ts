@@ -296,8 +296,10 @@ export interface PythonConfig {
  * Docs: https://moonrepo.dev/docs/config/toolchain#rust
  */
 export interface RustConfig {
-	/** List of binaries to install into the environment using `cargo install`. */
+	/** List of binaries to install into the environment using `cargo binstall`. */
 	bins: BinEntry[];
+	/** The version of `cargo-binstall` to install. Defaults to latest if not defined. */
+	binstallVersion: string | null;
 	/** Rust components to automatically install. */
 	components: string[];
 	/** Location of the WASM plugin to use for Rust support. */
@@ -687,8 +689,10 @@ export interface PartialPythonConfig {
  * Docs: https://moonrepo.dev/docs/config/toolchain#rust
  */
 export interface PartialRustConfig {
-	/** List of binaries to install into the environment using `cargo install`. */
+	/** List of binaries to install into the environment using `cargo binstall`. */
 	bins?: PartialBinEntry[] | null;
+	/** The version of `cargo-binstall` to install. Defaults to latest if not defined. */
+	binstallVersion?: string | null;
 	/** Rust components to automatically install. */
 	components?: string[] | null;
 	/** Location of the WASM plugin to use for Rust support. */

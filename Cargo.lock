@@ -4004,6 +4004,7 @@ dependencies = [
  "moon_args",
  "moon_common",
  "moon_config",
+ "moon_graph_utils",
  "moon_project",
  "moon_task",
  "moon_task_args",

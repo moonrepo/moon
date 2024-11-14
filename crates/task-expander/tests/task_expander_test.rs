@@ -28,8 +28,8 @@ mod task_expander {
             let mut task = create_task();
             task.command = "@dirs(group)".into();
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
         }
@@ -42,8 +42,8 @@ mod task_expander {
             let mut task = create_task();
             task.command = "./$project/bin".into();
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
@@ -61,8 +61,8 @@ mod task_expander {
             env::set_var("FOO", "foo");
             env::set_var("BAZ_QUX", "baz-qux");
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
@@ -81,8 +81,8 @@ mod task_expander {
             task.command = "./$FOO".into();
             task.env.insert("FOO".into(), "foo-self".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
@@ -101,8 +101,10 @@ mod task_expander {
             let mut task = create_task();
             task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_args(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_args(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.args,
@@ -126,8 +128,10 @@ mod task_expander {
             task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
             task.options.run_from_workspace_root = true;
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_args(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_args(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.args,
@@ -155,8 +159,10 @@ mod task_expander {
                 "some/$task".into(),
             ];
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_args(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_args(&mut task)
+                .unwrap();
 
             assert_eq!(task.args, ["a", "project/dir", "b", "some/task"]);
         }
@@ -177,8 +183,10 @@ mod task_expander {
             env::set_var("BAR_BAZ", "bar-baz");
             env::set_var("FOO_BAR", "foo-bar");
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_args(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_args(&mut task)
+                .unwrap();
 
             env::remove_var("FOO_BAR");
             env::remove_var("BAR_BAZ");
@@ -195,8 +203,10 @@ mod task_expander {
             task.args = vec!["a".into(), "${FOO_BAR}".into(), "b".into()];
             task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_args(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_args(&mut task)
+                .unwrap();
 
             assert_eq!(task.args, ["a", "foo-bar-self", "b"]);
         }
@@ -217,8 +227,10 @@ mod task_expander {
                 ..TaskDependencyConfig::default()
             });
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_deps(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.deps,
@@ -242,8 +254,10 @@ mod task_expander {
                 ..TaskDependencyConfig::default()
             });
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_deps(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.deps,
@@ -267,8 +281,10 @@ mod task_expander {
                 ..TaskDependencyConfig::default()
             });
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_deps(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.deps,
@@ -293,8 +309,10 @@ mod task_expander {
                 ..TaskDependencyConfig::default()
             });
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_deps(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.deps,
@@ -320,8 +338,10 @@ mod task_expander {
                 optional: None,
             });
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_deps(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.deps,
@@ -350,8 +370,10 @@ mod task_expander {
 
             env::set_var("FOO", "foo");
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             env::remove_var("FOO");
 
@@ -374,8 +396,10 @@ mod task_expander {
             task.env.insert("KEY1".into(), "@globs(all)".into());
             task.env.insert("KEY2".into(), "$project-$task".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.env,
@@ -397,8 +421,10 @@ mod task_expander {
             task.env.insert("KEY1".into(), "@globs(all)".into());
             task.env.insert("KEY2".into(), "$project-$task".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.env,
@@ -423,8 +449,10 @@ mod task_expander {
 
             env::set_var("FOO", "foo");
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             env::remove_var("FOO");
 
@@ -444,8 +472,10 @@ mod task_expander {
             task.env.insert("KEY2".into(), "value2".into());
             task.options.env_files = Some(vec![InputPath::ProjectFile(".env".into())]);
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.env,
@@ -467,8 +497,10 @@ mod task_expander {
 
             env::set_var("EXTERNAL", "external-value");
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             env::remove_var("EXTERNAL");
 
@@ -493,8 +525,10 @@ mod task_expander {
             task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
             task.env.insert("TOP_LEVEL".into(), "$BASE".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(task.env.get("TOP_LEVEL").unwrap(), "value");
         }
@@ -509,8 +543,10 @@ mod task_expander {
             let mut task = create_task();
             task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(task.env.get("MYPATH").unwrap(), "/path:/another/path");
 
@@ -525,8 +561,10 @@ mod task_expander {
             let mut task = create_task();
             task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(task.env.get("MYPATH").unwrap(), "/path:$MYPATH");
         }
@@ -544,8 +582,10 @@ mod task_expander {
                 InputPath::WorkspaceFile(".env-shared".into()),
             ]);
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.env,
@@ -573,8 +613,10 @@ mod task_expander {
             task.env.insert("KEY2".into(), "value2".into());
             task.options.env_files = Some(vec![InputPath::ProjectFile(".env-missing".into())]);
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.env,
@@ -594,8 +636,10 @@ mod task_expander {
             let mut task = create_task();
             task.options.env_files = Some(vec![InputPath::ProjectFile(".env-invalid".into())]);
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_env(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_env(&mut task)
+                .unwrap();
         }
     }
 
@@ -610,8 +654,10 @@ mod task_expander {
             let mut task = create_task();
             task.inputs.push(InputPath::EnvVar("FOO_BAR".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_inputs(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_inputs(&mut task)
+                .unwrap();
 
             assert_eq!(task.input_env, FxHashSet::from_iter(["FOO_BAR".into()]));
             assert_eq!(task.input_globs, FxHashSet::default());
@@ -627,8 +673,10 @@ mod task_expander {
             task.inputs.push(InputPath::ProjectFile("file.txt".into()));
             task.inputs.push(InputPath::TokenFunc("@files(all)".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_inputs(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_inputs(&mut task)
+                .unwrap();
 
             assert_eq!(task.input_globs, FxHashSet::default());
             assert_eq!(
@@ -652,8 +700,10 @@ mod task_expander {
             task.inputs.push(InputPath::ProjectFile("file.txt".into()));
             task.inputs.push(InputPath::TokenFunc("@group(all)".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_inputs(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_inputs(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.input_globs,
@@ -680,8 +730,10 @@ mod task_expander {
             task.inputs
                 .push(InputPath::WorkspaceFile("$project/index.js".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context).expand_inputs(&mut task).unwrap();
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_inputs(&mut task)
+                .unwrap();
 
             assert_eq!(
                 task.input_globs,
@@ -705,8 +757,8 @@ mod task_expander {
             task.outputs
                 .push(OutputPath::TokenFunc("@files(all)".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
@@ -734,8 +786,8 @@ mod task_expander {
             task.outputs
                 .push(OutputPath::TokenFunc("@group(all)".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
@@ -764,8 +816,8 @@ mod task_expander {
             task.outputs
                 .push(OutputPath::WorkspaceFile("$project/index.js".into()));
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
@@ -785,8 +837,8 @@ mod task_expander {
             task.outputs.push(OutputPath::ProjectFile("out".into()));
             task.input_files.insert("project/source/out".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
@@ -807,8 +859,8 @@ mod task_expander {
                 .push(OutputPath::ProjectGlob("out/**/*".into()));
             task.input_globs.insert("project/source/out/**/*".into());
 
-            let context = create_context(&project, sandbox.path());
-            TaskExpander::new(context)
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 

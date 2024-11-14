@@ -53,7 +53,7 @@ fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
     let result = command.spawn()?.wait()?;
 
     if !result.success() {
-        return Ok(result.code().unwrap_or(1));
+        return Ok(result.code().unwrap_or(1) as u8);
     }
 
     Ok(0)

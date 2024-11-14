@@ -92,7 +92,7 @@ impl<'task> CommandExecutor<'task> {
             report_item.attempt_current = self.attempt_index;
 
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 command = self.command.bin.to_str(),
                 "Running task (attempt {} of {})",
                 self.attempt_index,
@@ -155,7 +155,7 @@ impl<'task> CommandExecutor<'task> {
                         is_success = output.status.success();
 
                         debug!(
-                            task = self.task.target.as_str(),
+                            task_target = self.task.target.as_str(),
                             command = self.command.bin.to_str(),
                             exit_code = output.status.code(),
                             "Ran task, checking conditions",
@@ -164,7 +164,7 @@ impl<'task> CommandExecutor<'task> {
                         attempt.finish_from_output(output);
                     } else {
                         debug!(
-                            task = self.task.target.as_str(),
+                            task_target = self.task.target.as_str(),
                             command = self.command.bin.to_str(),
                             "Task timed out",
                         );
@@ -184,7 +184,7 @@ impl<'task> CommandExecutor<'task> {
                     // Successful execution, so break the loop
                     if is_success {
                         debug!(
-                            task = self.task.target.as_str(),
+                            task_target = self.task.target.as_str(),
                             "Task was successful, proceeding to next step",
                         );
 
@@ -194,7 +194,7 @@ impl<'task> CommandExecutor<'task> {
                     // Unsuccessful execution (maybe flaky), attempt again
                     else if self.attempt_index < self.attempt_total {
                         debug!(
-                            task = self.task.target.as_str(),
+                            task_target = self.task.target.as_str(),
                             "Task was unsuccessful, attempting again",
                         );
 
@@ -204,7 +204,7 @@ impl<'task> CommandExecutor<'task> {
                     // We've hit our max attempts, so break
                     else {
                         debug!(
-                            task = self.task.target.as_str(),
+                            task_target = self.task.target.as_str(),
                             "Task was unsuccessful, failing as we hit our max attempts",
                         );
 
@@ -215,7 +215,7 @@ impl<'task> CommandExecutor<'task> {
                 // Process unexpectedly crashed
                 Err(error) => {
                     debug!(
-                        task = self.task.target.as_str(),
+                        task_target = self.task.target.as_str(),
                         command = self.command.bin.to_str(),
                         "Failed to run task, an unexpected error occurred",
                     );

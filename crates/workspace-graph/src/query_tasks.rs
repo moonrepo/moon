@@ -52,7 +52,7 @@ impl WorkspaceGraph {
         targets.sort();
 
         debug!(
-            tasks = ?targets
+            task_targets = ?targets
                 .iter()
                 .map(|target| target.as_str())
                 .collect::<Vec<_>>(),

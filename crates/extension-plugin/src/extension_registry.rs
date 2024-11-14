@@ -41,7 +41,7 @@ impl ExtensionRegistry {
                 let value = serialize_config(config.config.iter())?;
 
                 trace!(
-                    id = id.as_str(),
+                    extension_id = id.as_str(),
                     config = %value,
                     "Storing moon extension configuration",
                 );

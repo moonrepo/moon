@@ -29,7 +29,7 @@ impl ToolchainPlugin {
             return Ok(None);
         }
 
-        debug!(toolchain = self.id.as_str(), "Syncing workspace");
+        debug!(toolchain_id = self.id.as_str(), "Syncing workspace");
 
         let output: SyncWorkspaceOutput = self
             .plugin
@@ -50,7 +50,7 @@ impl ToolchainPlugin {
     //         return Ok(());
     //     }
 
-    //     debug!(toolchain = self.id.as_str(), "Syncing project");
+    //     debug!(toolchain_id = self.id.as_str(), "Syncing project");
 
     //     self.plugin
     //         .call_func_without_output(

@@ -23,6 +23,7 @@
 - Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`,
   `$vcsRevision`, `$workingDir`
 - Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
+- Updated Pkl configurations to support `read()` for environment variables.
 
 #### 🐞 Fixes
 

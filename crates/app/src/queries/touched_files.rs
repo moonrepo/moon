@@ -53,7 +53,7 @@ macro_rules! check_shallow {
 pub async fn query_touched_files(
     vcs: &BoxedVcs,
     options: &QueryTouchedFilesOptions,
-) -> AppResult<QueryTouchedFilesResult> {
+) -> miette::Result<QueryTouchedFilesResult> {
     debug!("Querying for touched files");
 
     let default_branch = vcs.get_default_branch().await?;
@@ -154,7 +154,9 @@ pub async fn query_touched_files(
     })
 }
 
-pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
+pub async fn load_touched_files(
+    vcs: &BoxedVcs,
+) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,

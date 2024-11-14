@@ -5,17 +5,16 @@ use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
 use moon_console::Console;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
-use starbase::AppResult;
 use starbase_styles::color;
 use std::path::Path;
 use tera::{Context, Tera};
 use tracing::instrument;
 
-fn render_template(context: Context) -> AppResult<String> {
+fn render_template(context: Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_rust_config_template(), &context, false).into_diagnostic()
 }
 
-fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
+fn detect_rust_version(dest_dir: &Path) -> miette::Result<String> {
     if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
         if let Some(version) = toolchain_toml.toolchain.channel {
             let rust_version = if version == "stable"
@@ -41,7 +40,7 @@ pub async fn init_rust(
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
-) -> AppResult<String> {
+) -> miette::Result<String> {
     if !options.yes {
         console.out.print_header("Rust")?;
 

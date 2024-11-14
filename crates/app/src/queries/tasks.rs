@@ -95,7 +95,7 @@ fn load_with_regex(
 pub async fn query_tasks(
     workspace_graph: &WorkspaceGraph,
     options: &QueryTasksOptions,
-) -> AppResult<Vec<Arc<Task>>> {
+) -> miette::Result<Vec<Arc<Task>>> {
     debug!("Querying for tasks");
 
     let mut tasks = if let Some(query) = &options.query {

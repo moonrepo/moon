@@ -18,7 +18,7 @@ pub async fn query_hash_diff(
     cache_engine: &CacheEngine,
     base_left: &str,
     base_right: &str,
-) -> AppResult<QueryHashDiffResult> {
+) -> miette::Result<QueryHashDiffResult> {
     debug!("Diffing hashes");
 
     let (left_hash, left) = query_hash(cache_engine, base_left).await?;

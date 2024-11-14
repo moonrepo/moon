@@ -51,5 +51,5 @@ pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
         );
     }
 
-    Ok(())
+    Ok(None)
 }

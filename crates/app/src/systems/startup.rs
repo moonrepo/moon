@@ -30,7 +30,7 @@ where
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 #[instrument]
-pub fn find_workspace_root(working_dir: &Path) -> AppResult<PathBuf> {
+pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
     debug!(
         working_dir = ?working_dir,
         "Attempting to find workspace root from current working directory",
@@ -77,7 +77,7 @@ pub fn find_workspace_root(working_dir: &Path) -> AppResult<PathBuf> {
 pub fn detect_moon_environment(
     working_dir: &Path,
     workspace_root: &Path,
-) -> AppResult<Arc<MoonEnvironment>> {
+) -> miette::Result<Arc<MoonEnvironment>> {
     let mut env = MoonEnvironment::new()?;
     env.working_dir = working_dir.to_path_buf();
     env.workspace_root = workspace_root.to_path_buf();
@@ -90,7 +90,7 @@ pub fn detect_moon_environment(
 pub fn detect_proto_environment(
     working_dir: &Path,
     _workspace_root: &Path,
-) -> AppResult<Arc<ProtoEnvironment>> {
+) -> miette::Result<Arc<ProtoEnvironment>> {
     let mut env = ProtoEnvironment::new()?;
     env.cwd = working_dir.to_path_buf();
 
@@ -103,7 +103,7 @@ pub fn detect_proto_environment(
 pub async fn load_workspace_config(
     config_loader: ConfigLoader,
     workspace_root: &Path,
-) -> AppResult<Arc<WorkspaceConfig>> {
+) -> miette::Result<Arc<WorkspaceConfig>> {
     let config_name = config_loader.get_debug_label("workspace", true);
 
     debug!("Loading {} (required)", color::file(&config_name));
@@ -129,7 +129,7 @@ pub async fn load_toolchain_config(
     proto_env: Arc<ProtoEnvironment>,
     workspace_root: &Path,
     working_dir: &Path,
-) -> AppResult<Arc<ToolchainConfig>> {
+) -> miette::Result<Arc<ToolchainConfig>> {
     debug!(
         "Attempting to load {} (optional)",
         color::file(config_loader.get_debug_label("toolchain", true))
@@ -155,7 +155,7 @@ pub async fn load_toolchain_config(
 pub async fn load_tasks_configs(
     config_loader: ConfigLoader,
     workspace_root: &Path,
-) -> AppResult<Arc<InheritedTasksManager>> {
+) -> miette::Result<Arc<InheritedTasksManager>> {
     debug!(
         "Attempting to load {} and {} (optional)",
         color::file(config_loader.get_debug_label("tasks", true)),
@@ -177,7 +177,7 @@ pub async fn load_tasks_configs(
 }
 
 #[instrument(skip_all)]
-pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> AppResult<Option<Arc<Moonbase>>> {
+pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moonbase>>> {
     if vcs.is_enabled() && env::var("MOONBASE_REPO_SLUG").is_err() {
         if let Ok(slug) = vcs.get_repository_slug().await {
             env::set_var("MOONBASE_REPO_SLUG", slug.as_str());

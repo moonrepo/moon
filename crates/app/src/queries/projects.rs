@@ -119,7 +119,7 @@ fn load_with_regex(
 pub async fn query_projects(
     workspace_graph: &WorkspaceGraph,
     options: &QueryProjectsOptions,
-) -> AppResult<Vec<Arc<Project>>> {
+) -> miette::Result<Vec<Arc<Project>>> {
     debug!("Querying for projects");
 
     let mut projects = if let Some(query) = &options.query {

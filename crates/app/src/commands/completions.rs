@@ -6,7 +6,6 @@ use clap_complete_nushell::Nushell;
 use miette::IntoDiagnostic;
 use starbase::AppResult;
 use starbase_shell::ShellType;
-use std::process;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -36,16 +35,16 @@ pub async fn completions(session: CliSession, args: CompletionsArgs) -> AppResul
         ShellType::Nu => {
             generate(Nushell, &mut app, "moon", &mut stdio);
 
-            return Ok(());
+            return Ok(None);
         }
         unsupported => {
             eprintln!("{unsupported} does not currently support completions");
 
-            process::exit(1);
+            return Ok(Some(1));
         }
     };
 
     generate(clap_shell, &mut app, "moon", &mut stdio);
 
-    Ok(())
+    Ok(None)
 }

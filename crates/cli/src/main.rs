@@ -8,14 +8,14 @@ use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
-use moon_app::{commands, systems::bootstrap, Cli, CliSession, Commands, ExitCode};
+use moon_app::{commands, systems::bootstrap, Cli, CliSession, Commands};
 use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_styles::color;
 use starbase_utils::{dirs, string_vec};
 use std::env;
-use std::process::{exit, Command};
+use std::process::{Command, ExitCode};
 use tracing::debug;
 
 #[global_allocator]
@@ -108,13 +108,15 @@ async fn main() -> MainResult {
                 command.args(&args[start_index..]);
                 command.current_dir(current_dir);
 
-                return exec_local_bin(command).into_diagnostic();
+                exec_local_bin(command).into_diagnostic()?;
+
+                return Ok(ExitCode::from(0));
             }
         }
     }
 
     // Otherwise just run the CLI
-    let result = app
+    let exit_code = app
         .run(CliSession::new(cli, version), |session| async {
             match session.cli.command.clone() {
                 Commands::ActionGraph(args) => {
@@ -190,23 +192,7 @@ async fn main() -> MainResult {
                 Commands::Upgrade => commands::upgrade::upgrade(session).await,
             }
         })
-        .await;
+        .await?;
 
-    if let Err(error) = result {
-        // Rust crashes with a broken pipe error by default,
-        // so we unfortunately need to work around it with this hack!
-        // https://github.com/rust-lang/rust/issues/46016
-        // if error.to_string().to_lowercase().contains("broken pipe") {
-        //     exit(0);
-        // }
-
-        // If we received a custom exit code, use it
-        if let Some(ExitCode(code)) = error.downcast_ref::<ExitCode>() {
-            exit(*code);
-        }
-
-        return Err(error);
-    }
-
-    Ok(())
+    Ok(ExitCode::from(exit_code))
 }

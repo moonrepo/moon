@@ -27,7 +27,7 @@ pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
             color::url("https://moonrepo.dev/docs/guides/vcs-hooks")
         );
 
-        return Ok(());
+        return Ok(None);
     }
 
     let done = create_progress_bar(format!(
@@ -54,5 +54,5 @@ pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
         done("Did not sync hooks".into(), true);
     }
 
-    Ok(())
+    Ok(None)
 }

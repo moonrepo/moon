@@ -5,13 +5,12 @@ use miette::IntoDiagnostic;
 use moon_config::load_toolchain_typescript_config_template;
 use moon_console::Console;
 use moon_typescript_lang::TsConfigJsonCache;
-use starbase::AppResult;
 use starbase_styles::color;
 use std::path::Path;
 use tera::{Context, Tera};
 use tracing::instrument;
 
-pub fn render_template(context: Context) -> AppResult<String> {
+pub fn render_template(context: Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_typescript_config_template(), &context, false).into_diagnostic()
 }
 
@@ -21,7 +20,7 @@ pub async fn init_typescript(
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
-) -> AppResult<String> {
+) -> miette::Result<String> {
     if !options.yes {
         console.out.print_header("TypeScript")?;
 

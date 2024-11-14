@@ -31,7 +31,7 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
     if args.json {
         console.write_line(json::format(&task, true)?)?;
 
-        return Ok(());
+        return Ok(None);
     }
 
     console.print_header(&args.target.id)?;
@@ -170,5 +170,5 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
     console.write_newline()?;
     console.flush()?;
 
-    Ok(())
+    Ok(None)
 }

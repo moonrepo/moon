@@ -5,7 +5,10 @@ use starbase_styles::color;
 use starbase_utils::{fs, json};
 use tracing::debug;
 
-pub async fn query_hash(cache_engine: &CacheEngine, hash: &str) -> AppResult<(String, String)> {
+pub async fn query_hash(
+    cache_engine: &CacheEngine,
+    hash: &str,
+) -> miette::Result<(String, String)> {
     debug!("Querying for hash manifest with {}", color::hash(hash));
 
     for file in fs::read_dir(&cache_engine.hash.hashes_dir)? {

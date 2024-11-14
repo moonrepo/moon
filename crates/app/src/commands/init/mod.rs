@@ -4,7 +4,6 @@ mod prompts;
 mod rust;
 mod typescript;
 
-use crate::app_error::ExitCode;
 use crate::helpers::create_theme;
 use crate::session::CliSession;
 use bun::init_bun;
@@ -58,11 +57,11 @@ pub struct InitArgs {
     yes: bool,
 }
 
-fn render_toolchain_template(context: &Context) -> AppResult<String> {
+fn render_toolchain_template(context: &Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_config_template(), context, false).into_diagnostic()
 }
 
-fn render_workspace_template(context: &Context) -> AppResult<String> {
+fn render_workspace_template(context: &Context) -> miette::Result<String> {
     Tera::one_off(load_workspace_config_template(), context, false).into_diagnostic()
 }
 
@@ -98,7 +97,7 @@ fn verify_dest_dir(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> AppResult<Option<PathBuf>> {
+) -> miette::Result<Option<PathBuf>> {
     if options.yes
         || Confirm::with_theme(theme)
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
@@ -140,7 +139,7 @@ pub async fn init_tool(
             color::shell("moon init")
         ))?;
 
-        return Err(ExitCode(1).into());
+        return Ok(Some(1));
     }
 
     let tool_config = match tool {
@@ -167,7 +166,7 @@ pub async fn init_tool(
         .out
         .write_line("Toolchain config has successfully been updated")?;
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -192,12 +191,12 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
     if let Some(tool) = &args.tool {
         init_tool(&dest_dir, tool, &options, &theme, &session).await?;
 
-        return Ok(());
+        return Ok(None);
     }
 
     // Extract template variables
     if verify_dest_dir(&dest_dir, &options, &theme)?.is_none() {
-        return Ok(());
+        return Ok(None);
     }
 
     let git = Git::load(&dest_dir, "master", &[])?;
@@ -259,7 +258,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     stdout.write_newline()?;
 
-    Ok(())
+    Ok(None)
 }
 
 #[cfg(test)]

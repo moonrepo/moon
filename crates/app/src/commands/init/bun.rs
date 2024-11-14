@@ -11,7 +11,7 @@ use std::path::Path;
 use tera::{Context, Tera};
 use tracing::instrument;
 
-pub fn render_template(context: Context) -> AppResult<String> {
+pub fn render_template(context: Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_bun_config_template(), &context, false).into_diagnostic()
 }
 
@@ -21,7 +21,7 @@ pub async fn init_bun(
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
-) -> AppResult<String> {
+) -> miette::Result<String> {
     if !options.yes {
         console.out.print_header("Bun")?;
 

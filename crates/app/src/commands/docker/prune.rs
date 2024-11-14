@@ -62,7 +62,7 @@ pub async fn prune_bun(
             .await?;
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -76,7 +76,7 @@ pub async fn prune_deno(
         deno.install_focused_dependencies(&(), &[], true).await?;
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -129,7 +129,7 @@ pub async fn prune_node(
             .await?;
     }
 
-    Ok(())
+    Ok(None)
 }
 
 // This assumes that the project was built in --release mode. Is this correct?
@@ -155,7 +155,7 @@ pub async fn prune_rust(_rust: &RustTool, session: &CliSession) -> AppResult {
         }
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -240,5 +240,5 @@ pub async fn prune(session: CliSession) -> AppResult {
         }
     }
 
-    Ok(())
+    Ok(None)
 }

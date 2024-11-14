@@ -42,21 +42,21 @@ fn get_tracing_modules() -> Vec<String> {
 }
 
 #[cfg(unix)]
-fn exec_local_bin(mut command: Command) -> std::io::Result<()> {
+fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
     use std::os::unix::process::CommandExt;
 
     Err(command.exec())
 }
 
 #[cfg(windows)]
-fn exec_local_bin(mut command: Command) -> std::io::Result<()> {
+fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
     let result = command.spawn()?.wait()?;
 
     if !result.success() {
-        exit(result.code().unwrap_or(1));
+        return Ok(result.code().unwrap_or(1));
     }
 
-    Ok(())
+    Ok(0)
 }
 
 #[tokio::main]
@@ -108,9 +108,9 @@ async fn main() -> MainResult {
                 command.args(&args[start_index..]);
                 command.current_dir(current_dir);
 
-                exec_local_bin(command).into_diagnostic()?;
+                let exit_code = exec_local_bin(command).into_diagnostic()?;
 
-                return Ok(ExitCode::from(0));
+                return Ok(ExitCode::from(exit_code));
             }
         }
     }

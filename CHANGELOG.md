@@ -9,6 +9,11 @@
 - Refactored the `moon query tasks` command.
   - CLI options have been replaced with new task based options, instead of being project based.
   - Now utilizes the new task graph and affected tracker.
+- The `moon project-graph --json` output no longer includes task data (the `tasks` field is an empty
+  map).
+  - Use `moon task-graph` to access this data, and piece things together using the project
+    `taskTargets` field.
+  - The `moon project --json` output pieces everything together automatically.
 
 #### 🚀 Updates
 

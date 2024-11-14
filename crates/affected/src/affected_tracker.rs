@@ -290,7 +290,8 @@ impl<'app> AffectedTracker<'app> {
             return Ok(Some(AffectedBy::AlreadyMarked));
         }
 
-        if task.metadata.empty_inputs {
+        // inputs: []
+        if task.state.empty_inputs {
             return Ok(Some(AffectedBy::AlwaysAffected));
         }
 

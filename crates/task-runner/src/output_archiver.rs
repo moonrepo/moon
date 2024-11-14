@@ -40,7 +40,7 @@ impl<'task> OutputArchiver<'task> {
         if !archive_file.exists() {
             if !self.app.cache_engine.is_writable() {
                 debug!(
-                    task = self.task.target.as_str(),
+                    task_target = self.task.target.as_str(),
                     hash, "Cache is not writable, skipping output archiving"
                 );
 
@@ -48,7 +48,7 @@ impl<'task> OutputArchiver<'task> {
             }
 
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash, "Archiving task outputs from project"
             );
 
@@ -135,7 +135,7 @@ impl<'task> OutputArchiver<'task> {
     #[instrument(skip(self))]
     pub fn create_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             hash,
             archive_file = ?archive_file, "Creating archive file"
         );
@@ -165,7 +165,7 @@ impl<'task> OutputArchiver<'task> {
         // Pack the archive
         if let Err(error) = archive.pack(TarPacker::new_gz) {
             warn!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash,
                 archive_file = ?archive_file,
                 "Failed to package outputs into archive: {}",

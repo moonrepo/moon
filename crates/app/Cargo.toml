@@ -35,7 +35,7 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.7.2"
+bytes = "1.8.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
@@ -47,7 +47,7 @@ clap = { workspace = true, features = [
     "wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_complete_nushell = "4.5.3"
+clap_complete_nushell = "4.5.4"
 diff = "0.1.13"
 miette = { workspace = true }
 once_cell = { workspace = true }

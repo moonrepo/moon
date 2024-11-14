@@ -19,8 +19,6 @@ miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
-serde = { workspace = true, features = ["rc"] }
-starbase_utils = { workspace = true, features = ["json"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
@@ -31,6 +29,7 @@ moon_query = { path = "../query" }
 moon_workspace = { path = "../workspace" }
 starbase_events = { workspace = true }
 starbase_sandbox = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 tokio = { workspace = true }
 
 [lints]

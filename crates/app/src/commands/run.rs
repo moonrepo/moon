@@ -204,7 +204,7 @@ pub async fn run_target(
                 .write_line(format!("Using query {}", color::shell(query_input)))?;
         }
 
-        return Ok(());
+        return Ok(None);
     }
 
     // Process all tasks in the graph
@@ -219,12 +219,12 @@ pub async fn run_target(
     )
     .await?;
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
 pub async fn run(session: CliSession, args: RunArgs) -> AppResult {
     run_target(&session, &args, &args.targets).await?;
 
-    Ok(())
+    Ok(None)
 }

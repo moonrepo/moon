@@ -47,7 +47,7 @@ impl CodeownersGenerator {
             return Ok(());
         }
 
-        trace!(project = id, source, "Adding project entries");
+        trace!(project_id = id, source, "Adding project entries");
 
         self.write("")?;
 

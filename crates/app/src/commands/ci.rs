@@ -1,4 +1,4 @@
-use crate::app_error::{AppError, ExitCode};
+use crate::app_error::AppError;
 use crate::components::run_action_pipeline;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::session::CliSession;
@@ -88,7 +88,7 @@ async fn gather_touched_files(
     console: &mut CiConsole,
     session: &CliSession,
     args: &CiArgs,
-) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
+) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     console.print_header("Gathering touched files")?;
 
     let mut base = args.base.clone();
@@ -144,7 +144,7 @@ async fn gather_potential_targets(
     console: &mut CiConsole,
     workspace_graph: &WorkspaceGraph,
     args: &CiArgs,
-) -> AppResult<TargetList> {
+) -> miette::Result<TargetList> {
     console.print_header("Gathering potential targets")?;
 
     let mut targets = vec![];
@@ -171,7 +171,7 @@ fn distribute_targets_across_jobs(
     console: &mut CiConsole,
     args: &CiArgs,
     targets: TargetList,
-) -> AppResult<TargetList> {
+) -> miette::Result<TargetList> {
     if args.job.is_none() || args.job_total.is_none() {
         return Ok(targets);
     }
@@ -209,7 +209,7 @@ async fn generate_action_graph(
     workspace_graph: &WorkspaceGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-) -> AppResult<(ActionGraph, ActionContext)> {
+) -> miette::Result<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
     let mut action_graph_builder = session.build_action_graph(workspace_graph).await?;
@@ -257,7 +257,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     if targets.is_empty() {
         console.write_line(color::invalid("No tasks to run"))?;
 
-        return Ok(());
+        return Ok(None);
     }
 
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
@@ -273,7 +273,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     if action_graph.is_empty() {
         console.write_line(color::invalid("No tasks affected based on touched files"))?;
 
-        return Ok(());
+        return Ok(None);
     }
 
     // Process all tasks in the graph
@@ -292,8 +292,8 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     });
 
     if failed {
-        return Err(ExitCode(1).into());
+        return Ok(Some(1));
     }
 
-    Ok(())
+    Ok(None)
 }

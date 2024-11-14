@@ -40,5 +40,5 @@ pub async fn check_dirty_repo(session: &CliSession) -> AppResult {
         ));
     }
 
-    Ok(())
+    Ok(None)
 }

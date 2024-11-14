@@ -102,7 +102,7 @@ fn load_task(
 
     trace!(
         plugin = &uuid,
-        target = target.as_str(),
+        task_target = target.as_str(),
         "Calling host function {}",
         color::label("load_task"),
     );
@@ -119,7 +119,7 @@ fn load_task(
 
     trace!(
         plugin = &uuid,
-        target = target.as_str(),
+        task_target = target.as_str(),
         "Called host function {}",
         color::label("load_task"),
     );

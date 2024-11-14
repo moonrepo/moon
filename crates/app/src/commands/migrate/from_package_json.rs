@@ -109,5 +109,5 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
 
     yaml::write_file_with_config(project.root.join(&config_names[0]), &partial_config)?;
 
-    Ok(())
+    Ok(None)
 }

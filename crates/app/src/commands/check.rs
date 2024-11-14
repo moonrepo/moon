@@ -79,7 +79,5 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
         },
         &targets,
     )
-    .await?;
-
-    Ok(())
+    .await
 }

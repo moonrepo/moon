@@ -377,7 +377,7 @@ mod update_compiler_options {
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                string_vec!["index.ts"],
+                vec![PathOrGlob::from("index.ts")],
             )]));
 
             assert!(updated);
@@ -391,7 +391,7 @@ mod update_compiler_options {
                     .unwrap()
                     .get("alias")
                     .unwrap(),
-                string_vec!["index.ts"]
+                vec![PathOrGlob::from("index.ts")]
             );
         }
 
@@ -400,9 +400,9 @@ mod update_compiler_options {
             let mut tsc = TsConfigJsonCache::default();
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([
-                ("one".into(), string_vec!["one.ts"]),
-                ("two".into(), string_vec!["two.ts"]),
-                ("three".into(), string_vec!["three.ts"]),
+                ("one".into(), vec![PathOrGlob::from("one.ts")]),
+                ("two".into(), vec![PathOrGlob::from("two.ts")]),
+                ("three".into(), vec![PathOrGlob::from("three.ts")]),
             ]));
 
             assert!(updated);
@@ -426,7 +426,7 @@ mod update_compiler_options {
                     compiler_options: Some(CompilerOptions {
                         paths: Some(CompilerOptionsPathsMap::from_iter([(
                             "alias".into(),
-                            string_vec!["old.ts"],
+                            vec![PathOrGlob::from("old.ts")],
                         )])),
                         ..Default::default()
                     }),
@@ -437,7 +437,7 @@ mod update_compiler_options {
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                string_vec!["new.ts"],
+                vec![PathOrGlob::from("new.ts")],
             )]));
 
             assert!(updated);
@@ -451,7 +451,7 @@ mod update_compiler_options {
                     .unwrap()
                     .get("alias")
                     .unwrap(),
-                string_vec!["new.ts"]
+                vec![PathOrGlob::from("new.ts")]
             );
         }
 
@@ -462,7 +462,7 @@ mod update_compiler_options {
                     compiler_options: Some(CompilerOptions {
                         paths: Some(CompilerOptionsPathsMap::from_iter([(
                             "alias".into(),
-                            string_vec!["./src", "./other"],
+                            vec![PathOrGlob::from("./src"), PathOrGlob::from("./other")],
                         )])),
                         ..Default::default()
                     }),
@@ -473,14 +473,14 @@ mod update_compiler_options {
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                string_vec!["./src", "./other"],
+                vec![PathOrGlob::from("./src"), PathOrGlob::from("./other")],
             )]));
 
             assert!(!updated);
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                string_vec!["./other", "./src"],
+                vec![PathOrGlob::from("./other"), PathOrGlob::from("./src")],
             )]));
 
             assert!(!updated);

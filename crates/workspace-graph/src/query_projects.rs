@@ -52,7 +52,7 @@ impl WorkspaceGraph {
         project_ids.sort();
 
         debug!(
-            projects = ?project_ids
+            project_ids = ?project_ids
                 .iter()
                 .map(|id| id.as_str())
                 .collect::<Vec<_>>(),

@@ -37,13 +37,13 @@ pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppRe
     if args.dot {
         println!("{}", project_graph.to_dot());
 
-        return Ok(());
+        return Ok(None);
     }
 
     if args.json {
         println!("{}", project_graph.to_json()?);
 
-        return Ok(());
+        return Ok(None);
     }
 
     let graph_info = project_graph_repr(&project_graph).await;
@@ -57,5 +57,5 @@ pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppRe
         respond_to_request(req, &mut tera, &graph_info, "Project graph".to_owned())?;
     }
 
-    Ok(())
+    Ok(None)
 }

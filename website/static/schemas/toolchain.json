@@ -681,6 +681,13 @@
           "type": "boolean",
           "markdownDescription": "Assumes only the root `requirements.txt` is used for dependencies. Can be used to support the \"one version policy\" pattern."
         },
+        "venvName": {
+          "title": "venvName",
+          "description": "Defines the virtual environment name which will be created on workspace root. Project dependencies will be installed into this. Defaults to .venv",
+          "default": ".venv",
+          "type": "string",
+          "markdownDescription": "Defines the virtual environment name which will be created on workspace root. Project dependencies will be installed into this. Defaults to `.venv`"
+        },
         "version": {
           "title": "version",
           "description": "The version of Python to download, install, and run python tasks with.",

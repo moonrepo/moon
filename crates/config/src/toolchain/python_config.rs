@@ -19,7 +19,9 @@ pub struct PythonConfig {
     #[setting(nested)]
     pub pip: Option<PipConfig>,
 
-    #[setting(default = ".venv", skip)]
+    /// Defines the virtual environment name which will be created on workspace root.
+    /// Project dependencies will be installed into this. Defaults to `.venv`
+    #[setting(default = ".venv")]
     pub venv_name: String,
 
     /// Assumes only the root `requirements.txt` is used for dependencies.

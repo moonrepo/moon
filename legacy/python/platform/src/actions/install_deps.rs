@@ -37,36 +37,24 @@ pub async fn install_deps(
             );
         }
 
+        let mut args = vec![];
+
+        // Add pip installArgs, if users have given
         if let Some(install_args) = &pip_config.install_args {
-            if install_args.iter().any(|x| !x.starts_with("-")) {
-                console
-                    .out
-                    .print_checkpoint(Checkpoint::Setup, "pip install")?;
-
-                let mut args = vec!["-m", "pip", "install"];
-                if let Some(install_args) = &pip_config.install_args {
-                    args.extend(install_args.iter().map(|c| c.as_str()));
-                }
-
-                operations.push(
-                    Operation::task_execution(format!("python {}", args.join(" ")))
-                        .track_async(|| python.exec_python(args, working_dir))
-                        .await?,
-                );
-            }
+            args.extend(install_args.iter().map(|c| c.as_str()));
         }
 
-        if let Some(req) = requirements_path {
+        // Add requirements.txt path, if found
+        if let Some(req) = &requirements_path {
+            args.extend(["-r", req.as_os_str().to_str().unwrap()]);
+        }
+
+        if !args.is_empty() {
+            args.splice(0..0, vec!["-m", "pip", "install"]);
+
             console
                 .out
                 .print_checkpoint(Checkpoint::Setup, "pip install")?;
-
-            let mut args = vec!["-m", "pip", "install"];
-            if let Some(install_args) = &pip_config.install_args {
-                args.extend(install_args.iter().map(|c| c.as_str()));
-            }
-
-            args.extend(["-r", req.as_os_str().to_str().unwrap()]);
 
             operations.push(
                 Operation::task_execution(format!("python {}", args.join(" ")))

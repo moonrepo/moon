@@ -277,6 +277,13 @@ export interface PythonConfig {
 	 */
 	rootRequirementsOnly?: boolean;
 	/**
+	 * Defines the virtual environment name which will be created on workspace root.
+	 * Project dependencies will be installed into this. Defaults to `.venv`
+	 *
+	 * @default '.venv'
+	 */
+	venvName?: string;
+	/**
 	 * The version of Python to download, install, and run `python` tasks with.
 	 *
 	 * @envvar MOON_PYTHON_VERSION
@@ -660,6 +667,13 @@ export interface PartialPythonConfig {
 	 * @default true
 	 */
 	rootRequirementsOnly?: boolean | null;
+	/**
+	 * Defines the virtual environment name which will be created on workspace root.
+	 * Project dependencies will be installed into this. Defaults to `.venv`
+	 *
+	 * @default '.venv'
+	 */
+	venvName?: string | null;
 	/**
 	 * The version of Python to download, install, and run `python` tasks with.
 	 *

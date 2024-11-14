@@ -239,14 +239,16 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        if let Some(python_version) = &self.config.version {
-            let deps =
-                BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
-            hasher.hash_content(PythonToolchainHash {
-                version: python_version.clone(),
-                dependencies: deps,
-            })?;
-        }
+        let deps = BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
+        hasher.hash_content(PythonToolchainHash {
+            version: self
+                .config
+                .version
+                .as_ref()
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
+            dependencies: deps,
+        })?;
 
         Ok(())
     }
@@ -259,18 +261,19 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        if let Some(python_version) = &self.config.version {
-            let mut deps = BTreeMap::new();
-            if let Some(pip_requirements) =
-                find_requirements_txt(&project.root, &self.workspace_root)
-            {
-                deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
-            }
-            hasher.hash_content(PythonToolchainHash {
-                version: python_version.clone(),
-                dependencies: deps,
-            })?;
+        let mut deps = BTreeMap::new();
+        if let Some(pip_requirements) = find_requirements_txt(&project.root, &self.workspace_root) {
+            deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
         }
+        hasher.hash_content(PythonToolchainHash {
+            version: self
+                .config
+                .version
+                .as_ref()
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
+            dependencies: deps,
+        })?;
 
         Ok(())
     }

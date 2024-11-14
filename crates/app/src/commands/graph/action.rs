@@ -53,7 +53,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     if args.dot {
         println!("{}", action_graph.to_dot());
 
-        return Ok(());
+        return Ok(None);
     }
 
     let graph_info = action_graph_repr(&action_graph).await;
@@ -61,7 +61,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     if args.json {
         println!("{}", json::format(&graph_info, false)?);
 
-        return Ok(());
+        return Ok(None);
     }
 
     let (server, mut tera) = setup_server().await?;
@@ -74,5 +74,5 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
         respond_to_request(req, &mut tera, &graph_info, "Action graph".to_owned())?;
     }
 
-    Ok(())
+    Ok(None)
 }

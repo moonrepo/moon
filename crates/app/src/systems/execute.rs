@@ -14,13 +14,13 @@ pub async fn check_for_new_version(
     manifest_url: &str,
 ) -> AppResult {
     if is_test_env() || is_formatted_output() {
-        return Ok(());
+        return Ok(None);
     }
 
     match Launchpad::check_version(cache_engine, moon_env, false, manifest_url).await {
         Ok(Some(result)) => {
             if !result.update_available {
-                return Ok(());
+                return Ok(None);
             }
 
             console.out.print_checkpoint(
@@ -53,5 +53,5 @@ pub async fn check_for_new_version(
         _ => {}
     };
 
-    Ok(())
+    Ok(None)
 }

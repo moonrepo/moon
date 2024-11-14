@@ -4,7 +4,6 @@ use moon_common::Id;
 use moon_task::Task;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
 use std::{collections::BTreeMap, sync::Arc};
 use tracing::debug;
 
@@ -95,7 +94,7 @@ fn load_with_regex(
 pub async fn query_tasks(
     workspace_graph: &WorkspaceGraph,
     options: &QueryTasksOptions,
-) -> AppResult<Vec<Arc<Task>>> {
+) -> miette::Result<Vec<Arc<Task>>> {
     debug!("Querying for tasks");
 
     let mut tasks = if let Some(query) = &options.query {

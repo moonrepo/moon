@@ -23,5 +23,5 @@ pub async fn clean(session: CliSession, args: CleanArgs) -> AppResult {
         true,
     );
 
-    Ok(())
+    Ok(None)
 }

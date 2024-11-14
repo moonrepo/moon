@@ -31,7 +31,7 @@ pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
             color::path(template.root)
         ))?;
 
-        return Ok(());
+        return Ok(None);
     }
 
     if args.dry_run {
@@ -184,5 +184,5 @@ pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
     console.write_newline()?;
     console.flush()?;
 
-    Ok(())
+    Ok(None)
 }

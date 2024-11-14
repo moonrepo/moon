@@ -13,5 +13,5 @@ pub async fn teardown() -> AppResult {
 
     done("Teardown complete", true);
 
-    Ok(())
+    Ok(None)
 }

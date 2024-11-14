@@ -75,7 +75,7 @@ impl<'task> CommandBuilder<'task> {
         }
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             command = self.command.bin.to_str(),
             working_dir = ?self.working_dir,
             "Creating task command to execute",
@@ -102,7 +102,7 @@ impl<'task> CommandBuilder<'task> {
         if let ActionNode::RunTask(inner) = &self.node {
             if !inner.args.is_empty() {
                 trace!(
-                    task = self.task.target.as_str(),
+                    task_target = self.task.target.as_str(),
                     args = ?inner.args,
                     "Inheriting args from dependent task"
                 );
@@ -116,7 +116,7 @@ impl<'task> CommandBuilder<'task> {
             && !context.passthrough_args.is_empty()
         {
             trace!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 args = ?context.passthrough_args,
                 "Inheriting args passed through the command line"
             );
@@ -131,7 +131,7 @@ impl<'task> CommandBuilder<'task> {
         if let ActionNode::RunTask(inner) = &self.node {
             if !inner.env.is_empty() {
                 trace!(
-                    task = self.task.target.as_str(),
+                    task_target = self.task.target.as_str(),
                     env = ?inner.env,
                     "Inheriting env from dependent task"
                 );

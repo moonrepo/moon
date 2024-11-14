@@ -33,7 +33,7 @@ impl<'task> OutputHydrater<'task> {
 
         if self.app.cache_engine.is_readable() {
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash, "Hydrating cached outputs into project"
             );
 
@@ -51,7 +51,7 @@ impl<'task> OutputHydrater<'task> {
             }
         } else {
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash, "Cache is not readable, skipping output hydration"
             );
         }
@@ -62,7 +62,7 @@ impl<'task> OutputHydrater<'task> {
     #[instrument(skip(self))]
     pub fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             hash,
             archive_file = ?archive_file, "Unpacking archive into project"
         );
@@ -81,7 +81,7 @@ impl<'task> OutputHydrater<'task> {
         // Unpack the archive
         if let Err(error) = archive.unpack(TarUnpacker::new_gz) {
             warn!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash,
                 archive_file = ?archive_file,
                 "Failed to hydrate outputs from archive: {}",

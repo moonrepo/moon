@@ -136,7 +136,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         trace!(
             project_id = self.project_id.as_str(),
-            tasks = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+            task_ids = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Filtering global tasks",
         );
 
@@ -149,14 +149,14 @@ impl<'proj> TasksBuilder<'proj> {
             if !include_all {
                 if include_set.is_empty() {
                     trace!(
-                        target = target.as_str(),
+                        task_target = target.as_str(),
                         "Not inheriting any global tasks, empty include filter",
                     );
 
                     break;
                 } else if !include_set.contains(task_id) {
                     trace!(
-                        target = target.as_str(),
+                        task_target = target.as_str(),
                         "Not inheriting global task {}, not included",
                         color::id(task_id)
                     );
@@ -169,7 +169,7 @@ impl<'proj> TasksBuilder<'proj> {
             // ["a"] = Exclude "a"
             if !exclude.is_empty() && exclude.contains(&task_id) {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "Not inheriting global task {}, excluded",
                     color::id(task_id)
                 );
@@ -179,7 +179,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "Inheriting global task {} and renaming to {}",
                     color::id(task_id),
                     color::id(renamed_task_id)
@@ -188,7 +188,7 @@ impl<'proj> TasksBuilder<'proj> {
                 renamed_task_id
             } else {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "Inheriting global task {}",
                     color::id(task_id),
                 );
@@ -215,7 +215,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         trace!(
             project_id = self.project_id.as_str(),
-            tasks = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+            task_ids = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Loading local tasks",
         );
 
@@ -244,7 +244,7 @@ impl<'proj> TasksBuilder<'proj> {
         let target = Target::new(self.project_id, id)?;
 
         trace!(
-            target = target.as_str(),
+            task_target = target.as_str(),
             "Building task {}",
             color::id(id.as_str())
         );
@@ -285,7 +285,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if is_local {
             trace!(
-                target = target.as_str(),
+                task_target = target.as_str(),
                 "Marking task as local (using server preset)"
             );
 
@@ -398,21 +398,21 @@ impl<'proj> TasksBuilder<'proj> {
         if configured_inputs == 0 {
             if has_configured_inputs {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "Task has explicitly disabled inputs",
                 );
 
                 task.metadata.empty_inputs = true;
             } else if self.context.monorepo && task.metadata.root_level {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "Task is a root-level project in a monorepo, defaulting to no inputs",
                 );
 
                 task.metadata.empty_inputs = true;
             } else {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "No inputs configured, defaulting to {} (from project)",
                     color::file("**/*"),
                 );
@@ -496,7 +496,7 @@ impl<'proj> TasksBuilder<'proj> {
             // If an arg contains a glob, we must run in a shell for expansion to work
             if task.args.iter().any(|arg| is_glob_like(arg)) {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     "Task has a glob-like argument, wrapping in a shell so glob expansion works",
                 );
 
@@ -509,7 +509,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if !for_current_system {
                 trace!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     os_list = ?os_list.iter().map(|os| os.to_string()).collect::<Vec<_>>(),
                     "Task has been marked for another operating system, disabling command/script",
                 );
@@ -675,8 +675,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !global_deps.is_empty() {
             trace!(
-                target = target.as_str(),
-                deps = ?global_deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
+                task_target = target.as_str(),
+                dep_targets = ?global_deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
                 "Inheriting global implicit deps",
             );
         }
@@ -707,7 +707,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !global_inputs.is_empty() {
             trace!(
-                target = target.as_str(),
+                task_target = target.as_str(),
                 inputs = ?global_inputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
                 "Inheriting global implicit inputs",
             );
@@ -725,7 +725,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !env.is_empty() {
             trace!(
-                target = target.as_str(),
+                task_target = target.as_str(),
                 env_vars = ?self.project_env,
                 "Inheriting project env vars",
             );

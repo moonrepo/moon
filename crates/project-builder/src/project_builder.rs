@@ -226,7 +226,10 @@ impl<'app> ProjectBuilder<'app> {
     ) -> miette::Result<Vec<DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
-        trace!(id = self.id.as_str(), "Building project dependencies");
+        trace!(
+            project_id = self.id.as_str(),
+            "Building project dependencies"
+        );
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
@@ -256,8 +259,8 @@ impl<'app> ProjectBuilder<'app> {
 
                     trace!(
                         project_id = self.id.as_str(),
-                        dep = dep_id.as_str(),
-                        task = task_config.target.as_str(),
+                        dep_id = dep_id.as_str(),
+                        task_target = task_config.target.as_str(),
                         "Marking arbitrary project as an implicit dependency because of a task dependency"
                     );
 
@@ -281,7 +284,7 @@ impl<'app> ProjectBuilder<'app> {
         if !deps.is_empty() {
             trace!(
                 project_id = self.id.as_str(),
-                deps = ?deps.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+                dep_ids = ?deps.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Depends on {} projects",
                 deps.len(),
             );
@@ -295,7 +298,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut file_inputs = BTreeMap::default();
         let project_source = &self.source;
 
-        trace!(id = self.id.as_str(), "Building file groups");
+        trace!(project_id = self.id.as_str(), "Building file groups");
 
         // Inherit global first
         if let Some(global) = &self.global_config {
@@ -338,7 +341,7 @@ impl<'app> ProjectBuilder<'app> {
 
     #[instrument(skip_all)]
     async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
-        trace!(id = self.id.as_str(), "Building tasks");
+        trace!(project_id = self.id.as_str(), "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(
             self.id,

@@ -49,7 +49,7 @@ fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResul
         }
     }
 
-    Ok(())
+    Ok(None)
 }
 
 fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
@@ -70,7 +70,7 @@ fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
         fs::write_file(dest.join(file), data.as_bytes())?;
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip(session, project_graph))]
@@ -166,7 +166,7 @@ async fn scaffold_workspace(
         copy_files(&files_to_copy, source, dest)?;
         create_files(&files_to_create, dest)?;
 
-        Ok(())
+        Ok(None)
     };
 
     // Copy each project and mimic the folder structure
@@ -268,7 +268,7 @@ async fn scaffold_workspace(
         )?;
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip(session, project_graph, manifest))]
@@ -334,7 +334,7 @@ async fn scaffold_sources_project(
         }
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip(session, project_graph))]
@@ -405,7 +405,7 @@ async fn scaffold_sources(
         true,
     )?;
 
-    Ok(())
+    Ok(None)
 }
 
 pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
@@ -481,5 +481,5 @@ pub async fn scaffold(session: CliSession, args: DockerScaffoldArgs) -> AppResul
     )
     .await?;
 
-    Ok(())
+    Ok(None)
 }

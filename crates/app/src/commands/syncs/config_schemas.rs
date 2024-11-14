@@ -21,5 +21,5 @@ pub async fn sync(session: CliSession, args: SyncConfigSchemasArgs) -> AppResult
 
     done("Successfully generated schemas", true);
 
-    Ok(())
+    Ok(None)
 }

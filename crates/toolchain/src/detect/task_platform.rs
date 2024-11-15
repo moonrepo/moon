@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 
 pub static BUN_COMMANDS: OnceLock<Regex> = OnceLock::new();
 pub static DENO_COMMANDS: OnceLock<Regex> = OnceLock::new();
+pub static PYTHON_COMMANDS: OnceLock<Regex> = OnceLock::new();
 pub static RUST_COMMANDS: OnceLock<Regex> = OnceLock::new();
 pub static NODE_COMMANDS: OnceLock<Regex> = OnceLock::new();
 pub static UNIX_SYSTEM_COMMANDS: OnceLock<Regex> = OnceLock::new();
@@ -17,6 +18,9 @@ fn use_platform_if_enabled(
         PlatformType::Bun if enabled_platforms.contains(&PlatformType::Bun) => return platform,
         PlatformType::Deno if enabled_platforms.contains(&PlatformType::Deno) => return platform,
         PlatformType::Node if enabled_platforms.contains(&PlatformType::Node) => return platform,
+        PlatformType::Python if enabled_platforms.contains(&PlatformType::Python) => {
+            return platform
+        }
         PlatformType::Rust if enabled_platforms.contains(&PlatformType::Rust) => return platform,
         _ => {}
     };
@@ -53,6 +57,13 @@ pub fn detect_task_platform(command: &str, enabled_platforms: &[PlatformType]) -
         .is_match(command)
     {
         return use_platform_if_enabled(PlatformType::Deno, enabled_platforms);
+    }
+
+    if PYTHON_COMMANDS
+        .get_or_init(|| Regex::new("^(python|python3|pip|pip3)$").unwrap())
+        .is_match(command)
+    {
+        return use_platform_if_enabled(PlatformType::Python, enabled_platforms);
     }
 
     if RUST_COMMANDS

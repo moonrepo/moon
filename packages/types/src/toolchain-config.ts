@@ -259,6 +259,38 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+export interface PipConfig {
+	/** List of arguments to append to `pip install` commands. */
+	installArgs: string[] | null;
+}
+
+export interface PythonConfig {
+	/** Options for pip, when used as a package manager. */
+	pip: PipConfig | null;
+	/** Location of the WASM plugin to use for Python support. */
+	plugin: PluginLocator | null;
+	/**
+	 * Assumes only the root `requirements.txt` is used for dependencies.
+	 * Can be used to support the "one version policy" pattern.
+	 *
+	 * @default true
+	 */
+	rootRequirementsOnly?: boolean;
+	/**
+	 * Defines the virtual environment name which will be created on workspace root.
+	 * Project dependencies will be installed into this. Defaults to `.venv`
+	 *
+	 * @default '.venv'
+	 */
+	venvName?: string;
+	/**
+	 * The version of Python to download, install, and run `python` tasks with.
+	 *
+	 * @envvar MOON_PYTHON_VERSION
+	 */
+	version: UnresolvedVersionSpec | null;
+}
+
 /**
  * Configures and enables the Rust platform.
  * Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -378,6 +410,8 @@ export interface ToolchainConfig {
 	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
+	/** Configures and enables the Python platform. */
+	python: PythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust: RustConfig | null;
 	/** All configured toolchains by unique ID. */
@@ -618,6 +652,38 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
+export interface PartialPipConfig {
+	/** List of arguments to append to `pip install` commands. */
+	installArgs?: string[] | null;
+}
+
+export interface PartialPythonConfig {
+	/** Options for pip, when used as a package manager. */
+	pip?: PartialPipConfig | null;
+	/** Location of the WASM plugin to use for Python support. */
+	plugin?: PluginLocator | null;
+	/**
+	 * Assumes only the root `requirements.txt` is used for dependencies.
+	 * Can be used to support the "one version policy" pattern.
+	 *
+	 * @default true
+	 */
+	rootRequirementsOnly?: boolean | null;
+	/**
+	 * Defines the virtual environment name which will be created on workspace root.
+	 * Project dependencies will be installed into this. Defaults to `.venv`
+	 *
+	 * @default '.venv'
+	 */
+	venvName?: string | null;
+	/**
+	 * The version of Python to download, install, and run `python` tasks with.
+	 *
+	 * @envvar MOON_PYTHON_VERSION
+	 */
+	version?: UnresolvedVersionSpec | null;
+}
+
 /**
  * Configures and enables the Rust platform.
  * Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -737,6 +803,8 @@ export interface PartialToolchainConfig {
 	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
+	/** Configures and enables the Python platform. */
+	python?: PartialPythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust?: PartialRustConfig | null;
 	/** All configured toolchains by unique ID. */

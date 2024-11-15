@@ -9,6 +9,10 @@ tasks:
     command: bun
   deno-via-cmd:
     command: deno
+  python:
+    platform: python
+  python-via-cmd:
+    command: python
   node:
     platform: node
   node-via-cmd:

@@ -721,6 +721,71 @@ Both imports can optionally be nested within a `src` directory.
 > This setting runs _after_ [`syncProjectReferences`](#syncprojectreferences) and will inherit any
 > synced references from that setting.
 
+## Python
+
+## `python`<VersionLabel version="1.30.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#python" />
+
+Enables and configures Python.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#version" />
+
+Defines the explicit Python toolchain If this field is _not defined_, the global `python` binary
+will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+python:
+  version: '3.11.10'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `rootPackageOnly`
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#rootPackageOnly" />
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `requirements.txt`, and only installing dependencies in the workspace root, and not within
+individual projects. It also bypasses all `workspaces` checks to determine package locations.
+Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+python:
+  rootPackageOnly: false
+```
+
+### `venv_name`
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#venv_name" />
+
+Defines the virtual environment name which will be created on workspace root, project dependencies
+will be installed into this. Defaults to `.venv`
+
+```yaml title=".moon/toolchain.yml" {2}
+python:
+  venv_name: '.my-custom-venv'
+```
+
+### `pip`
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#pip" />
+
+#### `install_args`
+
+<HeadingApiLink to="/api/types/interface/PipConfig#install_args" />
+
+Customize the arguments that will be passed to the pip install command, when the `InstallDeps`
+action is triggered in the pipeline. These arguments are used both locally and in CI.
+
+```yaml title=".moon/toolchain.yml" {3}
+python:
+  pip:
+    installArgs: ['--trusted-host company.repo.com', '-i https://company.repo.com/simple']
+```
+
 ## Rust
 
 ## `rust`<VersionLabel version="1.5.0" />

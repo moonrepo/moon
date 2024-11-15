@@ -167,6 +167,8 @@ export interface ProjectToolchainConfig {
 	deno: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node: ProjectToolchainCommonToolConfig | null;
+	/** Overrides `python` settings. */
+	python: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `typescript` settings. */
@@ -408,6 +410,8 @@ export interface PartialProjectToolchainConfig {
 	deno?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides `python` settings. */
+	python?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `typescript` settings. */

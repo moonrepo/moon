@@ -350,7 +350,7 @@ outputs:
 
         #[test]
         #[should_panic(
-            expected = "unknown variant `perl`, expected one of `bun`, `deno`, `node`, `rust`, `system`, `unknown`"
+            expected = "Failed to parse TaskConfig. platform: unknown variant `perl`, expected one of `bun`, `deno`, `node`, `python`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
             test_parse_config("platform: perl", load_config_from_code);

@@ -65,6 +65,18 @@
         }
       ]
     },
+    "python": {
+      "title": "python",
+      "description": "Configures and enables the Python platform.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PythonConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "rust": {
       "title": "rust",
       "description": "Configures and enables the Rust platform.",
@@ -568,6 +580,28 @@
       },
       "additionalProperties": false
     },
+    "PipConfig": {
+      "type": "object",
+      "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to pip install commands.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "List of arguments to append to `pip install` commands."
+        }
+      },
+      "additionalProperties": false
+    },
     "PluginLocator": {
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
@@ -609,6 +643,63 @@
             }
           ],
           "markdownDescription": "The version of pnpm to download, install, and run `pnpm` tasks with."
+        }
+      },
+      "additionalProperties": false
+    },
+    "PythonConfig": {
+      "type": "object",
+      "properties": {
+        "pip": {
+          "title": "pip",
+          "description": "Options for pip, when used as a package manager.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use for Python support.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootRequirementsOnly": {
+          "title": "rootRequirementsOnly",
+          "description": "Assumes only the root requirements.txt is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Assumes only the root `requirements.txt` is used for dependencies. Can be used to support the \"one version policy\" pattern."
+        },
+        "venvName": {
+          "title": "venvName",
+          "description": "Defines the virtual environment name which will be created on workspace root. Project dependencies will be installed into this. Defaults to .venv",
+          "default": ".venv",
+          "type": "string",
+          "markdownDescription": "Defines the virtual environment name which will be created on workspace root. Project dependencies will be installed into this. Defaults to `.venv`"
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of Python to download, install, and run python tasks with.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The version of Python to download, install, and run `python` tasks with."
         }
       },
       "additionalProperties": false

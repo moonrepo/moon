@@ -774,6 +774,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "chumsky"
+version = "1.0.0-alpha.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9c28d4e5dd9a9262a38b231153591da6ce1471b818233f4727985d3dd0ed93c"
+dependencies = [
+ "hashbrown 0.14.5",
+ "regex-automata 0.3.9",
+ "serde",
+ "stacker",
+ "unicode-ident",
+]
+
+[[package]]
 name = "chunked_transfer"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3151,6 +3164,9 @@ dependencies = [
  "moon_plugin",
  "moon_project",
  "moon_project_graph",
+ "moon_python_lang",
+ "moon_python_platform",
+ "moon_python_tool",
  "moon_query",
  "moon_rust_lang",
  "moon_rust_platform",
@@ -3891,6 +3907,69 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_python_lang"
+version = "0.0.1"
+dependencies = [
+ "cached",
+ "miette",
+ "moon_lang",
+ "moon_test_utils",
+ "pep-508",
+ "rustc-hash 2.0.0",
+]
+
+[[package]]
+name = "moon_python_platform"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_action",
+ "moon_action_context",
+ "moon_common",
+ "moon_config",
+ "moon_console",
+ "moon_hash",
+ "moon_logger",
+ "moon_platform",
+ "moon_process",
+ "moon_project",
+ "moon_python_lang",
+ "moon_python_tool",
+ "moon_task",
+ "moon_test_utils",
+ "moon_tool",
+ "moon_utils",
+ "proto_core",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_styles",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_python_tool"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_console",
+ "moon_logger",
+ "moon_process",
+ "moon_python_lang",
+ "moon_tool",
+ "moon_toolchain",
+ "moon_utils",
+ "proto_core",
+ "rustc-hash 2.0.0",
+ "starbase_styles",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -4654,6 +4733,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d61c5ce1153ab5b689d0c074c4e7fc613e942dfb7dd9eea5ab202d2ad91fe361"
 
 [[package]]
+name = "pep-508"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d56536b95df75cc5801a27ae2b53381d5d295fb30837be65f72916ecef5d1e4f"
+dependencies = [
+ "chumsky",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5195,6 +5283,17 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59b23e92ee4318893fa3fe3e6fb365258efbfe6ac6ab30f090cdcbb7aa37efa9"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-syntax 0.7.5",
+]
+
+[[package]]
+name = "regex-automata"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "368758f23274712b504848e9d5a6f010445cc8b87a7cdb4d7cbee666c1288da3"
@@ -5209,6 +5308,12 @@ name = "regex-syntax"
 version = "0.6.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
+
+[[package]]
+name = "regex-syntax"
+version = "0.7.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 
 [[package]]
 name = "regex-syntax"
@@ -5862,6 +5967,19 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "stacker"
+version = "0.1.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "799c883d55abdb5e98af1a7b3f23b9b6de8ecada0ecac058672d7635eb48ca7b"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "libc",
+ "psm",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "starbase"

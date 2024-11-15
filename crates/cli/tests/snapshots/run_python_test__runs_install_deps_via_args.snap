@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_python_test.rs
+assertion_line: 60
+expression: assert.output()
+snapshot_kind: text
+---
+▪▪▪▪ activate virtual environment
+▪▪▪▪ pip install
+▪▪▪▪ python:poetry
+Poetry (version 1.8.4)
+▪▪▪▪ python:poetry (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

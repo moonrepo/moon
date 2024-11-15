@@ -23,17 +23,17 @@
 - Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`,
   `$vcsRevision`, `$workingDir`
 - Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
-- Added Python tier 3 support.
-  - Will download and install Python into the toolchain when a `version` is configured.
-  - Will parse the `requirements.txt` to resolve and install dependencies.
-  - Added a `python.version` setting to `.moon/toolchain.yml`.
-  - Added a `toolchain.python` setting to `moon.yml`.
-  - Updated `moon bin` commands to support Python.
+- Updated Pkl configurations to support `read()` for environment variables.
 
 #### 🐞 Fixes
 
 - Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing
   direct relationships.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+- Updated proto to v0.42.1 (from 0.42.0).
 
 ## 1.29.4
 

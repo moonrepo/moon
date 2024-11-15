@@ -4,10 +4,6 @@ use miette::Diagnostic;
 use moon_common::{consts, Id, Style, Stylize};
 use thiserror::Error;
 
-#[derive(Debug, Diagnostic, Error)]
-#[error("Exit with code")]
-pub struct ExitCode(pub i32);
-
 #[derive(Error, Debug, Diagnostic)]
 pub enum AppError {
     #[diagnostic(code(app::ci::no_shallow))]

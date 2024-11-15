@@ -1,4 +1,3 @@
-use crate::app_error::ExitCode;
 use crate::session::CliSession;
 use clap::Args;
 use miette::IntoDiagnostic;
@@ -32,8 +31,8 @@ pub async fn bin(session: CliSession, args: BinArgs) -> AppResult {
         .into_diagnostic()?;
 
     if !result.success() {
-        return Err(ExitCode(result.code().unwrap_or(1)).into());
+        return Ok(Some(result.code().unwrap_or(1) as u8));
     }
 
-    Ok(())
+    Ok(None)
 }

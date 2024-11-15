@@ -197,7 +197,13 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJsonCache) -> miette::Re
                     }
 
                     if let Some(paths) = &options.paths {
-                        data[field]["paths"] = JsonValue::from_iter(paths.to_owned());
+                        data[field]["paths"] =
+                            JsonValue::from_iter(paths.iter().map(|(key, value)| {
+                                (
+                                    key.to_owned(),
+                                    value.iter().map(|v| v.to_string()).collect::<Vec<_>>(),
+                                )
+                            }));
                     }
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);

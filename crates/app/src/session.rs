@@ -90,11 +90,11 @@ impl CliSession {
     pub async fn build_action_graph<'graph>(
         &self,
         workspace_graph: &'graph WorkspaceGraph,
-    ) -> AppResult<ActionGraphBuilder<'graph>> {
+    ) -> miette::Result<ActionGraphBuilder<'graph>> {
         ActionGraphBuilder::new(workspace_graph)
     }
 
-    pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {
+    pub fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
@@ -107,7 +107,7 @@ impl CliSession {
         }))
     }
 
-    pub fn get_cache_engine(&self) -> AppResult<Arc<CacheEngine>> {
+    pub fn get_cache_engine(&self) -> miette::Result<Arc<CacheEngine>> {
         let item = self
             .cache_engine
             .get_or_try_init(|| CacheEngine::new(&self.workspace_root).map(Arc::new))?;
@@ -115,11 +115,11 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
-    pub fn get_console(&self) -> AppResult<Arc<Console>> {
+    pub fn get_console(&self) -> miette::Result<Arc<Console>> {
         Ok(Arc::new(self.console.clone()))
     }
 
-    pub async fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
+    pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
         let workspace_graph = self.get_workspace_graph().await?;
 
         let item = self.extension_registry.get_or_init(|| {
@@ -140,7 +140,7 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
-    pub async fn get_project_graph(&self) -> AppResult<Arc<ProjectGraph>> {
+    pub async fn get_project_graph(&self) -> miette::Result<Arc<ProjectGraph>> {
         if self.project_graph.get().is_none() {
             self.load_workspace_graph().await?;
         }
@@ -148,7 +148,7 @@ impl CliSession {
         Ok(self.project_graph.get().map(Arc::clone).unwrap())
     }
 
-    pub async fn get_task_graph(&self) -> AppResult<Arc<TaskGraph>> {
+    pub async fn get_task_graph(&self) -> miette::Result<Arc<TaskGraph>> {
         if self.task_graph.get().is_none() {
             self.load_workspace_graph().await?;
         }
@@ -156,7 +156,7 @@ impl CliSession {
         Ok(self.task_graph.get().map(Arc::clone).unwrap())
     }
 
-    pub async fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
+    pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
         let workspace_graph = self.get_workspace_graph().await?;
 
         let item = self.toolchain_registry.get_or_init(|| {
@@ -177,7 +177,7 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
-    pub fn get_vcs_adapter(&self) -> AppResult<Arc<BoxedVcs>> {
+    pub fn get_vcs_adapter(&self) -> miette::Result<Arc<BoxedVcs>> {
         let item = self.vcs_adapter.get_or_try_init(|| {
             let config = &self.workspace_config.vcs;
             let git = Git::load(
@@ -192,7 +192,7 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
-    pub async fn get_workspace_graph(&self) -> AppResult<WorkspaceGraph> {
+    pub async fn get_workspace_graph(&self) -> miette::Result<WorkspaceGraph> {
         let projects = self.get_project_graph().await?;
         let tasks = self.get_task_graph().await?;
 
@@ -217,7 +217,7 @@ impl CliSession {
         )
     }
 
-    async fn load_workspace_graph(&self) -> AppResult<()> {
+    async fn load_workspace_graph(&self) -> miette::Result<()> {
         let cache_engine = self.get_cache_engine()?;
         let context = create_workspace_graph_context(self).await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
@@ -280,7 +280,7 @@ impl AppSession for CliSession {
             self.moonbase = startup::signin_to_moonbase(&vcs).await?;
         }
 
-        Ok(())
+        Ok(None)
     }
 
     /// Analyze the current state and install/registery necessary functionality.
@@ -309,7 +309,7 @@ impl AppSession for CliSession {
             }
         }
 
-        Ok(())
+        Ok(None)
     }
 
     async fn execute(&mut self) -> AppResult {
@@ -330,13 +330,13 @@ impl AppSession for CliSession {
             .await?;
         }
 
-        Ok(())
+        Ok(None)
     }
 
     async fn shutdown(&mut self) -> AppResult {
         self.console.close()?;
 
-        Ok(())
+        Ok(None)
     }
 }
 

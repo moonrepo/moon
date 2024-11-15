@@ -37,13 +37,13 @@ pub async fn task_graph(session: CliSession, args: TaskGraphArgs) -> AppResult {
     if args.dot {
         println!("{}", task_graph.to_dot());
 
-        return Ok(());
+        return Ok(None);
     }
 
     if args.json {
         println!("{}", task_graph.to_json()?);
 
-        return Ok(());
+        return Ok(None);
     }
 
     let graph_info = task_graph_repr(&task_graph).await;
@@ -57,5 +57,5 @@ pub async fn task_graph(session: CliSession, args: TaskGraphArgs) -> AppResult {
         respond_to_request(req, &mut tera, &graph_info, "Task graph".to_owned())?;
     }
 
-    Ok(())
+    Ok(None)
 }

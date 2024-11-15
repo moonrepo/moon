@@ -172,7 +172,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         color::rel_path(project.source.join(out))
     ))?;
 
-    Ok(())
+    Ok(None)
 }
 
 fn get_base_image_from_platform(platform: &PlatformType) -> &str {

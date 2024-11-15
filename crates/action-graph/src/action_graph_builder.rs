@@ -268,7 +268,7 @@ impl<'app> ActionGraphBuilder<'app> {
             self.passthrough_targets.insert(task.target.clone());
 
             debug!(
-                task = task.target.as_str(),
+                task_target = task.target.as_str(),
                 "Not running task {} because {} is false",
                 color::label(&task.target.id),
                 color::property("runInCI"),
@@ -279,7 +279,7 @@ impl<'app> ActionGraphBuilder<'app> {
             if reqs.dependents {
                 if let Some(affected) = &mut self.affected {
                     trace!(
-                        task = task.target.as_str(),
+                        task_target = task.target.as_str(),
                         "But will run all dependent tasks if affected"
                     );
 
@@ -297,7 +297,7 @@ impl<'app> ActionGraphBuilder<'app> {
         // These tasks shouldn't actually run, so filter them out
         if self.passthrough_targets.contains(&task.target) {
             trace!(
-                task = task.target.as_str(),
+                task_target = task.target.as_str(),
                 "Not adding task {} to graph because it has been marked as passthrough",
                 color::label(&task.target.id),
             );
@@ -366,8 +366,8 @@ impl<'app> ActionGraphBuilder<'app> {
         // And we also need to create edges for task dependencies
         if !task.deps.is_empty() {
             trace!(
-                task = task.target.as_str(),
-                deps = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
+                task_target = task.target.as_str(),
+                dep_targets = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
                 "Linking dependencies for task",
             );
 

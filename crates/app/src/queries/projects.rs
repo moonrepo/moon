@@ -3,7 +3,6 @@ use moon_affected::Affected;
 use moon_project::Project;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -119,7 +118,7 @@ fn load_with_regex(
 pub async fn query_projects(
     workspace_graph: &WorkspaceGraph,
     options: &QueryProjectsOptions,
-) -> AppResult<Vec<Arc<Project>>> {
+) -> miette::Result<Vec<Arc<Project>>> {
     debug!("Querying for projects");
 
     let mut projects = if let Some(query) = &options.query {

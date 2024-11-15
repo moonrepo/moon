@@ -29,5 +29,5 @@ pub async fn sync(session: CliSession) -> AppResult {
         true,
     );
 
-    Ok(())
+    Ok(None)
 }

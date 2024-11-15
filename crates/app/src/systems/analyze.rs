@@ -31,7 +31,7 @@ pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -
         .into());
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument]
@@ -40,7 +40,7 @@ pub fn check_pkl_install() -> AppResult {
         return Err(AppError::PklRequired.into());
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -67,7 +67,7 @@ pub async fn install_proto(
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!
     if install_dir.exists() || is_test_env() || !toolchain_config.should_install_proto() {
-        return Ok(());
+        return Ok(None);
     }
 
     debug!("Installing proto");
@@ -89,7 +89,7 @@ pub async fn install_proto(
                 bin_name
             );
 
-            return Ok(());
+            return Ok(None);
         } else {
             return Err(ProtoError::InternetConnectionRequired.into());
         }
@@ -113,7 +113,7 @@ pub async fn install_proto(
 
     debug!("Successfully installed proto!");
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
@@ -207,14 +207,14 @@ pub async fn register_platforms(
         )),
     );
 
-    Ok(())
+    Ok(None)
 }
 
 #[instrument(skip(registry))]
 pub async fn load_toolchain(registry: Arc<ToolchainRegistry>) -> AppResult {
     // This isn't an action but we should also support skipping here!
     if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
-        return Ok(());
+        return Ok(None);
     }
 
     registry.load_all().await?;
@@ -223,5 +223,5 @@ pub async fn load_toolchain(registry: Arc<ToolchainRegistry>) -> AppResult {
         platform.setup_toolchain().await?;
     }
 
-    Ok(())
+    Ok(None)
 }

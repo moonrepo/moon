@@ -112,7 +112,7 @@ where
 
             if id.starts_with(".") {
                 debug!(
-                    id = id.as_str(),
+                    project_id = id.as_str(),
                     source = source.as_str(),
                     "Received a project for a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
                 );

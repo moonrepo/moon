@@ -475,7 +475,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         // Not loaded, resolve the task
         trace!(
-            target = target.as_str(),
+            task_target = target.as_str(),
             "Task does not exist in the task graph, attempting to load",
         );
 
@@ -507,7 +507,7 @@ impl<'app> WorkspaceBuilder<'app> {
         for dep_config in &mut task.deps {
             if cycle.contains(&dep_config.target) {
                 debug!(
-                    target = target.as_str(),
+                    task_target = target.as_str(),
                     dependency_target = dep_config.target.as_str(),
                     "Encountered a dependency cycle (from task); will disconnect nodes to avoid recursion",
                 );

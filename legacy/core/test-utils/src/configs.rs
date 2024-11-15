@@ -484,6 +484,49 @@ pub fn get_node_fixture_configs() -> (
     (workspace_config, toolchain_config, tasks_config)
 }
 
+pub fn get_python_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
+            "python".try_into().unwrap(),
+            "base".to_owned(),
+        )]))),
+        ..PartialWorkspaceConfig::default()
+    };
+
+    let mut toolchain_config = get_default_toolchain();
+    toolchain_config.python = Some(PartialPythonConfig {
+        version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
+        ..PartialPythonConfig::default()
+    });
+
+    let tasks_config = PartialInheritedTasksConfig {
+        tasks: Some(BTreeMap::from_iter([
+            (
+                "version".try_into().unwrap(),
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::String("python".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
+                    ..PartialTaskConfig::default()
+                },
+            ),
+            (
+                "noop".try_into().unwrap(),
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::String("noop".into())),
+                    ..PartialTaskConfig::default()
+                },
+            ),
+        ])),
+        ..PartialInheritedTasksConfig::default()
+    };
+
+    (workspace_config, toolchain_config, tasks_config)
+}
+
 pub fn get_node_depman_fixture_configs(
     depman: &str,
 ) -> (

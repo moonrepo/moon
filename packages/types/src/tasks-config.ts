@@ -165,7 +165,7 @@ export interface TaskOptionsConfig {
 }
 
 /** Platforms that each programming language can belong to. */
-export type PlatformType = 'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown';
+export type PlatformType = 'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown';
 
 /** Preset options to inherit. */
 export type TaskPreset = 'server' | 'watcher';
@@ -228,7 +228,7 @@ export interface TaskConfig {
 	 * be automatically detected.
 	 *
 	 * @default 'unknown'
-	 * @type {'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown'}
+	 * @type {'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown'}
 	 */
 	platform: PlatformType;
 	/** The preset to apply for the task. Will inherit default options. */

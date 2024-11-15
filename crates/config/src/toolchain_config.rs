@@ -57,6 +57,10 @@ pub struct ToolchainConfig {
     #[setting(nested)]
     pub node: Option<NodeConfig>,
 
+    /// Configures and enables the Python platform.
+    #[setting(nested)]
+    pub python: Option<PythonConfig>,
+
     /// Configures and enables the Rust platform.
     #[setting(nested)]
     pub rust: Option<RustConfig>,
@@ -84,6 +88,10 @@ impl ToolchainConfig {
 
         if self.node.is_some() {
             tools.push(PlatformType::Node);
+        }
+
+        if self.python.is_some() {
+            tools.push(PlatformType::Python)
         }
 
         if self.rust.is_some() {
@@ -141,6 +149,12 @@ impl ToolchainConfig {
             }
         }
 
+        if let Some(python_config) = &self.python {
+            if let Some(version) = &python_config.version {
+                inject("PROTO_PYTHON_VERSION", version);
+            }
+        }
+
         // We don't include Rust since it's a special case!
 
         env
@@ -154,6 +168,8 @@ impl ToolchainConfig {
     inherit_tool!(DenoConfig, deno, "deno", inherit_proto_deno);
 
     inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
+
+    inherit_tool!(PythonConfig, python, "python", inherit_proto_python);
 
     inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
 
@@ -171,6 +187,7 @@ impl ToolchainConfig {
         is_using_tool_version!(self, node, bun);
         is_using_tool_version!(self, node, pnpm);
         is_using_tool_version!(self, node, yarn);
+        is_using_tool_version!(self, python);
         is_using_tool_version!(self, rust);
 
         // Special case
@@ -189,6 +206,7 @@ impl ToolchainConfig {
         self.inherit_proto_bun(proto_config)?;
         self.inherit_proto_deno(proto_config)?;
         self.inherit_proto_node(proto_config)?;
+        self.inherit_proto_python(proto_config)?;
         self.inherit_proto_rust(proto_config)?;
         self.inherit_proto_typescript(proto_config)?;
 

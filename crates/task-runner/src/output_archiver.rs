@@ -184,10 +184,10 @@ impl<'task> OutputArchiver<'task> {
         archive_file: &Path,
     ) -> miette::Result<()> {
         if let Some(remote) = RemoteService::session() {
-            remote
-                .cache
-                .upload_artifact(self.project, self.task, hash, archive_file)
-                .await?;
+            // remote
+            //     .cache
+            //     .upload_artifact(self.project, self.task, hash, archive_file)
+            //     .await?;
         } else if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)

@@ -518,9 +518,9 @@ dependencies = [
 
 [[package]]
 name = "bazel-remote-apis"
-version = "0.6.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b3c926d1614bc1131704549c93e057c7e904e194331714e20812b5885efbbc5"
+checksum = "31bbf354d9565230c677c9f8fa60dff7427d8b5a5a49477a716ae13882679959"
 dependencies = [
  "prost",
  "prost-types",
@@ -4109,6 +4109,7 @@ dependencies = [
 name = "moon_remote"
 version = "0.0.1"
 dependencies = [
+ "async-trait",
  "bazel-remote-apis",
  "miette",
  "moon_config",

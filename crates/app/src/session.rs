@@ -4,7 +4,6 @@ use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::ActionGraphBuilder;
-use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_test_env};
@@ -280,7 +279,7 @@ impl AppSession for CliSession {
         }
 
         if let Some(remote_config) = &self.workspace_config.remote {
-            RemoteService::connect(remote_config).await?;
+            RemoteService::new(remote_config)?.connect().await?;
         }
 
         Ok(None)

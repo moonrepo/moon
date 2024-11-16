@@ -1,16 +1,16 @@
 use crate::cache_api::Cache;
+use crate::grpc_remote_client::GrpcRemoteClient;
+use crate::remote_client::RemoteClient;
 use miette::IntoDiagnostic;
 use moon_config::RemoteConfig;
 use std::sync::{Arc, OnceLock};
-use tonic::transport::{ClientTlsConfig, Endpoint};
-// use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint};
+use tokio::sync::RwLock;
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
-#[derive(Debug)]
 pub struct RemoteService {
-    pub cache: Cache,
     pub config: RemoteConfig,
+    client: RwLock<Box<dyn RemoteClient>>,
 }
 
 impl RemoteService {
@@ -18,35 +18,32 @@ impl RemoteService {
         INSTANCE.get().cloned()
     }
 
-    pub async fn connect(config: &RemoteConfig) -> miette::Result<Arc<RemoteService>> {
-        let mut endpoint = Endpoint::from_shared(config.host.clone()).into_diagnostic()?;
-
-        // Support TLS connections
-        // if let Some(tls) = &config.tls {
-        //     let pem = std::fs::read_to_string(data_dir.join("tls/ca.pem"))?;
-        //     let ca = Certificate::from_pem(pem);
-
-        //     let tls_config = ClientTlsConfig::new()
-        //         .ca_certificate(ca)
-        //         .domain_name("example.com")
-        //         .with_enabled_roots();
-        // }
-
-        // endpoint = endpoint
-        //     .tls_config(ClientTlsConfig::new().with_enabled_roots())
-        //     .unwrap();
-
-        let channel = endpoint.connect().await.into_diagnostic()?;
+    pub fn new(config: &RemoteConfig) -> miette::Result<Arc<RemoteService>> {
+        let client = if config.host.starts_with("http://") || config.host.starts_with("https://") {
+            todo!("TODO http client");
+        } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
+            Box::new(GrpcRemoteClient::default())
+        } else {
+            todo!("Handle error")
+        };
 
         let service = Arc::new(Self {
-            cache: Cache::new(channel, config).await?,
             config: config.to_owned(),
+            client: RwLock::new(client),
         });
-
-        dbg!(&service);
 
         let _ = INSTANCE.set(Arc::clone(&service));
 
         Ok(service)
+    }
+
+    pub async fn connect(&self) -> miette::Result<()> {
+        let mut client = self.client.write().await;
+
+        client
+            .connect_to_host(&self.config.host, &self.config)
+            .await?;
+
+        Ok(())
     }
 }

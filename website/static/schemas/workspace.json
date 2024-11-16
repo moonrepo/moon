@@ -120,6 +120,18 @@
       "default": true,
       "type": "boolean"
     },
+    "unstable_remote": {
+      "title": "unstable_remote",
+      "description": "Configures aspects of the remote caching service.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RemoteConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "vcs": {
       "title": "vcs",
       "description": "Configures the version control system (VCS).",
@@ -487,6 +499,42 @@
     "PluginLocator": {
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
+    },
+    "RemoteConfig": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "title": "host",
+          "type": "string"
+        },
+        "tls": {
+          "title": "tls",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RemoteTlsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteTlsConfig": {
+      "type": "object",
+      "properties": {
+        "domainName": {
+          "title": "domainName",
+          "type": "string"
+        },
+        "pemFile": {
+          "title": "pemFile",
+          "type": "string",
+          "format": "path"
+        }
+      },
+      "additionalProperties": false
     },
     "RunnerConfig": {
       "description": "Configures aspects of the task runner (also known as the action pipeline).",

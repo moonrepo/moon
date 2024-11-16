@@ -239,6 +239,16 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+export interface RemoteTlsConfig {
+	domainName: string;
+	pemFile: string;
+}
+
+export interface RemoteConfig {
+	host: string;
+	tls: RemoteTlsConfig | null;
+}
+
 /** The format to use for generated VCS hook files. */
 export type VcsHookFormat = 'bash' | 'native';
 
@@ -331,6 +341,8 @@ export interface WorkspaceConfig {
 	 * @default true
 	 */
 	telemetry?: boolean;
+	/** Configures aspects of the remote caching service. */
+	unstable_remote: RemoteConfig | null;
 	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
@@ -563,6 +575,16 @@ export interface PartialRunnerConfig {
 	logRunningCommand?: boolean | null;
 }
 
+export interface PartialRemoteTlsConfig {
+	domainName?: string | null;
+	pemFile?: string | null;
+}
+
+export interface PartialRemoteConfig {
+	host?: string | null;
+	tls?: PartialRemoteTlsConfig | null;
+}
+
 /** Configures the version control system (VCS). */
 export interface PartialVcsConfig {
 	/**
@@ -640,6 +662,8 @@ export interface PartialWorkspaceConfig {
 	 * @default true
 	 */
 	telemetry?: boolean | null;
+	/** Configures aspects of the remote caching service. */
+	unstable_remote?: PartialRemoteConfig | null;
 	/** Configures the version control system (VCS). */
 	vcs?: PartialVcsConfig | null;
 	/** Requires a specific version of the `moon` binary. */

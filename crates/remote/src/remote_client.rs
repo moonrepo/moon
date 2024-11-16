@@ -8,7 +8,7 @@ use moon_config::RemoteConfig;
 pub trait RemoteClient: Send + Sync {
     async fn connect_to_host(&mut self, host: &str, config: &RemoteConfig) -> miette::Result<()>;
 
-    async fn load_capabilities(&mut self) -> miette::Result<ServerCapabilities>;
+    async fn load_capabilities(&self) -> miette::Result<ServerCapabilities>;
 
     async fn upload_blob(&self, hash: &str, bytes: Vec<u8>) -> miette::Result<Digest>;
 

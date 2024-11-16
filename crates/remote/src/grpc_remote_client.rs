@@ -1,5 +1,3 @@
-use std::sync::OnceLock;
-
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::{
     asset::v1::{push_client::PushClient, PushBlobRequest, Qualifier},
@@ -11,8 +9,6 @@ use bazel_remote_apis::build::bazel::remote::{
 };
 use miette::IntoDiagnostic;
 use moon_config::RemoteConfig;
-use moon_project::Project;
-use moon_task::Task;
 use tonic::transport::{Channel, Endpoint};
 // use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint};
 
@@ -37,7 +33,7 @@ impl RemoteClient for GrpcRemoteClient {
         Ok(())
     }
 
-    async fn load_capabilities(&mut self) -> miette::Result<ServerCapabilities> {
+    async fn load_capabilities(&self) -> miette::Result<ServerCapabilities> {
         let mut client = CapabilitiesClient::new(self.channel.clone().unwrap());
 
         let response = client

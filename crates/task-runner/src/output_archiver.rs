@@ -7,7 +7,7 @@ use moon_remote::RemoteService;
 use moon_task::{TargetError, TargetScope, Task};
 use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
-use starbase_utils::glob;
+use starbase_utils::{fs, glob};
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, warn};
 
@@ -184,10 +184,14 @@ impl<'task> OutputArchiver<'task> {
         archive_file: &Path,
     ) -> miette::Result<()> {
         if let Some(remote) = RemoteService::session() {
-            // remote
-            //     .cache
-            //     .upload_artifact(self.project, self.task, hash, archive_file)
-            //     .await?;
+            remote
+                .upload_artifact(
+                    self.project,
+                    self.task,
+                    hash,
+                    fs::read_file_bytes(archive_file)?,
+                )
+                .await?;
         } else if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)

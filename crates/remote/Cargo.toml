@@ -5,12 +5,14 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
 bazel-remote-apis = "0.10.0"
 miette = { workspace = true }
+reqwest = { workspace = true }
 starbase_utils = { workspace = true }
 tokio = { workspace = true }
 tonic = { version = "0.12.2", default-features = false, features = [
@@ -18,6 +20,7 @@ tonic = { version = "0.12.2", default-features = false, features = [
     "gzip",
     "tls-native-roots",
 ] }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

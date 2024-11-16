@@ -7,6 +7,7 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_remote::RemoteService;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
@@ -21,6 +22,13 @@ pub async fn sync_workspace(
     workspace_graph: WorkspaceGraph,
     toolchain_registry: Arc<ToolchainRegistry>,
 ) -> miette::Result<ActionStatus> {
+    // Connect to the remote service in this action,
+    // as it always runs before tasks, and we don't need it
+    // for non-pipeline related features!
+    if let Some(remote_config) = &app_context.workspace_config.remote {
+        RemoteService::new(remote_config).await?;
+    }
+
     if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
         debug!(
             "Skipping workspace sync because {} is set",

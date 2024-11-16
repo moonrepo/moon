@@ -3178,6 +3178,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
+ "moon_remote",
  "moon_task_runner",
  "moon_time",
  "moon_toolchain_plugin",
@@ -4112,12 +4113,15 @@ dependencies = [
  "async-trait",
  "bazel-remote-apis",
  "miette",
+ "moon_common",
  "moon_config",
  "moon_project",
  "moon_task",
+ "reqwest",
  "starbase_utils",
  "tokio",
  "tonic",
+ "tracing",
 ]
 
 [[package]]

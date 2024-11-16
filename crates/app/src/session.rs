@@ -14,7 +14,6 @@ use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
 use moon_project_graph::ProjectGraph;
-use moon_remote::RemoteService;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
@@ -276,10 +275,6 @@ impl AppSession for CliSession {
             let vcs = self.get_vcs_adapter()?;
 
             startup::signin_to_moonbase(&vcs).await?;
-        }
-
-        if let Some(remote_config) = &self.workspace_config.remote {
-            RemoteService::new(remote_config)?.connect().await?;
         }
 
         Ok(None)

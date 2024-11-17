@@ -1,3 +1,4 @@
+use crate::fs_digest::create_digest;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
@@ -119,29 +120,41 @@ impl RemoteClient for GrpcRemoteClient {
         }
     }
 
-    async fn upload_blob(&self, hash: &str, bytes: Vec<u8>) -> miette::Result<Digest> {
-        let digest = Digest {
-            hash: hash.to_owned(),
-            size_bytes: bytes.len() as i64,
-        };
-
+    async fn batch_update_blobs(&self, blobs: Vec<Vec<u8>>) -> miette::Result<Vec<Option<Digest>>> {
         let mut client = ContentAddressableStorageClient::new(self.channel.clone().unwrap());
 
         let response = client
             .batch_update_blobs(BatchUpdateBlobsRequest {
                 instance_name: INSTANCE_NAME.into(),
-                requests: vec![batch_update_blobs_request::Request {
-                    digest: Some(digest.clone()),
-                    data: bytes,
-                    compressor: compressor::Value::Identity as i32,
-                }],
+                requests: blobs
+                    .into_iter()
+                    .map(|blob| batch_update_blobs_request::Request {
+                        digest: Some(create_digest(&blob)),
+                        data: blob,
+                        compressor: compressor::Value::Identity as i32,
+                    })
+                    .collect(),
                 digest_function: digest_function::Value::Sha256 as i32,
             })
             .await
             .expect("TODO response");
 
-        dbg!("upload_artifact", hash, response);
+        dbg!("batch_update_blobs", &response);
 
-        Ok(digest)
+        let mut digests = vec![];
+
+        for upload in response.into_inner().responses {
+            if let Some(status) = upload.status {
+                warn!(
+                    details = ?status.details,
+                    "Failed to upload blob: {}",
+                    status.message
+                );
+            }
+
+            digests.push(upload.digest);
+        }
+
+        Ok(digests)
     }
 }

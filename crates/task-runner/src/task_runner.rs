@@ -34,7 +34,7 @@ pub struct TaskRunner<'task> {
     project: &'task Project,
     pub task: &'task Task,
     platform_manager: &'task PlatformManager,
-    digest: Option<Digest>,
+    action_digest: Digest,
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
@@ -68,7 +68,10 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             cache,
             archiver: OutputArchiver { app, project, task },
-            digest: None,
+            action_digest: Digest {
+                hash: String::new(),
+                size_bytes: 0,
+            },
             hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,
@@ -303,8 +306,8 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in the remote service
-        if let (Some(remote), Some(digest)) = (RemoteService::session(), &self.digest) {
-            if remote.is_action_cached(digest).await? {
+        if let Some(remote) = RemoteService::session() {
+            if remote.is_action_cached(&self.action_digest).await? {
                 debug!(
                     task_target = self.task.target.as_str(),
                     hash, "Cache hit in remote service, will attempt to download output blobs"
@@ -385,9 +388,9 @@ impl<'task> TaskRunner<'task> {
             "Generating a unique hash for this task"
         );
 
-        let mut operation = Operation::hash_generation();
         let hash_engine = &self.app.cache_engine.hash;
         let mut hasher = hash_engine.create_hasher(node.label());
+        let mut operation = Operation::hash_generation();
 
         // Hash common fields
         trace!(
@@ -456,10 +459,10 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
 
         if size_bytes > 0 {
-            self.digest = Some(Digest {
+            self.action_digest = Digest {
                 hash: hash.clone(),
                 size_bytes: size_bytes as i64,
-            });
+            };
         }
 
         debug!(
@@ -544,8 +547,8 @@ impl<'task> TaskRunner<'task> {
             return Err(result_error);
         }
 
-        // If our last task execution was a failure, return a hard error
         if let Some(last_attempt) = self.operations.get_last_execution() {
+            // If our last task execution was a failure, return a hard error
             if last_attempt.has_failed() {
                 return Err(TaskRunnerError::RunFailed {
                     target: self.task.target.clone(),
@@ -604,7 +607,11 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let archived = match self.archiver.archive(hash).await? {
+        let archived = match self
+            .archiver
+            .archive(&self.action_digest, self.operations.get_last_execution())
+            .await?
+        {
             Some(archive_file) => {
                 debug!(
                     task_target = self.task.target.as_str(),

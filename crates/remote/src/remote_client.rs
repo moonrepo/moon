@@ -17,5 +17,5 @@ pub trait RemoteClient: Send + Sync {
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>>;
 
-    async fn upload_blob(&self, hash: &str, bytes: Vec<u8>) -> miette::Result<Digest>;
+    async fn batch_update_blobs(&self, blobs: Vec<Vec<u8>>) -> miette::Result<Vec<Option<Digest>>>;
 }

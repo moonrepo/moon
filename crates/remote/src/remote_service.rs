@@ -1,15 +1,21 @@
+use crate::fs_digest::calculate_digests_for_outputs;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::{
     asset::v1::Qualifier,
-    execution::v2::{digest_function, ActionResult, Digest, ServerCapabilities},
+    execution::v2::{
+        digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
+    },
 };
 use miette::IntoDiagnostic;
+use moon_action::{ActionStatus, Operation, OperationMeta};
 use moon_common::color;
 use moon_config::RemoteConfig;
 use moon_project::Project;
 use moon_task::Task;
+use prost_types::Timestamp;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use tokio::sync::RwLock;
 use tracing::{debug, instrument, warn};
@@ -18,6 +24,7 @@ static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
 pub struct RemoteService {
     pub config: RemoteConfig,
+    pub workspace_root: PathBuf,
 
     action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
@@ -31,7 +38,10 @@ impl RemoteService {
     }
 
     #[instrument(skip(config))]
-    pub async fn new(config: &RemoteConfig) -> miette::Result<Arc<RemoteService>> {
+    pub async fn new(
+        config: &RemoteConfig,
+        workspace_root: &Path,
+    ) -> miette::Result<Arc<RemoteService>> {
         let mut client =
             if config.host.starts_with("http://") || config.host.starts_with("https://") {
                 todo!("TODO http client");
@@ -49,6 +59,7 @@ impl RemoteService {
             config: config.to_owned(),
             client,
             cache_enabled: false,
+            workspace_root: workspace_root.to_path_buf(),
         };
 
         instance.validate_capabilities()?;
@@ -111,6 +122,87 @@ impl RemoteService {
         Ok(false)
     }
 
+    pub async fn create_action_result(
+        &self,
+        operation: &Operation,
+    ) -> miette::Result<ActionResult> {
+        let mut result = ActionResult {
+            execution_metadata: Some(ExecutedActionMetadata {
+                worker: "moon".into(),
+                execution_start_timestamp: None,
+                execution_completed_timestamp: None,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        match &operation.meta {
+            OperationMeta::ProcessExecution(exec) | OperationMeta::TaskExecution(exec) => {
+                let mut blobs = vec![];
+                let mut stderr_index = -1;
+                let mut stdout_index = -1;
+
+                if let Some(stderr) = &exec.stderr {
+                    stderr_index = blobs.len() as i8;
+                    blobs.push(stderr.as_bytes().to_owned());
+                }
+
+                if let Some(stdout) = &exec.stdout {
+                    stdout_index = blobs.len() as i8;
+                    blobs.push(stdout.as_bytes().to_owned());
+                }
+
+                if !blobs.is_empty() {
+                    let mut digests = self.client.batch_update_blobs(blobs).await?;
+
+                    if stderr_index >= 0 {
+                        result.stderr_digest = digests
+                            .get_mut(stderr_index as usize)
+                            .and_then(|item| item.take());
+                    }
+
+                    if stdout_index >= 0 {
+                        result.stdout_digest = digests
+                            .get_mut(stdout_index as usize)
+                            .and_then(|item| item.take());
+                    }
+                }
+
+                result.exit_code = exec.exit_code.unwrap_or_default();
+            }
+            _ => {}
+        };
+
+        Ok(result)
+    }
+
+    pub async fn cache_run_task_action(
+        &self,
+        digest: &Digest,
+        operation: &Operation,
+        task: &Task,
+    ) -> miette::Result<()> {
+        if !self.cache_enabled || operation.get_output().is_none() || operation.has_failed() {
+            return Ok(());
+        }
+
+        let output_digests = calculate_digests_for_outputs(
+            task.get_output_files(&self.workspace_root, true)?,
+            &self.workspace_root,
+        )?;
+
+        let mut result = self.create_action_result(operation).await?;
+        result.output_files = output_digests.files;
+        result.output_symlinks = output_digests.symlinks;
+        result.output_directories = output_digests.dirs;
+
+        self.client
+            .update_action_result(digest.to_owned(), result)
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn upload_artifact(
         &self,
         project: &Project,
@@ -140,18 +232,18 @@ impl RemoteService {
             }
         }
 
-        let digest = match self.client.upload_blob(hash, bytes).await {
-            Ok(digest) => digest,
-            Err(error) => {
-                warn!(
-                    hash,
-                    "Failed to upload artifact to remote storage: {}",
-                    color::muted_light(error.to_string()),
-                );
+        // let digest = match self.client.upload_blob(hash, bytes).await {
+        //     Ok(digest) => digest,
+        //     Err(error) => {
+        //         warn!(
+        //             hash,
+        //             "Failed to upload artifact to remote storage: {}",
+        //             color::muted_light(error.to_string()),
+        //         );
 
-                return Ok(());
-            }
-        };
+        //         return Ok(());
+        //     }
+        // };
 
         Ok(())
     }

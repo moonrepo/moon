@@ -1,3 +1,4 @@
+mod fs_digest;
 mod grpc_remote_client;
 mod remote_client;
 mod remote_error;

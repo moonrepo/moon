@@ -11,6 +11,7 @@ use tracing::{debug, instrument, warn};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HydrateFrom {
     LocalCache,
+    Moonbase,
     PreviousOutput,
     RemoteCache,
 }
@@ -38,7 +39,7 @@ impl<'task> OutputHydrater<'task> {
             );
 
             // Attempt to download from remote cache to `.moon/outputs/<hash>`
-            if !archive_file.exists() && matches!(from, HydrateFrom::RemoteCache) {
+            if !archive_file.exists() && matches!(from, HydrateFrom::Moonbase) {
                 self.download_from_remote_storage(hash, &archive_file)
                     .await?;
             }

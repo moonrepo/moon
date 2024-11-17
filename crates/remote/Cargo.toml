@@ -13,7 +13,9 @@ async-trait = { workspace = true }
 bazel-remote-apis = "0.10.0"
 miette = { workspace = true }
 reqwest = { workspace = true }
+scc = { workspace = true }
 starbase_utils = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tonic = { version = "0.12.2", default-features = false, features = [
     "channel",

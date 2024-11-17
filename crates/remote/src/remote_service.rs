@@ -1,8 +1,9 @@
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
+use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::{
     asset::v1::Qualifier,
-    execution::v2::{digest_function, ServerCapabilities},
+    execution::v2::{digest_function, ActionResult, Digest, ServerCapabilities},
 };
 use miette::IntoDiagnostic;
 use moon_common::color;
@@ -18,10 +19,10 @@ static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 pub struct RemoteService {
     pub config: RemoteConfig,
 
-    capabilities: ServerCapabilities,
-    client: RwLock<Box<dyn RemoteClient>>,
-
+    action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
+    capabilities: ServerCapabilities,
+    client: Box<dyn RemoteClient>,
 }
 
 impl RemoteService {
@@ -43,9 +44,10 @@ impl RemoteService {
         client.connect_to_host(&config.host, config).await?;
 
         let mut instance = Self {
+            action_results: scc::HashMap::default(),
             capabilities: client.load_capabilities().await?,
             config: config.to_owned(),
-            client: RwLock::new(client),
+            client,
             cache_enabled: false,
         };
 
@@ -88,6 +90,27 @@ impl RemoteService {
         Ok(())
     }
 
+    pub async fn is_action_cached(&self, digest: &Digest) -> miette::Result<bool> {
+        if !self.cache_enabled {
+            return Ok(false);
+        }
+
+        if self.action_results.contains_async(&digest.hash).await {
+            return Ok(true);
+        }
+
+        if let Some(result) = self.client.get_action_result(digest.to_owned()).await? {
+            let _ = self
+                .action_results
+                .insert_async(digest.hash.clone(), result)
+                .await;
+
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+
     pub async fn upload_artifact(
         &self,
         project: &Project,
@@ -95,6 +118,8 @@ impl RemoteService {
         hash: &str,
         bytes: Vec<u8>,
     ) -> miette::Result<()> {
+        return Ok(());
+
         if !self.cache_enabled {
             return Ok(());
         }
@@ -115,9 +140,7 @@ impl RemoteService {
             }
         }
 
-        let mut client = self.client.write().await;
-
-        let digest = match client.upload_blob(hash, bytes).await {
+        let digest = match self.client.upload_blob(hash, bytes).await {
             Ok(digest) => digest,
             Err(error) => {
                 warn!(
@@ -129,19 +152,6 @@ impl RemoteService {
                 return Ok(());
             }
         };
-
-        let qualifiers = vec![
-            Qualifier {
-                name: "resource_type".into(),
-                value: "application/gzip".into(),
-            },
-            Qualifier {
-                name: "moon.task_target".into(),
-                value: task.target.to_string(),
-            },
-        ];
-
-        client.create_asset(digest, qualifiers).await?;
 
         Ok(())
     }

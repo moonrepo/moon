@@ -13,6 +13,7 @@ use moon_console::TaskReportItem;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
+use moon_remote::{Digest, RemoteService};
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
 use moon_time::{is_stale, now_millis};
@@ -33,6 +34,7 @@ pub struct TaskRunner<'task> {
     project: &'task Project,
     pub task: &'task Task,
     platform_manager: &'task PlatformManager,
+    digest: Option<Digest>,
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
@@ -66,6 +68,7 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             cache,
             archiver: OutputArchiver { app, project, task },
+            digest: None,
             hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,
@@ -299,6 +302,18 @@ impl<'task> TaskRunner<'task> {
             return Ok(Some(HydrateFrom::LocalCache));
         }
 
+        // Check if the outputs have been cached in the remote service
+        if let (Some(remote), Some(digest)) = (RemoteService::session(), &self.digest) {
+            if remote.is_action_cached(digest).await? {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash, "Cache hit in remote service, will attempt to download output blobs"
+                );
+
+                return Ok(Some(HydrateFrom::RemoteCache));
+            }
+        }
+
         // Check if archive exists in moonbase (remote storage) by querying the artifacts
         // endpoint. This only checks that the database record exists!
         if let Some(moonbase) = Moonbase::session() {
@@ -310,7 +325,7 @@ impl<'task> TaskRunner<'task> {
                     "Cache hit in remote cache, will attempt to download the archive"
                 );
 
-                return Ok(Some(HydrateFrom::RemoteCache));
+                return Ok(Some(HydrateFrom::Moonbase));
             }
         }
 
@@ -371,7 +386,8 @@ impl<'task> TaskRunner<'task> {
         );
 
         let mut operation = Operation::hash_generation();
-        let mut hasher = self.app.cache_engine.hash.create_hasher(node.label());
+        let hash_engine = &self.app.cache_engine.hash;
+        let mut hasher = hash_engine.create_hasher(node.label());
 
         // Hash common fields
         trace!(
@@ -432,12 +448,19 @@ impl<'task> TaskRunner<'task> {
             )
             .await?;
 
-        let hash = self.app.cache_engine.hash.save_manifest(hasher)?;
+        let (hash, size_bytes) = hash_engine.save_manifest(hasher)?;
 
         operation.meta.set_hash(&hash);
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
+
+        if size_bytes > 0 {
+            self.digest = Some(Digest {
+                hash: hash.clone(),
+                size_bytes: size_bytes as i64,
+            });
+        }
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -656,7 +679,7 @@ impl<'task> TaskRunner<'task> {
         self.load_logs(&mut operation)?;
 
         operation.finish(match from {
-            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+            HydrateFrom::Moonbase | HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
             _ => ActionStatus::Cached,
         });
 

@@ -1,44 +1,59 @@
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
+use chrono::NaiveDateTime;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use prost_types::Timestamp;
 use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::{self, FsError};
+use starbase_utils::glob;
+use std::path::PathBuf;
 use std::{
     fs::Metadata,
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tracing::warn;
 
-fn hash_bytes(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::default();
-    hasher.update(bytes);
+pub struct Blob {
+    pub bytes: Vec<u8>,
+    pub digest: Digest,
+}
 
-    format!("{:x}", hasher.finalize())
+impl Blob {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        Self {
+            digest: create_digest(&bytes),
+            bytes,
+        }
+    }
 }
 
 pub fn create_digest(bytes: &[u8]) -> Digest {
+    let mut hasher = Sha256::default();
+    hasher.update(bytes);
+
     Digest {
-        hash: hash_bytes(bytes),
+        hash: format!("{:x}", hasher.finalize()),
         size_bytes: bytes.len() as i64,
     }
 }
 
-pub fn create_digest_from_path(path: &Path) -> miette::Result<Digest> {
-    let bytes = fs::read_file_bytes(path)?;
-
-    Ok(create_digest(&bytes))
+pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
+    time.duration_since(UNIX_EPOCH)
+        .ok()
+        .map(|duration| Timestamp {
+            seconds: duration.as_secs() as i64,
+            nanos: duration.subsec_nanos() as i32,
+        })
 }
 
-pub fn create_timestamp(time: SystemTime) -> Timestamp {
-    let duration = time.duration_since(UNIX_EPOCH).unwrap();
+pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
+    let utc = time.and_utc();
 
-    Timestamp {
-        seconds: duration.as_secs() as i64,
-        nanos: duration.as_nanos() as i32,
-    }
+    Some(Timestamp {
+        seconds: utc.timestamp(),
+        nanos: utc.timestamp_subsec_nanos() as i32,
+    })
 }
 
 #[cfg(unix)]
@@ -51,11 +66,11 @@ fn is_file_executable(path: &Path, _props: &NodeProperties) -> bool {
     path.extension().is_some_and(|ext| ext == "exe")
 }
 
-pub fn calculate_node_properties(metadata: &Metadata) -> NodeProperties {
+pub fn compute_node_properties(metadata: &Metadata) -> NodeProperties {
     let mut props = NodeProperties::default();
 
     if let Ok(time) = metadata.modified() {
-        props.mtime = Some(create_timestamp(time));
+        props.mtime = create_timestamp(time);
     }
 
     #[cfg(unix)]
@@ -70,50 +85,80 @@ pub fn calculate_node_properties(metadata: &Metadata) -> NodeProperties {
 
 #[derive(Default)]
 pub struct OutputDigests {
+    pub blobs: Vec<Blob>,
     pub dirs: Vec<OutputDirectory>,
     pub files: Vec<OutputFile>,
     pub symlinks: Vec<OutputSymlink>,
 }
 
-pub fn calculate_digests_for_outputs(
+impl OutputDigests {
+    pub fn insert_relative_path(
+        &mut self,
+        rel_path: WorkspaceRelativePathBuf,
+        workspace_root: &Path,
+    ) -> miette::Result<()> {
+        self.insert_path(rel_path.to_path(workspace_root), workspace_root)
+    }
+
+    pub fn insert_path(&mut self, abs_path: PathBuf, workspace_root: &Path) -> miette::Result<()> {
+        // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L1233
+        let path_to_string = |inner_path: &Path| {
+            let outer_path = inner_path.relative_to(workspace_root).unwrap().to_string();
+
+            if outer_path.starts_with('/') {
+                outer_path[1..].to_owned()
+            } else {
+                outer_path
+            }
+        };
+
+        if abs_path.is_symlink() {
+            let link = std::fs::read_link(&abs_path).map_err(|error| FsError::Read {
+                path: abs_path.clone(),
+                error: Box::new(error),
+            })?;
+            let metadata = fs::metadata(&abs_path)?;
+            let props = compute_node_properties(&metadata);
+
+            self.symlinks.push(OutputSymlink {
+                path: path_to_string(&abs_path),
+                target: path_to_string(&link),
+                node_properties: Some(props),
+            });
+        } else if abs_path.is_file() {
+            let bytes = fs::read_file_bytes(&abs_path)?;
+            let digest = create_digest(&bytes);
+            let metadata = fs::metadata(&abs_path)?;
+            let props = compute_node_properties(&metadata);
+
+            self.files.push(OutputFile {
+                path: path_to_string(&abs_path),
+                digest: Some(digest.clone()),
+                is_executable: is_file_executable(&abs_path, &props),
+                contents: vec![],
+                node_properties: Some(props),
+            });
+
+            self.blobs.push(Blob { digest, bytes });
+        } else if abs_path.is_dir() {
+            // TODO use the REAPI directory types
+            for abs_file in glob::walk_files(abs_path, ["**/*"])? {
+                self.insert_path(abs_file, workspace_root)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+pub fn compute_digests_for_outputs(
     paths: Vec<WorkspaceRelativePathBuf>,
     workspace_root: &Path,
 ) -> miette::Result<OutputDigests> {
     let mut result = OutputDigests::default();
 
     for path in paths {
-        let abs_path = path.to_path(workspace_root);
-
-        if abs_path.is_file() {
-            let metadata = fs::metadata(&abs_path)?;
-            let node_properties = calculate_node_properties(&metadata);
-
-            if abs_path.is_symlink() {
-                let link = std::fs::read_link(&abs_path).map_err(|error| FsError::Read {
-                    path: abs_path.clone(),
-                    error: Box::new(error),
-                })?;
-
-                result.symlinks.push(OutputSymlink {
-                    path: path.to_string(),
-                    target: link.relative_to(workspace_root).unwrap().to_string(),
-                    node_properties: Some(node_properties),
-                });
-            } else {
-                result.files.push(OutputFile {
-                    path: path.to_string(),
-                    digest: Some(create_digest_from_path(&abs_path)?),
-                    is_executable: is_file_executable(&abs_path, &node_properties),
-                    contents: vec![],
-                    node_properties: Some(node_properties),
-                });
-            }
-        } else if abs_path.is_dir() {
-            warn!(
-                dir = ?abs_path,
-                "Directories are currently not supported as outputs for remote caching",
-            );
-        }
+        result.insert_relative_path(path, workspace_root)?;
     }
 
     Ok(result)

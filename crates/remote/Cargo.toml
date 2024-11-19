@@ -8,16 +8,16 @@ publish = false
 moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
-moon_project = { path = "../project" }
-moon_task = { path = "../task" }
 async-trait = { workspace = true }
 bazel-remote-apis = "0.10.0"
+chrono = { workspace = true }
 miette = { workspace = true }
 prost-types = "0.13.2"
 reqwest = { workspace = true }
+rustc-hash = { workspace = true }
 scc = { workspace = true }
 sha2 = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tonic = { version = "0.12.2", default-features = false, features = [

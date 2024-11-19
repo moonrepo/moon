@@ -4,11 +4,10 @@ use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project::Project;
-use moon_remote::{Digest, RemoteService};
+use moon_remote::{compute_digests_for_outputs, Digest, RemoteService};
 use moon_task::{TargetError, TargetScope, Task};
 use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
-use starbase_utils::{fs, glob};
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, warn};
 
@@ -67,10 +66,8 @@ impl<'task> OutputArchiver<'task> {
         }
 
         // Then cache the result in the remote service
-        if let (Some(remote), Some(operation)) = (RemoteService::session(), operation) {
-            remote
-                .cache_run_task_action(digest, operation, self.task)
-                .await?;
+        if let Some(operation) = operation {
+            self.upload_to_remote_service(digest, operation).await?;
         }
 
         Ok(Some(archive_file))
@@ -198,18 +195,29 @@ impl<'task> OutputArchiver<'task> {
         hash: &str,
         archive_file: &Path,
     ) -> miette::Result<()> {
-        if let Some(remote) = RemoteService::session() {
-            remote
-                .upload_artifact(
-                    self.project,
-                    self.task,
-                    hash,
-                    fs::read_file_bytes(archive_file)?,
-                )
-                .await?;
-        } else if let Some(moonbase) = Moonbase::session() {
+        if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    #[instrument(skip(self))]
+    async fn upload_to_remote_service(
+        &self,
+        digest: &Digest,
+        operation: &Operation,
+    ) -> miette::Result<()> {
+        if let Some(remote) = RemoteService::session() {
+            let output_digests = compute_digests_for_outputs(
+                self.task.get_output_files(&self.app.workspace_root, true)?,
+                &self.app.workspace_root,
+            )?;
+
+            remote
+                .save_action_with_outputs(digest, operation, output_digests)
                 .await?;
         }
 

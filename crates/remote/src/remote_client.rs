@@ -1,3 +1,4 @@
+use crate::fs_digest::Blob;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, Digest, ServerCapabilities,
 };
@@ -9,13 +10,17 @@ pub trait RemoteClient: Send + Sync {
 
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities>;
 
-    async fn get_action_result(&self, digest: Digest) -> miette::Result<Option<ActionResult>>;
+    async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>>;
 
     async fn update_action_result(
         &self,
-        digest: Digest,
+        digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>>;
 
-    async fn batch_update_blobs(&self, blobs: Vec<Vec<u8>>) -> miette::Result<Vec<Option<Digest>>>;
+    async fn batch_update_blobs(
+        &self,
+        digest: &Digest,
+        blobs: Vec<Blob>,
+    ) -> miette::Result<Vec<Option<Digest>>>;
 }

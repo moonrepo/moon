@@ -1,30 +1,20 @@
-use crate::fs_digest::calculate_digests_for_outputs;
+use crate::fs_digest::{create_timestamp, create_timestamp_from_naive, Blob, OutputDigests};
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
-use crate::remote_error::RemoteError;
-use bazel_remote_apis::build::bazel::remote::{
-    asset::v1::Qualifier,
-    execution::v2::{
-        digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
-    },
+use bazel_remote_apis::build::bazel::remote::execution::v2::{
+    digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
 };
-use miette::IntoDiagnostic;
-use moon_action::{ActionStatus, Operation, OperationMeta};
+use moon_action::{Operation, OperationMeta};
 use moon_common::color;
 use moon_config::RemoteConfig;
-use moon_project::Project;
-use moon_task::Task;
-use prost_types::Timestamp;
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-use tokio::sync::RwLock;
+use std::time::SystemTime;
 use tracing::{debug, instrument, warn};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
 pub struct RemoteService {
     pub config: RemoteConfig,
-    pub workspace_root: PathBuf,
 
     action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
@@ -38,10 +28,7 @@ impl RemoteService {
     }
 
     #[instrument(skip(config))]
-    pub async fn new(
-        config: &RemoteConfig,
-        workspace_root: &Path,
-    ) -> miette::Result<Arc<RemoteService>> {
+    pub async fn new(config: &RemoteConfig) -> miette::Result<Arc<RemoteService>> {
         let mut client =
             if config.host.starts_with("http://") || config.host.starts_with("https://") {
                 todo!("TODO http client");
@@ -59,7 +46,6 @@ impl RemoteService {
             config: config.to_owned(),
             client,
             cache_enabled: false,
-            workspace_root: workspace_root.to_path_buf(),
         };
 
         instance.validate_capabilities()?;
@@ -110,7 +96,7 @@ impl RemoteService {
             return Ok(true);
         }
 
-        if let Some(result) = self.client.get_action_result(digest.to_owned()).await? {
+        if let Some(result) = self.client.get_action_result(digest).await? {
             let _ = self
                 .action_results
                 .insert_async(digest.hash.clone(), result)
@@ -124,13 +110,16 @@ impl RemoteService {
 
     pub async fn create_action_result(
         &self,
+        digest: &Digest,
         operation: &Operation,
     ) -> miette::Result<ActionResult> {
         let mut result = ActionResult {
             execution_metadata: Some(ExecutedActionMetadata {
                 worker: "moon".into(),
-                execution_start_timestamp: None,
-                execution_completed_timestamp: None,
+                execution_start_timestamp: create_timestamp_from_naive(operation.started_at),
+                execution_completed_timestamp: operation
+                    .finished_at
+                    .and_then(create_timestamp_from_naive),
                 ..Default::default()
             }),
             ..Default::default()
@@ -144,16 +133,16 @@ impl RemoteService {
 
                 if let Some(stderr) = &exec.stderr {
                     stderr_index = blobs.len() as i8;
-                    blobs.push(stderr.as_bytes().to_owned());
+                    blobs.push(Blob::new(stderr.as_bytes().to_owned()));
                 }
 
                 if let Some(stdout) = &exec.stdout {
                     stdout_index = blobs.len() as i8;
-                    blobs.push(stdout.as_bytes().to_owned());
+                    blobs.push(Blob::new(stdout.as_bytes().to_owned()));
                 }
 
                 if !blobs.is_empty() {
-                    let mut digests = self.client.batch_update_blobs(blobs).await?;
+                    let mut digests = self.client.batch_update_blobs(digest, blobs).await?;
 
                     if stderr_index >= 0 {
                         result.stderr_digest = digests
@@ -176,79 +165,61 @@ impl RemoteService {
         Ok(result)
     }
 
-    pub async fn cache_run_task_action(
-        &self,
-        digest: &Digest,
-        operation: &Operation,
-        task: &Task,
-    ) -> miette::Result<()> {
+    pub async fn save_action(&self, digest: &Digest, operation: &Operation) -> miette::Result<()> {
         if !self.cache_enabled || operation.get_output().is_none() || operation.has_failed() {
             return Ok(());
         }
 
-        let output_digests = calculate_digests_for_outputs(
-            task.get_output_files(&self.workspace_root, true)?,
-            &self.workspace_root,
-        )?;
-
-        let mut result = self.create_action_result(operation).await?;
-        result.output_files = output_digests.files;
-        result.output_symlinks = output_digests.symlinks;
-        result.output_directories = output_digests.dirs;
+        debug!(
+            hash = &digest.hash,
+            "Caching {} action operation",
+            color::muted_light(operation.label())
+        );
 
         self.client
-            .update_action_result(digest.to_owned(), result)
+            .update_action_result(digest, self.create_action_result(digest, operation).await?)
             .await?;
 
         Ok(())
     }
 
-    pub async fn upload_artifact(
+    pub async fn save_action_with_outputs(
         &self,
-        project: &Project,
-        task: &Task,
-        hash: &str,
-        bytes: Vec<u8>,
+        digest: &Digest,
+        operation: &Operation,
+        outputs: OutputDigests,
     ) -> miette::Result<()> {
-        return Ok(());
-
-        if !self.cache_enabled {
+        if !self.cache_enabled || operation.get_output().is_none() || operation.has_failed() {
             return Ok(());
         }
 
-        if let Some(cap) = &self.capabilities.cache_capabilities {
-            // 0 = no limit
-            if cap.max_batch_total_size_bytes > 0
-                && bytes.len() as i64 > cap.max_batch_total_size_bytes
-            {
-                debug!(
-                    hash,
-                    size = bytes.len(),
-                    maz_size = cap.max_batch_total_size_bytes,
-                    "Unable to upload artifact, as the blob size is larger than the maximum allowed by the remote server",
-                );
+        debug!(
+            hash = &digest.hash,
+            "Caching {} action operation with outputs",
+            color::muted_light(operation.label())
+        );
 
-                return Ok(());
+        let mut result = self.create_action_result(digest, operation).await?;
+        result.output_files = outputs.files;
+        result.output_symlinks = outputs.symlinks;
+        result.output_directories = outputs.dirs;
+
+        if !outputs.blobs.is_empty() {
+            if let Some(metadata) = &mut result.execution_metadata {
+                metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
+            }
+
+            self.client
+                .batch_update_blobs(digest, outputs.blobs)
+                .await?;
+
+            if let Some(metadata) = &mut result.execution_metadata {
+                metadata.output_upload_completed_timestamp = create_timestamp(SystemTime::now());
             }
         }
 
-        // let digest = match self.client.upload_blob(hash, bytes).await {
-        //     Ok(digest) => digest,
-        //     Err(error) => {
-        //         warn!(
-        //             hash,
-        //             "Failed to upload artifact to remote storage: {}",
-        //             color::muted_light(error.to_string()),
-        //         );
+        self.client.update_action_result(digest, result).await?;
 
-        //         return Ok(());
-        //     }
-        // };
-
-        Ok(())
-    }
-
-    pub fn download_artifact(&self) -> miette::Result<()> {
         Ok(())
     }
 }

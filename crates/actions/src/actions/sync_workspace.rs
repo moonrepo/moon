@@ -26,7 +26,7 @@ pub async fn sync_workspace(
     // as it always runs before tasks, and we don't need it
     // for non-pipeline related features!
     if let Some(remote_config) = &app_context.workspace_config.remote {
-        RemoteService::new(remote_config, &app_context.workspace_root).await?;
+        RemoteService::new(remote_config).await?;
     }
 
     if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {

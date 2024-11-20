@@ -5,8 +5,8 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
     capabilities_client::CapabilitiesClient, compressor,
     content_addressable_storage_client::ContentAddressableStorageClient, digest_function,
-    ActionResult, BatchUpdateBlobsRequest, Digest, GetActionResultRequest, GetCapabilitiesRequest,
-    ServerCapabilities, UpdateActionResultRequest,
+    ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, GetActionResultRequest,
+    GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
 use miette::IntoDiagnostic;
 use moon_common::color;
@@ -162,6 +162,63 @@ impl RemoteClient for GrpcRemoteClient {
                 }
             }
         }
+    }
+
+    async fn batch_read_blobs(
+        &self,
+        digest: &Digest,
+        blob_digests: Vec<Digest>,
+    ) -> miette::Result<Vec<Blob>> {
+        let mut client = ContentAddressableStorageClient::new(self.channel.clone().unwrap());
+
+        trace!(
+            hash = &digest.hash,
+            blobs = blob_digests.len(),
+            "Downloading output blobs for action"
+        );
+
+        let response = client
+            .batch_read_blobs(BatchReadBlobsRequest {
+                acceptable_compressors: vec![compressor::Value::Identity as i32],
+                instance_name: INSTANCE_NAME.into(),
+                digests: blob_digests,
+                digest_function: digest_function::Value::Sha256 as i32,
+            })
+            .await
+            .expect("TODO response");
+
+        let mut blobs = vec![];
+        let mut total_count = 0;
+
+        for download in response.into_inner().responses {
+            if let Some(status) = download.status {
+                if status.code != 0 {
+                    warn!(
+                        details = ?status.details,
+                        "Failed to download blob: {}",
+                        status.message
+                    );
+                }
+            }
+
+            if let Some(digest) = download.digest {
+                blobs.push(Blob {
+                    digest,
+                    bytes: download.data,
+                });
+            }
+
+            total_count += 1;
+        }
+
+        trace!(
+            hash = &digest.hash,
+            "Downloaded {} of {} output blobs",
+            blobs.len(),
+            total_count
+        );
+
+        Ok(blobs)
     }
 
     async fn batch_update_blobs(

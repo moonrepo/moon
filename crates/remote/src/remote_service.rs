@@ -4,9 +4,12 @@ use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
 };
-use moon_action::{Operation, OperationMeta};
+use moon_action::Operation;
 use moon_common::color;
 use moon_config::RemoteConfig;
+use rustc_hash::FxHashMap;
+use starbase_utils::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 use tokio::sync::RwLock;
@@ -17,6 +20,7 @@ static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
 pub struct RemoteService {
     pub config: RemoteConfig,
+    pub workspace_root: PathBuf,
 
     action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
@@ -31,7 +35,10 @@ impl RemoteService {
     }
 
     #[instrument(skip(config))]
-    pub async fn new(config: &RemoteConfig) -> miette::Result<Arc<RemoteService>> {
+    pub async fn new(
+        config: &RemoteConfig,
+        workspace_root: &Path,
+    ) -> miette::Result<Arc<RemoteService>> {
         let mut client =
             if config.host.starts_with("http://") || config.host.starts_with("https://") {
                 todo!("TODO http client");
@@ -50,6 +57,7 @@ impl RemoteService {
             client: Arc::new(client),
             cache_enabled: false,
             upload_requests: Arc::new(RwLock::new(vec![])),
+            workspace_root: workspace_root.to_owned(),
         };
 
         instance.validate_capabilities()?;
@@ -130,7 +138,7 @@ impl RemoteService {
         );
 
         let result = self
-            .create_action_result_from_operation(digest, operation)
+            .create_action_result_from_operation(operation, None)
             .await?;
 
         let digest = digest.to_owned();
@@ -157,7 +165,7 @@ impl RemoteService {
         &self,
         digest: &Digest,
         operation: &Operation,
-        outputs: OutputDigests,
+        mut outputs: OutputDigests,
     ) -> miette::Result<()> {
         if !self.cache_enabled || operation.has_failed() {
             return Ok(());
@@ -172,7 +180,7 @@ impl RemoteService {
         );
 
         let mut result = self
-            .create_action_result_from_operation(digest, operation)
+            .create_action_result_from_operation(operation, Some(&mut outputs))
             .await?;
         result.output_files = outputs.files;
         result.output_symlinks = outputs.symlinks;
@@ -212,6 +220,51 @@ impl RemoteService {
         Ok(())
     }
 
+    pub async fn restore_operation(
+        &self,
+        digest: &Digest,
+        operation: &mut Operation,
+    ) -> miette::Result<()> {
+        if !self.cache_enabled {
+            return Ok(());
+        }
+
+        let Some(result) = self.action_results.get_async(&digest.hash).await else {
+            return Ok(());
+        };
+
+        if let Some(output) = operation.get_output_mut() {
+            output.exit_code = Some(result.exit_code);
+
+            if !result.stderr_raw.is_empty() {
+                output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+            }
+
+            if !result.stdout_raw.is_empty() {
+                output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
+            }
+        }
+
+        let mut blob_digests = vec![];
+        let mut file_map = FxHashMap::default();
+
+        // TODO support symlinks and directories
+        for file in &result.output_files {
+            if let Some(digest) = &file.digest {
+                blob_digests.push(digest.to_owned());
+                file_map.insert(&digest.hash, file);
+            }
+        }
+
+        for blob in self.client.batch_read_blobs(digest, blob_digests).await? {
+            if let Some(file) = file_map.get(&blob.digest.hash) {
+                fs::write_file(self.workspace_root.join(&file.path), &blob.bytes)?;
+            }
+        }
+
+        Ok(())
+    }
+
     pub async fn wait_for_requests(&self) {
         let mut requests = self.upload_requests.write().await;
 
@@ -224,8 +277,8 @@ impl RemoteService {
 
     async fn create_action_result_from_operation(
         &self,
-        digest: &Digest,
         operation: &Operation,
+        outputs: Option<&mut OutputDigests>,
     ) -> miette::Result<ActionResult> {
         let mut result = ActionResult {
             execution_metadata: Some(ExecutedActionMetadata {
@@ -239,42 +292,25 @@ impl RemoteService {
             ..Default::default()
         };
 
-        match &operation.meta {
-            OperationMeta::ProcessExecution(exec) | OperationMeta::TaskExecution(exec) => {
-                let mut blobs = vec![];
-                let mut stderr_index = -1;
-                let mut stdout_index = -1;
+        if let Some(exec) = operation.get_output() {
+            result.exit_code = exec.exit_code.unwrap_or_default();
 
+            if let Some(outputs) = outputs {
                 if let Some(stderr) = &exec.stderr {
-                    stderr_index = blobs.len() as i8;
-                    blobs.push(Blob::new(stderr.as_bytes().to_owned()));
+                    let blob = Blob::new(stderr.as_bytes().to_owned());
+
+                    result.stderr_digest = Some(blob.digest.clone());
+                    outputs.blobs.push(blob);
                 }
 
                 if let Some(stdout) = &exec.stdout {
-                    stdout_index = blobs.len() as i8;
-                    blobs.push(Blob::new(stdout.as_bytes().to_owned()));
+                    let blob = Blob::new(stdout.as_bytes().to_owned());
+
+                    result.stdout_digest = Some(blob.digest.clone());
+                    outputs.blobs.push(blob);
                 }
-
-                if !blobs.is_empty() {
-                    let mut digests = self.client.batch_update_blobs(digest, blobs).await?;
-
-                    if stderr_index >= 0 {
-                        result.stderr_digest = digests
-                            .get_mut(stderr_index as usize)
-                            .and_then(|item| item.take());
-                    }
-
-                    if stdout_index >= 0 {
-                        result.stdout_digest = digests
-                            .get_mut(stdout_index as usize)
-                            .and_then(|item| item.take());
-                    }
-                }
-
-                result.exit_code = exec.exit_code.unwrap_or_default();
             }
-            _ => {}
-        };
+        }
 
         Ok(result)
     }

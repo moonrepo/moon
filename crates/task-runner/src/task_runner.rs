@@ -2,7 +2,7 @@ use crate::command_builder::CommandBuilder;
 use crate::command_executor::CommandExecutor;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
-use crate::run_state::TaskRunCacheState;
+use crate::run_state::*;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
@@ -531,7 +531,7 @@ impl<'task> TaskRunner<'task> {
         };
 
         if let Some(last_attempt) = result.attempts.get_last_execution() {
-            self.save_logs(last_attempt)?;
+            self.persist_state(last_attempt)?;
         }
 
         // Extract the attempts from the result
@@ -644,11 +644,6 @@ impl<'task> TaskRunner<'task> {
     pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::output_hydration();
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            "Running cache hydration operation"
-        );
-
         // Not cached
         let Some(from) = self.is_cached(hash).await? else {
             debug!(
@@ -664,7 +659,17 @@ impl<'task> TaskRunner<'task> {
         };
 
         // Did not hydrate
-        if !self.hydrater.hydrate(hash, from).await? {
+        debug!(
+            task_target = self.task.target.as_str(),
+            hydrate_from = ?from,
+            "Running cache hydration operation"
+        );
+
+        if !self
+            .hydrater
+            .hydrate(from, &self.action_digest, &mut operation)
+            .await?
+        {
             debug!(task_target = self.task.target.as_str(), "Did not hydrate");
 
             operation.finish(ActionStatus::Invalid);
@@ -683,7 +688,7 @@ impl<'task> TaskRunner<'task> {
         // Fill in these values since the command executor does not run!
         self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
 
-        self.load_logs(&mut operation)?;
+        self.persist_state(&operation)?;
 
         operation.finish(match from {
             HydrateFrom::Moonbase | HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
@@ -735,63 +740,17 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    fn load_logs(&self, operation: &mut Operation) -> miette::Result<()> {
-        if let Some(output) = operation.get_output_mut() {
-            let state_dir = self
-                .app
+    fn persist_state(&mut self, operation: &Operation) -> miette::Result<()> {
+        write_stdlog_state_files(
+            self.app
                 .cache_engine
                 .state
-                .get_target_dir(&self.task.target);
-            let err_path = state_dir.join("stderr.log");
-            let out_path = state_dir.join("stdout.log");
-
-            output.exit_code = Some(self.cache.data.exit_code);
-
-            if err_path.exists() {
-                output.set_stderr(fs::read_file(err_path)?);
-            }
-
-            if out_path.exists() {
-                output.set_stdout(fs::read_file(out_path)?);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn save_logs(&mut self, operation: &Operation) -> miette::Result<()> {
-        let state_dir = self
-            .app
-            .cache_engine
-            .state
-            .get_target_dir(&self.task.target);
-        let err_path = state_dir.join("stderr.log");
-        let out_path = state_dir.join("stdout.log");
+                .get_target_dir(&self.task.target),
+            operation,
+        )?;
 
         if let Some(output) = operation.get_output() {
             self.cache.data.exit_code = output.get_exit_code();
-
-            fs::write_file(
-                err_path,
-                output
-                    .stderr
-                    .as_ref()
-                    .map(|log| log.as_bytes())
-                    .unwrap_or_default(),
-            )?;
-
-            fs::write_file(
-                out_path,
-                output
-                    .stdout
-                    .as_ref()
-                    .map(|log| log.as_bytes())
-                    .unwrap_or_default(),
-            )?;
-        } else {
-            // Ensure logs from a previous run are removed
-            fs::remove_file(err_path)?;
-            fs::remove_file(out_path)?;
         }
 
         Ok(())

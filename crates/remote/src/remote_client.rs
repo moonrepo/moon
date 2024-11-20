@@ -18,6 +18,12 @@ pub trait RemoteClient: Send + Sync {
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>>;
 
+    async fn batch_read_blobs(
+        &self,
+        digest: &Digest,
+        blob_digests: Vec<Digest>,
+    ) -> miette::Result<Vec<Blob>>;
+
     async fn batch_update_blobs(
         &self,
         digest: &Digest,

@@ -3147,6 +3147,7 @@ dependencies = [
  "moon_console",
  "moon_notifier",
  "moon_project",
+ "moon_remote",
  "moon_task",
  "moon_toolchain",
  "moon_toolchain_plugin",

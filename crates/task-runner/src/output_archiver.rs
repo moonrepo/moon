@@ -217,7 +217,7 @@ impl<'task> OutputArchiver<'task> {
             )?;
 
             remote
-                .save_action_with_outputs(digest, operation, output_digests)
+                .save_operation_with_outputs(digest, operation, output_digests)
                 .await?;
         }
 

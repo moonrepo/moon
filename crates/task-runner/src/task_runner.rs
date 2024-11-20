@@ -307,7 +307,7 @@ impl<'task> TaskRunner<'task> {
 
         // Check if the outputs have been cached in the remote service
         if let Some(remote) = RemoteService::session() {
-            if remote.is_action_cached(&self.action_digest).await? {
+            if remote.is_operation_cached(&self.action_digest).await? {
                 debug!(
                     task_target = self.task.target.as_str(),
                     hash, "Cache hit in remote service, will attempt to download output blobs"

@@ -9,6 +9,8 @@ use moon_common::color;
 use moon_config::RemoteConfig;
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
+use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
 use tracing::{debug, instrument, warn};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
@@ -19,7 +21,8 @@ pub struct RemoteService {
     action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
     capabilities: ServerCapabilities,
-    client: Box<dyn RemoteClient>,
+    client: Arc<Box<dyn RemoteClient>>,
+    upload_requests: Arc<RwLock<Vec<JoinHandle<()>>>>,
 }
 
 impl RemoteService {
@@ -44,8 +47,9 @@ impl RemoteService {
             action_results: scc::HashMap::default(),
             capabilities: client.load_capabilities().await?,
             config: config.to_owned(),
-            client,
+            client: Arc::new(client),
             cache_enabled: false,
+            upload_requests: Arc::new(RwLock::new(vec![])),
         };
 
         instance.validate_capabilities()?;
@@ -68,7 +72,7 @@ impl RemoteService {
 
                 warn!(
                     host,
-                    "Remote service does not support SHA256 digests, disabling in moon"
+                    "Remote service does not support SHA256 digests, which is required by moon"
                 );
             }
         } else {
@@ -87,7 +91,7 @@ impl RemoteService {
         Ok(())
     }
 
-    pub async fn is_action_cached(&self, digest: &Digest) -> miette::Result<bool> {
+    pub async fn is_operation_cached(&self, digest: &Digest) -> miette::Result<bool> {
         if !self.cache_enabled {
             return Ok(false);
         }
@@ -108,7 +112,117 @@ impl RemoteService {
         Ok(false)
     }
 
-    pub async fn create_action_result(
+    pub async fn save_operation(
+        &self,
+        digest: &Digest,
+        operation: &Operation,
+    ) -> miette::Result<()> {
+        if !self.cache_enabled || operation.has_failed() {
+            return Ok(());
+        }
+
+        let operation_label = operation.label().to_owned();
+
+        debug!(
+            hash = &digest.hash,
+            "Caching {} operation",
+            color::muted_light(&operation_label)
+        );
+
+        let result = self
+            .create_action_result_from_operation(digest, operation)
+            .await?;
+
+        let digest = digest.to_owned();
+        let client = Arc::clone(&self.client);
+
+        self.upload_requests
+            .write()
+            .await
+            .push(tokio::spawn(async move {
+                if let Err(error) = client.update_action_result(&digest, result).await {
+                    warn!(
+                        hash = &digest.hash,
+                        "Failed to cache {} operation: {}",
+                        color::muted_light(operation_label),
+                        color::muted_light(error.to_string()),
+                    );
+                }
+            }));
+
+        Ok(())
+    }
+
+    pub async fn save_operation_with_outputs(
+        &self,
+        digest: &Digest,
+        operation: &Operation,
+        outputs: OutputDigests,
+    ) -> miette::Result<()> {
+        if !self.cache_enabled || operation.has_failed() {
+            return Ok(());
+        }
+
+        let operation_label = operation.label().to_owned();
+
+        debug!(
+            hash = &digest.hash,
+            "Caching {} operation with outputs",
+            color::muted_light(&operation_label)
+        );
+
+        let mut result = self
+            .create_action_result_from_operation(digest, operation)
+            .await?;
+        result.output_files = outputs.files;
+        result.output_symlinks = outputs.symlinks;
+        result.output_directories = outputs.dirs;
+
+        if !outputs.blobs.is_empty() {
+            if let Some(metadata) = &mut result.execution_metadata {
+                metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
+            }
+
+            self.client
+                .batch_update_blobs(digest, outputs.blobs)
+                .await?;
+
+            if let Some(metadata) = &mut result.execution_metadata {
+                metadata.output_upload_completed_timestamp = create_timestamp(SystemTime::now());
+            }
+        }
+
+        let digest = digest.to_owned();
+        let client = Arc::clone(&self.client);
+
+        self.upload_requests
+            .write()
+            .await
+            .push(tokio::spawn(async move {
+                if let Err(error) = client.update_action_result(&digest, result).await {
+                    warn!(
+                        hash = &digest.hash,
+                        "Failed to cache {} operation: {}",
+                        color::muted_light(operation_label),
+                        color::muted_light(error.to_string()),
+                    );
+                }
+            }));
+
+        Ok(())
+    }
+
+    pub async fn wait_for_requests(&self) {
+        let mut requests = self.upload_requests.write().await;
+
+        for future in requests.drain(0..) {
+            // We can ignore the errors because we handle them in
+            // the tasks above by logging to the console
+            let _ = future.await;
+        }
+    }
+
+    async fn create_action_result_from_operation(
         &self,
         digest: &Digest,
         operation: &Operation,
@@ -163,63 +277,5 @@ impl RemoteService {
         };
 
         Ok(result)
-    }
-
-    pub async fn save_action(&self, digest: &Digest, operation: &Operation) -> miette::Result<()> {
-        if !self.cache_enabled || operation.get_output().is_none() || operation.has_failed() {
-            return Ok(());
-        }
-
-        debug!(
-            hash = &digest.hash,
-            "Caching {} action operation",
-            color::muted_light(operation.label())
-        );
-
-        self.client
-            .update_action_result(digest, self.create_action_result(digest, operation).await?)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn save_action_with_outputs(
-        &self,
-        digest: &Digest,
-        operation: &Operation,
-        outputs: OutputDigests,
-    ) -> miette::Result<()> {
-        if !self.cache_enabled || operation.get_output().is_none() || operation.has_failed() {
-            return Ok(());
-        }
-
-        debug!(
-            hash = &digest.hash,
-            "Caching {} action operation with outputs",
-            color::muted_light(operation.label())
-        );
-
-        let mut result = self.create_action_result(digest, operation).await?;
-        result.output_files = outputs.files;
-        result.output_symlinks = outputs.symlinks;
-        result.output_directories = outputs.dirs;
-
-        if !outputs.blobs.is_empty() {
-            if let Some(metadata) = &mut result.execution_metadata {
-                metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
-            }
-
-            self.client
-                .batch_update_blobs(digest, outputs.blobs)
-                .await?;
-
-            if let Some(metadata) = &mut result.execution_metadata {
-                metadata.output_upload_completed_timestamp = create_timestamp(SystemTime::now());
-            }
-        }
-
-        self.client.update_action_result(digest, result).await?;
-
-        Ok(())
     }
 }

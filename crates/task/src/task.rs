@@ -1,7 +1,7 @@
 use crate::task_options::TaskOptions;
 use moon_common::{
     cacheable,
-    path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf},
+    path::{PathExt, ProjectRelativePathBuf, WorkspaceRelativePathBuf},
     Id,
 };
 use moon_config::{
@@ -154,10 +154,7 @@ impl Task {
 
             // Glob results are absolute paths!
             for file in walk_paths {
-                list.insert(
-                    WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
-                        .unwrap(),
-                );
+                list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
 
@@ -184,10 +181,7 @@ impl Task {
 
             // Glob results are absolute paths!
             for file in walk_paths {
-                list.insert(
-                    WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
-                        .unwrap(),
-                );
+                list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
 

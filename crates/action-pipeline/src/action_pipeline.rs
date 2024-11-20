@@ -5,6 +5,7 @@ use crate::job_dispatcher::JobDispatcher;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::moonbase_subscriber::MoonbaseSubscriber;
+use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use moon_action::{Action, ActionNode};
@@ -13,6 +14,7 @@ use moon_action_graph::ActionGraph;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
+use moon_remote::RemoteService;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -360,6 +362,12 @@ impl ActionPipeline {
                 &self.report_name,
             ))
             .await;
+
+        if let Some(session) = RemoteService::session() {
+            debug!("Subscribing remote service");
+
+            self.emitter.subscribe(RemoteSubscriber::new(session)).await;
+        }
 
         if let Some(session) = Moonbase::session() {
             debug!("Subscribing moonbase");

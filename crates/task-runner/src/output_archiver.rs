@@ -70,7 +70,11 @@ impl<'task> OutputArchiver<'task> {
             self.upload_to_remote_service(digest, operation).await?;
         }
 
-        Ok(Some(archive_file))
+        Ok(if archive_file.exists() {
+            Some(archive_file)
+        } else {
+            None
+        })
     }
 
     pub fn is_archivable(&self) -> miette::Result<bool> {

@@ -6,7 +6,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
 };
 use moon_action::Operation;
-use moon_common::color;
+use moon_common::{color, is_ci};
 use moon_config::RemoteConfig;
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -35,10 +35,16 @@ impl RemoteService {
     }
 
     #[instrument]
-    pub async fn new(
-        config: &RemoteConfig,
-        workspace_root: &Path,
-    ) -> miette::Result<Arc<RemoteService>> {
+    pub async fn connect(config: &RemoteConfig, workspace_root: &Path) -> miette::Result<()> {
+        if is_ci() && (config.host.contains("0.0.0.0") || config.host.contains("localhost")) {
+            debug!(
+                host = &config.host,
+                "Remote service is configured with a localhost endpoint, but we are in a CI environment; disabling service",
+            );
+
+            return Ok(());
+        }
+
         info!(
             docs = "https://github.com/bazelbuild/remote-apis",
             "The Bazel Remote Execution API based service is currently unstable"
@@ -68,10 +74,9 @@ impl RemoteService {
 
         instance.validate_capabilities()?;
 
-        let service = Arc::new(instance);
-        let _ = INSTANCE.set(Arc::clone(&service));
+        let _ = INSTANCE.set(Arc::new(instance));
 
-        Ok(service)
+        Ok(())
     }
 
     pub fn validate_capabilities(&mut self) -> miette::Result<()> {

@@ -34,12 +34,12 @@ pub struct TaskRunner<'task> {
     project: &'task Project,
     pub task: &'task Task,
     platform_manager: &'task PlatformManager,
-    action_digest: Digest,
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
 
     // Public for testing
+    pub action_digest: Digest,
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
     pub report_item: TaskReportItem,
@@ -458,12 +458,10 @@ impl<'task> TaskRunner<'task> {
 
         self.operations.push(operation);
 
-        if size_bytes > 0 {
-            self.action_digest = Digest {
-                hash: hash.clone(),
-                size_bytes: size_bytes as i64,
-            };
-        }
+        self.action_digest = Digest {
+            hash: hash.clone(),
+            size_bytes: size_bytes as i64,
+        };
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -547,8 +545,8 @@ impl<'task> TaskRunner<'task> {
             return Err(result_error);
         }
 
+        // If our last task execution was a failure, return a hard error
         if let Some(last_attempt) = self.operations.get_last_execution() {
-            // If our last task execution was a failure, return a hard error
             if last_attempt.has_failed() {
                 return Err(TaskRunnerError::RunFailed {
                     target: self.task.target.clone(),
@@ -688,12 +686,18 @@ impl<'task> TaskRunner<'task> {
         // Fill in these values since the command executor does not run!
         self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
 
-        self.persist_state(&operation)?;
+        if let Some(output) = operation.get_output_mut() {
+            output.command = Some(self.task.get_command_line());
+            output.exit_code = Some(self.cache.data.exit_code);
+        }
 
+        // Then finalize the operation and target state
         operation.finish(match from {
             HydrateFrom::Moonbase | HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
             _ => ActionStatus::Cached,
         });
+
+        self.persist_state(&operation)?;
 
         context.set_target_state(&self.task.target, TargetState::Passed(hash.to_owned()));
 

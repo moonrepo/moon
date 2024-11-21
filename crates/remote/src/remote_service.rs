@@ -1,6 +1,7 @@
 use crate::fs_digest::{create_timestamp, create_timestamp_from_naive, Blob, OutputDigests};
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
+use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
 };
@@ -14,7 +15,7 @@ use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, info, instrument, warn};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
@@ -39,13 +40,19 @@ impl RemoteService {
         config: &RemoteConfig,
         workspace_root: &Path,
     ) -> miette::Result<Arc<RemoteService>> {
+        info!(
+            docs = "https://github.com/bazelbuild/remote-apis",
+            "The Bazel Remote Execution API based service is currently unstable"
+        );
+        info!("Please report any issues to GitHub or Discord");
+
         let mut client =
             if config.host.starts_with("http://") || config.host.starts_with("https://") {
-                todo!("TODO http client");
+                return Err(RemoteError::NoHttpClient.into());
             } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
                 Box::new(GrpcRemoteClient::default())
             } else {
-                todo!("Handle error")
+                return Err(RemoteError::UnknownHostProtocol.into());
             };
 
         client.connect_to_host(&config.host, config).await?;
@@ -53,9 +60,9 @@ impl RemoteService {
         let mut instance = Self {
             action_results: scc::HashMap::default(),
             capabilities: client.load_capabilities().await?,
-            config: config.to_owned(),
-            client: Arc::new(client),
             cache_enabled: false,
+            client: Arc::new(client),
+            config: config.to_owned(),
             upload_requests: Arc::new(RwLock::new(vec![])),
             workspace_root: workspace_root.to_owned(),
         };
@@ -82,6 +89,17 @@ impl RemoteService {
                     host,
                     "Remote service does not support SHA256 digests, which is required by moon"
                 );
+            }
+
+            if let Some(ac_cap) = &cap.action_cache_update_capabilities {
+                if !ac_cap.update_enabled {
+                    enabled = false;
+
+                    warn!(
+                        host,
+                        "Remote service does not support caching of actions, which is required by moon"
+                    );
+                }
             }
         } else {
             enabled = false;
@@ -137,10 +155,7 @@ impl RemoteService {
             color::muted_light(&operation_label)
         );
 
-        let result = self
-            .create_action_result_from_operation(operation, None)
-            .await?;
-
+        let result = self.create_action_result_from_operation(operation, None)?;
         let digest = digest.to_owned();
         let client = Arc::clone(&self.client);
 
@@ -179,26 +194,10 @@ impl RemoteService {
             color::muted_light(&operation_label)
         );
 
-        let mut result = self
-            .create_action_result_from_operation(operation, Some(&mut outputs))
-            .await?;
+        let mut result = self.create_action_result_from_operation(operation, Some(&mut outputs))?;
         result.output_files = outputs.files;
         result.output_symlinks = outputs.symlinks;
         result.output_directories = outputs.dirs;
-
-        if !outputs.blobs.is_empty() {
-            if let Some(metadata) = &mut result.execution_metadata {
-                metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
-            }
-
-            self.client
-                .batch_update_blobs(digest, outputs.blobs)
-                .await?;
-
-            if let Some(metadata) = &mut result.execution_metadata {
-                metadata.output_upload_completed_timestamp = create_timestamp(SystemTime::now());
-            }
-        }
 
         let digest = digest.to_owned();
         let client = Arc::clone(&self.client);
@@ -207,6 +206,29 @@ impl RemoteService {
             .write()
             .await
             .push(tokio::spawn(async move {
+                if !outputs.blobs.is_empty() {
+                    if let Some(metadata) = &mut result.execution_metadata {
+                        metadata.output_upload_start_timestamp =
+                            create_timestamp(SystemTime::now());
+                    }
+
+                    if let Err(error) = client.batch_update_blobs(&digest, outputs.blobs).await {
+                        warn!(
+                            hash = &digest.hash,
+                            "Failed to upload blobs for {} operation: {}",
+                            color::muted_light(operation_label),
+                            color::muted_light(error.to_string()),
+                        );
+
+                        return;
+                    }
+
+                    if let Some(metadata) = &mut result.execution_metadata {
+                        metadata.output_upload_completed_timestamp =
+                            create_timestamp(SystemTime::now());
+                    }
+                }
+
                 if let Err(error) = client.update_action_result(&digest, result).await {
                     warn!(
                         hash = &digest.hash,
@@ -232,6 +254,25 @@ impl RemoteService {
         let Some(result) = self.action_results.get_async(&digest.hash).await else {
             return Ok(());
         };
+
+        let operation_label = operation.label().to_owned();
+        let has_outputs = !result.output_files.is_empty()
+            || !result.output_symlinks.is_empty()
+            || !result.output_directories.is_empty();
+
+        if has_outputs {
+            debug!(
+                hash = &digest.hash,
+                "Restoring {} operation with outputs",
+                color::muted_light(&operation_label)
+            );
+        } else {
+            debug!(
+                hash = &digest.hash,
+                "Restoring {} operation",
+                color::muted_light(&operation_label)
+            );
+        }
 
         if let Some(output) = operation.get_output_mut() {
             output.exit_code = Some(result.exit_code);
@@ -275,7 +316,7 @@ impl RemoteService {
         }
     }
 
-    async fn create_action_result_from_operation(
+    fn create_action_result_from_operation(
         &self,
         operation: &Operation,
         outputs: Option<&mut OutputDigests>,

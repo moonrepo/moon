@@ -239,12 +239,25 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+/** Configures the action cache (AC) and content addressable cache (CAS). */
+export interface RemoteCacheConfig {
+	/** @default 'moon-outputs' */
+	instanceName?: string;
+}
+
 export interface RemoteTlsConfig {
 	domainName: string;
 	pemFile: string;
 }
 
+/** Configures the remote service, powered by the Bazel Remote Execution API. */
 export interface RemoteConfig {
+	/** Configures the action cache (AC) and content addressable cache (CAS). */
+	cache: RemoteCacheConfig;
+	/**
+	 * The remote host to connect and send requests to.
+	 * Supports gRPC protocols.
+	 */
 	host: string;
 	tls: RemoteTlsConfig | null;
 }
@@ -341,7 +354,7 @@ export interface WorkspaceConfig {
 	 * @default true
 	 */
 	telemetry?: boolean;
-	/** Configures aspects of the remote caching service. */
+	/** Configures aspects of the remote service. */
 	unstable_remote: RemoteConfig | null;
 	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
@@ -575,12 +588,25 @@ export interface PartialRunnerConfig {
 	logRunningCommand?: boolean | null;
 }
 
+/** Configures the action cache (AC) and content addressable cache (CAS). */
+export interface PartialRemoteCacheConfig {
+	/** @default 'moon-outputs' */
+	instanceName?: string | null;
+}
+
 export interface PartialRemoteTlsConfig {
 	domainName?: string | null;
 	pemFile?: string | null;
 }
 
+/** Configures the remote service, powered by the Bazel Remote Execution API. */
 export interface PartialRemoteConfig {
+	/** Configures the action cache (AC) and content addressable cache (CAS). */
+	cache?: PartialRemoteCacheConfig | null;
+	/**
+	 * The remote host to connect and send requests to.
+	 * Supports gRPC protocols.
+	 */
 	host?: string | null;
 	tls?: PartialRemoteTlsConfig | null;
 }
@@ -662,7 +688,7 @@ export interface PartialWorkspaceConfig {
 	 * @default true
 	 */
 	telemetry?: boolean | null;
-	/** Configures aspects of the remote caching service. */
+	/** Configures aspects of the remote service. */
 	unstable_remote?: PartialRemoteConfig | null;
 	/** Configures the version control system (VCS). */
 	vcs?: PartialVcsConfig | null;

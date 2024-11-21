@@ -145,7 +145,7 @@ pub struct WorkspaceConfig {
     #[setting(nested, validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
-    /// Configures aspects of the remote caching service.
+    /// Configures aspects of the remote service.
     #[setting(nested, rename = "unstable_remote")]
     pub remote: Option<RemoteConfig>,
 

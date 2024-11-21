@@ -85,10 +85,10 @@ cacheable!(
         pub type_of: TaskType,
 
         #[serde(skip)]
-        inputs_cache: OnceCell<Vec<PathBuf>>,
+        pub inputs_cache: OnceCell<Vec<PathBuf>>,
 
         #[serde(skip)]
-        outputs_cache: OnceCell<Vec<PathBuf>>,
+        pub outputs_cache: OnceCell<Vec<PathBuf>>,
     }
 );
 

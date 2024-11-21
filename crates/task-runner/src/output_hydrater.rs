@@ -25,61 +25,63 @@ pub struct OutputHydrater<'task> {
 }
 
 impl<'task> OutputHydrater<'task> {
-    #[instrument(skip(self))]
+    #[instrument(skip(self, operation))]
     pub async fn hydrate(
         &self,
         from: HydrateFrom,
         digest: &Digest,
         operation: &mut Operation,
     ) -> miette::Result<bool> {
-        // Only hydrate when the hash is different from the previous build,
-        // as we can assume the outputs from the previous build still exist?
-        if matches!(from, HydrateFrom::PreviousOutput) {
-            return Ok(true);
-        }
+        match from {
+            // Only hydrate when the hash is different from the previous build,
+            // as we can assume the outputs from the previous build still exist?
+            HydrateFrom::PreviousOutput => Ok(true),
 
-        if matches!(from, HydrateFrom::RemoteCache) {
-            return self.download_from_remote_service(digest, operation).await;
-        }
+            // Based on the remote execution APIs
+            HydrateFrom::RemoteCache => self.download_from_remote_service(digest, operation).await,
 
-        let archive_file = self.app.cache_engine.hash.get_archive_path(&digest.hash);
+            // Otherwise write to local cache, then download archive from moonbase
+            HydrateFrom::LocalCache | HydrateFrom::Moonbase => {
+                let archive_file = self.app.cache_engine.hash.get_archive_path(&digest.hash);
 
-        if self.app.cache_engine.is_readable() {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash = &digest.hash,
-                "Hydrating cached outputs into project"
-            );
+                if self.app.cache_engine.is_readable() {
+                    debug!(
+                        task_target = self.task.target.as_str(),
+                        hash = &digest.hash,
+                        "Hydrating cached outputs into project"
+                    );
 
-            // Attempt to download from remote cache to `.moon/outputs/<hash>`
-            if !archive_file.exists() && matches!(from, HydrateFrom::Moonbase) {
-                self.download_from_remote_storage(&digest.hash, &archive_file)
-                    .await?;
+                    // Attempt to download from remote cache to `.moon/outputs/<hash>`
+                    if !archive_file.exists() && matches!(from, HydrateFrom::Moonbase) {
+                        self.download_from_remote_storage(&digest.hash, &archive_file)
+                            .await?;
+                    }
+
+                    // Otherwise hydrate the cached archive into the task's outputs
+                    if archive_file.exists() {
+                        self.unpack_local_archive(&digest.hash, &archive_file)?;
+
+                        read_stdlog_state_files(
+                            self.app
+                                .cache_engine
+                                .state
+                                .get_target_dir(&self.task.target),
+                            operation,
+                        )?;
+
+                        return Ok(true);
+                    }
+                } else {
+                    debug!(
+                        task_target = self.task.target.as_str(),
+                        hash = &digest.hash,
+                        "Cache is not readable, skipping output hydration"
+                    );
+                }
+
+                Ok(false)
             }
-
-            // Otherwise hydrate the cached archive into the task's outputs
-            if archive_file.exists() {
-                self.unpack_local_archive(&digest.hash, &archive_file)?;
-
-                read_stdlog_state_files(
-                    self.app
-                        .cache_engine
-                        .state
-                        .get_target_dir(&self.task.target),
-                    operation,
-                )?;
-
-                return Ok(true);
-            }
-        } else {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash = &digest.hash,
-                "Cache is not readable, skipping output hydration"
-            );
         }
-
-        Ok(false)
     }
 
     #[instrument(skip(self))]
@@ -135,18 +137,18 @@ impl<'task> OutputHydrater<'task> {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, operation))]
     async fn download_from_remote_service(
         &self,
         digest: &Digest,
         operation: &mut Operation,
     ) -> miette::Result<bool> {
-        let Some(remote) = RemoteService::session() else {
-            return Ok(false);
-        };
+        if let Some(remote) = RemoteService::session() {
+            remote.restore_operation(digest, operation).await?;
 
-        remote.restore_operation(digest, operation).await?;
+            return Ok(true);
+        }
 
-        Ok(true)
+        Ok(false)
     }
 }

@@ -2,6 +2,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
 use chrono::NaiveDateTime;
+use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use prost_types::Timestamp;
 use sha2::{Digest as Sha256Digest, Sha256};
@@ -13,6 +14,7 @@ use std::{
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
+use tracing::instrument;
 
 pub struct Blob {
     pub bytes: Vec<u8>,
@@ -105,8 +107,8 @@ impl OutputDigests {
         let path_to_string = |inner_path: &Path| {
             let outer_path = inner_path.relative_to(workspace_root).unwrap().to_string();
 
-            if outer_path.starts_with('/') {
-                outer_path[1..].to_owned()
+            if let Some(stripped) = outer_path.strip_prefix('/') {
+                stripped.to_owned()
             } else {
                 outer_path
             }
@@ -151,6 +153,7 @@ impl OutputDigests {
     }
 }
 
+#[instrument]
 pub fn compute_digests_for_outputs(
     paths: Vec<WorkspaceRelativePathBuf>,
     workspace_root: &Path,
@@ -162,4 +165,57 @@ pub fn compute_digests_for_outputs(
     }
 
     Ok(result)
+}
+
+fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {
+    if let Some(mtime) = &props.mtime {
+        filetime::set_file_mtime(
+            path,
+            filetime::FileTime::from_unix_time(mtime.seconds, mtime.nanos as u32),
+        )
+        .map_err(|error| FsError::Write {
+            path: path.to_owned(),
+            error: Box::new(error),
+        })?;
+    }
+
+    if let Some(mode) = &props.unix_mode {
+        fs::update_perms(path, Some(*mode))?;
+    }
+
+    Ok(())
+}
+
+pub fn write_output_file(
+    output_path: PathBuf,
+    bytes: Vec<u8>,
+    file: &OutputFile,
+) -> miette::Result<()> {
+    fs::write_file(&output_path, bytes)?;
+
+    if let Some(props) = &file.node_properties {
+        apply_node_properties(&output_path, props)?;
+    }
+
+    Ok(())
+}
+
+pub fn link_output_file(
+    from_path: PathBuf,
+    to_path: PathBuf,
+    link: &OutputSymlink,
+) -> miette::Result<()> {
+    // Windows requires admin privileges to create soft/hard links,
+    // so just copy for now... annoying... definitely revisit!
+    #[cfg(windows)]
+    fs::copy_file(&from_path, &to_path)?;
+
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(&from_path, &to_path).into_diagnostic()?;
+
+    if let Some(props) = &link.node_properties {
+        apply_node_properties(&to_path, props)?;
+    }
+
+    Ok(())
 }

@@ -14,3 +14,4 @@ pub use remote_service::*;
 // - Other digest functions besides sha256
 // - Compression formats (only identity right now)
 // - Proper error handling
+// - Directory blob types

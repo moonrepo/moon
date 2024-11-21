@@ -1,4 +1,4 @@
-use crate::fs_digest::{create_timestamp, create_timestamp_from_naive, Blob, OutputDigests};
+use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
 use crate::RemoteError;
@@ -9,7 +9,6 @@ use moon_action::Operation;
 use moon_common::color;
 use moon_config::RemoteConfig;
 use rustc_hash::FxHashMap;
-use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
@@ -35,7 +34,7 @@ impl RemoteService {
         INSTANCE.get().cloned()
     }
 
-    #[instrument(skip(config))]
+    #[instrument]
     pub async fn new(
         config: &RemoteConfig,
         workspace_root: &Path,
@@ -117,6 +116,7 @@ impl RemoteService {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub async fn is_operation_cached(&self, digest: &Digest) -> miette::Result<bool> {
         if !self.cache_enabled {
             return Ok(false);
@@ -138,6 +138,7 @@ impl RemoteService {
         Ok(false)
     }
 
+    #[instrument(skip(self, operation))]
     pub async fn save_operation(
         &self,
         digest: &Digest,
@@ -176,6 +177,7 @@ impl RemoteService {
         Ok(())
     }
 
+    #[instrument(skip(self, operation, outputs))]
     pub async fn save_operation_with_outputs(
         &self,
         digest: &Digest,
@@ -242,6 +244,7 @@ impl RemoteService {
         Ok(())
     }
 
+    #[instrument(skip(self, operation))]
     pub async fn restore_operation(
         &self,
         digest: &Digest,
@@ -289,23 +292,40 @@ impl RemoteService {
         let mut blob_digests = vec![];
         let mut file_map = FxHashMap::default();
 
-        // TODO support symlinks and directories
+        // TODO support directories
         for file in &result.output_files {
             if let Some(digest) = &file.digest {
-                blob_digests.push(digest.to_owned());
+                blob_digests.push(digest.clone());
                 file_map.insert(&digest.hash, file);
             }
         }
 
         for blob in self.client.batch_read_blobs(digest, blob_digests).await? {
             if let Some(file) = file_map.get(&blob.digest.hash) {
-                fs::write_file(self.workspace_root.join(&file.path), &blob.bytes)?;
+                write_output_file(self.workspace_root.join(&file.path), blob.bytes, file)?;
             }
         }
+
+        // Create symlinks after blob files have been written,
+        // as the link target may reference one of these outputs
+        for link in &result.output_symlinks {
+            link_output_file(
+                self.workspace_root.join(&link.target),
+                self.workspace_root.join(&link.path),
+                link,
+            )?;
+        }
+
+        debug!(
+            hash = &digest.hash,
+            "Restored {} operation",
+            color::muted_light(&operation_label)
+        );
 
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub async fn wait_for_requests(&self) {
         let mut requests = self.upload_requests.write().await;
 

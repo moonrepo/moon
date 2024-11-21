@@ -11,6 +11,7 @@ moon_config = { path = "../config" }
 async-trait = { workspace = true }
 bazel-remote-apis = "0.10.0"
 chrono = { workspace = true }
+filetime = "0.2.25"
 miette = { workspace = true }
 prost-types = "0.13.2"
 reqwest = { workspace = true }

@@ -21,7 +21,7 @@ pub struct OutputArchiver<'task> {
 }
 
 impl<'task> OutputArchiver<'task> {
-    #[instrument(skip(self))]
+    #[instrument(skip(self, operation))]
     pub async fn archive(
         &self,
         digest: &Digest,
@@ -204,7 +204,7 @@ impl<'task> OutputArchiver<'task> {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, operation))]
     async fn upload_to_remote_service(
         &self,
         digest: &Digest,

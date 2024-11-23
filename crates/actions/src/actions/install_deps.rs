@@ -244,7 +244,7 @@ async fn hash_manifests(
         }
     }
 
-    let hash = app_context.cache_engine.hash.save_manifest(hasher)?;
+    let (hash, _) = app_context.cache_engine.hash.save_manifest(hasher)?;
 
     operation.meta.set_hash(&hash);
     operation.finish(ActionStatus::Passed);

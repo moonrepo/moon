@@ -11,6 +11,12 @@ cacheable!(
     }
 );
 
+impl<T: Schematic> Default for OneOrMany<T> {
+    fn default() -> Self {
+        Self::Many(vec![])
+    }
+}
+
 impl<T: Schematic + Clone> OneOrMany<T> {
     pub fn to_list(&self) -> Vec<T> {
         match self {

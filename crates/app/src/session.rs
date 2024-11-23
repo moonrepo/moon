@@ -4,7 +4,6 @@ use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::ActionGraphBuilder;
-use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_test_env};
@@ -39,7 +38,6 @@ pub struct CliSession {
     // Components
     pub config_loader: ConfigLoader,
     pub console: Console,
-    pub moonbase: Option<Arc<Moonbase>>,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
 
@@ -71,7 +69,6 @@ impl CliSession {
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet),
             extension_registry: OnceCell::new(),
-            moonbase: None,
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceCell::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
@@ -277,7 +274,7 @@ impl AppSession for CliSession {
         if !is_test_env() && is_ci() {
             let vcs = self.get_vcs_adapter()?;
 
-            self.moonbase = startup::signin_to_moonbase(&vcs).await?;
+            startup::signin_to_moonbase(&vcs).await?;
         }
 
         Ok(None)

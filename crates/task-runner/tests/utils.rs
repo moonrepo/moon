@@ -79,7 +79,7 @@ impl TaskRunnerContainer {
     pub fn create_archiver(&self) -> OutputArchiver {
         OutputArchiver {
             app: &self.app_context,
-            project_config: &self.project.config,
+            project: &self.project,
             task: &self.task,
         }
     }

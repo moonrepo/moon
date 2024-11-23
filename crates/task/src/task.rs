@@ -1,7 +1,7 @@
 use crate::task_options::TaskOptions;
 use moon_common::{
     cacheable,
-    path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf},
+    path::{PathExt, ProjectRelativePathBuf, WorkspaceRelativePathBuf},
     Id,
 };
 use moon_config::{
@@ -85,7 +85,10 @@ cacheable!(
         pub type_of: TaskType,
 
         #[serde(skip)]
-        pub walk_cache: OnceCell<Vec<PathBuf>>,
+        pub inputs_cache: OnceCell<Vec<PathBuf>>,
+
+        #[serde(skip)]
+        pub outputs_cache: OnceCell<Vec<PathBuf>>,
     }
 );
 
@@ -134,31 +137,55 @@ impl Task {
         &self,
         workspace_root: &Path,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
-        let mut list = vec![];
+        let mut list = FxHashSet::default();
 
         for path in &self.input_files {
             // Detect if file actually exists
             if path.to_path(workspace_root).is_file() {
-                list.push(path.to_owned());
+                list.insert(path.to_owned());
             }
         }
 
         if !self.input_globs.is_empty() {
             let globs = &self.input_globs;
             let walk_paths = self
-                .walk_cache
+                .inputs_cache
                 .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
 
             // Glob results are absolute paths!
             for file in walk_paths {
-                list.push(
-                    WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
-                        .unwrap(),
-                );
+                list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
 
-        Ok(list)
+        Ok(list.into_iter().collect())
+    }
+
+    /// Return a list of all workspace-relative output files.
+    pub fn get_output_files(
+        &self,
+        workspace_root: &Path,
+        include_non_globs: bool,
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+        let mut list = FxHashSet::default();
+
+        if include_non_globs {
+            list.extend(self.output_files.clone());
+        }
+
+        if !self.output_globs.is_empty() {
+            let globs = &self.output_globs;
+            let walk_paths = self
+                .outputs_cache
+                .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
+
+            // Glob results are absolute paths!
+            for file in walk_paths {
+                list.insert(file.relative_to(workspace_root).unwrap());
+            }
+        }
+
+        Ok(list.into_iter().collect())
     }
 
     /// Return true if the task is a "build" type.

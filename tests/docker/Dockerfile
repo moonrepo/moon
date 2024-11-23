@@ -1,5 +1,6 @@
 FROM node:latest
 WORKDIR /app
+ENV CI=true
 
 # Install moon binary
 # RUN npm install -g @moonrepo/cli

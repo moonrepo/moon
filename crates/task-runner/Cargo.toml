@@ -22,13 +22,14 @@ moon_console = { path = "../console" }
 moon_platform = { path = "../../legacy/core/platform" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
+moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }
-starbase_utils = { workspace = true, features = ["glob"] }
+starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }

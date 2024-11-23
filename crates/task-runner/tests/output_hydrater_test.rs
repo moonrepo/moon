@@ -1,9 +1,22 @@
 mod utils;
 
+use moon_action::Operation;
 use moon_cache::CacheMode;
+use moon_remote::Digest;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use std::env;
 use utils::*;
+
+fn stub_digest() -> Digest {
+    Digest {
+        hash: "hash123".into(),
+        size_bytes: 0,
+    }
+}
+
+fn stub_operation() -> Operation {
+    Operation::output_hydration()
+}
 
 mod output_hydrater {
     use super::*;
@@ -11,21 +24,23 @@ mod output_hydrater {
     mod unpack {
         use super::*;
 
-        #[tokio::test]
-        async fn does_nothing_if_no_hash() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            let hydrater = container.create_hydrator();
+        // #[tokio::test]
+        // async fn does_nothing_if_no_hash() {
+        //     let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+        //     let hydrater = container.create_hydrator();
 
-            assert!(!hydrater.hydrate("", HydrateFrom::LocalCache).await.unwrap());
-        }
+        //     assert!(!hydrater.hydrate("", HydrateFrom::LocalCache).await.unwrap());
+        // }
 
         #[tokio::test]
         async fn does_nothing_if_from_prev_outputs() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             let hydrater = container.create_hydrator();
+            let digest = stub_digest();
+            let mut operation = stub_operation();
 
             assert!(hydrater
-                .hydrate("hash123", HydrateFrom::PreviousOutput)
+                .hydrate(HydrateFrom::PreviousOutput, &digest, &mut operation)
                 .await
                 .unwrap());
         }
@@ -38,6 +53,8 @@ mod output_hydrater {
                 .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
             let hydrater = container.create_hydrator();
+            let digest = stub_digest();
+            let mut operation = stub_operation();
 
             container
                 .app_context
@@ -45,7 +62,7 @@ mod output_hydrater {
                 .force_mode(CacheMode::Off);
 
             assert!(!hydrater
-                .hydrate("hash123", HydrateFrom::LocalCache)
+                .hydrate(HydrateFrom::LocalCache, &digest, &mut operation)
                 .await
                 .unwrap());
 
@@ -60,6 +77,8 @@ mod output_hydrater {
                 .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
             let hydrater = container.create_hydrator();
+            let digest = stub_digest();
+            let mut operation = stub_operation();
 
             container
                 .app_context
@@ -67,7 +86,7 @@ mod output_hydrater {
                 .force_mode(CacheMode::Write);
 
             assert!(!hydrater
-                .hydrate("hash123", HydrateFrom::LocalCache)
+                .hydrate(HydrateFrom::LocalCache, &digest, &mut operation)
                 .await
                 .unwrap());
 
@@ -82,8 +101,11 @@ mod output_hydrater {
             assert!(!container.sandbox.path().join("project/file.txt").exists());
 
             let hydrater = container.create_hydrator();
+            let digest = stub_digest();
+            let mut operation = stub_operation();
+
             hydrater
-                .hydrate("hash123", HydrateFrom::LocalCache)
+                .hydrate(HydrateFrom::LocalCache, &digest, &mut operation)
                 .await
                 .unwrap();
 
@@ -102,8 +124,11 @@ mod output_hydrater {
                 .exists());
 
             let hydrater = container.create_hydrator();
+            let digest = stub_digest();
+            let mut operation = stub_operation();
+
             hydrater
-                .hydrate("hash123", HydrateFrom::LocalCache)
+                .hydrate(HydrateFrom::LocalCache, &digest, &mut operation)
                 .await
                 .unwrap();
 

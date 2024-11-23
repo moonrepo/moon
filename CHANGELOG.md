@@ -12,9 +12,12 @@
 
 #### 🚀 Updates
 
-- Resolved the `strictProjectIds` experiment and you can no longer reference the original ID.
-- Resolved the `disallowRunInCiMismatch` experiment and you can no longer have a CI based task
-  depend on a non-CI based task.
+- Added unstable support for self-hosted remote caches, powered by the
+  [Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis).
+  - Allows for 3rd-party implementations like
+    [`bazel-remote`](https://github.com/buchgr/bazel-remote) to be used.
+  - Currently supports the gRPC protocol, and will support HTTP in a later release.
+  - Our moonbase product will be sunset in the future.
 - Added a new task graph, that enables new granular based functionality for task related features.
   - Added a new `moon task-graph` command.
   - Can now control the depth of upstream (dependencies) and downstream (dependents).
@@ -24,6 +27,9 @@
   `$vcsRevision`, `$workingDir`
 - Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
 - Updated Pkl configurations to support `read()` for environment variables.
+- Resolved the `strictProjectIds` experiment and you can no longer reference the original ID.
+- Resolved the `disallowRunInCiMismatch` experiment and you can no longer have a CI based task
+  depend on a non-CI based task.
 
 #### 🐞 Fixes
 

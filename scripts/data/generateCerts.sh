@@ -41,6 +41,7 @@ echo Remove passphrase from client key:
 openssl rsa -passin pass:1111 -in client.key -out client.key
 
 echo Converting the private keys to X.509:
+openssl pkcs8 -topk8 -nocrypt -in ca.key -out ca.pem
 # Generates client.pem which is the clientPrivateKeyFile for the Client (needed for mutual TLS only)
 openssl pkcs8 -topk8 -nocrypt -in client.key -out client.pem
 # Generates server.pem which is the privateKeyFile for the Server

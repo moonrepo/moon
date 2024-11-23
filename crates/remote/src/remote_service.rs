@@ -38,7 +38,7 @@ impl RemoteService {
 
     #[instrument]
     pub async fn connect(config: &RemoteConfig, workspace_root: &Path) -> miette::Result<()> {
-        if is_ci() && (config.host.contains("0.0.0.0") || config.host.contains("localhost")) {
+        if is_ci() && config.is_localhost() {
             debug!(
                 host = &config.host,
                 "Remote service is configured with a localhost endpoint, but we are in a CI environment; disabling service",
@@ -402,15 +402,17 @@ async fn batch_upload_blobs(
         let client = Arc::clone(&client);
         let digest = digest.to_owned();
 
-        trace!(
-            hash = &digest.hash,
-            blobs = group.items.len(),
-            size = group.size,
-            max_size,
-            "Batching blobs upload (group {} of {})",
-            group_index + 1,
-            group_total
-        );
+        if group_total > 1 {
+            trace!(
+                hash = &digest.hash,
+                blobs = group.items.len(),
+                size = group.size,
+                max_size,
+                "Batching blobs upload (group {} of {})",
+                group_index + 1,
+                group_total
+            );
+        }
 
         set.spawn(async move {
             if let Err(error) = client.batch_update_blobs(&digest, group.items).await {
@@ -464,15 +466,17 @@ async fn batch_download_blobs(
         let client = Arc::clone(&client);
         let digest = digest.to_owned();
 
-        trace!(
-            hash = &digest.hash,
-            blobs = group.items.len(),
-            size = group.size,
-            max_size,
-            "Batching blobs download (group {} of {})",
-            group_index + 1,
-            group_total
-        );
+        if group_total > 1 {
+            trace!(
+                hash = &digest.hash,
+                blobs = group.items.len(),
+                size = group.size,
+                max_size,
+                "Batching blobs download (group {} of {})",
+                group_index + 1,
+                group_total
+            );
+        }
 
         set.spawn(async move { client.batch_read_blobs(&digest, group.items).await });
     }

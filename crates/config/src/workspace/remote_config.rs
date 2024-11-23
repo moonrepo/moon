@@ -84,3 +84,13 @@ pub struct RemoteConfig {
     #[setting(nested)]
     pub tls: Option<RemoteTlsConfig>,
 }
+
+impl RemoteConfig {
+    pub fn is_localhost(&self) -> bool {
+        self.host.contains("localhost") || self.host.contains("0.0.0.0")
+    }
+
+    pub fn is_secure(&self) -> bool {
+        self.tls.is_some() || self.mtls.is_some()
+    }
+}

@@ -66,7 +66,8 @@ impl RemoteClient for GrpcRemoteClient {
         let mut endpoint = Endpoint::from_shared(host.to_owned())
             .map_err(map_transport_error)?
             .user_agent("moon")
-            .map_err(map_transport_error)?;
+            .map_err(map_transport_error)?
+            .keep_alive_while_idle(true);
 
         if let Some(mtls) = &config.mtls {
             endpoint = endpoint
@@ -76,6 +77,17 @@ impl RemoteClient for GrpcRemoteClient {
             endpoint = endpoint
                 .tls_config(create_tls_config(tls, workspace_root)?)
                 .map_err(map_transport_error)?;
+        }
+
+        if config.is_localhost() {
+            endpoint = endpoint.origin(
+                format!(
+                    "{}://localhost",
+                    if config.is_secure() { "https" } else { "http" }
+                )
+                .parse()
+                .unwrap(),
+            );
         }
 
         self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);

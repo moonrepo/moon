@@ -245,9 +245,43 @@ export interface RemoteCacheConfig {
 	instanceName?: string;
 }
 
+/** Configures for both server and client authentication with mTLS. */
+export interface RemoteMtlsConfig {
+	/**
+	 * If true, assume that the server supports HTTP/2,
+	 * even if it doesn't provide protocol negotiation via ALPN.
+	 */
+	assumeHttp2: boolean;
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * client's PEM encoded X509 certificate.
+	 */
+	clientCert: string;
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * client's private key.
+	 */
+	clientKey: string;
+	/** The domain name in which to verify the TLS certificate. */
+	domain: string | null;
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * servers's PEM encoded X509 certificate.
+	 */
+	serverCert: string;
+}
+
+/** Configures for server-only authentication with TLS. */
 export interface RemoteTlsConfig {
-	domainName: string;
-	pemFile: string;
+	/**
+	 * If true, assume that the server supports HTTP/2,
+	 * even if it doesn't provide protocol negotiation via ALPN.
+	 */
+	assumeHttp2: boolean;
+	/** A file path, relative from the workspace root, to a PEM encoded X509 certificate. */
+	cert: string;
+	/** The domain name in which to verify the TLS certificate. */
+	domain: string | null;
 }
 
 /** Configures the remote service, powered by the Bazel Remote Execution API. */
@@ -259,6 +293,12 @@ export interface RemoteConfig {
 	 * Supports gRPC protocols.
 	 */
 	host: string;
+	/**
+	 * Connect to the host using server and client authentication with mTLS.
+	 * This takes precedence over normal TLS.
+	 */
+	mtls: RemoteMtlsConfig | null;
+	/** Connect to the host using server-only authentication with TLS. */
 	tls: RemoteTlsConfig | null;
 }
 
@@ -594,9 +634,43 @@ export interface PartialRemoteCacheConfig {
 	instanceName?: string | null;
 }
 
+/** Configures for both server and client authentication with mTLS. */
+export interface PartialRemoteMtlsConfig {
+	/**
+	 * If true, assume that the server supports HTTP/2,
+	 * even if it doesn't provide protocol negotiation via ALPN.
+	 */
+	assumeHttp2?: boolean | null;
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * client's PEM encoded X509 certificate.
+	 */
+	clientCert?: string | null;
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * client's private key.
+	 */
+	clientKey?: string | null;
+	/** The domain name in which to verify the TLS certificate. */
+	domain?: string | null;
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * servers's PEM encoded X509 certificate.
+	 */
+	serverCert?: string | null;
+}
+
+/** Configures for server-only authentication with TLS. */
 export interface PartialRemoteTlsConfig {
-	domainName?: string | null;
-	pemFile?: string | null;
+	/**
+	 * If true, assume that the server supports HTTP/2,
+	 * even if it doesn't provide protocol negotiation via ALPN.
+	 */
+	assumeHttp2?: boolean | null;
+	/** A file path, relative from the workspace root, to a PEM encoded X509 certificate. */
+	cert?: string | null;
+	/** The domain name in which to verify the TLS certificate. */
+	domain?: string | null;
 }
 
 /** Configures the remote service, powered by the Bazel Remote Execution API. */
@@ -608,6 +682,12 @@ export interface PartialRemoteConfig {
 	 * Supports gRPC protocols.
 	 */
 	host?: string | null;
+	/**
+	 * Connect to the host using server and client authentication with mTLS.
+	 * This takes precedence over normal TLS.
+	 */
+	mtls?: PartialRemoteMtlsConfig | null;
+	/** Connect to the host using server-only authentication with TLS. */
 	tls?: PartialRemoteTlsConfig | null;
 }
 

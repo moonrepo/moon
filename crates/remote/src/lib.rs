@@ -1,5 +1,6 @@
 mod fs_digest;
 mod grpc_remote_client;
+mod grpc_tls;
 mod remote_client;
 mod remote_error;
 mod remote_service;
@@ -15,3 +16,5 @@ pub use remote_service::*;
 // - Compression formats (only identity right now)
 // - Proper error handling
 // - Directory blob types
+// - Write/read bytestream for large blobs
+// - TLS/mTLS issues

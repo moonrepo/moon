@@ -74,4 +74,10 @@ schemas:
 	cargo run -p moon_config_schema --features typescript
 
 bazel-remote:
-	rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092 --experimental_remote_asset_api
+	rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
+
+bazel-remote-tls:
+	rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092 --tls_cert_file=./crates/remote/tests/__fixtures__/certs-local/server.crt --tls_key_file=./crates/remote/tests/__fixtures__/certs-local/server.key
+
+bazel-remote-mtls:
+	rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --tls_cert_file=./crates/remote/tests/__fixtures__/certs/server.pem --tls_key_file=./crates/remote/tests/__fixtures__/certs/server.key --tls_ca_file=./crates/remote/tests/__fixtures__/certs/ca.pem

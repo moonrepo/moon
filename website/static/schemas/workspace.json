@@ -530,8 +530,21 @@
           "description": "The remote host to connect and send requests to. Supports gRPC protocols.",
           "type": "string"
         },
+        "mtls": {
+          "title": "mtls",
+          "description": "Connect to the host using server and client authentication with mTLS. This takes precedence over normal TLS.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RemoteMtlsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "tls": {
           "title": "tls",
+          "description": "Connect to the host using server-only authentication with TLS.",
           "anyOf": [
             {
               "$ref": "#/definitions/RemoteTlsConfig"
@@ -539,25 +552,80 @@
             {
               "type": "null"
             }
+          ],
+          "markdownDescription": "Connect to the host using server-only authentication with TLS."
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteMtlsConfig": {
+      "description": "Configures for both server and client authentication with mTLS.",
+      "type": "object",
+      "properties": {
+        "assumeHttp2": {
+          "title": "assumeHttp2",
+          "description": "If true, assume that the server supports HTTP/2, even if it doesn't provide protocol negotiation via ALPN.",
+          "type": "boolean"
+        },
+        "clientCert": {
+          "title": "clientCert",
+          "description": "A file path, relative from the workspace root, to the client's PEM encoded X509 certificate.",
+          "type": "string"
+        },
+        "clientKey": {
+          "title": "clientKey",
+          "description": "A file path, relative from the workspace root, to the client's private key.",
+          "type": "string"
+        },
+        "domain": {
+          "title": "domain",
+          "description": "The domain name in which to verify the TLS certificate.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
+        },
+        "serverCert": {
+          "title": "serverCert",
+          "description": "A file path, relative from the workspace root, to the servers's PEM encoded X509 certificate.",
+          "type": "string"
         }
       },
       "additionalProperties": false
     },
     "RemoteTlsConfig": {
+      "description": "Configures for server-only authentication with TLS.",
       "type": "object",
       "properties": {
-        "domainName": {
-          "title": "domainName",
+        "assumeHttp2": {
+          "title": "assumeHttp2",
+          "description": "If true, assume that the server supports HTTP/2, even if it doesn't provide protocol negotiation via ALPN.",
+          "type": "boolean"
+        },
+        "cert": {
+          "title": "cert",
+          "description": "A file path, relative from the workspace root, to a PEM encoded X509 certificate.",
           "type": "string"
         },
-        "pemFile": {
-          "title": "pemFile",
-          "type": "string",
-          "format": "path"
+        "domain": {
+          "title": "domain",
+          "description": "The domain name in which to verify the TLS certificate.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Configures for server-only authentication with TLS."
     },
     "RunnerConfig": {
       "description": "Configures aspects of the task runner (also known as the action pipeline).",

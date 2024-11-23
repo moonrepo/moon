@@ -47,7 +47,7 @@ impl RemoteService {
 
         info!(
             docs = "https://github.com/bazelbuild/remote-apis",
-            "The Bazel Remote Execution API based service is currently unstable"
+            "Remote service, powered by the Bazel Remote Execution API, is currently unstable"
         );
         info!("Please report any issues to GitHub or Discord");
 
@@ -60,7 +60,7 @@ impl RemoteService {
                 return Err(RemoteError::UnknownHostProtocol.into());
             };
 
-        client.connect_to_host(&config.host, config).await?;
+        client.connect_to_host(config, workspace_root).await?;
 
         let mut instance = Self {
             action_results: scc::HashMap::default(),

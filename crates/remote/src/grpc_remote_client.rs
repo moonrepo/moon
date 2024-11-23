@@ -1,4 +1,5 @@
 use crate::fs_digest::Blob;
+use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
@@ -8,18 +9,30 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, GetActionResultRequest,
     GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
-use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::RemoteConfig;
+use std::{error::Error, path::Path};
 use tonic::{
     transport::{Channel, Endpoint},
     Code,
 };
 use tracing::{trace, warn};
-// use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint};
+
+fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
+    RemoteError::ConnectFailed {
+        error: Box::new(error),
+    }
+}
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
-    RemoteError::CallFailed(Box::new(error))
+    match error.source() {
+        Some(src) => RemoteError::CallFailedViaSource {
+            error: src.to_string(),
+        },
+        None => RemoteError::CallFailed {
+            error: Box::new(error),
+        },
+    }
 }
 
 #[derive(Default)]
@@ -30,22 +43,42 @@ pub struct GrpcRemoteClient {
 
 #[async_trait::async_trait]
 impl RemoteClient for GrpcRemoteClient {
-    async fn connect_to_host(&mut self, host: &str, config: &RemoteConfig) -> miette::Result<()> {
+    async fn connect_to_host(
+        &mut self,
+        config: &RemoteConfig,
+        workspace_root: &Path,
+    ) -> miette::Result<()> {
+        let host = &config.host;
+
         trace!(
             instance = &config.cache.instance_name,
-            "Connecting to gRPC host {}",
-            color::url(host)
+            "Connecting to gRPC host {} {}",
+            color::url(host),
+            if config.mtls.is_some() {
+                "(with mTLS)"
+            } else if config.tls.is_some() {
+                "(with TLS)"
+            } else {
+                "(unsecure)"
+            }
         );
 
-        let endpoint = Endpoint::from_shared(host.to_owned()).into_diagnostic()?;
+        let mut endpoint = Endpoint::from_shared(host.to_owned())
+            .map_err(map_transport_error)?
+            .user_agent("moon")
+            .map_err(map_transport_error)?;
 
-        self.channel = Some(
-            endpoint
-                .connect()
-                .await
-                .map_err(|error| RemoteError::ConnectFailed(Box::new(error)))?,
-        );
+        if let Some(mtls) = &config.mtls {
+            endpoint = endpoint
+                .tls_config(create_mtls_config(mtls, workspace_root)?)
+                .map_err(map_transport_error)?;
+        } else if let Some(tls) = &config.tls {
+            endpoint = endpoint
+                .tls_config(create_tls_config(tls, workspace_root)?)
+                .map_err(map_transport_error)?;
+        }
 
+        self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);
         self.instance_name = config.cache.instance_name.clone();
 
         Ok(())

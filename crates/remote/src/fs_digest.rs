@@ -121,7 +121,7 @@ impl OutputDigests {
         };
 
         if abs_path.is_symlink() {
-            let link = std::fs::read_link(&abs_path).map_err(map_read_error)?;
+            let link = fs::read_link(&abs_path).map_err(map_read_error)?;
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
 

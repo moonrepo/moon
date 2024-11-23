@@ -37,7 +37,7 @@ docker:
       - '*.json'
 
 unstable_remote:
-  host: 'grpc://localhost:9092'
+  host: 'grpcs://localhost:9092'
   # mtls:
   #   caCert: 'crates/remote/tests/__fixtures__/certs/ca.pem'
   #   clientCert: 'crates/remote/tests/__fixtures__/certs/client.pem'
@@ -45,5 +45,5 @@ unstable_remote:
   #   domain: 'localhost'
   # tls:
   #   assumeHttp2: true
-  #   cert: 'crates/remote/tests/__fixtures__/certs-local/ca.crt'
+  #   cert: 'crates/remote/tests/__fixtures__/certs/ca.pem'
   #   domain: 'localhost'

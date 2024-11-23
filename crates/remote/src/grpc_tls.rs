@@ -30,14 +30,15 @@ pub fn create_tls_config(
         "Configuring TLS",
     );
 
-    let mut tls =
-        ClientTlsConfig::new().ca_certificate(Certificate::from_pem(fs::read_file_bytes(cert)?));
+    let mut tls = ClientTlsConfig::new()
+        .with_enabled_roots()
+        .ca_certificate(Certificate::from_pem(fs::read_file_bytes(cert)?));
 
     if let Some(domain) = &config.domain {
         tls = tls.domain_name(domain.to_owned());
     }
 
-    Ok(tls.assume_http2(config.assume_http2).with_enabled_roots())
+    Ok(tls.assume_http2(config.assume_http2))
 }
 
 // https://github.com/hyperium/tonic/blob/master/examples/src/tls_client_auth/client.rs
@@ -59,6 +60,7 @@ pub fn create_mtls_config(
     );
 
     let mut mtls = ClientTlsConfig::new()
+        .with_enabled_roots()
         .ca_certificate(Certificate::from_pem(fs::read_file_bytes(ca_cert)?))
         .identity(Identity::from_pem(
             fs::read_file_bytes(client_cert)?,
@@ -69,5 +71,5 @@ pub fn create_mtls_config(
         mtls = mtls.domain_name(domain.to_owned());
     }
 
-    Ok(mtls.assume_http2(config.assume_http2).with_enabled_roots())
+    Ok(mtls.assume_http2(config.assume_http2))
 }

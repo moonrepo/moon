@@ -5,6 +5,7 @@ use crate::job_dispatcher::JobDispatcher;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::moonbase_subscriber::MoonbaseSubscriber;
+use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use moon_action::{Action, ActionNode};
@@ -350,6 +351,8 @@ impl ActionPipeline {
                 self.summarize,
             ))
             .await;
+
+        self.emitter.subscribe(RemoteSubscriber).await;
 
         debug!("Subscribing run reports and estimates");
 

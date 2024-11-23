@@ -1,12 +1,13 @@
 use crate::task_runner_error::TaskRunnerError;
+use moon_action::Operation;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_config::ProjectConfig;
+use moon_project::Project;
+use moon_remote::{compute_digests_for_outputs, Digest, RemoteService};
 use moon_task::{TargetError, TargetScope, Task};
 use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
-use starbase_utils::glob;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, warn};
 
@@ -15,13 +16,17 @@ use tracing::{debug, instrument, warn};
 /// can be hydrated easily.
 pub struct OutputArchiver<'task> {
     pub app: &'task AppContext,
-    pub project_config: &'task ProjectConfig,
+    pub project: &'task Project,
     pub task: &'task Task,
 }
 
 impl<'task> OutputArchiver<'task> {
-    #[instrument(skip(self))]
-    pub async fn archive(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
+    #[instrument(skip(self, operation))]
+    pub async fn archive(
+        &self,
+        digest: &Digest,
+        operation: Option<&Operation>,
+    ) -> miette::Result<Option<PathBuf>> {
         if !self.is_archivable()? {
             return Ok(None);
         }
@@ -35,31 +40,41 @@ impl<'task> OutputArchiver<'task> {
         }
 
         // If so, create and pack the archive!
-        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
+        let archive_file = self.app.cache_engine.hash.get_archive_path(&digest.hash);
 
         if !archive_file.exists() {
-            if !self.app.cache_engine.is_writable() {
+            if self.app.cache_engine.is_writable() {
                 debug!(
                     task_target = self.task.target.as_str(),
-                    hash, "Cache is not writable, skipping output archiving"
+                    hash = &digest.hash,
+                    "Archiving task outputs from project"
                 );
 
-                return Ok(None);
-            }
+                self.create_local_archive(&digest.hash, &archive_file)?;
 
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Archiving task outputs from project"
-            );
-
-            self.create_local_archive(hash, &archive_file)?;
-
-            if archive_file.exists() {
-                self.upload_to_remote_storage(hash, &archive_file).await?;
+                if archive_file.exists() {
+                    self.upload_to_remote_storage(&digest.hash, &archive_file)
+                        .await?;
+                }
+            } else {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash = &digest.hash,
+                    "Cache is not writable, skipping output archiving"
+                );
             }
         }
 
-        Ok(Some(archive_file))
+        // Then cache the result in the remote service
+        if let Some(operation) = operation {
+            self.upload_to_remote_service(digest, operation).await?;
+        }
+
+        Ok(if archive_file.exists() {
+            Some(archive_file)
+        } else {
+            None
+        })
     }
 
     pub fn is_archivable(&self) -> miette::Result<bool> {
@@ -86,7 +101,7 @@ impl<'task> OutputArchiver<'task> {
                     }
                 }
                 TargetScope::Tag(tag_id) => {
-                    if self.project_config.tags.contains(tag_id) && is_matching_task {
+                    if self.project.config.tags.contains(tag_id) && is_matching_task {
                         return Ok(true);
                     }
                 }
@@ -124,7 +139,9 @@ impl<'task> OutputArchiver<'task> {
         // If all globs are negated, then the empty check will always
         // fail, resulting in archives not being created
         if has_globs && !all_negated_globs {
-            let outputs = glob::walk_files(&self.app.workspace_root, &self.task.output_globs)?;
+            let outputs = self
+                .task
+                .get_output_files(&self.app.workspace_root, false)?;
 
             return Ok(!outputs.is_empty());
         }
@@ -133,7 +150,7 @@ impl<'task> OutputArchiver<'task> {
     }
 
     #[instrument(skip(self))]
-    pub fn create_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
+    fn create_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
             task_target = self.task.target.as_str(),
             hash,
@@ -177,7 +194,7 @@ impl<'task> OutputArchiver<'task> {
     }
 
     #[instrument(skip(self))]
-    pub async fn upload_to_remote_storage(
+    async fn upload_to_remote_storage(
         &self,
         hash: &str,
         archive_file: &Path,
@@ -185,6 +202,26 @@ impl<'task> OutputArchiver<'task> {
         if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    #[instrument(skip(self, operation))]
+    async fn upload_to_remote_service(
+        &self,
+        digest: &Digest,
+        operation: &Operation,
+    ) -> miette::Result<()> {
+        if let Some(remote) = RemoteService::session() {
+            let output_digests = compute_digests_for_outputs(
+                self.task.get_output_files(&self.app.workspace_root, true)?,
+                &self.app.workspace_root,
+            )?;
+
+            remote
+                .save_operation_with_outputs(digest, operation, output_digests)
                 .await?;
         }
 

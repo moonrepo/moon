@@ -23,7 +23,7 @@ fn saves_manifest() {
         })
         .unwrap();
 
-    let hash = engine.save_manifest(hasher).unwrap();
+    let (hash, _) = engine.save_manifest(hasher).unwrap();
 
     assert_eq!(
         hash,
@@ -48,7 +48,7 @@ fn saves_manifest_without_hasher() {
     let sandbox = create_empty_sandbox();
     let engine = HashEngine::new(sandbox.path()).unwrap();
 
-    let hash = engine
+    let (hash, _) = engine
         .save_manifest_without_hasher(
             "test",
             Content {

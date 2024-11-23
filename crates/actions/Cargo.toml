@@ -17,6 +17,7 @@ moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
+moon_remote = { path = "../remote" }
 moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }

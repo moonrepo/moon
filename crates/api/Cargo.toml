@@ -12,7 +12,7 @@ moon_env = { path = "../env" }
 moon_time = { path = "../time" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }
-md5 = "0.7.0"
+md5 = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 reqwest = { workspace = true, features = ["json", "multipart", "stream"] }

@@ -17,12 +17,18 @@
 
 #### 🚀 Updates
 
-- Added unstable support for self-hosted remote caches, powered by the
+- Added _unstable_ support for self-hosted remote caches, powered by the
   [Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis).
   - Allows for 3rd-party implementations like
     [`bazel-remote`](https://github.com/buchgr/bazel-remote) to be used.
   - Currently supports the gRPC protocol, and will support HTTP in a later release.
   - Our moonbase product will be sunset in the future.
+- Added Python tier 2 and 3 support.
+  - Will download and install Python into the toolchain when a `version` is configured.
+  - Will parse the `requirements.txt` to resolve and install dependencies.
+  - Added a `python` setting to `.moon/toolchain.yml`.
+  - Added a `toolchain.python` setting to `moon.yml`.
+  - Updated `moon bin` commands to support Python.
 - Added a new task graph, that enables new granular based functionality for task related features.
   - Added a new `moon task-graph` command.
   - Can now control the depth of upstream (dependencies) and downstream (dependents).
@@ -44,7 +50,7 @@
 #### ⚙️ Internal
 
 - Updated dependencies.
-- Updated proto to v0.42.1 (from 0.42.0).
+- Updated proto to v0.42.2 (from 0.42.0).
 
 ## 1.29.4
 

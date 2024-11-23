@@ -13,8 +13,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 use tokio::sync::RwLock;
-use tokio::task::JoinHandle;
-use tracing::{debug, info, instrument, warn};
+use tokio::task::{JoinHandle, JoinSet};
+use tracing::{debug, info, instrument, trace, warn};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
@@ -121,6 +121,21 @@ impl RemoteService {
         Ok(())
     }
 
+    pub fn get_max_batch_size(&self) -> i64 {
+        self.capabilities
+            .cache_capabilities
+            .as_ref()
+            .and_then(|cap| {
+                if cap.max_batch_total_size_bytes == 0 {
+                    None
+                } else {
+                    Some(cap.max_batch_total_size_bytes)
+                }
+            })
+            // grpc limit: 4mb - buffer
+            .unwrap_or(4194304 - (1024 * 10))
+    }
+
     #[instrument(skip(self))]
     pub async fn is_operation_cached(&self, digest: &Digest) -> miette::Result<bool> {
         if !self.cache_enabled {
@@ -208,6 +223,7 @@ impl RemoteService {
 
         let digest = digest.to_owned();
         let client = Arc::clone(&self.client);
+        let max_size = self.get_max_batch_size();
 
         self.upload_requests
             .write()
@@ -219,14 +235,15 @@ impl RemoteService {
                             create_timestamp(SystemTime::now());
                     }
 
-                    if let Err(error) = client.batch_update_blobs(&digest, outputs.blobs).await {
-                        warn!(
-                            hash = &digest.hash,
-                            "Failed to upload blobs for {} operation: {}",
-                            color::muted_light(operation_label),
-                            color::muted_light(error.to_string()),
-                        );
+                    let upload_result = batch_upload_blobs(
+                        client.clone(),
+                        digest.clone(),
+                        outputs.blobs,
+                        max_size as usize,
+                    )
+                    .await;
 
+                    if upload_result.is_err() || upload_result.is_ok_and(|res| !res) {
                         return;
                     }
 
@@ -380,4 +397,75 @@ impl RemoteService {
 
         Ok(result)
     }
+}
+
+async fn batch_upload_blobs(
+    client: Arc<Box<dyn RemoteClient>>,
+    digest: Digest,
+    blobs: Vec<Blob>,
+    max_size: usize,
+) -> miette::Result<bool> {
+    let mut blob_groups = FxHashMap::default();
+    let mut group_sizes = FxHashMap::default();
+    let mut group_index = 0;
+    let mut current_size = 0;
+
+    for blob in blobs {
+        let blob_size = blob.bytes.len();
+
+        if blob_size >= max_size {
+            warn!(
+                size = blob_size,
+                max_size,
+                "Encountered a blob larger than the max upload size; this is currently not supported until we support the ByteStream API; aborting upload"
+            );
+
+            return Ok(false);
+        }
+
+        if current_size >= max_size || (current_size + blob_size) >= max_size {
+            group_sizes.insert(group_index, current_size);
+            group_index += 1;
+            current_size = 0;
+        }
+
+        current_size += blob_size;
+        blob_groups.entry(group_index).or_insert(vec![]).push(blob);
+    }
+
+    let mut set = JoinSet::default();
+
+    for (group, blobs) in blob_groups.into_iter() {
+        let client = Arc::clone(&client);
+        let digest = digest.to_owned();
+
+        trace!(
+            hash = &digest.hash,
+            blobs = blobs.len(),
+            size = group_sizes.get(&group),
+            max_size,
+            "Batching output blobs (group {} of {})",
+            group + 1,
+            group_index + 1
+        );
+
+        set.spawn(async move {
+            if let Err(error) = client.batch_update_blobs(&digest, blobs).await {
+                warn!(
+                    hash = &digest.hash,
+                    group = group + 1,
+                    "Failed to upload blobs: {}",
+                    color::muted_light(error.to_string()),
+                );
+
+                return false;
+            }
+
+            true
+        });
+    }
+
+    let results = set.join_all().await;
+
+    Ok(results.into_iter().all(|passed| passed))
 }

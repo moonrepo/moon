@@ -59,7 +59,7 @@ impl RemoteClient for GrpcRemoteClient {
             } else if config.tls.is_some() {
                 "(with TLS)"
             } else {
-                "(unsecure)"
+                "(insecure)"
             }
         );
 
@@ -104,7 +104,7 @@ impl RemoteClient for GrpcRemoteClient {
     async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>> {
         let mut client = ActionCacheClient::new(self.channel.clone().unwrap());
 
-        trace!(hash = &digest.hash, "Loading a cached action result");
+        trace!(hash = &digest.hash, "Checking for a cached action result");
 
         match client
             .get_action_result(GetActionResultRequest {
@@ -211,8 +211,8 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = &digest.hash,
-            blobs = blob_digests.len(),
-            "Downloading output blobs"
+            "Downloading {} output blobs",
+            blob_digests.len()
         );
 
         let response = match client
@@ -283,8 +283,8 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = &digest.hash,
-            blobs = blobs.len(),
-            "Uploading output blobs"
+            "Uploading {} output blobs",
+            blobs.len()
         );
 
         let response = match client
@@ -304,10 +304,20 @@ impl RemoteClient for GrpcRemoteClient {
         {
             Ok(res) => res,
             Err(status) => {
-                return if matches!(status.code(), Code::InvalidArgument) {
+                let code = status.code();
+
+                return if matches!(code, Code::InvalidArgument) {
                     warn!(
                         hash = &digest.hash,
                         "Attempted to upload more blobs than the allowed limit"
+                    );
+
+                    Ok(vec![])
+                } else if matches!(code, Code::ResourceExhausted) {
+                    warn!(
+                        code = ?code,
+                        "Remote service exhausted resource: {}",
+                        status.message()
                     );
 
                     Ok(vec![])

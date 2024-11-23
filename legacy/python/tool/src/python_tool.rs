@@ -1,6 +1,6 @@
 use moon_config::PythonConfig;
 use moon_console::{Checkpoint, Console};
-use moon_logger::{debug, map_list};
+use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, load_tool_plugin, prepend_path_env_var,
@@ -10,32 +10,19 @@ use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
-use starbase_styles::color;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
 use tracing::instrument;
 
-const LOG_TARGET: &str = "moon:python-tool";
-
 pub fn get_python_tool_paths(python_tool: &PythonTool, working_dir: &Path) -> Vec<PathBuf> {
-    let venv_python = working_dir.join(python_tool.config.venv_name.clone());
+    let venv_python = working_dir.join(&python_tool.config.venv_name);
 
-    let paths = if venv_python.exists() {
-        vec![
-            venv_python.join("Scripts").clone(),
-            venv_python.join("bin").clone(),
-        ]
+    if venv_python.exists() {
+        vec![venv_python.join("Scripts"), venv_python.join("bin")]
     } else {
         get_proto_paths(&python_tool.proto_env)
-    };
-
-    debug!(
-        target: LOG_TARGET,
-        "Proto Env {} ",
-        map_list(&paths, |c| color::label(c.display().to_string())),
-    );
-    paths
+    }
 }
 
 pub struct PythonTool {
@@ -151,12 +138,15 @@ impl Tool for PythonTool {
                 }
             }
         }
+
         self.tool.locate_globals_dirs().await?;
+
         Ok(installed)
     }
 
     async fn teardown(&mut self) -> miette::Result<()> {
         self.tool.teardown().await?;
+
         Ok(())
     }
 }

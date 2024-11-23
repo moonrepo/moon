@@ -34,7 +34,6 @@ pub struct PythonPlatform {
 
     toolchain: ToolManager<PythonTool>,
 
-    #[allow(dead_code)]
     pub workspace_root: PathBuf,
 }
 

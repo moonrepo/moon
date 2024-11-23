@@ -1,6 +1,7 @@
 /target
 node_modules/
 .nx
+bazel-remote
 
 # Yarn
 .yarn/*

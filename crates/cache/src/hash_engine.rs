@@ -44,22 +44,24 @@ impl HashEngine {
         self.hashes_dir.join(format!("{hash}.json"))
     }
 
-    pub fn save_manifest(&self, mut hasher: ContentHasher) -> miette::Result<String> {
+    pub fn save_manifest(&self, mut hasher: ContentHasher) -> miette::Result<(String, usize)> {
         let hash = hasher.generate_hash()?;
         let path = self.get_manifest_path(&hash);
 
         debug!(label = hasher.label, manifest = ?path, "Saving hash manifest");
 
-        fs::write_file(&path, hasher.serialize()?)?;
+        let data = hasher.serialize()?;
 
-        Ok(hash)
+        fs::write_file(&path, data)?;
+
+        Ok((hash, data.len()))
     }
 
     pub fn save_manifest_without_hasher<T: Serialize>(
         &self,
         label: &str,
         content: T,
-    ) -> miette::Result<String> {
+    ) -> miette::Result<(String, usize)> {
         let mut hasher = ContentHasher::new(label);
         hasher.hash_content(content)?;
 

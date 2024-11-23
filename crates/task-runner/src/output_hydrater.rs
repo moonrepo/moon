@@ -1,6 +1,9 @@
+use crate::run_state::read_stdlog_state_files;
+use moon_action::Operation;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_remote::{Digest, RemoteService};
 use moon_task::Task;
 use starbase_archive::tar::TarUnpacker;
 use starbase_archive::Archiver;
@@ -11,6 +14,7 @@ use tracing::{debug, instrument, warn};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HydrateFrom {
     LocalCache,
+    Moonbase,
     PreviousOutput,
     RemoteCache,
 }
@@ -21,46 +25,67 @@ pub struct OutputHydrater<'task> {
 }
 
 impl<'task> OutputHydrater<'task> {
-    #[instrument(skip(self))]
-    pub async fn hydrate(&self, hash: &str, from: HydrateFrom) -> miette::Result<bool> {
-        // Only hydrate when the hash is different from the previous build,
-        // as we can assume the outputs from the previous build still exist?
-        if matches!(from, HydrateFrom::PreviousOutput) {
-            return Ok(true);
-        }
+    #[instrument(skip(self, operation))]
+    pub async fn hydrate(
+        &self,
+        from: HydrateFrom,
+        digest: &Digest,
+        operation: &mut Operation,
+    ) -> miette::Result<bool> {
+        match from {
+            // Only hydrate when the hash is different from the previous build,
+            // as we can assume the outputs from the previous build still exist?
+            HydrateFrom::PreviousOutput => Ok(true),
 
-        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
+            // Based on the remote execution APIs
+            HydrateFrom::RemoteCache => self.download_from_remote_service(digest, operation).await,
 
-        if self.app.cache_engine.is_readable() {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Hydrating cached outputs into project"
-            );
+            // Otherwise write to local cache, then download archive from moonbase
+            HydrateFrom::LocalCache | HydrateFrom::Moonbase => {
+                let archive_file = self.app.cache_engine.hash.get_archive_path(&digest.hash);
 
-            // Attempt to download from remote cache to `.moon/outputs/<hash>`
-            if !archive_file.exists() && matches!(from, HydrateFrom::RemoteCache) {
-                self.download_from_remote_storage(hash, &archive_file)
-                    .await?;
+                if self.app.cache_engine.is_readable() {
+                    debug!(
+                        task_target = self.task.target.as_str(),
+                        hash = &digest.hash,
+                        "Hydrating cached outputs into project"
+                    );
+
+                    // Attempt to download from remote cache to `.moon/outputs/<hash>`
+                    if !archive_file.exists() && matches!(from, HydrateFrom::Moonbase) {
+                        self.download_from_remote_storage(&digest.hash, &archive_file)
+                            .await?;
+                    }
+
+                    // Otherwise hydrate the cached archive into the task's outputs
+                    if archive_file.exists() {
+                        self.unpack_local_archive(&digest.hash, &archive_file)?;
+
+                        read_stdlog_state_files(
+                            self.app
+                                .cache_engine
+                                .state
+                                .get_target_dir(&self.task.target),
+                            operation,
+                        )?;
+
+                        return Ok(true);
+                    }
+                } else {
+                    debug!(
+                        task_target = self.task.target.as_str(),
+                        hash = &digest.hash,
+                        "Cache is not readable, skipping output hydration"
+                    );
+                }
+
+                Ok(false)
             }
-
-            // Otherwise hydrate the cached archive into the task's outputs
-            if archive_file.exists() {
-                self.unpack_local_archive(hash, &archive_file)?;
-
-                return Ok(true);
-            }
-        } else {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Cache is not readable, skipping output hydration"
-            );
         }
-
-        Ok(false)
     }
 
     #[instrument(skip(self))]
-    pub fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
+    fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
         debug!(
             task_target = self.task.target.as_str(),
             hash,
@@ -98,7 +123,7 @@ impl<'task> OutputHydrater<'task> {
     }
 
     #[instrument(skip(self))]
-    pub async fn download_from_remote_storage(
+    async fn download_from_remote_storage(
         &self,
         hash: &str,
         archive_file: &Path,
@@ -110,5 +135,20 @@ impl<'task> OutputHydrater<'task> {
         }
 
         Ok(())
+    }
+
+    #[instrument(skip(self, operation))]
+    async fn download_from_remote_service(
+        &self,
+        digest: &Digest,
+        operation: &mut Operation,
+    ) -> miette::Result<bool> {
+        if let Some(remote) = RemoteService::session() {
+            remote.restore_operation(digest, operation).await?;
+
+            return Ok(true);
+        }
+
+        Ok(false)
     }
 }

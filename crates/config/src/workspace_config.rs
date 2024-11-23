@@ -145,6 +145,10 @@ pub struct WorkspaceConfig {
     #[setting(nested, validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
+    /// Configures aspects of the remote service.
+    #[setting(nested, rename = "unstable_remote")]
+    pub remote: Option<RemoteConfig>,
+
     /// Configures aspects of the task runner (also known as the action pipeline).
     #[setting(nested)]
     pub runner: RunnerConfig,

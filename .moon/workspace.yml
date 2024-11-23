@@ -35,3 +35,15 @@ docker:
     include:
       - '*.config.js'
       - '*.json'
+
+unstable_remote:
+  host: 'grpc://localhost:9092'
+  # mtls:
+  #   caCert: 'crates/remote/tests/__fixtures__/certs-local/ca.pem'
+  #   clientCert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'
+  #   clientKey: 'crates/remote/tests/__fixtures__/certs-local/client.key'
+  #   domain: 'localhost'
+  # tls:
+  #   # assumeHttp2: true
+  #   cert: 'crates/remote/tests/__fixtures__/certs-local/ca.pem'
+  #   # domain: 'localhost'

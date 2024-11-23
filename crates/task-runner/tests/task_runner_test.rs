@@ -3,12 +3,20 @@ mod utils;
 use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::CacheMode;
+use moon_remote::Digest;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_task_runner::TaskRunner;
 use moon_time::now_millis;
 use std::env;
 use utils::*;
+
+fn stub_digest() -> Digest {
+    Digest {
+        hash: "hash123".into(),
+        size_bytes: 0,
+    }
+}
 
 mod task_runner {
     use super::*;
@@ -699,6 +707,11 @@ mod task_runner {
     mod execute {
         use super::*;
 
+        fn setup_exec_state(runner: &mut TaskRunner) {
+            runner.report_item.hash = Some("hash123".into());
+            runner.action_digest = stub_digest();
+        }
+
         #[tokio::test]
         async fn executes_and_sets_success_state() {
             let container = TaskRunnerContainer::new_os("runner", "success").await;
@@ -708,7 +721,8 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
-            runner.report_item.hash = Some("hash123".into());
+            setup_exec_state(&mut runner);
+
             runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
@@ -751,8 +765,9 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
+            setup_exec_state(&mut runner);
+
             // Swallow panic so we can check operations
-            runner.report_item.hash = Some("hash123".into());
             let _ = runner.execute(&context, &node).await;
 
             assert_eq!(
@@ -774,7 +789,8 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
-            runner.report_item.hash = Some("hash123".into());
+            setup_exec_state(&mut runner);
+
             runner.execute(&context, &node).await.unwrap();
 
             let operation = runner.operations.last().unwrap();
@@ -797,8 +813,9 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
+            setup_exec_state(&mut runner);
+
             // Swallow panic so we can check operations
-            runner.report_item.hash = Some("hash123".into());
             let _ = runner.execute(&context, &node).await;
 
             let operation = runner.operations.last().unwrap();
@@ -820,7 +837,8 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
-            runner.report_item.hash = Some("hash123".into());
+            setup_exec_state(&mut runner);
+
             runner.execute(&context, &node).await.unwrap();
 
             assert!(container
@@ -841,8 +859,9 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
+            setup_exec_state(&mut runner);
+
             // Swallow panic so we can check operations
-            runner.report_item.hash = Some("hash123".into());
             let _ = runner.execute(&context, &node).await;
 
             let operation = runner
@@ -1048,6 +1067,7 @@ mod task_runner {
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
+                runner.action_digest = stub_digest();
             }
 
             #[tokio::test]
@@ -1093,9 +1113,11 @@ mod task_runner {
             use super::*;
             use std::fs;
 
-            fn setup_local_state(container: &TaskRunnerContainer, _runner: &mut TaskRunner) {
+            fn setup_local_state(container: &TaskRunnerContainer, runner: &mut TaskRunner) {
                 container.sandbox.enable_git();
                 container.pack_archive();
+
+                runner.action_digest = stub_digest();
             }
 
             #[tokio::test]

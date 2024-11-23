@@ -83,6 +83,19 @@ impl Operation {
             .unwrap_or_else(|| "unknown failure".into())
     }
 
+    pub fn label(&self) -> &str {
+        match &self.meta {
+            OperationMeta::NoOperation => "NoOperation",
+            OperationMeta::OutputHydration(_) => "OutputHydration",
+            OperationMeta::ProcessExecution(_) => "ProcessExecution",
+            OperationMeta::SyncOperation(_) => "SyncOperation",
+            OperationMeta::TaskExecution(_) => "TaskExecution",
+            OperationMeta::ArchiveCreation => "ArchiveCreation",
+            OperationMeta::HashGeneration(_) => "HashGeneration",
+            OperationMeta::MutexAcquisition => "MutexAcquisition",
+        }
+    }
+
     pub fn finish(&mut self, status: ActionStatus) {
         self.finished_at = Some(now_timestamp());
         self.status = status;

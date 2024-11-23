@@ -1,16 +1,17 @@
+// Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
+
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
 use chrono::NaiveDateTime;
-use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use prost_types::Timestamp;
 use sha2::{Digest as Sha256Digest, Sha256};
-use starbase_utils::fs::{self, FsError};
+use starbase_utils::fs::FsError;
 use starbase_utils::glob;
 use std::path::PathBuf;
 use std::{
-    fs::Metadata,
+    fs::{self, Metadata},
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -114,12 +115,14 @@ impl OutputDigests {
             }
         };
 
+        let map_read_error = |error| FsError::Read {
+            path: abs_path.clone(),
+            error: Box::new(error),
+        };
+
         if abs_path.is_symlink() {
-            let link = std::fs::read_link(&abs_path).map_err(|error| FsError::Read {
-                path: abs_path.clone(),
-                error: Box::new(error),
-            })?;
-            let metadata = fs::metadata(&abs_path)?;
+            let link = std::fs::read_link(&abs_path).map_err(map_read_error)?;
+            let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
 
             self.symlinks.push(OutputSymlink {
@@ -128,9 +131,9 @@ impl OutputDigests {
                 node_properties: Some(props),
             });
         } else if abs_path.is_file() {
-            let bytes = fs::read_file_bytes(&abs_path)?;
+            let bytes = fs::read(&abs_path).map_err(map_read_error)?;
             let digest = create_digest(&bytes);
-            let metadata = fs::metadata(&abs_path)?;
+            let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
 
             self.files.push(OutputFile {
@@ -179,8 +182,16 @@ fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<
         })?;
     }
 
+    #[cfg(unix)]
     if let Some(mode) = &props.unix_mode {
-        fs::update_perms(path, Some(*mode))?;
+        use std::os::unix::fs::PermissionsExt;
+
+        fs::set_permissions(path, fs::Permissions::from_mode(*mode)).map_err(|error| {
+            FsError::Perms {
+                path: path.to_path_buf(),
+                error: Box::new(error),
+            }
+        })?;
     }
 
     Ok(())
@@ -191,7 +202,10 @@ pub fn write_output_file(
     bytes: Vec<u8>,
     file: &OutputFile,
 ) -> miette::Result<()> {
-    fs::write_file(&output_path, bytes)?;
+    fs::write(&output_path, bytes).map_err(|error| FsError::Write {
+        path: output_path.clone(),
+        error: Box::new(error),
+    })?;
 
     if let Some(props) = &file.node_properties {
         apply_node_properties(&output_path, props)?;
@@ -208,10 +222,17 @@ pub fn link_output_file(
     // Windows requires admin privileges to create soft/hard links,
     // so just copy for now... annoying... definitely revisit!
     #[cfg(windows)]
-    fs::copy_file(&from_path, &to_path)?;
+    fs::copy(&from_path, &to_path).map_err(|error| FsError::Copy {
+        from: from_path.clone(),
+        to: to_path.clone(),
+        error: Box::new(error),
+    })?;
 
     #[cfg(unix)]
-    std::os::unix::fs::symlink(&from_path, &to_path).into_diagnostic()?;
+    std::os::unix::fs::symlink(&from_path, &to_path).map_err(|error| FsError::Create {
+        path: to_path.clone(),
+        error: Box::new(error),
+    })?;
 
     if let Some(props) = &link.node_properties {
         apply_node_properties(&to_path, props)?;

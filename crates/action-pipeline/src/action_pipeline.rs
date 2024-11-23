@@ -352,7 +352,7 @@ impl ActionPipeline {
             ))
             .await;
 
-        self.emitter.subscribe(RemoteSubscriber::default()).await;
+        self.emitter.subscribe(RemoteSubscriber).await;
 
         debug!("Subscribing run reports and estimates");
 

@@ -5,6 +5,7 @@ use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
 };
+use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_common::{color, is_ci};
 use moon_config::RemoteConfig;
@@ -311,32 +312,14 @@ impl RemoteService {
             }
         }
 
-        let mut blob_digests = vec![];
-        let mut file_map = FxHashMap::default();
-
-        // TODO support directories
-        for file in &result.output_files {
-            if let Some(digest) = &file.digest {
-                blob_digests.push(digest.clone());
-                file_map.insert(&digest.hash, file);
-            }
-        }
-
-        for blob in self.client.batch_read_blobs(digest, blob_digests).await? {
-            if let Some(file) = file_map.get(&blob.digest.hash) {
-                write_output_file(self.workspace_root.join(&file.path), blob.bytes, file)?;
-            }
-        }
-
-        // Create symlinks after blob files have been written,
-        // as the link target may reference one of these outputs
-        for link in &result.output_symlinks {
-            link_output_file(
-                self.workspace_root.join(&link.target),
-                self.workspace_root.join(&link.path),
-                link,
-            )?;
-        }
+        batch_download_blobs(
+            self.client.clone(),
+            digest,
+            &result,
+            &self.workspace_root,
+            self.get_max_batch_size() as usize,
+        )
+        .await?;
 
         debug!(
             hash = &digest.hash,
@@ -444,7 +427,7 @@ async fn batch_upload_blobs(
             blobs = blobs.len(),
             size = group_sizes.get(&group),
             max_size,
-            "Batching output blobs (group {} of {})",
+            "Batching blobs upload (group {} of {})",
             group + 1,
             group_index + 1
         );
@@ -468,4 +451,78 @@ async fn batch_upload_blobs(
     let results = set.join_all().await;
 
     Ok(results.into_iter().all(|passed| passed))
+}
+
+async fn batch_download_blobs(
+    client: Arc<Box<dyn RemoteClient>>,
+    digest: &Digest,
+    result: &ActionResult,
+    workspace_root: &Path,
+    max_size: usize,
+) -> miette::Result<()> {
+    let mut file_map = FxHashMap::default();
+    let mut digest_groups = FxHashMap::default();
+    let mut group_sizes = FxHashMap::default();
+    let mut group_index = 0;
+    let mut current_size = 0;
+
+    // TODO support directories
+    for file in &result.output_files {
+        if let Some(digest) = &file.digest {
+            file_map.insert(&digest.hash, file);
+
+            let blob_size = digest.size_bytes as usize;
+
+            if current_size >= max_size || (current_size + blob_size) >= max_size {
+                group_sizes.insert(group_index, current_size);
+                group_index += 1;
+                current_size = 0;
+            }
+
+            current_size += blob_size;
+            digest_groups
+                .entry(group_index)
+                .or_insert(vec![])
+                .push(digest.to_owned());
+        }
+    }
+
+    let mut set = JoinSet::<miette::Result<Vec<Blob>>>::default();
+
+    for (group, blob_digests) in digest_groups.into_iter() {
+        let client = Arc::clone(&client);
+        let digest = digest.to_owned();
+
+        trace!(
+            hash = &digest.hash,
+            blobs = blob_digests.len(),
+            size = group_sizes.get(&group),
+            max_size,
+            "Batching blobs download (group {} of {})",
+            group + 1,
+            group_index + 1
+        );
+
+        set.spawn(async move { client.batch_read_blobs(&digest, blob_digests).await });
+    }
+
+    while let Some(res) = set.join_next().await {
+        for blob in res.into_diagnostic()?? {
+            if let Some(file) = file_map.get(&blob.digest.hash) {
+                write_output_file(workspace_root.join(&file.path), blob.bytes, file)?;
+            }
+        }
+    }
+
+    // Create symlinks after blob files have been written,
+    // as the link target may reference one of these outputs
+    for link in &result.output_symlinks {
+        link_output_file(
+            workspace_root.join(&link.target),
+            workspace_root.join(&link.path),
+            link,
+        )?;
+    }
+
+    Ok(())
 }

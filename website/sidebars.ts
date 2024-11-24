@@ -10,7 +10,7 @@ const sidebars: SidebarsConfig = {
 			label: 'How it works',
 			collapsed: true,
 			collapsible: true,
-			items: ['how-it-works/languages', 'how-it-works/project-graph', 'how-it-works/action-graph'],
+			items: ['how-it-works/languages', 'how-it-works/project-graph', 'how-it-works/task-graph', 'how-it-works/action-graph'],
 			link: {
 				type: 'generated-index',
 				title: 'How it works',
@@ -172,6 +172,7 @@ const sidebars: SidebarsConfig = {
 					},
 				},
 				'commands/task',
+				'commands/task-graph',
 				'commands/teardown',
 				'commands/templates',
 				'commands/upgrade',

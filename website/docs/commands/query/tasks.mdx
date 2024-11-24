@@ -52,18 +52,24 @@ passing the `--json` flag. The output has the following structure:
 
 #### Affected
 
-- `--affected` - Filter projects that have been affected by touched files.
+- `--affected` - Filter tasks that have been affected by touched files.
+- `--downstream` - Include downstream dependents of queried tasks. Supports "none" (default),
+  "direct", "deep".
+  <VersionLabel version="1.30.0" />
+- `--upstream` - Include upstream dependencies of queried tasks. Supports "none", "direct", "deep"
+  (default).
+  <VersionLabel version="1.30.0" />
 
-#### Filters
+#### Filters<VersionLabel version="1.30.0" />
 
 All option values are case-insensitive regex patterns.
 
-- `--alias <regex>` - Filter projects that match this alias.
-- `--id <regex>` - Filter projects that match this ID/name.
-- `--language <regex>` - Filter projects of this programming language.
-- `--source <regex>` - Filter projects that match this source path.
-- `--tasks <regex>` - Filter projects that have the following tasks.
-- `--type <regex>` - Filter project of this type.
+- `--command <regex>` - Filter tasks that match this command.
+- `--id <regex>` - Filter tasks that match this ID.
+- `--platform <regex>` - Filter tasks of this platform.
+- `--project <regex>` - Filter tasks that belong to this project.
+- `--script <regex>` - Filter tasks that match this script.
+- `--type <regex>` - Filter tasks of this type.
 
 ### Configuration
 

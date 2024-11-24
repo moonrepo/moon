@@ -38,6 +38,37 @@ taking precedence over those defined in the extended configuration.
 
 :::
 
+## `moon`<VersionLabel version="1.29.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#moon" />
+
+Configures how moon will receive information about latest releases and download locations.
+
+### `manifestUrl`
+
+<HeadingApiLink to="/api/types/interface/MoonConfig#manifestUrl" />
+
+Defines an HTTPS URL in which to fetch the current version information from.
+
+```yaml title=".moon/toolchain.yml" {2}
+moon:
+  manifestUrl: 'https://proxy.corp.net/moon/version'
+```
+
+### `downloadUrl`
+
+<HeadingApiLink to="/api/types/interface/MoonConfig#downloadUrl" />
+
+Defines an HTTPS URL in which the moon binary can be downloaded from. The download file name is
+hard-coded and will be appended to the provided URL.
+
+Defaults to downloading from GitHub: https://github.com/moonrepo/moon/releases
+
+```yaml title=".moon/toolchain.yml" {2}
+moon:
+  downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
+```
+
 ## JavaScript
 
 ## `bun`<VersionLabel version="1.17.0" />
@@ -155,37 +186,6 @@ installation action. Defaults to `false`.
 ```yaml title=".moon/toolchain.yml" {2}
 deno:
   lockfile: true
-```
-
-## `moon`<VersionLabel version="1.29.0" />
-
-<HeadingApiLink to="/api/types/interface/ToolchainConfig#moon" />
-
-Configures how moon will receive information about latest releases and download locations.
-
-### `manifestUrl`
-
-<HeadingApiLink to="/api/types/interface/MoonConfig#manifestUrl" />
-
-Defines an HTTPS URL in which to fetch the current version information from.
-
-```yaml title=".moon/toolchain.yml" {2}
-moon:
-  manifestUrl: 'https://proxy.corp.net/moon/version'
-```
-
-### `downloadUrl`
-
-<HeadingApiLink to="/api/types/interface/MoonConfig#downloadUrl" />
-
-Defines an HTTPS URL in which the moon binary can be downloaded from. The download file name is
-hard-coded and will be appended to the provided URL.
-
-Defaults to downloading from GitHub: https://github.com/moonrepo/moon/releases
-
-```yaml title=".moon/toolchain.yml" {2}
-moon:
-  downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
 ```
 
 ## `node`
@@ -721,31 +721,39 @@ Both imports can optionally be nested within a `src` directory.
 > This setting runs _after_ [`syncProjectReferences`](#syncprojectreferences) and will inherit any
 > synced references from that setting.
 
-## Python
+## Python<VersionLabel version="1.30.0" />
 
-## `python`<VersionLabel version="1.30.0" />
+## `python`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#python" />
 
-Enables and configures Python.
+Enables and configures [Python](https://www.python.org/).
 
 ### `version`
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#version" />
 
-Defines the explicit Python toolchain If this field is _not defined_, the global `python` binary
-will be used.
+Defines the explicit Python toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `python` binary will be used.
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
   version: '3.11.10'
 ```
 
+:::info
+
+Python installation's are based on pre-built binaries provided by
+[indygreg/python-build-standalone](https://github.com/indygreg/python-build-standalone).
+
+:::
+
 > Version can also be defined with [`.prototools`](../proto/config).
 
-### `rootPackageOnly`
+### `rootRequirementsOnly`
 
-<HeadingApiLink to="/api/types/interface/PythonConfig#rootPackageOnly" />
+<HeadingApiLink to="/api/types/interface/PythonConfig#rootRequirementsOnly" />
 
 Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
 the root `requirements.txt`, and only installing dependencies in the workspace root, and not within
@@ -754,28 +762,30 @@ Defaults to `true`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
-  rootPackageOnly: false
+  rootRequirementsOnly: false
 ```
 
-### `venv_name`
+### `venvName`
 
-<HeadingApiLink to="/api/types/interface/PythonConfig#venv_name" />
+<HeadingApiLink to="/api/types/interface/PythonConfig#venvName" />
 
-Defines the virtual environment name which will be created on workspace root, project dependencies
-will be installed into this. Defaults to `.venv`
+Defines the virtual environment file name, which will be created in the workspace or project root,
+and where dependencies will be installed into. Defaults to `.venv`
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
-  venv_name: '.my-custom-venv'
+  venvName: '.my-custom-venv'
 ```
 
 ### `pip`
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#pip" />
 
-#### `install_args`
+Optional fields for defining pip specific configuration.
 
-<HeadingApiLink to="/api/types/interface/PipConfig#install_args" />
+#### `installArgs`
+
+<HeadingApiLink to="/api/types/interface/PipConfig#installArgs" />
 
 Customize the arguments that will be passed to the pip install command, when the `InstallDeps`
 action is triggered in the pipeline. These arguments are used both locally and in CI.

@@ -19,15 +19,15 @@ pub struct PythonConfig {
     #[setting(nested)]
     pub pip: Option<PipConfig>,
 
-    /// Defines the virtual environment name which will be created on workspace root.
-    /// Project dependencies will be installed into this. Defaults to `.venv`
-    #[setting(default = ".venv")]
-    pub venv_name: String,
-
     /// Assumes only the root `requirements.txt` is used for dependencies.
     /// Can be used to support the "one version policy" pattern.
     #[setting(default = true)]
     pub root_requirements_only: bool,
+
+    /// Defines the virtual environment name, which will be created in the workspace root.
+    /// Project dependencies will be installed into this.
+    #[setting(default = ".venv")]
+    pub venv_name: String,
 
     /// The version of Python to download, install, and run `python` tasks with.
     #[setting(env = "MOON_PYTHON_VERSION")]

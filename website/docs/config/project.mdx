@@ -369,6 +369,7 @@ The Docker image to use in the base stage. Defaults to an image based on the pro
 - `oven/bun:latest` for Bun
 - `denoland/deno:latest` for Deno
 - `node:latest` for Node.js
+- `python:latest` for Python
 - `rust:latest` for Rust
 - `scratch` for everything else
 
@@ -1457,6 +1458,25 @@ use when _running tasks_ for this project.
 toolchain:
   node:
     version: '12.12.0'
+```
+
+### `python`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#python" />
+
+Configures Python for this project and overrides the top-level [`python`](./toolchain#python)
+setting.
+
+#### `version`
+
+Defines the explicit Python
+[version/channel specification](../concepts/toolchain#version-specification) to use when _running
+tasks_ for this project.
+
+```yaml title="moon.yml" {2,3}
+toolchain:
+  python:
+    version: '3.12.0'
 ```
 
 ### `rust`

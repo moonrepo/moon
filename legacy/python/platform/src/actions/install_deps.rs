@@ -24,7 +24,7 @@ pub async fn install_deps(
         if !virtual_environment.exists() {
             console
                 .out
-                .print_checkpoint(Checkpoint::Setup, "activating virtual environment")?;
+                .print_checkpoint(Checkpoint::Setup, "activate virtual environment")?;
 
             let args = vec![
                 "-m",

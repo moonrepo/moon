@@ -140,9 +140,14 @@ impl<'cmd> CommandInspector<'cmd> {
         let line = self.get_command_line();
 
         format!(
-            "{}{}",
+            "{}::{}::{}",
             line.command.join(OsStr::new(" ")).to_string_lossy(),
-            line.input.to_string_lossy()
+            line.input.to_string_lossy(),
+            self.command
+                .cwd
+                .as_ref()
+                .and_then(|cwd| cwd.as_os_str().to_str())
+                .unwrap_or_default()
         )
     }
 

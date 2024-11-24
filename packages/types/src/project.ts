@@ -51,7 +51,7 @@ export interface TaskOptions {
 	windowsShell: TaskWindowsShell | null;
 }
 
-export interface TaskMetadata {
+export interface TaskState {
 	emptyInputs: boolean;
 	expanded: boolean;
 	localOnly: boolean;
@@ -68,12 +68,13 @@ export interface Task {
 	inputFiles: string[];
 	inputGlobs: string[];
 	inputVars: string[];
-	metadata: TaskMetadata;
 	options: TaskOptions;
 	outputs: string[];
 	outputFiles: string[];
 	outputGlobs: string[];
 	platform: PlatformType;
+	script: string | null;
+	state: TaskState;
 	target: string;
 	type: TaskType;
 }

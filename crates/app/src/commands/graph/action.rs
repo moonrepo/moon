@@ -59,7 +59,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     let graph_info = action_graph_repr(&action_graph).await;
 
     if args.json {
-        println!("{}", json::format(&graph_info, false)?);
+        println!("{}", json::format(&graph_info, true)?);
 
         return Ok(None);
     }

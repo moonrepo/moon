@@ -297,8 +297,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         task.preset = preset;
         task.options = self.build_task_options(id, preset)?;
-        task.metadata.local_only = is_local;
-        task.metadata.root_level = is_root_level_source(self.project_source);
+        task.state.local_only = is_local;
+        task.state.root_level = is_root_level_source(self.project_source);
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -402,14 +402,14 @@ impl<'proj> TasksBuilder<'proj> {
                     "Task has explicitly disabled inputs",
                 );
 
-                task.metadata.empty_inputs = true;
-            } else if self.context.monorepo && task.metadata.root_level {
+                task.state.empty_inputs = true;
+            } else if self.context.monorepo && task.state.root_level {
                 trace!(
                     task_target = target.as_str(),
                     "Task is a root-level project in a monorepo, defaulting to no inputs",
                 );
 
-                task.metadata.empty_inputs = true;
+                task.state.empty_inputs = true;
             } else {
                 trace!(
                     task_target = target.as_str(),

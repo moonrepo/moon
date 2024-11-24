@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct TaskInternalMetadata {
+    pub struct TaskState {
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
@@ -59,8 +59,6 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub metadata: TaskInternalMetadata,
-
         pub options: TaskOptions,
 
         pub outputs: Vec<OutputPath>,
@@ -78,6 +76,8 @@ cacheable!(
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub script: Option<String>,
+
+        pub state: TaskState,
 
         pub target: Target,
 
@@ -195,7 +195,7 @@ impl Task {
 
     /// Return true if the task has been expanded.
     pub fn is_expanded(&self) -> bool {
-        self.metadata.expanded
+        self.state.expanded
     }
 
     /// Return true if an internal task.
@@ -210,7 +210,7 @@ impl Task {
 
     /// Return true if a local only task.
     pub fn is_local(&self) -> bool {
-        self.metadata.local_only
+        self.state.local_only
     }
 
     /// Return true if the task is a "no operation" and does nothing.

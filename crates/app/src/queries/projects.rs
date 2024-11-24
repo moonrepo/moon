@@ -1,7 +1,7 @@
 use super::convert_to_regex;
 use moon_affected::Affected;
 use moon_project::Project;
-use moon_workspace_graph::WorkspaceGraph;
+use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::debug;
@@ -51,7 +51,10 @@ fn load_with_regex(
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
-    for project in workspace_graph.get_all_projects()? {
+    for project_id in workspace_graph.projects.get_node_keys() {
+        // Include tasks for JSON output
+        let project = workspace_graph.get_project_with_tasks(project_id)?;
+
         if let Some(regex) = &id_regex {
             if !regex.is_match(&project.id) {
                 continue;
@@ -109,7 +112,7 @@ fn load_with_regex(
             }
         }
 
-        filtered.push(project);
+        filtered.push(Arc::new(project));
     }
 
     Ok(filtered)

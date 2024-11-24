@@ -27,6 +27,15 @@ impl TouchedFiles {
         files.extend(&self.unstaged);
         files
     }
+
+    pub fn merge(&mut self, other: TouchedFiles) {
+        self.added.extend(other.added);
+        self.deleted.extend(other.deleted);
+        self.modified.extend(other.modified);
+        self.untracked.extend(other.untracked);
+        self.staged.extend(other.staged);
+        self.unstaged.extend(other.unstaged);
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Default, Eq, PartialEq, Serialize)]

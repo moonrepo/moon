@@ -12,7 +12,7 @@ chrono = { workspace = true }
 clean-path = "0.2.1"
 dunce = "1.0.5"
 humantime = "2.1.0"
-md5 = "0.7.0"
+md5 = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 pathdiff = { workspace = true }

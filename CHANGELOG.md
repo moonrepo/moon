@@ -9,20 +9,32 @@
 - Refactored the `moon query tasks` command.
   - CLI options have been replaced with new task based options, instead of being project based.
   - Now utilizes the new task graph and affected tracker.
+- The `moon project-graph --json` output no longer includes task data (the `tasks` field is an empty
+  map).
+  - Use `moon task-graph` to access this data, and piece things together using the project
+    `taskTargets` field.
+  - The `moon project --json` output pieces everything together automatically.
 
 #### 🚀 Updates
 
-- Added unstable support for self-hosted remote caches, powered by the
+- Added _unstable_ support for self-hosted remote caches, powered by the
   [Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis).
   - Allows for 3rd-party implementations like
     [`bazel-remote`](https://github.com/buchgr/bazel-remote) to be used.
   - Currently supports the gRPC protocol, and will support HTTP in a later release.
   - Our moonbase product will be sunset in the future.
+- Added Python tier 2 and 3 support.
+  - Will download and install Python into the toolchain when a `version` is configured.
+  - Will parse the `requirements.txt` to resolve and install dependencies.
+  - Added a `python` setting to `.moon/toolchain.yml`.
+  - Added a `toolchain.python` setting to `moon.yml`.
+  - Updated `moon bin` commands to support Python.
 - Added a new task graph, that enables new granular based functionality for task related features.
   - Added a new `moon task-graph` command.
   - Can now control the depth of upstream (dependencies) and downstream (dependents).
   - Affected information now tracks based on dependent graph connections.
   - Added `--upstream` and `--downstream` options to `moon query tasks`.
+- Added basic support for Git submodules, and will now extract touched files from all submodules.
 - Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`,
   `$vcsRevision`, `$workingDir`
 - Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
@@ -35,11 +47,12 @@
 
 - Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing
   direct relationships.
+- Fixed an issue where touched file paths would include Git submodule directories and trigger hasher warnings.
 
 #### ⚙️ Internal
 
 - Updated dependencies.
-- Updated proto to v0.42.1 (from 0.42.0).
+- Updated proto to v0.42.2 (from 0.42.0).
 
 ## 1.29.4
 

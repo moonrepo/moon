@@ -290,11 +290,6 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         // Not loaded, build the project
-        trace!(
-            project_id = id.as_str(),
-            "Project does not exist in the project graph, attempting to load",
-        );
-
         let mut project = self.build_project(&id).await?;
 
         cycle.insert(id.clone());
@@ -474,11 +469,6 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         // Not loaded, resolve the task
-        trace!(
-            task_target = target.as_str(),
-            "Task does not exist in the task graph, attempting to load",
-        );
-
         let (_, project_index) = self
             .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
             .await?;

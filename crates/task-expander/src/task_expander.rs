@@ -49,7 +49,7 @@ impl<'graph> TaskExpander<'graph> {
             self.expand_command(&mut task)?;
         }
 
-        task.metadata.expanded = true;
+        task.state.expanded = true;
 
         Ok(task)
     }

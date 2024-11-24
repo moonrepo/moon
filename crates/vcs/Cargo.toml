@@ -12,6 +12,7 @@ publish = false
 moon_common = { path = "../common" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }
+futures = { workspace = true }
 git-url-parse = "0.4.5"
 ignore = "0.4.23"
 miette = { workspace = true }
@@ -21,6 +22,7 @@ rustc-hash = { workspace = true }
 scc = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true }
+starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

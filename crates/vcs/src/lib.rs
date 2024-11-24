@@ -1,4 +1,5 @@
 mod git;
+mod git_submodule;
 mod process_cache;
 mod touched_files;
 mod vcs;

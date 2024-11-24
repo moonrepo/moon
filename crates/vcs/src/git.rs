@@ -1,3 +1,4 @@
+use crate::git_submodule::*;
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
@@ -8,7 +9,7 @@ use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{is_test_env, Style, Stylize};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -99,9 +100,6 @@ pub struct Git {
     /// Root of the `.git` directory.
     pub git_root: PathBuf,
 
-    /// Ignore rules derived from a root `.gitignore` file.
-    ignore: Option<Gitignore>,
-
     /// Run and cache `git` commands.
     pub process: ProcessCache,
 
@@ -113,6 +111,12 @@ pub struct Git {
 
     /// If in a git worktree, the root of the worktree (the `.git` file).
     pub worktree_root: Option<PathBuf>,
+
+    /// Ignore rules derived from a root `.gitignore` file.
+    ignore: Option<Gitignore>,
+
+    /// Map of submodules within the repository.
+    submodules: FxHashMap<String, GitSubmodule>,
 }
 
 impl Git {
@@ -202,6 +206,19 @@ impl Git {
             );
         }
 
+        // Load .gitmodules
+        let modules_path = repository_root.join(".gitmodules");
+        let mut submodules = FxHashMap::default();
+
+        if modules_path.exists() {
+            debug!(
+                modules_file = ?modules_path,
+                "Loading submodules from .gitmodules",
+            );
+
+            submodules = parse_gitmodules_file(&modules_path)?;
+        }
+
         Ok(Git {
             default_branch: Arc::new(default_branch.as_ref().to_owned()),
             ignore,
@@ -215,6 +232,7 @@ impl Git {
             process: ProcessCache::new("git", workspace_root),
             git_root,
             worktree_root,
+            submodules,
         })
     }
 
@@ -245,6 +263,12 @@ impl Git {
         }
 
         Ok(None)
+    }
+
+    pub fn get_module_checkout_paths(&self) -> Vec<&str> {
+        let mut paths = vec![""]; // Root
+        paths.extend(self.submodules.values().map(|sm| sm.path.as_str()));
+        paths
     }
 
     pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
@@ -282,6 +306,192 @@ impl Git {
         };
 
         Ok(self.default_branch.clone())
+    }
+
+    // https://git-scm.com/docs/git-status#_short_format
+    #[instrument(skip(self))]
+    async fn get_touched_files_from_dir(&self, dir: &str) -> miette::Result<TouchedFiles> {
+        let mut command = self.process.create_command([
+            "status",
+            "--porcelain",
+            "--untracked-files",
+            "--ignore-submodules",
+            // We use this option so that file names with special characters
+            // are displayed as-is and are not quoted/escaped
+            "-z",
+        ]);
+
+        // Run in a directory to support submodules
+        if !dir.is_empty() {
+            command.cwd(self.process.root.join(dir));
+        }
+
+        let output = self.process.run_command(command, false).await?;
+
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
+
+        let mut added = FxHashSet::default();
+        let mut deleted = FxHashSet::default();
+        let mut modified = FxHashSet::default();
+        let mut untracked = FxHashSet::default();
+        let mut staged = FxHashSet::default();
+        let mut unstaged = FxHashSet::default();
+
+        // Lines are terminated by a NUL byte:
+        //  XY file\0
+        //  XY file\0orig_file\0
+        for line in output.split('\0') {
+            if line.is_empty() {
+                continue;
+            }
+
+            // orig_file\0
+            if !STATUS_PATTERN.is_match(line) {
+                continue;
+            }
+
+            // XY file\0
+            let mut chars = line.chars();
+            let x = chars.next().unwrap_or_default();
+            let y = chars.next().unwrap_or_default();
+            let file = WorkspaceRelativePathBuf::from(dir)
+                .join(self.to_workspace_relative_path(&line[3..]));
+
+            match x {
+                'A' | 'C' => {
+                    added.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'D' => {
+                    deleted.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'M' | 'R' => {
+                    modified.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                _ => {}
+            }
+
+            match y {
+                'A' | 'C' => {
+                    added.insert(file.clone());
+                    unstaged.insert(file.clone());
+                }
+                'D' => {
+                    deleted.insert(file.clone());
+                    unstaged.insert(file.clone());
+                }
+                'M' | 'R' => {
+                    modified.insert(file.clone());
+                    unstaged.insert(file.clone());
+                }
+                '?' => {
+                    untracked.insert(file.clone());
+                }
+                _ => {}
+            }
+        }
+
+        Ok(TouchedFiles {
+            added,
+            deleted,
+            modified,
+            staged,
+            unstaged,
+            untracked,
+        })
+    }
+
+    async fn get_touched_files_between_revisions_from_dir(
+        &self,
+        base_revision: &str,
+        revision: &str,
+        dir: &str,
+    ) -> miette::Result<TouchedFiles> {
+        let base = self.get_merge_base(base_revision, revision).await?;
+
+        let mut command = self.process.create_command([
+            "--no-pager",
+            "diff",
+            "--name-status",
+            "--no-color",
+            "--relative",
+            "--ignore-submodules",
+            // We use this option so that file names with special characters
+            // are displayed as-is and are not quoted/escaped
+            "-z",
+            base.as_ref().map(|b| b.as_str()).unwrap_or(base_revision),
+        ]);
+
+        // Run in a directory to support submodules
+        if !dir.is_empty() {
+            command.cwd(self.process.root.join(dir));
+        }
+
+        let output = self.process.run_command(command, false).await?;
+
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
+
+        let mut added = FxHashSet::default();
+        let mut deleted = FxHashSet::default();
+        let mut modified = FxHashSet::default();
+        let mut staged = FxHashSet::default();
+        let mut unstaged = FxHashSet::default();
+        let mut last_status = "A";
+
+        // Lines AND statuses are terminated by a NUL byte
+        //  X\0file\0
+        //  X000\0file\0
+        //  X000\0file\0renamed_file\0
+        for line in output.split('\0') {
+            if line.is_empty() {
+                continue;
+            }
+
+            // X\0
+            // X000\0
+            if DIFF_SCORE_PATTERN.is_match(line) || DIFF_PATTERN.is_match(line) {
+                last_status = &line[0..1];
+                continue;
+            }
+
+            let x = last_status.chars().next().unwrap_or_default();
+            let file =
+                WorkspaceRelativePathBuf::from(dir).join(self.to_workspace_relative_path(line));
+
+            match x {
+                'A' | 'C' => {
+                    added.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'D' => {
+                    deleted.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'M' | 'R' | 'T' => {
+                    modified.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'U' => {
+                    unstaged.insert(file.clone());
+                }
+                _ => {}
+            }
+        }
+
+        Ok(TouchedFiles {
+            added,
+            deleted,
+            modified,
+            staged,
+            unstaged,
+            untracked: FxHashSet::default(),
+        })
     }
 
     fn to_workspace_relative_path(&self, value: &str) -> WorkspaceRelativePathBuf {
@@ -402,6 +612,7 @@ impl Vcs for Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
+            "--recurse-submodules",
             dir,
         ];
 
@@ -478,98 +689,19 @@ impl Vcs for Git {
     // https://git-scm.com/docs/git-status#_short_format
     #[instrument(skip(self))]
     async fn get_touched_files(&self) -> miette::Result<TouchedFiles> {
-        let output = self
-            .process
-            .run(
-                [
-                    "status",
-                    "--porcelain",
-                    "--untracked-files",
-                    // Git submodule directories are included in this output,
-                    // but we only want files...
-                    "--ignore-submodules",
-                    // We use this option so that file names with special characters
-                    // are displayed as-is and are not quoted/escaped
-                    "-z",
-                ],
-                false,
-            )
-            .await?;
+        let mut touched_files = TouchedFiles::default();
 
-        if output.is_empty() {
-            return Ok(TouchedFiles::default());
+        for result in futures::future::try_join_all(
+            self.get_module_checkout_paths()
+                .iter()
+                .map(|path| self.get_touched_files_from_dir(path)),
+        )
+        .await?
+        {
+            touched_files.merge(result);
         }
 
-        let mut added = FxHashSet::default();
-        let mut deleted = FxHashSet::default();
-        let mut modified = FxHashSet::default();
-        let mut untracked = FxHashSet::default();
-        let mut staged = FxHashSet::default();
-        let mut unstaged = FxHashSet::default();
-
-        // Lines are terminated by a NUL byte:
-        //  XY file\0
-        //  XY file\0orig_file\0
-        for line in output.split('\0') {
-            if line.is_empty() {
-                continue;
-            }
-
-            // orig_file\0
-            if !STATUS_PATTERN.is_match(line) {
-                continue;
-            }
-
-            // XY file\0
-            let mut chars = line.chars();
-            let x = chars.next().unwrap_or_default();
-            let y = chars.next().unwrap_or_default();
-            let file = self.to_workspace_relative_path(&line[3..]);
-
-            match x {
-                'A' | 'C' => {
-                    added.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                'D' => {
-                    deleted.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                'M' | 'R' => {
-                    modified.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                _ => {}
-            }
-
-            match y {
-                'A' | 'C' => {
-                    added.insert(file.clone());
-                    unstaged.insert(file.clone());
-                }
-                'D' => {
-                    deleted.insert(file.clone());
-                    unstaged.insert(file.clone());
-                }
-                'M' | 'R' => {
-                    modified.insert(file.clone());
-                    unstaged.insert(file.clone());
-                }
-                '?' => {
-                    untracked.insert(file.clone());
-                }
-                _ => {}
-            }
-        }
-
-        Ok(TouchedFiles {
-            added,
-            deleted,
-            modified,
-            staged,
-            unstaged,
-            untracked,
-        })
+        Ok(touched_files)
     }
 
     async fn get_touched_files_against_previous_revision(
@@ -605,84 +737,18 @@ impl Vcs for Git {
         base_revision: &str,
         revision: &str,
     ) -> miette::Result<TouchedFiles> {
-        let base = self.get_merge_base(base_revision, revision).await?;
+        let mut touched_files = TouchedFiles::default();
 
-        let output = self
-            .process
-            .run(
-                [
-                    "--no-pager",
-                    "diff",
-                    "--name-status",
-                    "--no-color",
-                    "--relative",
-                    // We use this option so that file names with special characters
-                    // are displayed as-is and are not quoted/escaped
-                    "-z",
-                    base.as_ref().map(|b| b.as_str()).unwrap_or(base_revision),
-                ],
-                false,
-            )
-            .await?;
-
-        if output.is_empty() {
-            return Ok(TouchedFiles::default());
+        for result in
+            futures::future::try_join_all(self.get_module_checkout_paths().iter().map(|path| {
+                self.get_touched_files_between_revisions_from_dir(base_revision, revision, path)
+            }))
+            .await?
+        {
+            touched_files.merge(result);
         }
 
-        let mut added = FxHashSet::default();
-        let mut deleted = FxHashSet::default();
-        let mut modified = FxHashSet::default();
-        let mut staged = FxHashSet::default();
-        let mut unstaged = FxHashSet::default();
-        let mut last_status = "A";
-
-        // Lines AND statuses are terminated by a NUL byte
-        //  X\0file\0
-        //  X000\0file\0
-        //  X000\0file\0renamed_file\0
-        for line in output.split('\0') {
-            if line.is_empty() {
-                continue;
-            }
-
-            // X\0
-            // X000\0
-            if DIFF_SCORE_PATTERN.is_match(line) || DIFF_PATTERN.is_match(line) {
-                last_status = &line[0..1];
-                continue;
-            }
-
-            let x = last_status.chars().next().unwrap_or_default();
-            let file = self.to_workspace_relative_path(line);
-
-            match x {
-                'A' | 'C' => {
-                    added.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                'D' => {
-                    deleted.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                'M' | 'R' | 'T' => {
-                    modified.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                'U' => {
-                    unstaged.insert(file.clone());
-                }
-                _ => {}
-            }
-        }
-
-        Ok(TouchedFiles {
-            added,
-            deleted,
-            modified,
-            staged,
-            unstaged,
-            untracked: FxHashSet::default(),
-        })
+        Ok(touched_files)
     }
 
     async fn get_version(&self) -> miette::Result<Version> {

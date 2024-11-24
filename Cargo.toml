@@ -34,6 +34,7 @@ compact_str = { version = "0.8.0", default-features = false, features = [
 console = "0.15.8"
 convert_case = "0.6.0"
 dirs = "5.0.1"
+futures = "0.3.31"
 indexmap = "2.6.0"
 md5 = "0.7.0"
 miette = "7.2.0"

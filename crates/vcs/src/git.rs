@@ -485,6 +485,9 @@ impl Vcs for Git {
                     "status",
                     "--porcelain",
                     "--untracked-files",
+                    // Git submodule directories are included in this output,
+                    // but we only want files...
+                    "--ignore-submodules",
                     // We use this option so that file names with special characters
                     // are displayed as-is and are not quoted/escaped
                     "-z",

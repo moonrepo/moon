@@ -362,8 +362,32 @@ A token variable is a value that starts with `$` and is substituted to a value d
 current workspace, project, and task. And unlike token functions, token variables can be placed
 _within_ content when necessary, and supports multiple variables within the same content.
 
+### Environment<VersionLabel version="1.30.0" />
+
+- `$arch` - The current host architecture, derived from the Rust
+  [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html).
+- `$os` - The current operating system, derived from the Rust
+  [`OS` constant](https://doc.rust-lang.org/std/env/consts/constant.OS.html).
+- `$osFamily` - The current operating system family, either `unix` or `windows`.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --arch $arch'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--arch'
+      - 'aarch64'
+```
+
 ### Workspace
 
+- `$workingDir` - The current working directory.
 - `$workspaceRoot` - Absolute file path to the workspace root.
 
 ```yaml
@@ -468,4 +492,25 @@ tasks:
       - 'example'
       - '--date'
       - '2023-03-17'
+```
+
+### VCS<VersionLabel version="1.30.0" />
+
+- `$vcsBranch` - The current branch.
+- `$vcsRepository` - The repository slug, in the format of `owner/repo`.
+- `$vcsRevision` - The current revision (commit, etc).
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --branch $vcsBranch'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--branch'
+      - 'master'
 ```

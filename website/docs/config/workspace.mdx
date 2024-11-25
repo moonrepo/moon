@@ -301,21 +301,6 @@ docker:
 
 Enable or disable experiments that alter core functionality.
 
-### `strictProjectIds`<VersionLabel version="1.29.4" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#strictProjectIds" />
-
-When building the project graph, disallows referencing the original ID of a project (inferred from
-the folder name) when the project has been renamed to a new ID using the [`id`](./project#id)
-setting.
-
-Defaults to `false` but will be enabled to `true` in the future.
-
-```yaml title=".moon/workspace.yml" {1,2}
-experiments:
-  strictProjectIds: true
-```
-
 ## `extensions`<VersionLabel version="1.20.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />
@@ -496,6 +481,134 @@ Defines an HTTPS URL that all pipeline events will be posted to. View the
 notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
 ```
+
+## `unstable_remote`<VersionLabel version="1.30.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#unstable_remote" />
+
+Configures a remote service, primarily for cloud-based caching of artifacts. Learn more about this
+in the [remote caching](../guides/remote-cache) guide.
+
+### `cache`
+
+<HeadingApiLink to="/api/types/interface/RemoteConfig#cache" />
+
+Configures aspects of the caching layer, primarily the action cache (AC) and content addressable
+cache (CAS).
+
+#### `instanceName`
+
+<HeadingApiLink to="/api/types/interface/RemoteCacheConfig#instanceName" />
+
+A
+[unique identifier](https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L223)
+used to distinguish between the various instances on the host. This allows the same remote service
+to serve and partition multiple moon repositories. Defaults to `moon-outputs`.
+
+```yaml title=".moon/workspace.yml" {2}
+unstable_remote:
+  cache:
+    instanceName: 'custom-dir-name'
+```
+
+> We suggest changing the instance name to the name of your repository!
+
+### `host`
+
+<HeadingApiLink to="/api/types/interface/RemoteConfig#host" />
+
+The host URL to communicate with when uploading and download artifacts. Supports gRPC through the
+`grpc://` and `grpcs://` protocols. This field is required!
+
+```yaml title=".moon/workspace.yml" {2}
+unstable_remote:
+  host: 'grpc://your-host.com:9092'
+```
+
+### `mtls`
+
+<HeadingApiLink to="/api/types/interface/RemoteConfig#mtls" />
+
+Connect to the host using server and client authentication with mTLS. This takes precedence over
+normal TLS.
+
+```yaml title=".moon/workspace.yml" {3-7}
+unstable_remote:
+  # ...
+  mtls:
+    caCert: 'certs/ca.pem'
+    clientCert: 'certs/client.pem'
+    clientKey: 'certs/client.key'
+    domain: 'your-host.com'
+```
+
+#### `assumeHttp2`
+
+<HeadingApiLink to="/api/types/interface/RemoteMtlsConfig#assumeHttp2" />
+
+If true, assume that the host supports HTTP/2, even if it doesn't provide protocol negotiation via
+ALPN.
+
+#### `caCert`
+
+<HeadingApiLink to="/api/types/interface/RemoteMtlsConfig#caCert" />
+
+A file path, relative from the workspace root, to the certificate authority PEM encoded X509
+certificate (typically `ca.pem`).
+
+#### `clientCert`
+
+<HeadingApiLink to="/api/types/interface/RemoteMtlsConfig#clientCert" />
+
+A file path, relative from the workspace root, to the client's PEM encoded X509 certificate
+(typically `client.pem`).
+
+#### `clientKey`
+
+<HeadingApiLink to="/api/types/interface/RemoteMtlsConfig#clientKey" />
+
+A file path, relative from the workspace root, to the client's PEM encoded X509 private key
+(typically `client.key`).
+
+#### `domain`
+
+<HeadingApiLink to="/api/types/interface/RemoteMtlsConfig#domain" />
+
+The domain name in which to verify the TLS certificate.
+
+### `tls`
+
+<HeadingApiLink to="/api/types/interface/RemoteConfig#tls" />
+
+Connect to the host using server-only authentication with TLS.
+
+```yaml title=".moon/workspace.yml" {3-5}
+unstable_remote:
+  # ...
+  tls:
+    cert: 'certs/ca.pem'
+    domain: 'your-host.com'
+```
+
+#### `assumeHttp2`
+
+<HeadingApiLink to="/api/types/interface/RemoteTlsConfig#assumeHttp2" />
+
+If true, assume that the host supports HTTP/2, even if it doesn't provide protocol negotiation via
+ALPN.
+
+#### `cert`
+
+<HeadingApiLink to="/api/types/interface/RemoteTlsConfig#cert" />
+
+A file path, relative from the workspace root, to the certificate authority PEM encoded X509
+certificate (typically `ca.pem`).
+
+#### `domain`
+
+<HeadingApiLink to="/api/types/interface/RemoteTlsConfig#domain" />
+
+The domain name in which to verify the TLS certificate.
 
 ## `runner`
 

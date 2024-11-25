@@ -180,7 +180,8 @@ fn get_base_image_from_platform(platform: &PlatformType) -> &str {
         PlatformType::Bun => "oven/bun:latest",
         PlatformType::Deno => "denoland/deno:latest",
         PlatformType::Node => "node:latest",
+        PlatformType::Python => "python:latest",
         PlatformType::Rust => "rust:latest",
-        _ => "scratch",
+        PlatformType::System | PlatformType::Unknown => "scratch",
     }
 }

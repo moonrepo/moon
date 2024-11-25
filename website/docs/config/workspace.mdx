@@ -301,21 +301,6 @@ docker:
 
 Enable or disable experiments that alter core functionality.
 
-### `strictProjectIds`<VersionLabel version="1.29.4" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#strictProjectIds" />
-
-When building the project graph, disallows referencing the original ID of a project (inferred from
-the folder name) when the project has been renamed to a new ID using the [`id`](./project#id)
-setting.
-
-Defaults to `false` but will be enabled to `true` in the future.
-
-```yaml title=".moon/workspace.yml" {1,2}
-experiments:
-  strictProjectIds: true
-```
-
 ## `extensions`<VersionLabel version="1.20.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />
@@ -497,9 +482,9 @@ notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
 ```
 
-## `remote`<VersionLabel version="1.30.0" />
+## `unstable_remote`<VersionLabel version="1.30.0" />
 
-<HeadingApiLink to="/api/types/interface/WorkspaceConfig#remote" />
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#unstable_remote" />
 
 Configures a remote service, primarily for cloud-based caching of artifacts. Learn more about this
 in the [remote caching](../guides/remote-cache) guide.
@@ -521,7 +506,7 @@ used to distinguish between the various instances on the host. This allows the s
 to serve and partition multiple moon repositories. Defaults to `moon-outputs`.
 
 ```yaml title=".moon/workspace.yml" {2}
-remote:
+unstable_remote:
   cache:
     instanceName: 'custom-dir-name'
 ```
@@ -536,7 +521,7 @@ The host URL to communicate with when uploading and download artifacts. Supports
 `grpc://` and `grpcs://` protocols. This field is required!
 
 ```yaml title=".moon/workspace.yml" {2}
-remote:
+unstable_remote:
   host: 'grpc://your-host.com:9092'
 ```
 
@@ -548,7 +533,7 @@ Connect to the host using server and client authentication with mTLS. This takes
 normal TLS.
 
 ```yaml title=".moon/workspace.yml" {3-7}
-remote:
+unstable_remote:
   # ...
   mtls:
     caCert: 'certs/ca.pem'
@@ -598,7 +583,7 @@ The domain name in which to verify the TLS certificate.
 Connect to the host using server-only authentication with TLS.
 
 ```yaml title=".moon/workspace.yml" {3-5}
-remote:
+unstable_remote:
   # ...
   tls:
     cert: 'certs/ca.pem'

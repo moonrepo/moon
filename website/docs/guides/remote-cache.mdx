@@ -56,11 +56,12 @@ proxies, and more.
 ### Configure remote caching
 
 Once your service is running, you can enable remote caching by configuring the
-[`remote`](../config/workspace#remote) settings in [`.moon/workspace.yml`](../config/workspace). At
-minimum, the only setting that is required is `host`.
+[`unstable_remote`](../config/workspace#unstable_remote) settings in
+[`.moon/workspace.yml`](../config/workspace). At minimum, the only setting that is required is
+`host`.
 
 ```yaml title=".moon/workspace.yml"
-remote:
+unstable_remote:
   host: 'grpc://your-host.com:9092'
 ```
 
@@ -73,14 +74,14 @@ tested. There's also [many](https://github.com/hyperium/tonic/issues/1652)
 
 ```yaml title=".moon/workspace.yml"
 # TLS
-remote:
+unstable_remote:
   host: 'grpcs://your-host.com:9092'
   tls:
     cert: 'certs/ca.pem'
     domain: 'your-host.com'
 
 # mTLS
-remote:
+unstable_remote:
   host: 'grpcs://your-host.com:9092'
   mtls:
     caCert: 'certs/ca.pem'

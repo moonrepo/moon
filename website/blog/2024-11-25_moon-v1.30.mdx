@@ -79,6 +79,54 @@ python:
 
 ## Unstable self-hosted remote caching
 
+This has been a request from the community for a very long time, and we get it, not every user wants
+to store their build artifacts (not source code) in a third-party cloud provider. While we're proud
+of our [moonbase service](/moonbase), it wasn't a viable option for many companies because of their
+proprietary requirements. We spent a few months reworking moonbase to work as a self-hosted service,
+so users can host it as on-prem solution, but it has been a very costly initiative. During this
+process, we came to the conclusion that spending our time and resources on moonbase simply isn't
+worth it, so we made the hard decision to sunset moonbase in the future.
+
+So what does that mean for remote caching? Simply put, you can now host your own remote caching
+service! Instead of building a custom API for consumers to implement, we opted to implement the
+[Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto),
+which supports a content addressable storage (CAS) API, and is used by other popular build tools,
+like Bazel, Buck, Pants, and more!
+
+Because we opted for a community solution, we can now focus all our efforts on [moon](/moon) and
+[proto](/proto)! Additionally, adopting RE API allows you, the user, to use an off-the-shelf
+solution, like [`bazel-remote`](https://github.com/buchgr/bazel-remote), instead of building your
+own custom caching server! For example, to make use of remote caching, simply serve `bazel-remote`:
+
+```shell
+bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
+```
+
+And then configure the new [`unstable_remote`](/docs/config/workspace#unstable_remote) setting in
+[`.moon/workspace.yml`](/docs/config/workspace).
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  host: 'grpc://your-host.com:9092'
+```
+
+Pretty awesome right? Jump to the
+[official remote caching](/docs/guides/remote-cache#self-hosted-unstable) documentation for more
+information on this implementation.
+
+### Unsupported features
+
+Since this is a new feature, we're marking it as unstable, as it hasn't been thoroughly tested, and
+_does not_ support the entire Bazel RE API. The following features _have not_ been implemented, but
+will be in the future.
+
+- HTTP(S) host (we only support gRPC(S))
+- Digest hashing functions besides SHA256
+- Compression formats (we only support identity/uncompressed right now)
+- Write/read bytestream for large blobs (4mb is the current limit)
+- Better TLS/mTLS support (it has some issues)
+- Directory blob types
+
 ## New task graph and improved affected tracker
 
 In our [last release](./moon-v1.29#new-affected-projects-tracker), we announced a new affected

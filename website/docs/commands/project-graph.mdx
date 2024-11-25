@@ -2,7 +2,7 @@
 title: project-graph
 ---
 
-The `moon project-graph [name]` (or `moon pg`) command will generate and serve a visual graph of all
+The `moon project-graph [id]` (or `moon pg`) command will generate and serve a visual graph of all
 configured projects as nodes, with dependencies between as edges, and can also output the graph in
 [Graphviz DOT format](https://graphviz.org/doc/info/lang.html).
 
@@ -14,7 +14,7 @@ $ moon project-graph
 $ moon project-graph --dot > graph.dot
 ```
 
-> A project name can be passed to focus the graph to only that project and it's dependencies. For
+> A project name can be passed to focus the graph to only that project and its dependencies. For
 > example, `moon project-graph app`.
 
 ### Arguments

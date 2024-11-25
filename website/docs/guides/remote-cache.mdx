@@ -3,7 +3,7 @@ title: Remote caching
 toc_max_heading_level: 6
 ---
 
-import RemoteCacheBeta from '@site/src/components/Forms/RemoteCacheBeta';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Is your CI pipeline running slower than usual? Are you tired of running the same build over and over
 although nothing has changed? Do you wish to reuse the same local cache across other machines and
@@ -14,17 +14,93 @@ computation time, and alleviate resources. It achieves this by uploading hashed 
 storage provider, like AWS S3 or Google Cloud, and downloading them on demand when a build matches a
 derived hash.
 
-## Requirements
+To make use of remote caching, we provide 2 solutions.
 
-- moon >= 0.23.3
+## Self-hosted (unstable)<VersionLabel version="1.30.0" />
 
-## Sign up for an account
+This solution allows you to host any remote caching service that is compatible with the
+[Bazel Remote Execution v2 API](https://github.com/bazelbuild/remote-apis/tree/main/build/bazel/remote/execution/v2),
+such as [`bazel-remote`](https://github.com/buchgr/bazel-remote). When using this solution, the
+following RE API features must be enabled:
 
-Remote caching requires a [moonrepo.app](https://moonrepo.app) account, powered by our
-[moonbase](/moonbase) service. Creating an account requires a GitHub account. In the future we'll
-support additional OAuth providers.
+- Action result caching
+- Content addressable storage caching
+- SHA256 digest hashing
+- gRPC requests
 
-### Create an organization
+:::warning
+
+This feature and its implementation is currently unstable, and its documentation is incomplete.
+Please report any issues on GitHub or through Discord!
+
+:::
+
+### Host your service
+
+When you have chosen (or built) a compatible service, host it and make it available through gRPC (we
+do not support HTTP at this time). For example, if you plan to use `bazel-remote`, you can do
+something like the following:
+
+```bash
+bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
+```
+
+:::info
+
+View the official [`bazel-remote`](https://github.com/buchgr/bazel-remote#usage) documentation for
+all the available options, like storing artifacts in S3, configuring authentication (TLS/mTLS),
+proxies, and more.
+
+:::
+
+### Configure remote caching
+
+Once your service is running, you can enable remote caching by configuring the
+[`unstable_remote`](../config/workspace#unstable_remote) settings in
+[`.moon/workspace.yml`](../config/workspace). At minimum, the only setting that is required is
+`host`.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  host: 'grpc://your-host.com:9092'
+```
+
+#### TLS and mTLS
+
+We have rudimentary support for TLS and mTLS, but it's very unstable, and has not been thoroughly
+tested. There's also [many](https://github.com/hyperium/tonic/issues/1652)
+[many](https://github.com/hyperium/tonic/issues/1989)
+[issues](https://github.com/hyperium/tonic/issues/1033) around authentication in Tonic.
+
+```yaml title=".moon/workspace.yml"
+# TLS
+unstable_remote:
+  host: 'grpcs://your-host.com:9092'
+  tls:
+    cert: 'certs/ca.pem'
+    domain: 'your-host.com'
+
+# mTLS
+unstable_remote:
+  host: 'grpcs://your-host.com:9092'
+  mtls:
+    caCert: 'certs/ca.pem'
+    clientCert: 'certs/client.pem'
+    clientKey: 'certs/client.key'
+    domain: 'your-host.com'
+```
+
+## Cloud-hosted: moonbase<VersionLabel version="0.23.3" />
+
+This solution utilizes our [moonbase](/moonbase) service, which is a SaaS cloud offering hosted and
+managed by us. This is also known as third-party hosting.
+
+### Sign up for an account
+
+Remote caching requires a [moonrepo.app](https://moonrepo.app) account. Creating an account requires
+a GitHub account. In the future we'll support additional OAuth providers.
+
+#### Create an organization
 
 A moonbase organization can represent a company, team, group, or personal workspace, and is required
 for housing repositories, projects, artifacts, and more. Begin by creating an organization from the
@@ -33,7 +109,7 @@ dashboard.
 > The "Region" field is very important for remote caching, as it configures which S3 region to store
 > artifacts in. This _cannot_ be changed after creation, so choose wisely!
 
-### Create a repository
+#### Create a repository
 
 A moonbase repository is a direct relationship to a codebase repository, and is necessary for
 linking artifacts to the appropriate tasks. From an organization's page, you can create a
@@ -42,7 +118,7 @@ repository.
 > The "Slug" field must match your repository's "remote/repo" naming exactly, as we compare these
 > values for authentication purposes.
 
-## Enabling remote caching
+### Enabling remote caching
 
 Once you have a [moonrepo.app](https://moonrepo.app) account, an organization, and repository, you
 can enable remote caching in your CI pipeline. From a moonbase organization page, you can view your
@@ -62,10 +138,10 @@ repository slug (`<owner>/<repo>`) must match.
 
 #### What is an artifact?
 
-In the context of moon and remote caching, an artifact is a tar archive (`.tar.gz`) that contains
-all [outputs of a task](../config/project#outputs), as well as the stdout and stderr of the task
-that generated the outputs. Artifacts are uniquely identified by the
-[moon generated hash](../concepts/cache#hashing).
+In the context of moon and remote caching, an artifact is the
+[outputs of a task](../config/project#outputs), a tar archive (`.tar.gz`) that contains all these
+outputs, as well as the stdout and stderr of the task that generated the outputs. Artifacts are
+uniquely identified by the [moon generated hash](../concepts/cache#hashing).
 
 #### Do I have to use remote caching?
 
@@ -84,9 +160,10 @@ verify this, you can inspect the tar archives in `.moon/cache/outputs`.
 
 No, moon does not collect any PII as part of the remote caching process.
 
-However, to use remote caching, you must create a moonrepo account in which we require an email
-address, and information about your organization and repository.
+However, to use [moonbase](/moonbase) remote caching, you must create a moonrepo account in which we
+require an email address, and information about your organization and repository.
 
 #### Are artifacts encrypted?
 
-Yes! We use AWS's built-in SSE-S3 encryption for all S3 buckets.
+For [moonbase](/moonbase), yes! We use AWS's built-in SSE-S3 encryption for all S3 buckets. For
+self-hosted services, encryption is up to you.

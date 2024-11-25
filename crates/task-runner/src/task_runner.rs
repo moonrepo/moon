@@ -725,9 +725,12 @@ impl<'task> TaskRunner<'task> {
 
         let mut operation = Operation::task_execution(&self.task.command);
 
-        if let (Some(output), Some(error)) = (operation.get_output_mut(), report) {
+        if let Some(output) = operation.get_output_mut() {
             output.exit_code = Some(-1);
-            output.set_stderr(error.to_string());
+
+            if let Some(error) = report {
+                output.set_stderr(error.to_string());
+            }
         }
 
         operation.finish(ActionStatus::Aborted);

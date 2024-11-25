@@ -32,7 +32,7 @@ impl<'task> OutputHydrater<'task> {
         digest: &Digest,
         operation: &mut Operation,
     ) -> miette::Result<bool> {
-        match from {
+        let result = match from {
             // Only hydrate when the hash is different from the previous build,
             // as we can assume the outputs from the previous build still exist?
             HydrateFrom::PreviousOutput => Ok(true),
@@ -43,6 +43,7 @@ impl<'task> OutputHydrater<'task> {
             // Otherwise write to local cache, then download archive from moonbase
             HydrateFrom::LocalCache | HydrateFrom::Moonbase => {
                 let archive_file = self.app.cache_engine.hash.get_archive_path(&digest.hash);
+                let mut hydrated = false;
 
                 if self.app.cache_engine.is_readable() {
                     debug!(
@@ -61,15 +62,7 @@ impl<'task> OutputHydrater<'task> {
                     if archive_file.exists() {
                         self.unpack_local_archive(&digest.hash, &archive_file)?;
 
-                        read_stdlog_state_files(
-                            self.app
-                                .cache_engine
-                                .state
-                                .get_target_dir(&self.task.target),
-                            operation,
-                        )?;
-
-                        return Ok(true);
+                        hydrated = true
                     }
                 } else {
                     debug!(
@@ -79,8 +72,28 @@ impl<'task> OutputHydrater<'task> {
                     );
                 }
 
-                Ok(false)
+                Ok(hydrated)
             }
+        };
+
+        match result {
+            Ok(hydrated) => {
+                // If not from the remote cache, we need to read the
+                // locally cached stdout/stderr into the operation
+                // so that it can be replayed in the console
+                if !matches!(from, HydrateFrom::RemoteCache) {
+                    read_stdlog_state_files(
+                        self.app
+                            .cache_engine
+                            .state
+                            .get_target_dir(&self.task.target),
+                        operation,
+                    )?;
+                }
+
+                Ok(hydrated)
+            }
+            Err(error) => Err(error),
         }
     }
 

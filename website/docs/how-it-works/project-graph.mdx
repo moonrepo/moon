@@ -21,7 +21,7 @@ your workspace.
 
 ## Relationships
 
-A relationship is between a dependent (the parent project) and a dependency/requirement (a child
+A relationship is between a dependent (downstream project) and a dependency/requirement (upstream
 project). Relationships are derived from source code and configuration files within the repository,
 and fall into 1 of 2 categories:
 
@@ -82,21 +82,8 @@ integration.
 Great question, the project graph is used throughout the codebase to accomplish a variety of
 functions, but mainly:
 
-- Is fed into the [action graph](./action-graph) to determine relationships of tasks between other
+- Is fed into the [task graph](./task-graph) to determine relationships of tasks between other
   tasks, and across projects.
 - Powers our [Docker](../guides/docker) layer caching and scaffolding implementations.
 - Utilized for [project syncing](../commands/sync) to ensure a healthy repository state.
 - Determines affected projects in [continuous integration](../guides/ci) workflows.
-
-<!--
-## Debugging the graph
-
-moon consistently caches the project graph, but as they say, cache invalidation is hard. As such,
-you may run into issues where you update configuration or modify tasks, but the change is not
-reflected when running `moon` commands. With that said, we apologize ahead of time, but we do offer
-this guide to help you debug any issues.
-
-To start, you can verify if the project graph cache is the problem by deleting the
-`.moon/cache/states/projectGraph.json` file, and re-running commands. If the issue was resolved,
-then the cache is the culprit, otherwise it may be another bug.
--->

@@ -1,0 +1,163 @@
+---
+slug: moon-v1.30
+title: moon v1.30 - Python support, self-hosted remote caching, task graph, and more!
+authors: [milesj]
+tags: [affected, detection, tracker, task, graph, self-hosted, remote, cache, python, toolchain]
+image: ./img/moon/v1.30.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+It's been almost 2 months since our last release, and we're excited to announce some major features
+requested by the community!
+
+<!--truncate-->
+
+## Experimental Python tier 2 and 3 support
+
+Thanks to a contribution from [@harlequin](https://github.com/harlequin), we now provide Python tier
+[2](/docs/how-it-works/languages#tier-2--platform) and
+[3](/docs/how-it-works/languages#tier-3--toolchain) support. Python is a very popular language, so
+it was about time that we officially supported it in some capacity. When enabling Python in moon,
+the following functionality will be enabled:
+
+- Will download and install Python into the toolchain (if `python.version` is defined).
+- Will parse `requirements.txt` to extract dependency and version information for hashing.
+- Will automatically activate virtual environments and setup `PATH` for tasks.
+- Will automatically install dependencies for `requirements.txt` via pip.
+- And a handful of internal interoperability features.
+
+However, we're still marking this implementation as experimental, as it hasn't been thoroughly
+tested, and we're not 100% positive the workflows are what users expect. So please provide any
+feedback, good or bad!
+
+Furthermore, as mentioned above, we install dependencies with pip (the version of pip that comes
+pre-installed with the current Python version). At this time, _we do not support_ other package
+managers like Poetry, Hatch, PDM, Rye, or uv, but we will in the future!
+
+### New `python` configurations
+
+Languages in
+[moon are enabled through configuration](/docs/how-it-works/languages#enabling-a-language) blocks in
+[`.moon/toolchain.yml`](/docs/config/toolchain), and Python is no different. We now support a
+[`python`](/docs/config/toolchain#python) toolchain setting
+([view all available settings](/docs/config/toolchain)).
+
+```yaml title=".moon/toolchain.yml"
+python:
+  version: '3.14.0'
+```
+
+When the `python` setting is defined, it will enable the language and
+[deep platform integration](/docs/how-it-works/languages#tier-2--platform), and when the
+`python.version` field is defined, it will further enable
+[toolchain support](/docs/how-it-works/languages#tier-3--toolchain). Both of these features provide
+heavy automation, improving the overall developer experience.
+
+This is fantastic, but what if another Python project in the monorepo requires a different toolchain
+channel/version? If so, they can use the new [`toolchain.python`](/docs/config/project#python)
+setting in [`moon.yml`](/docs/config/project) to define project-level overrides.
+
+```yaml title="<project>/moon.yml"
+toolchain:
+  python:
+    version: '3.12.0'
+```
+
+### Built-in virtual environments
+
+Of course we also have support for Python virtual environments. When running a task, moon will
+automatically enable the virtual environment in the workspace root or a project root (depending on
+config)! The name of the venv can be customized with the
+[`python.venvName`](/docs/config/toolchain#venvname) setting, otherwise it defaults to `.venv`.
+
+```yaml title=".moon/toolchain.yml"
+python:
+  venvName: '.venvcustom'
+```
+
+## Unstable self-hosted remote caching
+
+This has been a request from the community for a very long time, and we get it, not every user wants
+to store their build artifacts (not source code) in a third-party cloud provider. While we're proud
+of our [moonbase service](/moonbase), it wasn't a viable option for many companies because of their
+proprietary requirements. We spent a few months reworking moonbase to work as a self-hosted service,
+so users can host it as on-prem solution, but it has been a very costly initiative. During this
+process, we came to the conclusion that spending our time and resources on moonbase simply isn't
+worth it, so we made the hard decision to sunset moonbase in the future.
+
+So what does that mean for remote caching? Simply put, you can now host your own remote caching
+service! Instead of building a custom API for consumers to implement, we opted to implement the
+[Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto),
+which supports a content addressable storage (CAS) API, and is used by other popular build tools,
+like Bazel, Buck, Pants, and more!
+
+Because we opted for a community solution, we can now focus all our efforts on [moon](/moon) and
+[proto](/proto)! Additionally, adopting RE API allows you, the user, to use an off-the-shelf
+solution, like [`bazel-remote`](https://github.com/buchgr/bazel-remote), instead of building your
+own custom caching server! For example, to make use of remote caching, simply serve `bazel-remote`:
+
+```shell
+bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
+```
+
+And then configure the new [`unstable_remote`](/docs/config/workspace#unstable_remote) setting in
+[`.moon/workspace.yml`](/docs/config/workspace).
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  host: 'grpc://your-host.com:9092'
+```
+
+Pretty awesome right? Jump to the
+[official remote caching](/docs/guides/remote-cache#self-hosted-unstable) documentation for more
+information on this implementation.
+
+### Unsupported features
+
+Since this is a new feature, we're marking it as unstable, as it hasn't been thoroughly tested, and
+_does not_ support the entire Bazel RE API. The following features _have not_ been implemented, but
+will be in the future.
+
+- HTTP(S) host (we only support gRPC(S))
+- Digest hashing functions besides SHA256
+- Compression formats (we only support identity/uncompressed right now)
+- Write/read bytestream for large blobs (4mb is the current limit)
+- Better TLS/mTLS support (it has some issues)
+- Directory blob types
+
+## New task graph and improved affected tracker
+
+In our [last release](./moon-v1.29#new-affected-projects-tracker), we announced a new affected
+tracker for projects, but _not_ for tasks. The reason behind this was simple, we couldn't! Up until
+now, we had no concept of a task graph, we had a project graph (that had tasks) and an action graph
+(that ran tasks), but the relationships between tasks were split across both of these graphs.
+
+This made it complicated to support tasks for the new affected tracker, as the action graph
+_consumes_ the tracker, not the other way around. To remedy this issue, we now support an official
+task graph, which is derived from the project graph, and then feeds into the action graph. Since the
+task graph sits outside of the action graph, we're now able to support tasks in the affected
+tracker!
+
+Because of the new task graph, the following improvements have been introduced:
+
+- Tasks are now supported in the affected tracker (as mentioned).
+- We can now properly query dependencies and dependents of specific tasks.
+- We can now associate types to relationships (graph edges). For example, in the future we can add
+  optional, cleanup, and other kinds of dependencies.
+- We've added a new command, [`moon task-graph`](/docs/commands/task-graph), that can visualize
+  tasks in isolation.
+- We've updated the [`moon query tasks`](/docs/commands/query/tasks) to derive information from the
+  task graph.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.30.0) for a full list
+of changes.
+
+- Added basic support for Git submodules, and will now extract touched files from all submodules.
+- Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`,
+  `$vcsRevision`, `$workingDir`
+- Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
+- Updated Pkl configurations to support `read()` for environment variables.

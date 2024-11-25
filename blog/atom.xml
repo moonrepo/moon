@@ -2,11 +2,142 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-10-31T00:00:00.000Z</updated>
+    <updated>2024-11-25T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.30 - Python support, self-hosted remote caching, task graph, and more!]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.30</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.30"/>
+        <updated>2024-11-25T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[It's been almost 2 months since our last release, and we're excited to announce some major features]]></summary>
+        <content type="html"><![CDATA[<p>It's been almost 2 months since our last release, and we're excited to announce some major features
+requested by the community!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="experimental-python-tier-2-and-3-support">Experimental Python tier 2 and 3 support<a class="hash-link" aria-label="Direct link to Experimental Python tier 2 and 3 support" title="Direct link to Experimental Python tier 2 and 3 support" href="https://moonrepo.dev/blog/moon-v1.30#experimental-python-tier-2-and-3-support">​</a></h2>
+<p>Thanks to a contribution from <a href="https://github.com/harlequin" target="_blank" rel="noopener noreferrer">@harlequin</a>, we now provide Python tier
+<a href="https://moonrepo.dev/docs/how-it-works/languages#tier-2--platform">2</a> and
+<a href="https://moonrepo.dev/docs/how-it-works/languages#tier-3--toolchain">3</a> support. Python is a very popular language, so
+it was about time that we officially supported it in some capacity. When enabling Python in moon,
+the following functionality will be enabled:</p>
+<ul>
+<li>Will download and install Python into the toolchain (if <code>python.version</code> is defined).</li>
+<li>Will parse <code>requirements.txt</code> to extract dependency and version information for hashing.</li>
+<li>Will automatically activate virtual environments and setup <code>PATH</code> for tasks.</li>
+<li>Will automatically install dependencies for <code>requirements.txt</code> via pip.</li>
+<li>And a handful of internal interoperability features.</li>
+</ul>
+<p>However, we're still marking this implementation as experimental, as it hasn't been thoroughly
+tested, and we're not 100% positive the workflows are what users expect. So please provide any
+feedback, good or bad!</p>
+<p>Furthermore, as mentioned above, we install dependencies with pip (the version of pip that comes
+pre-installed with the current Python version). At this time, <em>we do not support</em> other package
+managers like Poetry, Hatch, PDM, Rye, or uv, but we will in the future!</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-python-configurations">New <code>python</code> configurations<a class="hash-link" aria-label="Direct link to new-python-configurations" title="Direct link to new-python-configurations" href="https://moonrepo.dev/blog/moon-v1.30#new-python-configurations">​</a></h3>
+<p>Languages in
+<a href="https://moonrepo.dev/docs/how-it-works/languages#enabling-a-language">moon are enabled through configuration</a> blocks in
+<a href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a>, and Python is no different. We now support a
+<a href="https://moonrepo.dev/docs/config/toolchain#python"><code>python</code></a> toolchain setting
+(<a href="https://moonrepo.dev/docs/config/toolchain">view all available settings</a>).</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/toolchain.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'3.14.0'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>When the <code>python</code> setting is defined, it will enable the language and
+<a href="https://moonrepo.dev/docs/how-it-works/languages#tier-2--platform">deep platform integration</a>, and when the
+<code>python.version</code> field is defined, it will further enable
+<a href="https://moonrepo.dev/docs/how-it-works/languages#tier-3--toolchain">toolchain support</a>. Both of these features provide
+heavy automation, improving the overall developer experience.</p>
+<p>This is fantastic, but what if another Python project in the monorepo requires a different toolchain
+channel/version? If so, they can use the new <a href="https://moonrepo.dev/docs/config/project#python"><code>toolchain.python</code></a>
+setting in <a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a> to define project-level overrides.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">&lt;project&gt;/moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'3.12.0'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="built-in-virtual-environments">Built-in virtual environments<a class="hash-link" aria-label="Direct link to Built-in virtual environments" title="Direct link to Built-in virtual environments" href="https://moonrepo.dev/blog/moon-v1.30#built-in-virtual-environments">​</a></h3>
+<p>Of course we also have support for Python virtual environments. When running a task, moon will
+automatically enable the virtual environment in the workspace root or a project root (depending on
+config)! The name of the venv can be customized with the
+<a href="https://moonrepo.dev/docs/config/toolchain#venvname"><code>python.venvName</code></a> setting, otherwise it defaults to <code>.venv</code>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/toolchain.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">venvName</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'.venvcustom'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="unstable-self-hosted-remote-caching">Unstable self-hosted remote caching<a class="hash-link" aria-label="Direct link to Unstable self-hosted remote caching" title="Direct link to Unstable self-hosted remote caching" href="https://moonrepo.dev/blog/moon-v1.30#unstable-self-hosted-remote-caching">​</a></h2>
+<p>This has been a request from the community for a very long time, and we get it, not every user wants
+to store their build artifacts (not source code) in a third-party cloud provider. While we're proud
+of our <a href="https://moonrepo.dev/moonbase">moonbase service</a>, it wasn't a viable option for many companies because of their
+proprietary requirements. We spent a few months reworking moonbase to work as a self-hosted service,
+so users can host it as on-prem solution, but it has been a very costly initiative. During this
+process, we came to the conclusion that spending our time and resources on moonbase simply isn't
+worth it, so we made the hard decision to sunset moonbase in the future.</p>
+<p>So what does that mean for remote caching? Simply put, you can now host your own remote caching
+service! Instead of building a custom API for consumers to implement, we opted to implement the
+<a href="https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto" target="_blank" rel="noopener noreferrer">Bazel Remote Execution API</a>,
+which supports a content addressable storage (CAS) API, and is used by other popular build tools,
+like Bazel, Buck, Pants, and more!</p>
+<p>Because we opted for a community solution, we can now focus all our efforts on <a href="https://moonrepo.dev/moon">moon</a> and
+<a href="https://moonrepo.dev/proto">proto</a>! Additionally, adopting RE API allows you, the user, to use an off-the-shelf
+solution, like <a href="https://github.com/buchgr/bazel-remote" target="_blank" rel="noopener noreferrer"><code>bazel-remote</code></a>, instead of building your
+own custom caching server! For example, to make use of remote caching, simply serve <code>bazel-remote</code>:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">bazel-remote </span><span class="token parameter variable" style="color:#fef9c3">--dir</span><span class="token plain"> /path/to/moon-cache </span><span class="token parameter variable" style="color:#fef9c3">--max_size</span><span class="token plain"> </span><span class="token number" style="color:#94dded">10</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--storage_mode</span><span class="token plain"> uncompressed </span><span class="token parameter variable" style="color:#fef9c3">--grpc_address</span><span class="token plain"> </span><span class="token number" style="color:#94dded">0.0</span><span class="token plain">.0.0:9092</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>And then configure the new <a href="https://moonrepo.dev/docs/config/workspace#unstable_remote"><code>unstable_remote</code></a> setting in
+<a href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.yml</code></a>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'grpc://your-host.com:9092'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Pretty awesome right? Jump to the
+<a href="https://moonrepo.dev/docs/guides/remote-cache#self-hosted-unstable">official remote caching</a> documentation for more
+information on this implementation.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="unsupported-features">Unsupported features<a class="hash-link" aria-label="Direct link to Unsupported features" title="Direct link to Unsupported features" href="https://moonrepo.dev/blog/moon-v1.30#unsupported-features">​</a></h3>
+<p>Since this is a new feature, we're marking it as unstable, as it hasn't been thoroughly tested, and
+<em>does not</em> support the entire Bazel RE API. The following features <em>have not</em> been implemented, but
+will be in the future.</p>
+<ul>
+<li>HTTP(S) host (we only support gRPC(S))</li>
+<li>Digest hashing functions besides SHA256</li>
+<li>Compression formats (we only support identity/uncompressed right now)</li>
+<li>Write/read bytestream for large blobs (4mb is the current limit)</li>
+<li>Better TLS/mTLS support (it has some issues)</li>
+<li>Directory blob types</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-task-graph-and-improved-affected-tracker">New task graph and improved affected tracker<a class="hash-link" aria-label="Direct link to New task graph and improved affected tracker" title="Direct link to New task graph and improved affected tracker" href="https://moonrepo.dev/blog/moon-v1.30#new-task-graph-and-improved-affected-tracker">​</a></h2>
+<p>In our <a href="https://moonrepo.dev/blog/moon-v1.29#new-affected-projects-tracker">last release</a>, we announced a new affected
+tracker for projects, but <em>not</em> for tasks. The reason behind this was simple, we couldn't! Up until
+now, we had no concept of a task graph, we had a project graph (that had tasks) and an action graph
+(that ran tasks), but the relationships between tasks were split across both of these graphs.</p>
+<p>This made it complicated to support tasks for the new affected tracker, as the action graph
+<em>consumes</em> the tracker, not the other way around. To remedy this issue, we now support an official
+task graph, which is derived from the project graph, and then feeds into the action graph. Since the
+task graph sits outside of the action graph, we're now able to support tasks in the affected
+tracker!</p>
+<p>Because of the new task graph, the following improvements have been introduced:</p>
+<ul>
+<li>Tasks are now supported in the affected tracker (as mentioned).</li>
+<li>We can now properly query dependencies and dependents of specific tasks.</li>
+<li>We can now associate types to relationships (graph edges). For example, in the future we can add
+optional, cleanup, and other kinds of dependencies.</li>
+<li>We've added a new command, <a href="https://moonrepo.dev/docs/commands/task-graph"><code>moon task-graph</code></a>, that can visualize
+tasks in isolation.</li>
+<li>We've updated the <a href="https://moonrepo.dev/docs/commands/query/tasks"><code>moon query tasks</code></a> to derive information from the
+task graph.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.30#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.30.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added basic support for Git submodules, and will now extract touched files from all submodules.</li>
+<li>Added 7 new token variables: <code>$arch</code>, <code>$os</code>, <code>$osFamily</code>, <code>$vcsBranch</code>, <code>$vcsRepository</code>,
+<code>$vcsRevision</code>, <code>$workingDir</code></li>
+<li>Added a <code>rust.binstallVersion</code> setting to <code>.moon/toolchain.yml</code>.</li>
+<li>Updated Pkl configurations to support <code>read()</code> for environment variables.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="affected" term="affected"/>
+        <category label="detection" term="detection"/>
+        <category label="tracker" term="tracker"/>
+        <category label="task" term="task"/>
+        <category label="graph" term="graph"/>
+        <category label="self-hosted" term="self-hosted"/>
+        <category label="remote" term="remote"/>
+        <category label="cache" term="cache"/>
+        <category label="python" term="python"/>
+        <category label="toolchain" term="toolchain"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.42 - New bin linking, JSON/YAML plugins, and more]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.42</id>
@@ -1473,44 +1604,5 @@ of changes.</p>
         <category label="options" term="options"/>
         <category label="extensions" term="extensions"/>
         <category label="plugins" term="plugins"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.29 - Better environment support]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.29</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.29"/>
-        <updated>2024-01-23T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we focused heavily on environment interoperability.]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we focused heavily on environment interoperability.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-environment-aware-configuration">New environment aware configuration<a class="hash-link" aria-label="Direct link to New environment aware configuration" title="Direct link to New environment aware configuration" href="https://moonrepo.dev/blog/proto-v0.29#new-environment-aware-configuration">​</a></h2>
-<p>We've made a small but useful improvement to <code>.prototools</code>, environment aware files! When the
-<code>PROTO_ENV</code> environment variable is set, proto will look for an additional <code>.prototools.{env}</code> file
-and merge it with the base configuration.</p>
-<p>This is useful for certain deploy scenarios where you need different versions of tools, environment
-variables, or settings!</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"21.0.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools.production</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"20.0.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-env-and-toolsenv-settings">New <code>[env]</code> and <code>[tools.*.env]</code> settings<a class="hash-link" aria-label="Direct link to new-env-and-toolsenv-settings" title="Direct link to new-env-and-toolsenv-settings" href="https://moonrepo.dev/blog/proto-v0.29#new-env-and-toolsenv-settings">​</a></h2>
-<p>We're also introducing 2 new settings to the <code>.prototools</code> file, <a href="https://moonrepo.dev/docs/proto/config#env"><code>[env]</code></a>
-and <a href="https://moonrepo.dev/docs/proto/config#toolsenv"><code>[tools.*.env]</code></a>, both of which configure environment variables
-that'll be applied when the tool is executed. This is useful for defining directory-level and
-tool-specific variables.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">env</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">DEBUG</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"*"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.node.env</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">NODE_ENV</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"production"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<blockquote>
-<p>View the <a href="https://moonrepo.dev/docs/proto/config">configuration documentation</a> for more information on how these work!</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.29#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.29.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Updated <code>proto tool info</code> to display aliases and environment variables.</li>
-<li>Updated WASM logs to be shown alongside proto's <code>--log</code> output (under the <code>extism::pdk</code>
-namespace).</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="environment" term="environment"/>
     </entry>
 </feed>

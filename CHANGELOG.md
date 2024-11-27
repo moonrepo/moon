@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed a Git "fatal: bad object" error when submodules are in being used.
+- Fixed an issue where `moon ci` would trigger a shallow checkout error, even when a base revision
+  is provided.
 
 ## 1.30.0
 

@@ -783,11 +783,15 @@ impl Vcs for Git {
     ) -> miette::Result<TouchedFiles> {
         let mut touched_files = TouchedFiles::default();
 
-        for result in futures::future::try_join_all(
-            self.modules
-                .values()
-                .map(|module| self.exec_diff(module, base_revision, revision)),
-        )
+        // TODO: Revisit submodules
+        // https://github.com/moonrepo/moon/issues/1734
+        for result in futures::future::try_join_all(self.modules.values().filter_map(|module| {
+            if module.is_root() {
+                Some(self.exec_diff(module, base_revision, revision))
+            } else {
+                None
+            }
+        }))
         .await?
         {
             touched_files.merge(result);

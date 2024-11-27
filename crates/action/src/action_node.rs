@@ -59,8 +59,6 @@ impl RunTaskNode {
         }
 
         self.id = Some(hasher.finish());
-
-        dbg!(self.target.as_str(), self.id.as_ref());
     }
 }
 

@@ -11,7 +11,7 @@ use starbase_utils::glob::{self, GlobSet};
 use std::collections::BTreeMap;
 use std::env;
 use std::path::{Path, PathBuf};
-use tracing::{debug, warn};
+use tracing::{trace, warn};
 
 // Hash all inputs for a task, but exclude outputs and moon specific configuration files!
 pub struct TaskHasher<'task> {
@@ -226,7 +226,7 @@ impl<'task> TaskHasher<'task> {
             }
 
             if ignore.is_match(path) {
-                debug!(
+                trace!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),
                 );

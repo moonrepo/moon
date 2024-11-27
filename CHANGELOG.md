@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a Git "fatal: bad object" error when submodules are in being used.
+
 ## 1.30.0
 
 #### 💥 Breaking
@@ -47,7 +53,8 @@
 
 - Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing
   direct relationships.
-- Fixed an issue where touched file paths would include Git submodule directories and trigger hasher warnings.
+- Fixed an issue where touched file paths would include Git submodule directories and trigger hasher
+  warnings.
 
 #### ⚙️ Internal
 

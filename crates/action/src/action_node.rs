@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_target::Target;
 use moon_toolchain::Runtime;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
@@ -30,7 +30,7 @@ pub struct RunTaskNode {
     pub persistent: bool,  // Never terminates
     pub runtime: Runtime,
     pub target: Target,
-    pub id: Option<u32>, // For action graph states
+    pub id: Option<u64>, // For action graph states
 }
 
 impl RunTaskNode {
@@ -47,21 +47,20 @@ impl RunTaskNode {
     }
 
     fn calculate_id(&mut self) {
-        let mut id = 0;
-
-        for ch in self.target.as_str().chars() {
-            if let Some(num) = ch.to_digit(10) {
-                id += num;
-            }
-        }
+        let mut hasher = FxHasher::default();
+        hasher.write(self.target.as_str().as_bytes());
 
         if self.persistent {
-            id += 100;
-        } else if self.interactive {
-            id += 50;
+            hasher.write_u8(100);
         }
 
-        self.id = Some(id);
+        if self.interactive {
+            hasher.write_u8(50);
+        }
+
+        self.id = Some(hasher.finish());
+
+        dbg!(self.target.as_str(), self.id.as_ref());
     }
 }
 
@@ -117,7 +116,7 @@ impl ActionNode {
         Self::SyncWorkspace
     }
 
-    pub fn get_id(&self) -> u32 {
+    pub fn get_id(&self) -> u64 {
         match self {
             Self::RunTask(inner) => inner.id.unwrap_or_default(),
             _ => 0,

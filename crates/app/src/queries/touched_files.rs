@@ -72,9 +72,13 @@ pub async fn query_touched_files(
 
         // On a branch, so compare branch against remote base/default branch
     } else if !options.local {
-        check_shallow!(vcs);
+        let base_env = env::var("MOON_BASE");
 
-        let base = env::var("MOON_BASE").unwrap_or_else(|_| {
+        if options.base.is_none() && base_env.is_err() {
+            check_shallow!(vcs);
+        }
+
+        let base = base_env.unwrap_or_else(|_| {
             options
                 .base
                 .as_deref()

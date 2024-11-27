@@ -8,7 +8,7 @@ use thiserror::Error;
 pub enum AppError {
     #[diagnostic(code(app::ci::no_shallow))]
     #[error(
-        "CI requires a full VCS history to operate correctly. Please avoid shallow checkouts."
+        "CI requires a full VCS history or a base revision to operate correctly. Please avoid shallow checkouts."
     )]
     CiNoShallowHistory,
 

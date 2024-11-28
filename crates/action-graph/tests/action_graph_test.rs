@@ -380,6 +380,11 @@ mod action_graph {
 
             let touched_files = FxHashSet::from_iter([file]);
             builder.set_touched_files(&touched_files).unwrap();
+            builder
+                .affected
+                .as_mut()
+                .unwrap()
+                .mark_task_affected(&task, moon_affected::AffectedBy::AlwaysAffected);
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())

@@ -4,7 +4,7 @@ use moon_action::{
     SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
-use moon_affected::{AffectedBy, AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_config::{PlatformType, TaskDependencyConfig};
@@ -27,10 +27,6 @@ pub struct RunRequirements {
     pub interactive: bool,
     pub skip_affected: bool, // Temporary until we support task dependents properly
     pub target_locators: FxHashSet<TargetLocator>,
-
-    // Used to mark affected states
-    pub upstream_target: Option<Target>,
-    pub downstream_target: Option<Target>,
 }
 
 impl RunRequirements {
@@ -47,7 +43,7 @@ pub struct ActionGraphBuilder<'app> {
     workspace_graph: &'app WorkspaceGraph,
 
     // Affected states
-    affected: Option<AffectedTracker<'app>>,
+    pub affected: Option<AffectedTracker<'app>>,
     touched_files: Option<&'app FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
@@ -283,9 +279,7 @@ impl<'app> ActionGraphBuilder<'app> {
                         "But will run all dependent tasks if affected"
                     );
 
-                    if let Some(by) = affected.is_task_affected(task)? {
-                        affected.mark_task_affected(task, by)?;
-
+                    if affected.is_task_marked(task) {
                         self.run_task_dependents(task, reqs)?;
                     }
                 }
@@ -327,6 +321,13 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(Some(*index));
         }
 
+        // Compare against touched files if provided
+        if let Some(affected) = &mut self.affected {
+            if !affected.is_task_marked(task) {
+                return Ok(None);
+            }
+        }
+
         // We should install deps & sync projects *before* running targets
         let mut edges = vec![];
 
@@ -336,6 +337,9 @@ impl<'app> ActionGraphBuilder<'app> {
 
         edges.push(self.sync_project(project)?);
 
+        // Insert the node and create edges
+        let index = self.insert_node(node);
+
         // And we also need to create edges for task dependencies
         if !task.deps.is_empty() {
             trace!(
@@ -344,37 +348,8 @@ impl<'app> ActionGraphBuilder<'app> {
                 "Linking dependencies for task",
             );
 
-            edges.extend(self.run_task_dependencies(task)?);
+            edges.extend(self.run_task_dependencies(task, reqs)?);
         }
-
-        // Compare against touched files if provided. We need to run this *after*
-        // dependencies, so that they're affected status has been marked!
-        if let Some(affected) = &mut self.affected {
-            if let Some(downstream) = &reqs.downstream_target {
-                affected
-                    .mark_task_affected(task, AffectedBy::DownstreamTask(downstream.to_owned()))?;
-            }
-
-            if let Some(upstream) = &reqs.upstream_target {
-                affected.mark_task_affected(task, AffectedBy::UpstreamTask(upstream.to_owned()))?;
-            }
-
-            if !reqs.skip_affected {
-                match affected.is_task_affected(task)? {
-                    Some(by) => {
-                        affected.mark_task_affected(task, by)?;
-                        affected.mark_project_affected(
-                            project,
-                            AffectedBy::Task(task.target.clone()),
-                        )?;
-                    }
-                    None => return Ok(None),
-                };
-            }
-        }
-
-        // Insert the node and create edges
-        let index = self.insert_node(node);
 
         self.link_requirements(index, edges);
 
@@ -389,16 +364,17 @@ impl<'app> ActionGraphBuilder<'app> {
     // We don't pass touched files to dependencies, because if the parent
     // task is affected/going to run, then so should all of these!
     #[instrument(skip_all)]
-    pub fn run_task_dependencies(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
+    pub fn run_task_dependencies(
+        &mut self,
+        task: &Task,
+        child_reqs: &RunRequirements,
+    ) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
         let reqs = RunRequirements {
-            downstream_target: if self.affected.is_some() {
-                Some(task.target.clone())
-            } else {
-                None
-            },
+            ci: child_reqs.ci,
             ..Default::default()
         };
+
         let mut indices = vec![];
         let mut previous_target_index = None;
 
@@ -444,11 +420,6 @@ impl<'app> ActionGraphBuilder<'app> {
             ci: parent_reqs.ci,
             interactive: parent_reqs.interactive,
             skip_affected: true,
-            upstream_target: if self.affected.is_some() {
-                Some(task.target.clone())
-            } else {
-                None
-            },
             ..Default::default()
         };
 
@@ -603,23 +574,29 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: RunRequirements,
     ) -> miette::Result<Vec<NodeIndex>> {
         let mut inserted_nodes = vec![];
+        let mut initial_targets = vec![];
 
+        // Track the qualified as an initial target
         for locator in reqs.target_locators.clone() {
-            let target = match locator {
+            initial_targets.push(match locator {
                 TargetLocator::Qualified(target) => target,
                 TargetLocator::TaskFromWorkingDir(task_id) => Target::new(
                     &self.workspace_graph.get_project_from_path(None)?.id,
                     task_id,
                 )?,
-            };
+            });
+        }
 
-            // Track the qualified as an initial target
+        // Determine affected tasks before building
+        if let Some(affected) = &mut self.affected {
+            affected.track_tasks_by_target(&initial_targets)?;
+        }
+
+        // Then build and track initial and primary
+        for target in initial_targets {
+            let (inserted_targets, inserted_indices) = self.run_task_by_target(&target, &reqs)?;
+
             self.initial_targets.insert(target.clone());
-
-            // Run the target
-            let (inserted_targets, inserted_indices) = self.run_task_by_target(target, &reqs)?;
-
-            // Track the primary targets
             self.primary_targets.extend(inserted_targets);
 
             inserted_nodes.extend(inserted_indices);

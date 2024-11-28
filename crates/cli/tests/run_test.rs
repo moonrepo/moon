@@ -1020,7 +1020,6 @@ mod outputs {
 
     mod hydration {
         use super::*;
-        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[test]
         fn reuses_cache_from_previous_run() {

@@ -888,7 +888,6 @@ mod action_graph {
         mod affected {
             use super::*;
             use moon_affected::AffectedBy;
-            use moon_test_utils2::pretty_assertions::assert_eq;
 
             #[tokio::test]
             async fn doesnt_graph_if_not_affected_by_touched_files() {

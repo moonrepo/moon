@@ -1113,7 +1113,6 @@ mod task_manager {
         use moon_common::Id;
         use moon_config::*;
         use starbase_sandbox::locate_fixture;
-        use starbase_sandbox::pretty_assertions::assert_eq;
 
         #[test]
         fn loads_pkl() {

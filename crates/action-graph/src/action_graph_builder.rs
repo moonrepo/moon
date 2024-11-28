@@ -43,7 +43,7 @@ pub struct ActionGraphBuilder<'app> {
     workspace_graph: &'app WorkspaceGraph,
 
     // Affected states
-    pub affected: Option<AffectedTracker<'app>>,
+    affected: Option<AffectedTracker<'app>>,
     touched_files: Option<&'app FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
@@ -257,7 +257,7 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
-        // Create a new requirements object as we don't have our dependencies/
+        // Create a new requirements object as we don't want our dependencies/
         // dependents to check for affected or run their own dependents!
         let child_reqs = RunRequirements {
             ci: reqs.ci,

@@ -57,37 +57,40 @@ pub async fn query_touched_files(
 
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
+    let base_revision = env::var("MOON_BASE").ok().or(options.base.clone());
+    let head_revision = env::var("MOON_HEAD").ok().or(options.head.clone());
 
-    // On default branch, so compare against self -1 revision
-    let touched_files_map = if options.default_branch && vcs.is_default_branch(&current_branch) {
+    // Check locally touched files
+    let touched_files_map = if options.local {
+        trace!("Against local");
+
+        vcs.get_touched_files().await?
+    }
+    // Otherwise compare against remote
+    else if base_revision.is_none()
+        && options.default_branch
+        && vcs.is_default_branch(&current_branch)
+    {
+        // Since base is not set, ensure we're not in a
+        // shallow checkout
         check_shallow!(vcs);
 
         trace!(
-            "On default branch {}, comparing against previous revision",
+            "Against previous revision, as we're on the default branch \"{}\"",
             current_branch
         );
 
         vcs.get_touched_files_against_previous_revision(&default_branch)
             .await?
-
-        // On a branch, so compare branch against remote base/default branch
-    } else if !options.local {
-        let base_env = env::var("MOON_BASE");
-
-        if options.base.is_none() && base_env.is_err() {
+    } else {
+        // Don't check for shallow since base is set,
+        // and we can assume the user knows what they're doing
+        if base_revision.is_none() {
             check_shallow!(vcs);
         }
 
-        let base = base_env.unwrap_or_else(|_| {
-            options
-                .base
-                .as_deref()
-                .unwrap_or(&default_branch)
-                .to_owned()
-        });
-
-        let head = env::var("MOON_HEAD")
-            .unwrap_or_else(|_| options.head.as_deref().unwrap_or("HEAD").to_owned());
+        let base = base_revision.as_deref().unwrap_or(&default_branch);
+        let head = head_revision.as_deref().unwrap_or("HEAD");
 
         trace!(
             "Against remote using base \"{}\" with head \"{}\"",
@@ -95,28 +98,21 @@ pub async fn query_touched_files(
             head,
         );
 
-        vcs.get_touched_files_between_revisions(&base, &head)
-            .await?
-
-        // Otherwise, check locally touched files
-    } else {
-        trace!("Against locally touched");
-
-        vcs.get_touched_files().await?
+        vcs.get_touched_files_between_revisions(base, head).await?
     };
 
     let mut touched_files = FxHashSet::default();
 
     if options.status.is_empty() {
         debug!(
-            "Filtering based on touched status \"{}\"",
+            "Filtering based on touched status {}",
             color::symbol(TouchedStatus::All.to_string())
         );
 
         touched_files.extend(touched_files_map.all());
     } else {
         debug!(
-            "Filtering based on touched status \"{}\"",
+            "Filtering based on touched status {}",
             options
                 .status
                 .iter()

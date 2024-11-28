@@ -115,14 +115,14 @@ async fn gather_touched_files(
         &vcs,
         &QueryTouchedFilesOptions {
             default_branch: true,
-            base: base.clone(),
+            base,
             head,
             ..QueryTouchedFilesOptions::default()
         },
     )
     .await?;
 
-    if result.shallow && base.is_none() {
+    if result.shallow {
         return Err(AppError::CiNoShallowHistory.into());
     }
 

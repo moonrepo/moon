@@ -42,7 +42,7 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
     if args.all {
         trace!("Running check on all projects");
 
-        projects.extend(workspace_graph.get_all_projects()?);
+        projects.extend(workspace_graph.get_projects()?);
     } else if args.ids.is_empty() {
         trace!("Loading from path");
 

@@ -142,8 +142,8 @@ impl<'app> ActionGraphBuilder<'app> {
         if downstream != DownstreamScope::None {
             debug!("Force loading all projects and tasks to determine relationships");
 
-            self.workspace_graph.get_all_projects()?;
-            self.workspace_graph.get_all_tasks()?;
+            self.workspace_graph.get_projects()?;
+            self.workspace_graph.get_tasks_with_internal()?;
         }
 
         self.affected
@@ -491,7 +491,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 if let Some(all_query) = &self.all_query {
                     projects.extend(self.workspace_graph.query_projects(all_query)?);
                 } else {
-                    projects.extend(self.workspace_graph.get_all_projects()?);
+                    projects.extend(self.workspace_graph.get_projects()?);
                 };
 
                 for project in projects {
@@ -589,7 +589,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // Determine affected tasks before building
         if let Some(affected) = &mut self.affected {
-            affected.track_tasks_by_target(&initial_targets)?;
+            affected.track_tasks()?;
         }
 
         // Then build and track initial and primary

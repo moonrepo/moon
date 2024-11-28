@@ -57,7 +57,7 @@ impl WorkspaceGraph {
         Ok(project)
     }
 
-    pub fn get_all_projects(&self) -> miette::Result<Vec<Arc<Project>>> {
+    pub fn get_projects(&self) -> miette::Result<Vec<Arc<Project>>> {
         self.projects.get_all()
     }
 
@@ -93,12 +93,18 @@ impl WorkspaceGraph {
         Ok(all)
     }
 
-    pub fn get_all_tasks(&self) -> miette::Result<Vec<Arc<Task>>> {
+    /// Get all non-internal tasks.
+    pub fn get_tasks(&self) -> miette::Result<Vec<Arc<Task>>> {
         Ok(self
             .tasks
             .get_all()?
             .into_iter()
             .filter(|task| !task.is_internal())
             .collect())
+    }
+
+    /// Get all tasks, including internal.
+    pub fn get_tasks_with_internal(&self) -> miette::Result<Vec<Arc<Task>>> {
+        self.tasks.get_all()
     }
 }

@@ -106,7 +106,7 @@ mod project_graph {
             let graph = generate_workspace_graph("dependencies").await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "b", "c", "d"]
             );
         }
@@ -126,7 +126,7 @@ mod project_graph {
             let graph = mock.build_workspace_graph().await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "b", "c", "d", "dir"]
             );
         }
@@ -141,7 +141,7 @@ mod project_graph {
             let graph = mock.build_workspace_graph().await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "c"]
             );
         }
@@ -159,7 +159,7 @@ mod project_graph {
             let graph = mock.build_workspace_graph().await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["b", "c"]
             );
         }
@@ -180,7 +180,7 @@ mod project_graph {
             let graph = mock.build_workspace_graph().await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "b", "c", "root"]
             );
         }
@@ -195,7 +195,7 @@ mod project_graph {
             let graph = generate_workspace_graph_from_sandbox(sandbox.path()).await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "b", "c", "d"]
             );
         }
@@ -208,7 +208,7 @@ mod project_graph {
             let graph = generate_workspace_graph_from_sandbox(sandbox.path()).await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "b", "c", "d"]
             );
         }
@@ -226,7 +226,7 @@ mod project_graph {
             let graph = mock.build_workspace_graph().await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["app", "library", "tool", "unknown"]
             );
         }
@@ -236,7 +236,7 @@ mod project_graph {
             let graph = generate_workspace_graph("ids").await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 [
                     "Capital",
                     "PascalCase",
@@ -452,7 +452,7 @@ mod project_graph {
             let graph = generate_workspace_graph("cycle").await;
 
             assert_eq!(
-                get_ids_from_projects(graph.get_all_projects().unwrap()),
+                get_ids_from_projects(graph.get_projects().unwrap()),
                 ["a", "b", "c"]
             );
 

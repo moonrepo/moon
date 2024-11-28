@@ -334,68 +334,6 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn doesnt_graph_if_not_affected_by_touched_files() {
-            let sandbox = create_sandbox("projects");
-            let container = ActionGraphContainer::new(sandbox.path()).await;
-            let mut builder = container.create_builder();
-
-            let project = container.workspace_graph.get_project("bar").unwrap();
-
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
-
-            // Empty set works fine, just needs to be some
-            let touched_files = FxHashSet::default();
-            builder.set_touched_files(&touched_files).unwrap();
-
-            builder
-                .run_task(&project, &task, &RunRequirements::default())
-                .unwrap();
-
-            let graph = builder.build();
-
-            assert!(!topo(graph).into_iter().any(|node| {
-                if let ActionNode::RunTask(inner) = &node {
-                    inner.target.as_str() == "bar:build"
-                } else {
-                    false
-                }
-            }));
-        }
-
-        #[tokio::test]
-        async fn graphs_if_affected_by_touched_files() {
-            let sandbox = create_sandbox("projects");
-            let container = ActionGraphContainer::new(sandbox.path()).await;
-            let mut builder = container.create_builder();
-
-            let file = WorkspaceRelativePathBuf::from("bar/file.js");
-
-            let project = container.workspace_graph.get_project("bar").unwrap();
-
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
-            task.input_files.insert(file.clone());
-
-            let touched_files = FxHashSet::from_iter([file]);
-            builder.set_touched_files(&touched_files).unwrap();
-            builder
-                .affected
-                .as_mut()
-                .unwrap()
-                .mark_task_affected(&task, moon_affected::AffectedBy::AlwaysAffected)
-                .unwrap();
-
-            builder
-                .run_task(&project, &task, &RunRequirements::default())
-                .unwrap();
-
-            let graph = builder.build();
-
-            assert!(!topo(graph).is_empty());
-        }
-
-        #[tokio::test]
         async fn task_can_have_a_diff_platform_from_project() {
             let sandbox = create_sandbox("projects");
             let container = ActionGraphContainer::new(sandbox.path()).await;
@@ -945,6 +883,137 @@ mod action_graph {
                     }),
                 ]
             );
+        }
+
+        mod affected {
+            use super::*;
+            use moon_affected::AffectedBy;
+            use moon_test_utils2::pretty_assertions::assert_eq;
+
+            #[tokio::test]
+            async fn doesnt_graph_if_not_affected_by_touched_files() {
+                let sandbox = create_sandbox("projects");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.workspace_graph.get_project("bar").unwrap();
+
+                let mut task = create_task("build", "bar");
+                task.platform = PlatformType::Node;
+
+                // Empty set works fine, just needs to be some
+                let touched_files = FxHashSet::default();
+                builder.set_touched_files(&touched_files).unwrap();
+
+                builder
+                    .run_task(&project, &task, &RunRequirements::default())
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert!(!topo(graph).into_iter().any(|node| {
+                    if let ActionNode::RunTask(inner) = &node {
+                        inner.target.as_str() == "bar:build"
+                    } else {
+                        false
+                    }
+                }));
+            }
+
+            #[tokio::test]
+            async fn graphs_if_affected_by_touched_files() {
+                let sandbox = create_sandbox("projects");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let file = WorkspaceRelativePathBuf::from("bar/file.js");
+
+                let project = container.workspace_graph.get_project("bar").unwrap();
+
+                let mut task = create_task("build", "bar");
+                task.platform = PlatformType::Node;
+                task.input_files.insert(file.clone());
+
+                let touched_files = FxHashSet::from_iter([file]);
+                builder.set_touched_files(&touched_files).unwrap();
+                builder.mock_affected(|affected| {
+                    affected
+                        .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                        .unwrap();
+                });
+
+                builder
+                    .run_task(&project, &task, &RunRequirements::default())
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test]
+            async fn includes_deps_if_owning_task_is_affected() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container
+                    .workspace_graph
+                    .get_project("deps-affected")
+                    .unwrap();
+                let task = container
+                    .workspace_graph
+                    .get_task_from_project("deps-affected", "b")
+                    .unwrap();
+
+                let touched_files =
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]);
+                builder.set_touched_files(&touched_files).unwrap();
+                builder.mock_affected(|affected| {
+                    affected
+                        .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                        .unwrap();
+                });
+
+                builder
+                    .run_task(
+                        &project,
+                        &task,
+                        &RunRequirements {
+                            dependents: true,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_eq!(
+                    topo(graph),
+                    vec![
+                        ActionNode::sync_workspace(),
+                        ActionNode::setup_toolchain(SetupToolchainNode {
+                            runtime: Runtime::system()
+                        }),
+                        ActionNode::sync_project(SyncProjectNode {
+                            project: Id::raw("deps-affected"),
+                            runtime: Runtime::system()
+                        }),
+                        ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:c").unwrap(),
+                            Runtime::system()
+                        )),
+                        ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:b").unwrap(),
+                            Runtime::system()
+                        )),
+                        ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:a").unwrap(),
+                            Runtime::system()
+                        )),
+                    ]
+                );
+            }
         }
 
         mod run_in_ci {

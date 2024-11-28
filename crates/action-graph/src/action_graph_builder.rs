@@ -257,6 +257,17 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
+        // Create a new requirements object as we don't have our dependencies/
+        // dependents to check for affected or run their own dependents!
+        let child_reqs = RunRequirements {
+            ci: reqs.ci,
+            ci_check: reqs.ci_check,
+            dependents: false,
+            interactive: reqs.interactive,
+            skip_affected: true,
+            ..Default::default()
+        };
+
         // Only apply checks when requested. This applies to `moon ci`,
         // but not `moon run`, since the latter should be able to
         // manually run local tasks in CI (deploys, etc).
@@ -280,7 +291,7 @@ impl<'app> ActionGraphBuilder<'app> {
                     );
 
                     if affected.is_task_marked(task) {
-                        self.run_task_dependents(task, reqs)?;
+                        self.run_task_dependents(task, &child_reqs)?;
                     }
                 }
             }
@@ -323,7 +334,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // Compare against touched files if provided
         if let Some(affected) = &mut self.affected {
-            if !affected.is_task_marked(task) {
+            if !reqs.skip_affected && !affected.is_task_marked(task) {
                 return Ok(None);
             }
         }
@@ -348,14 +359,14 @@ impl<'app> ActionGraphBuilder<'app> {
                 "Linking dependencies for task",
             );
 
-            edges.extend(self.run_task_dependencies(task, reqs)?);
+            edges.extend(self.run_task_dependencies(task, &child_reqs)?);
         }
 
         self.link_requirements(index, edges);
 
         // And possibly dependents
         if reqs.dependents {
-            self.run_task_dependents(task, reqs)?;
+            self.run_task_dependents(task, &child_reqs)?;
         }
 
         Ok(Some(index))
@@ -367,14 +378,9 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_dependencies(
         &mut self,
         task: &Task,
-        child_reqs: &RunRequirements,
+        reqs: &RunRequirements,
     ) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
-        let reqs = RunRequirements {
-            ci: child_reqs.ci,
-            ..Default::default()
-        };
-
         let mut indices = vec![];
         let mut previous_target_index = None;
 
@@ -405,60 +411,19 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok(indices)
     }
 
-    // This is costly, is there a better way to do this?
     #[instrument(skip_all)]
     pub fn run_task_dependents(
         &mut self,
         task: &Task,
-        parent_reqs: &RunRequirements,
+        reqs: &RunRequirements,
     ) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
 
-        // Create a new requirements object as we only want direct
-        // dependents, and shouldn't recursively create.
-        let reqs = RunRequirements {
-            ci: parent_reqs.ci,
-            interactive: parent_reqs.interactive,
-            skip_affected: true,
-            ..Default::default()
-        };
+        for dep_target in self.workspace_graph.tasks.dependents_of(task) {
+            let (_, dep_indices) = self.run_task_by_target(dep_target, reqs)?;
 
-        if let TargetScope::Project(project_locator) = &task.target.scope {
-            let mut projects_to_build = vec![];
-
-            // From self project
-            let self_project = self.workspace_graph.get_project(project_locator)?;
-
-            projects_to_build.push(self_project.clone());
-
-            // From other projects
-            for dependent_id in self.workspace_graph.projects.dependents_of(&self_project) {
-                projects_to_build.push(self.workspace_graph.get_project(&dependent_id)?);
-            }
-
-            for project in projects_to_build {
-                // Don't skip internal tasks, since they are a dependency of the parent
-                // task, and must still run! They just can't be ran manually.
-                for dep_task in self.workspace_graph.get_tasks_from_project(&project.id)? {
-                    // But do skip persistent tasks!
-                    if dep_task.is_persistent() {
-                        continue;
-                    }
-
-                    // Since these are transient tasks, we should always filter out tasks
-                    // that should not run in CI, as we don't know what side-effects it
-                    // will cause. This applies to both `moon ci` and `moon run`.
-                    if parent_reqs.ci && !dep_task.should_run_in_ci() {
-                        self.passthrough_targets.insert(dep_task.target.clone());
-                        continue;
-                    }
-
-                    if dep_task.deps.iter().any(|dep| dep.target == task.target) {
-                        if let Some(index) = self.run_task(&project, &dep_task, &reqs)? {
-                            indices.push(index);
-                        }
-                    }
-                }
+            for dep_index in dep_indices {
+                indices.push(dep_index);
             }
         }
 
@@ -711,5 +676,14 @@ impl<'app> ActionGraphBuilder<'app> {
         self.indices.insert(node, index);
 
         index
+    }
+}
+
+#[cfg(debug_assertions)]
+impl<'app> ActionGraphBuilder<'app> {
+    pub fn mock_affected(&mut self, mut op: impl FnMut(&mut AffectedTracker<'app>)) {
+        if let Some(affected) = self.affected.as_mut() {
+            op(affected);
+        }
     }
 }

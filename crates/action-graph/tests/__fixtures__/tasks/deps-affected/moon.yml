@@ -1,0 +1,12 @@
+tasks:
+  a:
+    command: 'a'
+    inputs: ['a.txt']
+    deps: ['b']
+  b:
+    command: 'b'
+    inputs: ['b.txt']
+    deps: ['c']
+  c:
+    command: 'c'
+    inputs: ['c.txt']

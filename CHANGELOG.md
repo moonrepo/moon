@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where dependencies/dependents of an affected task would be skipped in the action
+  graph if they were also not affected.
+
+#### ⚙️ Internal
+
+- Improved task dependent resolution in the action graph.
+
 ## 1.30.1
 
 #### 🐞 Fixes

@@ -6,7 +6,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub enum AffectedBy {
     AlreadyMarked,
     AlwaysAffected,
@@ -84,7 +84,7 @@ pub struct AffectedProjectState {
 }
 
 impl AffectedProjectState {
-    pub fn from(list: Vec<AffectedBy>) -> Self {
+    pub fn from(list: FxHashSet<AffectedBy>) -> Self {
         let mut state = Self::default();
 
         for by in list {
@@ -130,7 +130,7 @@ pub struct AffectedTaskState {
 }
 
 impl AffectedTaskState {
-    pub fn from(list: Vec<AffectedBy>) -> Self {
+    pub fn from(list: FxHashSet<AffectedBy>) -> Self {
         let mut state = Self::default();
 
         for by in list {

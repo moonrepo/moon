@@ -149,11 +149,8 @@ async fn gather_potential_targets(
 
     let mut targets = vec![];
 
-    // Required for dependents
-    workspace_graph.get_all_projects()?;
-
     if args.targets.is_empty() {
-        for task in workspace_graph.get_all_tasks()? {
+        for task in workspace_graph.get_tasks()? {
             targets.push(task.target.clone());
         }
     } else {

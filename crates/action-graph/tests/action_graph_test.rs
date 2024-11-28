@@ -354,14 +354,13 @@ mod action_graph {
 
             let graph = builder.build();
 
-            assert!(topo(graph)
-                .into_iter()
-                .find(|node| if let ActionNode::RunTask(inner) = &node {
+            assert!(!topo(graph).into_iter().any(|node| {
+                if let ActionNode::RunTask(inner) = &node {
                     inner.target.as_str() == "bar:build"
                 } else {
                     false
-                })
-                .is_none());
+                }
+            }));
         }
 
         #[tokio::test]
@@ -384,7 +383,8 @@ mod action_graph {
                 .affected
                 .as_mut()
                 .unwrap()
-                .mark_task_affected(&task, moon_affected::AffectedBy::AlwaysAffected);
+                .mark_task_affected(&task, moon_affected::AffectedBy::AlwaysAffected)
+                .unwrap();
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())

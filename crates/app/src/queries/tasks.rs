@@ -48,7 +48,7 @@ fn load_with_regex(
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
-    for task in workspace_graph.get_all_tasks()? {
+    for task in workspace_graph.get_tasks()? {
         if let Some(regex) = &id_regex {
             if !regex.is_match(&task.id) {
                 continue;

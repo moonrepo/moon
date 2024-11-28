@@ -127,7 +127,7 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
         debug!("Tracking projects and marking any affected");
 
-        for project in self.workspace_graph.get_all_projects()? {
+        for project in self.workspace_graph.get_projects()? {
             if let Some(affected) = self.is_project_affected(&project) {
                 self.mark_project_affected(&project, affected)?;
             }
@@ -263,7 +263,9 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_tasks(&mut self) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
-        for task in self.workspace_graph.get_all_tasks()? {
+        // Include internal since they can trigger affected
+        // for any dependents!
+        for task in self.workspace_graph.get_tasks_with_internal()? {
             if let Some(affected) = self.is_task_affected(&task)? {
                 self.mark_task_affected(&task, affected)?;
             }

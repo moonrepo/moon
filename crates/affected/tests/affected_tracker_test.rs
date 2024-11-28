@@ -198,6 +198,33 @@ mod affected_projects {
                 ])
             );
         }
+
+        #[tokio::test]
+        async fn deep_cycle() {
+            use moon_test_utils2::pretty_assertions::assert_eq;
+
+            let workspace_graph = generate_workspace_graph("projects").await;
+            let touched_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_projects().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.projects,
+                FxHashMap::from_iter([
+                    (Id::raw("cycle-a"), {
+                        let mut state = create_state_from_file("cycle-a/file.txt");
+                        state.downstream.insert(Id::raw("cycle-c"));
+                        state
+                    }),
+                    (Id::raw("cycle-b"), create_state_from_dependent("cycle-a")),
+                    (Id::raw("cycle-c"), create_state_from_dependent("cycle-b")),
+                    (Id::raw("root"), create_state_from_file("cycle-a/file.txt")),
+                ])
+            );
+        }
     }
 
     mod project_downstream {
@@ -298,6 +325,30 @@ mod affected_projects {
                 FxHashMap::from_iter([
                     (Id::raw("e"), create_state_from_file("e/file.txt")),
                     (Id::raw("root"), create_state_from_file("e/file.txt")),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn deep_cycle() {
+            let workspace_graph = generate_workspace_graph("projects").await;
+            let touched_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_projects().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.projects,
+                FxHashMap::from_iter([
+                    (Id::raw("cycle-a"), create_state_from_dependency("cycle-b")),
+                    (Id::raw("cycle-b"), create_state_from_dependency("cycle-c")),
+                    (
+                        Id::raw("cycle-c"),
+                        create_state_from_file("cycle-c/file.txt")
+                    ),
+                    (Id::raw("root"), create_state_from_file("cycle-c/file.txt")),
                 ])
             );
         }
@@ -644,11 +695,44 @@ mod affected_tasks {
                 ])
             );
         }
+
+        #[tokio::test]
+        async fn deep_cycle() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("cycle:global").unwrap(),
+                        create_state_from_file("cycle/c.txt")
+                    ),
+                    (Target::parse("cycle:c").unwrap(), {
+                        let mut state = create_state_from_file("cycle/c.txt");
+                        state.downstream.insert(Target::parse("cycle:b").unwrap());
+                        state
+                    }),
+                    (
+                        Target::parse("cycle:a").unwrap(),
+                        create_state_from_dependent("cycle:c")
+                    ),
+                    (
+                        Target::parse("cycle:b").unwrap(),
+                        create_state_from_dependent("cycle:a")
+                    ),
+                ])
+            );
+        }
     }
 
     mod task_downstream {
         use super::*;
-        use moon_test_utils2::pretty_assertions::assert_eq;
 
         #[tokio::test]
         async fn none() {
@@ -782,6 +866,39 @@ mod affected_tasks {
                     (
                         Target::parse("chain:z").unwrap(),
                         create_state_from_file("chain/z.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn deep_cycle() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("cycle:global").unwrap(),
+                        create_state_from_file("cycle/c.txt")
+                    ),
+                    (
+                        Target::parse("cycle:c").unwrap(),
+                        create_state_from_file("cycle/c.txt")
+                    ),
+                    (
+                        Target::parse("cycle:b").unwrap(),
+                        create_state_from_dependency("cycle:c")
+                    ),
+                    (
+                        Target::parse("cycle:a").unwrap(),
+                        create_state_from_dependency("cycle:b")
                     ),
                 ])
             );

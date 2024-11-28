@@ -151,6 +151,10 @@ impl<'app> AffectedTracker<'app> {
         }
     }
 
+    pub fn is_project_marked(&self, project: &Project) -> bool {
+        self.projects.contains_key(&project.id)
+    }
+
     pub fn mark_project_affected(
         &mut self,
         project: &Project,
@@ -170,13 +174,24 @@ impl<'app> AffectedTracker<'app> {
             .or_default()
             .insert(affected);
 
-        self.track_project_dependencies(project, 0)?;
-        self.track_project_dependents(project, 0)?;
+        self.track_project_dependencies(project, 0, &mut FxHashSet::default())?;
+        self.track_project_dependents(project, 0, &mut FxHashSet::default())?;
 
         Ok(())
     }
 
-    fn track_project_dependencies(&mut self, project: &Project, depth: u16) -> miette::Result<()> {
+    fn track_project_dependencies(
+        &mut self,
+        project: &Project,
+        depth: u16,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<()> {
+        if cycle.contains(&project.id) {
+            return Ok(());
+        }
+
+        cycle.insert(project.id.clone());
+
         if self.project_upstream == UpstreamScope::None {
             trace!(
                 project_id = project.id.as_str(),
@@ -212,13 +227,24 @@ impl<'app> AffectedTracker<'app> {
 
             let dep_project = self.workspace_graph.get_project(&dep_config.id)?;
 
-            self.track_project_dependencies(&dep_project, depth + 1)?;
+            self.track_project_dependencies(&dep_project, depth + 1, cycle)?;
         }
 
         Ok(())
     }
 
-    fn track_project_dependents(&mut self, project: &Project, depth: u16) -> miette::Result<()> {
+    fn track_project_dependents(
+        &mut self,
+        project: &Project,
+        depth: u16,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<()> {
+        if cycle.contains(&project.id) {
+            return Ok(());
+        }
+
+        cycle.insert(project.id.clone());
+
         if self.project_downstream == DownstreamScope::None {
             trace!(
                 project_id = project.id.as_str(),
@@ -254,7 +280,7 @@ impl<'app> AffectedTracker<'app> {
 
             let dep_project = self.workspace_graph.get_project(&dep_id)?;
 
-            self.track_project_dependents(&dep_project, depth + 1)?;
+            self.track_project_dependents(&dep_project, depth + 1, cycle)?;
         }
 
         Ok(())
@@ -339,8 +365,8 @@ impl<'app> AffectedTracker<'app> {
             .or_default()
             .insert(affected);
 
-        self.track_task_dependencies(task, 0)?;
-        self.track_task_dependents(task, 0)?;
+        self.track_task_dependencies(task, 0, &mut FxHashSet::default())?;
+        self.track_task_dependents(task, 0, &mut FxHashSet::default())?;
 
         if let Some(project_id) = task.target.get_project_id() {
             self.projects
@@ -352,7 +378,18 @@ impl<'app> AffectedTracker<'app> {
         Ok(())
     }
 
-    fn track_task_dependencies(&mut self, task: &Task, depth: u16) -> miette::Result<()> {
+    fn track_task_dependencies(
+        &mut self,
+        task: &Task,
+        depth: u16,
+        cycle: &mut FxHashSet<Target>,
+    ) -> miette::Result<()> {
+        if cycle.contains(&task.target) {
+            return Ok(());
+        }
+
+        cycle.insert(task.target.clone());
+
         if self.task_upstream == UpstreamScope::None {
             trace!(
                 task_target = task.target.as_str(),
@@ -388,13 +425,24 @@ impl<'app> AffectedTracker<'app> {
 
             let dep_task = self.workspace_graph.get_task(&dep_config.target)?;
 
-            self.track_task_dependencies(&dep_task, depth + 1)?;
+            self.track_task_dependencies(&dep_task, depth + 1, cycle)?;
         }
 
         Ok(())
     }
 
-    fn track_task_dependents(&mut self, task: &Task, depth: u16) -> miette::Result<()> {
+    fn track_task_dependents(
+        &mut self,
+        task: &Task,
+        depth: u16,
+        cycle: &mut FxHashSet<Target>,
+    ) -> miette::Result<()> {
+        if cycle.contains(&task.target) {
+            return Ok(());
+        }
+
+        cycle.insert(task.target.clone());
+
         if self.task_downstream == DownstreamScope::None {
             trace!(
                 task_target = task.target.as_str(),
@@ -430,7 +478,7 @@ impl<'app> AffectedTracker<'app> {
 
             let dep_task = self.workspace_graph.get_task(&dep_target)?;
 
-            self.track_task_dependents(&dep_task, depth + 1)?;
+            self.track_task_dependents(&dep_task, depth + 1, cycle)?;
         }
 
         Ok(())

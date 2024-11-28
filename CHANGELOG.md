@@ -6,6 +6,7 @@
 
 - Fixed an issue where dependencies/dependents of an affected task would be skipped in the action
   graph if they were also not affected.
+- Fixed a potential cycle (stack overflow) that may occur in the affected tracker.
 
 #### ⚙️ Internal
 

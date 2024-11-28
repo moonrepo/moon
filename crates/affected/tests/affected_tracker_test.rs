@@ -201,8 +201,6 @@ mod affected_projects {
 
         #[tokio::test]
         async fn deep_cycle() {
-            use moon_test_utils2::pretty_assertions::assert_eq;
-
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 

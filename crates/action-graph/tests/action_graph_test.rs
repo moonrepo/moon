@@ -354,7 +354,14 @@ mod action_graph {
 
             let graph = builder.build();
 
-            assert!(topo(graph).is_empty());
+            assert!(topo(graph)
+                .into_iter()
+                .find(|node| if let ActionNode::RunTask(inner) = &node {
+                    inner.target.as_str() == "bar:build"
+                } else {
+                    false
+                })
+                .is_none());
         }
 
         #[tokio::test]

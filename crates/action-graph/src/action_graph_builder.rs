@@ -327,7 +327,28 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(Some(*index));
         }
 
-        // Compare against touched files if provided
+        // We should install deps & sync projects *before* running targets
+        let mut edges = vec![];
+
+        if let Some(install_deps_index) = self.install_deps(project, Some(task))? {
+            edges.push(install_deps_index);
+        }
+
+        edges.push(self.sync_project(project)?);
+
+        // And we also need to create edges for task dependencies
+        if !task.deps.is_empty() {
+            trace!(
+                task_target = task.target.as_str(),
+                dep_targets = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
+                "Linking dependencies for task",
+            );
+
+            edges.extend(self.run_task_dependencies(task)?);
+        }
+
+        // Compare against touched files if provided. We need to run this *after*
+        // dependencies, so that they're affected status has been marked!
         if let Some(affected) = &mut self.affected {
             if let Some(downstream) = &reqs.downstream_target {
                 affected
@@ -352,27 +373,8 @@ impl<'app> ActionGraphBuilder<'app> {
             }
         }
 
-        // We should install deps & sync projects *before* running targets
-        let mut edges = vec![];
-
-        if let Some(install_deps_index) = self.install_deps(project, Some(task))? {
-            edges.push(install_deps_index);
-        }
-
-        edges.push(self.sync_project(project)?);
-
+        // Insert the node and create edges
         let index = self.insert_node(node);
-
-        // And we also need to create edges for task dependencies
-        if !task.deps.is_empty() {
-            trace!(
-                task_target = task.target.as_str(),
-                dep_targets = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
-                "Linking dependencies for task",
-            );
-
-            edges.extend(self.run_task_dependencies(task)?);
-        }
 
         self.link_requirements(index, edges);
 

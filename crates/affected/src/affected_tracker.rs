@@ -6,17 +6,18 @@ use moon_task::{Target, Task};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
+use std::fmt;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker<'app> {
     workspace_graph: &'app WorkspaceGraph,
     touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
 
-    projects: FxHashMap<Id, Vec<AffectedBy>>,
+    projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
     project_downstream: DownstreamScope,
     project_upstream: UpstreamScope,
 
-    tasks: FxHashMap<Target, Vec<AffectedBy>>,
+    tasks: FxHashMap<Target, FxHashSet<AffectedBy>>,
     task_downstream: DownstreamScope,
     task_upstream: UpstreamScope,
 }
@@ -167,7 +168,7 @@ impl<'app> AffectedTracker<'app> {
         self.projects
             .entry(project.id.clone())
             .or_default()
-            .push(affected);
+            .insert(affected);
 
         self.track_project_dependencies(project, 0)?;
         self.track_project_dependents(project, 0)?;
@@ -203,7 +204,7 @@ impl<'app> AffectedTracker<'app> {
             self.projects
                 .entry(dep_config.id.clone())
                 .or_default()
-                .push(AffectedBy::DownstreamProject(project.id.clone()));
+                .insert(AffectedBy::DownstreamProject(project.id.clone()));
 
             if depth == 0 && self.project_upstream == UpstreamScope::Direct {
                 continue;
@@ -221,7 +222,7 @@ impl<'app> AffectedTracker<'app> {
         if self.project_downstream == DownstreamScope::None {
             trace!(
                 project_id = project.id.as_str(),
-                "Not tracking dependents as downstream scope is none"
+                "Not tracking project dependents as downstream scope is none"
             );
 
             return Ok(());
@@ -231,10 +232,13 @@ impl<'app> AffectedTracker<'app> {
             if self.project_downstream == DownstreamScope::Direct {
                 trace!(
                     project_id = project.id.as_str(),
-                    "Tracking direct dependents"
+                    "Tracking direct project dependents"
                 );
             } else {
-                trace!(project_id = project.id.as_str(), "Tracking deep dependents");
+                trace!(
+                    project_id = project.id.as_str(),
+                    "Tracking deep project dependents"
+                );
             }
         }
 
@@ -242,7 +246,7 @@ impl<'app> AffectedTracker<'app> {
             self.projects
                 .entry(dep_id.clone())
                 .or_default()
-                .push(AffectedBy::UpstreamProject(project.id.clone()));
+                .insert(AffectedBy::UpstreamProject(project.id.clone()));
 
             if depth == 0 && self.project_downstream == DownstreamScope::Direct {
                 continue;
@@ -331,7 +335,7 @@ impl<'app> AffectedTracker<'app> {
         self.tasks
             .entry(task.target.clone())
             .or_default()
-            .push(affected);
+            .insert(affected);
 
         self.track_task_dependencies(task, 0)?;
         self.track_task_dependents(task, 0)?;
@@ -340,7 +344,7 @@ impl<'app> AffectedTracker<'app> {
             self.projects
                 .entry(project_id.to_owned())
                 .or_default()
-                .push(AffectedBy::Task(task.target.clone()));
+                .insert(AffectedBy::Task(task.target.clone()));
         }
 
         Ok(())
@@ -374,7 +378,7 @@ impl<'app> AffectedTracker<'app> {
             self.tasks
                 .entry(dep_config.target.clone())
                 .or_default()
-                .push(AffectedBy::DownstreamTask(task.target.clone()));
+                .insert(AffectedBy::DownstreamTask(task.target.clone()));
 
             if depth == 0 && self.task_upstream == UpstreamScope::Direct {
                 continue;
@@ -392,7 +396,7 @@ impl<'app> AffectedTracker<'app> {
         if self.task_downstream == DownstreamScope::None {
             trace!(
                 task_target = task.target.as_str(),
-                "Not tracking dependents as downstream scope is none"
+                "Not tracking task dependents as downstream scope is none"
             );
 
             return Ok(());
@@ -402,12 +406,12 @@ impl<'app> AffectedTracker<'app> {
             if self.task_downstream == DownstreamScope::Direct {
                 trace!(
                     task_target = task.target.as_str(),
-                    "Tracking direct dependents"
+                    "Tracking direct task dependents"
                 );
             } else {
                 trace!(
                     task_target = task.target.as_str(),
-                    "Tracking deep dependents"
+                    "Tracking deep task dependents"
                 );
             }
         }
@@ -416,7 +420,7 @@ impl<'app> AffectedTracker<'app> {
             self.tasks
                 .entry(dep_target.clone())
                 .or_default()
-                .push(AffectedBy::UpstreamTask(task.target.clone()));
+                .insert(AffectedBy::UpstreamTask(task.target.clone()));
 
             if depth == 0 && self.task_downstream == DownstreamScope::Direct {
                 continue;
@@ -428,5 +432,19 @@ impl<'app> AffectedTracker<'app> {
         }
 
         Ok(())
+    }
+}
+
+impl<'app> fmt::Debug for AffectedTracker<'app> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AffectedTracker")
+            .field("touched_files", &self.touched_files)
+            .field("projects", &self.projects)
+            .field("project_downstream", &self.project_downstream)
+            .field("project_upstream", &self.project_upstream)
+            .field("tasks", &self.tasks)
+            .field("task_downstream", &self.task_downstream)
+            .field("task_upstream", &self.task_upstream)
+            .finish()
     }
 }

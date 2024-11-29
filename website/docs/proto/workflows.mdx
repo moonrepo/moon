@@ -32,8 +32,9 @@ $ which node
 To make use of shims, prepend the `~/.proto/shims` directory to `PATH` in your shell profile. This
 _must come before_ the [bin directory](#binary-linking) if using both.
 
-If you're using or plan to use [shell activation](#shell-activation), this happens automatically and
-can be ignored.
+If you're using or plan to use [shell activation](#shell-activation), the `PATH` configuration
+happens automatically, but shell activation will only work if the `proto` command is accessible,
+which requires `~/.proto/bin` to be in your `PATH`.
 
 ## Binary linking
 
@@ -83,8 +84,9 @@ Node.js package managers currently do not support this, as JavaScript files are 
 To make use of bins, prepend the `~/.proto/bin` directory to `PATH` in your shell profile. This
 _must come after_ the [shim directory](#shims) if using both.
 
-If you're using or plan to use [shell activation](#shell-activation), this happens automatically and
-can be ignored.
+If you're using or plan to use [shell activation](#shell-activation), the `PATH` configuration
+happens automatically, but shell activation will only work if the `proto` command is accessible,
+which requires `~/.proto/bin` to be in your `PATH`.
 
 ## Shell activation<VersionLabel version="0.38.0" />
 

@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.d8458592.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.63986b2c.js" defer="defer"></script>
 <script src="/assets/js/main.518be3ce.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -36,6 +36,8 @@ Activation is ran each time the current directory changes using a shell hook.</p
 <li><code>--json</code> - Print the activate instructions in JSON format.</li>
 <li><code>--no-bin</code> - Do not include <code>~/.proto/bin</code> when appending <code>PATH</code>.</li>
 <li><code>--no-shim</code> - Do not include <code>~/.proto/shims</code> when prepending <code>PATH</code>.</li>
+<li><code>--on-init</code> - Trigger activation when initialized in the shell, instead of waiting for a cd/prompt
+change. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.43.0</span></li>
 </ul>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="caveats">Caveats<a class="hash-link" aria-label="Direct link to Caveats" title="Direct link to Caveats" href="/docs/proto/commands/activate#caveats">​</a></h3>
 <ul>
@@ -48,7 +50,7 @@ activated.</li>
 </ul>
 </li>
 <li>Activation is only applied <em>after changing directories</em> and not when a new shell session is
-started. We are looking into ways to support this.</li>
+started, unless the <code>--on-init</code> argument is passed.</li>
 </ul>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="setup">Setup<a class="hash-link" aria-label="Direct link to Setup" title="Direct link to Setup" href="/docs/proto/commands/activate#setup">​</a></h3>
 <p>The following activation steps should be added <em>after</em> all environment variable and <code>PATH</code>

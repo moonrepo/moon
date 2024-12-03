@@ -8,5 +8,5 @@ A template for testing all variable config combinations.
 Error: codegen::args::parse_failed
 
   × Failed to parse variables from arguments.
-  ╰─▶   × invalid value 'abc' for '--number <number>': invalid digit found
-      in string
+  ╰─▶   × invalid value 'abc' for '--number <number>': invalid digit found in
+        │ string

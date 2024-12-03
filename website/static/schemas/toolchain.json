@@ -683,10 +683,9 @@
         },
         "venvName": {
           "title": "venvName",
-          "description": "Defines the virtual environment name which will be created on workspace root. Project dependencies will be installed into this. Defaults to .venv",
+          "description": "Defines the virtual environment name, which will be created in the workspace root. Project dependencies will be installed into this.",
           "default": ".venv",
-          "type": "string",
-          "markdownDescription": "Defines the virtual environment name which will be created on workspace root. Project dependencies will be installed into this. Defaults to `.venv`"
+          "type": "string"
         },
         "version": {
           "title": "version",

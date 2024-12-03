@@ -96,7 +96,7 @@ uuid = { version = "1.11.0", features = ["v4"] }
 extism = "=1.9.1"
 extism-pdk = "1.3.0"
 proto_core = "0.43.8"
-proto_installer = "0.7.1"
+proto_installer = "0.8.0"
 system_env = "0.6.1"
 version_spec = "0.7.1"
 warpgate = "0.20.1"

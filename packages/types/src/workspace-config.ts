@@ -254,21 +254,21 @@ export interface RemoteMtlsConfig {
 	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
+	 * certificate authority PEM encoded X509 certificate.
+	 */
+	caCert: string;
+	/**
+	 * A file path, relative from the workspace root, to the
 	 * client's PEM encoded X509 certificate.
 	 */
 	clientCert: string;
 	/**
 	 * A file path, relative from the workspace root, to the
-	 * client's private key.
+	 * client's PEM encoded X509 private key.
 	 */
 	clientKey: string;
 	/** The domain name in which to verify the TLS certificate. */
 	domain: string | null;
-	/**
-	 * A file path, relative from the workspace root, to the
-	 * servers's PEM encoded X509 certificate.
-	 */
-	serverCert: string;
 }
 
 /** Configures for server-only authentication with TLS. */
@@ -278,7 +278,10 @@ export interface RemoteTlsConfig {
 	 * even if it doesn't provide protocol negotiation via ALPN.
 	 */
 	assumeHttp2: boolean;
-	/** A file path, relative from the workspace root, to a PEM encoded X509 certificate. */
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * certificate authority PEM encoded X509 certificate.
+	 */
 	cert: string;
 	/** The domain name in which to verify the TLS certificate. */
 	domain: string | null;
@@ -643,21 +646,21 @@ export interface PartialRemoteMtlsConfig {
 	assumeHttp2?: boolean | null;
 	/**
 	 * A file path, relative from the workspace root, to the
+	 * certificate authority PEM encoded X509 certificate.
+	 */
+	caCert?: string | null;
+	/**
+	 * A file path, relative from the workspace root, to the
 	 * client's PEM encoded X509 certificate.
 	 */
 	clientCert?: string | null;
 	/**
 	 * A file path, relative from the workspace root, to the
-	 * client's private key.
+	 * client's PEM encoded X509 private key.
 	 */
 	clientKey?: string | null;
 	/** The domain name in which to verify the TLS certificate. */
 	domain?: string | null;
-	/**
-	 * A file path, relative from the workspace root, to the
-	 * servers's PEM encoded X509 certificate.
-	 */
-	serverCert?: string | null;
 }
 
 /** Configures for server-only authentication with TLS. */
@@ -667,7 +670,10 @@ export interface PartialRemoteTlsConfig {
 	 * even if it doesn't provide protocol negotiation via ALPN.
 	 */
 	assumeHttp2?: boolean | null;
-	/** A file path, relative from the workspace root, to a PEM encoded X509 certificate. */
+	/**
+	 * A file path, relative from the workspace root, to the
+	 * certificate authority PEM encoded X509 certificate.
+	 */
 	cert?: string | null;
 	/** The domain name in which to verify the TLS certificate. */
 	domain?: string | null;

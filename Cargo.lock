@@ -3279,7 +3279,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "serde",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]
@@ -3320,7 +3320,7 @@ dependencies = [
  "rustc-hash",
  "semver",
  "serde",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tokio",
  "tokio-util",
@@ -3408,7 +3408,7 @@ dependencies = [
  "starbase_sandbox",
  "starbase_shell",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "system_env",
  "tera",
  "thiserror 2.0.4",
@@ -3476,7 +3476,7 @@ dependencies = [
  "schematic",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3496,7 +3496,7 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "scc",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3512,7 +3512,7 @@ dependencies = [
  "moon_time",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3524,7 +3524,7 @@ dependencies = [
  "serde",
  "serial_test",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3550,10 +3550,10 @@ dependencies = [
  "serial_test",
  "sigpipe",
  "starbase",
- "starbase_archive 0.9.0",
+ "starbase_archive",
  "starbase_sandbox",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tokio",
  "tracing",
  "wasi-common",
@@ -3578,9 +3578,9 @@ dependencies = [
  "once_cell",
  "regex",
  "rustc-hash",
- "starbase_archive 0.9.0",
+ "starbase_archive",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tera",
  "thiserror 2.0.4",
  "tokio",
@@ -3596,7 +3596,7 @@ dependencies = [
  "moon_hash",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3692,7 +3692,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -3736,7 +3736,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3758,7 +3758,7 @@ version = "0.0.1"
 dependencies = [
  "miette 7.4.0",
  "moon_common",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3786,7 +3786,7 @@ dependencies = [
  "once_cell",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
 ]
 
@@ -3798,7 +3798,7 @@ dependencies = [
  "petgraph",
  "rustc-hash",
  "serde",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -3808,7 +3808,7 @@ dependencies = [
  "miette 7.4.0",
  "serde",
  "sha2",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3866,7 +3866,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
  "yarn-lock-parser",
 ]
@@ -3899,7 +3899,7 @@ dependencies = [
  "schematic",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3920,7 +3920,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -3934,7 +3934,7 @@ dependencies = [
  "moon_time",
  "reqwest",
  "serde",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tokio",
  "tracing",
  "uuid",
@@ -4011,7 +4011,7 @@ dependencies = [
  "serde_json",
  "starbase_sandbox",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tokio",
  "tracing",
@@ -4088,7 +4088,7 @@ dependencies = [
  "moon_project",
  "rustc-hash",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tracing",
 ]
@@ -4113,7 +4113,7 @@ dependencies = [
  "scc",
  "starbase_events",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tokio",
  "tracing",
@@ -4156,7 +4156,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]
@@ -4178,7 +4178,7 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -4191,7 +4191,7 @@ dependencies = [
  "moon_config",
  "pest",
  "pest_derive",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tracing",
 ]
@@ -4213,7 +4213,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "sha2",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tokio",
  "tonic",
@@ -4234,7 +4234,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -4262,7 +4262,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]
@@ -4281,7 +4281,7 @@ dependencies = [
  "moon_toolchain",
  "proto_core",
  "rustc-hash",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -4332,7 +4332,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -4380,7 +4380,7 @@ dependencies = [
  "regex",
  "rustc-hash",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tracing",
 ]
@@ -4418,7 +4418,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]
@@ -4447,9 +4447,9 @@ dependencies = [
  "moon_test_utils2",
  "moon_time",
  "serde",
- "starbase_archive 0.9.0",
+ "starbase_archive",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tokio",
  "tokio-util",
@@ -4470,7 +4470,7 @@ dependencies = [
  "pretty_assertions",
  "rustc-hash",
  "serde_yaml",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -4560,7 +4560,7 @@ dependencies = [
  "moon_utils",
  "serde_json",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "typescript_tsconfig_json",
 ]
 
@@ -4580,7 +4580,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -4602,7 +4602,7 @@ dependencies = [
  "regex",
  "relative-path",
  "semver",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -4623,7 +4623,7 @@ dependencies = [
  "semver",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tokio",
  "tracing",
@@ -4641,7 +4641,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_sandbox",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "system_env",
  "tokio",
  "tracing",
@@ -4669,7 +4669,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_events",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tracing",
 ]
@@ -5381,9 +5381,9 @@ dependencies = [
  "serde_json",
  "sha2",
  "shell-words",
- "starbase_archive 0.9.0",
+ "starbase_archive",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tracing",
  "url",
@@ -5394,17 +5394,17 @@ dependencies = [
 
 [[package]]
 name = "proto_installer"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6101838fdc8482b32935f1c68bb94b6e1726887f97f475371e159cd816c0399b"
+checksum = "728cfe9b8c3f9188ee248e99de7f5427c1e952b91b90c04735afee9a535f582a"
 dependencies = [
  "miette 7.4.0",
  "reqwest",
- "starbase_archive 0.8.9",
+ "starbase_archive",
  "starbase_styles",
- "starbase_utils 0.8.12",
+ "starbase_utils",
  "system_env",
- "thiserror 1.0.69",
+ "thiserror 2.0.4",
  "tracing",
 ]
 
@@ -6435,26 +6435,6 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.8.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddcd0a8668af71ac7aaec90d5c75237d48f7cfc2b68f0ca06cafc683e2ab584c"
-dependencies = [
- "binstall-tar",
- "bzip2",
- "flate2",
- "miette 7.4.0",
- "rustc-hash",
- "starbase_styles",
- "starbase_utils 0.8.12",
- "thiserror 1.0.69",
- "tracing",
- "xz2",
- "zip",
- "zstd",
-]
-
-[[package]]
-name = "starbase_archive"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d80c1d1b4368f34f8d7ee9db29e44141a7a6ae349ce2ddf30b86914f499dc8d3"
@@ -6465,7 +6445,7 @@ dependencies = [
  "miette 7.4.0",
  "rustc-hash",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "thiserror 2.0.4",
  "tracing",
  "xz2",
@@ -6509,7 +6489,7 @@ dependencies = [
  "insta",
  "predicates",
  "pretty_assertions",
- "starbase_utils 0.9.1",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -6535,26 +6515,6 @@ dependencies = [
  "owo-colors",
  "relative-path",
  "supports-color",
-]
-
-[[package]]
-name = "starbase_utils"
-version = "0.8.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92724184aae5faf89b2ded8ac247e24cb0720f3eb5ec163509fb6994cdfa6f9d"
-dependencies = [
- "dirs 5.0.1",
- "json-strip-comments",
- "miette 7.4.0",
- "reqwest",
- "serde",
- "serde_json",
- "starbase_styles",
- "thiserror 1.0.69",
- "toml",
- "tracing",
- "url",
- "wax",
 ]
 
 [[package]]
@@ -7533,9 +7493,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "starbase_archive 0.9.0",
+ "starbase_archive",
  "starbase_styles",
- "starbase_utils 0.9.1",
+ "starbase_utils",
  "system_env",
  "thiserror 2.0.4",
  "tokio",

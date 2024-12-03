@@ -277,8 +277,8 @@ export interface PythonConfig {
 	 */
 	rootRequirementsOnly?: boolean;
 	/**
-	 * Defines the virtual environment name which will be created on workspace root.
-	 * Project dependencies will be installed into this. Defaults to `.venv`
+	 * Defines the virtual environment name, which will be created in the workspace root.
+	 * Project dependencies will be installed into this.
 	 *
 	 * @default '.venv'
 	 */
@@ -670,8 +670,8 @@ export interface PartialPythonConfig {
 	 */
 	rootRequirementsOnly?: boolean | null;
 	/**
-	 * Defines the virtual environment name which will be created on workspace root.
-	 * Project dependencies will be installed into this. Defaults to `.venv`
+	 * Defines the virtual environment name, which will be created in the workspace root.
+	 * Project dependencies will be installed into this.
 	 *
 	 * @default '.venv'
 	 */

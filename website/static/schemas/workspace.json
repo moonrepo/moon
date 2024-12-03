@@ -567,6 +567,11 @@
           "description": "If true, assume that the server supports HTTP/2, even if it doesn't provide protocol negotiation via ALPN.",
           "type": "boolean"
         },
+        "caCert": {
+          "title": "caCert",
+          "description": "A file path, relative from the workspace root, to the certificate authority PEM encoded X509 certificate.",
+          "type": "string"
+        },
         "clientCert": {
           "title": "clientCert",
           "description": "A file path, relative from the workspace root, to the client's PEM encoded X509 certificate.",
@@ -574,7 +579,7 @@
         },
         "clientKey": {
           "title": "clientKey",
-          "description": "A file path, relative from the workspace root, to the client's private key.",
+          "description": "A file path, relative from the workspace root, to the client's PEM encoded X509 private key.",
           "type": "string"
         },
         "domain": {
@@ -588,11 +593,6 @@
               "type": "null"
             }
           ]
-        },
-        "serverCert": {
-          "title": "serverCert",
-          "description": "A file path, relative from the workspace root, to the servers's PEM encoded X509 certificate.",
-          "type": "string"
         }
       },
       "additionalProperties": false
@@ -608,7 +608,7 @@
         },
         "cert": {
           "title": "cert",
-          "description": "A file path, relative from the workspace root, to a PEM encoded X509 certificate.",
+          "description": "A file path, relative from the workspace root, to the certificate authority PEM encoded X509 certificate.",
           "type": "string"
         },
         "domain": {

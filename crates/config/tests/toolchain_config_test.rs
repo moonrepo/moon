@@ -635,7 +635,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().npm.plugin.unwrap(),
                     PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.0/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.1/node_depman_tool.wasm".into()
                     }))
                 );
             }
@@ -727,7 +727,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.0/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.1/node_depman_tool.wasm".into()
                     }))
                 );
             }
@@ -751,7 +751,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.0/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.1/node_depman_tool.wasm".into()
                     }))
                 );
             }
@@ -853,7 +853,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.0/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.1/node_depman_tool.wasm".into()
                     }))
                 );
             }
@@ -877,7 +877,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.0/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.14.1/node_depman_tool.wasm".into()
                     }))
                 );
             }
@@ -1131,6 +1131,103 @@ node:
 
                 assert_eq!(cfg.dependency_version_format, NodeVersionFormat::Workspace);
             }
+        }
+    }
+
+    mod python {
+        use super::*;
+
+        #[test]
+        fn enables_via_proto() {
+            let config = test_load_config(FILENAME, "{}", |path| {
+                let mut proto = ProtoConfig::default();
+                proto.versions.insert(
+                    Id::raw("python"),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap(),
+                );
+
+                load_config_from_root(path, &proto)
+            });
+
+            assert!(config.python.is_some());
+            assert_eq!(
+                config.python.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn inherits_plugin_locator() {
+            let config = test_load_config(FILENAME, "python: {}", |path| {
+                let mut tools = ProtoConfig::default();
+                tools.inherit_builtin_plugins();
+
+                load_config_from_root(path, &tools)
+            });
+
+            assert_eq!(
+                config.python.unwrap().plugin.unwrap(),
+                PluginLocator::Url(Box::new(UrlLocator {
+                    url: "https://github.com/moonrepo/tools/releases/download/python_tool-v0.12.1/python_tool.wasm".into()
+                }))
+            );
+        }
+
+        #[test]
+        #[serial]
+        fn proto_version_doesnt_override() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+python:
+  version: 1.0.0
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("python"),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                    );
+
+                    load_config_from_root(path, &proto)
+                },
+            );
+
+            assert!(config.python.is_some());
+            assert_eq!(
+                config.python.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        #[serial]
+        fn inherits_version_from_env_var() {
+            env::set_var("MOON_PYTHON_VERSION", "1.0.0");
+
+            let config = test_load_config(
+                FILENAME,
+                r"
+python:
+  version: 3.0.0
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("python"),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                    );
+
+                    load_config_from_root(path, &proto)
+                },
+            );
+
+            env::remove_var("MOON_PYTHON_VERSION");
+
+            assert_eq!(
+                config.python.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
         }
     }
 

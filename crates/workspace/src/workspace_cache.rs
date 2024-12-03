@@ -38,7 +38,7 @@ hash_content!(
     }
 );
 
-impl<'graph> Default for WorkspaceGraphHash<'graph> {
+impl Default for WorkspaceGraphHash<'_> {
     fn default() -> Self {
         WorkspaceGraphHash {
             projects: BTreeMap::default(),

@@ -20,7 +20,7 @@ pub struct TaskDepsBuilder<'proj> {
     pub task: &'proj mut Task,
 }
 
-impl<'proj> TaskDepsBuilder<'proj> {
+impl TaskDepsBuilder<'_> {
     pub fn build(self) -> miette::Result<()> {
         let mut deps = vec![];
 

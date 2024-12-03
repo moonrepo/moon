@@ -6,7 +6,7 @@ use thiserror::Error;
 #[derive(Error, Debug, Diagnostic)]
 pub enum ToolError {
     #[diagnostic(code(tool::missing_binary))]
-    #[error("Unable to find a {0} for {}. Have you installed the corresponding dependency?", .1.style(Style::Symbol))]
+    #[error("Unable to find a {} for {}. Have you installed the corresponding dependency?", .0, .1.style(Style::Symbol))]
     MissingBinary(String, String),
 
     #[diagnostic(code(tool::unknown))]
@@ -14,8 +14,8 @@ pub enum ToolError {
     UnknownTool(String),
 
     #[diagnostic(code(tool::unsupported_platform))]
-    #[error("Platform {0} has not been enabled or configured. Enable it with {}.", color::shell(format!("moon init {}", .0)))]
-    UnsupportedPlatform(String),
+    #[error("Platform {0} has not been enabled or configured. Enable it with {}.", color::shell(format!("moon init {}", .name)))]
+    UnsupportedPlatform { name: String },
 
     #[diagnostic(code(tool::unsupported_runtime))]
     #[error("Unsupported toolchain runtime {0}.")]

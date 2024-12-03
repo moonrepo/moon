@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated proto to v0.43.0 (from 0.42.2).
+- Updated wasmtime to v26 (from v23).
+- Updated Rust to v1.83.
+
 ## 1.30.2
 
 #### 🐞 Fixes

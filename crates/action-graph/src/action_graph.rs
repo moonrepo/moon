@@ -192,7 +192,7 @@ impl<'graph> ActionGraphIter<'graph> {
 }
 
 // This is based on the `Topo` struct from petgraph!
-impl<'graph> Iterator for ActionGraphIter<'graph> {
+impl Iterator for ActionGraphIter<'_> {
     type Item = NodeIndex;
 
     fn next(&mut self) -> Option<Self::Item> {

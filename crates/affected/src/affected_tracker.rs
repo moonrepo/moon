@@ -485,7 +485,7 @@ impl<'app> AffectedTracker<'app> {
     }
 }
 
-impl<'app> fmt::Debug for AffectedTracker<'app> {
+impl fmt::Debug for AffectedTracker<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AffectedTracker")
             .field("touched_files", &self.touched_files)

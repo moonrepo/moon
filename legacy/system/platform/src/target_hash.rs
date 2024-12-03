@@ -11,7 +11,7 @@ hash_content!(
     }
 );
 
-impl<'proc> SystemTargetHash<'proc> {
+impl SystemTargetHash<'_> {
     pub fn new() -> Self {
         SystemTargetHash {
             arch: consts::ARCH,

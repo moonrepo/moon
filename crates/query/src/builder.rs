@@ -36,7 +36,7 @@ pub enum Condition<'l> {
     },
 }
 
-impl<'l> Condition<'l> {
+impl Condition<'_> {
     pub fn matches(&self, haystack: &FieldValues, needle: &str) -> miette::Result<bool> {
         Ok(match self {
             Condition::Field { op, .. } => match op {

@@ -37,9 +37,12 @@ impl PlatformManager {
     pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> miette::Result<&BoxedPlatform> {
         let type_of = type_of.into();
 
-        self.cache
-            .get(&type_of)
-            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
+        self.cache.get(&type_of).ok_or_else(|| {
+            ToolError::UnsupportedPlatform {
+                name: type_of.to_string(),
+            }
+            .into()
+        })
     }
 
     pub fn get_mut<T: Into<PlatformType>>(
@@ -48,9 +51,12 @@ impl PlatformManager {
     ) -> miette::Result<&mut BoxedPlatform> {
         let type_of = type_of.into();
 
-        self.cache
-            .get_mut(&type_of)
-            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
+        self.cache.get_mut(&type_of).ok_or_else(|| {
+            ToolError::UnsupportedPlatform {
+                name: type_of.to_string(),
+            }
+            .into()
+        })
     }
 
     pub fn enabled(&self) -> std::collections::hash_map::Keys<PlatformType, BoxedPlatform> {

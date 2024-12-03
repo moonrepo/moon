@@ -71,7 +71,7 @@ $ which node-22
 ~/.proto/bin/node-22 -> ~/.proto/tools/node/22.5.1/bin/node
 ```
 
-:::warning
+:::info
 
 Not all tools support symlinking a binary, as not all files are executable. For example, most
 Node.js package managers currently do not support this, as JavaScript files are not executable
@@ -82,11 +82,19 @@ Node.js package managers currently do not support this, as JavaScript files are 
 ### Setup
 
 To make use of bins, prepend the `~/.proto/bin` directory to `PATH` in your shell profile. This
-_must come after_ the [shim directory](#shims) if using both.
+_must come after_ the [shim directory](#shims) if using shims.
 
 If you're using or plan to use [shell activation](#shell-activation), the `PATH` configuration
 happens automatically, but shell activation will only work if the `proto` command is accessible,
 which requires `~/.proto/bin` to be in your `PATH`.
+
+:::warning
+
+This directory must always exist in `PATH`, as the official proto binaries `~/.proto/bin/proto` and
+`~/.proto/bin/proto-shim` are located here. If you move those binaries to another location, you can
+omit `~/.proto/bin` from `PATH` if you like.
+
+:::
 
 ## Shell activation<VersionLabel version="0.38.0" />
 

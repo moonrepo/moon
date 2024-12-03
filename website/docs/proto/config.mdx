@@ -169,6 +169,19 @@ supported!
 
 > This functionality enables per-directory environment variables!
 
+#### `file`<VersionLabel version="0.43.0" />
+
+This is a special field that points to a dotenv file, relative from the current configuration file,
+that will be loaded into the environment variables mapping. Variables defined in a dotenv file will
+be loaded _before_ variables manually defined within `[env]`.
+
+This feature utilizes the [dotenvy](https://github.com/allan2/dotenvy) crate for parsing dotfiles.
+
+```toml title=".prototools"
+[env]
+file = ".env"
+```
+
 ### `[settings]`
 
 #### `auto-install`
@@ -268,12 +281,22 @@ allow-invalid-certs = true
 
 #### `proxies`
 
-A list of proxy URLs to use for requests. As an alternative, the `HTTPS_PROXY` environment variable
-can be set.
+A list of proxy URLs to use for requests. As an alternative, the `HTTP_PROXY` and `HTTPS_PROXY`
+environment variables can be set. URLs that start with `http://` will be considered insecure, while
+`https://` will be secure.
 
 ```toml title=".prototools"
 [settings.http]
 proxies = ["https://internal.proxy", "https://corp.net/proxy"]
+```
+
+#### `secure-proxies`<VersionLabel version="0.40.3" />
+
+A list of proxy URLs that will be considered secure, regardless of the HTTP protocol.
+
+```toml title=".prototools"
+[settings.http]
+secure-proxies = ["http://internal.proxy", "http://corp.net/proxy"]
 ```
 
 #### `root-cert`
@@ -380,6 +403,16 @@ variables will override those defined in `[env]`. Refer to [`[env]`](#env) for u
 ```toml title=".prototools"
 [tools.node.env]
 NODE_ENV = "production"
+```
+
+#### `file`<VersionLabel version="0.43.0" />
+
+Like [`[env].file`](#file), this is a path to a dotenv file, relative from the current configuration
+file, that will be loaded into the environment variables mapping for this specific tool.
+
+```toml title=".prototools"
+[tools.node.env]
+file = "frontend/.env"
 ```
 
 ## GitHub Action

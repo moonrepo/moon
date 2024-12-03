@@ -71,6 +71,23 @@ Or to explicitly configure the version in [`.prototools`](./config):
 bun = "canary"
 ```
 
+### What kind of features are supported for HTTP requests?
+
+proto makes a lot of HTTP requests, for information such as available versions/releases, and for
+downloading the blobs/archives themselves. Because of this, we do our best to support all kinds of
+internet connections, proxy and intranet usage, and more, through the following:
+
+- All GET and HEAD requests are cached to `~/.proto/cache/requests` based on the
+  [HTTP cache semantics](https://github.com/kornelski/rusty-http-cache-semantics) and relevant RFCs.
+- We support the
+  [netrc file format](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html)
+  and will automatically load `~/.netrc` if it exists.
+- We support an offline mode that will short-circuit certain workflows if there's no internet
+  connection. We check for a connection by pinging DNS endpoints, but this can be configured with
+  [`[settings.offline]`](./config#settingsoffline).
+- We attempt to automatically load root and system certifications so that secure connections work
+  correctly. This can be configured with [`[settings.http]`](./config#settingshttp).
+
 ## Troubleshooting
 
 ### Network requests keep failing, how can I bypass?

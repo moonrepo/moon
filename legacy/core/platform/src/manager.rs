@@ -15,7 +15,10 @@ pub struct PlatformManager {
 
 impl PlatformManager {
     pub fn read() -> &'static PlatformManager {
-        unsafe { PLATFORM_REGISTRY.get_or_init(PlatformManager::default) }
+        #[allow(static_mut_refs)]
+        unsafe {
+            PLATFORM_REGISTRY.get_or_init(PlatformManager::default)
+        }
     }
 
     pub fn write() -> &'static mut PlatformManager {
@@ -24,7 +27,10 @@ impl PlatformManager {
             PlatformManager::read();
         }
 
-        unsafe { PLATFORM_REGISTRY.get_mut().unwrap() }
+        #[allow(static_mut_refs)]
+        unsafe {
+            PLATFORM_REGISTRY.get_mut().unwrap()
+        }
     }
 
     pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>

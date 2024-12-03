@@ -81,7 +81,7 @@ pub struct SandboxAssert<'s> {
     pub sandbox: &'s Sandbox,
 }
 
-impl<'s> SandboxAssert<'s> {
+impl SandboxAssert<'_> {
     pub fn debug(&self) -> &Self {
         println!("SANDBOX:");
         debug_sandbox_files(self.sandbox.path());

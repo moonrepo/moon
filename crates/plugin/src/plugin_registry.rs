@@ -244,7 +244,7 @@ pub struct PluginInstance<'l, T: Plugin> {
     entry: OccupiedEntry<'l, Id, T>,
 }
 
-impl<'l, T: Plugin> Deref for PluginInstance<'l, T> {
+impl<T: Plugin> Deref for PluginInstance<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -252,7 +252,7 @@ impl<'l, T: Plugin> Deref for PluginInstance<'l, T> {
     }
 }
 
-impl<'l, T: Plugin> DerefMut for PluginInstance<'l, T> {
+impl<T: Plugin> DerefMut for PluginInstance<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.entry.get_mut()
     }

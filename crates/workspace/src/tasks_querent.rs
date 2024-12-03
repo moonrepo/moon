@@ -10,7 +10,7 @@ pub struct WorkspaceBuilderTasksQuerent<'builder> {
     pub task_data: &'builder FxHashMap<Target, TaskBuildData>,
 }
 
-impl<'builder> TasksQuerent for WorkspaceBuilderTasksQuerent<'builder> {
+impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
     fn query_projects_by_tag(&self, tag: &str) -> miette::Result<Vec<&Id>> {
         Ok(self
             .projects_by_tag

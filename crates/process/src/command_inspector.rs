@@ -19,7 +19,7 @@ pub struct CommandLine<'l> {
     pub main_command: LineValue<'l>,
 }
 
-impl<'l> CommandLine<'l> {
+impl CommandLine<'_> {
     pub fn new(command: &Command) -> CommandLine {
         let mut command_line: Vec<LineValue> = vec![];
         let mut input_line: Vec<LineValue> = vec![];
@@ -93,7 +93,7 @@ impl<'l> CommandLine<'l> {
     }
 }
 
-impl<'l> Display for CommandLine<'l> {
+impl Display for CommandLine<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let command = join_args_os(&self.command);
         let command = command.to_string_lossy();

@@ -360,7 +360,7 @@ impl<'task> CommandExecutor<'task> {
     }
 }
 
-impl<'task> Drop for CommandExecutor<'task> {
+impl Drop for CommandExecutor<'_> {
     fn drop(&mut self) {
         self.stop_monitoring();
     }

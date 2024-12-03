@@ -92,7 +92,7 @@ pub enum Event<'data> {
     },
 }
 
-impl<'data> Event<'data> {
+impl Event<'_> {
     pub fn get_type(&self) -> &str {
         match self {
             Event::ActionStarted { .. } => "action.started",

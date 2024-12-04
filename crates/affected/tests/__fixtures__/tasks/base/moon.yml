@@ -3,7 +3,15 @@ tasks:
   b: {}
   c: {}
 
-  # Affected by env vars
   by-env:
     inputs:
       - '$ENV'
+  by-file:
+    inputs:
+      - 'file.txt'
+  by-glob:
+    inputs:
+      - '*.txt'
+
+  no-inputs:
+    inputs: []

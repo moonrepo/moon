@@ -402,10 +402,88 @@ mod affected_tasks {
         let touched_files = FxHashSet::default();
 
         let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
-        tracker.track_projects().unwrap();
+        tracker.track_tasks().unwrap();
         let affected = tracker.build();
 
         assert!(affected.tasks.is_empty());
+    }
+
+    #[tokio::test]
+    async fn not_affected_if_no_inputs() {
+        let workspace_graph = generate_workspace_graph("tasks").await;
+        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:no-inputs").unwrap()])
+            .unwrap();
+        let affected = tracker.build();
+
+        assert!(affected.tasks.is_empty());
+    }
+
+    #[tokio::test]
+    async fn affected_by_file() {
+        let workspace_graph = generate_workspace_graph("tasks").await;
+        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
+            .unwrap();
+        let affected = tracker.build();
+
+        assert_eq!(
+            affected.tasks,
+            FxHashMap::from_iter([(
+                Target::parse("base:by-file").unwrap(),
+                create_state_from_file("base/file.txt")
+            )])
+        );
+    }
+
+    #[tokio::test]
+    async fn affected_by_glob() {
+        let workspace_graph = generate_workspace_graph("tasks").await;
+        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-glob").unwrap()])
+            .unwrap();
+        let affected = tracker.build();
+
+        assert_eq!(
+            affected.tasks,
+            FxHashMap::from_iter([(
+                Target::parse("base:by-glob").unwrap(),
+                create_state_from_file("base/file.txt")
+            )])
+        );
+    }
+
+    #[tokio::test]
+    async fn affected_by_env_var() {
+        let workspace_graph = generate_workspace_graph("tasks").await;
+        let touched_files = FxHashSet::default();
+
+        env::set_var("ENV", "affected");
+
+        let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-env").unwrap()])
+            .unwrap();
+        let affected = tracker.build();
+
+        assert_eq!(
+            affected.tasks,
+            FxHashMap::from_iter([(
+                Target::parse("base:by-env").unwrap(),
+                create_state_from_env("ENV")
+            )])
+        );
+
+        env::remove_var("ENV");
     }
 
     #[tokio::test]
@@ -470,30 +548,6 @@ mod affected_tasks {
                 ),
             ])
         );
-    }
-
-    #[tokio::test]
-    async fn by_env_var() {
-        let workspace_graph = generate_workspace_graph("tasks").await;
-        let touched_files = FxHashSet::default();
-
-        env::set_var("ENV", "affected");
-
-        let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
-        tracker
-            .track_tasks_by_target(&[Target::parse("base:by-env").unwrap()])
-            .unwrap();
-        let affected = tracker.build();
-
-        assert_eq!(
-            affected.tasks,
-            FxHashMap::from_iter([(
-                Target::parse("base:by-env").unwrap(),
-                create_state_from_env("ENV")
-            )])
-        );
-
-        env::remove_var("ENV");
     }
 
     #[tokio::test]

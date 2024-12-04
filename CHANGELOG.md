@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where a task with explicit no inputs (`inputs: []`) would always be marked as affected.
+
 #### ⚙️ Internal
 
 - Updated proto to v0.43.0 (from 0.42.2).

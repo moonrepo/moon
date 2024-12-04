@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.aa2d49d0.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.36e2b1e0.js" defer="defer"></script>
 <script src="/assets/js/main.518be3ce.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -34,7 +34,7 @@ can define tasks that can be ran using this new root-level project name, for exa
 <p>And that&#x27;s it, but there are a few caveats to be aware of...</p>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="caveats">Caveats<a class="hash-link" aria-label="Direct link to Caveats" title="Direct link to Caveats" href="/docs/guides/root-project#caveats">​</a></h2>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="greedy-inputs">Greedy inputs<a class="hash-link" aria-label="Direct link to Greedy inputs" title="Direct link to Greedy inputs" href="/docs/guides/root-project#greedy-inputs">​</a></h3>
-<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>In moon v1.24, root-level tasks default to no inputs. In previous versions, inputs default to
+<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>In moon v1.24, root-level tasks default to no inputs. In previous versions, inputs defaulted to
 <code>**/*</code>. This section is only applicable for older moon versions!</p></div></div>
 <p>Task <a href="/docs/config/project#inputs"><code>inputs</code></a> default to <code>**/*</code>, which would result in root-level tasks
 scanning <em>all</em> files in the repository. This will be a very expensive operation! We suggest

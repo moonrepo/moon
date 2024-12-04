@@ -324,7 +324,7 @@ impl<'app> AffectedTracker<'app> {
 
         // inputs: []
         if task.state.empty_inputs {
-            return Ok(Some(AffectedBy::AlwaysAffected));
+            return Ok(None);
         }
 
         for var_name in &task.input_env {

@@ -180,7 +180,7 @@ fn distribute_targets_across_jobs(
 
     console.print_header("Distributing targets across jobs")?;
     console.write_line(format!("Job index: {job_index}"))?;
-    console.write_line(format!("Job total: {job_index}"))?;
+    console.write_line(format!("Job total: {job_total}"))?;
     console.write_line(format!("Batch size: {batch_size}"))?;
     console.write_line("Batched targets:")?;
 

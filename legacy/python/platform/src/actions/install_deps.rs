@@ -45,8 +45,8 @@ pub async fn install_deps(
         }
 
         // Add requirements.txt path, if found
-        if let Some(req) = &requirements_path {
-            args.extend(["-r", req.to_str().unwrap_or_default()]);
+        if let Some(reqs_path) = requirements_path.as_ref().and_then(|req| req.to_str()) {
+            args.extend(["-r", reqs_path]);
         }
 
         if !args.is_empty() {

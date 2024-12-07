@@ -4,6 +4,7 @@
 
 #### 🐞 Fixes
 
+- Fixed `moon ci` showing incorrect job related logs.
 - Fixed some issues with the Python toolchain:
   - pip is no longer required to be enabled to activate a virtual environment.
   - The venv root is now the location of a located `requirements.txt`, otherwise the package root,

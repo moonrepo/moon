@@ -1,9 +1,7 @@
 use moon_action::Operation;
 use moon_console::{Checkpoint, Console};
-use moon_python_tool::PythonTool;
+use moon_python_tool::{find_requirements_txt, PythonTool};
 use std::path::Path;
-
-use crate::find_requirements_txt;
 
 pub async fn install_deps(
     python: &PythonTool,
@@ -33,7 +31,7 @@ pub async fn install_deps(
 
         operations.push(
             Operation::task_execution(format!("python {}", args.join(" ")))
-                .track_async(|| python.exec_python(args, workspace_root))
+                .track_async(|| python.exec_python(args, working_dir, workspace_root))
                 .await?,
         );
     }
@@ -60,7 +58,7 @@ pub async fn install_deps(
 
             operations.push(
                 Operation::task_execution(format!("python {}", args.join(" ")))
-                    .track_async(|| python.exec_python(args, working_dir))
+                    .track_async(|| python.exec_python(args, working_dir, workspace_root))
                     .await?,
             );
         }

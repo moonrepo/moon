@@ -175,7 +175,7 @@ fn distribute_targets_across_jobs(
 
     let job_index = args.job.unwrap_or_default();
     let job_total = args.job_total.unwrap_or_default();
-    let batch_size = (targets.len() + job_total - 1) / job_total;
+    let batch_size = targets.len().div_ceil(job_total);
     let batched_targets;
 
     console.print_header("Distributing targets across jobs")?;

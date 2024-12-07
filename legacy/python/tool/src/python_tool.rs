@@ -10,16 +10,25 @@ use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
 use tracing::instrument;
 
-pub fn get_python_tool_paths(python_tool: &PythonTool, working_dir: &Path) -> Vec<PathBuf> {
-    let venv_python = working_dir.join(&python_tool.config.venv_name);
+pub fn find_requirements_txt(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
+    fs::find_upwards_until("requirements.txt", starting_dir, workspace_root)
+}
 
-    if venv_python.exists() {
-        vec![venv_python.join("Scripts"), venv_python.join("bin")]
+pub fn get_python_tool_paths(
+    python_tool: &PythonTool,
+    working_dir: &Path,
+    workspace_root: &Path,
+) -> Vec<PathBuf> {
+    if let Some(venv_root) =
+        fs::find_upwards_until(&python_tool.config.venv_name, working_dir, workspace_root)
+    {
+        vec![venv_root.join("Scripts"), venv_root.join("bin")]
     } else {
         get_proto_paths(&python_tool.proto_env)
     }
@@ -68,7 +77,12 @@ impl PythonTool {
     }
 
     #[instrument(skip_all)]
-    pub async fn exec_python<I, S>(&self, args: I, working_dir: &Path) -> miette::Result<()>
+    pub async fn exec_python<I, S>(
+        &self,
+        args: I,
+        working_dir: &Path,
+        workspace_root: &Path,
+    ) -> miette::Result<()>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -78,7 +92,7 @@ impl PythonTool {
             .envs(get_proto_env_vars())
             .env(
                 "PATH",
-                prepend_path_env_var(get_python_tool_paths(self, working_dir)),
+                prepend_path_env_var(get_python_tool_paths(self, working_dir, workspace_root)),
             )
             .cwd(working_dir)
             .with_console(self.console.clone())

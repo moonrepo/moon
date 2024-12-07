@@ -1,4 +1,4 @@
-use crate::{actions, find_requirements_txt, toolchain_hash::PythonToolchainHash};
+use crate::{actions, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::{path::is_root_level_source, Id};
@@ -12,7 +12,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_python_lang::pip_requirements::load_lockfile_dependencies;
-use moon_python_tool::{get_python_tool_paths, PythonTool};
+use moon_python_tool::{find_requirements_txt, get_python_tool_paths, PythonTool};
 use moon_task::Task;
 use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
 use moon_utils::async_trait;
@@ -294,16 +294,14 @@ impl Platform for PythonPlatform {
 
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {
-                let cwd = if python.config.root_requirements_only {
-                    self.workspace_root.as_path()
-                } else {
-                    working_dir
-                };
-
                 command.env("PROTO_PYTHON_VERSION", version);
                 command.env(
                     "PATH",
-                    prepend_path_env_var(get_python_tool_paths(python, cwd)),
+                    prepend_path_env_var(get_python_tool_paths(
+                        python,
+                        working_dir,
+                        &self.workspace_root,
+                    )),
                 );
             }
         }

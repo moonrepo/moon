@@ -12,33 +12,33 @@ pub async fn install_deps(
     console: &Console,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
+    let requirements_path = find_requirements_txt(working_dir, workspace_root);
+
+    let venv_root = if python.config.root_requirements_only {
+        workspace_root.join(&python.config.venv_name)
+    } else {
+        requirements_path
+            .as_ref()
+            .and_then(|rp| rp.parent())
+            .unwrap_or(working_dir)
+            .join(&python.config.venv_name)
+    };
+
+    if !venv_root.exists() {
+        console
+            .out
+            .print_checkpoint(Checkpoint::Setup, "python venv")?;
+
+        let args = vec!["-m", "venv", venv_root.to_str().unwrap_or_default()];
+
+        operations.push(
+            Operation::task_execution(format!("python {}", args.join(" ")))
+                .track_async(|| python.exec_python(args, workspace_root))
+                .await?,
+        );
+    }
 
     if let Some(pip_config) = &python.config.pip {
-        let requirements_path = find_requirements_txt(working_dir, workspace_root);
-        let virtual_environment = if python.config.root_requirements_only {
-            workspace_root.join(&python.config.venv_name)
-        } else {
-            working_dir.join(&python.config.venv_name)
-        };
-
-        if !virtual_environment.exists() {
-            console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "activate virtual environment")?;
-
-            let args = vec![
-                "-m",
-                "venv",
-                virtual_environment.to_str().unwrap_or_default(),
-            ];
-
-            operations.push(
-                Operation::task_execution(format!("python {}", args.join(" ")))
-                    .track_async(|| python.exec_python(args, workspace_root))
-                    .await?,
-            );
-        }
-
         let mut args = vec![];
 
         // Add pip installArgs, if users have given

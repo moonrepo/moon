@@ -1,10 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed some issues with the Python toolchain:
+  - pip is no longer required to be enabled to activate a virtual environment.
+  - The venv root is now the location of a located `requirements.txt`, otherwise the package root,
+    or workspace root if `python.rootRequirementsOnly` is enabled.
+
 ## 1.30.3
 
 #### 🐞 Fixes
 
-- Fixed an issue where a task with explicit no inputs (`inputs: []`) would always be marked as affected.
+- Fixed an issue where a task with explicit no inputs (`inputs: []`) would always be marked as
+  affected.
 
 #### ⚙️ Internal
 

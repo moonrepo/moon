@@ -1,10 +1,8 @@
 ---
 source: crates/cli/tests/run_python_test.rs
-assertion_line: 60
 expression: assert.output()
-snapshot_kind: text
 ---
-▪▪▪▪ activate virtual environment
+▪▪▪▪ python venv
 ▪▪▪▪ pip install
 ▪▪▪▪ python:poetry
 Poetry (version 1.8.4)

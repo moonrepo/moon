@@ -22,7 +22,7 @@ pub async fn install_deps(
             .join(&python.config.venv_name)
     };
 
-    if !venv_root.exists() {
+    if !venv_root.exists() && requirements_path.is_some() {
         console
             .out
             .print_checkpoint(Checkpoint::Setup, "python venv")?;

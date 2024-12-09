@@ -758,19 +758,18 @@ Python installation's are based on pre-built binaries provided by
 Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
 the root `requirements.txt`, and only installing dependencies in the workspace root, and not within
 individual projects. It also bypasses all `workspaces` checks to determine package locations.
-Defaults to `true`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
-  rootRequirementsOnly: false
+  rootRequirementsOnly: true
 ```
 
 ### `venvName`
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#venvName" />
 
-Defines the virtual environment file name, which will be created in the workspace or project root,
-and where dependencies will be installed into. Defaults to `.venv`
+Defines the virtual environment name, which will be created in the workspace or project root when a
+`requirements.txt` exists, and where dependencies will be installed into. Defaults to `.venv`
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:

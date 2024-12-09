@@ -21,7 +21,6 @@ pub struct PythonConfig {
 
     /// Assumes only the root `requirements.txt` is used for dependencies.
     /// Can be used to support the "one version policy" pattern.
-    #[setting(default = true)]
     pub root_requirements_only: bool,
 
     /// Defines the virtual environment name, which will be created in the workspace root.

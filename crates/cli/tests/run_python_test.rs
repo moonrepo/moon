@@ -57,6 +57,10 @@ fn runs_install_deps_via_args() {
         }),
         ..PartialPythonConfig::default()
     });
+
+    // Needed for venv
+    sandbox.create_file("base/requirements.txt", "");
+
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("python:poetry");
     });

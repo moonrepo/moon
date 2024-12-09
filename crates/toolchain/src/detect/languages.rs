@@ -38,6 +38,7 @@ pub static PYTHON: StaticStringList = &[
     "pyproject.toml",
     ".pylock.toml",
     ".python-version",
+    ".venv",
     // pip
     "Pipfile",
     "Pipfile.lock",

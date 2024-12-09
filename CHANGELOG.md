@@ -1,10 +1,23 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `moon ci` showing incorrect job related logs.
+- Fixed some issues with the Python toolchain:
+  - pip is no longer required to be enabled to activate a virtual environment.
+  - Changed `python.rootRequirementsOnly` to `false` by default.
+  - The venv root is now the location of a found `requirements.txt`, otherwise the package root, or
+    workspace root if `python.rootRequirementsOnly` is enabled.
+  - Tasks will now inherit the correct venv paths in `PATH`.
+
 ## 1.30.3
 
 #### 🐞 Fixes
 
-- Fixed an issue where a task with explicit no inputs (`inputs: []`) would always be marked as affected.
+- Fixed an issue where a task with explicit no inputs (`inputs: []`) would always be marked as
+  affected.
 
 #### ⚙️ Internal
 

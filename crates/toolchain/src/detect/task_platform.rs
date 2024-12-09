@@ -60,7 +60,7 @@ pub fn detect_task_platform(command: &str, enabled_platforms: &[PlatformType]) -
     }
 
     if PYTHON_COMMANDS
-        .get_or_init(|| Regex::new("^(python|python3|pip|pip3)$").unwrap())
+        .get_or_init(|| Regex::new("^(python|python3|python-3|pip|pip3|pip-3)$").unwrap())
         .is_match(command)
     {
         return use_platform_if_enabled(PlatformType::Python, enabled_platforms);

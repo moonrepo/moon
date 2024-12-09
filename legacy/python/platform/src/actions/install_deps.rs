@@ -1,9 +1,7 @@
 use moon_action::Operation;
 use moon_console::{Checkpoint, Console};
-use moon_python_tool::PythonTool;
+use moon_python_tool::{find_requirements_txt, PythonTool};
 use std::path::Path;
-
-use crate::find_requirements_txt;
 
 pub async fn install_deps(
     python: &PythonTool,
@@ -12,33 +10,33 @@ pub async fn install_deps(
     console: &Console,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
+    let requirements_path = find_requirements_txt(working_dir, workspace_root);
+
+    let venv_root = if python.config.root_requirements_only {
+        workspace_root.join(&python.config.venv_name)
+    } else {
+        requirements_path
+            .as_ref()
+            .and_then(|rp| rp.parent())
+            .unwrap_or(working_dir)
+            .join(&python.config.venv_name)
+    };
+
+    if !venv_root.exists() && requirements_path.is_some() {
+        console
+            .out
+            .print_checkpoint(Checkpoint::Setup, "python venv")?;
+
+        let args = vec!["-m", "venv", venv_root.to_str().unwrap_or_default()];
+
+        operations.push(
+            Operation::task_execution(format!("python {}", args.join(" ")))
+                .track_async(|| python.exec_python(args, working_dir, workspace_root))
+                .await?,
+        );
+    }
 
     if let Some(pip_config) = &python.config.pip {
-        let requirements_path = find_requirements_txt(working_dir, workspace_root);
-        let virtual_environment = if python.config.root_requirements_only {
-            workspace_root.join(&python.config.venv_name)
-        } else {
-            working_dir.join(&python.config.venv_name)
-        };
-
-        if !virtual_environment.exists() {
-            console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "activate virtual environment")?;
-
-            let args = vec![
-                "-m",
-                "venv",
-                virtual_environment.to_str().unwrap_or_default(),
-            ];
-
-            operations.push(
-                Operation::task_execution(format!("python {}", args.join(" ")))
-                    .track_async(|| python.exec_python(args, workspace_root))
-                    .await?,
-            );
-        }
-
         let mut args = vec![];
 
         // Add pip installArgs, if users have given
@@ -47,8 +45,8 @@ pub async fn install_deps(
         }
 
         // Add requirements.txt path, if found
-        if let Some(req) = &requirements_path {
-            args.extend(["-r", req.to_str().unwrap_or_default()]);
+        if let Some(reqs_path) = requirements_path.as_ref().and_then(|req| req.to_str()) {
+            args.extend(["-r", reqs_path]);
         }
 
         if !args.is_empty() {
@@ -60,7 +58,7 @@ pub async fn install_deps(
 
             operations.push(
                 Operation::task_execution(format!("python {}", args.join(" ")))
-                    .track_async(|| python.exec_python(args, working_dir))
+                    .track_async(|| python.exec_python(args, working_dir, workspace_root))
                     .await?,
             );
         }

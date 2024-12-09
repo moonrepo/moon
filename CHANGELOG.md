@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed Python virtual env bin path not being available for tasks when `python.version` is not
+  defined.
+
 ## 1.30.4
 
 #### 🐞 Fixes

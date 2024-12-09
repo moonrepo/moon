@@ -25,13 +25,17 @@ pub fn get_python_tool_paths(
     working_dir: &Path,
     workspace_root: &Path,
 ) -> Vec<PathBuf> {
+    let mut paths = vec![];
+
     if let Some(venv_root) =
         fs::find_upwards_until(&python_tool.config.venv_name, working_dir, workspace_root)
     {
-        vec![venv_root.join("Scripts"), venv_root.join("bin")]
-    } else {
-        get_proto_paths(&python_tool.proto_env)
+        paths.push(venv_root.join("Scripts"));
+        paths.push(venv_root.join("bin"));
     }
+
+    paths.extend(get_proto_paths(&python_tool.proto_env));
+    paths
 }
 
 pub struct PythonTool {

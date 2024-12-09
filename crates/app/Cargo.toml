@@ -36,7 +36,7 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.8.0"
+bytes = "1.9.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",

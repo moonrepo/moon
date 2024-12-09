@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed Python virtual env bin path not being available for tasks when `python.version` is not
+  defined.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.43.1 (from 0.43.0).
+- Updated dependencies.
+
 ## 1.30.4
 
 #### 🐞 Fixes

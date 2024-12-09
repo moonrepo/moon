@@ -20,10 +20,10 @@ default-members = ["crates/cli"]
 async-recursion = "1.1.1"
 async-trait = "0.1.83"
 cached = "0.54.0"
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { version = "0.4.39", features = ["serde"] }
 cd_env = "0.2.0"
 ci_env = "0.3.0"
-clap = { version = "4.5.22", default-features = false, features = [
+clap = { version = "4.5.23", default-features = false, features = [
     "std",
     "error-context",
 ] }
@@ -71,14 +71,14 @@ starbase_archive = { version = "0.9.0", default-features = false, features = [
 ] }
 starbase_events = "0.6.6"
 starbase_sandbox = "0.8.0"
-starbase_shell = "0.6.5"
+starbase_shell = "0.6.6"
 starbase_styles = { version = "0.4.4", features = ["relative-path"] }
 starbase_utils = { version = "0.9.1", default-features = false, features = [
     "editor-config",
     "miette",
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
-thiserror = "2.0.4"
+thiserror = "2.0.6"
 tokio = { version = "1.42.0", default-features = false, features = [
     "macros",
     "process",
@@ -88,7 +88,7 @@ tokio = { version = "1.42.0", default-features = false, features = [
     "time",
     "tracing",
 ] }
-tokio-util = "0.7.12"
+tokio-util = "0.7.13"
 tracing = "0.1.41"
 uuid = { version = "1.11.0", features = ["v4"] }
 

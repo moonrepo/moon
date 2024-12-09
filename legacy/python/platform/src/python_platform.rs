@@ -239,6 +239,7 @@ impl Platform for PythonPlatform {
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         let deps = BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
+
         hasher.hash_content(PythonToolchainHash {
             version: self
                 .config
@@ -261,9 +262,11 @@ impl Platform for PythonPlatform {
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         let mut deps = BTreeMap::new();
+
         if let Some(pip_requirements) = find_requirements_txt(&project.root, &self.workspace_root) {
             deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
         }
+
         hasher.hash_content(PythonToolchainHash {
             version: self
                 .config
@@ -295,15 +298,16 @@ impl Platform for PythonPlatform {
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {
                 command.env("PROTO_PYTHON_VERSION", version);
-                command.env(
-                    "PATH",
-                    prepend_path_env_var(get_python_tool_paths(
-                        python,
-                        working_dir,
-                        &self.workspace_root,
-                    )),
-                );
             }
+
+            command.env(
+                "PATH",
+                prepend_path_env_var(get_python_tool_paths(
+                    python,
+                    working_dir,
+                    &self.workspace_root,
+                )),
+            );
         }
 
         Ok(command)

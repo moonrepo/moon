@@ -7,6 +7,10 @@
 - Fixed Python virtual env bin path not being available for tasks when `python.version` is not
   defined.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.30.4
 
 #### 🐞 Fixes

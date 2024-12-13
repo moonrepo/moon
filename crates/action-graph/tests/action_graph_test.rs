@@ -7,7 +7,7 @@ use moon_action_context::TargetState;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{PlatformType, TaskArgs, TaskDependencyConfig};
+use moon_config::{PlatformType, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_workspace_graph;
@@ -1027,7 +1027,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
-                task.options.run_in_ci = true;
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
 
                 builder
                     .run_task(
@@ -1121,7 +1121,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
-                task.options.run_in_ci = false;
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
 
                 builder
                     .run_task(
@@ -1158,7 +1158,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
-                task.options.run_in_ci = false;
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
 
                 builder
                     .run_task(
@@ -1188,7 +1188,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
-                task.options.run_in_ci = false;
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
 
                 builder
                     .run_task(

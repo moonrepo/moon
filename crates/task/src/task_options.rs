@@ -1,7 +1,7 @@
 use moon_common::cacheable;
 use moon_config::{
-    InputPath, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOutputStyle,
-    TaskUnixShell, TaskWindowsShell,
+    InputPath, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOptionRunInCI,
+    TaskOutputStyle, TaskUnixShell, TaskWindowsShell,
 };
 
 cacheable!(
@@ -53,7 +53,7 @@ cacheable!(
         pub run_deps_in_parallel: bool,
 
         #[serde(rename = "runInCI")]
-        pub run_in_ci: bool,
+        pub run_in_ci: TaskOptionRunInCI,
 
         pub run_from_workspace_root: bool,
 
@@ -93,7 +93,7 @@ impl Default for TaskOptions {
             persistent: false,
             retry_count: 0,
             run_deps_in_parallel: true,
-            run_in_ci: true,
+            run_in_ci: TaskOptionRunInCI::Affected,
             run_from_workspace_root: false,
             shell: None,
             timeout: None,

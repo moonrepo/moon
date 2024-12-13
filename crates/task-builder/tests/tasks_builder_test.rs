@@ -616,21 +616,21 @@ mod tasks_builder {
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             let task = tasks.get("interactive-local").unwrap();
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             let task = tasks.get("interactive-override").unwrap();
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
 
@@ -706,7 +706,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
         }
 
         #[tokio::test]
@@ -742,7 +742,7 @@ mod tasks_builder {
             let ci = tasks.get("override-ci").unwrap();
 
             assert!(ci.state.local_only);
-            assert!(ci.options.run_in_ci);
+            assert!(ci.options.run_in_ci.is_enabled());
         }
 
         #[tokio::test]
@@ -774,7 +774,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             // Custom overrides
@@ -784,7 +784,7 @@ mod tasks_builder {
             assert!(task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
 
@@ -799,7 +799,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert!(task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             // Custom overrides
@@ -809,7 +809,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
     }
@@ -1925,7 +1925,7 @@ mod tasks_builder {
             let task = tasks.get("extend-options").unwrap();
 
             assert!(!task.options.cache);
-            assert!(task.options.run_in_ci);
+            assert!(task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
         }
@@ -1937,7 +1937,7 @@ mod tasks_builder {
             let task = tasks.get("extend-local").unwrap();
 
             assert!(task.options.cache);
-            assert!(task.options.run_in_ci);
+            assert!(task.options.run_in_ci.is_enabled());
             assert!(!task.options.persistent);
         }
 
@@ -1962,7 +1962,7 @@ mod tasks_builder {
             );
 
             assert!(task.options.cache);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
         }

@@ -541,6 +541,10 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut inserted_nodes = vec![];
         let mut initial_targets = vec![];
 
+        if let Some(affected) = &mut self.affected {
+            affected.set_ci_check(reqs.ci_check);
+        }
+
         // Track the qualified as an initial target
         for locator in reqs.target_locators.clone() {
             initial_targets.push(match locator {

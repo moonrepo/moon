@@ -956,4 +956,110 @@ mod affected_tasks {
             );
         }
     }
+
+    mod ci {
+        use super::*;
+
+        #[tokio::test]
+        async fn when_ci_tracks_for_true() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.set_ci_check(true);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:enabled").unwrap(),
+                    create_state_from_file("ci/file.txt")
+                )])
+            );
+        }
+
+        #[tokio::test]
+        async fn when_not_ci_tracks_for_true() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.set_ci_check(false);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:enabled").unwrap(),
+                    create_state_from_file("ci/file.txt")
+                )])
+            );
+        }
+
+        #[tokio::test]
+        async fn when_ci_doesnt_track_for_false() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.set_ci_check(true);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert!(affected.tasks.is_empty());
+        }
+
+        #[tokio::test]
+        async fn when_not_ci_tracks_for_false() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.set_ci_check(false);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:disabled").unwrap(),
+                    create_state_from_file("ci/file.txt")
+                )])
+            );
+        }
+
+        #[tokio::test]
+        async fn when_ci_always_tracks_if_not_touched() {
+            let workspace_graph = generate_workspace_graph("tasks").await;
+            let touched_files = FxHashSet::default();
+
+            let mut tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+            tracker.set_ci_check(true);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:always").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:always").unwrap(),
+                    AffectedTaskState {
+                        other: true,
+                        ..Default::default()
+                    }
+                )])
+            );
+        }
+    }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
+  if affected, same as `true`).
+
 ## 1.30.6
 
 #### 🐞 Fixes

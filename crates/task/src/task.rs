@@ -236,7 +236,7 @@ impl Task {
 
     /// Return true if the task should run in a CI environment.
     pub fn should_run_in_ci(&self) -> bool {
-        if !self.options.run_in_ci {
+        if !self.options.run_in_ci.is_enabled() {
             return false;
         }
 

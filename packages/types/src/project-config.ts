@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type { UnresolvedVersionSpec } from './toolchain-config';
+import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
 /** The task-to-task relationship of the dependency. */
 export type DependencyType = 'cleanup' | 'required' | 'optional';

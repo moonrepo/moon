@@ -128,7 +128,7 @@ impl TaskDepsBuilder<'_> {
         }
 
         // Do not depend on tasks that can't run in CI
-        if !dep_task_options.run_in_ci && self.task.options.run_in_ci {
+        if !dep_task_options.run_in_ci.is_enabled() && self.task.options.run_in_ci.is_enabled() {
             return Err(TasksBuilderError::RunInCiDepRequirement {
                 dep: dep_task_target.to_owned(),
                 task: self.task.target.to_owned(),

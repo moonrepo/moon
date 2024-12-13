@@ -677,7 +677,6 @@
         "rootRequirementsOnly": {
           "title": "rootRequirementsOnly",
           "description": "Assumes only the root requirements.txt is used for dependencies. Can be used to support the \"one version policy\" pattern.",
-          "default": true,
           "type": "boolean",
           "markdownDescription": "Assumes only the root `requirements.txt` is used for dependencies. Can be used to support the \"one version policy\" pattern."
         },

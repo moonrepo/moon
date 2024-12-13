@@ -2,7 +2,7 @@ use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_project::Project;
-use moon_task::{Target, Task};
+use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
@@ -10,6 +10,8 @@ use std::fmt;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker<'app> {
+    ci: bool,
+
     workspace_graph: &'app WorkspaceGraph,
     touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
 
@@ -38,6 +40,7 @@ impl<'app> AffectedTracker<'app> {
             tasks: FxHashMap::default(),
             task_downstream: DownstreamScope::None,
             task_upstream: UpstreamScope::Deep,
+            ci: false,
         }
     }
 
@@ -80,6 +83,11 @@ impl<'app> AffectedTracker<'app> {
 
         affected.should_check = !self.touched_files.is_empty();
         affected
+    }
+
+    pub fn set_ci_check(&mut self, ci: bool) -> &mut Self {
+        self.ci = ci;
+        self
     }
 
     pub fn with_project_scopes(
@@ -320,6 +328,16 @@ impl<'app> AffectedTracker<'app> {
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
         if self.is_task_marked(task) {
             return Ok(Some(AffectedBy::AlreadyMarked));
+        }
+
+        if self.ci {
+            match &task.options.run_in_ci {
+                TaskOptionRunInCI::Always => {
+                    return Ok(Some(AffectedBy::AlwaysAffected));
+                }
+                TaskOptionRunInCI::Enabled(false) => return Ok(None),
+                _ => {}
+            };
         }
 
         // inputs: []

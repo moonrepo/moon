@@ -5,6 +5,7 @@ mod config_finder;
 mod config_loader;
 mod inherited_tasks_config;
 mod language_platform;
+mod macros;
 pub mod patterns;
 mod portable_path;
 mod project;

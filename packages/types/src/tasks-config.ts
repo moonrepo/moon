@@ -18,8 +18,6 @@ export interface TaskDependencyConfig {
 
 export type TaskDependency = string | TaskDependencyConfig;
 
-export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
-
 export type TaskOptionEnvFile = boolean | string | string[];
 
 /** The strategy in which to merge a specific task option. */
@@ -49,7 +47,7 @@ export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pw
 /** Options to control task inheritance and execution. */
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles: TaskOptionAffectedFiles | null;
+	affectedFiles: boolean | 'args' | 'env' | null;
 	/**
 	 * When affected and no files are matching, pass the task inputs
 	 * as arguments to the command, instead of `.`.
@@ -150,7 +148,7 @@ export interface TaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI: boolean | null;
+	runInCI: boolean | 'always' | 'affected' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.
@@ -301,7 +299,7 @@ export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 /** Options to control task inheritance and execution. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles?: TaskOptionAffectedFiles | null;
+	affectedFiles?: boolean | 'args' | 'env' | null;
 	/**
 	 * When affected and no files are matching, pass the task inputs
 	 * as arguments to the command, instead of `.`.
@@ -402,7 +400,7 @@ export interface PartialTaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot?: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI?: boolean | null;
+	runInCI?: boolean | 'always' | 'affected' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.

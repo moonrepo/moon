@@ -1095,20 +1095,6 @@
         "windows"
       ]
     },
-    "TaskOptionAffectedFiles": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string",
-          "enum": [
-            "args",
-            "env"
-          ]
-        }
-      ]
-    },
     "TaskOptionEnvFile": {
       "anyOf": [
         {
@@ -1134,7 +1120,18 @@
           "description": "The pattern in which affected files will be passed to the task.",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionAffectedFiles"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "args",
+                    "env"
+                  ]
+                }
+              ]
             },
             {
               "type": "null"
@@ -1414,7 +1411,18 @@
           "description": "Whether to run the task in CI or not, when executing moon ci or moon run.",
           "anyOf": [
             {
-              "type": "boolean"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "affected"
+                  ]
+                }
+              ]
             },
             {
               "type": "null"

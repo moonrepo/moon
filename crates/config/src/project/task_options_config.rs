@@ -24,13 +24,14 @@ fn validate_interactive<C>(
 
 derive_enum!(
     /// The pattern in which affected files will be passed to the affected task.
-    #[serde(untagged, expecting = "expected `args`, `env`, or a boolean")]
+    #[serde(expecting = "expected `args`, `env`, or a boolean")]
     pub enum TaskOptionAffectedFiles {
         /// Passed as command line arguments.
         Args,
         /// Passed as environment variables.
         Env,
         /// Passed as command line arguments and environment variables.
+        #[serde(untagged)]
         Enabled(bool),
     }
 );
@@ -87,13 +88,14 @@ impl Schematic for TaskOptionEnvFile {
 
 derive_enum!(
     /// The pattern in which to run the task automatically in CI.
-    #[serde(untagged, expecting = "expected `always`, `affected`, or a boolean")]
+    #[serde(expecting = "expected `always`, `affected`, or a boolean")]
     pub enum TaskOptionRunInCI {
         /// Always run, regardless of affected.
         Always,
         /// Only run if affected by touched files.
         Affected,
         /// Either affected, or don't run at all.
+        #[serde(untagged)]
         Enabled(bool),
     }
 );

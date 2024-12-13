@@ -10,6 +10,8 @@ use std::fmt;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker<'app> {
+    ci: bool,
+
     workspace_graph: &'app WorkspaceGraph,
     touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
 
@@ -38,6 +40,7 @@ impl<'app> AffectedTracker<'app> {
             tasks: FxHashMap::default(),
             task_downstream: DownstreamScope::None,
             task_upstream: UpstreamScope::Deep,
+            ci: false,
         }
     }
 
@@ -80,6 +83,11 @@ impl<'app> AffectedTracker<'app> {
 
         affected.should_check = !self.touched_files.is_empty();
         affected
+    }
+
+    pub fn set_ci_check(&mut self, ci: bool) -> &mut Self {
+        self.ci = ci;
+        self
     }
 
     pub fn with_project_scopes(
@@ -322,13 +330,15 @@ impl<'app> AffectedTracker<'app> {
             return Ok(Some(AffectedBy::AlreadyMarked));
         }
 
-        match &task.options.run_in_ci {
-            TaskOptionRunInCI::Always => {
-                return Ok(Some(AffectedBy::AlwaysAffected));
-            }
-            TaskOptionRunInCI::Enabled(false) => return Ok(None),
-            _ => {}
-        };
+        if self.ci {
+            match &task.options.run_in_ci {
+                TaskOptionRunInCI::Always => {
+                    return Ok(Some(AffectedBy::AlwaysAffected));
+                }
+                TaskOptionRunInCI::Enabled(false) => return Ok(None),
+                _ => {}
+            };
+        }
 
         // inputs: []
         if task.state.empty_inputs {

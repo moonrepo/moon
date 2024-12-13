@@ -1,0 +1,13 @@
+tasks:
+  enabled:
+    options:
+      runInCI: true
+  disabled:
+    options:
+      runInCI: false
+  affected:
+    options:
+      runInCI: affected
+  always:
+    options:
+      runInCI: always

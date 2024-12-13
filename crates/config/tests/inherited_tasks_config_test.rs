@@ -2,11 +2,7 @@ mod utils;
 
 use httpmock::prelude::*;
 use moon_common::Id;
-use moon_config::{
-    ConfigLoader, InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType,
-    PlatformType, ProjectType, StackType, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionsConfig,
-};
+use moon_config::*;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::Config;
@@ -97,7 +93,7 @@ tasks:
                     TaskConfig {
                         command: TaskArgs::String("e".to_owned()),
                         options: TaskOptionsConfig {
-                            run_in_ci: Some(false),
+                            run_in_ci: Some(TaskOptionRunInCI::Enabled(false)),
                             ..TaskOptionsConfig::default()
                         },
                         ..TaskConfig::default()
@@ -1111,7 +1107,6 @@ mod task_manager {
     mod pkl {
         use super::*;
         use moon_common::Id;
-        use moon_config::*;
         use starbase_sandbox::locate_fixture;
 
         #[test]
@@ -1183,7 +1178,7 @@ mod task_manager {
                         persistent: Some(true),
                         retry_count: Some(3),
                         run_deps_in_parallel: Some(false),
-                        run_in_ci: Some(true),
+                        run_in_ci: Some(TaskOptionRunInCI::Enabled(true)),
                         run_from_workspace_root: Some(false),
                         shell: Some(false),
                         timeout: Some(60),

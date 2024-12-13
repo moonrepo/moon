@@ -6,8 +6,8 @@ use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskPreset,
-    TaskType, ToolchainConfig,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,
+    TaskPreset, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
@@ -632,7 +632,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(run_in_ci) = &config.run_in_ci {
-                options.run_in_ci = *run_in_ci;
+                options.run_in_ci = run_in_ci.to_owned();
             }
 
             if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
@@ -660,7 +660,7 @@ impl<'proj> TasksBuilder<'proj> {
             // options.cache = false;
             options.output_style = Some(TaskOutputStyle::Stream);
             // options.persistent = false;
-            options.run_in_ci = false;
+            options.run_in_ci = TaskOptionRunInCI::Enabled(false);
         }
 
         Ok(options)
@@ -781,7 +781,7 @@ impl<'proj> TasksBuilder<'proj> {
                 interactive: preset.is_some_and(|set| set == TaskPreset::Watcher),
                 output_style: Some(TaskOutputStyle::Stream),
                 persistent: true,
-                run_in_ci: false,
+                run_in_ci: TaskOptionRunInCI::Enabled(false),
                 ..TaskOptions::default()
             },
             _ => TaskOptions::default(),

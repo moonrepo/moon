@@ -1,10 +1,9 @@
+use crate::generate_switch;
 use crate::portable_path::FilePath;
 use crate::shapes::{InputPath, OneOrMany};
 use moon_common::cacheable;
 use schematic::schema::{StringType, UnionType};
 use schematic::{derive_enum, Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
-use serde::{de, Deserialize, Deserializer, Serialize};
-use serde_yaml::Value;
 use std::env::consts;
 use std::str::FromStr;
 
@@ -23,50 +22,21 @@ fn validate_interactive<C>(
     Ok(())
 }
 
-/// The pattern in which affected files will be passed to the affected task.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(untagged, rename_all = "kebab-case")]
-pub enum TaskOptionAffectedFiles {
-    /// Passed as command line arguments.
-    Args,
-    /// Passed as environment variables.
-    Env,
-    /// Passed as command line arguments and environment variables.
-    Enabled(bool),
-}
-
-impl Schematic for TaskOptionAffectedFiles {
-    fn schema_name() -> Option<String> {
-        Some("TaskOptionAffectedFiles".into())
+derive_enum!(
+    /// The pattern in which affected files will be passed to the affected task.
+    #[serde(expecting = "expected `args`, `env`, or a boolean")]
+    pub enum TaskOptionAffectedFiles {
+        /// Passed as command line arguments.
+        Args,
+        /// Passed as environment variables.
+        Env,
+        /// Passed as command line arguments and environment variables.
+        #[serde(untagged)]
+        Enabled(bool),
     }
+);
 
-    fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([
-            schema.infer::<bool>(),
-            schema.nest().string(StringType {
-                enum_values: Some(vec!["args".into(), "env".into()]),
-                ..Default::default()
-            }),
-        ]))
-    }
-}
-
-impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        match Value::deserialize(deserializer)? {
-            Value::Bool(value) => Ok(TaskOptionAffectedFiles::Enabled(value)),
-            Value::String(value) if value == "args" || value == "env" => Ok(if value == "args" {
-                TaskOptionAffectedFiles::Args
-            } else {
-                TaskOptionAffectedFiles::Env
-            }),
-            _ => Err(de::Error::custom("expected `args`, `env`, or a boolean")),
-        }
-    }
-}
+generate_switch!(TaskOptionAffectedFiles, ["args", "env"]);
 
 derive_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
@@ -115,6 +85,22 @@ impl Schematic for TaskOptionEnvFile {
         ]))
     }
 }
+
+derive_enum!(
+    /// The pattern in which to run the task automatically in CI.
+    #[serde(expecting = "expected `always`, `affected`, or a boolean")]
+    pub enum TaskOptionRunInCI {
+        /// Always run, regardless of affected.
+        Always,
+        /// Only run if affected by touched files.
+        Affected,
+        /// Either affected, or don't run at all.
+        #[serde(untagged)]
+        Enabled(bool),
+    }
+);
+
+generate_switch!(TaskOptionRunInCI, ["always", "affected"]);
 
 derive_enum!(
     /// The strategy in which to merge a specific task option.
@@ -278,7 +264,7 @@ cacheable!(
 
         /// Whether to run the task in CI or not, when executing `moon ci` or `moon run`.
         #[serde(rename = "runInCI")]
-        pub run_in_ci: Option<bool>,
+        pub run_in_ci: Option<TaskOptionRunInCI>,
 
         /// Runs the task from the workspace root, instead of the project root.
         pub run_from_workspace_root: Option<bool>,

@@ -36,7 +36,7 @@ derive_enum!(
     }
 );
 
-generate_switch!(TaskOptionAffectedFiles, vec!["args".into(), "env".into()]);
+generate_switch!(TaskOptionAffectedFiles, ["args", "env"]);
 
 derive_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
@@ -100,7 +100,7 @@ derive_enum!(
     }
 );
 
-generate_switch!(TaskOptionRunInCI, vec!["always".into(), "affected".into()]);
+generate_switch!(TaskOptionRunInCI, ["always", "affected"]);
 
 derive_enum!(
     /// The strategy in which to merge a specific task option.

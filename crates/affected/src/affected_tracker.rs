@@ -2,7 +2,7 @@ use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_project::Project;
-use moon_task::{Target, Task};
+use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
@@ -321,6 +321,14 @@ impl<'app> AffectedTracker<'app> {
         if self.is_task_marked(task) {
             return Ok(Some(AffectedBy::AlreadyMarked));
         }
+
+        match &task.options.run_in_ci {
+            TaskOptionRunInCI::Always => {
+                return Ok(Some(AffectedBy::AlwaysAffected));
+            }
+            TaskOptionRunInCI::Enabled(false) => return Ok(None),
+            _ => {}
+        };
 
         // inputs: []
         if task.state.empty_inputs {

@@ -437,7 +437,7 @@ impl<'task> TaskRunner<'task> {
         // Hash platform fields
         trace!(
             task_target = self.task.target.as_str(),
-            platform = ?self.task.platform,
+            toolchains = ?self.task.toolchains.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
             "Including toolchain specific fields in the hash"
         );
 

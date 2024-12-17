@@ -345,6 +345,9 @@ pub struct QueryTasksArgs {
     #[arg(long, help = "Filter tasks with the provided script", help_heading = HEADING_FILTERS)]
     script: Option<String>,
 
+    #[arg(long, help = "Filter tasks that belong to a toolchain", help_heading = HEADING_FILTERS)]
+    toolchain: Option<String>,
+
     #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
     type_of: Option<String>,
 }
@@ -362,6 +365,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         platform: args.platform,
         project: args.project,
         script: args.script,
+        toolchain: args.toolchain,
         type_of: args.type_of,
         ..QueryTasksOptions::default()
     };

@@ -44,13 +44,14 @@ cacheable!(
         pub language: LanguageType,
 
         /// Default platform to run tasks against.
+        #[deprecated]
         pub platform: PlatformType,
-
-        /// The technology stack of the project.
-        pub stack: StackType,
 
         /// Absolute path to the project's root folder.
         pub root: PathBuf,
+
+        /// The technology stack of the project.
+        pub stack: StackType,
 
         /// Relative path from the workspace root to the project root.
         /// Is the RHS of the `projects` setting.
@@ -63,6 +64,9 @@ cacheable!(
         /// List of targets of all tasks configured or inherited for the project.
         /// Includes internal tasks!
         pub task_targets: Vec<Target>,
+
+        /// Default toolchain to run tasks against.
+        pub toolchain: Option<Id>,
 
         /// The type of project.
         #[serde(rename = "type")]

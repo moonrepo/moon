@@ -22,6 +22,7 @@ pub enum Field<'l> {
     Tag(FieldValues<'l>),
     Task(FieldValues<'l>),
     TaskPlatform(Vec<PlatformType>),
+    TaskToolchain(FieldValues<'l>),
     TaskType(Vec<TaskType>),
 }
 

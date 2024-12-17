@@ -69,6 +69,7 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
+        #[deprecated]
         pub platform: PlatformType,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -80,6 +81,8 @@ cacheable!(
         pub state: TaskState,
 
         pub target: Target,
+
+        pub toolchains: Vec<Id>,
 
         #[serde(rename = "type")]
         pub type_of: TaskType,
@@ -222,6 +225,15 @@ impl Task {
     /// Return true if the task is a "run" type.
     pub fn is_run_type(&self) -> bool {
         matches!(self.type_of, TaskType::Run) || self.is_local()
+    }
+
+    /// Return true of the task will run in the system toolchain.
+    pub fn is_system_toolchain(&self) -> bool {
+        if self.toolchains.is_empty() {
+            self.platform.is_system()
+        } else {
+            self.toolchains.len() == 1 && self.toolchains[0] == "system"
+        }
     }
 
     /// Return true if the task is a "test" type.

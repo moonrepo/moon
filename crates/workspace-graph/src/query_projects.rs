@@ -124,6 +124,19 @@ impl WorkspaceGraph {
                                     .matches_enum(platforms, &task.platform)
                                     .unwrap_or_default()
                             })),
+                        Field::TaskToolchain(ids) => Ok(self
+                            .tasks
+                            .get_all_for_project(&project.id, false)?
+                            .iter()
+                            .any(|task| {
+                                let toolchains = task
+                                    .toolchains
+                                    .iter()
+                                    .map(|t| t.as_str())
+                                    .collect::<Vec<_>>();
+
+                                condition.matches_list(ids, &toolchains).unwrap_or_default()
+                            })),
                         Field::TaskType(types) => Ok(self
                             .tasks
                             .get_all_for_project(&project.id, false)?

@@ -29,7 +29,16 @@ pub enum LanguageType {
 
 impl LanguageType {
     pub fn other(id: &str) -> Result<LanguageType, IdError> {
-        Ok(LanguageType::Other(Id::new(id)?))
+        Ok(Self::Other(Id::new(id)?))
+    }
+
+    pub fn get_toolchain_ids(&self) -> Vec<Id> {
+        match self {
+            Self::Bash | Self::Batch | Self::Unknown => vec![Id::raw("system")],
+            Self::TypeScript => vec![Id::raw("typescript"), Id::raw("javascript")],
+            Self::Other(id) => vec![id.to_owned()],
+            other => vec![Id::raw(other.to_string().to_lowercase())],
+        }
     }
 }
 
@@ -92,6 +101,18 @@ impl PlatformType {
 
     pub fn is_unknown(&self) -> bool {
         matches!(self, PlatformType::Unknown)
+    }
+
+    pub fn get_toolchain_ids(&self) -> Vec<Id> {
+        match self {
+            PlatformType::Bun => vec![Id::raw("bun"), Id::raw("javascript")],
+            PlatformType::Deno => vec![Id::raw("deno"), Id::raw("javascript")],
+            PlatformType::Node => vec![Id::raw("node"), Id::raw("javascript")],
+            PlatformType::Python => vec![Id::raw("python")],
+            PlatformType::Rust => vec![Id::raw("rust")],
+            PlatformType::System => vec![Id::raw("system")],
+            PlatformType::Unknown => vec![],
+        }
     }
 }
 

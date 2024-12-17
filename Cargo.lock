@@ -4527,6 +4527,7 @@ dependencies = [
 name = "moon_toolchain"
 version = "0.0.1"
 dependencies = [
+ "moon_common",
  "moon_config",
  "regex",
  "serde",

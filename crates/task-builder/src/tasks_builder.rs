@@ -4,7 +4,7 @@ use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::path::{is_root_level_source, WorkspaceRelativePath};
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
-    is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
+    is_glob_like, InheritedTasksConfig, InputPath, LanguageType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,
     TaskPreset, TaskType, ToolchainConfig,
@@ -12,7 +12,7 @@ use moon_config::{
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
-use moon_toolchain::detect::detect_task_platform;
+use moon_toolchain::detect::detect_task_toolchains;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
@@ -72,10 +72,11 @@ pub struct TasksBuilderContext<'proj> {
 #[derive(Debug)]
 pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
+    enabled_toolchains: Vec<Id>,
 
     project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
-    project_platform: &'proj PlatformType,
+    project_language: &'proj LanguageType,
     project_source: &'proj WorkspaceRelativePath,
 
     // Global settings for tasks to inherit
@@ -94,14 +95,15 @@ impl<'proj> TasksBuilder<'proj> {
     pub fn new(
         project_id: &'proj Id,
         project_source: &'proj WorkspaceRelativePath,
-        project_platform: &'proj PlatformType,
+        project_language: &'proj LanguageType,
         context: TasksBuilderContext<'proj>,
     ) -> Self {
         Self {
+            enabled_toolchains: context.toolchain_config.get_enabled(),
             context,
             project_id,
             project_env: FxHashMap::default(),
-            project_platform,
+            project_language,
             project_source,
             implicit_deps: vec![],
             implicit_inputs: vec![],
@@ -384,8 +386,14 @@ impl<'proj> TasksBuilder<'proj> {
                 );
             }
 
+            // Backwards compat
+            #[allow(deprecated)]
             if !config.platform.is_unknown() {
                 task.platform = config.platform;
+            }
+
+            if !config.toolchain.is_empty() {
+                task.toolchains = config.toolchain.to_list();
             }
 
             if config.description.is_some() {
@@ -424,7 +432,7 @@ impl<'proj> TasksBuilder<'proj> {
         // If a script, wipe out inherited arguments, and extract the first command
         if let Some(script) = &task.script {
             task.args.clear();
-            task.platform = PlatformType::System;
+            task.toolchains = vec![Id::raw("system")];
 
             if let Some(i) = script.find(' ') {
                 task.command = script[0..i].to_owned();
@@ -460,21 +468,19 @@ impl<'proj> TasksBuilder<'proj> {
             );
         }
 
-        if task.platform.is_unknown() {
-            let platform = detect_task_platform(
-                &task.command,
-                &self.context.toolchain_config.get_enabled_platforms(),
-            );
+        // Backwards compat for when the user has explicitly configured
+        // the deprecated `platform` setting
+        #[allow(deprecated)]
+        if !task.platform.is_unknown() && task.toolchains.is_empty() {
+            task.toolchains = task.platform.get_toolchain_ids();
+        }
 
-            task.platform = if platform.is_unknown() {
-                if self.project_platform.is_unknown() {
-                    PlatformType::System
-                } else {
-                    self.project_platform.to_owned()
-                }
-            } else {
-                platform
-            };
+        if task.toolchains.is_empty() {
+            task.toolchains = detect_task_toolchains(
+                &task.command,
+                &self.project_language,
+                &self.enabled_toolchains,
+            );
         }
 
         task.type_of = if !task.outputs.is_empty() {
@@ -489,7 +495,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if task.options.shell.is_none() {
             // Windows requires a shell for path resolution to work correctly
-            if cfg!(windows) || task.platform.is_system() || task.script.is_some() {
+            if cfg!(windows) || task.is_system_toolchain() || task.script.is_some() {
                 task.options.shell = Some(true);
             }
 

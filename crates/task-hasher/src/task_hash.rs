@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{OutputPath, PlatformType};
+use moon_config::OutputPath;
 use moon_hash::hash_content;
 use moon_project::Project;
 use moon_task::{Target, Task};
@@ -29,9 +29,6 @@ hash_content!(
         // Relative output paths
         pub outputs: Vec<&'task OutputPath>,
 
-        // Task `platform`
-        pub platform: &'task PlatformType,
-
         // Project `dependsOn`
         pub project_deps: Vec<&'task Id>,
 
@@ -40,6 +37,9 @@ hash_content!(
 
         // Task `target`
         pub target: &'task Target,
+
+        // Task `toolchains`
+        pub toolchains: Vec<&'task Id>,
 
         // Bump this to invalidate all caches
         pub version: String,
@@ -60,10 +60,10 @@ impl<'task> TaskHash<'task> {
             inputs: BTreeMap::new(),
             input_env: BTreeMap::new(),
             outputs: task.outputs.iter().collect(),
-            platform: &task.platform,
             project_deps: project.get_dependency_ids(),
             script: task.script.as_deref(),
             target: &task.target,
+            toolchains: task.toolchains.iter().collect(),
             // 1 - Original implementation
             // 2 - New task runner crate, tarball structure changed
             version: "2".into(),

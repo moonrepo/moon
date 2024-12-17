@@ -210,7 +210,7 @@ impl InheritedTasksManager {
 
                 // Only modify tasks for `tasks/*.*` files instead of `tasks.*`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
-                // We also don't know what platform each of the tasks should be yet.
+                // We also don't know what toolchain each of the tasks should be yet.
                 if let Some(tasks) = &mut managed_config.tasks {
                     for (task_id, task) in tasks.iter_mut() {
                         if lookup != "*" {

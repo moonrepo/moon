@@ -346,7 +346,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut tasks_builder = TasksBuilder::new(
             self.id,
             self.source,
-            &self.platform,
+            &self.language,
             TasksBuilderContext {
                 monorepo: self.context.monorepo,
                 toolchain_config: self.context.toolchain_config,

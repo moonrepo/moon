@@ -72,6 +72,7 @@ impl Serialize for LanguageType {
     }
 }
 
+// TODO: Remove in 2.0
 derive_enum!(
     /// Platforms that each programming language can belong to.
     #[derive(ConfigEnum, Copy, Default, Hash)]
@@ -105,9 +106,9 @@ impl PlatformType {
 
     pub fn get_toolchain_ids(&self) -> Vec<Id> {
         match self {
-            PlatformType::Bun => vec![Id::raw("bun"), Id::raw("javascript")],
-            PlatformType::Deno => vec![Id::raw("deno"), Id::raw("javascript")],
-            PlatformType::Node => vec![Id::raw("node"), Id::raw("javascript")],
+            PlatformType::Bun => vec![Id::raw("bun")],
+            PlatformType::Deno => vec![Id::raw("deno")],
+            PlatformType::Node => vec![Id::raw("node")],
             PlatformType::Python => vec![Id::raw("python")],
             PlatformType::Rust => vec![Id::raw("rust")],
             PlatformType::System => vec![Id::raw("system")],

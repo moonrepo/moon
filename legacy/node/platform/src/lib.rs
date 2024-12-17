@@ -6,7 +6,7 @@ pub use node_platform::NodePlatform;
 pub use target_hash::NodeTargetHash;
 
 use moon_common::Id;
-use moon_config::{NodePackageManager, PartialTaskConfig, PlatformType};
+use moon_config::{NodePackageManager, PartialTaskConfig};
 use moon_javascript_platform::ScriptParser;
 use moon_node_lang::PackageJsonCache;
 use std::collections::BTreeMap;
@@ -16,7 +16,7 @@ pub fn create_tasks_from_scripts(
     package_json: &mut PackageJsonCache,
     package_manager: NodePackageManager,
 ) -> miette::Result<BTreeMap<Id, PartialTaskConfig>> {
-    let mut parser = ScriptParser::new(project_id, PlatformType::Node, package_manager);
+    let mut parser = ScriptParser::new(project_id, Id::raw("node"), package_manager);
 
     parser.parse_scripts(package_json)?;
     parser.update_package(package_json)?;
@@ -29,7 +29,7 @@ pub fn infer_tasks_from_scripts(
     package_json: &PackageJsonCache,
     package_manager: NodePackageManager,
 ) -> miette::Result<BTreeMap<Id, PartialTaskConfig>> {
-    let mut parser = ScriptParser::new(project_id, PlatformType::Node, package_manager);
+    let mut parser = ScriptParser::new(project_id, Id::raw("node"), package_manager);
 
     parser.infer_scripts(package_json)?;
 

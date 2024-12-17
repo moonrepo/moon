@@ -470,6 +470,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Backwards compat for when the user has explicitly configured
         // the deprecated `platform` setting
+        // TODO: Remove in 2.0
         #[allow(deprecated)]
         if !task.platform.is_unknown() && task.toolchains.is_empty() {
             task.toolchains = task.platform.get_toolchain_ids();

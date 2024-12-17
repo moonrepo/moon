@@ -229,11 +229,7 @@ impl Task {
 
     /// Return true of the task will run in the system toolchain.
     pub fn is_system_toolchain(&self) -> bool {
-        if self.toolchains.is_empty() {
-            self.platform.is_system()
-        } else {
-            self.toolchains.len() == 1 && self.toolchains[0] == "system"
-        }
+        self.toolchains.is_empty() || self.toolchains.len() == 1 && self.toolchains[0] == "system"
     }
 
     /// Return true if the task is a "test" type.

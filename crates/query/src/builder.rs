@@ -1,6 +1,6 @@
 use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 use crate::query_error::QueryError;
-use moon_config::{LanguageType, PlatformType, ProjectType, StackType, TaskType};
+use moon_config::{LanguageType, ProjectType, StackType, TaskType};
 use starbase_utils::glob::GlobSet;
 use std::borrow::Cow;
 use std::cmp::PartialEq;
@@ -21,7 +21,7 @@ pub enum Field<'l> {
     ProjectType(Vec<ProjectType>),
     Tag(FieldValues<'l>),
     Task(FieldValues<'l>),
-    TaskPlatform(Vec<PlatformType>),
+    TaskPlatform(FieldValues<'l>),
     TaskToolchain(FieldValues<'l>),
     TaskType(Vec<TaskType>),
 }
@@ -131,9 +131,8 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     }
                     "tag" => Field::Tag(value),
                     "task" => Field::Task(value),
-                    "taskPlatform" => Field::TaskPlatform(build_criteria_enum::<PlatformType>(
-                        &field, &op, value,
-                    )?),
+                    "taskPlatform" => Field::TaskPlatform(value),
+                    "taskToolchain" => Field::TaskToolchain(value),
                     "taskType" => {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }

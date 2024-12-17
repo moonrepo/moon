@@ -3,15 +3,16 @@ name = "moon_project"
 version = "0.0.2"
 edition = "2021"
 license = "MIT"
-description = "A project (app, lib, etc) in moon."
+description = "A project in moon."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = true
 
 [dependencies]
-moon_common = { path = "../common" }
-moon_config = { path = "../config" }
-moon_file_group = { path = "../file-group" }
-moon_task = { path = "../task" }
+moon_common = { version = "0.0.9", path = "../common" }
+moon_config = { version = "0.0.11", path = "../config" }
+moon_file_group = { version = "0.0.2", path = "../file-group" }
+moon_task = { version = "0.0.2", path = "../task" }
 miette = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

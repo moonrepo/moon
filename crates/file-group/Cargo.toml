@@ -6,10 +6,11 @@ license = "MIT"
 description = "File groups and collections."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = true
 
 [dependencies]
-moon_common = { path = "../common" }
-moon_config = { path = "../config" }
+moon_common = { version = "0.0.9", path = "../common" }
+moon_config = { version = "0.0.11", path = "../config" }
 common-path = "1.0.0"
 miette = { workspace = true }
 once_cell = { workspace = true }

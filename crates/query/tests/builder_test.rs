@@ -1,4 +1,4 @@
-use moon_config::{LanguageType, PlatformType, ProjectType, StackType, TaskType};
+use moon_config::{LanguageType, ProjectType, StackType, TaskType};
 use moon_query::{
     build_query, ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator,
 };
@@ -626,7 +626,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::TaskPlatform(vec![PlatformType::Node]),
+                        field: Field::TaskPlatform(value_list(["node"])),
                         op: ComparisonOperator::Equal,
                     }],
                     input: Some("taskPlatform=node".into())
@@ -641,7 +641,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::TaskPlatform(vec![PlatformType::Node, PlatformType::System]),
+                        field: Field::TaskPlatform(value_list(["node", "system"])),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("taskPlatform!=[node, system]".into())

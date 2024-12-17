@@ -85,10 +85,7 @@ fn does_task_match_criteria(task: &Task, query: &Criteria) -> miette::Result<boo
                         }
                     }
                     Field::Task(ids) => condition.matches(ids, &task.id),
-                    Field::TaskPlatform(platforms) => {
-                        condition.matches_enum(platforms, &task.platform)
-                    }
-                    Field::TaskToolchain(ids) => {
+                    Field::TaskPlatform(ids) | Field::TaskToolchain(ids) => {
                         let toolchains = task
                             .toolchains
                             .iter()

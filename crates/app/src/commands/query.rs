@@ -337,6 +337,7 @@ pub struct QueryTasksArgs {
     command: Option<String>,
 
     #[arg(long, help = "Filter tasks that belong to a platform", help_heading = HEADING_FILTERS)]
+    #[deprecated(note = "Use `toolchain` instead.")]
     platform: Option<String>,
 
     #[arg(long, help = "Filter tasks that belong to a project", help_heading = HEADING_FILTERS)]
@@ -362,6 +363,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         json: args.json,
         command: args.command,
         query: args.query,
+        #[allow(deprecated)]
         platform: args.platform,
         project: args.project,
         script: args.script,
@@ -422,7 +424,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
                     task_id,
                     task.command,
                     task.type_of,
-                    task.platform,
+                    task.toolchains.join(", "),
                     task.description.as_deref().unwrap_or("...")
                 ))?;
             }

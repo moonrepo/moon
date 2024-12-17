@@ -585,8 +585,7 @@ impl<'graph> TokenExpander<'graph> {
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),
             "task" => Cow::Borrowed(task.id.as_str()),
-            "taskPlatform" => Cow::Owned(task.platform.to_string()),
-            "taskToolchain" => Cow::Borrowed(task.toolchains[0].as_str()),
+            "taskPlatform" | "taskToolchain" => Cow::Borrowed(task.toolchains[0].as_str()),
             "taskToolchains" => Cow::Owned(task.toolchains.join(",")),
             "taskType" => Cow::Owned(task.type_of.to_string()),
             // Datetime

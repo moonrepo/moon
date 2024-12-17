@@ -44,6 +44,7 @@ cacheable!(
         pub language: LanguageType,
 
         /// Default platform to run tasks against.
+        // TODO REMOVE
         #[deprecated]
         pub platform: PlatformType,
 
@@ -64,9 +65,6 @@ cacheable!(
         /// List of targets of all tasks configured or inherited for the project.
         /// Includes internal tasks!
         pub task_targets: Vec<Target>,
-
-        /// Default toolchain to run tasks against.
-        pub toolchain: Option<Id>,
 
         /// The type of project.
         #[serde(rename = "type")]

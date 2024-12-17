@@ -75,14 +75,10 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
         console.print_entry("Root", color::path(&project.root))?;
     }
 
-    if let Some(toolchain) = &project.toolchain {
-        console.print_entry("Toolchain", toolchain)?;
-    }
-
-    if project.platform.is_javascript() {
-        console.print_entry("Platform", format!("{}", &project.platform))?;
-    }
-
+    console.print_entry(
+        "Toolchains",
+        project.language.get_toolchain_ids().join(", "),
+    )?;
     console.print_entry("Language", format!("{}", &project.language))?;
     console.print_entry("Stack", format!("{}", &project.stack))?;
     console.print_entry("Type", format!("{}", &project.type_of))?;

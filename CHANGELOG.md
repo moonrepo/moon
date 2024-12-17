@@ -4,6 +4,10 @@
 
 #### 🚀 Updates
 
+- We are deprecating the concept of a task "platform", as this is required for the next step in supporting WASM based toolchain plugins. Going forward, any reference to platform is now a toolchain. The following changes have been made:
+  - Deprecated the `platform` task setting, use `toolchain` instead.
+  - Deprecated the `taskPlatform` query field, use `taskToolchain` instead.
+  - Removed the top-level `platform` setting from `moon.yml`. The toolchain is now inferred from the top-level `language` setting.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 

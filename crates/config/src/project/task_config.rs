@@ -223,6 +223,7 @@ cacheable!(
         /// available binaries, lookup paths, and more. When not provided, will
         /// be automatically detected.
         #[deprecated(note = "Use `toolchain` instead.")]
+        // TODO: Remove in 2.0
         pub platform: PlatformType,
 
         /// The preset to apply for the task. Will inherit default options.

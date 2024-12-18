@@ -269,29 +269,6 @@ fileGroups:
         }
     }
 
-    mod platform {
-        use super::*;
-
-        #[test]
-        fn supports_variant() {
-            let config = test_load_config("moon.yml", "platform: rust", |path| {
-                load_config_from_root(path, ".")
-            });
-
-            assert_eq!(config.platform, Some(PlatformType::Rust));
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to parse moon.yml. platform: unknown variant `perl`, expected one of `bun`, `deno`, `node`, `python`, `rust`, `system`, `unknown`"
-        )]
-        fn errors_on_invalid_variant() {
-            test_load_config("moon.yml", "platform: perl", |path| {
-                load_config_from_root(path, ".")
-            });
-        }
-    }
-
     mod owners {
         use super::*;
 
@@ -667,6 +644,7 @@ workspace:
         use std::collections::BTreeMap;
 
         #[test]
+        #[allow(deprecated)]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
                 ConfigLoader::with_pkl().load_project_config(path)

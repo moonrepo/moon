@@ -1,4 +1,4 @@
-use crate::language_platform::{LanguageType, PlatformType};
+use crate::language_platform::LanguageType;
 use crate::project::*;
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
@@ -130,10 +130,6 @@ cacheable!(
         /// file paths and globs to owners. An owner is either a user, team, or group.
         #[setting(nested)]
         pub owners: OwnersConfig,
-
-        /// The default platform for all tasks within the project,
-        /// if their platform is unknown.
-        pub platform: Option<PlatformType>,
 
         /// Expanded information about the project.
         #[setting(nested)]

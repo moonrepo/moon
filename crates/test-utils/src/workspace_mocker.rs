@@ -105,6 +105,7 @@ impl WorkspaceMocker {
     pub fn create_context(&self) -> WorkspaceBuilderContext {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
+            enabled_toolchains: self.toolchain_config.get_enabled(),
             extend_project: Emitter::<ExtendProjectEvent>::new(),
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,

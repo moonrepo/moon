@@ -1,5 +1,4 @@
 use moon_common::Id;
-use moon_config::LanguageType;
 use regex::Regex;
 use std::sync::OnceLock;
 
@@ -29,7 +28,7 @@ pub fn is_system_command(command: &str) -> bool {
 
 pub fn detect_task_toolchains(
     command: &str,
-    project_language: &LanguageType,
+    project_toolchains: &[Id],
     enabled_toolchains: &[Id],
 ) -> Vec<Id> {
     let mut toolchains = vec![];
@@ -69,9 +68,9 @@ pub fn detect_task_toolchains(
     }
 
     // Inherit the toolchain from the project's language
-    for id in project_language.get_toolchain_ids() {
-        if !toolchains.contains(&id) {
-            toolchains.push(id);
+    for id in project_toolchains {
+        if !toolchains.contains(id) {
+            toolchains.push(id.to_owned());
         }
     }
 

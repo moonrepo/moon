@@ -4,7 +4,7 @@ use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::path::{is_root_level_source, WorkspaceRelativePath};
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
-    is_glob_like, InheritedTasksConfig, InputPath, LanguageType, ProjectConfig,
+    is_glob_like, InheritedTasksConfig, InputPath, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,
     TaskPreset, TaskType, ToolchainConfig,
@@ -64,6 +64,7 @@ fn extract_config<'builder, 'proj>(
 
 #[derive(Debug)]
 pub struct TasksBuilderContext<'proj> {
+    pub enabled_toolchains: &'proj [Id],
     pub monorepo: bool,
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
@@ -72,12 +73,11 @@ pub struct TasksBuilderContext<'proj> {
 #[derive(Debug)]
 pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
-    enabled_toolchains: Vec<Id>,
 
     project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
-    project_language: &'proj LanguageType,
     project_source: &'proj WorkspaceRelativePath,
+    project_toolchains: &'proj [Id],
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
@@ -95,16 +95,15 @@ impl<'proj> TasksBuilder<'proj> {
     pub fn new(
         project_id: &'proj Id,
         project_source: &'proj WorkspaceRelativePath,
-        project_language: &'proj LanguageType,
+        project_toolchains: &'proj [Id],
         context: TasksBuilderContext<'proj>,
     ) -> Self {
         Self {
-            enabled_toolchains: context.toolchain_config.get_enabled(),
             context,
             project_id,
             project_env: FxHashMap::default(),
-            project_language,
             project_source,
+            project_toolchains,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -479,8 +478,8 @@ impl<'proj> TasksBuilder<'proj> {
         if task.toolchains.is_empty() {
             task.toolchains = detect_task_toolchains(
                 &task.command,
-                &self.project_language,
-                &self.enabled_toolchains,
+                self.project_toolchains,
+                self.context.enabled_toolchains,
             );
         }
 

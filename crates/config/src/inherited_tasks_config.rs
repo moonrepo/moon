@@ -109,16 +109,38 @@ impl InheritedTasksManager {
         let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
             IndexSet::from_iter(["*".to_string()]);
 
-        for toolchain in toolchains {
-            // Least to most specific
-            lookup.extend([
-                format!("{stack}"),                       // frontend
-                format!("{toolchain}"),                   // node
-                format!("{toolchain}-{stack}"),           // node-frontend
-                format!("{stack}-{project}"),             // frontend-library
-                format!("{toolchain}-{project}"),         // node-library
-                format!("{toolchain}-{stack}-{project}"), // node-frontend-library
-            ]);
+        // Reverse the order of the toolchains, as the order in the project/task
+        // is from most important to least important. But for the configuration,
+        // we need the opposite of that, so that the most important is the last
+        // layer to be merged in.
+        let toolchains = toolchains.iter().rev().collect::<Vec<_>>();
+
+        // Order from least to most specific!
+
+        // frontend
+        lookup.insert(format!("{stack}"));
+
+        // frontend-library
+        lookup.insert(format!("{stack}-{project}"));
+
+        for toolchain in &toolchains {
+            // node
+            lookup.insert(format!("{toolchain}"));
+        }
+
+        for toolchain in &toolchains {
+            // node-frontend
+            lookup.insert(format!("{toolchain}-{stack}"));
+        }
+
+        for toolchain in &toolchains {
+            // node-library
+            lookup.insert(format!("{toolchain}-{project}"));
+        }
+
+        for toolchain in &toolchains {
+            // node-frontend-library
+            lookup.insert(format!("{toolchain}-{stack}-{project}"));
         }
 
         // tag-foo
@@ -203,7 +225,7 @@ impl InheritedTasksManager {
                     standardize_separators(format!("{}", config_entry.input.display()));
                 let mut managed_config = config_entry.config.clone();
 
-                // Only modify tasks for `tasks/*.*` files instead of `tasks.*`,
+                // Only modify tasks for `tasks/**/.*` files instead of `tasks.*`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
                 // We also don't know what toolchain each of the tasks should be yet.
                 if let Some(tasks) = &mut managed_config.tasks {

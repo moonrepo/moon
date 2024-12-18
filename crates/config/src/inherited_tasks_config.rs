@@ -1,7 +1,6 @@
-use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
-use crate::shapes::InputPath;
+use crate::shapes::{InputPath, OneOrMany};
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
@@ -102,28 +101,25 @@ pub struct InheritedTasksManager {
 impl InheritedTasksManager {
     pub fn get_lookup_order(
         &self,
-        platform: &PlatformType,
-        language: &LanguageType,
+        toolchains: &[Id],
         stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> Vec<String> {
-        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> = IndexSet::from_iter([
-            "*".to_string(),
-            format!("{platform}"), // node
-            format!("{language}"), // javascript
-            format!("{stack}"),    // frontend
-            //
-            format!("{platform}-{stack}"), // node-frontend
-            format!("{language}-{stack}"), // javascript-frontend
-            //
-            format!("{stack}-{project}"),    // frontend-library
-            format!("{platform}-{project}"), // node-library
-            format!("{language}-{project}"), // javascript-library
-            //
-            format!("{platform}-{stack}-{project}"), // node-frontend-library
-            format!("{language}-{stack}-{project}"), // javascript-frontend-library
-        ]);
+        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
+            IndexSet::from_iter(["*".to_string()]);
+
+        for toolchain in toolchains {
+            // Least to most specific
+            lookup.extend([
+                format!("{stack}"),                       // frontend
+                format!("{toolchain}"),                   // node
+                format!("{toolchain}-{stack}"),           // node-frontend
+                format!("{stack}-{project}"),             // frontend-library
+                format!("{toolchain}-{project}"),         // node-library
+                format!("{toolchain}-{stack}-{project}"), // node-frontend-library
+            ]);
+        }
 
         // tag-foo
         for tag in tags {
@@ -173,8 +169,7 @@ impl InheritedTasksManager {
 
     pub fn get_inherited_config(
         &self,
-        platform: &PlatformType,
-        language: &LanguageType,
+        toolchains: &[Id],
         stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
@@ -183,7 +178,7 @@ impl InheritedTasksManager {
         use moon_common::path::standardize_separators;
         use schematic::{ConfigError, PartialConfig};
 
-        let lookup_order = self.get_lookup_order(platform, language, stack, project, tags);
+        let lookup_order = self.get_lookup_order(toolchains, stack, project, tags);
         let lookup_key = lookup_order.join(":");
 
         // Check the cache first in read only mode!
@@ -219,9 +214,9 @@ impl InheritedTasksManager {
                                 .get_or_insert(vec![])
                                 .push(InputPath::WorkspaceFile(source_path.clone()));
 
-                            // Automatically set the platform
-                            if task.platform.unwrap_or_default().is_unknown() {
-                                task.platform = Some(platform.to_owned());
+                            // Automatically set the toolchain
+                            if task.toolchain.is_none() {
+                                task.toolchain = Some(OneOrMany::Many(toolchains.to_owned()));
                             }
                         }
 
@@ -246,11 +241,7 @@ impl InheritedTasksManager {
                 ConfigError::Validator { error, .. } => ConfigError::Validator {
                     location: format!(
                         "inherited tasks {}",
-                        if platform.is_javascript() {
-                            format!("({}, {}, {}, {})", platform, language, stack, project)
-                        } else {
-                            format!("({}, {}, {})", language, stack, project)
-                        }
+                        format!("({}, {}, {})", toolchains.join(", "), stack, project),
                     ),
                     error,
                     help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),

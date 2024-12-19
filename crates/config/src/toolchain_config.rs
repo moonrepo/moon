@@ -98,6 +98,7 @@ impl ToolchainConfig {
             tools.push(Id::raw("rust"));
         }
 
+        tools.push(Id::raw("system"));
         tools
     }
 

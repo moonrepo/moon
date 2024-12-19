@@ -5,7 +5,8 @@ use moon_config::LanguageType;
 use std::path::Path;
 
 pub fn detect_project_toolchains(
-    root: &Path,
+    workspace_root: &Path,
+    project_root: &Path,
     language: &LanguageType,
     enabled_toolchains: &[Id],
 ) -> Vec<Id> {
@@ -18,23 +19,40 @@ pub fn detect_project_toolchains(
                 (Id::raw("bun"), BUN),
                 (Id::raw("node"), NODE),
             ];
+            let mut found = false;
 
-            for (id, files) in runtimes {
-                if enabled_toolchains.contains(&id) && has_language_files(root, files) {
-                    toolchains.push(id);
-                    toolchains.extend(language.get_toolchain_ids());
+            // Detect in project first
+            for (id, files) in &runtimes {
+                if has_language_files(project_root, files) {
+                    toolchains.push(id.to_owned());
+                    found = true;
                     break;
                 }
             }
+
+            // Then in workspace
+            for (id, files) in runtimes {
+                if !found && has_language_files(workspace_root, files) {
+                    toolchains.push(id);
+                    break;
+                }
+            }
+
+            toolchains.extend(language.get_toolchain_ids());
         }
         other => {
-            let id = Id::raw(other.to_string());
-
-            if enabled_toolchains.contains(&id) {
-                toolchains.push(id);
-            }
+            toolchains.push(Id::raw(other.to_string()));
         }
     };
+
+    let mut toolchains = toolchains
+        .into_iter()
+        .filter(|id| enabled_toolchains.contains(&id))
+        .collect::<Vec<_>>();
+
+    if toolchains.is_empty() {
+        toolchains.push(Id::raw("system"));
+    }
 
     toolchains
 }

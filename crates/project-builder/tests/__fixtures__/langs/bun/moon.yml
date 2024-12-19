@@ -1,3 +1,3 @@
 language: javascript
 type: application
-platform: bun
+platform: bun # deprecated

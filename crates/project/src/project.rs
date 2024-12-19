@@ -66,6 +66,9 @@ cacheable!(
         /// Includes internal tasks!
         pub task_targets: Vec<Target>,
 
+        /// Toolchains derived from the configured language.
+        pub toolchains: Vec<Id>,
+
         /// The type of project.
         #[serde(rename = "type")]
         pub type_of: ProjectType,

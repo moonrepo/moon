@@ -117,6 +117,7 @@ impl<'app> ProjectBuilder<'app> {
         // Infer toolchains from language
         if self.toolchains.is_empty() {
             self.toolchains = detect_project_toolchains(
+                self.context.workspace_root,
                 &self.root,
                 &self.language,
                 self.context.enabled_toolchains,
@@ -198,6 +199,7 @@ impl<'app> ProjectBuilder<'app> {
             language: self.language,
             root: self.root,
             source: self.source.to_owned(),
+            toolchains: self.toolchains,
             ..Project::default()
         };
 

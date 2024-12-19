@@ -337,6 +337,7 @@ pub struct QueryTasksArgs {
     command: Option<String>,
 
     #[arg(long, help = "Filter tasks that belong to a platform", help_heading = HEADING_FILTERS)]
+    #[deprecated(note = "Use `toolchain` instead.")]
     platform: Option<String>,
 
     #[arg(long, help = "Filter tasks that belong to a project", help_heading = HEADING_FILTERS)]
@@ -344,6 +345,9 @@ pub struct QueryTasksArgs {
 
     #[arg(long, help = "Filter tasks with the provided script", help_heading = HEADING_FILTERS)]
     script: Option<String>,
+
+    #[arg(long, help = "Filter tasks that belong to a toolchain", help_heading = HEADING_FILTERS)]
+    toolchain: Option<String>,
 
     #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
     type_of: Option<String>,
@@ -359,9 +363,11 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         json: args.json,
         command: args.command,
         query: args.query,
+        #[allow(deprecated)]
         platform: args.platform,
         project: args.project,
         script: args.script,
+        toolchain: args.toolchain,
         type_of: args.type_of,
         ..QueryTasksOptions::default()
     };
@@ -418,7 +424,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
                     task_id,
                     task.command,
                     task.type_of,
-                    task.platform,
+                    task.toolchains.join(", "),
                     task.description.as_deref().unwrap_or("...")
                 ))?;
             }

@@ -115,14 +115,18 @@ impl WorkspaceGraph {
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
                             condition.matches(ids, &target.task_id).unwrap_or_default()
                         })),
-                        Field::TaskPlatform(platforms) => Ok(self
+                        Field::TaskPlatform(ids) | Field::TaskToolchain(ids) => Ok(self
                             .tasks
                             .get_all_for_project(&project.id, false)?
                             .iter()
                             .any(|task| {
-                                condition
-                                    .matches_enum(platforms, &task.platform)
-                                    .unwrap_or_default()
+                                let toolchains = task
+                                    .toolchains
+                                    .iter()
+                                    .map(|t| t.as_str())
+                                    .collect::<Vec<_>>();
+
+                                condition.matches_list(ids, &toolchains).unwrap_or_default()
                             })),
                         Field::TaskType(types) => Ok(self
                             .tasks

@@ -133,6 +133,7 @@ cacheable!(
 
         /// The default platform for all tasks within the project,
         /// if their platform is unknown.
+        #[deprecated]
         pub platform: Option<PlatformType>,
 
         /// Expanded information about the project.

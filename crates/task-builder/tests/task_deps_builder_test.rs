@@ -92,7 +92,7 @@ mod task_deps_builder {
     #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
     fn errors_if_dep_not_run_in_ci() {
         let mut task = create_task();
-        task.options.run_in_ci = true;
+        task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
         task.deps
             .push(TaskDependencyConfig::new(Target::parse("no-ci").unwrap()));
 
@@ -101,7 +101,7 @@ mod task_deps_builder {
             FxHashMap::from_iter([(
                 Target::parse("project:no-ci").unwrap(),
                 TaskOptions {
-                    run_in_ci: false,
+                    run_in_ci: TaskOptionRunInCI::Enabled(false),
                     ..Default::default()
                 },
             )]),
@@ -111,7 +111,7 @@ mod task_deps_builder {
     #[test]
     fn doesnt_errors_if_dep_run_in_ci() {
         let mut task = create_task();
-        task.options.run_in_ci = false;
+        task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
         task.deps
             .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
 
@@ -120,7 +120,7 @@ mod task_deps_builder {
             FxHashMap::from_iter([(
                 Target::parse("project:ci").unwrap(),
                 TaskOptions {
-                    run_in_ci: true,
+                    run_in_ci: TaskOptionRunInCI::Enabled(true),
                     ..Default::default()
                 },
             )]),

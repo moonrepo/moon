@@ -13,10 +13,15 @@ configuration file in which the version has been configured.
 ```
 $ proto outdated
 
-Tool  Current  Newest   Latest  Config
-deno  1.40.0   1.42.4   1.42.4  ~/.prototools
-node  20.8.0   20.12.2  21.7.3  ~/.prototools
-npm   10.1.0   10.5.2   10.5.2  ~/.prototools
+╭───────────────────────────────────────────────────────────────────────╮
+│ Tool      Current Newest  Latest  Config                              │
+│───────────────────────────────────────────────────────────────────────│
+│ bun       1.1.42  1.1.42  1.1.42  /Users/name/.proto/.prototools      │
+│ node      23.5.0  23.5.0  23.5.0  /Users/name/.proto/.prototools      │
+│ npm       10.7.0  10.7.0  11.0.0  /Users/name/.proto/.prototools      │
+│ rust      1.83.0  1.83.0  1.83.0  /Users/name/.proto/.prototools      │
+│ yarn      3.6.3   3.8.7   4.5.1   /Users/name/.proto/.prototools      │
+╰───────────────────────────────────────────────────────────────────────╯
 ```
 
 > By default, this command _does not_ check tools for versions pinned in the global
@@ -27,3 +32,4 @@ npm   10.1.0   10.5.2   10.5.2  ~/.prototools
 - `--json` - Print the list in JSON format.
 - `--latest` - When updating versions with `--update`, use the latest version instead of newest.
 - `--update` - Update and write newest/latest versions to their respective configuration.
+- `--yes` - Avoid and confirm all prompts. <VersionLabel version="0.44.0" />

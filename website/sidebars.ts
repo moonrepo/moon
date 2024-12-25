@@ -313,8 +313,6 @@ const sidebars: SidebarsConfig = {
 				},
 				'proto/commands/diagnose',
 				'proto/commands/install',
-				'proto/commands/list',
-				'proto/commands/list-remote',
 				'proto/commands/outdated',
 				'proto/commands/pin',
 				{
@@ -343,7 +341,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/uninstall',
 				'proto/commands/unpin',
 				'proto/commands/upgrade',
-				'proto/commands/use',
+				'proto/commands/versions',
 			],
 		},
 		'proto/faq',

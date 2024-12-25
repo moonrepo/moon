@@ -11,11 +11,23 @@ what versions of those tools are resolved to, and the configuration file in whic
 
 ```
 $ proto status
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Tool      Configured Resolved  Installed                           Config                             │
+│───────────────────────────────────────────────────────────────────────────────────────────────────────│
+│ bun       1.1.42     1.1.42    /Users/name/.proto/tools/          /Users/name/.proto/.prototools      │
+│                                bun/1.1.42                                                             │
+│ deno      1.43.1     1.43.1    /Users/name/.proto/tools/          /Users/name/.proto/.prototools      │
+│                                deno/1.43.1                                                            │
+│ node      23.5.0     23.5.0    /Users/name/.proto/tools/          /Users/name/.proto/.prototools      │
+│                                node/23.5.0                                                            │
+│ npm       ~10.7      10.7.0    /Users/name/.proto/tools/          /Users/name/.proto/.prototools      │
+│                                npm/10.7.0                                                             │
+│ python    3.12.0     3.12.0    /Users/name/.proto/tools/          /Users/name/.proto/.prototools      │
+│                                python/3.12.0                                                          │
+│ yarn      3.6.3      3.6.3     /Users/name/.proto/tools/          /Users/name/.proto/.prototools      │
+│                                yarn/3.6.3                                                             │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-Tool  Configured  Resolved  Installed                   Config
-deno  1.40.0      1.40.0    ~/.proto/tools/deno/1.40.0  ~/.prototools
-node  20.8.0      20.8.0    ~/.proto/tools/node/20.8.0  ~/.prototools
-npm   10.1.0      10.1.0    ~/.proto/tools/npm/10.1.0   ~/.prototools
 ```
 
 > By default, this command _does not_ check tools for versions pinned in the global

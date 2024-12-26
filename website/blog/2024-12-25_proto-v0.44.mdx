@@ -1,0 +1,96 @@
+---
+slug: proto-v0.44
+title: proto v0.44 - New terminal user interface and versions command
+authors: [milesj]
+tags: [terminal, console, ui, user, interface]
+# image: ./img/proto/v0.44.png
+---
+
+import Image from '@site/src/components/Image';
+
+Merry Christmas and happy holidays 🎄! In this release, we're introducing a new terminal user
+interface.
+
+<!--truncate-->
+
+## New terminal output
+
+We're excited to introduce new terminal outputs, also known as a terminal user interface (TUI), for
+all commands! We stumbled upon the [iocraft](https://docs.rs/iocraft/latest/iocraft/) Rust crate,
+which is a library for rendering terminal output using components and JSX-like syntax. As fans of
+[React](https://react.dev/) and [Ink](https://github.com/vadimdemedes/ink), this felt like the
+perfect opportunity to revisit all of our commands and implement a new interface unique to proto
+(and moon in the future).
+
+Here are some examples of this new output. A lot of it is still a work in progress and will be
+tweaked going forward, but we're already impressed with what iocraft can achieve!
+
+### Notices
+
+<Image src={require('./img/proto/v0.44/notice-success.png')} width="90%" />
+<Image src={require('./img/proto/v0.44/notice-caution.png')} width="90%" />
+
+### Information
+
+<Image src={require('./img/proto/v0.44/info-env.png')} width="90%" />
+<Image src={require('./img/proto/v0.44/info-plugin.png')} width="90%" />
+
+### Tables
+
+<Image src={require('./img/proto/v0.44/table-outdated.png')} width="90%" />
+<Image src={require('./img/proto/v0.44/table-search.png')} width="90%" />
+
+### Prompts
+
+<Image src={require('./img/proto/v0.44/confirm.png')} width="90%" />
+<Image src={require('./img/proto/v0.44/select.png')} width="90%" />
+
+### Progress
+
+<Image src={require('./img/proto/v0.44/progress.png')} width="90%" />
+
+## New `proto versions` command
+
+After much feedback, we've decided to merge the `proto list` and `proto list-remote` commands into a
+new command, [`proto versions`](/docs/proto/commands/versions). This command will list all versions
+available for the provided tool, while also annotating which of those versions has been installed
+locally.
+
+This data can now be accessed as JSON by passing the `--json` flag.
+
+```shel
+$ proto versions node
+...
+22.0.0
+22.1.0
+22.2.0
+22.3.0
+22.4.0
+22.4.1
+22.5.0
+22.5.1
+22.6.0
+22.7.0
+22.8.0
+22.9.0
+22.10.0
+22.11.0
+22.12.0
+23.0.0
+23.1.0
+23.2.0
+23.3.0
+23.4.0 - installed 12/19/24
+23.5.0 - installed 12/25/24
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.42.0) for a full list
+of changes.
+
+- Added a `--yes` option to `proto outdated`, that skips confirmation prompts.
+- Added a `--json` option to `proto clean`, to capture the cleaned result as JSON.
+- Updated `proto clean` to accept a target in which to clean as the 1st argument. For example,
+  `proto clean cache`.
+- Moved the `--json` and `--yes` options into global options.

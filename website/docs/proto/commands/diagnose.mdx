@@ -14,15 +14,13 @@ maybe fix (depending on your usage of proto).
 $ proto diagnose
 
 Shell: zsh
-Shell profile: ~/.zshrc
+Shell profile: /Users/name/.zshrc
 
-Errors
-  Issue: Bin directory (~/.proto/bin) was found BEFORE the shims directory (~/.proto/shims) on PATH
-  Resolution: Ensure the shims path comes before the bin path in your shell
+Errors ────────────────────────────────────────────────────────────────────
 
-Warnings
-  Issue: Missing PROTO_HOME environment variable (Will default to ~/.proto if not defined)
-  Resolution: Export PROTO_HOME="$HOME/.proto" from your shell
+  - Issue: Bin directory /Users/name/.proto/bin was found BEFORE the shims directory /Users/name/.proto/shims on PATH
+    Resolution: Ensure the shims path comes before the bin path in your shell
+    Comment: Runtime version detection will not work correctly unless shims are used
 ```
 
 ### Options

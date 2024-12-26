@@ -17,36 +17,34 @@ available aliases, and store location.
 ```
 $ proto plugin list --versions
 
-bun - Bun
-  Store: ~/.proto/tools/bun
-  Source: https://github.com/moonrepo/bun-plugin/releases/download/v0.10.0/bun_plugin.wasm
-  Versions:
-    1.0.13 - installed 11/21/23, last used 02/28/24, default version
-    0.8.0 - installed 11/19/23, last used 03/04/24
-    1.0.0 - installed 11/19/23, last used 03/04/24
-    1.0.15 - installed 12/09/23, last used 03/04/24
+Bun ────────────────────────────────────
 
-deno - Deno
-  Store: ~/.proto/tools/deno
-  Source: https://github.com/moonrepo/deno-plugin/releases/download/v0.10.0/deno_plugin.wasm
+  ID: bun
+  Source URL: https://github.com/moonrepo/tools/releases/download/bun_tool-v0.14.0/bun_tool.wasm
+  Store directory: /Users/miles/.proto/tools/bun
   Versions:
-    1.36.1 - installed 08/15/23, default version
-    1.30.0 - installed 02/01/24, last used 03/04/24
-    1.38.0 - installed 11/08/23
-    1.40.0 - installed 02/01/24, last used 03/04/24
+    1.1.42 - installed 12/25/24, fallback version
 
-go - Go
-  Store: ~/.proto/tools/go
-  Source: https://github.com/moonrepo/go-plugin/releases/download/v0.10.0/go_plugin.wasm
+Deno ───────────────────────────────────
+
+  ID: deno
+  Source URL: https://github.com/moonrepo/tools/releases/download/deno_tool-v0.13.0/deno_tool.wasm
+  Store directory: /Users/miles/.proto/tools/deno
   Versions:
-    1.21.5 - installed 12/06/23, last used 02/29/24, default version
+    1.30.0 - installed 02/01/24, last used 11/28/24
+    1.40.0 - installed 02/01/24, last used 12/09/24
+    1.43.1 - installed 12/25/24, fallback version
+
+Go ─────────────────────────────────────
+
+  ID: go
+  Source URL: https://github.com/moonrepo/tools/releases/download/go_tool-v0.14.0/go_tool.wasm
+  Store directory: /Users/miles/.proto/tools/go
+  Versions:
+    1.18.0 - installed 12/25/24, fallback version
+    1.19.0 - installed 12/22/24
     1.20.12 - installed 12/09/23
-
-node - Node.js
-  Store: ~/.proto/tools/node
-  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.10.0/node_plugin.wasm
-  Versions:
-    20.0.0 - installed 09/03/23, last used 03/04/24, default version
+    1.23.4 - installed 12/24/24
 ```
 
 A list of tool IDs can be provided to filter the output list.

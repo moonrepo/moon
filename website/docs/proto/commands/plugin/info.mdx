@@ -12,33 +12,57 @@ The `proto plugin info <id>` command will display information about a tool and i
 ```
 $ proto plugin info node
 
-node - Node.js
+Plugin ─────────────────────────────────
 
-Plugin
-  Version: 0.10.0
-  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.10.0/node_plugin.wasm
+  ID: node
+  Name: Node.js
+  Type: Language
+  Version: 0.13.0
+  Source URL: https://github.com/moonrepo/tools/releases/download/node_tool-v0.13.0/node_tool.wasm
 
-Inventory
-  Store: ~/.proto/tools/node
-  Executable: ~/.proto/tools/node/20.0.0/bin/node
-  Global packages directory: ~/.proto/tools/node/globals/bin
-  Binaries:
-    - ~/.proto/bin/node (primary)
+Inventory ──────────────────────────────
+
+  Detected version: 23.5.0
+  Fallback version: 23.5.0
+  Store directory: /Users/name/.proto/tools/node
+  Executable file: /Users/name/.proto/tools/node/23.5.0/bin/node
+  Executables directory: /Users/name/.proto/tools/node/23.5.0/bin
+  Global packages directory: /Users/name/.proto/tools/node/globals/bin
   Shims:
-    - ~/.proto/shims/node (primary)
+    - /Users/name/.proto/shims/node
+  Binaries:
+    - /Users/name/.proto/bin/node
+    - /Users/name/.proto/bin/node-20
+    - /Users/name/.proto/bin/node-20.15
+    - /Users/name/.proto/bin/node-20.8
+    - /Users/name/.proto/bin/node-23
+    - /Users/name/.proto/bin/node-23.4
+    - /Users/name/.proto/bin/node-23.5
   Installed versions:
-    - 20.0.0
-  Aliases:
-    argon - 4.9.1
-    boron - 6.17.1
-    carbon - 8.17.0
-    dubnium - 10.24.1
-    erbium - 12.22.12
-    fermium - 14.21.3
-    gallium - 16.20.2
-    hydrogen - 18.19.1
-    iron - 20.11.1
-    latest - 21.6.2
+    20.8.0 - installed 12/19/24, last used 12/19/24
+    20.15.0 - installed 12/25/24, last used 12/25/24
+    23.4.0 - installed 12/19/24, last used 12/19/24
+    23.5.0 - installed 12/25/24, last used 12/25/24, fallback version
+  Remote aliases:
+    argon = 4.9.1
+    boron = 6.17.1
+    carbon = 8.17.0
+    dubnium = 10.24.1
+    erbium = 12.22.12
+    fermium = 14.21.3
+    gallium = 16.20.2
+    hydrogen = 18.20.5
+    iron = 20.18.1
+    jod = 22.12.0
+    latest = 23.5.0
+    stable = 22.12.0
+
+Configuration ──────────────────────────
+
+  Local aliases:
+    example = 19.0.0
+  Environment variables: —
+  Settings: —
 ```
 
 ### Arguments

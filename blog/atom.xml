@@ -2,11 +2,69 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-11-25T00:00:00.000Z</updated>
+    <updated>2024-12-25T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.44 - New terminal user interface and versions command]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.44</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.44"/>
+        <updated>2024-12-25T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Merry Christmas and happy holidays 🎄! In this release, we're introducing a new terminal user]]></summary>
+        <content type="html"><![CDATA[<p>Merry Christmas and happy holidays 🎄! In this release, we're introducing a new terminal user
+interface.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-terminal-output">New terminal output<a class="hash-link" aria-label="Direct link to New terminal output" title="Direct link to New terminal output" href="https://moonrepo.dev/blog/proto-v0.44#new-terminal-output">​</a></h2>
+<p>We're excited to introduce new terminal outputs, also known as a terminal user interface (TUI), for
+all commands! We stumbled upon the <a href="https://docs.rs/iocraft/latest/iocraft/" target="_blank" rel="noopener noreferrer">iocraft</a> Rust crate,
+which is a library for rendering terminal output using components and JSX-like syntax. As fans of
+<a href="https://react.dev/" target="_blank" rel="noopener noreferrer">React</a> and <a href="https://github.com/vadimdemedes/ink" target="_blank" rel="noopener noreferrer">Ink</a>, this felt like the
+perfect opportunity to revisit all of our commands and implement a new interface unique to proto
+(and moon in the future).</p>
+<p>Here are some examples of this new output. A lot of it is still a work in progress and will be
+tweaked going forward, but we're already impressed with what iocraft can achieve!</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="notices">Notices<a class="hash-link" aria-label="Direct link to Notices" title="Direct link to Notices" href="https://moonrepo.dev/blog/proto-v0.44#notices">​</a></h3>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/notice-success-254582753244b00934c95f97dec3a919.png" width="90%" alt="" class="inline-block"></div>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/notice-caution-79cdc2e8db63979fdbb49bbcd67ea59f.png" width="90%" alt="" class="inline-block"></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="information">Information<a class="hash-link" aria-label="Direct link to Information" title="Direct link to Information" href="https://moonrepo.dev/blog/proto-v0.44#information">​</a></h3>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/info-env-861de6c24686136db952da1e09efd792.png" width="90%" alt="" class="inline-block"></div>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/info-plugin-435cf590895a9bf7adf9b30a70e21433.png" width="90%" alt="" class="inline-block"></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="tables">Tables<a class="hash-link" aria-label="Direct link to Tables" title="Direct link to Tables" href="https://moonrepo.dev/blog/proto-v0.44#tables">​</a></h3>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/table-outdated-2192bf6b51844be592f479137a5c5cb8.png" width="90%" alt="" class="inline-block"></div>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/table-search-49163a166a105c87d96f0f25fbc700cf.png" width="90%" alt="" class="inline-block"></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="prompts">Prompts<a class="hash-link" aria-label="Direct link to Prompts" title="Direct link to Prompts" href="https://moonrepo.dev/blog/proto-v0.44#prompts">​</a></h3>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/confirm-ce50d89b46c868773b6da77167a32c0c.png" width="90%" alt="" class="inline-block"></div>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/select-a9dd0acb274c17036b9ecfb7499d31be.png" width="90%" alt="" class="inline-block"></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="progress">Progress<a class="hash-link" aria-label="Direct link to Progress" title="Direct link to Progress" href="https://moonrepo.dev/blog/proto-v0.44#progress">​</a></h3>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/progress-7fae1a2f6c3daa0aa4ea2a1d5a7dd52f.png" width="90%" alt="" class="inline-block"></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-versions-command">New <code>proto versions</code> command<a class="hash-link" aria-label="Direct link to new-proto-versions-command" title="Direct link to new-proto-versions-command" href="https://moonrepo.dev/blog/proto-v0.44#new-proto-versions-command">​</a></h2>
+<p>After much feedback, we've decided to merge the <code>proto list</code> and <code>proto list-remote</code> commands into a
+new command, <a href="https://moonrepo.dev/docs/proto/commands/versions"><code>proto versions</code></a>. This command will list all versions
+available for the provided tool, while also annotating which of those versions has been installed
+locally.</p>
+<p>This data can now be accessed as JSON by passing the <code>--json</code> flag.</p>
+<div class="language-shel codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shel codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto versions node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">...</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.0.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.1.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.2.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.3.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.4.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.4.1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.5.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.5.1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.6.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.7.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.8.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.9.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.10.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.11.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.12.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.0.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.1.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.2.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.3.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.4.0 - installed 12/19/24</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.5.0 - installed 12/25/24</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.44#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.42.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added a <code>--yes</code> option to <code>proto outdated</code>, that skips confirmation prompts.</li>
+<li>Added a <code>--json</code> option to <code>proto clean</code>, to capture the cleaned result as JSON.</li>
+<li>Updated <code>proto clean</code> to accept a target in which to clean as the 1st argument. For example,
+<code>proto clean cache</code>.</li>
+<li>Moved the <code>--json</code> and <code>--yes</code> options into global options.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="terminal" term="terminal"/>
+        <category label="console" term="console"/>
+        <category label="ui" term="ui"/>
+        <category label="user" term="user"/>
+        <category label="interface" term="interface"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.30 - Python support, self-hosted remote caching, task graph, and more!]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.30</id>
@@ -1532,77 +1590,5 @@ expansion works correctly.</li>
         <category label="shell" term="shell"/>
         <category label="tasks" term="tasks"/>
         <category label="turborepo" term="turborepo"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moon v1.20 - Extension plugins, default task options, and more]]></title>
-        <id>https://moonrepo.dev/blog/moon-v1.20</id>
-        <link href="https://moonrepo.dev/blog/moon-v1.20"/>
-        <updated>2024-01-26T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're excited to introduce extensions, our first type of plugin!]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're excited to introduce extensions, our first type of plugin!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-extension-plugins">New extension plugins<a class="hash-link" aria-label="Direct link to New extension plugins" title="Direct link to New extension plugins" href="https://moonrepo.dev/blog/moon-v1.20#new-extension-plugins">​</a></h2>
-<p>In our <a href="https://moonrepo.dev/blog/2024-roadmap">2024 roadmap blog post</a>, we talked heavily about plugins, as we believe
-they're the future of moon and its ecosystem. What we didn't talk about is that we plan to have
-<em>many types of plugins</em>, and not just language/platform specific ones. And with that, we're excited
-to introduce extensions!</p>
-<p>An extension is a WASM plugin that allows you to extend moon with additional functionality, have
-whitelisted access to the file system, and receive partial information about the current workspace.
-Extensions are extremely useful in offering new and unique functionality that doesn't need to be
-built into moon's core.</p>
-<p>Once such extension is our built-in <code>download</code> extension, which is a basic extension that simply
-downloads a file from a URL into the current moon workspace.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ext download -- </span><span class="token parameter variable" style="color:#fef9c3">--url</span><span class="token plain"> https://github.com/moonrepo/proto/releases/latest/download/proto_cli-aarch64-apple-darwin.tar.xz</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Shipping alongside extensions are the following new features:</p>
-<ul>
-<li>An <a href="https://moonrepo.dev/docs/guides/extensions">official extensions guide</a>!</li>
-<li>An <a href="https://moonrepo.dev/docs/config/workspace#extensions"><code>extensions</code></a> setting for configuring new extensions.</li>
-<li>A <a href="https://moonrepo.dev/docs/commands/ext"><code>moon ext</code></a> command for executing a configured extension.</li>
-<li>The required infrastructure for plugins!</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-default-options-for-tasks">Configure default options for tasks<a class="hash-link" aria-label="Direct link to Configure default options for tasks" title="Direct link to Configure default options for tasks" href="https://moonrepo.dev/blog/moon-v1.20#configure-default-options-for-tasks">​</a></h2>
-<p><a href="https://moonrepo.dev/docs/config/project#options">Task options</a> provide a way to apply granular changes to a task's
-behavior when running in the pipeline. However, they can become tedious when you need to apply them
-to many tasks, especially when inheritance is involved. To help with this, you can now configure the
-<a href="https://moonrepo.dev/docs/config/tasks#taskoptions"><code>taskOptions</code></a> setting in task related configs, like
-<code>.moon/tasks.yml</code> and <code>.moon/tasks/*.yml</code>, which acts as the base/default options for all inherited
-tasks.</p>
-<p>For example, the following config:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/tasks.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">lint</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">test</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Can simply be rewritten as:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/tasks.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">taskOptions</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">lint</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">test</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Because these options are defined at the workspace-level, they adhere to the same merge and
-inheritance rules as other settings. Just be aware that these options are inherited first in the
-chain, and can be overwritten by other layers, or by project-level tasks.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="optional-task-dependencies">Optional task dependencies<a class="hash-link" aria-label="Direct link to Optional task dependencies" title="Direct link to Optional task dependencies" href="https://moonrepo.dev/blog/moon-v1.20#optional-task-dependencies">​</a></h2>
-<p>By default, all task <a href="https://moonrepo.dev/docs/config/project#tasks-1"><code>deps</code></a> are required to exist when tasks are
-being built and expanded, but this isn't always true when dealing with composition and inheritance.
-For example, say you're using
-<a href="https://moonrepo.dev/docs/concepts/task-inheritance#scope-by-project-metadata">tag-based inheritance</a>, and a global
-task relies on one of these tagged tasks, but not all projects may define the appropriate tags. In
-previous versions of moon, this is a hard failure, as the dependent task does not exist.</p>
-<p>To remedy this, we're introducing a new <a href="https://moonrepo.dev/docs/config/project#optional-1"><code>optional</code></a> flag for task
-dependencies. When set to <code>true</code>, moon will no longer error when the task doesn't exist, and instead
-will omit the dependency.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/tasks.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite'</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'#components:build'</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">optional</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<blockquote>
-<p>Thanks to <a href="https://github.com/maastrich" target="_blank" rel="noopener noreferrer">@maastrich</a> for this contribution!</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.20#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.20.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added a "Tags" view to the VSCode extension.</li>
-<li>Updated proto to v0.29.1 (from v0.26.4).</li>
-<li>Updated proto installation to trigger for all applicable commands, not just <code>moon run</code>,
-<code>moon check</code>, and <code>moon ci</code>.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="task" term="task"/>
-        <category label="options" term="options"/>
-        <category label="extensions" term="extensions"/>
-        <category label="plugins" term="plugins"/>
     </entry>
 </feed>

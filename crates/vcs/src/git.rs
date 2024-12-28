@@ -1,4 +1,5 @@
 use crate::git_submodule::*;
+use crate::git_worktree::*;
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
@@ -106,6 +107,9 @@ pub struct Git {
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
 
+    /// Root of the repository that contains `.git`.
+    pub repository_root: PathBuf,
+
     /// Path between the git and workspace root.
     pub root_prefix: Option<RelativePathBuf>,
 
@@ -209,7 +213,14 @@ impl Git {
 
         // Load .gitmodules
         let modules_path = repository_root.join(".gitmodules");
-        let mut modules = BTreeMap::from_iter([("(root)".into(), GitModule::default())]);
+        let mut modules = BTreeMap::from_iter([(
+            "(root)".into(),
+            GitModule {
+                checkout_dir: repository_root.clone(),
+                git_dir: git_root.clone(),
+                ..Default::default()
+            },
+        )]);
 
         if modules_path.exists() {
             debug!(
@@ -217,24 +228,29 @@ impl Git {
                 "Loading submodules from .gitmodules",
             );
 
-            modules.extend(parse_gitmodules_file(&modules_path)?);
+            modules.extend(parse_gitmodules_file(&modules_path, &repository_root)?);
         }
 
-        Ok(Git {
+        let git = Git {
             default_branch: Arc::new(default_branch.as_ref().to_owned()),
             ignore,
             remote_candidates: remote_candidates.to_owned(),
             root_prefix: if repository_root == workspace_root {
                 None
             } else {
-                RelativePathBuf::from_path(workspace_root.strip_prefix(repository_root).unwrap())
+                RelativePathBuf::from_path(workspace_root.strip_prefix(&repository_root).unwrap())
                     .ok()
             },
+            repository_root,
             process: ProcessCache::new("git", workspace_root),
             git_root,
             worktree_root,
             modules,
-        })
+        };
+
+        dbg!(&git);
+
+        Ok(git)
     }
 
     async fn get_merge_base(&self, base: &str, head: &str) -> miette::Result<Option<Arc<String>>> {
@@ -855,27 +871,4 @@ impl Vcs for Git {
 
         Ok(result)
     }
-}
-
-fn extract_gitdir_from_worktree(git_file: &Path) -> miette::Result<PathBuf> {
-    let contents =
-        std::fs::read_to_string(git_file).map_err(|error| GitError::LoadWorktreeFailed {
-            path: git_file.to_owned(),
-            error: Box::new(error),
-        })?;
-
-    for line in contents.lines() {
-        if let Some(suffix) = line.strip_prefix("gitdir:") {
-            let git_dir = PathBuf::from(suffix.trim());
-
-            return Ok(git_dir
-                .canonicalize()
-                .map_err(|error| GitError::LoadWorktreeFailed {
-                    path: git_dir,
-                    error: Box::new(error),
-                })?);
-        }
-    }
-
-    Err(GitError::ParseWorktreeFailed.into())
 }

@@ -1168,7 +1168,7 @@ node:
             assert_eq!(
                 config.python.unwrap().plugin.unwrap(),
                 PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/tools/releases/download/python_tool-v0.12.1/python_tool.wasm".into()
+                    url: "https://github.com/moonrepo/tools/releases/download/python_tool-v0.12.2/python_tool.wasm".into()
                 }))
             );
         }

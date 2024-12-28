@@ -202,6 +202,8 @@ impl<'app> HooksGenerator<'app> {
                     "#!/usr/bin/env powershell"
                 },
                 "$ErrorActionPreference = 'Stop'",
+                // https://learn.microsoft.com/en-us/powershell/scripting/learn/experimental-features?view=powershell-7.4#psnativecommanderroractionpreference
+                "$PSNativeCommandErrorActionPreference = $true",
                 "",
             ]);
         }
@@ -216,7 +218,19 @@ impl<'app> HooksGenerator<'app> {
 
         for command in commands {
             contents.push(command);
+
+            // https://github.com/moonrepo/moon/issues/1761
+            if !self.is_bash_format() {
+                contents.extend([
+                    "",
+                    "if ($LASTEXITCODE -ne 0) {",
+                    "  exit $LASTEXITCODE",
+                    "}",
+                    "",
+                ]);
+            }
         }
+
         contents.push("\n");
 
         self.create_file(file_path, contents.join("\n"))?;

@@ -21,8 +21,14 @@ use tracing::instrument;
 
 pub fn get_bun_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
-    paths.push(proto_env.home.join(".bun").join("install").join("global"));
-    paths.push(proto_env.home.join(".bun").join("bin"));
+    paths.push(
+        proto_env
+            .home_dir
+            .join(".bun")
+            .join("install")
+            .join("global"),
+    );
+    paths.push(proto_env.home_dir.join(".bun").join("bin"));
     paths
 }
 

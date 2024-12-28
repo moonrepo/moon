@@ -29,7 +29,7 @@ pub fn get_deno_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
         paths.push(value.join("bin"));
     }
 
-    paths.push(proto_env.home.join(".deno").join("bin"));
+    paths.push(proto_env.home_dir.join(".deno").join("bin"));
 
     paths
 }

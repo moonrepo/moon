@@ -2,6 +2,16 @@ use crate::git::GitError;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Default)]
+pub struct GitWorktree {
+    /// Absolute path to where the worktree is checked out to within the repository.
+    pub checkout_dir: PathBuf,
+
+    /// Absolute path to the worktree's `.git` directory, which is housed in the
+    /// parent's `.git/worktrees`.
+    pub git_dir: PathBuf,
+}
+
 pub fn extract_gitdir_from_worktree(path: &Path) -> miette::Result<PathBuf> {
     let contents = fs::read_to_string(path).map_err(|error| GitError::LoadWorktreeFailed {
         path: path.to_owned(),

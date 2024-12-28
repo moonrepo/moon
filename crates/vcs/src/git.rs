@@ -95,6 +95,9 @@ pub enum GitError {
 
 #[derive(Debug)]
 pub struct Git {
+    /// Ignore rules derived from a root `.gitignore` file.
+    ignore: Option<Gitignore>,
+
     /// Default git branch name.
     pub default_branch: Arc<String>,
 
@@ -113,11 +116,8 @@ pub struct Git {
     /// Path between the git and workspace root.
     pub root_prefix: Option<RelativePathBuf>,
 
-    /// If in a git worktree, the root of the worktree (the `.git` file).
-    pub worktree_root: Option<PathBuf>,
-
-    /// Ignore rules derived from a root `.gitignore` file.
-    ignore: Option<Gitignore>,
+    /// If in a git worktree, information about it's location (the `.git` file).
+    pub worktree: Option<GitWorktree>,
 
     /// Map of submodules within the repository.
     /// The root is also considered a module to keep things easy.
@@ -141,7 +141,7 @@ impl Git {
 
         // Find the .git dir
         let mut current_dir = workspace_root;
-        let mut worktree_root = None;
+        let mut worktree = None;
         let repository_root;
         let git_root;
 
@@ -152,13 +152,15 @@ impl Git {
                 if git_check.is_file() {
                     debug!(
                         git = ?git_check,
-                        "Found a .git file (worktree root)"
+                        "Found a .git file (submodule or worktree root)"
                     );
 
-                    git_root = extract_gitdir_from_worktree(&git_check)?;
-                    repository_root = current_dir.to_path_buf();
-                    worktree_root = Some(current_dir.to_path_buf());
-                    break;
+                    worktree = Some(GitWorktree {
+                        checkout_dir: current_dir.to_path_buf(),
+                        git_dir: extract_gitdir_from_worktree(&git_check)?,
+                    });
+
+                    // Don't break and continue searching for the root
                 } else {
                     debug!(
                         git = ?git_check,
@@ -244,11 +246,9 @@ impl Git {
             repository_root,
             process: ProcessCache::new("git", workspace_root),
             git_root,
-            worktree_root,
+            worktree,
             modules,
         };
-
-        dbg!(&git);
 
         Ok(git)
     }
@@ -697,6 +697,10 @@ impl Vcs for Git {
         let is_in_repo =
             |dir: &Path| dir.is_absolute() && dir.starts_with(self.git_root.parent().unwrap());
 
+        if let Some(tree) = &self.worktree {
+            return Ok(tree.git_dir.join("hooks"));
+        }
+
         if let Ok(output) = self
             .process
             .run(["config", "--get", "core.hooksPath"], true)
@@ -722,8 +726,9 @@ impl Vcs for Git {
 
     async fn get_repository_root(&self) -> miette::Result<PathBuf> {
         Ok(self
-            .worktree_root
-            .as_deref()
+            .worktree
+            .as_ref()
+            .map(|tree| tree.checkout_dir.as_ref())
             .unwrap_or_else(|| self.git_root.parent().unwrap())
             .to_path_buf())
     }

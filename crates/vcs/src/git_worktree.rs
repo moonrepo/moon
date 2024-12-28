@@ -2,7 +2,7 @@ use crate::git::GitError;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct GitWorktree {
     /// Absolute path to where the worktree is checked out to within the repository.
     pub checkout_dir: PathBuf,

@@ -6,6 +6,7 @@ mod touched_files;
 mod vcs;
 
 pub use git::*;
+pub use git_worktree::*;
 pub use touched_files::*;
 pub use vcs::*;
 

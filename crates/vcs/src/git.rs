@@ -239,6 +239,15 @@ impl Git {
             remote_candidates: remote_candidates.to_owned(),
             root_prefix: if repository_root == workspace_root {
                 None
+            } else if let Some(tree) = &worktree {
+                if tree.checkout_dir == workspace_root {
+                    None
+                } else {
+                    RelativePathBuf::from_path(
+                        workspace_root.strip_prefix(&tree.checkout_dir).unwrap(),
+                    )
+                    .ok()
+                }
             } else {
                 RelativePathBuf::from_path(workspace_root.strip_prefix(&repository_root).unwrap())
                     .ok()

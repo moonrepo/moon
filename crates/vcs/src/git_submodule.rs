@@ -1,12 +1,23 @@
 use moon_common::path::RelativePathBuf;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default)]
 pub struct GitModule {
     pub branch: Option<String>,
+
+    /// Absolute path to where the submodule is checked out to within the repository.
+    pub checkout_dir: PathBuf,
+
+    /// Absolute path to the submodule's `.git` directory, which is housed in the
+    /// parent's `.git/modules`.
+    pub git_dir: PathBuf,
+
+    /// Relative path to the submodule checkout, defined in `.gitmodules`.
     pub path: RelativePathBuf,
+
+    /// URL of the repository.
     pub url: String,
 }
 
@@ -16,11 +27,15 @@ impl GitModule {
     }
 }
 
-pub fn parse_gitmodules_file(path: &Path) -> miette::Result<FxHashMap<String, GitModule>> {
+// https://git-scm.com/docs/gitmodules
+pub fn parse_gitmodules_file(
+    gitmodules_path: &Path,
+    repository_root: &Path,
+) -> miette::Result<FxHashMap<String, GitModule>> {
     let mut modules = FxHashMap::default();
     let mut current_module_name = None;
     let mut current_module = GitModule::default();
-    let contents = fs::read_file(path)?;
+    let contents = fs::read_file(gitmodules_path)?;
 
     fn clean_line(line: &str) -> String {
         line.replace("=", "").replace("\"", "").trim().to_owned()
@@ -58,6 +73,17 @@ pub fn parse_gitmodules_file(path: &Path) -> miette::Result<FxHashMap<String, Gi
 
     Ok(modules
         .into_iter()
-        .filter(|(_, module)| !module.path.as_str().is_empty())
+        .filter_map(|(name, mut module)| {
+            let rel_path = module.path.as_str();
+
+            if rel_path.is_empty() {
+                None
+            } else {
+                module.checkout_dir = repository_root.join(rel_path);
+                module.git_dir = repository_root.join(".git/modules").join(rel_path);
+
+                Some((name, module))
+            }
+        })
         .collect())
 }

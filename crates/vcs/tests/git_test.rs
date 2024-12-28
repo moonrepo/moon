@@ -1,5 +1,5 @@
 use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{clean_git_version, Git, TouchedFiles, Vcs};
+use moon_vcs::{clean_git_version, Git, GitWorktree, TouchedFiles, Vcs};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{create_sandbox, Sandbox};
 use std::collections::BTreeMap;
@@ -56,7 +56,7 @@ mod root_detection {
         let (sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
-        assert_eq!(git.worktree_root, None);
+        assert_eq!(git.worktree, None);
         assert_eq!(git.process.root, sandbox.path());
         assert_eq!(git.root_prefix, None);
     }
@@ -68,7 +68,7 @@ mod root_detection {
         let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
-        assert_eq!(git.worktree_root, None);
+        assert_eq!(git.worktree, None);
         assert_eq!(git.process.root, sandbox.path());
         assert_eq!(git.root_prefix, None);
     }
@@ -86,7 +86,7 @@ mod root_detection {
         .unwrap();
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
-        assert_eq!(git.worktree_root, None);
+        assert_eq!(git.worktree, None);
         assert_eq!(git.process.root, sandbox.path().join("nested/moon"));
         assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
@@ -102,8 +102,18 @@ mod root_detection {
 
         let git = Git::load(sandbox.path().join("tree"), "master", &["origin".into()]).unwrap();
 
-        assert!(git.git_root.ends_with(".git/worktrees/tree"));
-        assert_eq!(git.worktree_root, Some(sandbox.path().join("tree")));
+        assert_eq!(git.git_root, sandbox.path().join(".git"));
+        assert_eq!(
+            git.worktree,
+            Some(GitWorktree {
+                checkout_dir: sandbox.path().join("tree"),
+                git_dir: sandbox
+                    .path()
+                    .join(".git/worktrees/tree")
+                    .canonicalize()
+                    .unwrap(),
+            })
+        );
         assert_eq!(git.process.root, sandbox.path().join("tree"));
         assert_eq!(git.root_prefix, None);
     }
@@ -124,8 +134,18 @@ mod root_detection {
         )
         .unwrap();
 
-        assert!(git.git_root.ends_with(".git/worktrees/tree"));
-        assert_eq!(git.worktree_root, Some(sandbox.path().join("tree")));
+        assert_eq!(git.git_root, sandbox.path().join(".git"));
+        assert_eq!(
+            git.worktree,
+            Some(GitWorktree {
+                checkout_dir: sandbox.path().join("tree"),
+                git_dir: sandbox
+                    .path()
+                    .join(".git/worktrees/tree")
+                    .canonicalize()
+                    .unwrap(),
+            })
+        );
         assert_eq!(git.process.root, sandbox.path().join("tree/nested/moon"));
         assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }

@@ -20,7 +20,7 @@ starbase_shell = { workspace = true }
 system_env = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["io-util"] }
 
 [lints]
 workspace = true

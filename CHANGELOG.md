@@ -4,7 +4,9 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where `python venv` would fail to find an applicable Python version.
 - Fixed an issue with PowerShell Git hooks not bubbling up exit codes of failed commands.
+- Fixed an issue where Git submodules/worktrees would point to the wrong hooks folder.
 
 #### ⚙️ Internal
 

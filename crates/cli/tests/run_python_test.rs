@@ -65,7 +65,5 @@ fn runs_install_deps_via_args() {
         cmd.arg("run").arg("python:poetry");
     });
 
-    assert.debug();
-
     assert_snapshot!(assert.output());
 }

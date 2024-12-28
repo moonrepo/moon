@@ -3,8 +3,8 @@ use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
-    async_trait, get_proto_env_vars, get_proto_paths, load_tool_plugin, prepend_path_env_var,
-    use_global_tool_on_path, Tool,
+    async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
+    prepend_path_env_var, use_global_tool_on_path, Tool,
 };
 use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
@@ -91,18 +91,22 @@ impl PythonTool {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        Command::new("python")
-            .args(args)
+        let mut cmd = Command::new("python");
+
+        cmd.args(args)
             .envs(get_proto_env_vars())
             .env(
                 "PATH",
                 prepend_path_env_var(get_python_tool_paths(self, working_dir, workspace_root)),
             )
             .cwd(working_dir)
-            .with_console(self.console.clone())
-            .create_async()
-            .exec_stream_output()
-            .await?;
+            .with_console(self.console.clone());
+
+        if let Some(version) = get_proto_version_env(&self.tool) {
+            cmd.env("PROTO_PYTHON_VERSION", version);
+        }
+
+        cmd.create_async().exec_stream_output().await?;
 
         Ok(())
     }

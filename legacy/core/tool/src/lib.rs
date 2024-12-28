@@ -63,7 +63,7 @@ pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
         proto.store.shims_dir.clone(),
         proto.store.bin_dir.clone(),
         // And ensure non-proto managed moon comes last
-        proto.home.join(".moon").join("bin"),
+        proto.home_dir.join(".moon").join("bin"),
     ]
 }
 
@@ -101,7 +101,7 @@ pub async fn load_tool_plugin(
         Wasm::file(proto.get_plugin_loader()?.load_plugin(id, locator).await?),
     )?;
 
-    inject_default_manifest_config(id, &proto.home, &mut manifest)?;
+    inject_default_manifest_config(id, &proto.home_dir, &mut manifest)?;
     inject_proto_manifest_config(id, proto, &mut manifest)?;
 
     ProtoTool::load_from_manifest(id, proto, manifest).await

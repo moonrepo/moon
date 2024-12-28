@@ -90,7 +90,7 @@ impl<T: Plugin> PluginRegistry<T> {
         manifest.timeout_ms = None;
 
         // Inherit default configs, like host environment and ID.
-        inject_default_manifest_config(id, &self.host_data.moon_env.home, &mut manifest)?;
+        inject_default_manifest_config(id, &self.host_data.moon_env.home_dir, &mut manifest)?;
 
         // Ensure virtual host paths exist, otherwise WASI (via extism)
         // will throw a cryptic file/directory not found error.

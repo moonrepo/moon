@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated proto to v0.44.1 (from 0.43.1).
+
 ## 1.30.5
 
 #### 🐞 Fixes

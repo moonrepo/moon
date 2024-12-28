@@ -27,11 +27,11 @@ clap = { version = "4.5.23", default-features = false, features = [
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.38"
+clap_complete = "4.5.40"
 compact_str = { version = "0.8.0", default-features = false, features = [
     "serde",
 ] }
-console = "0.15.8"
+console = "0.15.10"
 convert_case = "0.6.0"
 dirs = "5.0.1"
 futures = "0.3.31"
@@ -71,14 +71,14 @@ starbase_archive = { version = "0.9.0", default-features = false, features = [
 ] }
 starbase_events = "0.6.6"
 starbase_sandbox = "0.8.0"
-starbase_shell = "0.6.6"
+starbase_shell = "0.6.9"
 starbase_styles = { version = "0.4.4", features = ["relative-path"] }
 starbase_utils = { version = "0.9.1", default-features = false, features = [
     "editor-config",
     "miette",
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
-thiserror = "2.0.6"
+thiserror = "2.0.9"
 tokio = { version = "1.42.0", default-features = false, features = [
     "macros",
     "process",
@@ -95,11 +95,11 @@ uuid = { version = "1.11.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.9.1"
 extism-pdk = "1.3.0"
-proto_core = "0.43.8"
+proto_core = "0.44.1"
 proto_installer = "0.8.0"
 system_env = "0.6.1"
 version_spec = "0.7.1"
-warpgate = "0.20.1"
+warpgate = "0.20.2"
 warpgate_api = "0.10.1"
 warpgate_pdk = "0.8.1"
 

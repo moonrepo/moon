@@ -11,7 +11,7 @@ pub struct MoonEnvironment {
     pub plugins_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub templates_dir: PathBuf,
-    pub home: PathBuf,       // ~
+    pub home_dir: PathBuf,   // ~
     pub store_root: PathBuf, // ~/.moon
     pub test_only: bool,
     pub working_dir: PathBuf,
@@ -36,7 +36,7 @@ impl MoonEnvironment {
             plugins_dir: store_root.join("plugins"),
             temp_dir: store_root.join("temp"),
             templates_dir: store_root.join("templates"),
-            home: dirs::home_dir().unwrap(),
+            home_dir: dirs::home_dir().unwrap(),
             store_root: store_root.to_owned(),
             test_only: false,
             working_dir: PathBuf::new(),
@@ -48,7 +48,7 @@ impl MoonEnvironment {
         let mut env = Self::from(sandbox.join(".moon")).unwrap();
         env.working_dir = sandbox.to_path_buf();
         env.workspace_root = sandbox.to_path_buf();
-        env.home = sandbox.join(".home");
+        env.home_dir = sandbox.join(".home");
         env.test_only = true;
         env
     }
@@ -57,7 +57,7 @@ impl MoonEnvironment {
         BTreeMap::from_iter([
             (self.working_dir.clone(), "/cwd".into()),
             (self.store_root.clone(), "/moon".into()),
-            (self.home.clone(), "/userhome".into()),
+            (self.home_dir.clone(), "/userhome".into()),
             (self.workspace_root.clone(), "/workspace".into()),
         ])
     }

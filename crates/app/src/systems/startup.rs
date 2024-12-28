@@ -91,7 +91,7 @@ pub fn detect_proto_environment(
     _workspace_root: &Path,
 ) -> miette::Result<Arc<ProtoEnvironment>> {
     let mut env = ProtoEnvironment::new()?;
-    env.cwd = working_dir.to_path_buf();
+    env.working_dir = working_dir.to_path_buf();
 
     Ok(Arc::new(env))
 }

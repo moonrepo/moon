@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue with PowerShell Git hooks not bubbling up exit codes of failed commands.
+
 #### ⚙️ Internal
 
 - Updated proto to v0.44.1 (from 0.43.1).

@@ -81,7 +81,7 @@ fn load_with_regex(
         }
 
         if let Some(regex) = &toolchain_regex {
-            if !task.toolchains.iter().any(|tc| regex.is_match(&tc)) {
+            if !task.toolchains.iter().any(|tc| regex.is_match(tc)) {
                 continue;
             }
         }

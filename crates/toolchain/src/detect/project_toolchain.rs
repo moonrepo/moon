@@ -47,7 +47,7 @@ pub fn detect_project_toolchains(
 
     let mut toolchains = toolchains
         .into_iter()
-        .filter(|id| enabled_toolchains.contains(&id))
+        .filter(|id| enabled_toolchains.contains(id))
         .collect::<Vec<_>>();
 
     if toolchains.is_empty() {

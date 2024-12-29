@@ -111,8 +111,7 @@ impl PlatformType {
             PlatformType::Node => vec![Id::raw("node")],
             PlatformType::Python => vec![Id::raw("python")],
             PlatformType::Rust => vec![Id::raw("rust")],
-            PlatformType::System => vec![Id::raw("system")],
-            PlatformType::Unknown => vec![],
+            PlatformType::System | PlatformType::Unknown => vec![Id::raw("system")],
         }
     }
 }

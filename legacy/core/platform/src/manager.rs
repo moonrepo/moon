@@ -41,19 +41,19 @@ impl PlatformManager {
         self.cache.values().find(predicate)
     }
 
-    pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> miette::Result<&BoxedPlatform> {
-        let type_of = type_of.into();
+    pub fn get_by_toolchain(&self, id: &Id) -> miette::Result<&BoxedPlatform> {
+        let type_of = PlatformType::try_from(id.as_str())?;
 
         self.cache.get(&type_of).ok_or_else(|| {
-            ToolError::UnsupportedPlatform {
-                name: type_of.to_string(),
+            ToolError::UnsupportedToolchains {
+                ids: vec![id.to_string()],
             }
             .into()
         })
     }
 
-    pub fn get_by_toolchains(&self, toolchains: &[Id]) -> miette::Result<&BoxedPlatform> {
-        for id in toolchains {
+    pub fn get_by_toolchains(&self, ids: &[Id]) -> miette::Result<&BoxedPlatform> {
+        for id in ids {
             let type_of = PlatformType::try_from(id.as_str())?;
 
             if let Some(platform) = self.cache.get(&type_of) {
@@ -62,20 +62,17 @@ impl PlatformManager {
         }
 
         Err(ToolError::UnsupportedToolchains {
-            ids: toolchains.iter().map(|tc| tc.to_string()).collect(),
+            ids: ids.iter().map(|tc| tc.to_string()).collect(),
         }
         .into())
     }
 
-    pub fn get_mut<T: Into<PlatformType>>(
-        &mut self,
-        type_of: T,
-    ) -> miette::Result<&mut BoxedPlatform> {
-        let type_of = type_of.into();
+    pub fn get_by_toolchain_mut(&mut self, id: &Id) -> miette::Result<&mut BoxedPlatform> {
+        let type_of = PlatformType::try_from(id.as_str())?;
 
         self.cache.get_mut(&type_of).ok_or_else(|| {
-            ToolError::UnsupportedPlatform {
-                name: type_of.to_string(),
+            ToolError::UnsupportedToolchains {
+                ids: vec![id.to_string()],
             }
             .into()
         })

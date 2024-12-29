@@ -263,8 +263,10 @@ impl InheritedTasksManager {
             .map_err(|error| match error {
                 ConfigError::Validator { error, .. } => ConfigError::Validator {
                     location: format!(
-                        "inherited tasks {}",
-                        format!("({}, {}, {})", toolchains.join(", "), stack, project),
+                        "inherited tasks ({}, {}, {})",
+                        toolchains.join(", "),
+                        stack,
+                        project
                     ),
                     error,
                     help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),

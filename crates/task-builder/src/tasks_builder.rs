@@ -396,7 +396,7 @@ impl<'proj> TasksBuilder<'proj> {
                     .toolchain
                     .to_list()
                     .into_iter()
-                    .filter(|tc| self.context.enabled_toolchains.contains(&tc))
+                    .filter(|tc| self.context.enabled_toolchains.contains(tc))
                     .collect();
             }
 

@@ -5,7 +5,6 @@ use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::path::encode_component;
 use moon_common::{color, is_ci};
-use moon_config::PlatformType;
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_time::to_millis;
@@ -32,7 +31,7 @@ pub async fn install_deps(
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> miette::Result<ActionStatus> {
-    if runtime.platform.is_system() {
+    if runtime.is_system() {
         return Ok(ActionStatus::Skipped);
     }
 
@@ -80,7 +79,7 @@ pub async fn install_deps(
     }
 
     let registry = PlatformManager::read();
-    let platform = registry.get(runtime)?;
+    let platform = registry.get_by_toolchain(&runtime.toolchain)?;
 
     let Some((lockfile_name, manifest_name)) = platform.get_dependency_configs()? else {
         debug!("No dependency manager configured for language, skipping dependency install");
@@ -114,7 +113,7 @@ pub async fn install_deps(
     lockfile_timestamp == 0
         // Dependencies haven't been installed yet
         || state.data.last_install_time == 0
-        || !has_vendor_dir(&app_context, runtime.platform, project)
+        || !has_vendor_dir(&app_context, runtime.id(), project)
         // Dependencies have changed since last run
         || state.data.last_install_time != lockfile_timestamp
         || manifests_hash
@@ -156,13 +155,9 @@ pub async fn install_deps(
     Ok(ActionStatus::Skipped)
 }
 
-fn has_vendor_dir(
-    app_context: &AppContext,
-    platform: PlatformType,
-    project: Option<&Project>,
-) -> bool {
-    let vendor_dir_name = match platform {
-        PlatformType::Bun | PlatformType::Node => "node_modules",
+fn has_vendor_dir(app_context: &AppContext, toolchain: String, project: Option<&Project>) -> bool {
+    let vendor_dir_name = match toolchain.as_str() {
+        "bun" | "node" => "node_modules",
         // Ignore for other platforms
         _ => return true,
     };

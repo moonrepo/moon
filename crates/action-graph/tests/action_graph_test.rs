@@ -42,14 +42,14 @@ fn create_runtime_with_version(version: Version) -> RuntimeReq {
 
 fn create_node_runtime() -> Runtime {
     Runtime::new(
-        PlatformType::Node,
+        Id::raw("node"),
         create_runtime_with_version(Version::new(20, 0, 0)),
     )
 }
 
 fn create_rust_runtime() -> Runtime {
     Runtime::new(
-        PlatformType::Rust,
+        Id::raw("rust"),
         create_runtime_with_version(Version::new(1, 70, 0)),
     )
 }
@@ -1825,7 +1825,7 @@ mod action_graph {
             let mut builder = ActionGraphBuilder::new(&wg).unwrap();
             let system = Runtime::system();
             let node = Runtime::new(
-                PlatformType::Node,
+                Id::raw("node"),
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
 
@@ -1851,14 +1851,14 @@ mod action_graph {
             let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
             let node1 = Runtime::new(
-                PlatformType::Node,
+                Id::raw("node"),
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
             let node2 = Runtime::new_override(
-                PlatformType::Node,
+                Id::raw("node"),
                 create_runtime_with_version(Version::new(4, 5, 6)),
             );
-            let node3 = Runtime::new(PlatformType::Node, RuntimeReq::Global);
+            let node3 = Runtime::new(Id::raw("node"), RuntimeReq::Global);
 
             builder.setup_toolchain(&node1);
             builder.setup_toolchain(&node2);
@@ -2095,14 +2095,14 @@ mod action_graph {
                     }),
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::new_override(
-                            PlatformType::Node,
+                            Id::raw("node"),
                             create_runtime_with_version(Version::new(18, 0, 0))
                         )
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("baz"),
                         runtime: Runtime::new_override(
-                            PlatformType::Node,
+                            Id::raw("node"),
                             create_runtime_with_version(Version::new(18, 0, 0))
                         )
                     }),

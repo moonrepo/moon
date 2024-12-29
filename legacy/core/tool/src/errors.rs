@@ -18,7 +18,7 @@ pub enum ToolError {
     UnsupportedPlatform { name: String },
 
     #[diagnostic(code(tool::unsupported_toolchain))]
-    #[error("Toolchains {} have not been enabled or configured.", .ids.join(", "))]
+    #[error("Toolchain(s) {} have not been enabled or configured.", .ids.join(", "))]
     UnsupportedToolchains { ids: Vec<String> },
 
     #[diagnostic(code(tool::unsupported_runtime))]

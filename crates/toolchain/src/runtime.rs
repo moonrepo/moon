@@ -1,3 +1,4 @@
+use moon_common::Id;
 pub use moon_config::{PlatformType, SemVer, UnresolvedVersionSpec, Version, VersionSpec};
 use serde::Serialize;
 use std::fmt;
@@ -68,39 +69,44 @@ impl From<&Runtime> for RuntimeReq {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct Runtime {
-    pub platform: PlatformType,
     pub requirement: RuntimeReq,
+    pub toolchain: Id,
     pub overridden: bool,
 }
 
 impl Runtime {
-    pub fn new(platform: PlatformType, requirement: RuntimeReq) -> Self {
+    pub fn new(toolchain: Id, requirement: RuntimeReq) -> Self {
         Self {
-            platform,
+            toolchain,
             requirement,
             overridden: false,
         }
     }
 
-    pub fn new_override(platform: PlatformType, requirement: RuntimeReq) -> Self {
-        let mut runtime = Self::new(platform, requirement);
+    pub fn new_override(toolchain: Id, requirement: RuntimeReq) -> Self {
+        let mut runtime = Self::new(toolchain, requirement);
         runtime.overridden = true;
         runtime
     }
 
     pub fn system() -> Self {
-        Self::new(PlatformType::System, RuntimeReq::Global)
+        Self::new(Id::raw("system"), RuntimeReq::Global)
+    }
+
+    pub fn is_system(&self) -> bool {
+        self.toolchain == "system"
     }
 
     pub fn label(&self) -> String {
-        match self.platform {
-            PlatformType::System => "system".into(),
-            platform => format!("{:?} {}", platform, self.requirement),
+        if self.toolchain == "system" {
+            "system".into()
+        } else {
+            format!("{} {}", self.toolchain, self.requirement)
         }
     }
 
     pub fn id(&self) -> String {
-        self.platform.to_string().to_lowercase()
+        self.toolchain.to_string()
     }
 
     pub fn target(&self) -> String {
@@ -124,7 +130,7 @@ impl Runtime {
 
 impl fmt::Display for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.platform)
+        write!(f, "{:?}", self.id())
     }
 }
 
@@ -134,8 +140,8 @@ impl AsRef<Runtime> for Runtime {
     }
 }
 
-impl From<&Runtime> for PlatformType {
-    fn from(value: &Runtime) -> Self {
-        value.platform
-    }
-}
+// impl From<&Runtime> for PlatformType {
+//     fn from(value: &Runtime) -> Self {
+//         value.platform
+//     }
+// }

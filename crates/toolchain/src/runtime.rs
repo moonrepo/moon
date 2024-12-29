@@ -139,9 +139,3 @@ impl AsRef<Runtime> for Runtime {
         self
     }
 }
-
-// impl From<&Runtime> for PlatformType {
-//     fn from(value: &Runtime) -> Self {
-//         value.platform
-//     }
-// }

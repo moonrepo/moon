@@ -136,7 +136,7 @@ pub async fn register_platforms(
 
     if let Some(bun_config) = &toolchain_config.bun {
         registry.register(
-            PlatformType::Bun,
+            PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
                 &toolchain_config.typescript,
@@ -149,7 +149,7 @@ pub async fn register_platforms(
 
     if let Some(deno_config) = &toolchain_config.deno {
         registry.register(
-            PlatformType::Deno,
+            PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
                 &toolchain_config.typescript,
@@ -162,7 +162,7 @@ pub async fn register_platforms(
 
     if let Some(node_config) = &toolchain_config.node {
         registry.register(
-            PlatformType::Node,
+            PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
                 &toolchain_config.typescript,
@@ -175,7 +175,7 @@ pub async fn register_platforms(
 
     if let Some(python_config) = &toolchain_config.python {
         registry.register(
-            PlatformType::Python,
+            PlatformType::Python.get_toolchain_id(),
             Box::new(PythonPlatform::new(
                 python_config,
                 workspace_root,
@@ -187,7 +187,7 @@ pub async fn register_platforms(
 
     if let Some(rust_config) = &toolchain_config.rust {
         registry.register(
-            PlatformType::Rust,
+            PlatformType::Rust.get_toolchain_id(),
             Box::new(RustPlatform::new(
                 rust_config,
                 workspace_root,
@@ -199,7 +199,7 @@ pub async fn register_platforms(
 
     // Should be last since it's the most common
     registry.register(
-        PlatformType::System,
+        PlatformType::System.get_toolchain_id(),
         Box::new(SystemPlatform::new(
             workspace_root,
             Arc::clone(proto_env),

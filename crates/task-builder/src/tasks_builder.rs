@@ -477,7 +477,7 @@ impl<'proj> TasksBuilder<'proj> {
         // TODO: Remove in 2.0
         #[allow(deprecated)]
         if !task.platform.is_unknown() && task.toolchains.is_empty() {
-            task.toolchains = task.platform.get_toolchain_ids();
+            task.toolchains = vec![task.platform.get_toolchain_id()];
         }
 
         if task.toolchains.is_empty() {

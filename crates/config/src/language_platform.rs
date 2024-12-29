@@ -104,14 +104,14 @@ impl PlatformType {
         matches!(self, PlatformType::Unknown)
     }
 
-    pub fn get_toolchain_ids(&self) -> Vec<Id> {
+    pub fn get_toolchain_id(&self) -> Id {
         match self {
-            PlatformType::Bun => vec![Id::raw("bun")],
-            PlatformType::Deno => vec![Id::raw("deno")],
-            PlatformType::Node => vec![Id::raw("node")],
-            PlatformType::Python => vec![Id::raw("python")],
-            PlatformType::Rust => vec![Id::raw("rust")],
-            PlatformType::System | PlatformType::Unknown => vec![Id::raw("system")],
+            PlatformType::Bun => Id::raw("bun"),
+            PlatformType::Deno => Id::raw("deno"),
+            PlatformType::Node => Id::raw("node"),
+            PlatformType::Python => Id::raw("python"),
+            PlatformType::Rust => Id::raw("rust"),
+            PlatformType::System | PlatformType::Unknown => Id::raw("system"),
         }
     }
 }

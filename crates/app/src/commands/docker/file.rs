@@ -176,12 +176,16 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
 }
 
 fn get_base_image(project: &Project) -> &str {
-    match project.toolchains[0].as_str() {
-        "bun" => "oven/bun:latest",
-        "deno" => "denoland/deno:latest",
-        "node" => "node:latest",
-        "python" => "python:latest",
-        "rust" => "rust:latest",
-        _ => "scratch",
+    if let Some(tc) = project.toolchains.first() {
+        return match tc.as_str() {
+            "bun" => "oven/bun:latest",
+            "deno" => "denoland/deno:latest",
+            "node" => "node:latest",
+            "python" => "python:latest",
+            "rust" => "rust:latest",
+            _ => "scratch",
+        };
     }
+
+    "scratch"
 }

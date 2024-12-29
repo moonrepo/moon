@@ -4,6 +4,7 @@ use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
+use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use proto_core::{ProtoConfig, ProtoEnvironment};
@@ -20,7 +21,7 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
 
     if let Some(bun_config) = &config.bun {
         manager.register(
-            PlatformType::Bun,
+            PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
                 &None,
@@ -33,7 +34,7 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
 
     if let Some(deno_config) = &config.deno {
         manager.register(
-            PlatformType::Deno,
+            PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
                 &None,
@@ -46,7 +47,7 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
 
     if let Some(node_config) = &config.node {
         manager.register(
-            PlatformType::Node,
+            PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
                 &None,
@@ -57,9 +58,21 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
         );
     }
 
+    if let Some(python_config) = &config.python {
+        manager.register(
+            PlatformType::Python.get_toolchain_id(),
+            Box::new(PythonPlatform::new(
+                python_config,
+                root,
+                proto.clone(),
+                console.clone(),
+            )),
+        );
+    }
+
     if let Some(rust_config) = &config.rust {
         manager.register(
-            PlatformType::Rust,
+            PlatformType::Rust.get_toolchain_id(),
             Box::new(RustPlatform::new(
                 rust_config,
                 root,
@@ -70,7 +83,7 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
     }
 
     manager.register(
-        PlatformType::System,
+        PlatformType::System.get_toolchain_id(),
         Box::new(SystemPlatform::new(root, proto.clone(), console.clone())),
     );
 

@@ -4,7 +4,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::path::encode_component;
-use moon_common::{color, is_ci};
+use moon_common::{color, is_ci, Id};
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_time::to_millis;
@@ -113,7 +113,7 @@ pub async fn install_deps(
     lockfile_timestamp == 0
         // Dependencies haven't been installed yet
         || state.data.last_install_time == 0
-        || !has_vendor_dir(&app_context, runtime.id(), project)
+        || !has_vendor_dir(&app_context, &runtime.toolchain, project)
         // Dependencies have changed since last run
         || state.data.last_install_time != lockfile_timestamp
         || manifests_hash
@@ -155,7 +155,7 @@ pub async fn install_deps(
     Ok(ActionStatus::Skipped)
 }
 
-fn has_vendor_dir(app_context: &AppContext, toolchain: String, project: Option<&Project>) -> bool {
+fn has_vendor_dir(app_context: &AppContext, toolchain: &Id, project: Option<&Project>) -> bool {
     let vendor_dir_name = match toolchain.as_str() {
         "bun" | "node" => "node_modules",
         // Ignore for other platforms

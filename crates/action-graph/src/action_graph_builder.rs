@@ -7,7 +7,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
-use moon_config::{PlatformType, TaskDependencyConfig};
+use moon_config::TaskDependencyConfig;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_query::{build_query, Criteria};
@@ -197,7 +197,7 @@ impl<'app> ActionGraphBuilder<'app> {
             && self
                 .platform_manager
                 .enabled()
-                .any(|enabled_platform| matches!(enabled_platform, PlatformType::Node))
+                .any(|enabled_platform| enabled_platform == "node")
         {
             debug!(
                 "Already installing dependencies with node, skipping a conflicting install from bun"

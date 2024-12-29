@@ -18,6 +18,9 @@ tasks:
   custom-platform:
     script: 'foo'
     platform: 'node'
+  custom-toolchain:
+    script: 'foo'
+    toolchain: 'node'
   with-command:
     script: 'bin --foo bar'
     command: 'qux'

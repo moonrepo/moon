@@ -392,7 +392,12 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if !config.toolchain.is_empty() {
-                task.toolchains = config.toolchain.to_list();
+                task.toolchains = config
+                    .toolchain
+                    .to_list()
+                    .into_iter()
+                    .filter(|tc| self.context.enabled_toolchains.contains(&tc))
+                    .collect();
             }
 
             if config.description.is_some() {

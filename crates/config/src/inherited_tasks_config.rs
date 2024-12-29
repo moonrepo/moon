@@ -196,9 +196,9 @@ impl InheritedTasksManager {
         project: &ProjectType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {
+        use crate::shapes::OneOrMany;
         use moon_common::color;
         use moon_common::path::standardize_separators;
-        use moon_config::OneOrMany;
         use schematic::{ConfigError, PartialConfig};
 
         let lookup_order = self.get_lookup_order(toolchains, stack, project, tags);

@@ -68,9 +68,11 @@ pub fn detect_task_toolchains(
     }
 
     // Inherit the toolchain from the project's language
-    for id in project_toolchains {
-        if !toolchains.contains(id) {
-            toolchains.push(id.to_owned());
+    if toolchains.is_empty() {
+        for id in project_toolchains {
+            if enabled_toolchains.contains(&id) {
+                toolchains.push(id.to_owned());
+            }
         }
     }
 

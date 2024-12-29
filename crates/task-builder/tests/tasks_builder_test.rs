@@ -782,8 +782,6 @@ mod tasks_builder {
 
             let task = tasks.get("retry-default").unwrap();
 
-            dbg!(&task);
-
             assert_eq!(task.options.retry_count, 5);
         }
 

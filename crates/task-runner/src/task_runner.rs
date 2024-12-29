@@ -442,7 +442,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         self.platform_manager
-            .get(self.task.platform)?
+            .get_by_toolchains(&self.task.toolchains)?
             .hash_run_target(
                 self.project,
                 node.get_runtime(),

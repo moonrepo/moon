@@ -1,4 +1,5 @@
 use crate::platform::Platform;
+use moon_common::Id;
 use moon_config::PlatformType;
 use moon_tool::ToolError;
 use rustc_hash::FxHashMap;
@@ -49,6 +50,21 @@ impl PlatformManager {
             }
             .into()
         })
+    }
+
+    pub fn get_by_toolchains(&self, toolchains: &[Id]) -> miette::Result<&BoxedPlatform> {
+        for id in toolchains {
+            let type_of = PlatformType::try_from(id.as_str())?;
+
+            if let Some(platform) = self.cache.get(&type_of) {
+                return Ok(platform);
+            }
+        }
+
+        Err(ToolError::UnsupportedToolchains {
+            ids: toolchains.iter().map(|tc| tc.to_string()).collect(),
+        }
+        .into())
     }
 
     pub fn get_mut<T: Into<PlatformType>>(

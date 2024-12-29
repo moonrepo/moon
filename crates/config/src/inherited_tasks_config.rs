@@ -1,6 +1,6 @@
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
-use crate::shapes::{InputPath, OneOrMany};
+use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
@@ -198,6 +198,7 @@ impl InheritedTasksManager {
     ) -> miette::Result<InheritedTasksResult> {
         use moon_common::color;
         use moon_common::path::standardize_separators;
+        use moon_config::OneOrMany;
         use schematic::{ConfigError, PartialConfig};
 
         let lookup_order = self.get_lookup_order(toolchains, stack, project, tags);

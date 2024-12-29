@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{
-    NodePackageManager, OutputPath, PartialTaskArgs, PartialTaskConfig, PartialTaskDependency,
-    PlatformType,
+    NodePackageManager, OneOrMany, OutputPath, PartialTaskArgs, PartialTaskConfig,
+    PartialTaskDependency,
 };
 use moon_javascript_platform::infer_tasks::*;
 use moon_node_lang::package_json::*;
@@ -15,7 +15,7 @@ fn create_tasks_from_scripts(
     project_id: &str,
     package_json: &mut PackageJsonCache,
 ) -> miette::Result<BTreeMap<Id, PartialTaskConfig>> {
-    let mut parser = ScriptParser::new(project_id, PlatformType::Node, NodePackageManager::Npm);
+    let mut parser = ScriptParser::new(project_id, Id::raw("node"), NodePackageManager::Npm);
 
     parser.parse_scripts(package_json)?;
     parser.update_package(package_json)?;
@@ -27,7 +27,7 @@ fn infer_tasks_from_scripts(
     project_id: &str,
     package_json: &PackageJsonCache,
 ) -> miette::Result<BTreeMap<Id, PartialTaskConfig>> {
-    let mut parser = ScriptParser::new(project_id, PlatformType::Node, NodePackageManager::Yarn);
+    let mut parser = ScriptParser::new(project_id, Id::raw("node"), NodePackageManager::Yarn);
 
     parser.infer_scripts(package_json)?;
 
@@ -196,7 +196,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::ConvertToTask,
-                PlatformType::Bun,
+                &Id::raw("bun"),
                 NodePackageManager::Bun,
             )
             .unwrap();
@@ -205,7 +205,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["bun", "./test.js"])),
-                    platform: Some(PlatformType::Bun),
+                    toolchain: Some(OneOrMany::One(Id::raw("bun"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -218,7 +218,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::WrapRunScript,
-                PlatformType::Bun,
+                &Id::raw("bun"),
                 NodePackageManager::Bun,
             )
             .unwrap();
@@ -227,7 +227,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["bun", "run", "script"])),
-                    platform: Some(PlatformType::Bun),
+                    toolchain: Some(OneOrMany::One(Id::raw("bun"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -240,7 +240,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Bun,
             )
             .unwrap();
@@ -249,7 +249,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -262,7 +262,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::WrapRunScript,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Bun,
             )
             .unwrap();
@@ -271,7 +271,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["bun", "run", "script"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -284,7 +284,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -293,7 +293,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -306,7 +306,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::WrapRunScript,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -315,7 +315,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["npm", "run", "script"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -328,7 +328,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Pnpm,
             )
             .unwrap();
@@ -337,7 +337,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -350,7 +350,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::WrapRunScript,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Pnpm,
             )
             .unwrap();
@@ -359,7 +359,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["pnpm", "run", "script"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -372,7 +372,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Yarn,
             )
             .unwrap();
@@ -381,7 +381,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -394,7 +394,7 @@ mod create_task {
                 "script",
                 "./test.js",
                 TaskContext::WrapRunScript,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Yarn,
             )
             .unwrap();
@@ -403,7 +403,7 @@ mod create_task {
                 task,
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "script"])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -420,7 +420,7 @@ mod create_task {
                 "script",
                 "bash scripts/setup.sh",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -432,7 +432,7 @@ mod create_task {
                         "bash",
                         "scripts/setup.sh"
                     ])),
-                    platform: Some(PlatformType::System),
+                    toolchain: Some(OneOrMany::One(Id::raw("system"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -445,7 +445,7 @@ mod create_task {
                 "script",
                 "scripts/setup.sh",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -457,7 +457,7 @@ mod create_task {
                         "bash",
                         "scripts/setup.sh"
                     ])),
-                    platform: Some(PlatformType::System),
+                    toolchain: Some(OneOrMany::One(Id::raw("system"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -470,7 +470,7 @@ mod create_task {
                 "script",
                 "node scripts/test.js",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -482,7 +482,7 @@ mod create_task {
                         "node",
                         "scripts/test.js"
                     ])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -498,7 +498,7 @@ mod create_task {
                     "script",
                     candidate,
                     TaskContext::ConvertToTask,
-                    PlatformType::Node,
+                    &Id::raw("node"),
                     NodePackageManager::Npm,
                 )
                 .unwrap();
@@ -507,7 +507,7 @@ mod create_task {
                     task,
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["node", candidate])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 )
@@ -525,7 +525,7 @@ mod create_task {
                 "script",
                 "KEY=VALUE yarn install",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -538,7 +538,7 @@ mod create_task {
                         "KEY".to_owned(),
                         "VALUE".to_owned()
                     )])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -551,7 +551,7 @@ mod create_task {
                 "script",
                 "KEY1=VAL1 KEY2=VAL2 yarn install",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -564,7 +564,7 @@ mod create_task {
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -577,7 +577,7 @@ mod create_task {
                 "script",
                 "KEY1=VAL1; KEY2=VAL2; yarn install",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -590,7 +590,7 @@ mod create_task {
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -603,7 +603,7 @@ mod create_task {
                 "script",
                 "NODE_OPTIONS='-f -b' yarn",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -616,7 +616,7 @@ mod create_task {
                         "NODE_OPTIONS".to_owned(),
                         "-f -b".to_owned()
                     )])),
-                    platform: Some(PlatformType::Node),
+                    toolchain: Some(OneOrMany::One(Id::raw("node"))),
                     ..PartialTaskConfig::default()
                 }
             )
@@ -651,7 +651,7 @@ mod create_task {
                     "script",
                     &format!("tool build {} {}", candidate.0, candidate.1),
                     TaskContext::ConvertToTask,
-                    PlatformType::Node,
+                    &Id::raw("node"),
                     NodePackageManager::Npm,
                 )
                 .unwrap();
@@ -666,7 +666,7 @@ mod create_task {
                             candidate.1
                         ])),
                         outputs: Some(vec![OutputPath::ProjectFile(candidate.2.to_owned())]),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 )
@@ -683,7 +683,7 @@ mod create_task {
                 "script",
                 "build --out ../parent/dir",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -697,7 +697,7 @@ mod create_task {
                 "script",
                 "build --out /abs/dir",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -711,7 +711,7 @@ mod create_task {
                 "script",
                 "build --out C:\\\\abs\\\\dir",
                 TaskContext::ConvertToTask,
-                PlatformType::Node,
+                &Id::raw("node"),
                 NodePackageManager::Npm,
             )
             .unwrap();
@@ -754,7 +754,7 @@ mod infer_tasks_from_scripts {
                             "build:app"
                         ])),
                         outputs: Some(vec![OutputPath::ProjectFile("dist".into())]),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -764,7 +764,7 @@ mod infer_tasks_from_scripts {
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "dev"])),
                         local: Some(true),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -772,7 +772,7 @@ mod infer_tasks_from_scripts {
                     "test".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "test"])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -780,7 +780,7 @@ mod infer_tasks_from_scripts {
                     "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "lint"])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -792,7 +792,7 @@ mod infer_tasks_from_scripts {
                             "run",
                             "typecheck"
                         ])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -887,7 +887,7 @@ mod create_tasks_from_scripts {
                     "test".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -897,7 +897,7 @@ mod create_tasks_from_scripts {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "eslint", "src/**/*", "."
                         ])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -905,7 +905,7 @@ mod create_tasks_from_scripts {
                     "typecheck".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["tsc", "--build"])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 ),
@@ -941,7 +941,7 @@ mod create_tasks_from_scripts {
                         "pretest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -950,7 +950,7 @@ mod create_tasks_from_scripts {
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:test"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -959,7 +959,7 @@ mod create_tasks_from_scripts {
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             deps: Some(create_target_deps(["~:pretest"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -991,7 +991,7 @@ mod create_tasks_from_scripts {
                         "pretest-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1000,7 +1000,7 @@ mod create_tasks_from_scripts {
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:pretest-dep1"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1009,7 +1009,7 @@ mod create_tasks_from_scripts {
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             deps: Some(create_target_deps(["~:pretest"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     )
@@ -1041,7 +1041,7 @@ mod create_tasks_from_scripts {
                         "posttest-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1050,7 +1050,7 @@ mod create_tasks_from_scripts {
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:posttest-dep1", "~:test"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1058,7 +1058,7 @@ mod create_tasks_from_scripts {
                         "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1090,7 +1090,7 @@ mod create_tasks_from_scripts {
                         "prerelease".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["webpack", "build"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1099,7 +1099,7 @@ mod create_tasks_from_scripts {
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["npm", "publish"])),
                             deps: Some(create_target_deps(["~:prerelease"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1134,7 +1134,7 @@ mod create_tasks_from_scripts {
                     "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
-                        platform: Some(PlatformType::Node),
+                        toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
                 )])
@@ -1175,7 +1175,7 @@ mod create_tasks_from_scripts {
                             "lint".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
-                                platform: Some(PlatformType::Node),
+                                toolchain: Some(OneOrMany::One(Id::raw("node"))),
                                 ..PartialTaskConfig::default()
                             }
                         ),
@@ -1187,7 +1187,7 @@ mod create_tasks_from_scripts {
                                     "run",
                                     "project:lint"
                                 ])),
-                                platform: Some(PlatformType::Node),
+                                toolchain: Some(OneOrMany::One(Id::raw("node"))),
                                 ..PartialTaskConfig::default()
                             }
                         ),
@@ -1229,7 +1229,7 @@ mod create_tasks_from_scripts {
                             "lint".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
-                                platform: Some(PlatformType::Node),
+                                toolchain: Some(OneOrMany::One(Id::raw("node"))),
                                 ..PartialTaskConfig::default()
                             }
                         ),
@@ -1243,7 +1243,7 @@ mod create_tasks_from_scripts {
                                     "--",
                                     "--fix"
                                 ])),
-                                platform: Some(PlatformType::Node),
+                                toolchain: Some(OneOrMany::One(Id::raw("node"))),
                                 ..PartialTaskConfig::default()
                             }
                         ),
@@ -1287,7 +1287,7 @@ mod create_tasks_from_scripts {
                         "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["webpack", "build"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1305,7 +1305,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "development".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1321,7 +1321,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1340,7 +1340,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "staging".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1396,7 +1396,7 @@ mod create_tasks_from_scripts {
                         "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["babel", "."])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1404,7 +1404,7 @@ mod create_tasks_from_scripts {
                         "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1412,7 +1412,7 @@ mod create_tasks_from_scripts {
                         "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     )
@@ -1480,7 +1480,7 @@ mod create_tasks_from_scripts {
                         "bootstrap".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "bootstrap"])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1488,7 +1488,7 @@ mod create_tasks_from_scripts {
                         "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "build"])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1499,7 +1499,7 @@ mod create_tasks_from_scripts {
                                 "make",
                                 "build-no-bundle"
                             ])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1507,7 +1507,7 @@ mod create_tasks_from_scripts {
                         "fix".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "fix"])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1515,7 +1515,7 @@ mod create_tasks_from_scripts {
                         "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "lint"])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1523,7 +1523,7 @@ mod create_tasks_from_scripts {
                         "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "test"])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1534,7 +1534,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/esm/index.js"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1545,7 +1545,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/runtime-integration/bundlers.cjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1556,7 +1556,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/runtime-integration/generate-absolute-runtime.cjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1567,7 +1567,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/runtime-integration/node.cjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1621,7 +1621,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "build"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1633,7 +1633,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:type",
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1646,7 +1646,7 @@ mod create_tasks_from_scripts {
                                 "project:test",
                             ])),
                             deps: Some(create_target_deps(["~:check-dep1"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1659,7 +1659,7 @@ mod create_tasks_from_scripts {
                                 "project:lint",
                             ])),
                             deps: Some(create_target_deps(["~:check-dep2"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1673,7 +1673,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "clean"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1681,7 +1681,7 @@ mod create_tasks_from_scripts {
                         "commit-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["yarn", "install"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1694,7 +1694,7 @@ mod create_tasks_from_scripts {
                                 "yarn.lock"
                             ])),
                             deps: Some(create_target_deps(["~:commit-dep1"])),
-                            platform: Some(PlatformType::System),
+                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1708,7 +1708,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--coverage"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1716,7 +1716,7 @@ mod create_tasks_from_scripts {
                         "create-config".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("create-config".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1724,7 +1724,7 @@ mod create_tasks_from_scripts {
                         "format".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("prettier".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1732,7 +1732,7 @@ mod create_tasks_from_scripts {
                         "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("eslint".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1753,7 +1753,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1764,7 +1764,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./packages/packemon/cjs/bin.cjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1776,7 +1776,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:clean"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1789,7 +1789,7 @@ mod create_tasks_from_scripts {
                                 "project:setup"
                             ])),
                             deps: Some(create_target_deps(["~:prerelease-dep1"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1802,7 +1802,7 @@ mod create_tasks_from_scripts {
                                 "project:packup"
                             ])),
                             deps: Some(create_target_deps(["~:prerelease-dep2"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1815,7 +1815,7 @@ mod create_tasks_from_scripts {
                                 "project:check"
                             ])),
                             deps: Some(create_target_deps(["~:prerelease-dep3"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1827,7 +1827,7 @@ mod create_tasks_from_scripts {
                                 "lerna-release"
                             ])),
                             deps: Some(create_target_deps(["~:prerelease"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1845,7 +1845,7 @@ mod create_tasks_from_scripts {
                                 "packemon",
                                 "build"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1853,7 +1853,7 @@ mod create_tasks_from_scripts {
                         "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("jest".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1864,7 +1864,7 @@ mod create_tasks_from_scripts {
                                 "typescript",
                                 "--build"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1878,7 +1878,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "validate"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1938,7 +1938,7 @@ mod create_tasks_from_scripts {
                         "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["run-p", "lint:*"])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1946,7 +1946,7 @@ mod create_tasks_from_scripts {
                         "lint-actionlint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("node-actionlint".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1957,7 +1957,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/lint-changelog.mjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1968,7 +1968,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/check-deps.mjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1986,7 +1986,7 @@ mod create_tasks_from_scripts {
                                 "EFF_NO_LINK_RULES".to_owned(),
                                 "true".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -1996,7 +1996,7 @@ mod create_tasks_from_scripts {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "prettier", ".", "!test*", "--check"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2010,7 +2010,7 @@ mod create_tasks_from_scripts {
                                 "--dot",
                                 "--gitignore"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2018,7 +2018,7 @@ mod create_tasks_from_scripts {
                         "lint-typecheck".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("tsc".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2032,7 +2032,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--fix"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2046,7 +2046,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--write"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2057,7 +2057,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/build/build.mjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2068,7 +2068,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/build-website.mjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2085,7 +2085,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2099,7 +2099,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--debug-benchmark"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2117,7 +2117,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2129,7 +2129,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:build"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2141,7 +2141,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:build"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2149,7 +2149,7 @@ mod create_tasks_from_scripts {
                         "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("jest".to_owned())),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2161,7 +2161,7 @@ mod create_tasks_from_scripts {
                                 "INSTALL_PACKAGE".to_owned(),
                                 "1".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2173,7 +2173,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2188,7 +2188,7 @@ mod create_tasks_from_scripts {
                                 "--config=./scripts/bundle-eslint-config.cjs",
                                 "dist/**/*.{js,mjs}"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2200,7 +2200,7 @@ mod create_tasks_from_scripts {
                                 ("TEST_STANDALONE".to_owned(), "1".to_owned()),
                                 ("NODE_ENV".to_owned(), "production".to_owned())
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2211,7 +2211,7 @@ mod create_tasks_from_scripts {
                                 "jest",
                                 "tests/integration"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),
@@ -2222,7 +2222,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/vendors/bundle-vendors.mjs"
                             ])),
-                            platform: Some(PlatformType::Node),
+                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
                             ..PartialTaskConfig::default()
                         }
                     ),

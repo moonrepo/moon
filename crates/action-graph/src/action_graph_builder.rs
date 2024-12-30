@@ -174,20 +174,6 @@ impl<'app> ActionGraphBuilder<'app> {
         let toolchains = task
             .map(|t| &t.toolchains)
             .unwrap_or_else(|| &project.toolchains);
-
-        // If project is NOT in the package manager workspace, then we should
-        // install dependencies in the project, not the workspace root.
-        if let Ok(platform) = self.platform_manager.get_by_toolchains(toolchains) {
-            if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
-                in_project = true;
-
-                debug!(
-                    "Project {} is not within the dependency manager workspace, dependencies will be installed within the project instead of the root",
-                    color::id(&project.id),
-                );
-            }
-        }
-
         let mut primary_toolchain = toolchains[0].to_owned();
 
         // If Bun and Node.js are enabled, they will both attempt to install
@@ -204,6 +190,19 @@ impl<'app> ActionGraphBuilder<'app> {
             );
 
             primary_toolchain = Id::raw("node")
+        }
+
+        // If project is NOT in the package manager workspace, then we should
+        // install dependencies in the project, not the workspace root.
+        if let Ok(platform) = self.platform_manager.get_by_toolchain(&primary_toolchain) {
+            if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
+                in_project = true;
+
+                debug!(
+                    "Project {} is not within the dependency manager workspace, dependencies will be installed within the project instead of the root",
+                    color::id(&project.id),
+                );
+            }
         }
 
         let node = if in_project {

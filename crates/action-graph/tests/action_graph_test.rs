@@ -7,7 +7,7 @@ use moon_action_context::TargetState;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{PlatformType, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
+use moon_config::{TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_workspace_graph;
@@ -21,6 +21,7 @@ fn create_task(id: &str, project: &str) -> Task {
     Task {
         id: Id::raw(id),
         target: Target::new(project, id).unwrap(),
+        toolchains: vec![Id::raw("node")],
         ..Task::default()
     }
 }
@@ -201,10 +202,9 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
 
             let mut bun = create_task("bun", "bar");
-            bun.platform = PlatformType::Bun;
+            bun.toolchains = vec![Id::raw("bun")];
 
-            let mut node = create_task("node", "bar");
-            node.platform = PlatformType::Node;
+            let node = create_task("node", "bar");
 
             let mut builder = container.create_builder();
             let project = container.workspace_graph.get_project("bar").unwrap();
@@ -261,9 +261,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())
@@ -298,9 +296,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())
@@ -343,7 +339,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Rust;
+            task.toolchains = vec![Id::raw("rust")];
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())
@@ -395,7 +391,7 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::run_task({
-                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
                     node.interactive = true;
                     node
                 })
@@ -427,7 +423,7 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::run_task({
-                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
                     node.interactive = true;
                     node
                 })
@@ -454,7 +450,7 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::run_task({
-                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
                     node.persistent = true;
                     node
                 })
@@ -468,8 +464,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             // Test collapsing
             builder
@@ -544,8 +539,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             builder
                 .run_task_with_config(
@@ -602,8 +596,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             builder
                 .run_task_with_config(
@@ -660,8 +653,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             // Test collapsing
             builder
@@ -736,8 +728,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             builder
                 .run_task_with_config(
@@ -794,8 +785,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             let project = container.workspace_graph.get_project("bar").unwrap();
-            let mut task = create_task("build", "bar");
-            task.platform = PlatformType::Node;
+            let task = create_task("build", "bar");
 
             // Test collapsing
             builder
@@ -896,9 +886,7 @@ mod action_graph {
                 let mut builder = container.create_builder();
 
                 let project = container.workspace_graph.get_project("bar").unwrap();
-
-                let mut task = create_task("build", "bar");
-                task.platform = PlatformType::Node;
+                let task = create_task("build", "bar");
 
                 // Empty set works fine, just needs to be some
                 let touched_files = FxHashSet::default();
@@ -930,7 +918,6 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
-                task.platform = PlatformType::Node;
                 task.input_files.insert(file.clone());
 
                 let touched_files = FxHashSet::from_iter([file]);

@@ -32,7 +32,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct Task {
         pub args: Vec<String>,
@@ -249,6 +249,37 @@ impl Task {
         }
 
         self.is_build_type() || self.is_test_type()
+    }
+}
+
+impl Default for Task {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            args: vec![],
+            command: String::from("noop"),
+            deps: vec![],
+            description: None,
+            env: FxHashMap::default(),
+            id: Id::default(),
+            inputs: vec![],
+            input_env: FxHashSet::default(),
+            input_files: FxHashSet::default(),
+            input_globs: FxHashSet::default(),
+            options: TaskOptions::default(),
+            outputs: vec![],
+            output_files: FxHashSet::default(),
+            output_globs: FxHashSet::default(),
+            platform: PlatformType::default(),
+            preset: None,
+            script: None,
+            state: TaskState::default(),
+            target: Target::default(),
+            toolchains: vec![Id::raw("system")],
+            type_of: TaskType::default(),
+            inputs_cache: OnceCell::new(),
+            outputs_cache: OnceCell::new(),
+        }
     }
 }
 

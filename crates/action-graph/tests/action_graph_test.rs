@@ -330,7 +330,7 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn task_can_have_a_diff_platform_from_project() {
+        async fn task_can_have_a_diff_toolchain_from_project() {
             let sandbox = create_sandbox("projects");
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
@@ -1833,7 +1833,7 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn graphs_same_platform() {
+        async fn graphs_same_toolchain() {
             let wg = WorkspaceGraph::default();
             let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
@@ -2018,7 +2018,7 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn inherits_platform_tool() {
+        async fn inherits_toolchain_tool() {
             let sandbox = create_sandbox("projects");
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
@@ -2055,7 +2055,7 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn supports_platform_override() {
+        async fn supports_toolchain_override() {
             let sandbox = create_sandbox("projects");
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();

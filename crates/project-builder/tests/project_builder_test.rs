@@ -379,7 +379,7 @@ mod project_builder {
         }
     }
 
-    mod platform_detect {
+    mod detect_toolchain {
         use super::*;
 
         #[tokio::test]

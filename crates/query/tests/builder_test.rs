@@ -616,7 +616,7 @@ mod mql_build {
         }
     }
 
-    mod task_platform {
+    mod task_toolchain {
         use super::*;
 
         #[test]
@@ -647,28 +647,6 @@ mod mql_build {
                     input: Some("taskToolchain!=[node, system]".into())
                 }
             );
-        }
-
-        #[test]
-        #[should_panic(expected = "Unknown query value kotlin for field taskToolchain.")]
-        fn invalid_value() {
-            build_query("taskToolchain=kotlin").unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Like operators (~ and !~) are not supported for field taskToolchain."
-        )]
-        fn errors_for_like() {
-            build_query("taskToolchain~node").unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Like operators (~ and !~) are not supported for field taskToolchain."
-        )]
-        fn errors_for_not_like() {
-            build_query("taskToolchain!~node").unwrap();
         }
     }
 

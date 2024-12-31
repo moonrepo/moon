@@ -420,7 +420,7 @@ mod tasks_builder {
         }
     }
 
-    mod detect_platforms {
+    mod detect_platform_legacy {
         use super::*;
 
         #[tokio::test]
@@ -2201,7 +2201,7 @@ mod tasks_builder {
         }
 
         #[tokio::test]
-        async fn cannot_change_platform() {
+        async fn cannot_change_platform_legacy() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
             let task = tasks.get("custom-platform").unwrap();

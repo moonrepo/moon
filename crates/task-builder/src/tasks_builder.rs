@@ -251,7 +251,9 @@ impl<'proj> TasksBuilder<'proj> {
         );
 
         let mut task = Task::default();
-        let chain = self.get_config_inherit_chain(id)?;
+
+        // Reset toolchains so that we don't inherit system by default
+        task.toolchains = vec![];
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -263,6 +265,8 @@ impl<'proj> TasksBuilder<'proj> {
             is_local = true;
             preset = Some(TaskPreset::Server);
         }
+
+        let chain = self.get_config_inherit_chain(id)?;
 
         for link in &chain {
             preset = link.config.preset;

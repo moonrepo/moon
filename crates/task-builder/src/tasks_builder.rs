@@ -250,10 +250,11 @@ impl<'proj> TasksBuilder<'proj> {
             color::id(id.as_str())
         );
 
-        let mut task = Task::default();
-
-        // Reset toolchains so that we don't inherit system by default
-        task.toolchains = vec![];
+        let mut task = Task {
+            // Reset toolchains so that we don't inherit system by default
+            toolchains: vec![],
+            ..Default::default()
+        };
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.

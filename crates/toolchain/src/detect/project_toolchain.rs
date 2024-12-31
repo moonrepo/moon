@@ -19,20 +19,16 @@ pub fn detect_project_toolchains(
                 (Id::raw("bun"), BUN),
                 (Id::raw("node"), NODE),
             ];
-            let mut found = false;
 
-            // Detect in project first
-            for (id, files) in &runtimes {
+            for (id, files) in runtimes {
+                // Detect in project first
                 if has_language_files(project_root, files) {
-                    toolchains.push(id.to_owned());
-                    found = true;
+                    toolchains.push(id);
                     break;
                 }
-            }
 
-            // Then in workspace
-            for (id, files) in runtimes {
-                if !found && has_language_files(workspace_root, files) {
+                // Then in workspace
+                if has_language_files(workspace_root, files) {
                     toolchains.push(id);
                     break;
                 }

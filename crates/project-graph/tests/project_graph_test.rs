@@ -1433,13 +1433,13 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query_projects(build_query("taskPlatform=[node]").unwrap())
+                .query_projects(build_query("taskToolchain=[node]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "b"]);
 
             let projects = graph
-                .query_projects(build_query("taskPlatform=system").unwrap())
+                .query_projects(build_query("taskToolchain=system").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["c", "d"]);
@@ -1461,7 +1461,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query_projects(build_query("task=build && taskPlatform=deno").unwrap())
+                .query_projects(build_query("task=build && taskToolchain=deno").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["d"]);

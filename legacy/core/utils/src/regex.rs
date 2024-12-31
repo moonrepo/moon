@@ -24,19 +24,6 @@ pub static ENV_VAR: Lazy<regex::Regex> = Lazy::new(|| create_regex("^\\$[A-Z0-9_
 pub static ENV_VAR_SUBSTITUTE: Lazy<regex::Regex> =
     Lazy::new(|| create_regex("\\$\\{([A-Z0-9_]+)\\}").unwrap());
 
-// Token function: `@func(arg)`
-pub static TOKEN_GROUP: &str = "([0-9A-Za-z_-]+)";
-
-pub static TOKEN_FUNC_PATTERN: Lazy<regex::Regex> =
-    Lazy::new(|| create_regex(format!("^@([a-z]+)\\({}\\)$", TOKEN_GROUP)).unwrap());
-
-pub static TOKEN_FUNC_ANYWHERE_PATTERN: Lazy<regex::Regex> =
-    Lazy::new(|| create_regex(format!("@([a-z]+)\\({}\\)", TOKEN_GROUP)).unwrap());
-
-pub static TOKEN_VAR_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
-    create_regex("\\$(language|projectAlias|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap()
-});
-
 #[inline]
 pub fn create_regex<V: AsRef<str>>(value: V) -> miette::Result<Regex> {
     Regex::new(value.as_ref()).into_diagnostic()
@@ -55,16 +42,6 @@ pub fn matches_id(id: &str) -> bool {
 #[inline]
 pub fn matches_target(target_id: &str) -> bool {
     TARGET_PATTERN.is_match(target_id)
-}
-
-#[inline]
-pub fn matches_token_func(token: &str) -> bool {
-    TOKEN_FUNC_PATTERN.is_match(token)
-}
-
-#[inline]
-pub fn matches_token_var(token: &str) -> bool {
-    TOKEN_VAR_PATTERN.is_match(token)
 }
 
 #[cfg(test)]

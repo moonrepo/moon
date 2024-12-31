@@ -1,7 +1,10 @@
 use crate::expander_utils::substitute_env_var;
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
+use moon_common::{
+    color,
+    path::{self, WorkspaceRelativePathBuf},
+};
 use moon_config::{patterns, InputPath, OutputPath, ProjectMetadataConfig};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
@@ -12,7 +15,7 @@ use regex::Regex;
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::env;
-use tracing::{instrument, warn};
+use tracing::{debug, instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct ExpandedResult {
@@ -560,6 +563,15 @@ impl<'graph> TokenExpander<'graph> {
                 Some(metadata) => Cow::Borrowed(op(metadata).unwrap_or_default()),
                 None => Cow::Owned(String::new()),
             };
+
+        if variable == "taskPlatform" {
+            debug!(
+                task_target = task.target.as_str(),
+                "The {} token variable is deprecated, use {} instead",
+                color::property("taskPlatform"),
+                color::property("taskToolchain"),
+            );
+        }
 
         let replaced_value = match variable {
             // Env

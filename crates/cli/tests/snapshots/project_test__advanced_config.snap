@@ -6,7 +6,7 @@ expression: assert.output()
 
 Project: advanced
 Source: advanced
-Platform: node
+Toolchains: typescript, javascript
 Language: typescript
 Stack: frontend
 Type: application

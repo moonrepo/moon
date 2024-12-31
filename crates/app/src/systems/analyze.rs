@@ -3,7 +3,7 @@ use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
 use moon_common::supports_pkl_configs;
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
-use moon_config::{PlatformType, ToolchainConfig};
+use moon_config::{BunConfig, NodePackageManager, PlatformType, ToolchainConfig};
 use moon_console::{Checkpoint, Console};
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
@@ -171,6 +171,25 @@ pub async fn register_platforms(
                 Arc::clone(&console),
             )),
         );
+
+        // TODO fix in 2.0
+        if toolchain_config.bun.is_none()
+            && (node_config.bun.is_some()
+                || matches!(node_config.package_manager, NodePackageManager::Bun))
+        {
+            let bun_config = BunConfig::default();
+
+            registry.register(
+                PlatformType::Bun.get_toolchain_id(),
+                Box::new(BunPlatform::new(
+                    &bun_config,
+                    &toolchain_config.typescript,
+                    workspace_root,
+                    Arc::clone(proto_env),
+                    Arc::clone(&console),
+                )),
+            );
+        }
     }
 
     if let Some(python_config) = &toolchain_config.python {

@@ -1,5 +1,5 @@
 use moon_bun_platform::BunPlatform;
-use moon_config::{ConfigLoader, PlatformType};
+use moon_config::{BunConfig, ConfigLoader, NodePackageManager, PlatformType};
 use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
@@ -56,6 +56,25 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
                 console.clone(),
             )),
         );
+
+        // TODO fix in 2.0
+        if config.bun.is_none()
+            && (node_config.bun.is_some()
+                || matches!(node_config.package_manager, NodePackageManager::Bun))
+        {
+            let bun_config = BunConfig::default();
+
+            manager.register(
+                PlatformType::Bun.get_toolchain_id(),
+                Box::new(BunPlatform::new(
+                    &bun_config,
+                    &None,
+                    root,
+                    proto.clone(),
+                    console.clone(),
+                )),
+            );
+        }
     }
 
     if let Some(python_config) = &config.python {

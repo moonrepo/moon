@@ -86,8 +86,13 @@ impl ToolchainConfig {
             tools.push(Id::raw("deno"));
         }
 
-        if self.node.is_some() {
+        if let Some(node) = &self.node {
             tools.push(Id::raw("node"));
+
+            // Better way to handle this?
+            if node.bun.is_some() || matches!(node.package_manager, NodePackageManager::Bun) {
+                tools.push(Id::raw("bun"));
+            }
         }
 
         if self.python.is_some() {

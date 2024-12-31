@@ -17,7 +17,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
@@ -478,6 +478,13 @@ impl<'proj> TasksBuilder<'proj> {
         #[allow(deprecated)]
         if !task.platform.is_unknown() && task.toolchains.is_empty() {
             task.toolchains = vec![task.platform.get_toolchain_id()];
+
+            debug!(
+                task_target = target.as_str(),
+                "The {} task setting has been deprecated, use {} instead",
+                color::property("platform"),
+                color::property("toolchain"),
+            );
         }
 
         if task.toolchains.is_empty() {

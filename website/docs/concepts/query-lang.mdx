@@ -53,13 +53,13 @@ The `&&` operator is used to combine comparisons into a logical AND, and the `||
 for logical OR.
 
 ```
-taskPlatform=system || taskPlatform=node
+taskToolchain=system || taskToolchain=node
 ```
 
 For readability concerns, you can also use `AND` or `OR`.
 
 ```
-taskPlatform=system OR taskPlatform=node
+taskToolchain=system OR taskToolchain=node
 ```
 
 > Mixing both operators in the same condition is not supported.
@@ -152,12 +152,12 @@ ID/name of a task within the project.
 task=[build,test]
 ```
 
-### `taskPlatform`
+### `taskToolchain`
 
-The platform a task will run against, as defined in [`moon.yml`](../config/project#platform-1).
+The toolchain a task will run against, as defined in [`moon.yml`](../config/project).
 
 ```
-taskPlatform=node
+taskToolchain=node
 ```
 
 ### `taskType`

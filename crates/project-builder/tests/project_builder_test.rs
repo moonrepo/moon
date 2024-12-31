@@ -255,7 +255,7 @@ mod project_builder {
             let project = build_lang_project("bun").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]); // no configs
+            assert_eq!(project.toolchains, vec![Id::raw("bun")]);
 
             let project = build_lang_project("bun-config").await;
 
@@ -268,7 +268,7 @@ mod project_builder {
             let project = build_lang_project("deno").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]); // no configs
+            assert_eq!(project.toolchains, vec![Id::raw("deno")]);
 
             let project = build_lang_project("deno-config").await;
 

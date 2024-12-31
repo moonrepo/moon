@@ -13,7 +13,7 @@ use moon_toolchain::detect::{detect_project_language, detect_project_toolchains}
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
@@ -116,12 +116,43 @@ impl<'app> ProjectBuilder<'app> {
 
         // Infer toolchains from language
         if self.toolchains.is_empty() {
-            self.toolchains = detect_project_toolchains(
-                self.context.workspace_root,
-                &self.root,
-                &self.language,
-                self.context.enabled_toolchains,
-            );
+            let mut added = false;
+
+            if let Some(default_id) = &config.toolchain.default {
+                if self.context.enabled_toolchains.contains(default_id) {
+                    self.toolchains.push(default_id.to_owned());
+                    added = true;
+                }
+            }
+
+            // TODO remove in 2.0
+            #[allow(deprecated)]
+            if !added && config.platform.is_some() {
+                if let Some(platform) = &config.platform {
+                    let default_id = platform.get_toolchain_id();
+
+                    if self.context.enabled_toolchains.contains(&default_id) {
+                        self.toolchains.push(default_id);
+                        added = true;
+                    }
+                }
+
+                debug!(
+                    project_id = self.id.as_str(),
+                    "The {} project setting has been deprecated, use {} instead, or rely on configuration/environment detection instead",
+                    color::property("platform"),
+                    color::property("toolchain.default"),
+                );
+            }
+
+            if !added {
+                self.toolchains = detect_project_toolchains(
+                    self.context.workspace_root,
+                    &self.root,
+                    &self.language,
+                    self.context.enabled_toolchains,
+                );
+            }
 
             trace!(
                 project_id = self.id.as_str(),

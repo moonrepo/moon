@@ -13,7 +13,8 @@
   - Deprecated the `taskPlatform` query field, use `taskToolchain` instead.
   - Deprecated the `--platform` option for `moon query tasks`, use `--toolchain` instead.
   - Deprecated the `$taskPlatform` token, use `$taskToolchain` instead.
-  - Removed the top-level `platform` setting from `moon.yml`. The toolchain is now inferred from the top-level `language` setting and any config files.
+  - Deprecated the top-level `platform` setting from `moon.yml`, use `toolchain.default` instead.
+    - Additionally, the toolchain can now be inferred from the top-level `language` setting and any config files in the project/workspace root. This pattern is preferred when possible.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 

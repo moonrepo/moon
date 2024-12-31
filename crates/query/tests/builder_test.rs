@@ -622,14 +622,14 @@ mod mql_build {
         #[test]
         fn valid_value() {
             assert_eq!(
-                build_query("taskPlatform=node").unwrap(),
+                build_query("taskToolchain=node").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::TaskPlatform(value_list(["node"])),
+                        field: Field::TaskToolchain(value_list(["node"])),
                         op: ComparisonOperator::Equal,
                     }],
-                    input: Some("taskPlatform=node".into())
+                    input: Some("taskToolchain=node".into())
                 }
             );
         }
@@ -637,38 +637,38 @@ mod mql_build {
         #[test]
         fn valid_value_list() {
             assert_eq!(
-                build_query("taskPlatform!=[node, system]").unwrap(),
+                build_query("taskToolchain!=[node, system]").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::TaskPlatform(value_list(["node", "system"])),
+                        field: Field::TaskToolchain(value_list(["node", "system"])),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    input: Some("taskPlatform!=[node, system]".into())
+                    input: Some("taskToolchain!=[node, system]".into())
                 }
             );
         }
 
         #[test]
-        #[should_panic(expected = "Unknown query value kotlin for field taskPlatform.")]
+        #[should_panic(expected = "Unknown query value kotlin for field taskToolchain.")]
         fn invalid_value() {
-            build_query("taskPlatform=kotlin").unwrap();
+            build_query("taskToolchain=kotlin").unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Like operators (~ and !~) are not supported for field taskPlatform."
+            expected = "Like operators (~ and !~) are not supported for field taskToolchain."
         )]
         fn errors_for_like() {
-            build_query("taskPlatform~node").unwrap();
+            build_query("taskToolchain~node").unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Like operators (~ and !~) are not supported for field taskPlatform."
+            expected = "Like operators (~ and !~) are not supported for field taskToolchain."
         )]
         fn errors_for_not_like() {
-            build_query("taskPlatform!~node").unwrap();
+            build_query("taskToolchain!~node").unwrap();
         }
     }
 

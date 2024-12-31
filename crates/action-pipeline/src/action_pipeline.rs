@@ -138,7 +138,7 @@ impl ActionPipeline {
         );
 
         // This aggregates results from jobs
-        let (sender, mut receiver) = mpsc::channel::<Action>(total_actions);
+        let (sender, mut receiver) = mpsc::channel::<Action>(total_actions.max(1));
 
         // Create job context
         let abort_token = CancellationToken::new();

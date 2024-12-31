@@ -294,7 +294,7 @@ mod project_builder {
             let project = build_lang_project("js").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]); // no configs
+            assert_eq!(project.toolchains, vec![Id::raw("node")]);
 
             let project = build_lang_project("js-config").await;
 

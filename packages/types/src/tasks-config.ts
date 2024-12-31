@@ -238,6 +238,12 @@ export interface TaskConfig {
 	 */
 	script: string | null;
 	/**
+	 * The toolchain(s) in which the task will be ran in. The toolchain determines
+	 * available binaries, lookup paths, and more. When not provided, will
+	 * be automatically detected.
+	 */
+	toolchain: string | string[];
+	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
 	 *
@@ -479,6 +485,12 @@ export interface PartialTaskConfig {
 	 * arguments, merging, or inheritance.
 	 */
 	script?: string | null;
+	/**
+	 * The toolchain(s) in which the task will be ran in. The toolchain determines
+	 * available binaries, lookup paths, and more. When not provided, will
+	 * be automatically detected.
+	 */
+	toolchain?: string | string[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.

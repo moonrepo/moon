@@ -37,27 +37,27 @@ node:
 deno: {}
 ```
 
-> For unsupported languages, use the system platform. Continue reading to learn more!
+> For unsupported languages, use the system toolchain. Continue reading to learn more!
 
-## System language and platform
+## System language and toolchain
 
 When working with moon, you'll most likely have tasks that run built-in system commands that do not
 belong to any of the supported languages. For example, you may have a task that runs `git` or
 `docker` commands, or common commands like `rm`, `cp`, `mv`, etc.
 
-For these cases, moon provides a special language/platform called `system`, that is always enabled.
-This platform is a catch-all, an escape-hatch, a fallback, and provides the following:
+For these cases, moon provides a special language/toolchain called `system`, that is always enabled.
+This toolchain is a catch-all, an escape-hatch, a fallback, and provides the following:
 
 - Runs a system command or a binary found on `PATH`.
 - Wraps the execution in a shell.
 
-To run system commands, set a task's [`platform`](../config/project#platform-1) setting to "system".
+To run system commands, set a task's [`toolchain`](../config/project#toolchain) setting to "system".
 
 ```yaml title="moon.yml"
 tasks:
   example:
     command: 'git status'
-    platform: 'system'
+    toolchain: 'system'
 ```
 
 ## Tier structure and responsibilities
@@ -72,13 +72,13 @@ Internally each tier maps to a Rust crate, as demonstrated by the graph at the t
 
 The zero tier represents all languages _not directly_ supported by moon. This tier merely exists as
 a mechanism for running non-supported language binaries via the
-[system platform](#system-language-and-platform).
+[system toolchain](#system-language-and-toolchain).
 
 ```yaml title="moon.yml"
 tasks:
   example:
     command: 'ruby'
-    platform: 'system'
+    toolchain: 'system'
 ```
 
 ### Tier 1 = Language
@@ -111,15 +111,15 @@ complex of all tiers, and the tier is in charge of:
 - Hashing efficiently for dependency installs and target runs.
 - Prepending `PATH` with appropriate lookups to execute a task.
 - Running a target's command with proper arguments, environment variables, and flags.
-- Maps to a project's [`platform`](../config/project#platform) or task's
-  [`platform`](../config/project#platform-1) setting.
+- Maps to a project's [`toolchain.default`](../config/project#toolchain-1) or task's
+  [`toolchain`](../config/project#toolchain) setting.
 - Supports a configuration block by name in [`.moon/toolchain.yml`](../config/toolchain).
 
 ```yaml title="moon.yml"
 tasks:
   example:
     command: 'webpack'
-    platform: 'node'
+    toolchain: 'node'
 ```
 
 ```yaml title=".moon/toolchain.yml"

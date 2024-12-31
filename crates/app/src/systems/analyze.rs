@@ -1,9 +1,8 @@
 use crate::app_error::AppError;
 use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
-use moon_common::supports_pkl_configs;
-use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
-use moon_config::{BunConfig, NodePackageManager, PlatformType, ToolchainConfig};
+use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name, supports_pkl_configs};
+use moon_config::{BunConfig, PlatformType, ToolchainConfig};
 use moon_console::{Checkpoint, Console};
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;

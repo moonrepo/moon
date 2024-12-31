@@ -6,7 +6,7 @@ expression: assert.output()
 
 Project: tasks
 Source: tasks
-Toolchains: typescript, javascript
+Toolchain: node
 Language: typescript
 Stack: unknown
 Type: unknown

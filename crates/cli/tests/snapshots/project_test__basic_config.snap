@@ -6,7 +6,7 @@ expression: assert.output()
 
 Project: basic
 Source: basic
-Toolchains: javascript
+Toolchain: node
 Language: javascript
 Stack: unknown
 Type: unknown

@@ -43,7 +43,14 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
 
     console.print_entry("Task", color::id(&args.target.task_id))?;
     console.print_entry("Project", color::id(&project.id))?;
-    console.print_entry("Toolchains", task.toolchains.join(", "))?;
+    console.print_entry(
+        if task.toolchains.len() == 1 {
+            "Toolchain"
+        } else {
+            "Toolchains"
+        },
+        task.toolchains.join(", "),
+    )?;
     console.print_entry("Type", task.type_of.to_string())?;
 
     let mut modes = vec![];

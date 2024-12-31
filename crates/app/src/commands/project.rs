@@ -76,8 +76,12 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
     }
 
     console.print_entry(
-        "Toolchains",
-        project.language.get_toolchain_ids().join(", "),
+        if project.toolchains.len() == 1 {
+            "Toolchain"
+        } else {
+            "Toolchains"
+        },
+        project.toolchains.join(", "),
     )?;
     console.print_entry("Language", format!("{}", &project.language))?;
     console.print_entry("Stack", format!("{}", &project.stack))?;

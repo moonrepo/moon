@@ -173,22 +173,25 @@ pub async fn register_platforms(
         );
 
         // TODO fix in 2.0
-        if toolchain_config.bun.is_none()
-            && (node_config.bun.is_some()
-                || matches!(node_config.package_manager, NodePackageManager::Bun))
-        {
-            let bun_config = BunConfig::default();
+        if toolchain_config.bun.is_none() {
+            if let Some(bunpm_config) = &node_config.bun {
+                let bun_config = BunConfig {
+                    plugin: bunpm_config.plugin.clone(),
+                    version: bunpm_config.version.clone(),
+                    ..Default::default()
+                };
 
-            registry.register(
-                PlatformType::Bun.get_toolchain_id(),
-                Box::new(BunPlatform::new(
-                    &bun_config,
-                    &toolchain_config.typescript,
-                    workspace_root,
-                    Arc::clone(proto_env),
-                    Arc::clone(&console),
-                )),
-            );
+                registry.register(
+                    PlatformType::Bun.get_toolchain_id(),
+                    Box::new(BunPlatform::new(
+                        &bun_config,
+                        &toolchain_config.typescript,
+                        workspace_root,
+                        Arc::clone(proto_env),
+                        Arc::clone(&console),
+                    )),
+                );
+            }
         }
     }
 

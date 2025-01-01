@@ -399,7 +399,7 @@ impl<'proj> TasksBuilder<'proj> {
             if !config.toolchain.is_empty() {
                 task.toolchains = config
                     .toolchain
-                    .to_list()
+                    .to_owned_list()
                     .into_iter()
                     .filter(|tc| self.context.enabled_toolchains.contains(tc))
                     .collect();
@@ -635,7 +635,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(os) = &config.os {
-                options.os = Some(os.to_list());
+                options.os = Some(os.to_owned_list());
             }
 
             if let Some(output_style) = &config.output_style {

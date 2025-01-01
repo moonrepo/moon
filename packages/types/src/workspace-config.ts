@@ -2,6 +2,7 @@
 
 /* eslint-disable */
 
+import type { ExtendsFrom } from './common';
 import type { PluginLocator } from './toolchain-config';
 
 /** How to order ownership rules within the generated file. */
@@ -125,8 +126,6 @@ export interface ExperimentsConfig {
 	 */
 	taskOutputBoundaries?: boolean;
 }
-
-export type ExtendsFrom = string | string[];
 
 /** Configures an individual extension. */
 export interface ExtensionConfig {

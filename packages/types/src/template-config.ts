@@ -113,7 +113,7 @@ export interface TemplateConfig {
 	 */
 	destination: string | null;
 	/** Extends one or many other templates. */
-	extends: string[];
+	extends: string | string[];
 	/** Overrides the ID of the template, instead of using the folder name. */
 	id: string | null;
 	/** A human-readable title for the template. */
@@ -218,7 +218,7 @@ export interface PartialTemplateConfig {
 	 */
 	destination?: string | null;
 	/** Extends one or many other templates. */
-	extends?: string[] | null;
+	extends?: string | string[] | null;
 	/** Overrides the ID of the template, instead of using the folder name. */
 	id?: string | null;
 	/** A human-readable title for the template. */

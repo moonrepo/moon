@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-export type ExtendsFrom = string | string[];
+import type { ExtendsFrom } from './common';
 
 export type TaskArgs = null | string | string[];
 

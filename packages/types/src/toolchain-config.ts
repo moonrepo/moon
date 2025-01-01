@@ -2,6 +2,8 @@
 
 /* eslint-disable */
 
+import type { ExtendsFrom } from './common';
+
 /** Formats that a `package.json` version dependency can be. */
 export type NodeVersionFormat =
 	| 'file'
@@ -95,8 +97,6 @@ export interface DenoConfig {
 	 */
 	version: UnresolvedVersionSpec | null;
 }
-
-export type ExtendsFrom = string | string[];
 
 /** Configures how and where updates will be received. */
 export interface MoonConfig {

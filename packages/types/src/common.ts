@@ -12,3 +12,5 @@ export interface Runtime {
 	requirement?: string;
 	overridden?: boolean;
 }
+
+export type ExtendsFrom = string[] | string;

@@ -1,4 +1,4 @@
-platform: rust
+language: rust
 
 tasks:
   system:

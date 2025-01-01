@@ -7,7 +7,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
-use moon_config::{PlatformType, TaskDependencyConfig};
+use moon_config::TaskDependencyConfig;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_query::{build_query, Criteria};
@@ -112,16 +112,8 @@ impl<'app> ActionGraphBuilder<'app> {
         self.indices.get(node)
     }
 
-    pub fn get_runtime(
-        &self,
-        project: &Project,
-        platform_type: PlatformType,
-        allow_override: bool,
-    ) -> Runtime {
-        if let Some(platform) = self
-            .platform_manager
-            .find(|p| p.get_type() == platform_type)
-        {
+    pub fn get_runtime(&self, project: &Project, toolchain: &Id, allow_override: bool) -> Runtime {
+        if let Ok(platform) = self.platform_manager.get_by_toolchain(toolchain) {
             return platform.get_runtime_from_config(if allow_override {
                 Some(&project.config)
             } else {
@@ -179,11 +171,30 @@ impl<'app> ActionGraphBuilder<'app> {
         task: Option<&Task>,
     ) -> miette::Result<Option<NodeIndex>> {
         let mut in_project = false;
-        let mut platform_type = task.map(|t| t.platform).unwrap_or_else(|| project.platform);
+        let toolchains = task
+            .map(|t| &t.toolchains)
+            .unwrap_or_else(|| &project.toolchains);
+        let mut primary_toolchain = toolchains[0].to_owned();
+
+        // If Bun and Node.js are enabled, they will both attempt to install
+        // dependencies in the target root. We need to avoid this problem,
+        // so always prefer Node.js instead. Revisit in the future.
+        if primary_toolchain == "bun"
+            && self
+                .platform_manager
+                .enabled()
+                .any(|enabled_platform| enabled_platform == "node")
+        {
+            debug!(
+                "Already installing dependencies with node, skipping a conflicting install from bun"
+            );
+
+            primary_toolchain = Id::raw("node")
+        }
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Ok(platform) = self.platform_manager.get(platform_type) {
+        if let Ok(platform) = self.platform_manager.get_by_toolchain(&primary_toolchain) {
             if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
                 in_project = true;
 
@@ -194,36 +205,18 @@ impl<'app> ActionGraphBuilder<'app> {
             }
         }
 
-        // If Bun and Node.js are enabled, they will both attempt to install
-        // dependencies in the target root. We need to avoid this problem,
-        // so always prefer Node.js instead. Revisit in the future.
-        if matches!(platform_type, PlatformType::Bun)
-            && self
-                .platform_manager
-                .enabled()
-                .any(|enabled_platform| matches!(enabled_platform, PlatformType::Node))
-        {
-            debug!(
-                "Already installing dependencies with {}, skipping a conflicting install from {}",
-                PlatformType::Node,
-                platform_type,
-            );
-
-            platform_type = PlatformType::Node;
-        }
-
         let node = if in_project {
             ActionNode::install_project_deps(InstallProjectDepsNode {
                 project: project.id.to_owned(),
-                runtime: self.get_runtime(project, platform_type, true),
+                runtime: self.get_runtime(project, &primary_toolchain, true),
             })
         } else {
             ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                runtime: self.get_runtime(project, platform_type, false),
+                runtime: self.get_runtime(project, &primary_toolchain, false),
             })
         };
 
-        if node.get_runtime().platform.is_system() {
+        if node.get_runtime().is_system() {
             return Ok(None);
         }
 
@@ -323,7 +316,7 @@ impl<'app> ActionGraphBuilder<'app> {
             env,
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
-            runtime: self.get_runtime(project, task.platform, true),
+            runtime: self.get_runtime(project, &task.toolchains[0], true),
             target: task.target.to_owned(),
             id: None,
         });
@@ -604,7 +597,7 @@ impl<'app> ActionGraphBuilder<'app> {
     ) -> miette::Result<NodeIndex> {
         let node = ActionNode::sync_project(SyncProjectNode {
             project: project.id.clone(),
-            runtime: self.get_runtime(project, project.platform, true),
+            runtime: self.get_runtime(project, &project.toolchains[0], true),
         });
 
         if let Some(index) = self.get_index_from_node(&node) {

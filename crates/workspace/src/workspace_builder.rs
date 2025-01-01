@@ -37,6 +37,7 @@ use tracing::{debug, instrument, trace};
 
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
+    pub enabled_toolchains: Vec<Id>,
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
@@ -379,6 +380,7 @@ impl<'app> WorkspaceBuilder<'app> {
             &build_data.source,
             ProjectBuilderContext {
                 config_loader: context.config_loader,
+                enabled_toolchains: &context.enabled_toolchains,
                 monorepo: self.repo_type.is_monorepo(),
                 root_project_id: self.root_project_id.as_ref(),
                 toolchain_config: context.toolchain_config,

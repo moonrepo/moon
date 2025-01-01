@@ -52,7 +52,7 @@ pub async fn sync_project(
 
     // Sync the projects and return true if any files have been mutated
     let mutated_files = PlatformManager::read()
-        .get(&node.runtime)?
+        .get_by_toolchain(&node.runtime.toolchain)?
         .sync_project(&action_context, &project, &dependencies)
         .await?;
 

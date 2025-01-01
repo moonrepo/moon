@@ -1,6 +1,7 @@
 use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use moon_bun_tool::BunTool;
+use moon_common::Id;
 use moon_config::PlatformType;
 use moon_deno_tool::DenoTool;
 use moon_node_lang::PackageJsonCache;
@@ -168,7 +169,7 @@ pub async fn prune(session: CliSession) -> AppResult {
 
     let workspace_graph = session.get_workspace_graph().await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;
-    let mut platforms = FxHashSet::<PlatformType>::default();
+    let mut toolchains = FxHashSet::<Id>::default();
 
     debug!(
         projects = ?manifest.focused_projects.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
@@ -176,17 +177,17 @@ pub async fn prune(session: CliSession) -> AppResult {
     );
 
     for project_id in &manifest.focused_projects {
-        platforms.insert(workspace_graph.get_project(project_id)?.platform);
+        toolchains.extend(workspace_graph.get_project(project_id)?.toolchains.clone());
     }
 
     // Do this later so we only run once for each platform instead of per project
-    for platform_type in platforms {
-        if platform_type.is_unknown() {
+    for toolchain_id in toolchains {
+        if toolchain_id == "unknown" {
             // Will crash with "Platform unknown has not been enabled"
             continue;
         }
 
-        let platform = PlatformManager::read().get(platform_type)?;
+        let platform = PlatformManager::read().get_by_toolchain(&toolchain_id)?;
 
         match platform.get_type() {
             PlatformType::Bun => {

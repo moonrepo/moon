@@ -1,8 +1,8 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, DependencySource, LanguageType, NodeConfig,
-    PlatformType, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
+    BunConfig, ConfigLoader, DenoConfig, DependencyConfig, DependencyScope, DependencySource,
+    LanguageType, NodeConfig, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 // We need some top-level struct to hold the data used for lifetime refs.
 struct Stub {
     config_loader: ConfigLoader,
+    enabled_toolchains: Vec<Id>,
     toolchain_config: ToolchainConfig,
     workspace_root: PathBuf,
     id: Id,
@@ -24,6 +25,8 @@ impl Stub {
     pub fn new(id: &str, root: &Path) -> Self {
         // Enable platforms so that detection works
         let toolchain_config = ToolchainConfig {
+            bun: Some(BunConfig::default()),
+            deno: Some(DenoConfig::default()),
             node: Some(NodeConfig::default()),
             rust: Some(RustConfig::default()),
             ..ToolchainConfig::default()
@@ -31,6 +34,7 @@ impl Stub {
 
         Self {
             config_loader: ConfigLoader::default(),
+            enabled_toolchains: toolchain_config.get_enabled(),
             toolchain_config,
             workspace_root: root.to_path_buf(),
             id: Id::raw(id),
@@ -44,6 +48,7 @@ impl Stub {
             &self.source,
             ProjectBuilderContext {
                 config_loader: &self.config_loader,
+                enabled_toolchains: &self.enabled_toolchains,
                 monorepo: true,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
@@ -224,7 +229,7 @@ mod project_builder {
         #[tokio::test]
         async fn detects_from_env() {
             let sandbox = create_sandbox("builder");
-            let project = build_project_without_inherited("foo", sandbox.path()).await;
+            let project = build_project_without_inherited("qux", sandbox.path()).await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
         }
@@ -234,7 +239,7 @@ mod project_builder {
             let project = build_lang_project("bash").await;
 
             assert_eq!(project.language, LanguageType::Bash);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -242,7 +247,7 @@ mod project_builder {
             let project = build_lang_project("batch").await;
 
             assert_eq!(project.language, LanguageType::Batch);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -250,12 +255,12 @@ mod project_builder {
             let project = build_lang_project("bun").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.platform, PlatformType::Bun);
+            assert_eq!(project.toolchains, vec![Id::raw("bun")]);
 
             let project = build_lang_project("bun-config").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            // assert_eq!(project.platform, PlatformType::Bun);
+            assert_eq!(project.toolchains, vec![Id::raw("bun")]);
         }
 
         #[tokio::test]
@@ -263,12 +268,12 @@ mod project_builder {
             let project = build_lang_project("deno").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.platform, PlatformType::Deno);
+            assert_eq!(project.toolchains, vec![Id::raw("deno")]);
 
             let project = build_lang_project("deno-config").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
-            // assert_eq!(project.platform, PlatformType::Deno);
+            assert_eq!(project.toolchains, vec![Id::raw("deno")]);
         }
 
         #[tokio::test]
@@ -276,12 +281,12 @@ mod project_builder {
             let project = build_lang_project("go").await;
 
             assert_eq!(project.language, LanguageType::Go);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
 
             let project = build_lang_project("go-config").await;
 
             assert_eq!(project.language, LanguageType::Go);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -289,12 +294,12 @@ mod project_builder {
             let project = build_lang_project("js").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.platform, PlatformType::Node);
+            assert_eq!(project.toolchains, vec![Id::raw("node")]);
 
             let project = build_lang_project("js-config").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.platform, PlatformType::Node);
+            assert_eq!(project.toolchains, vec![Id::raw("node")]);
         }
 
         #[tokio::test]
@@ -305,7 +310,7 @@ mod project_builder {
                 project.language,
                 LanguageType::Other("kotlin".try_into().unwrap())
             );
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -313,12 +318,12 @@ mod project_builder {
             let project = build_lang_project("php").await;
 
             assert_eq!(project.language, LanguageType::Php);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
 
             let project = build_lang_project("php-config").await;
 
             assert_eq!(project.language, LanguageType::Php);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -326,12 +331,12 @@ mod project_builder {
             let project = build_lang_project("python").await;
 
             assert_eq!(project.language, LanguageType::Python);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
 
             let project = build_lang_project("python-config").await;
 
             assert_eq!(project.language, LanguageType::Python);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -339,12 +344,12 @@ mod project_builder {
             let project = build_lang_project("ruby").await;
 
             assert_eq!(project.language, LanguageType::Ruby);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
 
             let project = build_lang_project("ruby-config").await;
 
             assert_eq!(project.language, LanguageType::Ruby);
-            assert_eq!(project.platform, PlatformType::System);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -352,12 +357,12 @@ mod project_builder {
             let project = build_lang_project("rust").await;
 
             assert_eq!(project.language, LanguageType::Rust);
-            assert_eq!(project.platform, PlatformType::Rust);
+            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
 
             let project = build_lang_project("rust-config").await;
 
             assert_eq!(project.language, LanguageType::Rust);
-            assert_eq!(project.platform, PlatformType::Rust);
+            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test]
@@ -365,16 +370,16 @@ mod project_builder {
             let project = build_lang_project("ts").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
-            assert_eq!(project.platform, PlatformType::Node);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
 
             let project = build_lang_project("ts-config").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
-            assert_eq!(project.platform, PlatformType::Node);
+            assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
     }
 
-    mod platform_detect {
+    mod detect_toolchain {
         use super::*;
 
         #[tokio::test]
@@ -382,7 +387,7 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("baz", sandbox.path()).await;
 
-            assert_eq!(project.platform, PlatformType::Node);
+            assert_eq!(project.toolchains, vec![Id::raw("node")]);
         }
 
         #[tokio::test]
@@ -390,7 +395,7 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("bar", sandbox.path()).await;
 
-            assert_eq!(project.platform, PlatformType::Rust);
+            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test]
@@ -398,7 +403,7 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("foo", sandbox.path()).await;
 
-            assert_eq!(project.platform, PlatformType::Node);
+            assert_eq!(project.toolchains, vec![Id::raw("node")]);
         }
 
         #[tokio::test]
@@ -406,18 +411,18 @@ mod project_builder {
             let project = build_lang_project("project-platform").await;
 
             assert_eq!(
-                project.tasks.get("node-a").unwrap().platform,
-                PlatformType::Node
+                project.tasks.get("node-a").unwrap().toolchains,
+                vec![Id::raw("node")]
             );
 
             assert_eq!(
-                project.tasks.get("node-b").unwrap().platform,
-                PlatformType::Node
+                project.tasks.get("node-b").unwrap().toolchains,
+                vec![Id::raw("node")]
             );
 
             assert_eq!(
-                project.tasks.get("system").unwrap().platform,
-                PlatformType::System
+                project.tasks.get("system").unwrap().toolchains,
+                vec![Id::raw("system")]
             );
         }
     }

@@ -86,6 +86,7 @@
       "title": "platform",
       "description": "The default platform for all tasks within the project, if their platform is unknown.",
       "default": "unknown",
+      "deprecated": true,
       "anyOf": [
         {
           "$ref": "#/definitions/PlatformType"
@@ -591,6 +592,18 @@
           ],
           "markdownDescription": "Overrides `bun` settings."
         },
+        "default": {
+          "title": "default",
+          "description": "The default toolchain for all tasks within the project, if their toolchain is unknown.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "deno": {
           "title": "deno",
           "description": "Overrides deno settings.",
@@ -1001,6 +1014,21 @@
             },
             {
               "type": "null"
+            }
+          ]
+        },
+        "toolchain": {
+          "title": "toolchain",
+          "description": "The toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           ]
         },

@@ -2,7 +2,6 @@ use crate::session::CliSession;
 use clap::Args;
 use miette::miette;
 use moon_common::Id;
-use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use starbase::AppResult;
@@ -22,7 +21,7 @@ pub struct RunScriptArgs {
 #[instrument(skip_all)]
 pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
     let node = PlatformManager::read()
-        .get(PlatformType::Node)?
+        .get_by_toolchain(&Id::raw("node"))?
         .get_tool()?
         .as_any()
         .downcast_ref::<NodeTool>()

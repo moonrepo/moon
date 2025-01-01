@@ -1,8 +1,8 @@
 use moon_args::split_args;
 use moon_common::Id;
 use moon_config::{
-    NodePackageManager, OutputPath, PartialTaskArgs, PartialTaskConfig, PartialTaskDependency,
-    PlatformType,
+    NodePackageManager, OneOrMany, OutputPath, PartialTaskArgs, PartialTaskConfig,
+    PartialTaskDependency,
 };
 use moon_node_lang::package_json::{PackageJsonCache, ScriptsMap};
 use moon_target::Target;
@@ -134,7 +134,7 @@ pub fn create_task(
     script_name: &str,
     script: &str,
     context: TaskContext,
-    platform: PlatformType,
+    toolchain: &Id,
     pm: NodePackageManager,
 ) -> miette::Result<PartialTaskConfig> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
@@ -173,7 +173,7 @@ pub fn create_task(
     }
 
     if is_wrapping {
-        task_config.platform = Some(platform);
+        task_config.toolchain = Some(OneOrMany::One(toolchain.to_owned()));
         task_config.command = Some(PartialTaskArgs::List(string_vec![
             match pm {
                 NodePackageManager::Bun => "bun",
@@ -189,14 +189,7 @@ pub fn create_task(
             if is_bash_script(command) {
                 args.insert(0, "bash".to_owned());
             } else if is_node_script(command) {
-                args.insert(
-                    0,
-                    if platform == PlatformType::Bun {
-                        "bun".to_owned()
-                    } else {
-                        "node".to_owned()
-                    },
-                );
+                args.insert(0, toolchain.as_str().to_owned());
             } else {
                 // Already there
             }
@@ -204,11 +197,13 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.platform = Some(if is_system_command(&args[0]) || &args[0] == "noop" {
-            PlatformType::System
-        } else {
-            platform
-        });
+        task_config.toolchain = Some(OneOrMany::One(
+            if is_system_command(&args[0]) || &args[0] == "noop" {
+                Id::raw("system")
+            } else {
+                toolchain.to_owned()
+            },
+        ));
         task_config.command = Some(if args.len() == 1 {
             PartialTaskArgs::String(args.remove(0))
         } else {
@@ -263,12 +258,12 @@ pub struct ScriptParser<'a> {
     /// Scripts that ran into issues while parsing.
     unresolved_scripts: ScriptsMap,
 
-    platform: PlatformType,
+    toolchain: Id,
     pm: NodePackageManager,
 }
 
 impl<'a> ScriptParser<'a> {
-    pub fn new(project_id: &'a str, platform: PlatformType, pm: NodePackageManager) -> Self {
+    pub fn new(project_id: &'a str, toolchain: Id, pm: NodePackageManager) -> Self {
         ScriptParser {
             life_cycles: ScriptsMap::default(),
             names_to_ids: FxHashMap::default(),
@@ -278,7 +273,7 @@ impl<'a> ScriptParser<'a> {
             scripts: ScriptsMap::default(),
             tasks: BTreeMap::new(),
             unresolved_scripts: ScriptsMap::default(),
-            platform,
+            toolchain,
             pm,
         }
     }
@@ -307,7 +302,7 @@ impl<'a> ScriptParser<'a> {
                     name,
                     script,
                     TaskContext::WrapRunScript,
-                    self.platform,
+                    &self.toolchain,
                     self.pm,
                 )?,
             );
@@ -494,7 +489,7 @@ impl<'a> ScriptParser<'a> {
                 name,
                 value,
                 TaskContext::ConvertToTask,
-                self.platform,
+                &self.toolchain,
                 self.pm,
             )?,
         );

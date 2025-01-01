@@ -6,7 +6,7 @@ expression: assert.output_standardized()
 
 Task: test
 Project: tasks
-Platform: node
+Toolchain: node
 Type: test
 
  PROCESS 

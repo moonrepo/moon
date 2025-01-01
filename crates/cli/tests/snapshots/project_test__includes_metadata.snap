@@ -15,6 +15,7 @@ Channel: #infra
 
 Project: metadata
 Source: metadata
+Toolchain: system
 Language: unknown
 Stack: infrastructure
 Type: configuration

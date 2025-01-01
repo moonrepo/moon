@@ -58,7 +58,7 @@ impl DenoPlatform {
         DenoPlatform {
             config: config.to_owned(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::new(PlatformType::Deno, RuntimeReq::Global)),
+            toolchain: ToolManager::new(Runtime::new(Id::raw("deno"), RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
             console,
@@ -77,7 +77,7 @@ impl Platform for DenoPlatform {
             if let Some(deno_config) = &config.toolchain.deno {
                 if let Some(version) = &deno_config.version {
                     return Runtime::new_override(
-                        PlatformType::Deno,
+                        Id::raw("deno"),
                         RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
@@ -85,13 +85,10 @@ impl Platform for DenoPlatform {
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::new(
-                PlatformType::Deno,
-                RuntimeReq::Toolchain(version.to_owned()),
-            );
+            return Runtime::new(Id::raw("deno"), RuntimeReq::Toolchain(version.to_owned()));
         }
 
-        Runtime::new(PlatformType::Deno, RuntimeReq::Global)
+        Runtime::new(Id::raw("deno"), RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -100,7 +97,7 @@ impl Platform for DenoPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime.platform, PlatformType::Deno);
+            return runtime.toolchain == "deno";
         }
 
         false

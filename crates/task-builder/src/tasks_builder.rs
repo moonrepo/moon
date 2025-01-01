@@ -4,7 +4,7 @@ use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::path::{is_root_level_source, WorkspaceRelativePath};
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
-    is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
+    is_glob_like, InheritedTasksConfig, InputPath, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,
     TaskPreset, TaskType, ToolchainConfig,
@@ -12,12 +12,12 @@ use moon_config::{
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
-use moon_toolchain::detect::detect_task_platform;
+use moon_toolchain::detect::detect_task_toolchains;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
@@ -64,6 +64,7 @@ fn extract_config<'builder, 'proj>(
 
 #[derive(Debug)]
 pub struct TasksBuilderContext<'proj> {
+    pub enabled_toolchains: &'proj [Id],
     pub monorepo: bool,
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
@@ -75,8 +76,8 @@ pub struct TasksBuilder<'proj> {
 
     project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
-    project_platform: &'proj PlatformType,
     project_source: &'proj WorkspaceRelativePath,
+    project_toolchains: &'proj [Id],
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
@@ -94,15 +95,15 @@ impl<'proj> TasksBuilder<'proj> {
     pub fn new(
         project_id: &'proj Id,
         project_source: &'proj WorkspaceRelativePath,
-        project_platform: &'proj PlatformType,
+        project_toolchains: &'proj [Id],
         context: TasksBuilderContext<'proj>,
     ) -> Self {
         Self {
             context,
             project_id,
             project_env: FxHashMap::default(),
-            project_platform,
             project_source,
+            project_toolchains,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -249,8 +250,11 @@ impl<'proj> TasksBuilder<'proj> {
             color::id(id.as_str())
         );
 
-        let mut task = Task::default();
-        let chain = self.get_config_inherit_chain(id)?;
+        let mut task = Task {
+            // Reset toolchains so that we don't inherit system by default
+            toolchains: vec![],
+            ..Default::default()
+        };
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -262,6 +266,8 @@ impl<'proj> TasksBuilder<'proj> {
             is_local = true;
             preset = Some(TaskPreset::Server);
         }
+
+        let chain = self.get_config_inherit_chain(id)?;
 
         for link in &chain {
             preset = link.config.preset;
@@ -384,8 +390,19 @@ impl<'proj> TasksBuilder<'proj> {
                 );
             }
 
+            // Backwards compat
+            #[allow(deprecated)]
             if !config.platform.is_unknown() {
                 task.platform = config.platform;
+            }
+
+            if !config.toolchain.is_empty() {
+                task.toolchains = config
+                    .toolchain
+                    .to_list()
+                    .into_iter()
+                    .filter(|tc| self.context.enabled_toolchains.contains(tc))
+                    .collect();
             }
 
             if config.description.is_some() {
@@ -424,7 +441,7 @@ impl<'proj> TasksBuilder<'proj> {
         // If a script, wipe out inherited arguments, and extract the first command
         if let Some(script) = &task.script {
             task.args.clear();
-            task.platform = PlatformType::System;
+            task.toolchains = vec![Id::raw("system")];
 
             if let Some(i) = script.find(' ') {
                 task.command = script[0..i].to_owned();
@@ -460,21 +477,27 @@ impl<'proj> TasksBuilder<'proj> {
             );
         }
 
-        if task.platform.is_unknown() {
-            let platform = detect_task_platform(
-                &task.command,
-                &self.context.toolchain_config.get_enabled_platforms(),
-            );
+        // Backwards compat for when the user has explicitly configured
+        // the deprecated `platform` setting
+        // TODO: Remove in 2.0
+        #[allow(deprecated)]
+        if !task.platform.is_unknown() && task.toolchains.is_empty() {
+            task.toolchains = vec![task.platform.get_toolchain_id()];
 
-            task.platform = if platform.is_unknown() {
-                if self.project_platform.is_unknown() {
-                    PlatformType::System
-                } else {
-                    self.project_platform.to_owned()
-                }
-            } else {
-                platform
-            };
+            debug!(
+                task_target = target.as_str(),
+                "The {} task setting has been deprecated, use {} instead",
+                color::property("platform"),
+                color::property("toolchain"),
+            );
+        }
+
+        if task.toolchains.is_empty() {
+            task.toolchains = detect_task_toolchains(
+                &task.command,
+                self.project_toolchains,
+                self.context.enabled_toolchains,
+            );
         }
 
         task.type_of = if !task.outputs.is_empty() {
@@ -489,7 +512,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if task.options.shell.is_none() {
             // Windows requires a shell for path resolution to work correctly
-            if cfg!(windows) || task.platform.is_system() || task.script.is_some() {
+            if cfg!(windows) || task.is_system_toolchain() || task.script.is_some() {
                 task.options.shell = Some(true);
             }
 

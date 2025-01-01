@@ -179,7 +179,7 @@ impl ActionNode {
                 )
             }
             Self::SetupToolchain(inner) => {
-                if inner.runtime.platform.is_system() {
+                if inner.runtime.is_system() {
                     "SetupToolchain(system)".into()
                 } else {
                     format!("SetupToolchain({})", inner.runtime.target())

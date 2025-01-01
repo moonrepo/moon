@@ -1,7 +1,10 @@
 use crate::expander_utils::substitute_env_var;
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
+use moon_common::{
+    color,
+    path::{self, WorkspaceRelativePathBuf},
+};
 use moon_config::{patterns, InputPath, OutputPath, ProjectMetadataConfig};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
@@ -12,7 +15,7 @@ use regex::Regex;
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::env;
-use tracing::{instrument, warn};
+use tracing::{debug, instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct ExpandedResult {
@@ -561,6 +564,15 @@ impl<'graph> TokenExpander<'graph> {
                 None => Cow::Owned(String::new()),
             };
 
+        if variable == "taskPlatform" {
+            debug!(
+                task_target = task.target.as_str(),
+                "The {} token variable is deprecated, use {} instead",
+                color::property("taskPlatform"),
+                color::property("taskToolchain"),
+            );
+        }
+
         let replaced_value = match variable {
             // Env
             "arch" => Cow::Borrowed(env::consts::ARCH),
@@ -585,7 +597,11 @@ impl<'graph> TokenExpander<'graph> {
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),
             "task" => Cow::Borrowed(task.id.as_str()),
-            "taskPlatform" => Cow::Owned(task.platform.to_string()),
+            "taskPlatform" | "taskToolchain" => match task.toolchains.first() {
+                Some(tc) => Cow::Borrowed(tc.as_str()),
+                None => Cow::Owned("unknown".into()),
+            },
+            "taskToolchains" => Cow::Owned(task.toolchains.join(",")),
             "taskType" => Cow::Owned(task.type_of.to_string()),
             // Datetime
             "date" => Cow::Owned(now_timestamp().format("%F").to_string()),

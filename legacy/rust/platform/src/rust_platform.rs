@@ -59,7 +59,7 @@ impl RustPlatform {
         RustPlatform {
             config: config.to_owned(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::new(PlatformType::Rust, RuntimeReq::Global)),
+            toolchain: ToolManager::new(Runtime::new(Id::raw("rust"), RuntimeReq::Global)),
             workspace_root: workspace_root.to_path_buf(),
             console,
         }
@@ -89,7 +89,7 @@ impl Platform for RustPlatform {
             if let Some(rust_config) = &config.toolchain.rust {
                 if let Some(version) = &rust_config.version {
                     return Runtime::new_override(
-                        PlatformType::Rust,
+                        Id::raw("rust"),
                         RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
@@ -97,13 +97,10 @@ impl Platform for RustPlatform {
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::new(
-                PlatformType::Rust,
-                RuntimeReq::Toolchain(version.to_owned()),
-            );
+            return Runtime::new(Id::raw("rust"), RuntimeReq::Toolchain(version.to_owned()));
         }
 
-        Runtime::new(PlatformType::Rust, RuntimeReq::Global)
+        Runtime::new(Id::raw("rust"), RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -112,7 +109,7 @@ impl Platform for RustPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime.platform, PlatformType::Rust);
+            return runtime.toolchain == "rust";
         }
 
         false

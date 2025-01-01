@@ -234,9 +234,8 @@ mod token_expander {
     }
 
     mod vars {
-        use env::consts;
-
         use super::*;
+        use env::consts;
 
         #[test]
         fn replaces_variables() {
@@ -300,9 +299,9 @@ mod token_expander {
             );
             assert_eq!(
                 expander
-                    .replace_variable(&task, Cow::Borrowed("$taskPlatform"))
+                    .replace_variable(&task, Cow::Borrowed("$taskToolchain"))
                     .unwrap(),
-                "unknown"
+                "system"
             );
             assert_eq!(
                 expander
@@ -1096,7 +1095,7 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![
                         WorkspaceRelativePathBuf::from("project/source/project:task"),
-                        WorkspaceRelativePathBuf::from("project/source/unknown"),
+                        WorkspaceRelativePathBuf::from("project/source/system"),
                     ],
                     globs: vec![],
                     ..ExpandedResult::default()

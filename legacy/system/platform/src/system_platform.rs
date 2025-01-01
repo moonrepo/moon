@@ -56,7 +56,7 @@ impl Platform for SystemPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime.platform, PlatformType::System);
+            return runtime.toolchain == "system";
         }
 
         false

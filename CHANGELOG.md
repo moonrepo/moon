@@ -2,8 +2,24 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- We've updated the task inheritance order to better reflect specificity. The biggest changes are
+  that deno/node/bun are now a higher priority than javascript/typescript, and stack is the lowest
+  priority. This should only affect users with very complex inheritance chains.
+
 #### 🚀 Updates
 
+- We are deprecating the concept of a task "platform", as this is required for the next step in
+  supporting WASM based toolchain plugins. Going forward, any reference to platform is now a
+  toolchain. The following changes have been made:
+  - Deprecated the `platform` task setting, use `toolchain` instead.
+  - Deprecated the `taskPlatform` query field, use `taskToolchain` instead.
+  - Deprecated the `--platform` option for `moon query tasks`, use `--toolchain` instead.
+  - Deprecated the `$taskPlatform` token, use `$taskToolchain` instead.
+  - Deprecated the top-level `platform` setting from `moon.yml`, use `toolchain.default` instead.
+    - Additionally, the toolchain can now be inferred from the top-level `language` setting and any
+      config files in the project/workspace root. This pattern is preferred when possible.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 

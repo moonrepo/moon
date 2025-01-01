@@ -20,7 +20,7 @@ $ moon query tasks "task~react"
 ```
 
 By default, this will output a list of projects, and tasks within the project being indented (with a
-tab) on their own line, in the format of `<id> | <command> | <type> | <platform> | <description>`.
+tab) on their own line, in the format of `<id> | <command> | <type> | <toolchain> | <description>`.
 If no description is defined, "..." will be displayed instead.
 
 ```
@@ -66,9 +66,9 @@ All option values are case-insensitive regex patterns.
 
 - `--command <regex>` - Filter tasks that match this command.
 - `--id <regex>` - Filter tasks that match this ID.
-- `--platform <regex>` - Filter tasks of this platform.
 - `--project <regex>` - Filter tasks that belong to this project.
 - `--script <regex>` - Filter tasks that match this script.
+- `--toolchain <regex>` - Filter tasks of this toolchain. <VersionLabel version="1.31.0" />
 - `--type <regex>` - Filter tasks of this type.
 
 ### Configuration

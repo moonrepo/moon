@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::shapes::{InputPath, OutputPath};
+use crate::shapes::{InputPath, OneOrMany, OutputPath};
 use moon_common::{cacheable, Id};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
@@ -222,6 +222,8 @@ cacheable!(
         /// The platform in which the task will be ran in. The platform determines
         /// available binaries, lookup paths, and more. When not provided, will
         /// be automatically detected.
+        #[deprecated(note = "Use `toolchain` instead.")]
+        // TODO: Remove in 2.0
         pub platform: PlatformType,
 
         /// The preset to apply for the task. Will inherit default options.
@@ -231,6 +233,11 @@ cacheable!(
         /// to multiple commands (&&, etc), or shell specific syntax. Does not support
         /// arguments, merging, or inheritance.
         pub script: Option<String>,
+
+        /// The toolchain(s) in which the task will be ran in. The toolchain determines
+        /// available binaries, lookup paths, and more. When not provided, will
+        /// be automatically detected.
+        pub toolchain: OneOrMany<Id>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined.

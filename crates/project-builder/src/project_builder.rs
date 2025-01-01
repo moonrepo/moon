@@ -2,21 +2,22 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_common::{color, Id};
 use moon_config::{
     ConfigLoader, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
-    InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig,
+    InheritedTasksResult, LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig,
     ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
-use moon_toolchain::detect::{detect_project_language, detect_project_platform};
+use moon_toolchain::detect::{detect_project_language, detect_project_toolchains};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
+    pub enabled_toolchains: &'app [Id],
     pub monorepo: bool,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
@@ -37,7 +38,7 @@ pub struct ProjectBuilder<'app> {
     root: PathBuf,
 
     pub language: LanguageType,
-    pub platform: PlatformType,
+    pub toolchains: Vec<Id>,
 }
 
 impl<'app> ProjectBuilder<'app> {
@@ -62,7 +63,7 @@ impl<'app> ProjectBuilder<'app> {
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
-            platform: PlatformType::Unknown,
+            toolchains: vec![],
         })
     }
 
@@ -78,8 +79,7 @@ impl<'app> ProjectBuilder<'app> {
             .expect("Local config must be loaded before global config!");
 
         let global_config = tasks_manager.get_inherited_config(
-            &self.platform,
-            &self.language,
+            &self.toolchains,
             &local_config.stack,
             &local_config.type_of,
             &local_config.tags,
@@ -96,16 +96,12 @@ impl<'app> ProjectBuilder<'app> {
         Ok(self)
     }
 
-    /// Inherit the local config and then detect applicable language and platform fields.
+    /// Inherit the local config and then detect applicable language and toolchain fields.
     #[instrument(skip_all)]
     pub async fn inherit_local_config(&mut self, config: &ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
-            let mut language = detect_project_language(&self.root);
-
-            if language == LanguageType::Unknown {
-                language = config.language.clone();
-            }
+            let language = detect_project_language(&self.root);
 
             trace!(
                 project_id = self.id.as_str(),
@@ -118,23 +114,53 @@ impl<'app> ProjectBuilder<'app> {
             config.language.clone()
         };
 
-        // Use configured platform or infer from language
-        self.platform = config.platform.unwrap_or_else(|| {
-            let platform = detect_project_platform(
-                &self.root,
-                &self.language,
-                &self.context.toolchain_config.get_enabled_platforms(),
-            );
+        // Infer toolchains from language
+        if self.toolchains.is_empty() {
+            let mut added = false;
+
+            if let Some(default_id) = &config.toolchain.default {
+                if self.context.enabled_toolchains.contains(default_id) {
+                    self.toolchains.push(default_id.to_owned());
+                    added = true;
+                }
+            }
+
+            // TODO remove in 2.0
+            #[allow(deprecated)]
+            if !added && config.platform.is_some() {
+                if let Some(platform) = &config.platform {
+                    let default_id = platform.get_toolchain_id();
+
+                    if self.context.enabled_toolchains.contains(&default_id) {
+                        self.toolchains.push(default_id);
+                        added = true;
+                    }
+                }
+
+                debug!(
+                    project_id = self.id.as_str(),
+                    "The {} project setting has been deprecated, use {} instead, or rely on configuration/environment detection instead",
+                    color::property("platform"),
+                    color::property("toolchain.default"),
+                );
+            }
+
+            if !added {
+                self.toolchains = detect_project_toolchains(
+                    self.context.workspace_root,
+                    &self.root,
+                    &self.language,
+                    self.context.enabled_toolchains,
+                );
+            }
 
             trace!(
                 project_id = self.id.as_str(),
                 language = ?self.language,
-                platform = ?self.platform,
-                "Unknown tasks platform, inferring from language and toolchain",
+                toolchains = ?self.toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
+                "Unknown tasks toolchain, inferring from project language",
             );
-
-            platform
-        });
+        }
 
         self.local_config = Some(config.to_owned());
 
@@ -168,7 +194,7 @@ impl<'app> ProjectBuilder<'app> {
         self
     }
 
-    /// Extend the builder with a platform specific task implicitly derived from the project graph.
+    /// Extend the builder with a toolchain specific task implicitly derived from the project graph.
     /// Implicit tasks *must not* override explicitly configured tasks.
     pub fn extend_with_task(&mut self, id: Id, config: TaskConfig) -> &mut Self {
         let local_config = self
@@ -202,9 +228,9 @@ impl<'app> ProjectBuilder<'app> {
             tasks,
             id: self.id.to_owned(),
             language: self.language,
-            platform: self.platform,
             root: self.root,
             source: self.source.to_owned(),
+            toolchains: self.toolchains,
             ..Project::default()
         };
 
@@ -346,8 +372,9 @@ impl<'app> ProjectBuilder<'app> {
         let mut tasks_builder = TasksBuilder::new(
             self.id,
             self.source,
-            &self.platform,
+            &self.toolchains,
             TasksBuilderContext {
+                enabled_toolchains: self.context.enabled_toolchains,
                 monorepo: self.context.monorepo,
                 toolchain_config: self.context.toolchain_config,
                 workspace_root: self.context.workspace_root,

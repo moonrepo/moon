@@ -13,8 +13,7 @@ tasks:
     - ./lib
     outputs:
     - lib
-    platform: node
+    toolchain: node
   test:
     command: jest
-    platform: node
-
+    toolchain: node

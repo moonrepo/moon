@@ -4486,6 +4486,7 @@ dependencies = [
  "moon_node_platform",
  "moon_platform",
  "moon_project_graph",
+ "moon_python_platform",
  "moon_rust_platform",
  "moon_system_platform",
  "moon_task_graph",
@@ -4527,6 +4528,7 @@ dependencies = [
 name = "moon_toolchain"
 version = "0.0.1"
 dependencies = [
+ "moon_common",
  "moon_config",
  "regex",
  "serde",

@@ -32,7 +32,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct Task {
         pub args: Vec<String>,
@@ -69,6 +69,7 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
+        #[deprecated]
         pub platform: PlatformType,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -80,6 +81,8 @@ cacheable!(
         pub state: TaskState,
 
         pub target: Target,
+
+        pub toolchains: Vec<Id>,
 
         #[serde(rename = "type")]
         pub type_of: TaskType,
@@ -224,6 +227,11 @@ impl Task {
         matches!(self.type_of, TaskType::Run) || self.is_local()
     }
 
+    /// Return true of the task will run in the system toolchain.
+    pub fn is_system_toolchain(&self) -> bool {
+        self.toolchains.is_empty() || self.toolchains.len() == 1 && self.toolchains[0] == "system"
+    }
+
     /// Return true if the task is a "test" type.
     pub fn is_test_type(&self) -> bool {
         matches!(self.type_of, TaskType::Test)
@@ -241,6 +249,37 @@ impl Task {
         }
 
         self.is_build_type() || self.is_test_type()
+    }
+}
+
+impl Default for Task {
+    #[allow(deprecated)]
+    fn default() -> Self {
+        Self {
+            args: vec![],
+            command: String::from("noop"),
+            deps: vec![],
+            description: None,
+            env: FxHashMap::default(),
+            id: Id::default(),
+            inputs: vec![],
+            input_env: FxHashSet::default(),
+            input_files: FxHashSet::default(),
+            input_globs: FxHashSet::default(),
+            options: TaskOptions::default(),
+            outputs: vec![],
+            output_files: FxHashSet::default(),
+            output_globs: FxHashSet::default(),
+            platform: PlatformType::default(),
+            preset: None,
+            script: None,
+            state: TaskState::default(),
+            target: Target::default(),
+            toolchains: vec![Id::raw("system")],
+            type_of: TaskType::default(),
+            inputs_cache: OnceCell::new(),
+            outputs_cache: OnceCell::new(),
+        }
     }
 }
 

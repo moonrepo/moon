@@ -1,9 +1,9 @@
 use crate::session::CliSession;
 use clap::Args;
 use moon_common::{color, Id};
-use moon_config::PlatformType;
 use moon_console::prompts::{Select, Text};
 use moon_docker::*;
+use moon_project::Project;
 use starbase::AppResult;
 use starbase_utils::fs;
 use tracing::{debug, instrument};
@@ -66,7 +66,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             .file
             .image
             .clone()
-            .unwrap_or_else(|| get_base_image_from_platform(&project.platform).into());
+            .unwrap_or_else(|| get_base_image(&project).into());
     } else {
         options.image = console.prompt_text(
             Text::new("Docker image?").with_default(
@@ -76,7 +76,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
                     .file
                     .image
                     .as_deref()
-                    .unwrap_or_else(|| get_base_image_from_platform(&project.platform)),
+                    .unwrap_or_else(|| get_base_image(&project)),
             ),
         )?;
     }
@@ -175,13 +175,17 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     Ok(None)
 }
 
-fn get_base_image_from_platform(platform: &PlatformType) -> &str {
-    match platform {
-        PlatformType::Bun => "oven/bun:latest",
-        PlatformType::Deno => "denoland/deno:latest",
-        PlatformType::Node => "node:latest",
-        PlatformType::Python => "python:latest",
-        PlatformType::Rust => "rust:latest",
-        PlatformType::System | PlatformType::Unknown => "scratch",
+fn get_base_image(project: &Project) -> &str {
+    if let Some(tc) = project.toolchains.first() {
+        return match tc.as_str() {
+            "bun" => "oven/bun:latest",
+            "deno" => "denoland/deno:latest",
+            "node" => "node:latest",
+            "python" => "python:latest",
+            "rust" => "rust:latest",
+            _ => "scratch",
+        };
     }
+
+    "scratch"
 }

@@ -68,7 +68,7 @@ impl NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::new(PlatformType::Node, RuntimeReq::Global)),
+            toolchain: ToolManager::new(Runtime::new(Id::raw("node"), RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
             console,
@@ -87,7 +87,7 @@ impl Platform for NodePlatform {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
                     return Runtime::new_override(
-                        PlatformType::Node,
+                        Id::raw("node"),
                         RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
@@ -95,14 +95,11 @@ impl Platform for NodePlatform {
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::new(
-                PlatformType::Node,
-                RuntimeReq::Toolchain(version.to_owned()),
-            );
+            return Runtime::new(Id::raw("node"), RuntimeReq::Toolchain(version.to_owned()));
         }
 
         // Global
-        Runtime::new(PlatformType::Node, RuntimeReq::Global)
+        Runtime::new(Id::raw("node"), RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -111,7 +108,7 @@ impl Platform for NodePlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime.platform, PlatformType::Node);
+            return runtime.toolchain == "node";
         }
 
         false

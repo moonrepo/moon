@@ -1,5 +1,6 @@
 use moon_action_context::ActionContext;
-use moon_config::{PlatformType, RustConfig};
+use moon_common::Id;
+use moon_config::RustConfig;
 use moon_console::Console;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
@@ -26,7 +27,7 @@ fn create_platform() -> RustPlatform {
 
 fn create_task() -> Task {
     Task {
-        platform: PlatformType::Rust,
+        toolchains: vec![Id::raw("rust")],
         ..Task::default()
     }
 }
@@ -39,7 +40,7 @@ async fn create_target_command(task: Task) -> Command {
             &ActionContext::default(),
             &Project::default(),
             &task,
-            &Runtime::new(PlatformType::Rust, RuntimeReq::Global),
+            &Runtime::new(Id::raw("rust"), RuntimeReq::Global),
             &PathBuf::from("cwd"),
         )
         .await
@@ -274,7 +275,7 @@ mod target_command {
                 &Project::default(),
                 &task,
                 &Runtime::new_override(
-                    PlatformType::Rust,
+                    Id::raw("rust"),
                     RuntimeReq::Toolchain(UnresolvedVersionSpec::parse("1.60.0").unwrap()),
                 ),
                 &PathBuf::from("cwd"),

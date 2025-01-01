@@ -1,5 +1,3 @@
-platform: node
-
 tasks:
   node-a:
     command: noop

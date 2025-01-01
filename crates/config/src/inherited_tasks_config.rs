@@ -1,4 +1,3 @@
-use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
@@ -102,28 +101,47 @@ pub struct InheritedTasksManager {
 impl InheritedTasksManager {
     pub fn get_lookup_order(
         &self,
-        platform: &PlatformType,
-        language: &LanguageType,
+        toolchains: &[Id],
         stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> Vec<String> {
-        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> = IndexSet::from_iter([
-            "*".to_string(),
-            format!("{platform}"), // node
-            format!("{language}"), // javascript
-            format!("{stack}"),    // frontend
-            //
-            format!("{platform}-{stack}"), // node-frontend
-            format!("{language}-{stack}"), // javascript-frontend
-            //
-            format!("{stack}-{project}"),    // frontend-library
-            format!("{platform}-{project}"), // node-library
-            format!("{language}-{project}"), // javascript-library
-            //
-            format!("{platform}-{stack}-{project}"), // node-frontend-library
-            format!("{language}-{stack}-{project}"), // javascript-frontend-library
-        ]);
+        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
+            IndexSet::from_iter(["*".to_string()]);
+
+        // Reverse the order of the toolchains, as the order in the project/task
+        // is from most important to least important. But for the configuration,
+        // we need the opposite of that, so that the most important is the last
+        // layer to be merged in.
+        let toolchains = toolchains.iter().rev().collect::<Vec<_>>();
+
+        // Order from least to most specific!
+
+        // frontend
+        lookup.insert(format!("{stack}"));
+
+        // frontend-library
+        lookup.insert(format!("{stack}-{project}"));
+
+        for toolchain in &toolchains {
+            // node
+            lookup.insert(format!("{toolchain}"));
+        }
+
+        for toolchain in &toolchains {
+            // node-frontend
+            lookup.insert(format!("{toolchain}-{stack}"));
+        }
+
+        for toolchain in &toolchains {
+            // node-library
+            lookup.insert(format!("{toolchain}-{project}"));
+        }
+
+        for toolchain in &toolchains {
+            // node-frontend-library
+            lookup.insert(format!("{toolchain}-{stack}-{project}"));
+        }
 
         // tag-foo
         for tag in tags {
@@ -173,17 +191,17 @@ impl InheritedTasksManager {
 
     pub fn get_inherited_config(
         &self,
-        platform: &PlatformType,
-        language: &LanguageType,
+        toolchains: &[Id],
         stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {
+        use crate::shapes::OneOrMany;
         use moon_common::color;
         use moon_common::path::standardize_separators;
         use schematic::{ConfigError, PartialConfig};
 
-        let lookup_order = self.get_lookup_order(platform, language, stack, project, tags);
+        let lookup_order = self.get_lookup_order(toolchains, stack, project, tags);
         let lookup_key = lookup_order.join(":");
 
         // Check the cache first in read only mode!
@@ -208,9 +226,9 @@ impl InheritedTasksManager {
                     standardize_separators(format!("{}", config_entry.input.display()));
                 let mut managed_config = config_entry.config.clone();
 
-                // Only modify tasks for `tasks/*.*` files instead of `tasks.*`,
+                // Only modify tasks for `tasks/**/.*` files instead of `tasks.*`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
-                // We also don't know what platform each of the tasks should be yet.
+                // We also don't know what toolchain each of the tasks should be yet.
                 if let Some(tasks) = &mut managed_config.tasks {
                     for (task_id, task) in tasks.iter_mut() {
                         if lookup != "*" {
@@ -219,9 +237,9 @@ impl InheritedTasksManager {
                                 .get_or_insert(vec![])
                                 .push(InputPath::WorkspaceFile(source_path.clone()));
 
-                            // Automatically set the platform
-                            if task.platform.unwrap_or_default().is_unknown() {
-                                task.platform = Some(platform.to_owned());
+                            // Automatically set the toolchain
+                            if task.toolchain.is_none() {
+                                task.toolchain = Some(OneOrMany::Many(toolchains.to_owned()));
                             }
                         }
 
@@ -245,12 +263,10 @@ impl InheritedTasksManager {
             .map_err(|error| match error {
                 ConfigError::Validator { error, .. } => ConfigError::Validator {
                     location: format!(
-                        "inherited tasks {}",
-                        if platform.is_javascript() {
-                            format!("({}, {}, {}, {})", platform, language, stack, project)
-                        } else {
-                            format!("({}, {}, {})", language, stack, project)
-                        }
+                        "inherited tasks ({}, {}, {})",
+                        toolchains.join(", "),
+                        stack,
+                        project
                     ),
                     error,
                     help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),

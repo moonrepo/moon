@@ -143,7 +143,7 @@ impl<'app> CodeGenerator<'app> {
 
             let mut extends = vec![];
 
-            for extend_id in &template.config.extends {
+            for extend_id in template.config.extends.to_list() {
                 extends.push(self.get_template(extend_id)?);
             }
 

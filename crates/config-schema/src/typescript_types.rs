@@ -63,7 +63,11 @@ fn generate_tasks(out_dir: &Path) -> miette::Result<()> {
     generator.add::<PartialInheritedTasksConfig>();
     generator.generate(
         out_dir.join("tasks-config.ts"),
-        TypeScriptRenderer::default(),
+        TypeScriptRenderer::new(TypeScriptOptions {
+            exclude_references: vec!["ExtendsFrom".into()],
+            external_types: HashMap::from_iter([("./common".into(), vec!["ExtendsFrom".into()])]),
+            ..Default::default()
+        }),
     )
 }
 
@@ -85,7 +89,11 @@ fn generate_toolchain(out_dir: &Path) -> miette::Result<()> {
     generator.add::<PartialToolchainConfig>();
     generator.generate(
         out_dir.join("toolchain-config.ts"),
-        TypeScriptRenderer::default(),
+        TypeScriptRenderer::new(TypeScriptOptions {
+            exclude_references: vec!["ExtendsFrom".into()],
+            external_types: HashMap::from_iter([("./common".into(), vec!["ExtendsFrom".into()])]),
+            ..Default::default()
+        }),
     )
 }
 
@@ -96,11 +104,11 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
     generator.generate(
         out_dir.join("workspace-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
-            exclude_references: vec!["PluginLocator".into()],
-            external_types: HashMap::from_iter([(
-                "./toolchain-config".into(),
-                vec!["PluginLocator".into()],
-            )]),
+            exclude_references: vec!["ExtendsFrom".into(), "PluginLocator".into()],
+            external_types: HashMap::from_iter([
+                ("./common".into(), vec!["ExtendsFrom".into()]),
+                ("./toolchain-config".into(), vec!["PluginLocator".into()]),
+            ]),
             ..Default::default()
         }),
     )

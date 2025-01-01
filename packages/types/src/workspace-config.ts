@@ -2,6 +2,7 @@
 
 /* eslint-disable */
 
+import type { ExtendsFrom } from './common';
 import type { PluginLocator } from './toolchain-config';
 
 /** How to order ownership rules within the generated file. */
@@ -371,10 +372,10 @@ export interface WorkspaceConfig {
 	/** Configures experiments across the entire moon workspace. */
 	experiments: ExperimentsConfig;
 	/**
-	 * Extends another workspace configuration file. Supports a relative
+	 * Extends one or many workspace configuration file. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends: string | null;
+	extends: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
 	extensions: Record<string, ExtensionConfig>;
 	/** Configures the generator for scaffolding from templates. */
@@ -748,10 +749,10 @@ export interface PartialWorkspaceConfig {
 	/** Configures experiments across the entire moon workspace. */
 	experiments?: PartialExperimentsConfig | null;
 	/**
-	 * Extends another workspace configuration file. Supports a relative
+	 * Extends one or many workspace configuration file. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends?: string | null;
+	extends?: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
 	extensions?: Record<string, PartialExtensionConfig> | null;
 	/** Configures the generator for scaffolding from templates. */

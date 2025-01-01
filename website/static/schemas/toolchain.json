@@ -34,10 +34,10 @@
     },
     "extends": {
       "title": "extends",
-      "description": "Extends another toolchain configuration file. Supports a relative file path or a secure URL.",
+      "description": "Extends one or many toolchain configuration files. Supports a relative file path or a secure URL.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/ExtendsFrom"
         },
         {
           "type": "null"
@@ -326,6 +326,19 @@
         }
       },
       "additionalProperties": false
+    },
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "MoonConfig": {
       "description": "Configures how and where updates will be received.",

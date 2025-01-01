@@ -36,10 +36,10 @@ pub struct ToolchainConfig {
     )]
     pub schema: String,
 
-    /// Extends another toolchain configuration file. Supports a relative
+    /// Extends one or many toolchain configuration files. Supports a relative
     /// file path or a secure URL.
-    #[setting(extend, validate = validate::extends_string)]
-    pub extends: Option<String>,
+    #[setting(extend, validate = validate::extends_from)]
+    pub extends: Option<schematic::ExtendsFrom>,
 
     /// Configures and enables the Bun platform.
     #[setting(nested)]

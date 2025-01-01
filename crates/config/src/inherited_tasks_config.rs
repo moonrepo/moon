@@ -42,10 +42,10 @@ cacheable!(
         )]
         pub schema: String,
 
-        /// Extends another tasks configuration file. Supports a relative
+        /// Extends one or many task configuration files. Supports a relative
         /// file path or a secure URL.
-        #[setting(extend, validate = validate::extends_string)]
-        pub extends: Option<String>,
+        #[setting(extend, validate = validate::extends_from)]
+        pub extends: Option<schematic::ExtendsFrom>,
 
         /// A mapping of group IDs to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.

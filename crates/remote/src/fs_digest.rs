@@ -225,20 +225,32 @@ pub fn link_output_file(
     to_path: PathBuf,
     link: &OutputSymlink,
 ) -> miette::Result<()> {
-    // Windows requires admin privileges to create soft/hard links,
-    // so just copy for now... annoying... definitely revisit!
     #[cfg(windows)]
-    fs::copy(&from_path, &to_path).map_err(|error| FsError::Copy {
-        from: from_path.clone(),
-        to: to_path.clone(),
-        error: Box::new(error),
-    })?;
+    {
+        if from_path.is_dir() {
+            std::os::windows::fs::symlink_dir(&from_path, &to_path).map_err(|error| {
+                FsError::Create {
+                    path: to_path.clone(),
+                    error: Box::new(error),
+                }
+            })?;
+        } else {
+            std::os::windows::fs::symlink_file(&from_path, &to_path).map_err(|error| {
+                FsError::Create {
+                    path: to_path.clone(),
+                    error: Box::new(error),
+                }
+            })?;
+        }
+    }
 
     #[cfg(unix)]
-    std::os::unix::fs::symlink(&from_path, &to_path).map_err(|error| FsError::Create {
-        path: to_path.clone(),
-        error: Box::new(error),
-    })?;
+    {
+        std::os::unix::fs::symlink(&from_path, &to_path).map_err(|error| FsError::Create {
+            path: to_path.clone(),
+            error: Box::new(error),
+        })?;
+    }
 
     if let Some(props) = &link.node_properties {
         apply_node_properties(&to_path, props)?;

@@ -24,6 +24,10 @@
   if affected, same as `true`).
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to support a list of files/URLs to extend.
 
+#### 🐞 Fixes
+
+- Fixed a panic that could occur during command argument parsing.
+
 ## 1.30.6
 
 #### 🐞 Fixes

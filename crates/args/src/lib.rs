@@ -95,7 +95,7 @@ where
         // Better way to do this?
         let has_special_chars =
             // Multi chars
-            bytes
+            bytes_len > 0 && bytes
                 .windows(bytes_len)
                 .any(|window| multi_chars.iter().any(|c| *c == window))
             ||

@@ -1,5 +1,5 @@
 use crate::portable_path::FilePath;
-use schematic::{validate, Config, ValidateError, ValidateResult};
+use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError, ValidateResult};
 
 fn path_is_required<D, C>(
     value: &FilePath,
@@ -14,9 +14,24 @@ fn path_is_required<D, C>(
     Ok(())
 }
 
+derive_enum!(
+    #[derive(Copy, ConfigEnum, Default)]
+    pub enum RemoteCompression {
+        /// No compression.
+        #[default]
+        None,
+        /// Zstandard compression.
+        Zstd,
+    }
+);
+
 /// Configures the action cache (AC) and content addressable cache (CAS).
 #[derive(Clone, Config, Debug)]
 pub struct RemoteCacheConfig {
+    /// The compression format to use when uploading/downloading blobs.
+    pub compression: RemoteCompression,
+
+    /// Unique instance name for blobs. Will be used as a folder name.
     #[setting(default = "moon-outputs")]
     pub instance_name: String,
 }

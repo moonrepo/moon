@@ -496,6 +496,19 @@ in the [remote caching](../guides/remote-cache) guide.
 Configures aspects of the caching layer, primarily the action cache (AC) and content addressable
 cache (CAS).
 
+#### `compression`<VersionLabel version="1.31.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteCacheConfig#compression" />
+
+The compression format to use when uploading/downloading blobs. Supports `none` and `zstd`, and
+defaults to no compression (`identity` format in RE API).
+
+```yaml title=".moon/workspace.yml" {3}
+unstable_remote:
+  cache:
+    compression: 'zstd'
+```
+
 #### `instanceName`
 
 <HeadingApiLink to="/api/types/interface/RemoteCacheConfig#instanceName" />
@@ -505,7 +518,7 @@ A
 used to distinguish between the various instances on the host. This allows the same remote service
 to serve and partition multiple moon repositories. Defaults to `moon-outputs`.
 
-```yaml title=".moon/workspace.yml" {2}
+```yaml title=".moon/workspace.yml" {3}
 unstable_remote:
   cache:
     instanceName: 'custom-dir-name'

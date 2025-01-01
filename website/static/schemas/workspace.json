@@ -517,13 +517,31 @@
       "description": "Configures the action cache (AC) and content addressable cache (CAS).",
       "type": "object",
       "properties": {
+        "compression": {
+          "title": "compression",
+          "description": "The compression format to use when uploading/downloading blobs.",
+          "default": "none",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RemoteCompression"
+            }
+          ]
+        },
         "instanceName": {
           "title": "instanceName",
+          "description": "Unique instance name for blobs. Will be used as a folder name.",
           "default": "moon-outputs",
           "type": "string"
         }
       },
       "additionalProperties": false
+    },
+    "RemoteCompression": {
+      "type": "string",
+      "enum": [
+        "none",
+        "zstd"
+      ]
     },
     "RemoteConfig": {
       "description": "Configures the remote service, powered by the Bazel Remote Execution API.",

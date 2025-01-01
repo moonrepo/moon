@@ -2,6 +2,7 @@ use crate::fs_digest::Blob;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
+use crate::remote_helpers::get_compressor;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
     capabilities_client::CapabilitiesClient, compressor,
@@ -10,7 +11,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
 use moon_common::color;
-use moon_config::RemoteConfig;
+use moon_config::{RemoteCompression, RemoteConfig};
 use std::{error::Error, path::Path};
 use tonic::{
     transport::{Channel, Endpoint},
@@ -38,7 +39,23 @@ fn map_status_error(error: tonic::Status) -> RemoteError {
 #[derive(Default)]
 pub struct GrpcRemoteClient {
     channel: Option<Channel>,
+    compression: RemoteCompression,
     instance_name: String,
+}
+
+impl GrpcRemoteClient {
+    fn get_acceptable_compressors(&self) -> Vec<i32> {
+        let mut list = vec![compressor::Value::Identity as i32];
+
+        match &self.compression {
+            RemoteCompression::Zstd => {
+                list.push(compressor::Value::Zstd as i32);
+            }
+            _ => {}
+        };
+
+        list
+    }
 }
 
 #[async_trait::async_trait]
@@ -91,6 +108,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);
+        self.compression = config.cache.compression.clone();
         self.instance_name = config.cache.instance_name.clone();
 
         Ok(())
@@ -229,7 +247,7 @@ impl RemoteClient for GrpcRemoteClient {
 
         let response = match client
             .batch_read_blobs(BatchReadBlobsRequest {
-                acceptable_compressors: vec![compressor::Value::Identity as i32],
+                acceptable_compressors: self.get_acceptable_compressors(),
                 instance_name: self.instance_name.clone(),
                 digests: blob_digests,
                 digest_function: digest_function::Value::Sha256 as i32,
@@ -272,6 +290,8 @@ impl RemoteClient for GrpcRemoteClient {
                 });
             }
 
+            // TODO decompress `compressor`
+
             total_count += 1;
         }
 
@@ -307,7 +327,8 @@ impl RemoteClient for GrpcRemoteClient {
                     .map(|blob| batch_update_blobs_request::Request {
                         digest: Some(blob.digest),
                         data: blob.bytes,
-                        compressor: compressor::Value::Identity as i32,
+                        // TODO compress blobs
+                        compressor: get_compressor(self.compression),
                     })
                     .collect(),
                 digest_function: digest_function::Value::Sha256 as i32,

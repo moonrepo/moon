@@ -1,6 +1,7 @@
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
+use crate::remote_helpers::get_compressor;
 use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
@@ -94,6 +95,19 @@ impl RemoteService {
                 warn!(
                     host,
                     "Remote service does not support SHA256 digests, which is required by moon"
+                );
+            }
+
+            let compressor = get_compressor(self.config.cache.compression);
+
+            if !cap.supported_compressors.contains(&compressor) {
+                enabled = false;
+
+                warn!(
+                    host,
+                    "Remote service does not support {} compression, but it has been configured and enabled through the {} setting",
+                    compressor,
+                    color::property("remote.cache.compression"),
                 );
             }
 

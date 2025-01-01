@@ -9,11 +9,10 @@ moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 async-trait = { workspace = true }
-bazel-remote-apis = "0.10.0"
+bazel-remote-apis = "0.11.0"
 chrono = { workspace = true }
-filetime = "0.2.25"
 miette = { workspace = true }
-prost-types = "0.13.3"
+prost-types = "0.13.4"
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }

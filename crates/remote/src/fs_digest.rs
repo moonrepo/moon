@@ -9,11 +9,10 @@ use prost_types::Timestamp;
 use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::FsError;
 use starbase_utils::glob;
-use std::path::PathBuf;
 use std::{
     fs::{self, Metadata},
-    path::Path,
-    time::{SystemTime, UNIX_EPOCH},
+    path::{Path, PathBuf},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tracing::instrument;
 
@@ -172,14 +171,21 @@ pub fn compute_digests_for_outputs(
 
 fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {
     if let Some(mtime) = &props.mtime {
-        filetime::set_file_mtime(
-            path,
-            filetime::FileTime::from_unix_time(mtime.seconds, mtime.nanos as u32),
-        )
-        .map_err(|error| FsError::Write {
-            path: path.to_owned(),
-            error: Box::new(error),
-        })?;
+        let modified = Duration::new(mtime.seconds as u64, mtime.nanos as u32);
+
+        let file = fs::File::options()
+            .write(true)
+            .open(path)
+            .map_err(|error| FsError::Write {
+                path: path.to_owned(),
+                error: Box::new(error),
+            })?;
+
+        file.set_modified(UNIX_EPOCH + modified)
+            .map_err(|error| FsError::Write {
+                path: path.to_owned(),
+                error: Box::new(error),
+            })?;
     }
 
     #[cfg(unix)]

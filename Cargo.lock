@@ -509,9 +509,9 @@ dependencies = [
 
 [[package]]
 name = "bazel-remote-apis"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31bbf354d9565230c677c9f8fa60dff7427d8b5a5a49477a716ae13882679959"
+checksum = "8bb2cb52a758f1af99c6a262e45c8db9e693f519824b984c1899f43920a39c33"
 dependencies = [
  "prost",
  "prost-types",
@@ -1018,9 +1018,9 @@ dependencies = [
 
 [[package]]
 name = "compact_str"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6050c3a16ddab2e412160b31f2c871015704239bca62f72f6e5f0be631d3f644"
+checksum = "3b79c4069c6cad78e2e0cdfcbd26275770669fb39fd308a752dc110e83b9af32"
 dependencies = [
  "castaway",
  "cfg-if",
@@ -3604,7 +3604,7 @@ dependencies = [
 name = "moon_common"
 version = "0.0.9"
 dependencies = [
- "compact_str 0.8.0",
+ "compact_str 0.8.1",
  "dirs 5.0.1",
  "miette 7.4.0",
  "regex",
@@ -4203,7 +4203,6 @@ dependencies = [
  "async-trait",
  "bazel-remote-apis",
  "chrono",
- "filetime",
  "miette 7.4.0",
  "moon_action",
  "moon_common",
@@ -4309,7 +4308,7 @@ dependencies = [
 name = "moon_target"
 version = "0.0.8"
 dependencies = [
- "compact_str 0.8.0",
+ "compact_str 0.8.1",
  "miette 7.4.0",
  "moon_common",
  "once_cell",
@@ -5309,9 +5308,9 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b0487d90e047de87f984913713b85c601c05609aad5b0df4b4573fbf69aa13f"
+checksum = "2c0fef6c4230e4ccf618a35c59d7ede15dea37de8427500f50aff708806e42ec"
 dependencies = [
  "bytes",
  "prost-derive",
@@ -5340,9 +5339,9 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9552f850d5f0964a4e4d0bf306459ac29323ddfbae05e35a7c0d35cb0803cc5"
+checksum = "157c5a9d7ea5c2ed2d9fb8f495b64759f7816c7eaea54ba3978f0d63000162e3"
 dependencies = [
  "anyhow",
  "itertools 0.13.0",
@@ -5353,9 +5352,9 @@ dependencies = [
 
 [[package]]
 name = "prost-types"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4759aa0d3a6232fb8dbdb97b61de2c20047c68aca932c7ed76da9d788508d670"
+checksum = "cc2f1e56baa61e93533aebc21af4d2134b70f66275e0fcdf3cbe43d77ff7e8fc"
 dependencies = [
  "prost",
 ]
@@ -5680,9 +5679,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.11"
+version = "0.12.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fe060fe50f524be480214aba758c71f99f90ee8c83c5a36b5e9e1d568eb4eb3"
+checksum = "43e734407157c3c2034e0258f5e4473ddb361b1e85f95a66690d67264d7cd1da"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -7452,7 +7451,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acae98122dbacf133351b898ae29916c0faa263279e1ee7ab418b02e38aaaecf"
 dependencies = [
- "compact_str 0.8.0",
+ "compact_str 0.8.1",
  "human-sort",
  "regex",
  "schematic",
@@ -7496,7 +7495,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f735385fd761d474fef2af2b4bfaaf5c2ab7c7765e7ea730bee2b1f939a22f67"
 dependencies = [
  "async-trait",
- "compact_str 0.8.0",
+ "compact_str 0.8.1",
  "extism",
  "http-cache-reqwest",
  "miette 7.4.0",

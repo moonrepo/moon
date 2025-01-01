@@ -96,6 +96,8 @@ export interface DenoConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
+export type ExtendsFrom = string | string[];
+
 /** Configures how and where updates will be received. */
 export interface MoonConfig {
 	/**
@@ -400,10 +402,10 @@ export interface ToolchainConfig {
 	/** Configures and enables the Deno platform. */
 	deno: DenoConfig | null;
 	/**
-	 * Extends another toolchain configuration file. Supports a relative
+	 * Extends one or many toolchain configuration files. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends: string | null;
+	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
@@ -791,10 +793,10 @@ export interface PartialToolchainConfig {
 	/** Configures and enables the Deno platform. */
 	deno?: PartialDenoConfig | null;
 	/**
-	 * Extends another toolchain configuration file. Supports a relative
+	 * Extends one or many toolchain configuration files. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends?: string | null;
+	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */

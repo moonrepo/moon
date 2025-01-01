@@ -47,10 +47,10 @@
     },
     "extends": {
       "title": "extends",
-      "description": "Extends another workspace configuration file. Supports a relative file path or a secure URL.",
+      "description": "Extends one or many workspace configuration file. Supports a relative file path or a secure URL.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/ExtendsFrom"
         },
         {
           "type": "null"
@@ -351,6 +351,19 @@
         }
       },
       "additionalProperties": false
+    },
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "ExtensionConfig": {
       "description": "Configures an individual extension.",

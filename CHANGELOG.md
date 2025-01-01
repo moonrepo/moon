@@ -22,6 +22,7 @@
       config files in the project/workspace root. This pattern is preferred when possible.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
+- Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to support a list of files/URLs to extend.
 
 ## 1.30.6
 

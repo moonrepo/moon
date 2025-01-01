@@ -2,6 +2,8 @@
 
 /* eslint-disable */
 
+export type ExtendsFrom = string | string[];
+
 export type TaskArgs = null | string | string[];
 
 /** Expanded information about a task dependency. */
@@ -261,10 +263,10 @@ export interface InheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string;
 	/**
-	 * Extends another tasks configuration file. Supports a relative
+	 * Extends one or many task configuration files. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends: string | null;
+	extends: ExtendsFrom | null;
 	/**
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
@@ -509,10 +511,10 @@ export interface PartialInheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
 	/**
-	 * Extends another tasks configuration file. Supports a relative
+	 * Extends one or many task configuration files. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends?: string | null;
+	extends?: ExtendsFrom | null;
 	/**
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.

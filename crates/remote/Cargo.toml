@@ -27,6 +27,7 @@ tonic = { version = "0.12.3", default-features = false, features = [
     "tls-native-roots",
 ] }
 tracing = { workspace = true }
+zstd = "0.13.2"
 
 [lints]
 workspace = true

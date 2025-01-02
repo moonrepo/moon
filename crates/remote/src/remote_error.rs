@@ -14,6 +14,13 @@ pub enum RemoteError {
     #[error("Failed to make gRPC call: {error}")]
     CallFailedViaSource { error: String },
 
+    #[diagnostic(code(remote::compression_failed))]
+    #[error("Failed to compress blob.")]
+    CompressionFailed {
+        #[source]
+        error: Box<std::io::Error>,
+    },
+
     #[diagnostic(code(remote::grpc::connect_failed))]
     #[error("Failed to connect to gRPC host.")]
     ConnectFailed {

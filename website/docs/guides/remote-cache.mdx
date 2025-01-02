@@ -45,6 +45,13 @@ something like the following:
 bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
 ```
 
+If you've configured the [`remote.cache.compression`](../config/workspace#compression) setting to
+"zstd", you'll need to run the binary with that storage mode as well.
+
+```bash
+bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode zstd --grpc_address 0.0.0.0:9092
+```
+
 :::info
 
 View the official [`bazel-remote`](https://github.com/buchgr/bazel-remote#usage) documentation for

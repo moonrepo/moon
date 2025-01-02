@@ -4217,6 +4217,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tracing",
+ "zstd",
 ]
 
 [[package]]

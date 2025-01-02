@@ -1,8 +1,8 @@
-use crate::fs_digest::Blob;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use crate::remote_helpers::get_compressor;
+use crate::{fs_digest::Blob, remote_helpers::compress_blob};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
     capabilities_client::CapabilitiesClient, compressor,
@@ -319,18 +319,24 @@ impl RemoteClient for GrpcRemoteClient {
             blobs.len()
         );
 
+        let mut requests = vec![];
+
+        for blob in blobs {
+            requests.push(batch_update_blobs_request::Request {
+                digest: Some(blob.digest),
+                data: compress_blob(self.compression, blob.bytes).map_err(|error| {
+                    RemoteError::CompressionFailed {
+                        error: Box::new(error),
+                    }
+                })?,
+                compressor: get_compressor(self.compression),
+            });
+        }
+
         let response = match client
             .batch_update_blobs(BatchUpdateBlobsRequest {
                 instance_name: self.instance_name.clone(),
-                requests: blobs
-                    .into_iter()
-                    .map(|blob| batch_update_blobs_request::Request {
-                        digest: Some(blob.digest),
-                        data: blob.bytes,
-                        // TODO compress blobs
-                        compressor: get_compressor(self.compression),
-                    })
-                    .collect(),
+                requests,
                 digest_function: digest_function::Value::Sha256 as i32,
             })
             .await

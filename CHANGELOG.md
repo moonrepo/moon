@@ -25,8 +25,10 @@
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
   support a list of files/URLs to extend.
 - Updated our unstable remote service (RE API) with new functionality:
+  - Added an `unstable_remote.cache.compression` setting, which can be set to `zstd` to enable zstd
+    compression on output blobs.
   - Symlink based outputs will now be created as symlinks on Windows, where previously they were
-    copies. Symlinks require
+    copies. Do note that symlinks require
     [privileged access on Windows](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/create-symbolic-links)
     to function correctly.
 

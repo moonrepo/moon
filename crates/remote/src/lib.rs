@@ -1,9 +1,9 @@
+mod compression;
 mod fs_digest;
 mod grpc_remote_client;
 mod grpc_tls;
 mod remote_client;
 mod remote_error;
-mod remote_helpers;
 mod remote_service;
 
 pub use bazel_remote_apis::build::bazel::remote::execution::v2::Digest;

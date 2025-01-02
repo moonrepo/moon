@@ -1,8 +1,8 @@
+use crate::compression::*;
+use crate::fs_digest::Blob;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
-use crate::remote_helpers::get_compressor;
-use crate::{fs_digest::Blob, remote_helpers::compress_blob};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
     capabilities_client::CapabilitiesClient, compressor,
@@ -241,6 +241,7 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = &digest.hash,
+            compression = self.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
         );
@@ -286,11 +287,14 @@ impl RemoteClient for GrpcRemoteClient {
             if let Some(digest) = download.digest {
                 blobs.push(Blob {
                     digest,
-                    bytes: download.data,
+                    bytes: decompress_blob(self.compression, download.data).map_err(|error| {
+                        RemoteError::DecompressFailed {
+                            format: self.compression,
+                            error: Box::new(error),
+                        }
+                    })?,
                 });
             }
-
-            // TODO decompress `compressor`
 
             total_count += 1;
         }
@@ -315,6 +319,7 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = &digest.hash,
+            compression = self.compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
         );
@@ -325,7 +330,8 @@ impl RemoteClient for GrpcRemoteClient {
             requests.push(batch_update_blobs_request::Request {
                 digest: Some(blob.digest),
                 data: compress_blob(self.compression, blob.bytes).map_err(|error| {
-                    RemoteError::CompressionFailed {
+                    RemoteError::CompressFailed {
+                        format: self.compression,
                         error: Box::new(error),
                     }
                 })?,

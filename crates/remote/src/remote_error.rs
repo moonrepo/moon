@@ -1,4 +1,5 @@
 use miette::Diagnostic;
+use moon_config::RemoteCompression;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -15,8 +16,17 @@ pub enum RemoteError {
     CallFailedViaSource { error: String },
 
     #[diagnostic(code(remote::compression_failed))]
-    #[error("Failed to compress blob.")]
-    CompressionFailed {
+    #[error("Failed to compress blob using {format}.")]
+    CompressFailed {
+        format: RemoteCompression,
+        #[source]
+        error: Box<std::io::Error>,
+    },
+
+    #[diagnostic(code(remote::compression_failed))]
+    #[error("Failed to decompress blob using {format}.")]
+    DecompressFailed {
+        format: RemoteCompression,
         #[source]
         error: Box<std::io::Error>,
     },

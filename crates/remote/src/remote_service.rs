@@ -1,7 +1,7 @@
+use crate::compression::*;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::remote_client::RemoteClient;
-use crate::remote_helpers::get_compressor;
 use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,

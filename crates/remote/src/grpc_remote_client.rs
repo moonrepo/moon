@@ -20,17 +20,17 @@ use tonic::{
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
-    RemoteError::ConnectFailed {
+    RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
 }
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
     match error.source() {
-        Some(src) => RemoteError::CallFailedViaSource {
+        Some(src) => RemoteError::GrpcCallFailedViaSource {
             error: src.to_string(),
         },
-        None => RemoteError::CallFailed {
+        None => RemoteError::GrpcCallFailed {
             error: Box::new(error),
         },
     }
@@ -41,21 +41,6 @@ pub struct GrpcRemoteClient {
     channel: Option<Channel>,
     compression: RemoteCompression,
     instance_name: String,
-}
-
-impl GrpcRemoteClient {
-    fn get_acceptable_compressors(&self) -> Vec<i32> {
-        let mut list = vec![compressor::Value::Identity as i32];
-
-        match &self.compression {
-            RemoteCompression::Zstd => {
-                list.push(compressor::Value::Zstd as i32);
-            }
-            _ => {}
-        };
-
-        list
-    }
 }
 
 #[async_trait::async_trait]
@@ -108,7 +93,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);
-        self.compression = config.cache.compression.clone();
+        self.compression = config.cache.compression;
         self.instance_name = config.cache.instance_name.clone();
 
         Ok(())
@@ -248,7 +233,7 @@ impl RemoteClient for GrpcRemoteClient {
 
         let response = match client
             .batch_read_blobs(BatchReadBlobsRequest {
-                acceptable_compressors: self.get_acceptable_compressors(),
+                acceptable_compressors: get_acceptable_compressors(self.compression),
                 instance_name: self.instance_name.clone(),
                 digests: blob_digests,
                 digest_function: digest_function::Value::Sha256 as i32,

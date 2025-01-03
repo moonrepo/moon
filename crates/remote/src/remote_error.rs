@@ -6,14 +6,25 @@ use thiserror::Error;
 pub enum RemoteError {
     #[diagnostic(code(remote::grpc::call_failed))]
     #[error("Failed to make gRPC call.")]
-    CallFailed {
+    GrpcCallFailed {
         #[source]
         error: Box<tonic::Status>,
     },
 
     #[diagnostic(code(remote::grpc::call_failed))]
     #[error("Failed to make gRPC call: {error}")]
-    CallFailedViaSource { error: String },
+    GrpcCallFailedViaSource { error: String },
+
+    #[diagnostic(code(remote::grpc::connect_failed))]
+    #[error("Failed to connect to gRPC host.")]
+    GrpcConnectFailed {
+        #[source]
+        error: Box<tonic::transport::Error>,
+    },
+
+    #[diagnostic(code(remote::http::connect_failed))]
+    #[error("Failed to connect to HTTP host ({code} {reason}).")]
+    HttpConnectFailed { code: u16, reason: String },
 
     #[diagnostic(code(remote::compression_failed))]
     #[error("Failed to compress blob using {format}.")]
@@ -29,13 +40,6 @@ pub enum RemoteError {
         format: RemoteCompression,
         #[source]
         error: Box<std::io::Error>,
-    },
-
-    #[diagnostic(code(remote::grpc::connect_failed))]
-    #[error("Failed to connect to gRPC host.")]
-    ConnectFailed {
-        #[source]
-        error: Box<tonic::transport::Error>,
     },
 
     #[diagnostic(code(remote::http::no_support))]

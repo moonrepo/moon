@@ -13,9 +13,10 @@ bazel-remote-apis = "0.11.0"
 chrono = { workspace = true }
 miette = { workspace = true }
 prost-types = "0.13.4"
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
+serde = { workspace = true }
 sha2 = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }

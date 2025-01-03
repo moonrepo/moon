@@ -6,6 +6,16 @@ use std::io;
 // https://github.com/buchgr/bazel-remote/blob/master/cache/disk/zstdimpl/gozstd.go#L13
 // https://github.com/klauspost/compress/tree/master/zstd#status
 
+pub fn get_acceptable_compressors(compression: RemoteCompression) -> Vec<i32> {
+    let mut list = vec![compressor::Value::Identity as i32];
+
+    if compression == RemoteCompression::Zstd {
+        list.push(compressor::Value::Zstd as i32);
+    };
+
+    list
+}
+
 pub fn get_compressor(compression: RemoteCompression) -> i32 {
     match compression {
         RemoteCompression::None => compressor::Value::Identity as i32,

@@ -35,8 +35,8 @@ docker:
     include:
       - '*.config.js'
       - '*.json'
-# unstable_remote:
-#   host: 'grpc://localhost:9092'
+unstable_remote:
+  host: 'http://localhost:8080'
 # mtls:
 #   caCert: 'crates/remote/tests/__fixtures__/certs-local/ca.pem'
 #   clientCert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'

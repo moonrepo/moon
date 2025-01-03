@@ -272,12 +272,7 @@ impl RemoteClient for GrpcRemoteClient {
             if let Some(digest) = download.digest {
                 blobs.push(Blob {
                     digest,
-                    bytes: decompress_blob(self.compression, download.data).map_err(|error| {
-                        RemoteError::DecompressFailed {
-                            format: self.compression,
-                            error: Box::new(error),
-                        }
-                    })?,
+                    bytes: decompress_blob(self.compression, download.data)?,
                 });
             }
 
@@ -314,12 +309,7 @@ impl RemoteClient for GrpcRemoteClient {
         for blob in blobs {
             requests.push(batch_update_blobs_request::Request {
                 digest: Some(blob.digest),
-                data: compress_blob(self.compression, blob.bytes).map_err(|error| {
-                    RemoteError::CompressFailed {
-                        format: self.compression,
-                        error: Box::new(error),
-                    }
-                })?,
+                data: compress_blob(self.compression, blob.bytes)?,
                 compressor: get_compressor(self.compression),
             });
         }

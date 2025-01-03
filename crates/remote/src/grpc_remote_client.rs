@@ -5,7 +5,7 @@ use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
-    capabilities_client::CapabilitiesClient, compressor,
+    capabilities_client::CapabilitiesClient,
     content_addressable_storage_client::ContentAddressableStorageClient, digest_function,
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, GetActionResultRequest,
     GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,

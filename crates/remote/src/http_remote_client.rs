@@ -98,20 +98,21 @@ impl RemoteClient for HttpRemoteClient {
     async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>> {
         trace!(hash = &digest.hash, "Checking for a cached action result");
 
-        dbg!(&digest);
-
         match self
             .get_client()
             .get(format!(
-                "{}/{}/cas/{}",
+                "{}/{}/ac/{}",
                 self.host, self.instance_name, digest.hash
             ))
+            .header("Accept", "application/json")
             .send()
             .await
         {
             Ok(response) => {
                 dbg!(&response);
                 // let result = response.into_inner();
+                //
+                dbg!(response.text().await.unwrap());
 
                 // trace!(
                 //     hash = &digest.hash,
@@ -144,6 +145,31 @@ impl RemoteClient for HttpRemoteClient {
         digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
+        trace!(
+            hash = &digest.hash,
+            files = result.output_files.len(),
+            links = result.output_symlinks.len(),
+            dirs = result.output_directories.len(),
+            exit_code = result.exit_code,
+            "Caching action result"
+        );
+
+        let res = self
+            .get_client()
+            .put(format!(
+                "{}/{}/ac/{}",
+                self.host, self.instance_name, digest.hash
+            ))
+            .header("Content-Type", "application/json")
+            .body("{}") // TODO
+            // .json(&result)
+            .send()
+            .await
+            .unwrap();
+
+        dbg!(&res);
+        dbg!(res.text().await.unwrap());
+
         Ok(None)
     }
 

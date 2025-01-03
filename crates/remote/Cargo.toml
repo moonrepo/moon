@@ -18,7 +18,7 @@ rustc-hash = { workspace = true }
 scc = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
-starbase_utils = { workspace = true, features = ["glob"] }
+starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tonic = { version = "0.12.3", default-features = false, features = [

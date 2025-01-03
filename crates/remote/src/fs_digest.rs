@@ -208,6 +208,13 @@ pub fn write_output_file(
     bytes: Vec<u8>,
     file: &OutputFile,
 ) -> miette::Result<()> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| FsError::Create {
+            path: parent.to_path_buf(),
+            error: Box::new(error),
+        })?;
+    }
+
     fs::write(&output_path, bytes).map_err(|error| FsError::Write {
         path: output_path.clone(),
         error: Box::new(error),
@@ -225,6 +232,13 @@ pub fn link_output_file(
     to_path: PathBuf,
     link: &OutputSymlink,
 ) -> miette::Result<()> {
+    if let Some(parent) = to_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| FsError::Create {
+            path: parent.to_path_buf(),
+            error: Box::new(error),
+        })?;
+    }
+
     #[cfg(windows)]
     {
         if from_path.is_dir() {

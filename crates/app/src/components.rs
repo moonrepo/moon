@@ -40,7 +40,7 @@ pub async fn run_action_pipeline(
             pipeline.summarize = true;
         }
         Commands::Run(cmd) => {
-            pipeline.bail = true;
+            pipeline.bail = !cmd.no_bail;
             pipeline.summarize = cmd.summary;
         }
         _ => {}

@@ -731,7 +731,7 @@ name. [Learn more about Git hooks](https://git-scm.com/book/en/v2/Customizing-Gi
 vcs:
   hooks:
     pre-commit:
-      - 'moon run :lint :format --affected --status=staged'
+      - 'moon run :lint :format --affected --status=staged --no-bail'
       - 'another-command'
 ```
 

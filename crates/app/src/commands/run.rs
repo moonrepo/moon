@@ -53,6 +53,13 @@ pub struct RunArgs {
     )]
     pub update_cache: bool,
 
+    #[arg(
+        long,
+        short = 'n',
+        help = "When a task fails, continue executing other tasks instead of aborting immediately"
+    )]
+    pub no_bail: bool,
+
     // Debugging
     #[arg(
         value_enum,
@@ -201,7 +208,7 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    run_action_pipeline(
+    let results = run_action_pipeline(
         session,
         ActionContext {
             passthrough_args: args.passthrough.to_owned(),
@@ -212,12 +219,24 @@ pub async fn run_target(
     )
     .await?;
 
+    if args.no_bail {
+        let failed = results.iter().any(|result| {
+            if result.has_failed() {
+                !result.allow_failure
+            } else {
+                false
+            }
+        });
+
+        if failed {
+            return Ok(Some(1));
+        }
+    }
+
     Ok(None)
 }
 
 #[instrument(skip_all)]
 pub async fn run(session: CliSession, args: RunArgs) -> AppResult {
-    run_target(&session, &args, &args.targets).await?;
-
-    Ok(None)
+    return run_target(&session, &args, &args.targets).await;
 }

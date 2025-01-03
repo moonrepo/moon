@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { ExtendsFrom } from './common';
 import type { PluginLocator } from './toolchain-config';
+import type { ExtendsFrom } from './common';
 
 /** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-name';
@@ -240,9 +240,22 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+export type RemoteCompression = 'none' | 'zstd';
+
 /** Configures the action cache (AC) and content addressable cache (CAS). */
 export interface RemoteCacheConfig {
-	/** @default 'moon-outputs' */
+	/**
+	 * The compression format to use when uploading/downloading blobs.
+	 *
+	 * @default 'none'
+	 * @type {'none' | 'zstd'}
+	 */
+	compression: RemoteCompression;
+	/**
+	 * Unique instance name for blobs. Will be used as a folder name.
+	 *
+	 * @default 'moon-outputs'
+	 */
 	instanceName?: string;
 }
 
@@ -634,7 +647,17 @@ export interface PartialRunnerConfig {
 
 /** Configures the action cache (AC) and content addressable cache (CAS). */
 export interface PartialRemoteCacheConfig {
-	/** @default 'moon-outputs' */
+	/**
+	 * The compression format to use when uploading/downloading blobs.
+	 *
+	 * @default 'none'
+	 */
+	compression?: RemoteCompression | null;
+	/**
+	 * Unique instance name for blobs. Will be used as a folder name.
+	 *
+	 * @default 'moon-outputs'
+	 */
 	instanceName?: string | null;
 }
 

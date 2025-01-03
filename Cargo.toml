@@ -28,7 +28,7 @@ clap = { version = "4.5.23", default-features = false, features = [
     "error-context",
 ] }
 clap_complete = "4.5.40"
-compact_str = { version = "0.8.0", default-features = false, features = [
+compact_str = { version = "0.8.1", default-features = false, features = [
     "serde",
 ] }
 console = "0.15.10"
@@ -48,7 +48,7 @@ regex = { version = "1.11.0", default-features = false, features = [
     "std",
     "perf",
 ] }
-reqwest = { version = "0.12.9", default-features = false, features = [
+reqwest = { version = "0.12.12", default-features = false, features = [
     "rustls-tls-native-roots",
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",

@@ -22,11 +22,20 @@
       config files in the project/workspace root. This pattern is preferred when possible.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
-- Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to support a list of files/URLs to extend.
+- Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
+  support a list of files/URLs to extend.
+- Updated our unstable remote service (RE API) with new functionality:
+  - Added an `unstable_remote.cache.compression` setting, which can be set to `zstd` to enable
+    zstandard compression on output blobs.
+  - Symlink based outputs will now be created as symlinks on Windows, where previously they were
+    copies. Do note that symlinks require
+    [privileged access on Windows](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/create-symbolic-links)
+    to function correctly.
 
 #### 🐞 Fixes
 
 - Fixed a panic that could occur during command argument parsing.
+- Fixed an issue where remote cached blobs would sometimes fail to be created locally.
 
 ## 1.30.6
 

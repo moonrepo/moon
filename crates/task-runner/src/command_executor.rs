@@ -293,7 +293,6 @@ impl<'task> CommandExecutor<'task> {
 
     fn prepare_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
         let is_primary = context.is_primary_target(&self.task.target);
-        let mut output_prefix = None;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
@@ -309,18 +308,20 @@ impl<'task> CommandExecutor<'task> {
             is_primary || is_ci_env()
         };
 
-        // Transitive targets may run concurrently, so differentiate them with a prefix.
-        if !is_primary || is_ci_env() || context.primary_targets.len() > 1 {
-            let prefix = context.get_target_prefix(&self.task.target);
+        // If only a single persistent task is being ran, we should not prefix the output.
+        if context.primary_targets.len() == 1
+            && is_primary
+            && (self.task.is_persistent() || self.task.deps.is_empty())
+        {
+            report_item.output_prefix = None;
+        }
 
-            self.command.set_prefix(&prefix);
-
-            output_prefix = Some(prefix);
+        if let Some(prefix) = &report_item.output_prefix {
+            self.command.set_prefix(prefix);
         }
 
         report_item.attempt_current = self.attempt_index;
         report_item.attempt_total = self.attempt_total;
-        report_item.output_prefix = output_prefix;
         report_item.output_streamed = self.stream;
     }
 

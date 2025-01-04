@@ -256,7 +256,24 @@ this, our generator will loop through all template paths configured in
 generator:
   templates:
     - './templates'
-    - './other/templates'
+    # Or
+    - 'file://other/templates'
+```
+
+When using literal file paths, all paths are relative from the workspace root.
+
+#### Globs<VersionLabel version="1.31.0" />
+
+If you'd prefer more control over literal file paths (above), you can instead use glob paths or the
+`glob://` protocol. Globs are relative from the workspace root, and will only match directories, or
+patterns that end in `template.yml`.
+
+```yaml title=".moon/workspace.yml"
+generator:
+  templates:
+    - './templates/*'
+    # Or
+    - 'glob://projects/*/templates/*'
 ```
 
 #### Git repositories<VersionLabel version="1.23.0" />
@@ -272,8 +289,8 @@ generator:
     - 'git://gitlab.com/org/repo#v1.2.3'
 ```
 
-> Git repositories will be cloned to `~/.moon/templates` using an HTTPS URL (not a Git URL), and
-> will be cached for future use.
+> Git repositories will be cloned to `~/.moon/templates/<domain>` using an HTTPS URL (not a Git
+> URL), and will be cached for future use.
 
 #### npm packages<VersionLabel version="1.23.0" />
 
@@ -287,7 +304,7 @@ generator:
     - 'npm://other-templates#4.5.6'
 ```
 
-> npm packages will be downloaded and unpacked to `~/.moon/templates` and cached for future use.
+> npm packages will be downloaded and unpacked to `~/.moon/templates/npm` and cached for future use.
 
 ### Declaring variables with CLI arguments
 
@@ -355,7 +372,7 @@ An example of this layout structure may look something like the following:
 └── package.json, etc
 ```
 
-These templates can then be referenced by name, such as []`moon generate template-one`][command].
+These templates can then be referenced by name, such as [`moon generate template-one`][command].
 
 [config]: ../config/template
 [command]: ../commands/generate

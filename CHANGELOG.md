@@ -23,6 +23,8 @@
 - Added the ability to run targets in `moon run` and `moon ci` using a glob-like syntax.
   - For example: `:build-*`, `app-*:build`, `#tag-{foo,bar}:build`, etc.
 - Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
+- Added glob support (and `glob://`) to `generator.templates`, allowing you to glob for your codegen
+  templates locations.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
@@ -34,6 +36,10 @@
     copies. Do note that symlinks require
     [privileged access on Windows](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/create-symbolic-links)
     to function correctly.
+- Updated the `moon templates` command:
+  - Templates are now sorted by identifier.
+  - Added a `--filter` option to filter the templates list by ID.
+- Improved the task output prefixing logic.
 
 #### 🐞 Fixes
 

@@ -1,6 +1,8 @@
 use moon_codegen::CodeGenerator;
 use moon_common::Id;
-use moon_config::{FilePath, GeneratorConfig, TemplateLocator, TemplateVariable, Version};
+use moon_config::{
+    FilePath, GeneratorConfig, GlobPath, TemplateLocator, TemplateVariable, Version,
+};
 use moon_env::MoonEnvironment;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::sync::Arc;
@@ -156,6 +158,31 @@ mod codegen {
                 .join("moonrepo_cli")
                 .join("1.0.0")
                 .exists());
+        }
+
+        #[tokio::test]
+        async fn walks_with_globs() {
+            let sandbox = create_sandbox("include");
+            let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
+            let config = GeneratorConfig {
+                templates: vec![TemplateLocator::Glob {
+                    glob: GlobPath::try_from("./templates/*").unwrap(),
+                }],
+            };
+
+            let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
+            codegen.load_templates().await.unwrap();
+
+            codegen.template_locations.sort();
+
+            assert_eq!(
+                codegen.template_locations,
+                vec![
+                    sandbox.path().join("templates/base"),
+                    sandbox.path().join("templates/extended"),
+                    sandbox.path().join("templates/partials"),
+                ]
+            );
         }
 
         #[tokio::test]

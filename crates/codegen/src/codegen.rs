@@ -9,7 +9,7 @@ use moon_process::Command;
 use moon_time::now_millis;
 use rustc_hash::FxHashMap;
 use starbase_archive::Archiver;
-use starbase_utils::{fs, net};
+use starbase_utils::{fs, glob, net};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn;
@@ -178,6 +178,7 @@ impl<'app> CodeGenerator<'app> {
     async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
         let mut futures = vec![];
+        let config_file_names = ConfigFinder::default().get_template_file_names();
 
         debug!("Resolving template locations to absolute file paths");
 
@@ -189,6 +190,21 @@ impl<'app> CodeGenerator<'app> {
                             .normalize()
                             .to_logical_path(self.workspace_root),
                     );
+                }
+                TemplateLocator::Glob { glob: pattern } => {
+                    for path in glob::walk(self.workspace_root, [pattern])? {
+                        if path.is_dir() {
+                            locations.push(path);
+                        } else if path.is_file()
+                            && path.file_name().is_some_and(|name| {
+                                config_file_names
+                                    .iter()
+                                    .any(|cfg_name| name == cfg_name.as_str())
+                            })
+                        {
+                            locations.push(path.parent().unwrap().to_path_buf());
+                        }
+                    }
                 }
                 TemplateLocator::Git {
                     remote_url,

@@ -22,6 +22,7 @@
       config files in the project/workspace root. This pattern is preferred when possible.
 - Added the ability to run targets in `moon run` and `moon ci` using a glob-like syntax.
   - For example: `:build-*`, `app-*:build`, `#tag-{foo,bar}:build`, etc.
+- Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to

@@ -20,6 +20,8 @@
   - Deprecated the top-level `platform` setting from `moon.yml`, use `toolchain.default` instead.
     - Additionally, the toolchain can now be inferred from the top-level `language` setting and any
       config files in the project/workspace root. This pattern is preferred when possible.
+- Added the ability to run targets in `moon run` and `moon ci` using a glob-like syntax.
+  - For example: `:build-*`, `app-*:build`, `#tag-{foo,bar}:build`, etc.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to

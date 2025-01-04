@@ -544,10 +544,11 @@ impl<'app> ActionGraphBuilder<'app> {
                 TargetLocator::GlobMatch {
                     project_glob,
                     task_glob,
+                    scope,
                     ..
                 } => {
                     let mut is_all = false;
-                    let mut do_query = true;
+                    let mut do_query = false;
                     let mut projects = vec![];
 
                     // Query for all applicable projects first since we can't
@@ -562,7 +563,16 @@ impl<'app> ActionGraphBuilder<'app> {
                         projects = self.workspace_graph.query_projects(build_query(&query)?)?;
                         do_query = !projects.is_empty();
                     } else {
-                        is_all = true;
+                        match scope {
+                            Some(TargetScope::All) => {
+                                is_all = true;
+                                do_query = true;
+                            }
+                            _ => {
+                                // Don't query for the other scopes,
+                                // since they're not valid from the run context
+                            }
+                        };
                     }
 
                     // Then query for all tasks within the queried projects

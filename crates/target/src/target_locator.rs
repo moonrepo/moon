@@ -62,7 +62,7 @@ impl FromStr for TargetLocator {
                 let mut project_glob = None;
 
                 match base_scope {
-                    "" | "*" => scope = Some(TargetScope::All),
+                    "" | "*" | "**" | "**/*" => scope = Some(TargetScope::All),
                     "~" => scope = Some(TargetScope::OwnSelf),
                     "^" => scope = Some(TargetScope::Deps),
                     inner => {

@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::warn;
-use yarn_lock_parser::{parse_str, Entry};
+use yarn_lock_parser::parse_str;
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(
@@ -14,8 +14,8 @@ pub fn load_lockfile_dependencies(
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     // Bun lockfiles are binary, but can be represented as text in Yarn v1 format!
-    let entries: Vec<Entry> = match parse_str(&lockfile_text) {
-        Ok(data) => data,
+    let entries = match parse_str(&lockfile_text) {
+        Ok(data) => data.entries,
         Err(_) => {
             warn!(
                 lockfile = ?path,

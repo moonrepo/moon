@@ -47,7 +47,7 @@ mod missing_tsconfig {
         );
         assert_eq!(
             tsconfig.data.include,
-            Some(vec![PathOrGlob::Glob("**/*".into())])
+            Some(vec![CompilerPath::from("**/*")])
         );
     }
 
@@ -93,7 +93,7 @@ mod missing_tsconfig {
         );
         assert_eq!(
             tsconfig.data.include,
-            Some(vec![PathOrGlob::Glob("**/*".into())])
+            Some(vec![CompilerPath::from("**/*")])
         );
     }
 
@@ -382,7 +382,7 @@ mod sync_config {
 
             assert_eq!(
                 tsconfig.data.include.unwrap(),
-                vec![PathOrGlob::Glob("../../types/**/*".into())]
+                vec![CompilerPath::from("../../types/**/*")]
             );
         }
 
@@ -417,7 +417,7 @@ mod sync_config {
 
             assert_eq!(
                 tsconfig.data.include.unwrap(),
-                vec![PathOrGlob::Glob("../../types/**/*".into())]
+                vec![CompilerPath::from("../../types/**/*")]
             );
         }
 
@@ -595,8 +595,8 @@ mod sync_config {
             assert_eq!(
                 tsconfig.data.include.unwrap(),
                 vec![
-                    PathOrGlob::Glob("../../common/c/**/*".into()),
-                    PathOrGlob::Glob("../b/**/*".into())
+                    CompilerPath::from("../../common/c/**/*"),
+                    CompilerPath::from("../b/**/*"),
                 ]
             );
             assert_eq!(
@@ -645,8 +645,8 @@ mod sync_config {
             assert_eq!(
                 tsconfig.data.include.unwrap(),
                 vec![
-                    PathOrGlob::Glob("../../common/c/**/*".into()),
-                    PathOrGlob::Glob("../b/**/*".into())
+                    CompilerPath::from("../../common/c/**/*"),
+                    CompilerPath::from("../b/**/*")
                 ]
             );
             assert_eq!(

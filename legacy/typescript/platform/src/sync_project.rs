@@ -3,7 +3,7 @@ use moon_config::TypeScriptConfig;
 use moon_node_lang::PackageJsonCache;
 use moon_project::Project;
 use moon_typescript_lang::{
-    tsconfig::{CompilerOptionsPathsMap, ExtendsField, PathOrGlob},
+    tsconfig::{CompilerOptionsPathsMap, CompilerPath, ExtendsField},
     TsConfigJson, TsConfigJsonCache,
 };
 use moon_utils::{
@@ -106,7 +106,7 @@ impl<'app> TypeScriptSyncer<'app> {
                     .join(&self.typescript_config.root_options_config_file_name),
                 &self.project.root,
             )?)),
-            include: Some(vec![PathOrGlob::Glob("**/*".into())]),
+            include: Some(vec![CompilerPath::from("**/*")]),
             references: Some(vec![]),
             ..TsConfigJson::default()
         };
@@ -185,7 +185,7 @@ impl<'app> TypeScriptSyncer<'app> {
 
                         for project_ref in local_project_refs {
                             let mut abs_ref =
-                                path::normalize(self.project.root.join(&project_ref.path));
+                                path::normalize(self.project.root.join(project_ref.path.as_str()));
 
                             // Remove the tsconfig.json file name if it exists
                             if project_ref
@@ -216,7 +216,7 @@ impl<'app> TypeScriptSyncer<'app> {
                                             if abs_ref.join(index).exists() {
                                                 tsconfig_compiler_paths.insert(
                                                     dep_package_name.clone(),
-                                                    vec![PathOrGlob::from(
+                                                    vec![CompilerPath::from(
                                                         to_relative_virtual_string(
                                                             abs_ref.join(index),
                                                             &self.project.root,
@@ -230,7 +230,7 @@ impl<'app> TypeScriptSyncer<'app> {
 
                                         tsconfig_compiler_paths.insert(
                                             format!("{dep_package_name}/*"),
-                                            vec![PathOrGlob::from(to_relative_virtual_string(
+                                            vec![CompilerPath::from(to_relative_virtual_string(
                                                 abs_ref.join(if abs_ref.join("src").exists() {
                                                     "src/*"
                                                 } else {
@@ -258,7 +258,7 @@ impl<'app> TypeScriptSyncer<'app> {
                     let cache_route = get_cache_dir()
                         .join("types")
                         .join(self.project.source.as_str());
-                    let out_dir = PathBuf::from(path::to_relative_virtual_string(
+                    let out_dir = CompilerPath::from(path::to_relative_virtual_string(
                         cache_route,
                         &self.project.root,
                     )?);

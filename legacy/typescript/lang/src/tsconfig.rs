@@ -18,10 +18,10 @@ config_cache_model!(
 
 impl TsConfigJsonCache {
     pub fn add_include<T: AsRef<str>>(&mut self, pattern: T) -> bool {
-        let pattern = PathOrGlob::from(pattern.as_ref());
+        let pattern = CompilerPath::from(pattern.as_ref());
         let mut include = match &self.data.include {
             Some(refs) => refs.clone(),
-            None => Vec::<PathOrGlob>::new(),
+            None => Vec::<CompilerPath>::new(),
         };
 
         if include.iter().any(|p| p == &pattern) {
@@ -59,10 +59,7 @@ impl TsConfigJsonCache {
             base_path = base_path.join(tsconfig_name);
         };
 
-        let path = PathBuf::from(to_relative_virtual_string(
-            base_path,
-            self.path.parent().unwrap(),
-        )?);
+        let path = to_relative_virtual_string(base_path, self.path.parent().unwrap())?;
 
         let mut references = match &self.data.references {
             Some(refs) => refs.clone(),
@@ -70,13 +67,13 @@ impl TsConfigJsonCache {
         };
 
         // Check if the reference already exists
-        if references.iter().any(|r| r.path == path) {
+        if references.iter().any(|r| r.path.as_str() == path) {
             return Ok(false);
         }
 
         // Add and sort the references
         references.push(ProjectReference {
-            path,
+            path: CompilerPath::from(path),
             prepend: None,
         });
 
@@ -170,7 +167,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJsonCache) -> miette::Re
 
                     for reference in references {
                         let mut item = json::json!({});
-                        item["path"] = JsonValue::from(reference.path.to_string_lossy());
+                        item["path"] = JsonValue::from(reference.path.as_str());
 
                         if let Some(prepend) = reference.prepend {
                             item["prepend"] = JsonValue::from(prepend);
@@ -193,7 +190,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJsonCache) -> miette::Re
                     }
 
                     if let Some(out_dir) = &options.out_dir {
-                        data[field]["outDir"] = JsonValue::from(out_dir.to_string_lossy());
+                        data[field]["outDir"] = JsonValue::from(out_dir.as_str());
                     }
 
                     if let Some(paths) = &options.paths {

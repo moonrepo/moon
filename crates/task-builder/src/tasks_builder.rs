@@ -594,6 +594,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.env_files = env_file.to_input_paths();
             }
 
+            if let Some(infer_inputs) = &config.infer_inputs {
+                options.infer_inputs = *infer_inputs;
+            }
+
             if let Some(internal) = &config.internal {
                 options.internal = *internal;
             }

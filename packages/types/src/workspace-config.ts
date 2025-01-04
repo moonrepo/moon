@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { PluginLocator } from './toolchain-config';
 import type { ExtendsFrom } from './common';
+import type { PluginLocator } from './toolchain-config';
 
 /** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-name';

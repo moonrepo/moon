@@ -70,6 +70,11 @@ export interface TaskOptionsConfig {
 	 */
 	envFile: TaskOptionEnvFile | null;
 	/**
+	 * Automatically infer inputs from file groups that were utilized
+	 * within `command`, `script`, `args`, and `env`.
+	 */
+	inferInputs: boolean | null;
+	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.
 	 */
@@ -327,6 +332,11 @@ export interface PartialTaskOptionsConfig {
 	 * running the task.
 	 */
 	envFile?: TaskOptionEnvFile | null;
+	/**
+	 * Automatically infer inputs from file groups that were utilized
+	 * within `command`, `script`, `args`, and `env`.
+	 */
+	inferInputs?: boolean | null;
 	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.

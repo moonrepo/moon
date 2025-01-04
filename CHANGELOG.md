@@ -25,6 +25,8 @@
 - Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
 - Added glob support (and `glob://`) to `generator.templates`, allowing you to glob for your codegen
   templates locations.
+- Added a task option `inferInputs`, that will automatically infer inputs based on file groups used
+  within the task.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 - Updated task inputs to automatically be inherited from file group token functions used within the

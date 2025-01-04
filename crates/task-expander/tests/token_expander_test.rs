@@ -621,6 +621,26 @@ mod token_expander {
         }
 
         #[test]
+        fn doesnt_inherit_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("@group(all)".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["./config.yml", "./dir/subdir", "./*.md", "./**/*.json"]
+            );
+            assert!(task.input_files.is_empty());
+            assert!(task.input_globs.is_empty());
+        }
+
+        #[test]
         fn can_use_env_and_token_vars_together() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
@@ -726,6 +746,29 @@ mod token_expander {
                     "project/source/*.md".into()
                 ])
             );
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("GROUP".into(), "@group(all)".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_env(&mut task).unwrap(),
+                FxHashMap::from_iter([(
+                    "GROUP".into(),
+                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                )])
+            );
+            assert!(task.input_files.is_empty());
+            assert!(task.input_globs.is_empty());
         }
 
         #[test]
@@ -1573,6 +1616,26 @@ mod token_expander {
                     "project/source/*.md".into()
                 ])
             );
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("bin @group(all)".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_script(&mut task).unwrap(),
+                "bin ./config.yml ./dir/subdir ./*.md ./**/*.json"
+            );
+            assert!(task.input_files.is_empty());
+            assert!(task.input_globs.is_empty());
         }
 
         #[test]

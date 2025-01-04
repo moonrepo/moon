@@ -1127,6 +1127,23 @@ differences are around quote handling and variable substitution, so be aware of 
 
 :::
 
+#### `inferInputs`<VersionLabel version="1.31.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#inferInputs" />
+
+Automatically infer [inputs](#inputs) based on the following parameters configured within the task's
+`command`, `script`, `args`, or `env`. Defaults to `true`.
+
+- File/glob paths derived from [file group based token functions](../concepts/token#file-groups).
+
+```yaml title="moon.yml" {5}
+tasks:
+  build:
+    # ...
+    options:
+      inferInputs: false
+```
+
 #### `internal`<VersionLabel version="1.23.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#internal" />

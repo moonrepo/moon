@@ -121,8 +121,10 @@ impl<'graph> TokenExpander<'graph> {
             let result = self.replace_function(task, &script)?;
 
             if let Some(token) = result.token {
-                task.input_files.extend(result.files.clone());
-                task.input_globs.extend(result.globs.clone());
+                if task.options.infer_inputs {
+                    task.input_files.extend(result.files.clone());
+                    task.input_globs.extend(result.globs.clone());
+                }
 
                 let mut items = vec![];
 
@@ -165,8 +167,10 @@ impl<'graph> TokenExpander<'graph> {
             if self.has_token_function(arg) {
                 let result = self.replace_function(task, arg)?;
 
-                task.input_files.extend(result.files.clone());
-                task.input_globs.extend(result.globs.clone());
+                if task.options.infer_inputs {
+                    task.input_files.extend(result.files.clone());
+                    task.input_globs.extend(result.globs.clone());
+                }
 
                 for file in result.files {
                     args.push(self.resolve_path_for_task(task, file)?);
@@ -209,8 +213,10 @@ impl<'graph> TokenExpander<'graph> {
                 let result = self.replace_function(task, value)?;
                 let mut items = vec![];
 
-                task.input_files.extend(result.files.clone());
-                task.input_globs.extend(result.globs.clone());
+                if task.options.infer_inputs {
+                    task.input_files.extend(result.files.clone());
+                    task.input_globs.extend(result.globs.clone());
+                }
 
                 for file in result.files {
                     items.push(self.resolve_path_for_task(task, file)?);

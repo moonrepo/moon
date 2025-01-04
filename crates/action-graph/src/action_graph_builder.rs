@@ -540,13 +540,66 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // Track the qualified as an initial target
         for locator in reqs.target_locators.clone() {
-            initial_targets.push(match locator {
-                TargetLocator::Qualified(target) => target,
-                TargetLocator::TaskFromWorkingDir(task_id) => Target::new(
-                    &self.workspace_graph.get_project_from_path(None)?.id,
-                    task_id,
-                )?,
-            });
+            match locator {
+                TargetLocator::GlobMatch {
+                    project_glob,
+                    task_glob,
+                    ..
+                } => {
+                    let mut is_all = false;
+                    let mut do_query = true;
+                    let mut projects = vec![];
+
+                    // Query for all applicable projects first since we can't
+                    // query projects + tasks at the same time
+                    if let Some(glob) = project_glob {
+                        let query = if let Some(tag_glob) = glob.strip_prefix('#') {
+                            format!("tag~{tag_glob}")
+                        } else {
+                            format!("project~{glob}")
+                        };
+
+                        projects = self.workspace_graph.query_projects(build_query(&query)?)?;
+                        do_query = !projects.is_empty();
+                    } else {
+                        is_all = true;
+                    }
+
+                    // Then query for all tasks within the queried projects
+                    if do_query {
+                        let mut query = format!("task~{task_glob}");
+
+                        if !is_all {
+                            query = format!(
+                                "project=[{}] && {query}",
+                                projects
+                                    .into_iter()
+                                    .map(|project| project.id.to_string())
+                                    .collect::<Vec<_>>()
+                                    .join(",")
+                            );
+                        }
+
+                        let tasks = self.workspace_graph.query_tasks(build_query(&query)?)?;
+
+                        initial_targets.extend(
+                            tasks
+                                .into_iter()
+                                .map(|task| task.target.clone())
+                                .collect::<Vec<_>>(),
+                        );
+                    }
+                }
+                TargetLocator::Qualified(target) => {
+                    initial_targets.push(target);
+                }
+                TargetLocator::TaskFromWorkingDir(task_id) => {
+                    initial_targets.push(Target::new(
+                        &self.workspace_graph.get_project_from_path(None)?.id,
+                        task_id,
+                    )?);
+                }
+            };
         }
 
         // Determine affected tasks before building

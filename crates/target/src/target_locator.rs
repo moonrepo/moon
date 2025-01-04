@@ -24,46 +24,6 @@ impl TargetLocator {
     pub fn as_str(&self) -> &str {
         self.as_ref()
     }
-
-    pub fn get_query(&self) -> String {
-        match self {
-            Self::GlobMatch {
-                project_glob,
-                task_glob,
-                ..
-            } => {
-                let mut query = String::new();
-
-                if let Some(glob) = project_glob {
-                    if let Some(inner_glob) = glob.strip_prefix('#') {
-                        query.push_str(&format!("tag~{inner_glob} && "));
-                    } else {
-                        query.push_str(&format!("project~{glob} && "));
-                    }
-                }
-
-                query.push_str(&format!("task~{}", task_glob));
-                query
-            }
-            Self::Qualified(target) => {
-                let mut query = String::new();
-
-                match &target.scope {
-                    TargetScope::Project(id) => {
-                        query.push_str(&format!("project={id} && "));
-                    }
-                    TargetScope::Tag(id) => {
-                        query.push_str(&format!("tag={id} && "));
-                    }
-                    _ => {}
-                };
-
-                query.push_str(&format!("task={}", target.task_id));
-                query
-            }
-            Self::TaskFromWorkingDir(id) => format!("task={id}"),
-        }
-    }
 }
 
 impl AsRef<TargetLocator> for TargetLocator {

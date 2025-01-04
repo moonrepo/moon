@@ -34,6 +34,9 @@
     copies. Do note that symlinks require
     [privileged access on Windows](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/create-symbolic-links)
     to function correctly.
+- Updated the `moon templates` command:
+  - Templates are now sorted by identifier.
+  - Added a `--filter` option to filter the templates list by ID.
 
 #### 🐞 Fixes
 

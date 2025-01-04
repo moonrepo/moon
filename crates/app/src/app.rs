@@ -21,6 +21,7 @@ use crate::systems::bootstrap;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
+use moon_codegen::TemplatesArgs;
 use moon_common::consts::BIN_NAME;
 use starbase::tracing::LogLevel;
 use starbase_styles::color::Color as ColorType;
@@ -138,7 +139,7 @@ pub enum Commands {
         name = "templates",
         about = "List all templates that are available for code generation."
     )]
-    Templates,
+    Templates(TemplatesArgs),
 
     // RUNNER
 

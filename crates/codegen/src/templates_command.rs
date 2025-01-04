@@ -1,16 +1,51 @@
 use crate::codegen::CodeGenerator;
+use clap::Args;
+use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_console::Console;
+use std::collections::BTreeMap;
+
+#[derive(Args, Clone, Debug)]
+pub struct TemplatesArgs {
+    #[arg(long, help = "Filter the templates based on this pattern")]
+    pub filter: Option<String>,
+}
 
 pub async fn templates_command(
     mut generator: CodeGenerator<'_>,
     console: &Console,
-) -> miette::Result<()> {
+    args: &TemplatesArgs,
+) -> miette::Result<Option<u8>> {
     generator.load_templates().await?;
+
+    let mut templates = BTreeMap::from_iter(&generator.templates);
+
+    if templates.is_empty() {
+        console
+            .err
+            .write_line("There are no configured templates")?;
+
+        return Ok(Some(1));
+    }
+
+    if let Some(filter) = &args.filter {
+        let pattern = regex::Regex::new(&format!("(?i){filter}")).into_diagnostic()?;
+
+        templates.retain(|&id, _| pattern.is_match(id.as_str()));
+
+        if templates.is_empty() {
+            console.err.write_line(format!(
+                "There are no templates that match the filter {}",
+                color::shell(filter)
+            ))?;
+
+            return Ok(Some(1));
+        }
+    }
 
     let out = console.stdout();
 
-    for template in generator.templates.values() {
+    for (_, template) in templates {
         out.print_entry_header(&template.id)?;
 
         out.write_line(format!(
@@ -57,5 +92,5 @@ pub async fn templates_command(
     out.write_newline()?;
     out.flush()?;
 
-    Ok(())
+    Ok(None)
 }

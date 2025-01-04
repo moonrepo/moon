@@ -3,8 +3,8 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig,
-    WorkspaceProjects,
+    ConfigLoader, ExtensionConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use proto_core::warpgate::UrlLocator;
 use rustc_hash::FxHashMap;
@@ -474,6 +474,32 @@ generator:
                         package: "@scope/package".into(),
                         version: Version::new(4, 5, 6)
                     }
+                ]
+            );
+        }
+
+        #[test]
+        fn can_set_glob_locations() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates:
+    - glob://templates/*
+    - glob://common/*/templates/*
+",
+                load_config_from_root,
+            );
+
+            assert_eq!(
+                config.generator.templates,
+                vec![
+                    TemplateLocator::Glob {
+                        glob: GlobPath("templates/*".into())
+                    },
+                    TemplateLocator::Glob {
+                        glob: GlobPath("common/*/templates/*".into())
+                    },
                 ]
             );
         }

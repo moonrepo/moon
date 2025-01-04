@@ -1,4 +1,4 @@
-use crate::portable_path::{FilePath, PortablePath};
+use crate::portable_path::{FilePath, GlobPath, PortablePath};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
@@ -22,6 +22,9 @@ pub enum TemplateLocator {
     File {
         path: FilePath,
     },
+    Glob {
+        glob: GlobPath,
+    },
     Git {
         remote_url: String,
         revision: String,
@@ -36,6 +39,7 @@ impl fmt::Display for TemplateLocator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TemplateLocator::File { path } => write!(f, "file://{path}"),
+            TemplateLocator::Glob { glob } => write!(f, "glob://{glob}"),
             TemplateLocator::Git {
                 remote_url,
                 revision,
@@ -92,6 +96,11 @@ impl FromStr for TemplateLocator {
                 "file" => {
                     return Ok(TemplateLocator::File {
                         path: FilePath::from_str(inner_value)?,
+                    })
+                }
+                "glob" => {
+                    return Ok(TemplateLocator::Glob {
+                        glob: GlobPath::from_str(inner_value)?,
                     })
                 }
                 other => {

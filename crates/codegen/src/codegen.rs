@@ -9,7 +9,7 @@ use moon_process::Command;
 use moon_time::now_millis;
 use rustc_hash::FxHashMap;
 use starbase_archive::Archiver;
-use starbase_utils::{fs, net};
+use starbase_utils::{fs, glob, net};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn;
@@ -189,6 +189,13 @@ impl<'app> CodeGenerator<'app> {
                             .normalize()
                             .to_logical_path(self.workspace_root),
                     );
+                }
+                TemplateLocator::Glob { glob: pattern } => {
+                    for path in glob::walk(self.workspace_root, [pattern])? {
+                        if path.is_dir() {
+                            locations.push(path);
+                        }
+                    }
                 }
                 TemplateLocator::Git {
                     remote_url,

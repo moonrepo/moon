@@ -256,7 +256,26 @@ this, our generator will loop through all template paths configured in
 generator:
   templates:
     - './templates'
-    - './other/templates'
+    # Or
+    - 'file://other/templates'
+```
+
+:::info
+
+When using literal file paths, all paths are relative from the workspace root. Additionally, the
+`file://` protocol is preferred.
+
+:::
+
+#### Globs<VersionLabel version="1.31.0" />
+
+If you'd prefer more control over literal file paths, you can use globs instead using the `glob://`
+protocol. Globs are relative from the workspace root, and will only match directories.
+
+```yaml title=".moon/workspace.yml"
+generator:
+  templates:
+    - 'glob://projects/*/templates/*'
 ```
 
 #### Git repositories<VersionLabel version="1.23.0" />

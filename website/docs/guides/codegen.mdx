@@ -291,8 +291,8 @@ generator:
     - 'git://gitlab.com/org/repo#v1.2.3'
 ```
 
-> Git repositories will be cloned to `~/.moon/templates` using an HTTPS URL (not a Git URL), and
-> will be cached for future use.
+> Git repositories will be cloned to `~/.moon/templates/<domain>` using an HTTPS URL (not a Git
+> URL), and will be cached for future use.
 
 #### npm packages<VersionLabel version="1.23.0" />
 
@@ -306,7 +306,7 @@ generator:
     - 'npm://other-templates#4.5.6'
 ```
 
-> npm packages will be downloaded and unpacked to `~/.moon/templates` and cached for future use.
+> npm packages will be downloaded and unpacked to `~/.moon/templates/npm` and cached for future use.
 
 ### Declaring variables with CLI arguments
 
@@ -374,7 +374,7 @@ An example of this layout structure may look something like the following:
 └── package.json, etc
 ```
 
-These templates can then be referenced by name, such as []`moon generate template-one`][command].
+These templates can then be referenced by name, such as [`moon generate template-one`][command].
 
 [config]: ../config/template
 [command]: ../commands/generate

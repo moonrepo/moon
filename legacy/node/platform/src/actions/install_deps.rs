@@ -68,6 +68,8 @@ pub async fn install_deps(
                         node.config.package_manager
                     );
                 }
+            } else {
+                break;
             }
         }
     }

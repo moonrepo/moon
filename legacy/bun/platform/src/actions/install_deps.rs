@@ -56,6 +56,8 @@ pub async fn install_deps(
             } else {
                 error!("Failed to install Bun dependencies, retrying...");
             }
+        } else {
+            break;
         }
     }
 

@@ -80,6 +80,8 @@ pub async fn install_deps(
                     } else {
                         error!("Failed to install pip dependencies, retrying...");
                     }
+                } else {
+                    break;
                 }
             }
         }

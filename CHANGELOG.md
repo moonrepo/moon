@@ -27,6 +27,8 @@
   templates locations.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
+- Updated task inputs to automatically be inherited from file group token functions used within the
+  task's `script`, `command`, `args`, or `env`.
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
   support a list of files/URLs to extend.
 - Updated our unstable remote service (Bazel RE API) with new functionality:

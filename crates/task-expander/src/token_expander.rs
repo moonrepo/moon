@@ -112,7 +112,7 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_script(&mut self, task: &Task) -> miette::Result<String> {
+    pub fn expand_script(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Script;
 
         let mut script = Cow::Borrowed(task.script.as_ref().expect("Script not defined!"));
@@ -121,6 +121,9 @@ impl<'graph> TokenExpander<'graph> {
             let result = self.replace_function(task, &script)?;
 
             if let Some(token) = result.token {
+                task.input_files.extend(result.files.clone());
+                task.input_globs.extend(result.globs.clone());
+
                 let mut items = vec![];
 
                 for file in result.files {
@@ -143,23 +146,27 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_args(&mut self, task: &Task) -> miette::Result<Vec<String>> {
-        self.expand_args_with_task(task, &task.args)
+    pub fn expand_args(&mut self, task: &mut Task) -> miette::Result<Vec<String>> {
+        self.expand_args_with_task(task, None)
     }
 
     pub fn expand_args_with_task(
         &mut self,
-        task: &Task,
-        base_args: &[String],
+        task: &mut Task,
+        base_args: Option<Vec<String>>,
     ) -> miette::Result<Vec<String>> {
         self.scope = TokenScope::Args;
 
         let mut args = vec![];
+        let base_args = base_args.as_ref().unwrap_or(&task.args);
 
         for arg in base_args {
             // Token functions
             if self.has_token_function(arg) {
                 let result = self.replace_function(task, arg)?;
+
+                task.input_files.extend(result.files.clone());
+                task.input_globs.extend(result.globs.clone());
 
                 for file in result.files {
                     args.push(self.resolve_path_for_task(task, file)?);
@@ -183,23 +190,27 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_env(&mut self, task: &Task) -> miette::Result<FxHashMap<String, String>> {
-        self.expand_env_with_task(task, &task.env)
+    pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<FxHashMap<String, String>> {
+        self.expand_env_with_task(task, None)
     }
 
     pub fn expand_env_with_task(
         &mut self,
-        task: &Task,
-        base_env: &FxHashMap<String, String>,
+        task: &mut Task,
+        base_env: Option<FxHashMap<String, String>>,
     ) -> miette::Result<FxHashMap<String, String>> {
         self.scope = TokenScope::Env;
 
         let mut env = FxHashMap::default();
+        let base_env = base_env.as_ref().unwrap_or(&task.env);
 
         for (key, value) in base_env {
             if self.has_token_function(value) {
                 let result = self.replace_function(task, value)?;
                 let mut items = vec![];
+
+                task.input_files.extend(result.files.clone());
+                task.input_globs.extend(result.globs.clone());
 
                 for file in result.files {
                     items.push(self.resolve_path_for_task(task, file)?);

@@ -143,6 +143,8 @@ impl<'task> TaskRunner<'task> {
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
+        self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
+
         let result = self.internal_run(context, node).await;
 
         self.cache.data.last_run_time = now_millis();
@@ -684,8 +686,6 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Fill in these values since the command executor does not run!
-        self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
-
         if let Some(output) = operation.get_output_mut() {
             output.command = Some(self.task.get_command_line());
             output.exit_code = Some(self.cache.data.exit_code);

@@ -39,6 +39,7 @@
 - Updated the `moon templates` command:
   - Templates are now sorted by identifier.
   - Added a `--filter` option to filter the templates list by ID.
+- Improved the task output prefixing logic.
 
 #### 🐞 Fixes
 

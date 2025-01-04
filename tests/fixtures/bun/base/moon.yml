@@ -1,5 +1,4 @@
 language: javascript
-platform: bun
 
 tasks:
   standard:

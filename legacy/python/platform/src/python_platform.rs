@@ -47,7 +47,7 @@ impl PythonPlatform {
         PythonPlatform {
             config: config.to_owned(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::new(PlatformType::Python, RuntimeReq::Global)),
+            toolchain: ToolManager::new(Runtime::new(Id::raw("python"), RuntimeReq::Global)),
             workspace_root: workspace_root.to_path_buf(),
             console,
         }
@@ -65,7 +65,7 @@ impl Platform for PythonPlatform {
             if let Some(python_config) = &config.toolchain.python {
                 if let Some(version) = &python_config.version {
                     return Runtime::new_override(
-                        PlatformType::Python,
+                        Id::raw("python"),
                         RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
@@ -73,13 +73,10 @@ impl Platform for PythonPlatform {
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::new(
-                PlatformType::Python,
-                RuntimeReq::Toolchain(version.to_owned()),
-            );
+            return Runtime::new(Id::raw("python"), RuntimeReq::Toolchain(version.to_owned()));
         }
 
-        Runtime::new(PlatformType::Python, RuntimeReq::Global)
+        Runtime::new(Id::raw("python"), RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -88,7 +85,7 @@ impl Platform for PythonPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime.platform, PlatformType::Python);
+            return runtime.toolchain == "python";
         }
 
         false

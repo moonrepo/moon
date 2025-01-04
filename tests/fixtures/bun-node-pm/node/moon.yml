@@ -1,5 +1,3 @@
-platform: node
-
 tasks:
   help:
     command: node --help

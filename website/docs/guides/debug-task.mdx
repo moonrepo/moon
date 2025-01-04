@@ -24,8 +24,8 @@ Some issues to look out for:
 - Have [tokens][token] resolved correctly? If not, verify syntax or try another token type.
 - Have `inputFiles`, `inputGlobs`, and `inputVars` expanded correctly from [`inputs`][inputs]?
 - Have `outputFiles` and `outputGlobs` expanded correctly from [`outputs`][outputs]?
-- Is the `platform` correct for the command? If incorrect, explicitly set the
-  [`platform`][platform].
+- Is the `toolchain` (formerly `platform`) correct for the command? If incorrect, explicitly set the
+  [`toolchain`][toolchain].
 - Are `options` and `flags` correct?
 
 :::info
@@ -52,7 +52,7 @@ root `inherited` object, which is structured as follows:
 Some issues to look out for:
 
 - Is the order correct? If not, verify the project's [`language`](../config/project#language) and
-  the task's [`platform`][platform].
+  the task's [`toolchain`][toolchain].
 - Does `config` correctly represent the merged state of all `layers`? Do note that tasks are shallow
   merged (by name), _not_ deep merged.
 - Have the root `tasks` properly inherited [`implicitDeps`][implicitDeps],
@@ -113,7 +113,7 @@ information is an array, and breaks down as follows:
   and `inputs`.
   - Dependencies are other tasks (and their hash) that this task depends on.
   - Inputs are all the files (and their hash from `git hash-object`) this task requires to run.
-- The remaining items are platform/language specific, some examples are:
+- The remaining items are toolchain/language specific, some examples are:
   - **Node.js** - The current Node.js version and the resolved versions/hashes of all `package.json`
     dependencies.
   - **Rust** - The current Rust version and the resolved versions/hashes of all `Cargo.toml`
@@ -125,7 +125,7 @@ Some issues to look out for:
 - Do the dependencies match the task's configured [`deps`][deps] and [`implicitDeps`][implicitDeps]?
 - Do the inputs match the task's configured [`inputs`][inputs] and
   [`implicitInputs`][implicitInputs]? If not, try tweaking the config.
-- Are the platform/language specific items correct?
+- Are the toolchain/language specific items correct?
 - Are dependency versions/hashes correctly parsed from the appropriate lockfile?
 
 ### Diffing a previous hash
@@ -174,6 +174,6 @@ ask for help!
 [deps]: ../config/project#deps
 [inputs]: ../config/project#inputs
 [outputs]: ../config/project#outputs
-[platform]: ../config/project#platform-1
+[toolchain]: ../config/project#toolchain
 [implicitDeps]: ../config/tasks#implicitdeps
 [implicitInputs]: ../config/tasks#implicitinputs

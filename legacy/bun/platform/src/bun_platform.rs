@@ -68,7 +68,7 @@ impl BunPlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::new(PlatformType::Bun, RuntimeReq::Global)),
+            toolchain: ToolManager::new(Runtime::new(Id::raw("bun"), RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
             console,
@@ -87,7 +87,7 @@ impl Platform for BunPlatform {
             if let Some(bun_config) = &config.toolchain.bun {
                 if let Some(version) = &bun_config.version {
                     return Runtime::new_override(
-                        PlatformType::Bun,
+                        Id::raw("bun"),
                         RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
@@ -95,10 +95,10 @@ impl Platform for BunPlatform {
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::new(PlatformType::Bun, RuntimeReq::Toolchain(version.to_owned()));
+            return Runtime::new(Id::raw("bun"), RuntimeReq::Toolchain(version.to_owned()));
         }
 
-        Runtime::new(PlatformType::Bun, RuntimeReq::Global)
+        Runtime::new(Id::raw("bun"), RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -107,7 +107,7 @@ impl Platform for BunPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime.platform, PlatformType::Bun);
+            return runtime.toolchain == "bun";
         }
 
         false

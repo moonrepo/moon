@@ -1,3 +1,4 @@
+use crate::shapes::OneOrMany;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ValidateError};
@@ -235,7 +236,7 @@ pub struct TemplateConfig {
     pub destination: Option<String>,
 
     /// Extends one or many other templates.
-    pub extends: Vec<Id>,
+    pub extends: OneOrMany<Id>,
 
     /// Overrides the ID of the template, instead of using the folder name.
     pub id: Option<Id>,

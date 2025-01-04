@@ -54,7 +54,7 @@ impl<'task> CommandBuilder<'task> {
     pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
         self.command = self
             .platform_manager
-            .get(self.task.platform)?
+            .get_by_toolchains(&self.task.toolchains)?
             .create_run_target_command(
                 context,
                 self.project,

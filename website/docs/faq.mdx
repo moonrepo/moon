@@ -155,7 +155,7 @@ tasks:
 ### Can we run other languages?
 
 Yes! Although our toolchain only supports a few languages at this time, you can still run other
-languages within tasks by setting their [`platform`](./config/project#platform-1) to "system".
+languages within tasks by setting their [`toolchain`](./config/project#toolchain) to "system".
 System tasks are an escape hatch that will use any command available on the current machine.
 
 ```yaml title="moon.yml"
@@ -163,11 +163,11 @@ tasks:
   # Ruby
   lint:
     command: 'rubocop'
-    platform: 'system'
+    toolchain: 'system'
   # PHP
   test:
     command: 'phpunit tests'
-    platform: 'system'
+    toolchain: 'system'
 ```
 
 However, because these languages are not supported directly within our toolchain, they will not

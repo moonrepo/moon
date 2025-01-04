@@ -17,6 +17,10 @@ pub enum ToolError {
     #[error("Platform {0} has not been enabled or configured. Enable it with {}.", color::shell(format!("moon init {}", .name)))]
     UnsupportedPlatform { name: String },
 
+    #[diagnostic(code(tool::unsupported_toolchain))]
+    #[error("Toolchain(s) {} has not been enabled or configured.", .ids.join(", "))]
+    UnsupportedToolchains { ids: Vec<String> },
+
     #[diagnostic(code(tool::unsupported_runtime))]
     #[error("Unsupported toolchain runtime {0}.")]
     UnsupportedRuntime(Runtime),

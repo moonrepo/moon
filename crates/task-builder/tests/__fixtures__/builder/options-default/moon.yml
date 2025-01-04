@@ -1,5 +1,4 @@
 language: javascript
-platform: node
 type: library
 
 tasks:

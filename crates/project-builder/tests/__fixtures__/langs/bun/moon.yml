@@ -1,3 +1,4 @@
 language: javascript
 type: application
-platform: bun
+toolchain:
+  default: bun

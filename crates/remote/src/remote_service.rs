@@ -1,5 +1,7 @@
+use crate::compression::*;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
+// use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
 use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
@@ -53,8 +55,9 @@ impl RemoteService {
         );
         info!("Please report any issues to GitHub or Discord");
 
-        let mut client =
+        let mut client: Box<dyn RemoteClient> =
             if config.host.starts_with("http://") || config.host.starts_with("https://") {
+                // Box::new(HttpRemoteClient::default())
                 return Err(RemoteError::NoHttpClient.into());
             } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
                 Box::new(GrpcRemoteClient::default())
@@ -94,6 +97,30 @@ impl RemoteService {
                 warn!(
                     host,
                     "Remote service does not support SHA256 digests, which is required by moon"
+                );
+            }
+
+            let compressor = get_compressor(self.config.cache.compression);
+
+            if !cap.supported_compressors.contains(&compressor) {
+                enabled = false;
+
+                warn!(
+                    host,
+                    "Remote service does not support {} compression, but it has been configured and enabled through the {} setting",
+                    compressor,
+                    color::property("remote.cache.compression"),
+                );
+            }
+
+            if !cap.supported_batch_update_compressors.contains(&compressor) {
+                enabled = false;
+
+                warn!(
+                    host,
+                    "Remote service does not support {} compression for batching, but it has been configured and enabled through the {} setting",
+                    compressor,
+                    color::property("remote.cache.compression"),
                 );
             }
 

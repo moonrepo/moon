@@ -75,10 +75,14 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
         console.print_entry("Root", color::path(&project.root))?;
     }
 
-    if project.platform.is_javascript() {
-        console.print_entry("Platform", format!("{}", &project.platform))?;
-    }
-
+    console.print_entry(
+        if project.toolchains.len() == 1 {
+            "Toolchain"
+        } else {
+            "Toolchains"
+        },
+        project.toolchains.join(", "),
+    )?;
     console.print_entry("Language", format!("{}", &project.language))?;
     console.print_entry("Stack", format!("{}", &project.stack))?;
     console.print_entry("Type", format!("{}", &project.type_of))?;

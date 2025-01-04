@@ -1,2 +1,4 @@
 language: javascript
 type: library
+toolchain:
+  default: node

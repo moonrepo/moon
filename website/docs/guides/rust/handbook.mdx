@@ -43,7 +43,7 @@ Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the wor
 rust = "1.69.0"
 ```
 
-This will enable the Rust platform and provide the following automations around its ecosystem:
+This will enable the Rust toolchain and provide the following automations around its ecosystem:
 
 - Manifests and lockfiles are parsed for accurate dependency versions for hashing purposes.
 - Cargo binaries (in `~/.cargo/bin`) are properly located and executed.
@@ -280,7 +280,7 @@ optional, as we'll inject it when necessary.
 tasks:
   test:
     command: 'nextest run --workspace'
-    platform: 'rust'
+    toolchain: 'rust'
 ```
 
 :::tip

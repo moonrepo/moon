@@ -6,7 +6,7 @@ expression: assert.output_standardized()
 
 Task: internal
 Project: tasks
-Platform: node
+Toolchain: node
 Type: test
 Modes: internal
 

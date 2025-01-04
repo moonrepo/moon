@@ -18,7 +18,21 @@ impl<T: Schematic> Default for OneOrMany<T> {
 }
 
 impl<T: Schematic + Clone> OneOrMany<T> {
-    pub fn to_list(&self) -> Vec<T> {
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Self::One(_) => false,
+            Self::Many(list) => list.is_empty(),
+        }
+    }
+
+    pub fn to_list(&self) -> Vec<&T> {
+        match self {
+            Self::One(item) => vec![item],
+            Self::Many(list) => list.iter().collect(),
+        }
+    }
+
+    pub fn to_owned_list(&self) -> Vec<T> {
         match self {
             Self::One(item) => vec![item.to_owned()],
             Self::Many(list) => list.to_owned(),

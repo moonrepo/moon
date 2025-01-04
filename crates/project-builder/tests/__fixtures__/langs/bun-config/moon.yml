@@ -1,4 +1,4 @@
 tasks:
   command:
-    # We have to explicitly set it because JS has 3 platforms!
-    platform: 'bun'
+    # We have to explicitly set it because JS has 3 runtimes!
+    toolchain: 'bun'

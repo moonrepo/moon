@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { UnresolvedVersionSpec } from './toolchain-config';
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { UnresolvedVersionSpec } from './toolchain-config';
 
 /** The task-to-task relationship of the dependency. */
 export type DependencyType = 'cleanup' | 'required' | 'optional';
@@ -163,6 +163,11 @@ export interface ProjectToolchainTypeScriptConfig {
 export interface ProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun: ProjectToolchainCommonToolConfig | null;
+	/**
+	 * The default toolchain for all tasks within the project,
+	 * if their toolchain is unknown.
+	 */
+	default: string | null;
 	/** Overrides `deno` settings. */
 	deno: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
@@ -248,6 +253,7 @@ export interface ProjectConfig {
 	 * if their platform is unknown.
 	 *
 	 * @default 'unknown'
+	 * @deprecated
 	 */
 	platform: PlatformType | null;
 	/** Expanded information about the project. */
@@ -406,6 +412,11 @@ export interface PartialProjectToolchainTypeScriptConfig {
 export interface PartialProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun?: PartialProjectToolchainCommonToolConfig | null;
+	/**
+	 * The default toolchain for all tasks within the project,
+	 * if their toolchain is unknown.
+	 */
+	default?: string | null;
 	/** Overrides `deno` settings. */
 	deno?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
@@ -480,6 +491,7 @@ export interface PartialProjectConfig {
 	 * if their platform is unknown.
 	 *
 	 * @default 'unknown'
+	 * @deprecated
 	 */
 	platform?: PlatformType | null;
 	/** Expanded information about the project. */

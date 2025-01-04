@@ -2,6 +2,8 @@
 
 /* eslint-disable */
 
+import type { ExtendsFrom } from './common';
+
 export type TaskArgs = null | string | string[];
 
 /** Expanded information about a task dependency. */
@@ -17,8 +19,6 @@ export interface TaskDependencyConfig {
 }
 
 export type TaskDependency = string | TaskDependencyConfig;
-
-export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 
 export type TaskOptionEnvFile = boolean | string | string[];
 
@@ -49,7 +49,7 @@ export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pw
 /** Options to control task inheritance and execution. */
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles: TaskOptionAffectedFiles | null;
+	affectedFiles: boolean | 'args' | 'env' | null;
 	/**
 	 * When affected and no files are matching, pass the task inputs
 	 * as arguments to the command, instead of `.`.
@@ -150,7 +150,7 @@ export interface TaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI: boolean | null;
+	runInCI: boolean | 'always' | 'affected' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.
@@ -240,6 +240,12 @@ export interface TaskConfig {
 	 */
 	script: string | null;
 	/**
+	 * The toolchain(s) in which the task will be ran in. The toolchain determines
+	 * available binaries, lookup paths, and more. When not provided, will
+	 * be automatically detected.
+	 */
+	toolchain: string | string[];
+	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
 	 *
@@ -257,10 +263,10 @@ export interface InheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string;
 	/**
-	 * Extends another tasks configuration file. Supports a relative
+	 * Extends one or many task configuration files. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends: string | null;
+	extends: ExtendsFrom | null;
 	/**
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
@@ -301,7 +307,7 @@ export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 /** Options to control task inheritance and execution. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles?: TaskOptionAffectedFiles | null;
+	affectedFiles?: boolean | 'args' | 'env' | null;
 	/**
 	 * When affected and no files are matching, pass the task inputs
 	 * as arguments to the command, instead of `.`.
@@ -402,7 +408,7 @@ export interface PartialTaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot?: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI?: boolean | null;
+	runInCI?: boolean | 'always' | 'affected' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.
@@ -482,6 +488,12 @@ export interface PartialTaskConfig {
 	 */
 	script?: string | null;
 	/**
+	 * The toolchain(s) in which the task will be ran in. The toolchain determines
+	 * available binaries, lookup paths, and more. When not provided, will
+	 * be automatically detected.
+	 */
+	toolchain?: string | string[] | null;
+	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
 	 *
@@ -499,10 +511,10 @@ export interface PartialInheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
 	/**
-	 * Extends another tasks configuration file. Supports a relative
+	 * Extends one or many task configuration files. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends?: string | null;
+	extends?: ExtendsFrom | null;
 	/**
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.

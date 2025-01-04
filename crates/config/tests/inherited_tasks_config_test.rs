@@ -2,11 +2,7 @@ mod utils;
 
 use httpmock::prelude::*;
 use moon_common::Id;
-use moon_config::{
-    ConfigLoader, InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType,
-    PlatformType, ProjectType, StackType, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionsConfig,
-};
+use moon_config::*;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::Config;
@@ -97,7 +93,7 @@ tasks:
                     TaskConfig {
                         command: TaskArgs::String("e".to_owned()),
                         options: TaskOptionsConfig {
-                            run_in_ci: Some(false),
+                            run_in_ci: Some(TaskOptionRunInCI::Enabled(false)),
                             ..TaskOptionsConfig::default()
                         },
                         ..TaskConfig::default()
@@ -489,7 +485,7 @@ implicitInputs:
 mod task_manager {
     use super::*;
 
-    fn stub_task(command: &str, platform: PlatformType) -> TaskConfig {
+    fn stub_task(command: &str, toolchains: Vec<Id>) -> TaskConfig {
         let mut global_inputs = vec![];
 
         if command != "global" {
@@ -500,7 +496,7 @@ mod task_manager {
         TaskConfig {
             command: TaskArgs::String(command.replace("tag-", "")),
             global_inputs,
-            platform,
+            toolchain: OneOrMany::Many(toolchains),
             ..TaskConfig::default()
         }
     }
@@ -578,24 +574,23 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::Node,
-                    &LanguageType::JavaScript,
+                    &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &ProjectType::Application,
                     &[]
                 ),
                 vec![
                     "*",
-                    "node",
-                    "javascript",
                     "frontend",
-                    "node-frontend",
-                    "javascript-frontend",
                     "frontend-application",
-                    "node-application",
+                    "javascript",
+                    "node",
+                    "javascript-frontend",
+                    "node-frontend",
                     "javascript-application",
+                    "node-application",
+                    "javascript-frontend-application",
                     "node-frontend-application",
-                    "javascript-frontend-application"
                 ]
             );
         }
@@ -606,24 +601,23 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::Node,
-                    &LanguageType::TypeScript,
+                    &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &ProjectType::Library,
                     &[]
                 ),
                 vec![
                     "*",
-                    "node",
-                    "typescript",
                     "frontend",
-                    "node-frontend",
-                    "typescript-frontend",
                     "frontend-library",
-                    "node-library",
+                    "typescript",
+                    "node",
+                    "typescript-frontend",
+                    "node-frontend",
                     "typescript-library",
+                    "node-library",
+                    "typescript-frontend-library",
                     "node-frontend-library",
-                    "typescript-frontend-library"
                 ]
             );
         }
@@ -634,18 +628,17 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::Unknown,
-                    &LanguageType::Ruby,
+                    &[Id::raw("ruby")],
                     &StackType::Backend,
                     &ProjectType::Tool,
                     &[]
                 ),
                 vec![
                     "*",
-                    "ruby",
                     "backend",
-                    "ruby-backend",
                     "backend-tool",
+                    "ruby",
+                    "ruby-backend",
                     "ruby-tool",
                     "ruby-backend-tool"
                 ]
@@ -653,18 +646,17 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::Unknown,
-                    &LanguageType::Rust,
+                    &[Id::raw("rust")],
                     &StackType::Backend,
                     &ProjectType::Application,
                     &[]
                 ),
                 vec![
                     "*",
-                    "rust",
                     "backend",
-                    "rust-backend",
                     "backend-application",
+                    "rust",
+                    "rust-backend",
                     "rust-application",
                     "rust-backend-application"
                 ]
@@ -677,18 +669,17 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::Unknown,
-                    &LanguageType::Other(Id::raw("kotlin")),
+                    &[Id::raw("kotlin")],
                     &StackType::Backend,
                     &ProjectType::Tool,
                     &[]
                 ),
                 vec![
                     "*",
-                    "kotlin",
                     "backend",
-                    "kotlin-backend",
                     "backend-tool",
+                    "kotlin",
+                    "kotlin-backend",
                     "kotlin-tool",
                     "kotlin-backend-tool"
                 ]
@@ -696,20 +687,19 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::System,
-                    &LanguageType::Other(Id::raw("dotnet")),
+                    &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Backend,
                     &ProjectType::Application,
                     &[]
                 ),
                 vec![
                     "*",
+                    "backend",
+                    "backend-application",
                     "system",
                     "dotnet",
-                    "backend",
                     "system-backend",
                     "dotnet-backend",
-                    "backend-application",
                     "system-application",
                     "dotnet-application",
                     "system-backend-application",
@@ -724,18 +714,17 @@ mod task_manager {
 
             assert_eq!(
                 manager.get_lookup_order(
-                    &PlatformType::Unknown,
-                    &LanguageType::Rust,
+                    &[Id::raw("rust")],
                     &StackType::Backend,
                     &ProjectType::Application,
                     &[Id::raw("cargo"), Id::raw("cli-app")]
                 ),
                 vec![
                     "*",
-                    "rust",
                     "backend",
-                    "rust-backend",
                     "backend-application",
+                    "rust",
+                    "rust-backend",
                     "rust-application",
                     "rust-backend-application",
                     "tag-cargo",
@@ -747,6 +736,7 @@ mod task_manager {
 
     mod config_order {
         use super::*;
+        use starbase_sandbox::pretty_assertions::assert_eq;
 
         #[test]
         fn creates_js_config() {
@@ -755,8 +745,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Node,
-                    &LanguageType::JavaScript,
+                    &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Backend,
                     &ProjectType::Application,
                     &[],
@@ -766,18 +755,21 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
+                    (Id::raw("global"), stub_task("global", vec![])),
                     (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
+                        Id::raw("node"),
+                        stub_task("node", vec![Id::raw("node"), Id::raw("javascript")])
                     ),
-                    (Id::raw("node"), stub_task("node", PlatformType::Node)),
                     (
                         Id::raw("node-application"),
-                        stub_task("node-application", PlatformType::Node)
+                        stub_task(
+                            "node-application",
+                            vec![Id::raw("node"), Id::raw("javascript")]
+                        )
                     ),
                     (
                         Id::raw("javascript"),
-                        stub_task("javascript", PlatformType::Node)
+                        stub_task("javascript", vec![Id::raw("node"), Id::raw("javascript")])
                     ),
                 ]),
             );
@@ -786,8 +778,8 @@ mod task_manager {
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks.yml",
-                    "tasks/node.yml",
                     "tasks/javascript.yml",
+                    "tasks/node.yml",
                     "tasks/node-application.yml",
                 ]
             );
@@ -800,8 +792,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::System,
-                    &LanguageType::Python,
+                    &[Id::raw("python")],
                     &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
@@ -811,17 +802,17 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
+                    (Id::raw("global"), stub_task("global", vec![])),
                     (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
+                        Id::raw("python"),
+                        stub_task("python", vec![Id::raw("python")])
                     ),
-                    (Id::raw("python"), stub_task("python", PlatformType::System)),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/python.yml",]
+                vec!["tasks.yml", "tasks/python.yml"]
             );
         }
 
@@ -832,8 +823,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Bun,
-                    &LanguageType::JavaScript,
+                    &[Id::raw("bun"), Id::raw("javascript")],
                     &StackType::Backend,
                     &ProjectType::Application,
                     &[],
@@ -843,21 +833,21 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
+                    (Id::raw("global"), stub_task("global", vec![])),
                     (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
+                        Id::raw("bun"),
+                        stub_task("bun", vec![Id::raw("bun"), Id::raw("javascript")])
                     ),
-                    (Id::raw("bun"), stub_task("bun", PlatformType::Bun)),
                     (
                         Id::raw("javascript"),
-                        stub_task("javascript", PlatformType::Bun)
+                        stub_task("javascript", vec![Id::raw("bun"), Id::raw("javascript")])
                     ),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/bun.yml", "tasks/javascript.yml",]
+                vec!["tasks.yml", "tasks/javascript.yml", "tasks/bun.yml"]
             );
         }
 
@@ -868,8 +858,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Node,
-                    &LanguageType::TypeScript,
+                    &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &ProjectType::Tool,
                     &[],
@@ -879,21 +868,21 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
+                    (Id::raw("global"), stub_task("global", vec![])),
                     (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
+                        Id::raw("node"),
+                        stub_task("node", vec![Id::raw("node"), Id::raw("typescript")])
                     ),
-                    (Id::raw("node"), stub_task("node", PlatformType::Node)),
                     (
                         Id::raw("typescript"),
-                        stub_task("typescript", PlatformType::Node)
+                        stub_task("typescript", vec![Id::raw("node"), Id::raw("typescript")])
                     ),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/node.yml", "tasks/typescript.yml",]
+                vec!["tasks.yml", "tasks/typescript.yml", "tasks/node.yml"]
             );
         }
 
@@ -904,8 +893,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::System,
-                    &LanguageType::Rust,
+                    &[Id::raw("rust")],
                     &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
@@ -915,11 +903,8 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
-                    ),
-                    (Id::raw("rust"), stub_task("rust", PlatformType::System)),
+                    (Id::raw("global"), stub_task("global", vec![])),
+                    (Id::raw("rust"), stub_task("rust", vec![Id::raw("rust")])),
                 ]),
             );
 
@@ -936,8 +921,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Node,
-                    &LanguageType::TypeScript,
+                    &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &ProjectType::Tool,
                     &[Id::raw("normal"), Id::raw("kebab-case")],
@@ -947,18 +931,21 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
+                    (Id::raw("global"), stub_task("global", vec![])),
                     (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
+                        Id::raw("node"),
+                        stub_task("node", vec![Id::raw("node"), Id::raw("typescript")])
                     ),
-                    (Id::raw("node"), stub_task("node", PlatformType::Node)),
                     (
                         Id::raw("typescript"),
-                        stub_task("typescript", PlatformType::Node)
+                        stub_task("typescript", vec![Id::raw("node"), Id::raw("typescript")])
                     ),
                     (
                         Id::raw("tag"),
-                        stub_task("tag-kebab-case", PlatformType::Node)
+                        stub_task(
+                            "tag-kebab-case",
+                            vec![Id::raw("node"), Id::raw("typescript")]
+                        )
                     ),
                 ]),
             );
@@ -967,8 +954,8 @@ mod task_manager {
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks.yml",
-                    "tasks/node.yml",
                     "tasks/typescript.yml",
+                    "tasks/node.yml",
                     "tasks/tag-normal.yml",
                     "tasks/tag-kebab-case.yml",
                 ]
@@ -982,8 +969,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::System,
-                    &LanguageType::Other(Id::raw("kotlin")),
+                    &[Id::raw("kotlin"), Id::raw("system")],
                     &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
@@ -993,17 +979,17 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
+                    (Id::raw("global"), stub_task("global", vec![])),
                     (
-                        Id::raw("global"),
-                        stub_task("global", PlatformType::Unknown)
+                        Id::raw("kotlin"),
+                        stub_task("kotlin", vec![Id::raw("kotlin"), Id::raw("system")])
                     ),
-                    (Id::raw("kotlin"), stub_task("kotlin", PlatformType::System)),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/kotlin.yml",]
+                vec!["tasks.yml", "tasks/kotlin.yml"]
             );
         }
     }
@@ -1016,13 +1002,12 @@ mod task_manager {
             let sandbox = create_sandbox("inheritance/override");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-            let mut task = stub_task("node-library", PlatformType::Node);
+            let mut task = stub_task("node-library", vec![Id::raw("node"), Id::raw("javascript")]);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Node,
-                    &LanguageType::JavaScript,
+                    &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
@@ -1040,13 +1025,15 @@ mod task_manager {
             let sandbox = create_sandbox("inheritance/override");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-            let mut task = stub_task("dotnet-application", PlatformType::System);
+            let mut task = stub_task(
+                "dotnet-application",
+                vec![Id::raw("dotnet"), Id::raw("system")],
+            );
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::System,
-                    &LanguageType::Other(Id::raw("dotnet")),
+                    &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Frontend,
                     &ProjectType::Application,
                     &[],
@@ -1070,8 +1057,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Rust,
-                    &LanguageType::Rust,
+                    &[Id::raw("rust")],
                     &StackType::Infrastructure,
                     &ProjectType::Application,
                     &[],
@@ -1092,8 +1078,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
-                    &PlatformType::Node,
-                    &LanguageType::JavaScript,
+                    &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
@@ -1111,7 +1096,6 @@ mod task_manager {
     mod pkl {
         use super::*;
         use moon_common::Id;
-        use moon_config::*;
         use starbase_sandbox::locate_fixture;
 
         #[test]
@@ -1183,7 +1167,7 @@ mod task_manager {
                         persistent: Some(true),
                         retry_count: Some(3),
                         run_deps_in_parallel: Some(false),
-                        run_in_ci: Some(true),
+                        run_in_ci: Some(TaskOptionRunInCI::Enabled(true)),
                         run_from_workspace_root: Some(false),
                         shell: Some(false),
                         timeout: Some(60),

@@ -63,7 +63,7 @@ pub async fn setup_toolchain(
 
     // Install and setup the specific tool + version in the toolchain!
     let installed_count = PlatformManager::write()
-        .get_mut(&node.runtime)?
+        .get_by_toolchain_mut(&node.runtime.toolchain)?
         .setup_tool(
             &action_context,
             &node.runtime,

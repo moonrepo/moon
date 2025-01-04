@@ -6,6 +6,7 @@ expression: assert.output()
 
 Project: emptyConfig
 Source: empty-config
+Toolchain: system
 Language: unknown
 Stack: unknown
 Type: unknown

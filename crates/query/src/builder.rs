@@ -1,11 +1,12 @@
 use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 use crate::query_error::QueryError;
-use moon_config::{LanguageType, PlatformType, ProjectType, StackType, TaskType};
+use moon_common::color;
+use moon_config::{LanguageType, ProjectType, StackType, TaskType};
 use starbase_utils::glob::GlobSet;
 use std::borrow::Cow;
 use std::cmp::PartialEq;
 use std::str::FromStr;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 pub type FieldValue<'l> = Cow<'l, str>;
 pub type FieldValues<'l> = Vec<FieldValue<'l>>;
@@ -21,7 +22,8 @@ pub enum Field<'l> {
     ProjectType(Vec<ProjectType>),
     Tag(FieldValues<'l>),
     Task(FieldValues<'l>),
-    TaskPlatform(Vec<PlatformType>),
+    TaskPlatform(FieldValues<'l>),
+    TaskToolchain(FieldValues<'l>),
     TaskType(Vec<TaskType>),
 }
 
@@ -130,9 +132,16 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     }
                     "tag" => Field::Tag(value),
                     "task" => Field::Task(value),
-                    "taskPlatform" => Field::TaskPlatform(build_criteria_enum::<PlatformType>(
-                        &field, &op, value,
-                    )?),
+                    "taskPlatform" => {
+                        debug!(
+                            "The {} query field is deprecated, use {} instead",
+                            color::property("taskPlatform"),
+                            color::property("taskToolchain"),
+                        );
+
+                        Field::TaskPlatform(value)
+                    }
+                    "taskToolchain" => Field::TaskToolchain(value),
                     "taskType" => {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }

@@ -4,6 +4,7 @@ use moon_config::*;
 use moon_target::Target;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
+use moon_toolchain::detect::detect_project_toolchains;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
@@ -17,15 +18,22 @@ async fn build_tasks_with_config(
     global_name: Option<&str>,
     monorepo: bool,
 ) -> BTreeMap<Id, Task> {
-    let platform = local_config.platform.unwrap_or_default();
     let id = Id::raw("project");
     let source = WorkspaceRelativePathBuf::from(source);
+    let enabled_toolchains = toolchain_config.get_enabled();
+    let project_toolchains = detect_project_toolchains(
+        root,
+        &root.join(source.as_str()),
+        &local_config.language,
+        &enabled_toolchains,
+    );
 
     let mut builder = TasksBuilder::new(
         &id,
         &source,
-        &platform,
+        &project_toolchains,
         TasksBuilderContext {
+            enabled_toolchains: &enabled_toolchains,
             monorepo,
             toolchain_config: &toolchain_config,
             workspace_root: root,
@@ -40,8 +48,7 @@ async fn build_tasks_with_config(
 
     let global_config = global_manager
         .get_inherited_config(
-            &platform,
-            &local_config.language,
+            &project_toolchains,
             &local_config.stack,
             &local_config.type_of,
             &local_config.tags,
@@ -192,7 +199,7 @@ mod tasks_builder {
     #[tokio::test]
     async fn inherits_global_tasks_from_all_scopes() {
         let sandbox = create_sandbox("builder");
-        let tasks = build_tasks(sandbox.path(), "scopes/moon.yml").await;
+        let tasks = build_tasks_with_toolchain(sandbox.path(), "scopes/moon.yml").await;
 
         assert_eq!(
             tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -379,7 +386,7 @@ mod tasks_builder {
         #[tokio::test]
         async fn handles_args_with_globs() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "args-glob/moon.yml").await;
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "args-glob/moon.yml").await;
 
             let task = tasks.get("no-glob-string").unwrap();
 
@@ -413,25 +420,25 @@ mod tasks_builder {
         }
     }
 
-    mod detect_platforms {
+    mod detect_platform_legacy {
         use super::*;
 
         #[tokio::test]
         async fn uses_explicitly_configured() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml").await;
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml").await;
 
             let task = tasks.get("system").unwrap();
 
-            assert_eq!(task.platform, PlatformType::System);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
 
             let task = tasks.get("bun").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Bun);
+            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Node);
+            assert_eq!(task.toolchains, vec![Id::raw("node")]);
         }
 
         #[tokio::test]
@@ -441,19 +448,19 @@ mod tasks_builder {
 
             let task = tasks.get("bun-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Bun);
+            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Deno);
+            assert_eq!(task.toolchains, vec![Id::raw("deno")]);
 
             let task = tasks.get("node-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Node);
+            assert_eq!(task.toolchains, vec![Id::raw("node")]);
 
             let task = tasks.get("rust-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Rust);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test]
@@ -463,19 +470,19 @@ mod tasks_builder {
 
             let task = tasks.get("bun-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::System);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::System);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
 
             let task = tasks.get("node-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::System);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
 
             let task = tasks.get("rust-via-cmd").unwrap();
 
-            assert_eq!(task.platform, PlatformType::System);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test]
@@ -485,11 +492,11 @@ mod tasks_builder {
 
             let task = tasks.get("unknown").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Rust);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
 
             let task = tasks.get("unknown-implicit").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Rust);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test]
@@ -499,7 +506,97 @@ mod tasks_builder {
 
             let task = tasks.get("global-build").unwrap();
 
-            assert_eq!(task.platform, PlatformType::Rust);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+        }
+    }
+
+    mod detect_toolchains {
+        use super::*;
+
+        #[tokio::test]
+        async fn uses_explicitly_configured() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "toolchains/moon.yml").await;
+
+            let task = tasks.get("system").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+
+            let task = tasks.get("bun").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
+
+            let task = tasks.get("node").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+        }
+
+        #[tokio::test]
+        async fn detects_from_command_name() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "toolchains/moon.yml").await;
+
+            let task = tasks.get("bun-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
+
+            let task = tasks.get("deno-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("deno")]);
+
+            let task = tasks.get("node-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+
+            let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+        }
+
+        #[tokio::test]
+        async fn doesnt_detect_from_command_if_not_toolchain_enabled() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "toolchains/moon.yml").await;
+
+            let task = tasks.get("bun-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+
+            let task = tasks.get("deno-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+
+            let task = tasks.get("node-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+
+            let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+        }
+
+        #[tokio::test]
+        async fn unknown_fallsback_to_project_toolchain() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "toolchains/moon.yml").await;
+
+            let task = tasks.get("unknown").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+
+            let task = tasks.get("unknown-implicit").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+        }
+
+        #[tokio::test]
+        async fn applies_to_global_inherited() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "toolchains/moon.yml").await;
+
+            let task = tasks.get("global-build").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
     }
 
@@ -616,28 +713,28 @@ mod tasks_builder {
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             let task = tasks.get("interactive-local").unwrap();
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             let task = tasks.get("interactive-override").unwrap();
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
 
         #[tokio::test]
         async fn shell() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml").await;
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "toolchains/moon.yml").await;
 
             // True for system
             assert_eq!(tasks.get("system").unwrap().options.shell, Some(true));
@@ -680,7 +777,8 @@ mod tasks_builder {
         #[tokio::test]
         async fn inherits_from_global() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "options-default/moon.yml").await;
+            let tasks =
+                build_tasks_with_toolchain(sandbox.path(), "options-default/moon.yml").await;
 
             let task = tasks.get("retry-default").unwrap();
 
@@ -690,7 +788,8 @@ mod tasks_builder {
         #[tokio::test]
         async fn can_override_global() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "options-default/moon.yml").await;
+            let tasks =
+                build_tasks_with_toolchain(sandbox.path(), "options-default/moon.yml").await;
 
             let task = tasks.get("retry-custom").unwrap();
 
@@ -706,7 +805,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
         }
 
         #[tokio::test]
@@ -742,7 +841,7 @@ mod tasks_builder {
             let ci = tasks.get("override-ci").unwrap();
 
             assert!(ci.state.local_only);
-            assert!(ci.options.run_in_ci);
+            assert!(ci.options.run_in_ci.is_enabled());
         }
 
         #[tokio::test]
@@ -774,7 +873,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             // Custom overrides
@@ -784,7 +883,7 @@ mod tasks_builder {
             assert!(task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
 
@@ -799,7 +898,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert!(task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             // Custom overrides
@@ -809,7 +908,7 @@ mod tasks_builder {
             assert!(!task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
     }
@@ -1925,7 +2024,7 @@ mod tasks_builder {
             let task = tasks.get("extend-options").unwrap();
 
             assert!(!task.options.cache);
-            assert!(task.options.run_in_ci);
+            assert!(task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
         }
@@ -1937,7 +2036,7 @@ mod tasks_builder {
             let task = tasks.get("extend-local").unwrap();
 
             assert!(task.options.cache);
-            assert!(task.options.run_in_ci);
+            assert!(task.options.run_in_ci.is_enabled());
             assert!(!task.options.persistent);
         }
 
@@ -1962,7 +2061,7 @@ mod tasks_builder {
             );
 
             assert!(task.options.cache);
-            assert!(!task.options.run_in_ci);
+            assert!(!task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
         }
@@ -2102,12 +2201,21 @@ mod tasks_builder {
         }
 
         #[tokio::test]
-        async fn cannot_change_platform() {
+        async fn cannot_change_platform_legacy() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
             let task = tasks.get("custom-platform").unwrap();
 
-            assert_eq!(task.platform, PlatformType::System);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+        }
+
+        #[tokio::test]
+        async fn cannot_change_toolchain() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("custom-toolchain").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
         }
     }
 

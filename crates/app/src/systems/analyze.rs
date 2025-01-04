@@ -1,9 +1,8 @@
 use crate::app_error::AppError;
 use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
-use moon_common::supports_pkl_configs;
-use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
-use moon_config::{PlatformType, ToolchainConfig};
+use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name, supports_pkl_configs};
+use moon_config::{BunConfig, PlatformType, ToolchainConfig};
 use moon_console::{Checkpoint, Console};
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
@@ -136,7 +135,7 @@ pub async fn register_platforms(
 
     if let Some(bun_config) = &toolchain_config.bun {
         registry.register(
-            PlatformType::Bun,
+            PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
                 &toolchain_config.typescript,
@@ -149,7 +148,7 @@ pub async fn register_platforms(
 
     if let Some(deno_config) = &toolchain_config.deno {
         registry.register(
-            PlatformType::Deno,
+            PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
                 &toolchain_config.typescript,
@@ -162,7 +161,7 @@ pub async fn register_platforms(
 
     if let Some(node_config) = &toolchain_config.node {
         registry.register(
-            PlatformType::Node,
+            PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
                 &toolchain_config.typescript,
@@ -171,11 +170,33 @@ pub async fn register_platforms(
                 Arc::clone(&console),
             )),
         );
+
+        // TODO fix in 2.0
+        if toolchain_config.bun.is_none() {
+            if let Some(bunpm_config) = &node_config.bun {
+                let bun_config = BunConfig {
+                    plugin: bunpm_config.plugin.clone(),
+                    version: bunpm_config.version.clone(),
+                    ..Default::default()
+                };
+
+                registry.register(
+                    PlatformType::Bun.get_toolchain_id(),
+                    Box::new(BunPlatform::new(
+                        &bun_config,
+                        &toolchain_config.typescript,
+                        workspace_root,
+                        Arc::clone(proto_env),
+                        Arc::clone(&console),
+                    )),
+                );
+            }
+        }
     }
 
     if let Some(python_config) = &toolchain_config.python {
         registry.register(
-            PlatformType::Python,
+            PlatformType::Python.get_toolchain_id(),
             Box::new(PythonPlatform::new(
                 python_config,
                 workspace_root,
@@ -187,7 +208,7 @@ pub async fn register_platforms(
 
     if let Some(rust_config) = &toolchain_config.rust {
         registry.register(
-            PlatformType::Rust,
+            PlatformType::Rust.get_toolchain_id(),
             Box::new(RustPlatform::new(
                 rust_config,
                 workspace_root,
@@ -199,7 +220,7 @@ pub async fn register_platforms(
 
     // Should be last since it's the most common
     registry.register(
-        PlatformType::System,
+        PlatformType::System.get_toolchain_id(),
         Box::new(SystemPlatform::new(
             workspace_root,
             Arc::clone(proto_env),

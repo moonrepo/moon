@@ -114,7 +114,7 @@ tasks:
 #### Depend on tasks from parent project's dependencies
 
 ```yaml title="moon.yml"
-# Also inferred from the language's platform
+# Also inferred from the language
 dependsOn:
   - 'project-a'
   - 'project-b'
@@ -187,7 +187,7 @@ tasks:
 tasks:
   example:
     command: 'printenv'
-    platform: 'system'
+    toolchain: 'system'
 ```
 
 </div>
@@ -201,7 +201,7 @@ language: 'ruby'
 tasks:
   example:
     command: 'rubocop'
-    platform: 'system'
+    toolchain: 'system'
 ```
 
 #### Run npm binaries (Node.js)
@@ -224,7 +224,7 @@ tasks:
 tasks:
   example:
     command: 'eslint'
-    platform: 'node'
+    toolchain: 'node'
 ```
 
 </div>

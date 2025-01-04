@@ -851,7 +851,7 @@ mod tasks {
     }
 
     #[test]
-    fn can_filter_by_platform() {
+    fn can_filter_by_toolchain() {
         let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
@@ -865,7 +865,7 @@ mod tasks {
             cmd.arg("query")
                 .arg("tasks")
                 .arg("--json")
-                .args(["--platform", "node"]);
+                .args(["--toolchain", "node"]);
         });
 
         let json: QueryTasksResult = json::parse(assert.output()).unwrap();
@@ -875,7 +875,7 @@ mod tasks {
             targets,
             string_vec!["platforms:node", "tasks:lint", "tasks:test"]
         );
-        assert_eq!(json.options.platform.unwrap(), "node".to_string());
+        assert_eq!(json.options.toolchain.unwrap(), "node".to_string());
     }
 
     #[test]

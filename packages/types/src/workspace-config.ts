@@ -3,6 +3,7 @@
 /* eslint-disable */
 
 import type { PluginLocator } from './toolchain-config';
+import type { ExtendsFrom } from './common';
 
 /** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-name';
@@ -239,9 +240,22 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+export type RemoteCompression = 'none' | 'zstd';
+
 /** Configures the action cache (AC) and content addressable cache (CAS). */
 export interface RemoteCacheConfig {
-	/** @default 'moon-outputs' */
+	/**
+	 * The compression format to use when uploading/downloading blobs.
+	 *
+	 * @default 'none'
+	 * @type {'none' | 'zstd'}
+	 */
+	compression: RemoteCompression;
+	/**
+	 * Unique instance name for blobs. Will be used as a folder name.
+	 *
+	 * @default 'moon-outputs'
+	 */
 	instanceName?: string;
 }
 
@@ -371,10 +385,10 @@ export interface WorkspaceConfig {
 	/** Configures experiments across the entire moon workspace. */
 	experiments: ExperimentsConfig;
 	/**
-	 * Extends another workspace configuration file. Supports a relative
+	 * Extends one or many workspace configuration file. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends: string | null;
+	extends: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
 	extensions: Record<string, ExtensionConfig>;
 	/** Configures the generator for scaffolding from templates. */
@@ -633,7 +647,17 @@ export interface PartialRunnerConfig {
 
 /** Configures the action cache (AC) and content addressable cache (CAS). */
 export interface PartialRemoteCacheConfig {
-	/** @default 'moon-outputs' */
+	/**
+	 * The compression format to use when uploading/downloading blobs.
+	 *
+	 * @default 'none'
+	 */
+	compression?: RemoteCompression | null;
+	/**
+	 * Unique instance name for blobs. Will be used as a folder name.
+	 *
+	 * @default 'moon-outputs'
+	 */
 	instanceName?: string | null;
 }
 
@@ -748,10 +772,10 @@ export interface PartialWorkspaceConfig {
 	/** Configures experiments across the entire moon workspace. */
 	experiments?: PartialExperimentsConfig | null;
 	/**
-	 * Extends another workspace configuration file. Supports a relative
+	 * Extends one or many workspace configuration file. Supports a relative
 	 * file path or a secure URL.
 	 */
-	extends?: string | null;
+	extends?: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
 	extensions?: Record<string, PartialExtensionConfig> | null;
 	/** Configures the generator for scaffolding from templates. */

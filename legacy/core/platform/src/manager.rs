@@ -1,5 +1,5 @@
 use crate::platform::Platform;
-use moon_config::PlatformType;
+use moon_common::Id;
 use moon_tool::ToolError;
 use rustc_hash::FxHashMap;
 use std::sync::OnceLock;
@@ -10,7 +10,7 @@ pub type BoxedPlatform = Box<dyn Platform>;
 
 #[derive(Default)]
 pub struct PlatformManager {
-    cache: FxHashMap<PlatformType, BoxedPlatform>,
+    cache: FxHashMap<Id, BoxedPlatform>,
 }
 
 impl PlatformManager {
@@ -40,47 +40,51 @@ impl PlatformManager {
         self.cache.values().find(predicate)
     }
 
-    pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> miette::Result<&BoxedPlatform> {
-        let type_of = type_of.into();
-
-        self.cache.get(&type_of).ok_or_else(|| {
-            ToolError::UnsupportedPlatform {
-                name: type_of.to_string(),
+    pub fn get_by_toolchain(&self, id: &Id) -> miette::Result<&BoxedPlatform> {
+        self.cache.get(id).ok_or_else(|| {
+            ToolError::UnsupportedToolchains {
+                ids: vec![id.to_string()],
             }
             .into()
         })
     }
 
-    pub fn get_mut<T: Into<PlatformType>>(
-        &mut self,
-        type_of: T,
-    ) -> miette::Result<&mut BoxedPlatform> {
-        let type_of = type_of.into();
+    pub fn get_by_toolchains(&self, ids: &[Id]) -> miette::Result<&BoxedPlatform> {
+        for id in ids {
+            if let Some(platform) = self.cache.get(id) {
+                return Ok(platform);
+            }
+        }
 
-        self.cache.get_mut(&type_of).ok_or_else(|| {
-            ToolError::UnsupportedPlatform {
-                name: type_of.to_string(),
+        Err(ToolError::UnsupportedToolchains {
+            ids: ids.iter().map(|tc| tc.to_string()).collect(),
+        }
+        .into())
+    }
+
+    pub fn get_by_toolchain_mut(&mut self, id: &Id) -> miette::Result<&mut BoxedPlatform> {
+        self.cache.get_mut(id).ok_or_else(|| {
+            ToolError::UnsupportedToolchains {
+                ids: vec![id.to_string()],
             }
             .into()
         })
     }
 
-    pub fn enabled(&self) -> std::collections::hash_map::Keys<PlatformType, BoxedPlatform> {
+    pub fn enabled(&self) -> std::collections::hash_map::Keys<Id, BoxedPlatform> {
         self.cache.keys()
     }
 
-    pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
+    pub fn list(&self) -> std::collections::hash_map::Values<Id, BoxedPlatform> {
         self.cache.values()
     }
 
-    pub fn list_mut(
-        &mut self,
-    ) -> std::collections::hash_map::ValuesMut<PlatformType, BoxedPlatform> {
+    pub fn list_mut(&mut self) -> std::collections::hash_map::ValuesMut<Id, BoxedPlatform> {
         self.cache.values_mut()
     }
 
-    pub fn register(&mut self, type_of: PlatformType, platform: BoxedPlatform) {
-        self.cache.insert(type_of, platform);
+    pub fn register(&mut self, id: Id, platform: BoxedPlatform) {
+        self.cache.insert(id, platform);
     }
 
     pub fn reset(&mut self) {

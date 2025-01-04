@@ -1,16 +1,17 @@
+use crate::compression::*;
 use crate::fs_digest::Blob;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
-    capabilities_client::CapabilitiesClient, compressor,
+    capabilities_client::CapabilitiesClient,
     content_addressable_storage_client::ContentAddressableStorageClient, digest_function,
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, GetActionResultRequest,
     GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
 use moon_common::color;
-use moon_config::RemoteConfig;
+use moon_config::{RemoteCompression, RemoteConfig};
 use std::{error::Error, path::Path};
 use tonic::{
     transport::{Channel, Endpoint},
@@ -19,17 +20,17 @@ use tonic::{
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
-    RemoteError::ConnectFailed {
+    RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
 }
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
     match error.source() {
-        Some(src) => RemoteError::CallFailedViaSource {
+        Some(src) => RemoteError::GrpcCallFailedViaSource {
             error: src.to_string(),
         },
-        None => RemoteError::CallFailed {
+        None => RemoteError::GrpcCallFailed {
             error: Box::new(error),
         },
     }
@@ -38,6 +39,7 @@ fn map_status_error(error: tonic::Status) -> RemoteError {
 #[derive(Default)]
 pub struct GrpcRemoteClient {
     channel: Option<Channel>,
+    compression: RemoteCompression,
     instance_name: String,
 }
 
@@ -91,6 +93,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);
+        self.compression = config.cache.compression;
         self.instance_name = config.cache.instance_name.clone();
 
         Ok(())
@@ -223,13 +226,14 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = &digest.hash,
+            compression = self.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
         );
 
         let response = match client
             .batch_read_blobs(BatchReadBlobsRequest {
-                acceptable_compressors: vec![compressor::Value::Identity as i32],
+                acceptable_compressors: get_acceptable_compressors(self.compression),
                 instance_name: self.instance_name.clone(),
                 digests: blob_digests,
                 digest_function: digest_function::Value::Sha256 as i32,
@@ -268,7 +272,7 @@ impl RemoteClient for GrpcRemoteClient {
             if let Some(digest) = download.digest {
                 blobs.push(Blob {
                     digest,
-                    bytes: download.data,
+                    bytes: decompress_blob(self.compression, download.data)?,
                 });
             }
 
@@ -295,21 +299,25 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = &digest.hash,
+            compression = self.compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
         );
 
+        let mut requests = vec![];
+
+        for blob in blobs {
+            requests.push(batch_update_blobs_request::Request {
+                digest: Some(blob.digest),
+                data: compress_blob(self.compression, blob.bytes)?,
+                compressor: get_compressor(self.compression),
+            });
+        }
+
         let response = match client
             .batch_update_blobs(BatchUpdateBlobsRequest {
                 instance_name: self.instance_name.clone(),
-                requests: blobs
-                    .into_iter()
-                    .map(|blob| batch_update_blobs_request::Request {
-                        digest: Some(blob.digest),
-                        data: blob.bytes,
-                        compressor: compressor::Value::Identity as i32,
-                    })
-                    .collect(),
+                requests,
                 digest_function: digest_function::Value::Sha256 as i32,
             })
             .await

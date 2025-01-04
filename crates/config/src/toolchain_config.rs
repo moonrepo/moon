@@ -36,10 +36,10 @@ pub struct ToolchainConfig {
     )]
     pub schema: String,
 
-    /// Extends another toolchain configuration file. Supports a relative
+    /// Extends one or many toolchain configuration files. Supports a relative
     /// file path or a secure URL.
-    #[setting(extend, validate = validate::extends_string)]
-    pub extends: Option<String>,
+    #[setting(extend, validate = validate::extends_from)]
+    pub extends: Option<schematic::ExtendsFrom>,
 
     /// Configures and enables the Bun platform.
     #[setting(nested)]
@@ -75,6 +75,38 @@ pub struct ToolchainConfig {
 }
 
 impl ToolchainConfig {
+    pub fn get_enabled(&self) -> Vec<Id> {
+        let mut tools = self.toolchains.keys().cloned().collect::<Vec<_>>();
+
+        if self.bun.is_some() {
+            tools.push(Id::raw("bun"));
+        }
+
+        if self.deno.is_some() {
+            tools.push(Id::raw("deno"));
+        }
+
+        if let Some(node) = &self.node {
+            tools.push(Id::raw("node"));
+
+            // Better way to handle this?
+            if node.bun.is_some() || matches!(node.package_manager, NodePackageManager::Bun) {
+                tools.push(Id::raw("bun"));
+            }
+        }
+
+        if self.python.is_some() {
+            tools.push(Id::raw("python"))
+        }
+
+        if self.rust.is_some() {
+            tools.push(Id::raw("rust"));
+        }
+
+        tools.push(Id::raw("system"));
+        tools
+    }
+
     pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
         let mut tools = vec![];
 

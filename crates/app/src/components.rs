@@ -40,7 +40,7 @@ pub async fn run_action_pipeline(
             pipeline.summarize = true;
         }
         Commands::Run(cmd) => {
-            pipeline.bail = true;
+            pipeline.bail = !cmd.no_bail;
             pipeline.summarize = cmd.summary;
         }
         _ => {}
@@ -58,6 +58,7 @@ pub async fn create_workspace_graph_context(
 ) -> miette::Result<WorkspaceBuilderContext> {
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
+        enabled_toolchains: session.toolchain_config.get_enabled(),
         extend_project: Emitter::<ExtendProjectEvent>::new(),
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,

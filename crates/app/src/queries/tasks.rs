@@ -1,11 +1,11 @@
 use super::convert_to_regex;
 use moon_affected::Affected;
-use moon_common::Id;
+use moon_common::{color, Id};
 use moon_task::Task;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc};
-use tracing::debug;
+use tracing::{debug, warn};
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct QueryTasksOptions {
@@ -16,9 +16,11 @@ pub struct QueryTasksOptions {
     // Filters
     pub id: Option<String>,
     pub command: Option<String>,
+    // TODO: Remove in 2.0
     pub platform: Option<String>,
     pub project: Option<String>,
     pub script: Option<String>,
+    pub toolchain: Option<String>,
     #[serde(rename = "type")]
     pub type_of: Option<String>,
 }
@@ -40,13 +42,26 @@ fn load_with_regex(
     workspace_graph: &WorkspaceGraph,
     options: &QueryTasksOptions,
 ) -> miette::Result<Vec<Arc<Task>>> {
+    if options.platform.is_some() {
+        warn!(
+            "The {} option is deprecated, use {} instead",
+            color::property("--platform"),
+            color::property("--toolchain"),
+        );
+    }
+
     let id_regex = convert_to_regex("id", &options.id)?;
     let command_regex = convert_to_regex("command", &options.command)?;
     let platform_regex = convert_to_regex("platform", &options.platform)?;
     let project_regex = convert_to_regex("project", &options.project)?;
     let script_regex = convert_to_regex("script", &options.script)?;
+    let mut toolchain_regex = convert_to_regex("toolchain", &options.toolchain)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
+
+    if toolchain_regex.is_none() {
+        toolchain_regex = platform_regex;
+    }
 
     for task in workspace_graph.get_tasks()? {
         if let Some(regex) = &id_regex {
@@ -73,8 +88,8 @@ fn load_with_regex(
             }
         }
 
-        if let Some(regex) = &platform_regex {
-            if !regex.is_match(&task.platform.to_string()) {
+        if let Some(regex) = &toolchain_regex {
+            if !task.toolchains.iter().any(|tc| regex.is_match(tc)) {
                 continue;
             }
         }

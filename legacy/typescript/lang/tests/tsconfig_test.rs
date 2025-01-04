@@ -320,7 +320,7 @@ mod update_compiler_options {
                 .out_dir
                 .as_ref()
                 .unwrap(),
-            &PathBuf::from("./test")
+            &CompilerPath::from("./test")
         )
     }
 
@@ -364,7 +364,7 @@ mod update_compiler_options {
                 .out_dir
                 .as_ref()
                 .unwrap(),
-            &PathBuf::from("./new")
+            &CompilerPath::from("./new")
         )
     }
 
@@ -377,7 +377,7 @@ mod update_compiler_options {
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                vec![PathOrGlob::from("index.ts")],
+                vec![CompilerPath::from("index.ts")],
             )]));
 
             assert!(updated);
@@ -391,7 +391,7 @@ mod update_compiler_options {
                     .unwrap()
                     .get("alias")
                     .unwrap(),
-                vec![PathOrGlob::from("index.ts")]
+                vec![CompilerPath::from("index.ts")]
             );
         }
 
@@ -400,9 +400,9 @@ mod update_compiler_options {
             let mut tsc = TsConfigJsonCache::default();
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([
-                ("one".into(), vec![PathOrGlob::from("one.ts")]),
-                ("two".into(), vec![PathOrGlob::from("two.ts")]),
-                ("three".into(), vec![PathOrGlob::from("three.ts")]),
+                ("one".into(), vec![CompilerPath::from("one.ts")]),
+                ("two".into(), vec![CompilerPath::from("two.ts")]),
+                ("three".into(), vec![CompilerPath::from("three.ts")]),
             ]));
 
             assert!(updated);
@@ -426,7 +426,7 @@ mod update_compiler_options {
                     compiler_options: Some(CompilerOptions {
                         paths: Some(CompilerOptionsPathsMap::from_iter([(
                             "alias".into(),
-                            vec![PathOrGlob::from("old.ts")],
+                            vec![CompilerPath::from("old.ts")],
                         )])),
                         ..Default::default()
                     }),
@@ -437,7 +437,7 @@ mod update_compiler_options {
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                vec![PathOrGlob::from("new.ts")],
+                vec![CompilerPath::from("new.ts")],
             )]));
 
             assert!(updated);
@@ -451,7 +451,7 @@ mod update_compiler_options {
                     .unwrap()
                     .get("alias")
                     .unwrap(),
-                vec![PathOrGlob::from("new.ts")]
+                vec![CompilerPath::from("new.ts")]
             );
         }
 
@@ -462,7 +462,7 @@ mod update_compiler_options {
                     compiler_options: Some(CompilerOptions {
                         paths: Some(CompilerOptionsPathsMap::from_iter([(
                             "alias".into(),
-                            vec![PathOrGlob::from("./src"), PathOrGlob::from("./other")],
+                            vec![CompilerPath::from("./src"), CompilerPath::from("./other")],
                         )])),
                         ..Default::default()
                     }),
@@ -473,14 +473,14 @@ mod update_compiler_options {
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                vec![PathOrGlob::from("./src"), PathOrGlob::from("./other")],
+                vec![CompilerPath::from("./src"), CompilerPath::from("./other")],
             )]));
 
             assert!(!updated);
 
             let updated = tsc.update_compiler_option_paths(CompilerOptionsPathsMap::from_iter([(
                 "alias".into(),
-                vec![PathOrGlob::from("./other"), PathOrGlob::from("./src")],
+                vec![CompilerPath::from("./other"), CompilerPath::from("./src")],
             )]));
 
             assert!(!updated);

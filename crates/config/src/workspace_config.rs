@@ -118,10 +118,10 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub experiments: ExperimentsConfig,
 
-    /// Extends another workspace configuration file. Supports a relative
+    /// Extends one or many workspace configuration file. Supports a relative
     /// file path or a secure URL.
-    #[setting(extend, validate = validate::extends_string)]
-    pub extends: Option<String>,
+    #[setting(extend, validate = validate::extends_from)]
+    pub extends: Option<schematic::ExtendsFrom>,
 
     /// Configures extensions that can be executed with `moon ext`.
     #[setting(nested)]

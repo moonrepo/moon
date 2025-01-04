@@ -32,6 +32,7 @@ pub async fn templates_command(
                 template
                     .config
                     .extends
+                    .to_list()
                     .iter()
                     .map(color::id)
                     .collect::<Vec<_>>()

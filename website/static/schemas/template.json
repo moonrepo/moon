@@ -29,10 +29,17 @@
     "extends": {
       "title": "extends",
       "description": "Extends one or many other templates.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "id": {
       "title": "id",

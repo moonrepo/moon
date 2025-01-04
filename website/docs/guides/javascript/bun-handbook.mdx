@@ -38,7 +38,7 @@ Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the work
 bun = "1.0.0"
 ```
 
-This will enable the Bun platform and provide the following automations around its ecosystem:
+This will enable the Bun toolchain and provide the following automations around its ecosystem:
 
 - Node modules will automatically be installed if dependencies in `package.json` have changed, or
   the lockfile has changed, since the last time a task has ran.
@@ -69,27 +69,28 @@ bun:
 
 > Versions can also be defined with [`.prototools`](../../proto/config).
 
-### Configuring the `platform`
+### Configuring the toolchain
 
 Since the JavaScript ecosystem supports multiple runtimes, moon is unable to automatically detect
 the correct runtime for all scenarios. Does the existence of a `package.json` mean Node.js or Bun?
 We don't know, and default to Node.js because of its popularity.
 
-To work around this, you can set `platform` to "bun" at the task-level or project-level.
+To work around this, you can set `toolchain` to "bun" at the task-level or project-level.
 
 ```yaml title="moon.yml"
 # For all tasks in the project
-platform: 'bun'
+toolchain:
+  default: 'bun'
 
 tasks:
   build:
     command: 'webpack'
     # For this specific task
-    platform: 'bun'
+    toolchain: 'bun'
 ```
 
-> The task-level `platform` only needs to be set if executing a `node_modules` binary! The `bun`
-> binary automatically sets the platform to Bun.
+> The task-level `toolchain.default` only needs to be set if executing a `node_modules` binary! The
+> `bun` binary automatically sets the toolchain to Bun.
 
 ### Using `package.json` scripts
 

@@ -36,7 +36,9 @@ docker:
       - '*.config.js'
       - '*.json'
 # unstable_remote:
-#   host: 'grpc://localhost:9092'
+#   host: 'grpc://0.0.0.0:9092'
+#   cache:
+#     compression: 'zstd'
 # mtls:
 #   caCert: 'crates/remote/tests/__fixtures__/certs-local/ca.pem'
 #   clientCert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'

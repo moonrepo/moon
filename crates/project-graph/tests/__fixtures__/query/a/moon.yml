@@ -11,4 +11,4 @@ tasks:
   build:
     command: build
     outputs: [dist]
-    platform: node
+    toolchain: node

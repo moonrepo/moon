@@ -9,11 +9,10 @@ use prost_types::Timestamp;
 use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::FsError;
 use starbase_utils::glob;
-use std::path::PathBuf;
 use std::{
     fs::{self, Metadata},
-    path::Path,
-    time::{SystemTime, UNIX_EPOCH},
+    path::{Path, PathBuf},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tracing::instrument;
 
@@ -172,14 +171,21 @@ pub fn compute_digests_for_outputs(
 
 fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {
     if let Some(mtime) = &props.mtime {
-        filetime::set_file_mtime(
-            path,
-            filetime::FileTime::from_unix_time(mtime.seconds, mtime.nanos as u32),
-        )
-        .map_err(|error| FsError::Write {
-            path: path.to_owned(),
-            error: Box::new(error),
-        })?;
+        let modified = Duration::new(mtime.seconds as u64, mtime.nanos as u32);
+
+        let file = fs::File::options()
+            .write(true)
+            .open(path)
+            .map_err(|error| FsError::Write {
+                path: path.to_owned(),
+                error: Box::new(error),
+            })?;
+
+        file.set_modified(UNIX_EPOCH + modified)
+            .map_err(|error| FsError::Write {
+                path: path.to_owned(),
+                error: Box::new(error),
+            })?;
     }
 
     #[cfg(unix)]
@@ -202,6 +208,13 @@ pub fn write_output_file(
     bytes: Vec<u8>,
     file: &OutputFile,
 ) -> miette::Result<()> {
+    if let Some(parent) = output_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| FsError::Create {
+            path: parent.to_path_buf(),
+            error: Box::new(error),
+        })?;
+    }
+
     fs::write(&output_path, bytes).map_err(|error| FsError::Write {
         path: output_path.clone(),
         error: Box::new(error),
@@ -219,20 +232,39 @@ pub fn link_output_file(
     to_path: PathBuf,
     link: &OutputSymlink,
 ) -> miette::Result<()> {
-    // Windows requires admin privileges to create soft/hard links,
-    // so just copy for now... annoying... definitely revisit!
+    if let Some(parent) = to_path.parent() {
+        fs::create_dir_all(parent).map_err(|error| FsError::Create {
+            path: parent.to_path_buf(),
+            error: Box::new(error),
+        })?;
+    }
+
     #[cfg(windows)]
-    fs::copy(&from_path, &to_path).map_err(|error| FsError::Copy {
-        from: from_path.clone(),
-        to: to_path.clone(),
-        error: Box::new(error),
-    })?;
+    {
+        if from_path.is_dir() {
+            std::os::windows::fs::symlink_dir(&from_path, &to_path).map_err(|error| {
+                FsError::Create {
+                    path: to_path.clone(),
+                    error: Box::new(error),
+                }
+            })?;
+        } else {
+            std::os::windows::fs::symlink_file(&from_path, &to_path).map_err(|error| {
+                FsError::Create {
+                    path: to_path.clone(),
+                    error: Box::new(error),
+                }
+            })?;
+        }
+    }
 
     #[cfg(unix)]
-    std::os::unix::fs::symlink(&from_path, &to_path).map_err(|error| FsError::Create {
-        path: to_path.clone(),
-        error: Box::new(error),
-    })?;
+    {
+        std::os::unix::fs::symlink(&from_path, &to_path).map_err(|error| FsError::Create {
+            path: to_path.clone(),
+            error: Box::new(error),
+        })?;
+    }
 
     if let Some(props) = &link.node_properties {
         apply_node_properties(&to_path, props)?;

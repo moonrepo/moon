@@ -35,7 +35,7 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     let path = path.as_ref();
 
     let mut cmd = assert_cmd::Command::from_std(create_moon_command_std(path));
-    cmd.timeout(std::time::Duration::from_secs(90));
+    cmd.timeout(std::time::Duration::from_secs(120));
     cmd
 }
 

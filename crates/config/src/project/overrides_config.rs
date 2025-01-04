@@ -41,6 +41,10 @@ cacheable!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectToolchainConfig {
+        /// The default toolchain for all tasks within the project,
+        /// if their toolchain is unknown.
+        pub default: Option<Id>,
+
         /// Overrides `bun` settings.
         #[setting(nested)]
         pub bun: Option<ProjectToolchainCommonToolConfig>,

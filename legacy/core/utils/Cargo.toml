@@ -16,7 +16,7 @@ md5 = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 pathdiff = { workspace = true }
-regex = { workspace = true }
+regex = { workspace = true, features = ["unicode"] }
 relative-path = { workspace = true }
 semver = { workspace = true }
 starbase_utils = { workspace = true }

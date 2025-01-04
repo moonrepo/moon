@@ -24,6 +24,11 @@ impl TargetLocator {
     pub fn as_str(&self) -> &str {
         self.as_ref()
     }
+
+    #[tracing::instrument(name = "parse_target_locator")]
+    pub fn parse(value: &str) -> miette::Result<TargetLocator> {
+        Self::from_str(value)
+    }
 }
 
 impl AsRef<TargetLocator> for TargetLocator {

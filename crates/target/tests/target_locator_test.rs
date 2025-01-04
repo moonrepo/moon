@@ -1,6 +1,5 @@
 use moon_common::Id;
 use moon_target::*;
-use std::str::FromStr;
 
 mod target_locator {
     use super::*;
@@ -11,7 +10,7 @@ mod target_locator {
         #[test]
         fn all_scope() {
             assert_eq!(
-                TargetLocator::from_str(":build-*").unwrap(),
+                TargetLocator::parse(":build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from(":build-*"),
                     scope: Some(TargetScope::All),
@@ -21,7 +20,7 @@ mod target_locator {
             );
 
             assert_eq!(
-                TargetLocator::from_str("*:build").unwrap(),
+                TargetLocator::parse("*:build").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("*:build"),
                     scope: Some(TargetScope::All),
@@ -34,7 +33,7 @@ mod target_locator {
         #[test]
         fn deps_scope() {
             assert_eq!(
-                TargetLocator::from_str("^:build-*").unwrap(),
+                TargetLocator::parse("^:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^:build-*"),
                     scope: Some(TargetScope::Deps),
@@ -47,7 +46,7 @@ mod target_locator {
         #[test]
         fn self_scope() {
             assert_eq!(
-                TargetLocator::from_str("~:build-*").unwrap(),
+                TargetLocator::parse("~:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("~:build-*"),
                     scope: Some(TargetScope::OwnSelf),
@@ -60,7 +59,7 @@ mod target_locator {
         #[test]
         fn tag_scope() {
             assert_eq!(
-                TargetLocator::from_str("#tag:build-*").unwrap(),
+                TargetLocator::parse("#tag:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("#tag:build-*"),
                     scope: None,
@@ -70,7 +69,7 @@ mod target_locator {
             );
 
             assert_eq!(
-                TargetLocator::from_str("#tag-*:build-*").unwrap(),
+                TargetLocator::parse("#tag-*:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("#tag-*:build-*"),
                     scope: None,
@@ -83,7 +82,7 @@ mod target_locator {
         #[test]
         fn project_scope() {
             assert_eq!(
-                TargetLocator::from_str("project:build-*").unwrap(),
+                TargetLocator::parse("project:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("project:build-*"),
                     scope: None,
@@ -93,7 +92,7 @@ mod target_locator {
             );
 
             assert_eq!(
-                TargetLocator::from_str("proj-*:build-*").unwrap(),
+                TargetLocator::parse("proj-*:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("proj-*:build-*"),
                     scope: None,
@@ -110,13 +109,13 @@ mod target_locator {
         #[test]
         #[should_panic(expected = "Invalid target $:build")]
         fn errors_invalid() {
-            TargetLocator::from_str("$:build").unwrap();
+            TargetLocator::parse("$:build").unwrap();
         }
 
         #[test]
         fn all_scope() {
             assert_eq!(
-                TargetLocator::from_str(":build").unwrap(),
+                TargetLocator::parse(":build").unwrap(),
                 TargetLocator::Qualified(Target::parse(":build").unwrap())
             );
         }
@@ -124,7 +123,7 @@ mod target_locator {
         #[test]
         fn deps_scope() {
             assert_eq!(
-                TargetLocator::from_str("^:build").unwrap(),
+                TargetLocator::parse("^:build").unwrap(),
                 TargetLocator::Qualified(Target::parse("^:build").unwrap())
             );
         }
@@ -132,7 +131,7 @@ mod target_locator {
         #[test]
         fn self_scope() {
             assert_eq!(
-                TargetLocator::from_str("~:build").unwrap(),
+                TargetLocator::parse("~:build").unwrap(),
                 TargetLocator::Qualified(Target::parse("~:build").unwrap())
             );
         }
@@ -140,7 +139,7 @@ mod target_locator {
         #[test]
         fn tag_scope() {
             assert_eq!(
-                TargetLocator::from_str("#tag:build").unwrap(),
+                TargetLocator::parse("#tag:build").unwrap(),
                 TargetLocator::Qualified(Target::parse("#tag:build").unwrap())
             );
         }
@@ -148,7 +147,7 @@ mod target_locator {
         #[test]
         fn project_scope() {
             assert_eq!(
-                TargetLocator::from_str("project:build").unwrap(),
+                TargetLocator::parse("project:build").unwrap(),
                 TargetLocator::Qualified(Target::parse("project:build").unwrap())
             );
         }
@@ -160,7 +159,7 @@ mod target_locator {
         #[test]
         fn returns_task() {
             assert_eq!(
-                TargetLocator::from_str("build").unwrap(),
+                TargetLocator::parse("build").unwrap(),
                 TargetLocator::TaskFromWorkingDir(Id::raw("build"))
             );
         }

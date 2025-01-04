@@ -173,12 +173,14 @@ mod codegen {
             let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
             codegen.load_templates().await.unwrap();
 
+            codegen.template_locations.sort();
+
             assert_eq!(
                 codegen.template_locations,
                 vec![
+                    sandbox.path().join("templates/base"),
                     sandbox.path().join("templates/extended"),
                     sandbox.path().join("templates/partials"),
-                    sandbox.path().join("templates/base"),
                 ]
             );
         }

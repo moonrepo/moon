@@ -178,6 +178,7 @@ impl<'app> CodeGenerator<'app> {
     async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
         let mut futures = vec![];
+        let config_file_names = ConfigFinder::default().get_template_file_names();
 
         debug!("Resolving template locations to absolute file paths");
 
@@ -194,6 +195,14 @@ impl<'app> CodeGenerator<'app> {
                     for path in glob::walk(self.workspace_root, [pattern])? {
                         if path.is_dir() {
                             locations.push(path);
+                        } else if path.is_file()
+                            && path.file_name().is_some_and(|name| {
+                                config_file_names
+                                    .iter()
+                                    .any(|cfg_name| name == cfg_name.as_str())
+                            })
+                        {
+                            locations.push(path.parent().unwrap().to_path_buf());
                         }
                     }
                 }

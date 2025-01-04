@@ -1,3 +1,4 @@
+use crate::is_glob_like;
 use crate::portable_path::{FilePath, GlobPath, PortablePath};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -111,9 +112,14 @@ impl FromStr for TemplateLocator {
             };
         }
 
-        // Backwards compatibility
-        Ok(TemplateLocator::File {
-            path: FilePath::from_str(value)?,
+        Ok(if is_glob_like(value) {
+            TemplateLocator::Glob {
+                glob: GlobPath::from_str(value)?,
+            }
+        } else {
+            TemplateLocator::File {
+                path: FilePath::from_str(value)?,
+            }
         })
     }
 }

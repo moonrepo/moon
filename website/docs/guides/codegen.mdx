@@ -260,21 +260,19 @@ generator:
     - 'file://other/templates'
 ```
 
-:::info
-
-When using literal file paths, all paths are relative from the workspace root. Additionally, the
-`file://` protocol is preferred.
-
-:::
+When using literal file paths, all paths are relative from the workspace root.
 
 #### Globs<VersionLabel version="1.31.0" />
 
-If you'd prefer more control over literal file paths, you can use globs instead using the `glob://`
-protocol. Globs are relative from the workspace root, and will only match directories.
+If you'd prefer more control over literal file paths (above), you can instead use glob paths or the
+`glob://` protocol. Globs are relative from the workspace root, and will only match directories, or
+patterns that end in `template.yml`.
 
 ```yaml title=".moon/workspace.yml"
 generator:
   templates:
+    - './templates/*'
+    # Or
     - 'glob://projects/*/templates/*'
 ```
 

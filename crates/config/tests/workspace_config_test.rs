@@ -485,7 +485,7 @@ generator:
                 r"
 generator:
   templates:
-    - glob://templates/*
+    - ./templates/*
     - glob://common/*/templates/*
 ",
                 load_config_from_root,
@@ -495,7 +495,7 @@ generator:
                 config.generator.templates,
                 vec![
                     TemplateLocator::Glob {
-                        glob: GlobPath("templates/*".into())
+                        glob: GlobPath("./templates/*".into())
                     },
                     TemplateLocator::Glob {
                         glob: GlobPath("common/*/templates/*".into())
@@ -529,19 +529,6 @@ generator:
                 r"
 generator:
   templates: ['npm://@scope/package']
-",
-                load_config_from_root,
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "globs are not supported, expected a literal file path")]
-        fn errors_on_template_glob() {
-            test_load_config(
-                FILENAME,
-                r"
-generator:
-  templates: ['glob/**/*']
 ",
                 load_config_from_root,
             );

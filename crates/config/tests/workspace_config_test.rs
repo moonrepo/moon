@@ -3,8 +3,8 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig,
-    WorkspaceProjects,
+    ConfigLoader, ExtensionConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use proto_core::warpgate::UrlLocator;
 use rustc_hash::FxHashMap;
@@ -479,6 +479,32 @@ generator:
         }
 
         #[test]
+        fn can_set_glob_locations() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates:
+    - ./templates/*
+    - glob://common/*/templates/*
+",
+                load_config_from_root,
+            );
+
+            assert_eq!(
+                config.generator.templates,
+                vec![
+                    TemplateLocator::Glob {
+                        glob: GlobPath("./templates/*".into())
+                    },
+                    TemplateLocator::Glob {
+                        glob: GlobPath("common/*/templates/*".into())
+                    },
+                ]
+            );
+        }
+
+        #[test]
         #[should_panic(
             expected = "Invalid Git template locator, must be in the format of `git://url#revision`"
         )]
@@ -503,19 +529,6 @@ generator:
                 r"
 generator:
   templates: ['npm://@scope/package']
-",
-                load_config_from_root,
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "globs are not supported, expected a literal file path")]
-        fn errors_on_template_glob() {
-            test_load_config(
-                FILENAME,
-                r"
-generator:
-  templates: ['glob/**/*']
 ",
                 load_config_from_root,
             );

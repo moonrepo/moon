@@ -44,10 +44,10 @@ CI, and what options are provided. The following scenarios are possible:
 
 :::info
 
-The default behavior for `moon run` is to "fail fast", meaning that any failed task will
-immediately abort execution of the entire action graph.  Pass `--no-bail` to execute as many
-tasks as safely possible (tasks with upstream failures will be skipped to avoid side effects).
-This is the default behavior for `moon ci`, and is also useful for pre-commit hooks.
+The default behavior for `moon run` is to "fail fast", meaning that any failed task will immediately
+abort execution of the entire action graph. Pass `--no-bail` to execute as many tasks as safely
+possible (tasks with upstream failures will be skipped to avoid side effects). This is the default
+behavior for `moon ci`, and is also useful for pre-commit hooks.
 
 :::
 
@@ -68,8 +68,8 @@ This is the default behavior for `moon ci`, and is also useful for pre-commit ho
   [a query statement](../concepts/query-lang). <VersionLabel version="1.3.0" />
 - `--summary` - Display a summary and stats of the current run. <VersionLabel version="1.25.0" />
 - `-u`, `--updateCache` - Bypass cache and force update any existing items.
-- `-n`, `--no-bail` - When a task fails, continue executing other tasks instead of aborting immediately
-
+- `-n`, `--no-bail` - When a task fails, continue executing other tasks instead of aborting
+  immediately
 
 #### Affected
 

@@ -22,11 +22,12 @@
       config files in the project/workspace root. This pattern is preferred when possible.
 - Added the ability to run targets in `moon run` and `moon ci` using a glob-like syntax.
   - For example: `:build-*`, `app-*:build`, `#tag-{foo,bar}:build`, etc.
+- Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
   support a list of files/URLs to extend.
-- Updated our unstable remote service (RE API) with new functionality:
+- Updated our unstable remote service (Bazel RE API) with new functionality:
   - Added an `unstable_remote.cache.compression` setting, which can be set to `zstd` to enable
     zstandard compression on output blobs.
   - Symlink based outputs will now be created as symlinks on Windows, where previously they were
@@ -38,6 +39,11 @@
 
 - Fixed a panic that could occur during command argument parsing.
 - Fixed an issue where remote cached blobs would sometimes fail to be created locally.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.44.2 (from 0.44.1).
+- Updated dependencies.
 
 ## 1.30.6
 

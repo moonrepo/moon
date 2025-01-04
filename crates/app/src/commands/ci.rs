@@ -9,7 +9,7 @@ use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
-use moon_task::{Target, TargetLocator};
+use moon_task::TargetLocator;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
@@ -17,14 +17,14 @@ use starbase_styles::color;
 use std::sync::Arc;
 use tracing::instrument;
 
-type TargetList = Vec<Target>;
+type TargetList = Vec<TargetLocator>;
 
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Args, Clone, Debug)]
 pub struct CiArgs {
-    #[arg(help = "List of targets (scope:task) to run")]
-    targets: Vec<Target>,
+    #[arg(help = "List of targets to run")]
+    targets: Vec<TargetLocator>,
 
     #[arg(long, help = "Base branch, commit, or revision to compare against")]
     base: Option<String>,
@@ -70,16 +70,14 @@ impl CiConsole {
     }
 
     pub fn print_targets(&self, targets: &TargetList) -> miette::Result<()> {
-        let mut targets_to_print = targets.clone();
+        let mut targets_to_print = targets
+            .iter()
+            .map(|t| format!("  {}", color::label(t.as_str())))
+            .collect::<Vec<_>>();
+
         targets_to_print.sort();
 
-        self.write_line(
-            targets_to_print
-                .iter()
-                .map(|t| format!("  {}", color::label(&t.id)))
-                .collect::<Vec<_>>()
-                .join("\n"),
-        )
+        self.write_line(targets_to_print.join("\n"))
     }
 }
 
@@ -151,7 +149,7 @@ async fn gather_potential_targets(
 
     if args.targets.is_empty() {
         for task in workspace_graph.get_tasks()? {
-            targets.push(task.target.clone());
+            targets.push(TargetLocator::Qualified(task.target.clone()));
         }
     } else {
         targets.extend(args.targets.clone());
@@ -218,11 +216,7 @@ async fn generate_action_graph(
         ci: true,
         ci_check: true,
         dependents: true,
-        target_locators: FxHashSet::from_iter(
-            targets
-                .iter()
-                .map(|target| TargetLocator::Qualified(target.to_owned())),
-        ),
+        target_locators: FxHashSet::from_iter(targets.clone()),
         ..Default::default()
     })?;
 

@@ -1743,6 +1743,89 @@ mod action_graph {
         }
 
         #[tokio::test]
+        async fn runs_by_task_glob() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([
+                        TargetLocator::parse(":*-dependency").unwrap(),
+                        TargetLocator::parse(":{a,c}").unwrap(),
+                    ]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_by_tag_glob() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([
+                        TargetLocator::parse("#front*:build").unwrap()
+                    ]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_by_project_glob() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::parse(
+                        "c{lient,ommon}:test",
+                    )
+                    .unwrap()]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn returns_empty_result_for_no_glob_match() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::parse(
+                        "{foo,bar}:task-*",
+                    )
+                    .unwrap()]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let graph = builder.build();
+
+            assert!(graph.is_empty());
+        }
+
+        #[tokio::test]
         async fn computes_context() {
             let sandbox = create_sandbox("tasks");
             let container = ActionGraphContainer::new(sandbox.path()).await;

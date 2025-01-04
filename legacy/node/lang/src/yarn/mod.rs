@@ -4,15 +4,15 @@ use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::PathBuf;
 use tracing::warn;
-use yarn_lock_parser::{parse_str, Entry};
+use yarn_lock_parser::parse_str;
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     let yarn_lock_text = fs::read_file(&path)?;
-    let entries: Vec<Entry> = match parse_str(&yarn_lock_text) {
-        Ok(data) => data,
+    let entries = match parse_str(&yarn_lock_text) {
+        Ok(data) => data.entries,
         Err(_) => {
             warn!(
               lockfile = ?path,
@@ -135,7 +135,7 @@ __metadata:
         .text()
         .unwrap();
 
-        let _: Vec<Entry> = parse_str(&content).unwrap();
+        let _ = parse_str(&content).unwrap();
     }
 
     #[test]
@@ -147,6 +147,6 @@ __metadata:
         .text()
         .unwrap();
 
-        let _: Vec<Entry> = parse_str(&content).unwrap();
+        let _ = parse_str(&content).unwrap();
     }
 }

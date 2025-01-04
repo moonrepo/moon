@@ -148,31 +148,31 @@ impl Operation {
         )
     }
 
-    pub fn track<T, F>(self, func: F) -> miette::Result<Self>
+    pub fn track<T, F>(mut self, func: F) -> miette::Result<Self>
     where
         F: FnOnce() -> miette::Result<T>,
     {
-        self.handle_track(func(), |_| true)
+        Self::do_track(&mut self, func).map(|_| self)
     }
 
-    pub fn track_with_check<T, F, C>(self, func: F, checker: C) -> miette::Result<Self>
+    pub fn track_with_check<T, F, C>(mut self, func: F, checker: C) -> miette::Result<Self>
     where
         F: FnOnce() -> miette::Result<T>,
         C: FnOnce(T) -> bool,
     {
-        self.handle_track(func(), checker)
+        Self::do_track_with_check(&mut self, func, checker).map(|_| self)
     }
 
-    pub async fn track_async<T, F, Fut>(self, func: F) -> miette::Result<Self>
+    pub async fn track_async<T, F, Fut>(mut self, func: F) -> miette::Result<Self>
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = miette::Result<T>>,
     {
-        self.handle_track(func().await, |_| true)
+        Self::do_track_async(&mut self, func).await.map(|_| self)
     }
 
     pub async fn track_async_with_check<T, F, Fut, C>(
-        self,
+        mut self,
         func: F,
         checker: C,
     ) -> miette::Result<Self>
@@ -181,14 +181,16 @@ impl Operation {
         Fut: Future<Output = miette::Result<T>>,
         C: FnOnce(T) -> bool,
     {
-        self.handle_track(func().await, checker)
+        Self::do_track_async_with_check(&mut self, func, checker)
+            .await
+            .map(|_| self)
     }
 
-    fn handle_track<T>(
-        mut self,
+    pub(crate) fn handle_track<T>(
+        &mut self,
         result: miette::Result<T>,
         checker: impl FnOnce(T) -> bool,
-    ) -> miette::Result<Self> {
+    ) -> miette::Result<()> {
         match result {
             Ok(value) => {
                 self.finish(if checker(value) {
@@ -197,7 +199,7 @@ impl Operation {
                     ActionStatus::Skipped
                 });
 
-                Ok(self)
+                Ok(())
             }
             Err(error) => {
                 self.finish(ActionStatus::Failed);
@@ -251,5 +253,47 @@ impl Operation {
                 ..Default::default()
             },
         )))
+    }
+
+    // Trackers
+
+    pub fn do_track<T, F>(op: &mut Operation, func: F) -> miette::Result<()>
+    where
+        F: FnOnce() -> miette::Result<T>,
+    {
+        op.handle_track(func(), |_| true)
+    }
+
+    pub fn do_track_with_check<T, F, C>(
+        op: &mut Operation,
+        func: F,
+        checker: C,
+    ) -> miette::Result<()>
+    where
+        F: FnOnce() -> miette::Result<T>,
+        C: FnOnce(T) -> bool,
+    {
+        op.handle_track(func(), checker)
+    }
+
+    pub async fn do_track_async<T, F, Fut>(op: &mut Operation, func: F) -> miette::Result<()>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<T>>,
+    {
+        op.handle_track(func().await, |_| true)
+    }
+
+    pub async fn do_track_async_with_check<T, F, Fut, C>(
+        op: &mut Operation,
+        func: F,
+        checker: C,
+    ) -> miette::Result<()>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<T>>,
+        C: FnOnce(T) -> bool,
+    {
+        op.handle_track(func().await, checker)
     }
 }

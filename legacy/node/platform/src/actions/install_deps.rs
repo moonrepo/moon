@@ -2,7 +2,7 @@ use moon_action::Operation;
 use moon_config::NodePackageManager;
 use moon_console::{Checkpoint, Console};
 use moon_lang::has_vendor_installed_dependencies;
-use moon_logger::{debug, info};
+use moon_logger::{debug, error, info};
 use moon_node_tool::NodeTool;
 use moon_utils::{is_ci, is_test_env};
 use std::path::Path;
@@ -40,15 +40,36 @@ pub async fn install_deps(
             NodePackageManager::Yarn => "yarn install",
         };
 
-        console.out.print_checkpoint(Checkpoint::Setup, command)?;
+        for attempt in 1..=3 {
+            if attempt == 1 {
+                console.out.print_checkpoint(Checkpoint::Setup, command)?;
+            } else {
+                console.out.print_checkpoint_with_comments(
+                    Checkpoint::Setup,
+                    command,
+                    [format!("attempt {attempt} of 3")],
+                )?;
+            }
 
-        operations.push(
-            Operation::task_execution(command)
-                .track_async(|| {
-                    package_manager.install_dependencies(node, working_dir, !is_test_env())
-                })
-                .await?,
-        );
+            let mut op = Operation::task_execution(command);
+            let result = Operation::do_track_async(&mut op, || {
+                package_manager.install_dependencies(node, working_dir, !is_test_env())
+            })
+            .await;
+
+            operations.push(op);
+
+            if let Err(error) = result {
+                if attempt == 3 {
+                    return Err(error);
+                } else {
+                    error!(
+                        "Failed to install {} dependencies, retrying...",
+                        node.config.package_manager
+                    );
+                }
+            }
+        }
     }
 
     // Dedupe dependencies

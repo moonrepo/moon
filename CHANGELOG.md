@@ -39,6 +39,7 @@
 - Updated the `moon templates` command:
   - Templates are now sorted by identifier.
   - Added a `--filter` option to filter the templates list by ID.
+- Updated toolchain dependency installs to retry up to 3 attempts if the install command fails.
 - Improved the task output prefixing logic.
 
 #### 🐞 Fixes

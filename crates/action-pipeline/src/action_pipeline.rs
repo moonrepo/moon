@@ -339,14 +339,19 @@ impl ActionPipeline {
             // we need to continually check if they've been aborted or
             // cancelled, otherwise we will end up with zombie processes
             loop {
+                sleep(Duration::from_millis(150)).await;
+
+                // No tasks running, so don't hang forever
+                if job_context.result_sender.is_closed() {
+                    break;
+                }
+
                 if job_context.is_aborted_or_cancelled() {
                     debug!("Shutting down {} persistent jobs", job_handles.len());
 
                     job_handles.shutdown().await;
                     break;
                 }
-
-                sleep(Duration::from_millis(150)).await;
             }
         }))
     }

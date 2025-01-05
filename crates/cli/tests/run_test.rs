@@ -580,6 +580,7 @@ mod target_scopes {
                 .env_remove("CI")
                 .current_dir(sandbox.path().join("base"));
         });
+
         let output = assert.output();
 
         assert!(predicate::str::contains("base:runFromProject").eval(&output));

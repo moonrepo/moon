@@ -3,7 +3,7 @@ mod utils;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
 use moon_task_expander::{ExpandedResult, TokenExpander};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
 use std::env;
@@ -498,7 +498,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_command(&task).unwrap();
+            expander.expand_command(&mut task).unwrap();
         }
 
         #[test]
@@ -512,7 +512,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "bin");
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "bin");
         }
 
         #[test]
@@ -526,7 +526,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "project/bin");
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "project/bin");
         }
 
         #[test]
@@ -540,7 +540,10 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "project/bin/task");
+            assert_eq!(
+                expander.expand_command(&mut task).unwrap(),
+                "project/bin/task"
+            );
         }
 
         #[test]
@@ -561,7 +564,38 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "name");
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "name");
+        }
+
+        #[test]
+        fn inherits_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.command = "$FOO".into();
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "$FOO");
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO".into()]));
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.command = "$FOO".into();
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "$FOO");
+            assert!(task.input_env.is_empty());
         }
     }
 
@@ -586,7 +620,89 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_args(&task).unwrap(), vec!["name"]);
+            assert_eq!(expander.expand_args(&mut task).unwrap(), vec!["name"]);
+        }
+
+        #[test]
+        fn inherits_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("$FOO".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_args(&mut task).unwrap(), vec!["$FOO"]);
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO".into()]));
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("$FOO".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_args(&mut task).unwrap(), vec!["$FOO"]);
+            assert!(task.input_env.is_empty());
+        }
+
+        #[test]
+        fn inherits_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("@group(all)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["./config.yml", "./dir/subdir", "./*.md", "./**/*.json"]
+            );
+            assert_eq!(
+                task.input_files,
+                FxHashSet::from_iter([
+                    "project/source/config.yml".into(),
+                    "project/source/dir/subdir".into()
+                ])
+            );
+            assert_eq!(
+                task.input_globs,
+                FxHashSet::from_iter([
+                    "project/source/**/*.json".into(),
+                    "project/source/*.md".into()
+                ])
+            );
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("@group(all)".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["./config.yml", "./dir/subdir", "./*.md", "./**/*.json"]
+            );
+            assert!(task.input_files.is_empty());
+            assert!(task.input_globs.is_empty());
         }
 
         #[test]
@@ -601,7 +717,10 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_args(&task).unwrap(), vec!["bar/project"]);
+            assert_eq!(
+                expander.expand_args(&mut task).unwrap(),
+                vec!["bar/project"]
+            );
         }
     }
 
@@ -620,7 +739,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("KEY".into(), "value".into())])
             );
         }
@@ -637,7 +756,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("VAR".into(), "project-prod".into())])
             );
         }
@@ -655,9 +774,66 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("VARS".into(), "project-debug-task".into())])
             );
+        }
+
+        #[test]
+        fn inherits_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("GROUP".into(), "@group(all)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_env(&mut task).unwrap(),
+                FxHashMap::from_iter([(
+                    "GROUP".into(),
+                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                )])
+            );
+            assert_eq!(
+                task.input_files,
+                FxHashSet::from_iter([
+                    "project/source/config.yml".into(),
+                    "project/source/dir/subdir".into()
+                ])
+            );
+            assert_eq!(
+                task.input_globs,
+                FxHashSet::from_iter([
+                    "project/source/**/*.json".into(),
+                    "project/source/*.md".into()
+                ])
+            );
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("GROUP".into(), "@group(all)".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_env(&mut task).unwrap(),
+                FxHashMap::from_iter([(
+                    "GROUP".into(),
+                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                )])
+            );
+            assert!(task.input_files.is_empty());
+            assert!(task.input_globs.is_empty());
         }
 
         #[test]
@@ -672,7 +848,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([(
                     "GROUP".into(),
                     "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
@@ -692,7 +868,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("DIRS".into(), "./dir/subdir,./other".into())])
             );
         }
@@ -709,7 +885,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([(
                     "FILES".into(),
                     "./config.yml,./dir/subdir/nested.json,./docs.md,./other/file.json".into()
@@ -729,7 +905,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("GLOBS".into(), "./*.md,./**/*.json".into())])
             );
         }
@@ -746,7 +922,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("ROOT".into(), "./dir/subdir".into())])
             );
         }
@@ -770,7 +946,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_env(&task).unwrap(),
+                expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([("ROOT".into(), "name".into())])
             );
         }
@@ -789,7 +965,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_env(&task).unwrap();
+            expander.expand_env(&mut task).unwrap();
         }
 
         #[test]
@@ -806,7 +982,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_env(&task).unwrap();
+            expander.expand_env(&mut task).unwrap();
         }
 
         #[test]
@@ -823,7 +999,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_env(&task).unwrap();
+            expander.expand_env(&mut task).unwrap();
         }
     }
 
@@ -1436,7 +1612,10 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_script(&task).unwrap(), "bin --foo -az bar");
+            assert_eq!(
+                expander.expand_script(&mut task).unwrap(),
+                "bin --foo -az bar"
+            );
         }
 
         #[test]
@@ -1451,7 +1630,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_script(&task).unwrap(),
+                expander.expand_script(&mut task).unwrap(),
                 "project/bin --foo -az bar"
             );
         }
@@ -1468,9 +1647,91 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_script(&task).unwrap(),
+                expander.expand_script(&mut task).unwrap(),
                 "project/bin/task --foo -az bar"
             );
+        }
+
+        #[test]
+        fn inherits_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("$FOO".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_script(&mut task).unwrap(), "$FOO");
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO".into()]));
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("$FOO".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_script(&mut task).unwrap(), "$FOO");
+            assert!(task.input_env.is_empty());
+        }
+
+        #[test]
+        fn inherits_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("bin @group(all)".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_script(&mut task).unwrap(),
+                "bin ./config.yml ./dir/subdir ./*.md ./**/*.json"
+            );
+            assert_eq!(
+                task.input_files,
+                FxHashSet::from_iter([
+                    "project/source/config.yml".into(),
+                    "project/source/dir/subdir".into()
+                ])
+            );
+            assert_eq!(
+                task.input_globs,
+                FxHashSet::from_iter([
+                    "project/source/**/*.json".into(),
+                    "project/source/*.md".into()
+                ])
+            );
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_token_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("bin @group(all)".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_script(&mut task).unwrap(),
+                "bin ./config.yml ./dir/subdir ./*.md ./**/*.json"
+            );
+            assert!(task.input_files.is_empty());
+            assert!(task.input_globs.is_empty());
         }
 
         #[test]
@@ -1486,7 +1747,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_script(&task).unwrap(),
+                expander.expand_script(&mut task).unwrap(),
                 "bin --foo -az ./**/*.json"
             );
         }
@@ -1507,7 +1768,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_script(&task).unwrap(),
+                expander.expand_script(&mut task).unwrap(),
                 "bin --foo -az ./docs.md ./other/file.json"
             );
         }
@@ -1530,7 +1791,10 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_script(&task).unwrap(), "bin --name name");
+            assert_eq!(
+                expander.expand_script(&mut task).unwrap(),
+                "bin --name name"
+            );
         }
     }
 }

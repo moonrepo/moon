@@ -114,8 +114,10 @@ impl<'graph> TaskExpander<'graph> {
         for dep in deps.iter_mut() {
             let dep_args = self
                 .token
-                .expand_args_with_task(task, &parse_task_args(&dep.args)?)?;
-            let dep_env = self.token.expand_env_with_task(task, &dep.env)?;
+                .expand_args_with_task(task, Some(parse_task_args(&dep.args)?))?;
+            let dep_env = self
+                .token
+                .expand_env_with_task(task, Some(mem::take(&mut dep.env)))?;
 
             dep.args = if dep_args.is_empty() {
                 TaskArgs::None

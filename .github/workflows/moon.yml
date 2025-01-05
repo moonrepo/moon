@@ -58,8 +58,8 @@ jobs:
       - uses: depot/setup-action@v1
       - uses: moonrepo/setup-rust@v1
         with:
-          cache-base: '^(master|develop-)'
-      - run: cargo build --workspace
+          cache: false
+      - run: cargo build
       - run: ./target/debug/moon --version
       # Non-staged
       - run: ./target/debug/moon docker scaffold website --include '*.config.js' --log debug

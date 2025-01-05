@@ -22,6 +22,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{mpsc, RwLock, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
+use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -176,22 +177,24 @@ impl ActionPipeline {
 
             actions.push(action);
 
-            if actions.len() == total_actions {
-                debug!("Finished pipeline, received all results");
-                break;
-            } else if abort_token.is_cancelled() {
+            if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
                 break;
             } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (via signal)");
+                break;
+            } else if actions.len() == total_actions {
+                debug!("Finished pipeline, received all results");
                 break;
             }
         }
 
         drop(receiver);
 
-        // Clean up any open handles
-        queue_handle.abort();
+        // Wait for the queue to abort all running tasks
+        let _ = queue_handle.await;
+
+        // Force abort the signal handler
         signal_handle.abort();
 
         self.aborted = abort_token.is_cancelled();
@@ -297,39 +300,53 @@ impl ActionPipeline {
             }
 
             // Then run all persistent actions in parallel
-            if !persistent_indices.is_empty() {
-                debug!(
-                    indices = ?persistent_indices,
-                    "Running {} persistent actions",
-                    persistent_indices.len()
-                );
+            if persistent_indices.is_empty() {
+                return;
+            }
 
-                persistent_indices
-                    .into_iter()
-                    .flat_map(|node_index| {
-                        let node = action_graph.get_node_from_index(&node_index)?;
+            debug!(
+                indices = ?persistent_indices,
+                "Running {} persistent actions",
+                persistent_indices.len()
+            );
 
-                        // Since the task is persistent, set the state early since
-                        // it "never finishes", otherwise the runner will error about
-                        // a missing hash if it's a dependency of another persistent task
-                        if let ActionNode::RunTask(inner) = node {
-                            action_context
-                                .set_target_state(inner.target.clone(), TargetState::Passthrough);
-                        }
+            persistent_indices
+                .into_iter()
+                .flat_map(|node_index| {
+                    let node = action_graph.get_node_from_index(&node_index)?;
 
-                        Some((node.to_owned(), node_index.index()))
-                    })
-                    .for_each(|(node, node_index)| {
-                        job_handles.spawn(dispatch_job(
-                            node,
-                            node_index,
-                            job_context.clone(),
-                            Arc::clone(&app_context),
-                            Arc::clone(&action_context),
-                        ));
-                    });
+                    // Since the task is persistent, set the state early since
+                    // it "never finishes", otherwise the runner will error about
+                    // a missing hash if it's a dependency of another persistent task
+                    if let ActionNode::RunTask(inner) = node {
+                        action_context
+                            .set_target_state(inner.target.clone(), TargetState::Passthrough);
+                    }
 
-                exhaust_job_handles(&mut job_handles, &job_context).await;
+                    Some((node.to_owned(), node_index.index()))
+                })
+                .for_each(|(node, node_index)| {
+                    job_handles.spawn(dispatch_job(
+                        node,
+                        node_index,
+                        job_context.clone(),
+                        Arc::clone(&app_context),
+                        Arc::clone(&action_context),
+                    ));
+                });
+
+            // Since these tasks are persistent and never complete,
+            // we need to continually check if they've been aborted or
+            // cancelled, otherwise we will end up with zombie processes
+            loop {
+                if job_context.is_aborted_or_cancelled() {
+                    debug!("Shutting down {} persistent jobs", job_handles.len());
+
+                    job_handles.shutdown().await;
+                    break;
+                }
+
+                sleep(Duration::from_millis(150)).await;
             }
         }))
     }
@@ -455,6 +472,7 @@ async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>, job_context: &Job
         // loop through and abort all currently running handles
         if job_context.is_aborted_or_cancelled() {
             set.shutdown().await;
+            set.detach_all();
 
             // Aborted
             return true;

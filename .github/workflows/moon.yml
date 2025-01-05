@@ -46,8 +46,10 @@ jobs:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           matrix: ${{ toJSON(matrix) }}
   docker:
+    if: ${{ github.repository == 'moonrepo/moon' }}
     name: Docker
-    runs-on: ubuntu-latest
+    # Older required for Docker libc
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       id-token: write

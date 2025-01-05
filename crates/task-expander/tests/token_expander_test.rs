@@ -498,7 +498,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_command(&task).unwrap();
+            expander.expand_command(&mut task).unwrap();
         }
 
         #[test]
@@ -512,7 +512,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "bin");
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "bin");
         }
 
         #[test]
@@ -526,7 +526,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "project/bin");
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "project/bin");
         }
 
         #[test]
@@ -540,7 +540,10 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "project/bin/task");
+            assert_eq!(
+                expander.expand_command(&mut task).unwrap(),
+                "project/bin/task"
+            );
         }
 
         #[test]
@@ -561,7 +564,38 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            assert_eq!(expander.expand_command(&task).unwrap(), "name");
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "name");
+        }
+
+        #[test]
+        fn inherits_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.command = "$FOO".into();
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "$FOO");
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO".into()]));
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.command = "$FOO".into();
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_command(&mut task).unwrap(), "$FOO");
+            assert!(task.input_env.is_empty());
         }
     }
 
@@ -587,6 +621,37 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(expander.expand_args(&mut task).unwrap(), vec!["name"]);
+        }
+
+        #[test]
+        fn inherits_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("$FOO".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_args(&mut task).unwrap(), vec!["$FOO"]);
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO".into()]));
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.args.push("$FOO".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_args(&mut task).unwrap(), vec!["$FOO"]);
+            assert!(task.input_env.is_empty());
         }
 
         #[test]
@@ -1585,6 +1650,37 @@ mod token_expander {
                 expander.expand_script(&mut task).unwrap(),
                 "project/bin/task --foo -az bar"
             );
+        }
+
+        #[test]
+        fn inherits_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("$FOO".into());
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_script(&mut task).unwrap(), "$FOO");
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO".into()]));
+        }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("$FOO".into());
+            task.options.infer_inputs = false;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(expander.expand_script(&mut task).unwrap(), "$FOO");
+            assert!(task.input_env.is_empty());
         }
 
         #[test]

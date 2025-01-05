@@ -500,7 +500,7 @@
         },
         "inferInputs": {
           "title": "inferInputs",
-          "description": "Automatically infer inputs from file groups that were utilized within command, script, args, and env.",
+          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env.",
           "anyOf": [
             {
               "type": "boolean"
@@ -509,7 +509,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Automatically infer inputs from file groups that were utilized within `command`, `script`, `args`, and `env`."
+          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`."
         },
         "interactive": {
           "title": "interactive",

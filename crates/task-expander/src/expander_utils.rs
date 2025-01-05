@@ -1,13 +1,14 @@
 use moon_config::patterns;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 use tracing::debug;
 
 pub fn substitute_env_vars(mut env: FxHashMap<String, String>) -> FxHashMap<String, String> {
     let cloned_env = env.clone();
+    let mut found = FxHashSet::default();
 
     for (key, value) in env.iter_mut() {
-        *value = substitute_env_var(key, value, &cloned_env);
+        *value = substitute_env_var(key, value, &cloned_env, &mut found);
     }
 
     env
@@ -17,6 +18,7 @@ pub fn substitute_env_var(
     base_name: &str,
     value: &str,
     env_map: &FxHashMap<String, String>,
+    env_found: &mut FxHashSet<String>,
 ) -> String {
     if !value.contains('$') {
         return value.to_owned();
@@ -31,6 +33,8 @@ pub fn substitute_env_var(
                 else {
                 return String::new();
             };
+
+            env_found.insert(name.to_owned());
 
             let flag = caps.name("flag1").or_else(|| caps.name("flag2")).map(|cap| cap.as_str());
 
@@ -83,29 +87,37 @@ mod tests {
     #[test]
     fn handles_flags_when_missing() {
         let envs = FxHashMap::default();
+        let mut found = FxHashSet::default();
 
-        assert_eq!(substitute_env_var("", "$KEY", &envs), "$KEY");
-        assert_eq!(substitute_env_var("", "${KEY}", &envs), "${KEY}");
+        assert_eq!(substitute_env_var("", "$KEY", &envs, &mut found), "$KEY");
+        assert_eq!(
+            substitute_env_var("", "${KEY}", &envs, &mut found),
+            "${KEY}"
+        );
 
-        assert_eq!(substitute_env_var("", "$KEY!", &envs), "$KEY");
-        assert_eq!(substitute_env_var("", "${KEY!}", &envs), "$KEY");
+        assert_eq!(substitute_env_var("", "$KEY!", &envs, &mut found), "$KEY");
+        assert_eq!(substitute_env_var("", "${KEY!}", &envs, &mut found), "$KEY");
 
-        assert_eq!(substitute_env_var("", "$KEY?", &envs), "");
-        assert_eq!(substitute_env_var("", "${KEY?}", &envs), "");
+        assert_eq!(substitute_env_var("", "$KEY?", &envs, &mut found), "");
+        assert_eq!(substitute_env_var("", "${KEY?}", &envs, &mut found), "");
     }
 
     #[test]
     fn handles_flags_when_not_missing() {
         let mut envs = FxHashMap::default();
         envs.insert("KEY".to_owned(), "value".to_owned());
+        let mut found = FxHashSet::default();
 
-        assert_eq!(substitute_env_var("", "$KEY", &envs), "value");
-        assert_eq!(substitute_env_var("", "${KEY}", &envs), "value");
+        assert_eq!(substitute_env_var("", "$KEY", &envs, &mut found), "value");
+        assert_eq!(substitute_env_var("", "${KEY}", &envs, &mut found), "value");
 
-        assert_eq!(substitute_env_var("", "$KEY!", &envs), "$KEY");
-        assert_eq!(substitute_env_var("", "${KEY!}", &envs), "$KEY");
+        assert_eq!(substitute_env_var("", "$KEY!", &envs, &mut found), "$KEY");
+        assert_eq!(substitute_env_var("", "${KEY!}", &envs, &mut found), "$KEY");
 
-        assert_eq!(substitute_env_var("", "$KEY?", &envs), "value");
-        assert_eq!(substitute_env_var("", "${KEY?}", &envs), "value");
+        assert_eq!(substitute_env_var("", "$KEY?", &envs, &mut found), "value");
+        assert_eq!(
+            substitute_env_var("", "${KEY?}", &envs, &mut found),
+            "value"
+        );
     }
 }

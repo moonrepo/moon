@@ -70,8 +70,8 @@ export interface TaskOptionsConfig {
 	 */
 	envFile: TaskOptionEnvFile | null;
 	/**
-	 * Automatically infer inputs from file groups that were utilized
-	 * within `command`, `script`, `args`, and `env`.
+	 * Automatically infer inputs from file groups or environment variables
+	 * that were utilized within `command`, `script`, `args`, and `env`.
 	 */
 	inferInputs: boolean | null;
 	/**
@@ -333,8 +333,8 @@ export interface PartialTaskOptionsConfig {
 	 */
 	envFile?: TaskOptionEnvFile | null;
 	/**
-	 * Automatically infer inputs from file groups that were utilized
-	 * within `command`, `script`, `args`, and `env`.
+	 * Automatically infer inputs from file groups or environment variables
+	 * that were utilized within `command`, `script`, `args`, and `env`.
 	 */
 	inferInputs?: boolean | null;
 	/**

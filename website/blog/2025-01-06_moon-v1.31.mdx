@@ -1,0 +1,40 @@
+---
+slug: moon-v1.31
+title: moon v1.31 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.30.png
+---
+
+It's been almost 2 months since our last release, and we're excited to announce some major features
+requested by the community!
+
+<!--truncate-->
+
+## Goodbye platform, hello toolchain
+
+## Run tasks using globs
+
+## Task improvements
+
+### Inferring inputs
+
+### Always run in CI
+
+## Remote cache improvements
+
+### Zstandard compression
+
+### Symlinking on Windows
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.31.0) for a full list
+of changes.
+
+- Added glob support (and `glob://`) to `generator.templates` in `.moon/workspace.yml`, allowing you
+  to glob for your codegen template locations.
+- Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
+  support a list of files/URLs to extend.
+- Updated toolchain dependency installs to retry up to 3 attempts if the install command fails.
+- Improved the task output prefixing logic.

@@ -23,8 +23,8 @@
 - Added the ability to run targets in `moon run` and `moon ci` using a glob-like syntax.
   - For example: `:build-*`, `app-*:build`, `#tag-{foo,bar}:build`, etc.
 - Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
-- Added glob support (and `glob://`) to `generator.templates`, allowing you to glob for your codegen
-  templates locations.
+- Added glob support (and `glob://`) to `generator.templates` in `.moon/workspace.yml`, allowing you
+  to glob for your codegen template locations.
 - Added a task option `inferInputs`, that will automatically infer inputs based on file groups and
   substituted environment variables used within the task.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run

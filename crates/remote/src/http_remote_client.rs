@@ -14,6 +14,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
 use reqwest::Client;
+use starbase_utils::json;
 use std::{error::Error, path::Path, sync::OnceLock};
 use tonic::{
     transport::{Channel, Endpoint, Server},
@@ -105,11 +106,12 @@ impl RemoteClient for HttpRemoteClient {
                 self.host, self.instance_name, digest.hash
             ))
             .header("Accept", "application/json")
+            .header("Content-Type", "application/json")
             .send()
             .await
         {
             Ok(response) => {
-                dbg!(&response);
+                dbg!("get_action_result", &response);
                 // let result = response.into_inner();
                 //
                 dbg!(response.text().await.unwrap());
@@ -154,20 +156,30 @@ impl RemoteClient for HttpRemoteClient {
             "Caching action result"
         );
 
+        let mut data = json::format(&result, false)?;
+
+        // Empty bytes arrays are not allowed
+        data = data.replace(r#""stdout_raw":[],"#, "");
+        data = data.replace(r#""stderr_raw":[],"#, "");
+        data = data.replace(r#""contents":[],"#, "");
+
+        dbg!(&result);
+        println!("{}", data);
+
         let res = self
             .get_client()
             .put(format!(
                 "{}/{}/ac/{}",
                 self.host, self.instance_name, digest.hash
             ))
+            .header("Accept", "application/json")
             .header("Content-Type", "application/json")
-            .body("{}") // TODO
-            // .json(&result)
+            .body(data)
             .send()
             .await
             .unwrap();
 
-        dbg!(&res);
+        dbg!("update_action_result", &res);
         dbg!(res.text().await.unwrap());
 
         Ok(None)

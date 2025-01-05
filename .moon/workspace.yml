@@ -36,7 +36,8 @@ docker:
       - '*.config.js'
       - '*.json'
 # unstable_remote:
-#   host: 'grpc://0.0.0.0:9092'
+#   host: 'http://0.0.0.0:8080'
+#   # host: 'grpc://0.0.0.0:9092'
 #   cache:
 #     compression: 'zstd'
 # mtls:

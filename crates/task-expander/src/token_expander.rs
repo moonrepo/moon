@@ -12,9 +12,10 @@ use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::borrow::Cow;
 use std::env;
+use std::mem;
 use tracing::{debug, instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
@@ -95,10 +96,10 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_command(&mut self, task: &Task) -> miette::Result<String> {
+    pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;
 
-        let mut command = Cow::Borrowed(&task.command);
+        let mut command = Cow::Owned(task.command.clone());
 
         if self.has_token_function(&command) {
             let result = self.replace_function(task, &command)?;
@@ -108,19 +109,24 @@ impl<'graph> TokenExpander<'graph> {
             }
         }
 
-        self.replace_all_variables(task, command.as_str())
+        self.replace_all_variables_and_infer(task, &command)
     }
 
     #[instrument(skip_all)]
-    pub fn expand_script(&mut self, task: &Task) -> miette::Result<String> {
+    pub fn expand_script(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Script;
 
-        let mut script = Cow::Borrowed(task.script.as_ref().expect("Script not defined!"));
+        let mut script = Cow::Owned(task.script.clone().expect("Script not defined!"));
 
         while self.has_token_function(&script) {
             let result = self.replace_function(task, &script)?;
 
             if let Some(token) = result.token {
+                if task.options.infer_inputs {
+                    task.input_files.extend(result.files.clone());
+                    task.input_globs.extend(result.globs.clone());
+                }
+
                 let mut items = vec![];
 
                 for file in result.files {
@@ -139,27 +145,33 @@ impl<'graph> TokenExpander<'graph> {
             }
         }
 
-        self.replace_all_variables(task, script.as_str())
+        self.replace_all_variables_and_infer(task, &script)
     }
 
     #[instrument(skip_all)]
-    pub fn expand_args(&mut self, task: &Task) -> miette::Result<Vec<String>> {
-        self.expand_args_with_task(task, &task.args)
+    pub fn expand_args(&mut self, task: &mut Task) -> miette::Result<Vec<String>> {
+        self.expand_args_with_task(task, None)
     }
 
     pub fn expand_args_with_task(
         &mut self,
-        task: &Task,
-        base_args: &[String],
+        task: &mut Task,
+        base_args: Option<Vec<String>>,
     ) -> miette::Result<Vec<String>> {
         self.scope = TokenScope::Args;
 
         let mut args = vec![];
+        let base_args = base_args.unwrap_or_else(|| mem::take(&mut task.args));
 
         for arg in base_args {
             // Token functions
-            if self.has_token_function(arg) {
-                let result = self.replace_function(task, arg)?;
+            if self.has_token_function(&arg) {
+                let result = self.replace_function(task, &arg)?;
+
+                if task.options.infer_inputs {
+                    task.input_files.extend(result.files.clone());
+                    task.input_globs.extend(result.globs.clone());
+                }
 
                 for file in result.files {
                     args.push(self.resolve_path_for_task(task, file)?);
@@ -175,7 +187,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 // Everything else
             } else {
-                args.push(self.replace_all_variables(task, arg)?);
+                args.push(self.replace_all_variables_and_infer(task, arg)?);
             }
         }
 
@@ -183,23 +195,29 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_env(&mut self, task: &Task) -> miette::Result<FxHashMap<String, String>> {
-        self.expand_env_with_task(task, &task.env)
+    pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<FxHashMap<String, String>> {
+        self.expand_env_with_task(task, None)
     }
 
     pub fn expand_env_with_task(
         &mut self,
-        task: &Task,
-        base_env: &FxHashMap<String, String>,
+        task: &mut Task,
+        base_env: Option<FxHashMap<String, String>>,
     ) -> miette::Result<FxHashMap<String, String>> {
         self.scope = TokenScope::Env;
 
         let mut env = FxHashMap::default();
+        let base_env = base_env.unwrap_or_else(|| mem::take(&mut task.env));
 
         for (key, value) in base_env {
-            if self.has_token_function(value) {
-                let result = self.replace_function(task, value)?;
+            if self.has_token_function(&value) {
+                let result = self.replace_function(task, &value)?;
                 let mut items = vec![];
+
+                if task.options.infer_inputs {
+                    task.input_files.extend(result.files.clone());
+                    task.input_globs.extend(result.globs.clone());
+                }
 
                 for file in result.files {
                     items.push(self.resolve_path_for_task(task, file)?);
@@ -217,8 +235,8 @@ impl<'graph> TokenExpander<'graph> {
                     key.to_owned(),
                     items.into_iter().collect::<Vec<_>>().join(","),
                 );
-            } else if self.has_token_variable(value) {
-                env.insert(key.to_owned(), self.replace_variables(task, value)?);
+            } else if self.has_token_variable(&value) {
+                env.insert(key.to_owned(), self.replace_variables(task, &value)?);
             } else {
                 env.insert(key.to_owned(), value.to_owned());
             }
@@ -665,7 +683,28 @@ impl<'graph> TokenExpander<'graph> {
             "",
             &self.replace_variables(task, value.as_ref())?,
             &task.env,
+            &mut FxHashSet::default(),
         ))
+    }
+
+    fn replace_all_variables_and_infer<T: AsRef<str>>(
+        &self,
+        task: &mut Task,
+        value: T,
+    ) -> miette::Result<String> {
+        let mut found = FxHashSet::default();
+        let result = substitute_env_var(
+            "",
+            &self.replace_variables(task, value.as_ref())?,
+            &task.env,
+            &mut found,
+        );
+
+        if task.options.infer_inputs {
+            task.input_env.extend(found);
+        }
+
+        Ok(result)
     }
 
     fn resolve_path_for_task(

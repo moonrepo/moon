@@ -210,6 +210,10 @@ cacheable!(
         /// running the task.
         pub env_file: Option<TaskOptionEnvFile>,
 
+        /// Automatically infer inputs from file groups or environment variables
+        /// that were utilized within `command`, `script`, `args`, and `env`.
+        pub infer_inputs: Option<bool>,
+
         /// Marks the task as interactive, so that it will run in isolation,
         /// and have direct access to stdin.
         #[setting(validate = validate_interactive)]

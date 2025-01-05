@@ -23,6 +23,8 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub env_files: Option<Vec<InputPath>>,
 
+        pub infer_inputs: bool,
+
         pub internal: bool,
 
         pub interactive: bool,
@@ -80,6 +82,7 @@ impl Default for TaskOptions {
             cache: true,
             cache_lifetime: None,
             env_files: None,
+            infer_inputs: true,
             internal: false,
             interactive: false,
             merge_args: TaskMergeStrategy::Append,

@@ -1229,6 +1229,19 @@
           ],
           "markdownDescription": "Loads and sets environment variables from the `.env` file when running the task."
         },
+        "inferInputs": {
+          "title": "inferInputs",
+          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`."
+        },
         "interactive": {
           "title": "interactive",
           "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin.",

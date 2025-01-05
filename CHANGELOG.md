@@ -25,8 +25,12 @@
 - Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
 - Added glob support (and `glob://`) to `generator.templates`, allowing you to glob for your codegen
   templates locations.
+- Added a task option `inferInputs`, that will automatically infer inputs based on file groups and
+  substituted environment variables used within the task.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run
   if affected, same as `true`).
+- Updated task inputs to automatically be inherited from file group token functions used within the
+  task's `script`, `command`, `args`, or `env`.
 - Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
   support a list of files/URLs to extend.
 - Updated our unstable remote service (Bazel RE API) with new functionality:
@@ -39,6 +43,7 @@
 - Updated the `moon templates` command:
   - Templates are now sorted by identifier.
   - Added a `--filter` option to filter the templates list by ID.
+- Updated toolchain dependency installs to retry up to 3 attempts if the install command fails.
 - Improved the task output prefixing logic.
 
 #### 🐞 Fixes

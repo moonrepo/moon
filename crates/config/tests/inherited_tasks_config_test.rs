@@ -1150,6 +1150,7 @@ mod task_manager {
                         cache: Some(false),
                         cache_lifetime: None,
                         env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
+                        infer_inputs: None,
                         interactive: Some(false),
                         internal: Some(true),
                         merge: None,

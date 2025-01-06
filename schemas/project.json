@@ -86,6 +86,7 @@
       "title": "platform",
       "description": "The default platform for all tasks within the project, if their platform is unknown.",
       "default": "unknown",
+      "deprecated": true,
       "anyOf": [
         {
           "$ref": "#/definitions/PlatformType"
@@ -591,6 +592,18 @@
           ],
           "markdownDescription": "Overrides `bun` settings."
         },
+        "default": {
+          "title": "default",
+          "description": "The default toolchain for all tasks within the project, if their toolchain is unknown.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "deno": {
           "title": "deno",
           "description": "Overrides deno settings.",
@@ -1004,6 +1017,21 @@
             }
           ]
         },
+        "toolchain": {
+          "title": "toolchain",
+          "description": "The toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
         "type": {
           "title": "type",
           "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",
@@ -1095,20 +1123,6 @@
         "windows"
       ]
     },
-    "TaskOptionAffectedFiles": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string",
-          "enum": [
-            "args",
-            "env"
-          ]
-        }
-      ]
-    },
     "TaskOptionEnvFile": {
       "anyOf": [
         {
@@ -1134,7 +1148,18 @@
           "description": "The pattern in which affected files will be passed to the task.",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionAffectedFiles"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "args",
+                    "env"
+                  ]
+                }
+              ]
             },
             {
               "type": "null"
@@ -1203,6 +1228,19 @@
             }
           ],
           "markdownDescription": "Loads and sets environment variables from the `.env` file when running the task."
+        },
+        "inferInputs": {
+          "title": "inferInputs",
+          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`."
         },
         "interactive": {
           "title": "interactive",
@@ -1414,7 +1452,18 @@
           "description": "Whether to run the task in CI or not, when executing moon ci or moon run.",
           "anyOf": [
             {
-              "type": "boolean"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "affected"
+                  ]
+                }
+              ]
             },
             {
               "type": "null"

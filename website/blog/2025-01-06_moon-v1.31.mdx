@@ -3,10 +3,11 @@ slug: moon-v1.31
 title: moon v1.31 - Toolchain progress, glob-based targets, task & remote cache improvements
 authors: [milesj]
 tags: [platform, toolchain, glob, task, target, remote, cache, ci]
-# image: ./img/moon/v1.30.png
+image: ./img/moon/v1.31.png
 ---
 
-Happy new years everyone! In this release, we've landed a handful of quality-of-life improvements.
+Happy new years everyone 🎉! In this release, we've landed a handful of quality-of-life
+improvements.
 
 <!--truncate-->
 
@@ -34,14 +35,15 @@ the concept of the platform, and renaming everything to toolchain. The following
 - Deprecated the `--platform` option for `moon query tasks`, use `--toolchain` instead.
 - Deprecated the `$taskPlatform` token, use `$taskToolchain` instead.
 
-## Run tasks using globs
+## Run tasks using glob-based targets
 
 This has been a request from the community for sometime, as it fills a gap that running multiple
 tasks with a non-project scope, or running tasks with a query, simply couldn't achieve. For example,
 say you had `build-debug` and `build-release` tasks, and wanted to future-proof it for potential new
 build related tasks.
 
-Before this release, you would need to explicitly list all targets, but with globs, you can achieve
+Before this release, you would need to explicitly list all targets in
+[`moon run`](/docs/commands/run) or [`moon ci`](/docs/commands/ci), but with globs, you can achieve
 the same affect with 1 glob target.
 
 ```shell

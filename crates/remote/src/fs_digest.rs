@@ -3,9 +3,9 @@
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
+use bazel_remote_apis::google::protobuf::{Timestamp, UInt32Value};
 use chrono::NaiveDateTime;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use prost_types::Timestamp;
 use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::FsError;
 use starbase_utils::glob;
@@ -60,7 +60,7 @@ pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
 
 #[cfg(unix)]
 fn is_file_executable(_path: &Path, props: &NodeProperties) -> bool {
-    props.unix_mode.is_some_and(|mode| mode & 0o111 != 0)
+    props.unix_mode.is_some_and(|mode| mode.value & 0o111 != 0)
 }
 
 #[cfg(windows)]
@@ -79,7 +79,9 @@ pub fn compute_node_properties(metadata: &Metadata) -> NodeProperties {
     {
         use std::os::unix::fs::PermissionsExt;
 
-        props.unix_mode = Some(metadata.permissions().mode());
+        props.unix_mode = Some(UInt32Value {
+            value: metadata.permissions().mode(),
+        });
     }
 
     props
@@ -192,7 +194,7 @@ fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<
     if let Some(mode) = &props.unix_mode {
         use std::os::unix::fs::PermissionsExt;
 
-        fs::set_permissions(path, fs::Permissions::from_mode(*mode)).map_err(|error| {
+        fs::set_permissions(path, fs::Permissions::from_mode(mode.value)).map_err(|error| {
             FsError::Perms {
                 path: path.to_path_buf(),
                 error: Box::new(error),

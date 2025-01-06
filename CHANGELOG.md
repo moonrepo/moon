@@ -50,6 +50,8 @@
 
 - Fixed a panic that could occur during command argument parsing.
 - Fixed an issue where remote cached blobs would sometimes fail to be created locally.
+- Fixed an issue when `ctrl+c`ing multiple persistent tasks would sometimes leave them running in
+  the background.
 
 #### ⚙️ Internal
 

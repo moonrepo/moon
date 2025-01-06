@@ -47,6 +47,7 @@ pub fn setup_no_colors() {
     env::set_var("NO_COLOR", "1");
     // https://github.com/mitsuhiko/clicolors-control/issues/19
     env::set_var("CLICOLOR", "0");
+    env::remove_var("FORCE_COLOR");
 
     set_colors_enabled(false);
     set_colors_enabled_stderr(false);
@@ -79,6 +80,7 @@ pub fn setup_colors(force: bool) {
             // https://bixense.com/clicolors/
             env::set_var("CLICOLOR_FORCE", &color_level);
             env::set_var("FORCE_COLOR", &color_level);
+            env::remove_var("NO_COLOR");
         }
 
         return;

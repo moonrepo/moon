@@ -35,6 +35,15 @@ the concept of the platform, and renaming everything to toolchain. The following
 - Deprecated the `--platform` option for `moon query tasks`, use `--toolchain` instead.
 - Deprecated the `$taskPlatform` token, use `$taskToolchain` instead.
 
+:::warning
+
+On the surface these two features look the same, but internally they are quite different. We've done
+our best to support backwards compatibility, but there may be some edge cases that our testing suite
+did not cover. If you run into any problems, mainly tasks being associated with the wrong toolchain,
+please report an issue!
+
+:::
+
 ## Run tasks using glob-based targets
 
 This has been a request from the community for sometime, as it fills a gap that running multiple
@@ -67,8 +76,8 @@ keeping it simple and sticking to `*`, `[]`, and `{}`.
 
 :::info
 
-Be sure to quote targets with glob syntax, otherwise your shell native glob expansion may trigger
-instead, or fail with an error.
+Be sure to quote targets that contain glob syntax, otherwise your shell native glob expansion may
+trigger instead, or your shell may fail with an error.
 
 :::
 

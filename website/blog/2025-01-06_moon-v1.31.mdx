@@ -1,0 +1,193 @@
+---
+slug: moon-v1.31
+title: moon v1.31 - Toolchain progress, glob-based targets, task & remote cache improvements
+authors: [milesj]
+tags: [platform, toolchain, glob, task, target, remote, cache, ci]
+image: ./img/moon/v1.31.png
+---
+
+Happy new years everyone 🎉! In this release, we've landed a handful of quality-of-life
+improvements.
+
+<!--truncate-->
+
+## Goodbye platform, hello toolchain
+
+In preparation for toolchain WASM plugins, we've had to rewrite and rethink a lot of the internals
+of moon. Once such feature is the concept of a "platform", which is primarily interacted with
+through a task's [`platform`](/docs/config/project#platform-1) setting or a project's
+[`platform`](/docs/config/project#platform) setting.
+
+We do our best to detect the language and runtime (the "platform") that a project or task belongs
+to. This is important as it determines what tools to install, paths to include in `PATH`, and much
+more. However, there are situations where our detection fails, or you need to be explicit, so the
+`platform` settings exist.
+
+The new toolchain system is much more powerful, but it works quite differently, so we're slowly
+making changes within each release before flipping the switch. In this release, we are deprecating
+the concept of the platform, and renaming everything to toolchain. The following changes were made:
+
+- Deprecated the top-level `platform` setting in `moon.yml`, use `toolchain.default` instead.
+  - Additionally, the toolchain can now be inferred from the top-level `language` setting and any
+    config files in the project/workspace root. This pattern is preferred when possible.
+- Deprecated the `platform` task setting, use `toolchain` instead.
+- Deprecated the `taskPlatform` query field, use `taskToolchain` instead.
+- Deprecated the `--platform` option for `moon query tasks`, use `--toolchain` instead.
+- Deprecated the `$taskPlatform` token, use `$taskToolchain` instead.
+
+## Run tasks using glob-based targets
+
+This has been a request from the community for sometime, as it fills a gap that running multiple
+tasks with a non-project scope, or running tasks with a query, simply couldn't achieve. For example,
+say you had `build-debug` and `build-release` tasks, and wanted to future-proof it for potential new
+build related tasks.
+
+Before this release, you would need to explicitly list all targets in
+[`moon run`](/docs/commands/run) or [`moon ci`](/docs/commands/ci), but with globs, you can achieve
+the same affect with 1 glob target.
+
+```shell
+# Before
+$ moon run :build-debug :build-release
+
+# After
+$ moon run ':build-*'
+```
+
+Furthermore, glob syntax can also be applied to the project scope, allowing you to filter the target
+instead of applying to all projects.
+
+```shell
+$ moon run '*-{app,lib}:build-*'
+```
+
+Because these glob targets are real globs, they support all the
+[same syntax](/docs/concepts/file-pattern#globs) as other glob related functionality, but we suggest
+keeping it simple and sticking to `*`, `[]`, and `{}`.
+
+:::info
+
+Be sure to quote targets with glob syntax, otherwise your shell native glob expansion may trigger
+instead, or fail with an error.
+
+:::
+
+## Task improvements
+
+We also spent some time improving the ergonomics of tasks, our most important feature.
+
+### Inferring inputs
+
+Up until now, you had to explicitly configure the [`inputs`](/docs/config/project#inputs) of a task.
+This can be very tedious, so we're looking into ways to automate this. The first is through a new
+feature we are calling "inferring inputs from task parameters", where we automatically include
+inputs from any file group token functions and substituted environment variables, found within
+`command`, `script`, `args`, or `env`.
+
+To demonstate this, here's a task that utilizes file group tokens in previous releases.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'lint @group(sources) @group(tests)'
+    inputs:
+      - '@group(sources)'
+      - '@group(tests)'
+```
+
+As you can immediately tell, there's a fair bit of duplication here. Going forward, the tokens found
+within `inputs` can be omitted, as we can infer that the files defined in the `sources` and `tests`
+file groups should be inputs. The task above can simply be rewritten as.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'lint @group(sources) @group(tests)'
+```
+
+Useful right? However, if you do _not_ want this functionality, you can disable it with the new task
+option [`inferInputs`](/docs/config/project#inferinputs) (which is enabled by default).
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    # ...
+    options:
+      inferInputs: false
+```
+
+### Always run in CI
+
+The [`runInCI`](/docs/config/project#runinci) task option pairs nicely with the `moon ci` command,
+as it does most of the heavy lifting in determining what tasks to run based on affected/touched
+files. However, there are sometimes situations where a task should _always_ run in CI, regardless of
+whether it was affected or not.
+
+This isn't currently possible in moon, until now! We've updated the `runInCI` option to support a
+new value, "always", which will always run the task in CI!
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    options:
+      runInCI: 'always'
+```
+
+## Remote cache improvements
+
+In our last release, v1.30, we released
+[unstable support for self-hosted remote caching](./moon-v1.30#unstable-self-hosted-remote-caching).
+While still unstable in this release, we've landed more improvements.
+
+### Zstandard compression
+
+We've added a new setting,
+[`unstable_remote.cache.compression`](/docs/config/workspace#compression), that defines a
+compression format to use when uploading and downloading blobs. At this time, we only support `zstd`
+as an option, which is _not_ enabled by default.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  cache:
+    compression: 'zstd'
+```
+
+If you're using `bazel-remote` as your cache server, you'll also need to run it with zstandard
+enabled.
+
+```shell
+$ bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode zstd --grpc_address 0.0.0.0:9092
+```
+
+### Symlinking on Windows
+
+In the previous release, if we encountered an output blob that should be created as a symlink, we
+would simply copy the file contents on Windows when restoring instead of symlinking. On Unix, these
+outputs were symlinked correctly.
+
+The reason for this, is that symlinks require
+[privileged access on Windows](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/create-symbolic-links)
+to function correctly. We felt that abiding the REAPI specification was more important than the
+privileged access requirement, so if you're on Windows, be sure to allow/enable symlinks on each
+machine.
+
+### Sunsetting moonbase
+
+Since we're migrating to and advocating for the self-hosted remote caching solution, we will be
+sunsetting our [moonbase](/moonbase) product hosted at https://moonrepo.app on March 31st. All
+active subscriptions will be cancelled at the end of February, but caching will continue to work,
+albeit at the unpaid plan limits. We suggest migrating to the self-hosted solution before then!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.31.0) for a full list
+of changes.
+
+- Added glob support (and `glob://`) to `generator.templates` in `.moon/workspace.yml`, allowing you
+  to glob for your codegen template locations.
+- Added a `--filter` option to `moon templates`.
+- Updated the `extends` setting in `.moon/workspace.yml`, `toolchain.yml`, and `tasks.yml`, to
+  support a list of files/URLs to extend.
+- Updated toolchain dependency installs to retry up to 3 attempts if the install command fails.
+- Improved the task output prefixing logic.

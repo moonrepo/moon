@@ -10,21 +10,21 @@
 
 #### 🚀 Updates
 
-- We are deprecating the concept of a task "platform", as this is required for the next step in
+- We are deprecating the concept of the "platform", as this is required for the next step in
   supporting WASM based toolchain plugins. Going forward, any reference to platform is now a
   toolchain. The following changes have been made:
+  - Deprecated the top-level `platform` setting in `moon.yml`, use `toolchain.default` instead.
+    - Additionally, the toolchain can now be inferred from the top-level `language` setting and any
+      config files in the project/workspace root. This pattern is preferred when possible.
   - Deprecated the `platform` task setting, use `toolchain` instead.
   - Deprecated the `taskPlatform` query field, use `taskToolchain` instead.
   - Deprecated the `--platform` option for `moon query tasks`, use `--toolchain` instead.
   - Deprecated the `$taskPlatform` token, use `$taskToolchain` instead.
-  - Deprecated the top-level `platform` setting from `moon.yml`, use `toolchain.default` instead.
-    - Additionally, the toolchain can now be inferred from the top-level `language` setting and any
-      config files in the project/workspace root. This pattern is preferred when possible.
 - Added the ability to run targets in `moon run` and `moon ci` using a glob-like syntax.
   - For example: `:build-*`, `app-*:build`, `#tag-{foo,bar}:build`, etc.
 - Added a `--no-bail` flag to `moon run`, that will continue running tasks even when a task fails.
-- Added glob support (and `glob://`) to `generator.templates`, allowing you to glob for your codegen
-  templates locations.
+- Added glob support (and `glob://`) to `generator.templates` in `.moon/workspace.yml`, allowing you
+  to glob for your codegen template locations.
 - Added a task option `inferInputs`, that will automatically infer inputs based on file groups and
   substituted environment variables used within the task.
 - Updated task option `runInCI` to support the values "always" (always run) and "affected" (only run

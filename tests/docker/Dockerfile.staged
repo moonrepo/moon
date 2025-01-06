@@ -1,5 +1,5 @@
 #### BASE
-FROM node:20 AS base
+FROM node:latest AS base
 WORKDIR /app
 ENV CI=true
 

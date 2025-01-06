@@ -40,6 +40,10 @@ config files in the project/workspace root. This pattern is preferred when possi
 <li>Deprecated the <code>--platform</code> option for <code>moon query tasks</code>, use <code>--toolchain</code> instead.</li>
 <li>Deprecated the <code>$taskPlatform</code> token, use <code>$taskToolchain</code> instead.</li>
 </ul>
+<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>On the surface these two features look the same, but internally they are quite different. We've done
+our best to support backwards compatibility, but there may be some edge cases that our testing suite
+did not cover. If you run into any problems, mainly tasks being associated with the wrong toolchain,
+please report an issue!</p></div></div>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="run-tasks-using-glob-based-targets">Run tasks using glob-based targets<a class="hash-link" aria-label="Direct link to Run tasks using glob-based targets" title="Direct link to Run tasks using glob-based targets" href="https://moonrepo.dev/blog/moon-v1.31#run-tasks-using-glob-based-targets">​</a></h2>
 <p>This has been a request from the community for sometime, as it fills a gap that running multiple
 tasks with a non-project scope, or running tasks with a query, simply couldn't achieve. For example,
@@ -55,8 +59,8 @@ instead of applying to all projects.</p>
 <p>Because these glob targets are real globs, they support all the
 <a href="https://moonrepo.dev/docs/concepts/file-pattern#globs">same syntax</a> as other glob related functionality, but we suggest
 keeping it simple and sticking to <code>*</code>, <code>[]</code>, and <code>{}</code>.</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Be sure to quote targets with glob syntax, otherwise your shell native glob expansion may trigger
-instead, or fail with an error.</p></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Be sure to quote targets that contain glob syntax, otherwise your shell native glob expansion may
+trigger instead, or your shell may fail with an error.</p></div></div>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="task-improvements">Task improvements<a class="hash-link" aria-label="Direct link to Task improvements" title="Direct link to Task improvements" href="https://moonrepo.dev/blog/moon-v1.31#task-improvements">​</a></h2>
 <p>We also spent some time improving the ergonomics of tasks, our most important feature.</p>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="inferring-inputs">Inferring inputs<a class="hash-link" aria-label="Direct link to Inferring inputs" title="Direct link to Inferring inputs" href="https://moonrepo.dev/blog/moon-v1.31#inferring-inputs">​</a></h3>

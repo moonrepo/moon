@@ -46,8 +46,10 @@ jobs:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           matrix: ${{ toJSON(matrix) }}
   docker:
+    if: ${{ github.repository == 'moonrepo/moon' }}
     name: Docker
-    runs-on: ubuntu-latest
+    # Older required for Docker libc
+    runs-on: ubuntu-20.04
     permissions:
       contents: read
       id-token: write
@@ -56,8 +58,8 @@ jobs:
       - uses: depot/setup-action@v1
       - uses: moonrepo/setup-rust@v1
         with:
-          cache-base: '^(master|develop-)'
-      - run: cargo build --workspace
+          cache: false
+      - run: cargo build
       - run: ./target/debug/moon --version
       # Non-staged
       - run: ./target/debug/moon docker scaffold website --include '*.config.js' --log debug

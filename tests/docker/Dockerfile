@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:latest
 WORKDIR /app
 ENV CI=true
 

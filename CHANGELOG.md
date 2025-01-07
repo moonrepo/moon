@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `NO_COLOR` and `FORCE_COLOR` being unexpectedly set in some situations.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.44.4 (from 0.44.2).
+
 ## 1.31.0
 
 #### 💥 Breaking

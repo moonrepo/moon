@@ -119,7 +119,7 @@ use proto-hook.nu
 Add the following line to the end of your profile (`$PROFILE`).
 
 ```shell
-Invoke-Expression "$(proto activate pwsh)"
+proto activate pwsh | Out-String | Invoke-Expression
 ```
 
 #### Zsh

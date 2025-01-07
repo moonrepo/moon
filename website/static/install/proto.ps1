@@ -79,6 +79,8 @@ if (-not $env:PROTO_LOG) {
 
 # Versions >= 0.30 handle the messaging
 if ($Version -eq "latest" -or $Version -notmatch '^0\.[0-2]{1}[0-9]{1}\.') {
+  $env:STARBASE_FORCE_TTY = "true"
+
   Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
 
 # While older versions do not

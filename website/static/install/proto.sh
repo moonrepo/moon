@@ -148,6 +148,8 @@ version_pattern="^0\.[0-2]{1}[0-9]{1}\."
 
 # Versions >= 0.30 handle the messaging
 if [[ "$version" == "latest" ]] || [[ ! "$version" =~ $version_pattern ]]; then
+	export STARBASE_FORCE_TTY=true
+
 	$bin_path setup "${setup_args[@]}"
 
 # While older versions do not

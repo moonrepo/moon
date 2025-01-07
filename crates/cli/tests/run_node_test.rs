@@ -1260,6 +1260,8 @@ mod non_js_bins {
             cmd.arg("run").arg("esbuild:build");
         });
 
+        assert.debug();
+
         assert_eq!(
             fs::read_to_string(sandbox.path().join("esbuild/output.js")).unwrap(),
             "(() => {\n  // input.js\n  var ESBUILD = \"esbuild\";\n})();\n"

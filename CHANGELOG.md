@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed `NO_COLOR` and `FORCE_COLOR` being unexpectedly set in some situations.
+- Fixed an issue where a custom project `language` would no longer inherit global tasks of the same
+  name.
 
 #### ⚙️ Internal
 

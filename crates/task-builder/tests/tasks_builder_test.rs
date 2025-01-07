@@ -21,12 +21,8 @@ async fn build_tasks_with_config(
     let id = Id::raw("project");
     let source = WorkspaceRelativePathBuf::from(source);
     let enabled_toolchains = toolchain_config.get_enabled();
-    let project_toolchains = detect_project_toolchains(
-        root,
-        &root.join(source.as_str()),
-        &local_config.language,
-        &enabled_toolchains,
-    );
+    let project_toolchains =
+        detect_project_toolchains(root, &root.join(source.as_str()), &local_config.language);
 
     let mut builder = TasksBuilder::new(
         &id,

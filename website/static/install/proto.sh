@@ -138,6 +138,18 @@ fi
 
 rm -rf "$download_file" "$temp_dir"
 
+
+if [[ "$PROTO_DEBUG" == "true" ]]; then
+	echo
+	echo "arch=$arch"
+	echo "target=$target"
+	echo "download_url=$download_url"
+	echo "bin_path=$bin_path"
+	echo "shim_path=$shim_path"
+	echo "is_wsl=$is_wsl"
+	echo "deps=$deps"
+fi
+
 # Run setup script to update shells
 
 if [[ -z "$PROTO_LOG" ]]; then
@@ -150,7 +162,10 @@ version_pattern="^0\.[0-2]{1}[0-9]{1}\."
 if [[ "$version" == "latest" ]] || [[ ! "$version" =~ $version_pattern ]]; then
 	export STARBASE_FORCE_TTY=true
 
-	$bin_path setup "${setup_args[@]}"
+	# Temp fix because prompts are broken! https://github.com/moonrepo/proto/issues/692
+	export CI=true
+
+	exec $bin_path setup "${setup_args[@]}"
 
 # While older versions do not
 else
@@ -165,15 +180,4 @@ else
 	echo "Launch a new terminal window to start using proto!"
 	echo
 	echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
-fi
-
-if [[ "$PROTO_DEBUG" == "true" ]]; then
-	echo
-	echo "arch=$arch"
-	echo "target=$target"
-	echo "download_url=$download_url"
-	echo "bin_path=$bin_path"
-	echo "shim_path=$shim_path"
-	echo "is_wsl=$is_wsl"
-	echo "deps=$deps"
 fi

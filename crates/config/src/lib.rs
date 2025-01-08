@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_types)] // schematic
+
 #[cfg(feature = "loader")]
 mod config_cache;
 mod config_finder;

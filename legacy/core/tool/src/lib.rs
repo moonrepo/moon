@@ -88,6 +88,7 @@ pub fn get_proto_env_vars() -> FxHashMap<String, String> {
         ("PROTO_NO_PROGRESS".into(), "true".into()),
         // ("PROTO_LOG".into(), "trace".into()),
         ("PROTO_VERSION".into(), PROTO_CLI_VERSION.into()),
+        ("STARBASE_FORCE_TTY".into(), "true".into()),
     ])
 }
 

@@ -1,0 +1,7 @@
+platform: bun
+language: typescript
+
+tasks:
+  bun:
+    command: bun
+    platform: bun

@@ -21,12 +21,8 @@ async fn build_tasks_with_config(
     let id = Id::raw("project");
     let source = WorkspaceRelativePathBuf::from(source);
     let enabled_toolchains = toolchain_config.get_enabled();
-    let project_toolchains = detect_project_toolchains(
-        root,
-        &root.join(source.as_str()),
-        &local_config.language,
-        &enabled_toolchains,
-    );
+    let project_toolchains =
+        detect_project_toolchains(root, &root.join(source.as_str()), &local_config.language);
 
     let mut builder = TasksBuilder::new(
         &id,
@@ -164,55 +160,59 @@ mod tasks_builder {
         assert!(!test.state.local_only);
     }
 
-    #[tokio::test]
-    async fn inherits_global_tasks() {
-        let sandbox = create_sandbox("builder");
-        let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
+    mod inheritance {
+        use super::*;
 
-        let build = tasks.get("local-build").unwrap();
+        #[tokio::test]
+        async fn inherits_global_tasks() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
 
-        assert_eq!(build.command, "local-build");
-        assert_eq!(
-            build.inputs,
-            vec![
-                InputPath::ProjectFile("abc".into()),
-                InputPath::WorkspaceGlob(".moon/*.yml".into()),
-            ]
-        );
-        assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
-        assert!(!build.state.local_only);
+            let build = tasks.get("local-build").unwrap();
 
-        let run = tasks.get("local-run").unwrap();
+            assert_eq!(build.command, "local-build");
+            assert_eq!(
+                build.inputs,
+                vec![
+                    InputPath::ProjectFile("abc".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+            assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
+            assert!(!build.state.local_only);
 
-        assert_eq!(run.command, "local-run");
-        assert_eq!(
-            run.inputs,
-            vec![
-                InputPath::ProjectFile("xyz".into()),
-                InputPath::WorkspaceGlob(".moon/*.yml".into()),
-            ]
-        );
-        assert_eq!(run.outputs, vec![]);
-        assert!(run.state.local_only);
-    }
+            let run = tasks.get("local-run").unwrap();
 
-    #[tokio::test]
-    async fn inherits_global_tasks_from_all_scopes() {
-        let sandbox = create_sandbox("builder");
-        let tasks = build_tasks_with_toolchain(sandbox.path(), "scopes/moon.yml").await;
+            assert_eq!(run.command, "local-run");
+            assert_eq!(
+                run.inputs,
+                vec![
+                    InputPath::ProjectFile("xyz".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+            assert_eq!(run.outputs, vec![]);
+            assert!(run.state.local_only);
+        }
 
-        assert_eq!(
-            tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
-            vec![
-                "global-build",
-                "global-run",
-                "global-test",
-                "local",
-                "node",
-                "node-application",
-                "tag"
-            ]
-        );
+        #[tokio::test]
+        async fn inherits_global_tasks_from_all_scopes() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "scopes/moon.yml").await;
+
+            assert_eq!(
+                tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+                vec![
+                    "global-build",
+                    "global-run",
+                    "global-test",
+                    "local",
+                    "node",
+                    "node-application",
+                    "tag"
+                ]
+            );
+        }
     }
 
     mod defaults {

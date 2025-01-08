@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `NO_COLOR` and `FORCE_COLOR` being unexpectedly set in some situations.
+- Fixed an issue where a custom project `language` would no longer inherit global tasks of the same
+  name.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.44.4](https://github.com/moonrepo/proto/releases/tag/v0.44.4) (from 0.44.2).
+
 ## 1.31.0
 
 #### 💥 Breaking

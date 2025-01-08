@@ -506,8 +506,24 @@ mod project_graph {
 
             assert_eq!(
                 map_ids_from_target(graph.get_project("node").unwrap().task_targets.clone()),
-                ["global", "global-node", "node"]
+                ["global", "global-javascript", "global-node", "node"]
             );
+
+            assert_eq!(
+                map_ids_from_target(
+                    graph
+                        .get_project("system-library")
+                        .unwrap()
+                        .task_targets
+                        .clone()
+                ),
+                ["global", "global-system", "system-library"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_scoped_tasks_for_tier3_language() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
 
             assert_eq!(
                 map_ids_from_target(
@@ -519,21 +535,83 @@ mod project_graph {
                 ),
                 [
                     "global",
+                    "global-javascript",
                     "global-node",
                     "global-node-library",
                     "node-library"
                 ]
             );
+        }
+
+        #[tokio::test]
+        async fn inherits_scoped_tasks_for_tier2_language() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids_from_target(graph.get_project("ruby-tool").unwrap().task_targets.clone()),
+                ["global", "ruby-tool"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_scoped_tasks_for_custom_language() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
 
             assert_eq!(
                 map_ids_from_target(
                     graph
-                        .get_project("system-library")
+                        .get_project("kotlin-app")
                         .unwrap()
                         .task_targets
                         .clone()
                 ),
-                ["global", "system-library"]
+                ["global", "global-kotlin", "global-system", "kotlin-app"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_js_tasks_for_bun_toolchain() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids_from_target(graph.get_project("bun").unwrap().task_targets.clone()),
+                ["bun", "global", "global-javascript"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_js_tasks_for_deno_toolchain() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids_from_target(graph.get_project("deno").unwrap().task_targets.clone()),
+                ["deno", "global", "global-javascript"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_js_tasks_for_node_toolchain() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids_from_target(graph.get_project("node").unwrap().task_targets.clone()),
+                ["global", "global-javascript", "global-node", "node"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_ts_tasks_instead_of_js() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids_from_target(
+                    graph
+                        .get_project("bun-with-ts")
+                        .unwrap()
+                        .task_targets
+                        .clone()
+                ),
+                ["bun", "global", "global-typescript"]
             );
         }
 

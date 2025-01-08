@@ -1,0 +1,6 @@
+platform: bun
+
+tasks:
+  bun:
+    command: bun
+    platform: bun

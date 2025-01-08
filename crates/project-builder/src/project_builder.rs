@@ -9,7 +9,9 @@ use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
-use moon_toolchain::detect::{detect_project_language, detect_project_toolchains};
+use moon_toolchain::detect::{
+    detect_project_language, detect_project_toolchains, get_project_toolchains,
+};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -38,7 +40,14 @@ pub struct ProjectBuilder<'app> {
     root: PathBuf,
 
     pub language: LanguageType,
-    pub toolchains: Vec<Id>,
+
+    // Toolchains that will be used as the fallback for tasks.
+    // These are filtered based on enabled.
+    pub toolchains_tasks: Vec<Id>,
+
+    // Toolchains that will be used for task/config inheritance.
+    // These are *not* filtered based on enabled.
+    pub toolchains_config: Vec<Id>,
 }
 
 impl<'app> ProjectBuilder<'app> {
@@ -63,7 +72,8 @@ impl<'app> ProjectBuilder<'app> {
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
-            toolchains: vec![],
+            toolchains_tasks: vec![],
+            toolchains_config: vec![],
         })
     }
 
@@ -79,7 +89,7 @@ impl<'app> ProjectBuilder<'app> {
             .expect("Local config must be loaded before global config!");
 
         let global_config = tasks_manager.get_inherited_config(
-            &self.toolchains,
+            &self.toolchains_config,
             &local_config.stack,
             &local_config.type_of,
             &local_config.tags,
@@ -114,28 +124,18 @@ impl<'app> ProjectBuilder<'app> {
             config.language.clone()
         };
 
-        // Infer toolchains from language
-        if self.toolchains.is_empty() {
-            let mut added = false;
+        // Infer toolchains from the language as it handles the chain correctly:
+        // For example: node -> javascript, and not just node
+        if self.toolchains_tasks.is_empty() {
+            let mut toolchains = vec![];
 
-            if let Some(default_id) = &config.toolchain.default {
-                if self.context.enabled_toolchains.contains(default_id) {
-                    self.toolchains.push(default_id.to_owned());
-                    added = true;
-                }
-            }
-
-            // TODO remove in 2.0
             #[allow(deprecated)]
-            if !added && config.platform.is_some() {
-                if let Some(platform) = &config.platform {
-                    let default_id = platform.get_toolchain_id();
+            if let Some(default_id) = &config.toolchain.default {
+                toolchains.extend(get_project_toolchains(default_id, &self.language));
+            } else if let Some(platform) = &config.platform {
+                let default_id = platform.get_toolchain_id();
 
-                    if self.context.enabled_toolchains.contains(&default_id) {
-                        self.toolchains.push(default_id);
-                        added = true;
-                    }
-                }
+                toolchains.extend(get_project_toolchains(&default_id, &self.language));
 
                 debug!(
                     project_id = self.id.as_str(),
@@ -143,21 +143,25 @@ impl<'app> ProjectBuilder<'app> {
                     color::property("platform"),
                     color::property("toolchain.default"),
                 );
-            }
-
-            if !added {
-                self.toolchains = detect_project_toolchains(
+            } else {
+                toolchains.extend(detect_project_toolchains(
                     self.context.workspace_root,
                     &self.root,
                     &self.language,
-                    self.context.enabled_toolchains,
-                );
+                ));
             }
+
+            self.toolchains_config.extend(toolchains.clone());
+
+            self.toolchains_tasks = toolchains
+                .into_iter()
+                .filter(|id| self.context.enabled_toolchains.contains(id))
+                .collect();
 
             trace!(
                 project_id = self.id.as_str(),
                 language = ?self.language,
-                toolchains = ?self.toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
+                toolchains = ?self.toolchains_tasks.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
                 "Unknown tasks toolchain, inferring from project language",
             );
         }
@@ -230,7 +234,12 @@ impl<'app> ProjectBuilder<'app> {
             language: self.language,
             root: self.root,
             source: self.source.to_owned(),
-            toolchains: self.toolchains,
+            // Should this be the config one?
+            toolchains: if self.toolchains_tasks.is_empty() {
+                vec![Id::raw("system")]
+            } else {
+                self.toolchains_tasks
+            },
             ..Project::default()
         };
 
@@ -372,7 +381,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut tasks_builder = TasksBuilder::new(
             self.id,
             self.source,
-            &self.toolchains,
+            &self.toolchains_tasks,
             TasksBuilderContext {
                 enabled_toolchains: self.context.enabled_toolchains,
                 monorepo: self.context.monorepo,

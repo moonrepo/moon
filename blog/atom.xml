@@ -784,7 +784,7 @@ of changes.</p>
 (for automated workflows).</li>
 <li>Updated <code>proto status</code> to display and include versions from ecosystem files (<code>.nvmrc</code>, etc).</li>
 <li>Updated <code>github://</code> plugin locators to support monorepos. Append the project name (that tags are
-prefixed with) to the path: <code>github://moonrepo/tools/node_tool</code></li>
+prefixed with) to the path: <code>github://moonrepo/plugins/node_tool</code></li>
 </ul>]]></content>
         <author>
             <name>Miles Johnson</name>

@@ -600,6 +600,22 @@ mod project_graph {
         }
 
         #[tokio::test]
+        async fn inherits_ts_tasks_instead_of_js() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids_from_target(
+                    graph
+                        .get_project("bun-with-ts")
+                        .unwrap()
+                        .task_targets
+                        .clone()
+                ),
+                ["bun", "global", "global-typescript"]
+            );
+        }
+
+        #[tokio::test]
         async fn inherits_tagged_tasks() {
             let graph = generate_inheritance_project_graph("inheritance/tagged").await;
 

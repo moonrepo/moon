@@ -131,11 +131,11 @@ impl<'app> ProjectBuilder<'app> {
 
             #[allow(deprecated)]
             if let Some(default_id) = &config.toolchain.default {
-                toolchains.extend(get_project_toolchains(default_id));
+                toolchains.extend(get_project_toolchains(default_id, &self.language));
             } else if let Some(platform) = &config.platform {
                 let default_id = platform.get_toolchain_id();
 
-                toolchains.extend(get_project_toolchains(&default_id));
+                toolchains.extend(get_project_toolchains(&default_id, &self.language));
 
                 debug!(
                     project_id = self.id.as_str(),

@@ -10,7 +10,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.44.4 (from 0.44.2).
+- Updated proto to [v0.44.4](https://github.com/moonrepo/proto/releases/tag/v0.44.4) (from 0.44.2).
 
 ## 1.31.0
 

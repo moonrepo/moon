@@ -1,7 +1,7 @@
 use super::languages::{BUN, DENO, NODE};
 use super::project_language::has_language_files;
 use moon_common::Id;
-use moon_config::LanguageType;
+use moon_config::{LanguageType, PlatformType};
 use std::convert::TryFrom;
 use std::path::Path;
 
@@ -17,8 +17,8 @@ pub fn get_project_toolchains(id: &Id, language: &LanguageType) -> Vec<Id> {
             Id::raw("javascript")
         });
     }
-    // Otherwise check if we're a supported language, if not, inherit system
-    else if LanguageType::try_from(id.as_str()).is_err() {
+    // Otherwise check if we're a supported platform, if not, inherit system
+    else if PlatformType::try_from(id.as_str()).is_err() {
         toolchains.push(Id::raw("system"));
     }
 

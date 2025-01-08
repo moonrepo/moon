@@ -1,0 +1,6 @@
+type: application
+language: kotlin
+
+tasks:
+  kotlin-app:
+    command: kotlin-app

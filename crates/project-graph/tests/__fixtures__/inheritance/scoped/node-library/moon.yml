@@ -1,5 +1,7 @@
-platform: node
 type: library
+
+toolchain:
+  default: node
 
 tasks:
   node-library:

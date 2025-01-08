@@ -35,7 +35,6 @@ impl LanguageType {
     pub fn get_toolchain_ids(&self) -> Vec<Id> {
         match self {
             Self::Bash | Self::Batch | Self::Unknown => vec![Id::raw("system")],
-            Self::TypeScript => vec![Id::raw("typescript"), Id::raw("javascript")],
             Self::Other(id) => vec![id.to_owned(), Id::raw("system")],
             other => vec![Id::raw(other.to_string().to_lowercase())],
         }

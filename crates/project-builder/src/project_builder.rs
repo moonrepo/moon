@@ -9,7 +9,9 @@ use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
-use moon_toolchain::detect::{detect_project_language, detect_project_toolchains};
+use moon_toolchain::detect::{
+    detect_project_language, detect_project_toolchains, get_project_toolchains,
+};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -122,32 +124,18 @@ impl<'app> ProjectBuilder<'app> {
             config.language.clone()
         };
 
-        // Infer toolchains from language
+        // Infer toolchains from the language as it handles the chain correctly:
+        // For example: node -> javascript, and not just node
         if self.toolchains_tasks.is_empty() {
-            let mut added = false;
+            let mut toolchains = vec![];
 
-            if let Some(default_id) = &config.toolchain.default {
-                self.toolchains_config.push(default_id.to_owned());
-
-                if self.context.enabled_toolchains.contains(default_id) {
-                    self.toolchains_tasks.push(default_id.to_owned());
-                    added = true;
-                }
-            }
-
-            // TODO remove in 2.0
             #[allow(deprecated)]
-            if !added && config.platform.is_some() {
-                if let Some(platform) = &config.platform {
-                    let default_id = platform.get_toolchain_id();
+            if let Some(default_id) = &config.toolchain.default {
+                toolchains.extend(get_project_toolchains(default_id));
+            } else if let Some(platform) = &config.platform {
+                let default_id = platform.get_toolchain_id();
 
-                    self.toolchains_config.push(default_id.clone());
-
-                    if self.context.enabled_toolchains.contains(&default_id) {
-                        self.toolchains_tasks.push(default_id);
-                        added = true;
-                    }
-                }
+                toolchains.extend(get_project_toolchains(&default_id));
 
                 debug!(
                     project_id = self.id.as_str(),
@@ -155,22 +143,20 @@ impl<'app> ProjectBuilder<'app> {
                     color::property("platform"),
                     color::property("toolchain.default"),
                 );
-            }
-
-            if !added {
-                let toolchains = detect_project_toolchains(
+            } else {
+                toolchains.extend(detect_project_toolchains(
                     self.context.workspace_root,
                     &self.root,
                     &self.language,
-                );
-
-                self.toolchains_config.extend(toolchains.clone());
-
-                self.toolchains_tasks = toolchains
-                    .into_iter()
-                    .filter(|id| self.context.enabled_toolchains.contains(id))
-                    .collect();
+                ));
             }
+
+            self.toolchains_config.extend(toolchains.clone());
+
+            self.toolchains_tasks = toolchains
+                .into_iter()
+                .filter(|id| self.context.enabled_toolchains.contains(id))
+                .collect();
 
             trace!(
                 project_id = self.id.as_str(),

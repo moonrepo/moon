@@ -1,0 +1,3 @@
+tasks:
+  global-typescript:
+    command: global-typescript

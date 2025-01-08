@@ -1,0 +1,6 @@
+platform: deno
+
+tasks:
+  deno:
+    command: deno
+    platform: deno

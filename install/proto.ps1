@@ -71,32 +71,33 @@ if (Test-Path "${TempDir}\proto-shim.exe") {
 Remove-Item $TempDir -Recurse -Force
 Remove-Item $DownloadFile -Force
 
+if ($env:PROTO_DEBUG -eq "true") {
+  Write-Output "target=${Target}"
+	Write-Output "download_url=${DownloadUrl}"
+	Write-Output "bin_path=${BinPath}"
+	Write-Output "shim_path=${ShimPath}"
+	Write-Output ""
+}
+
 # Run setup script to update shells
 
 if (-not $env:PROTO_LOG) {
   $env:PROTO_LOG = "error"
 }
 
-# Versions >= 0.30 handle the messaging
-if ($Version -eq "latest" -or $Version -notmatch '^0\.[0-2]{1}[0-9]{1}\.') {
-  $env:STARBASE_FORCE_TTY = "true"
+$env:STARBASE_FORCE_TTY = "true"
 
-  Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
+# We can't automatically run setup for the following reasons:
+#   - Interactive prompts don't work in piped commands
+#   - There's no way to pass arguments to `iex`
 
-# While older versions do not
-} else {
-  & $BinPath @('setup')
+# Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
 
-  Write-Output "Successfully installed proto to ${BinPath}"
-  Write-Output "Launch a new terminal window to start using proto!"
-  Write-Output ""
-  Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
-}
+Write-Output "Successfully installed proto! Run the command below to finish setting"
+Write-Output "up your environment, by modifying PATH, and configuring your shell."
+Write-Output ""
+Write-Output "  $BinPath setup"
+Write-Output ""
+Write-Output "Pass --help to view all available options."
+Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if ($env:PROTO_DEBUG -eq "true") {
-	Write-Output ""
-	Write-Output "target=${Target}"
-	Write-Output "download_url=${DownloadUrl}"
-	Write-Output "bin_path=${BinPath}"
-	Write-Output "shim_path=${ShimPath}"
-}

@@ -82,7 +82,7 @@ export default function ProductProto() {
 										<Text className="mb-1">Install proto for Linux, macOS, or WSL:</Text>
 
 										<CodeBlock language="shell">
-											{'curl -fsSL https://moonrepo.dev/install/proto.sh | bash'}
+											{'bash <(curl -fsSL https://moonrepo.dev/install/proto.sh)'}
 										</CodeBlock>
 
 										<Text className="mb-1" variant="muted">

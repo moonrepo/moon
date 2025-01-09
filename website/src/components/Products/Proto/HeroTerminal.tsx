@@ -24,7 +24,7 @@ export default function HeroTerminal() {
 			<li>
 				{isWindows
 					? 'irm https://moonrepo.dev/install/proto.ps1 | iex'
-					: 'curl -fsSL https://moonrepo.dev/install/proto.sh | bash'}
+					: 'bash <(curl -fsSL https://moonrepo.dev/install/proto.sh)'}
 			</li>
 
 			{lang === 'bun' && (

@@ -421,11 +421,10 @@ use extism_pdk::*;
 ```
 
 We can then build the WASM binary. The file will be available at
-`target/wasm32-wasi/debug/<name>.wasm`.
+`target/wasm32-wasip1/debug/<name>.wasm`.
 
 ```shell
-cargo install cargo-wasi
-cargo wasi build
+cargo build --target wasm32-wasip1
 ```
 
 ## Building and publishing
@@ -452,12 +451,12 @@ This functionality is natively supported in our
 #!/usr/bin/env bash
 
 target="${CARGO_TARGET_DIR:-target}"
-input="$target/wasm32-wasi/release/$1.wasm"
-output="$target/wasm32-wasi/$1.wasm"
+input="$target/wasm32-wasip1/release/$1.wasm"
+output="$target/wasm32-wasip1/$1.wasm"
 
 echo "Building"
 
-cargo build --target wasm32-wasi --release
+cargo build --target wasm32-wasip1 --release
 
 echo "Optimizing"
 
@@ -483,7 +482,7 @@ git push --tags
 ```
 
 2. Build a release version of the plugin using the `build-wasm` script above. The file will be
-   available at `target/wasm32-wasi/<name>.wasm`.
+   available at `target/wasm32-wasip1/<name>.wasm`.
 
 ```shell
 build-wasm <name>

@@ -10,7 +10,7 @@ build:
 	cargo build --workspace
 
 build-wasm:
-	cd wasm/test-plugin && cargo wasi build
+	cd wasm/test-plugin && cargo build --target wasm32-wasip1
 
 # CHECKING
 
@@ -74,7 +74,7 @@ schemas:
 	cargo run -p moon_config_schema --features typescript
 
 clean-bazel-remote:
-    rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && rm -f ~/.moon/bazel-cache/ac.v2/.DS_Store
+	rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && rm -f ~/.moon/bazel-cache/ac.v2/.DS_Store
 
 bazel-remote:
 	just clean-bazel-remote && bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092

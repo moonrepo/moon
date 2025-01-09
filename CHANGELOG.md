@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.84.
+
 ## 1.31.1
 
 #### 🐞 Fixes

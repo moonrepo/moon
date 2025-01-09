@@ -44,7 +44,7 @@ In a terminal that supports Bash, run the following command. This will download 
 then open an interactive prompt to complete the installation.
 
 ```shell
-curl -fsSL https://moonrepo.dev/install/proto.sh | bash
+bash <(curl -fsSL https://moonrepo.dev/install/proto.sh)
 ```
 
 Furthermore, the version of proto to install can be passed as an argument to the install script. We
@@ -52,7 +52,7 @@ also accept `--no-profile` to avoid modifying your shell profile, and `--yes` to
 prompts.
 
 ```shell
-curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- 1.2.3 --yes
+bash <(curl -fsSL https://moonrepo.dev/install/proto.sh) 1.2.3 --yes
 ```
 
 ### Windows

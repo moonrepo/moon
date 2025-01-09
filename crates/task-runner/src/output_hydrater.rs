@@ -24,7 +24,7 @@ pub struct OutputHydrater<'task> {
     pub task: &'task Task,
 }
 
-impl<'task> OutputHydrater<'task> {
+impl OutputHydrater<'_> {
     #[instrument(skip(self, operation))]
     pub async fn hydrate(
         &self,

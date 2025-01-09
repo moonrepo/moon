@@ -181,7 +181,7 @@ mod rustup_toolchain {
         let toolchain_config = PartialToolchainConfig {
             rust: Some(PartialRustConfig {
                 components: Some(vec!["clippy".into()]),
-                targets: Some(vec!["wasm32-wasi".into()]),
+                targets: Some(vec!["wasm32-wasip1".into()]),
                 ..PartialRustConfig::default()
             }),
             ..PartialToolchainConfig::default()

@@ -20,7 +20,7 @@ pub fn is_musl() -> bool {
         return false;
     };
 
-    String::from_utf8(output.stdout).map_or(false, |out| out.contains("musl"))
+    String::from_utf8(output.stdout).is_ok_and(|out| out.contains("musl"))
 }
 
 #[instrument(skip_all)]

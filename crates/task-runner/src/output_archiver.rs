@@ -20,7 +20,7 @@ pub struct OutputArchiver<'task> {
     pub task: &'task Task,
 }
 
-impl<'task> OutputArchiver<'task> {
+impl OutputArchiver<'_> {
     #[instrument(skip(self, operation))]
     pub async fn archive(
         &self,

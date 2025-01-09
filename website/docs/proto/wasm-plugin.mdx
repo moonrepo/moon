@@ -400,13 +400,13 @@ debug build:
 
 ```toml
 [plugins]
-<id> = "file://./target/wasm32-wasi/debug/<name>.wasm"
+<id> = "file://./target/wasm32-wasip1/debug/<name>.wasm"
 ```
 
 And everytime you make a change to the plugin, you'll need to rebuild it with:
 
 ```shell
-cargo wasi build
+cargo build --target wasm32-wasip1
 ```
 
 With these 2 pieces in place, you can now execute `proto` commands. Be sure you're running them from
@@ -432,7 +432,7 @@ cargo add --dev proto_pdk_test_utils starbase_sandbox tokio
 And as mentioned above, everytime you make a change to the plugin, you'll need to rebuild it with:
 
 ```shell
-cargo wasi build
+cargo build --target wasm32-wasip1
 ```
 
 #### Testing plugin functions

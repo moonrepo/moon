@@ -130,9 +130,9 @@ impl WorkspaceMocker {
         .await
     }
 
-    pub async fn build_workspace_graph_with_options<'l>(
+    pub async fn build_workspace_graph_with_options(
         &self,
-        mut options: WorkspaceMockOptions<'l>,
+        mut options: WorkspaceMockOptions<'_>,
     ) -> WorkspaceGraph {
         let context = options
             .context

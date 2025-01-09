@@ -28,7 +28,7 @@ jobs:
         with:
           bins: just,cargo-wasi
           cache: false
-      - run: rustup target add wasm32-wasi
+          targets: wasm32-wasip1
       - name: Building crates
         run: just build-wasm
   format:

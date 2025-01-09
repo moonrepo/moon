@@ -31,7 +31,7 @@ impl<'graph> JobDispatcher<'graph> {
 }
 
 // This is based on the `Topo` struct from petgraph!
-impl<'graph> JobDispatcher<'graph> {
+impl JobDispatcher<'_> {
     pub async fn next(&mut self) -> Option<NodeIndex> {
         let completed = self.context.completed_jobs.read().await;
 

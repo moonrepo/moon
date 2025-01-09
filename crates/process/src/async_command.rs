@@ -16,7 +16,7 @@ pub struct AsyncCommand<'cmd> {
     pub current_id: Option<u32>,
 }
 
-impl<'cmd> AsyncCommand<'cmd> {
+impl AsyncCommand<'_> {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
         self.inspector.log_command();
 

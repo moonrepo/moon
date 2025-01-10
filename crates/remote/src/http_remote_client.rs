@@ -4,35 +4,26 @@ use crate::http_endpoints::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    action_cache_client::ActionCacheClient, batch_update_blobs_request,
-    capabilities_client::CapabilitiesClient, compressor,
-    content_addressable_storage_client::ContentAddressableStorageClient, digest_function,
-    ActionCacheUpdateCapabilities, ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest,
-    CacheCapabilities, Digest, ExecutionCapabilities, GetActionResultRequest,
-    GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
+    digest_function, ActionCacheUpdateCapabilities, ActionResult, CacheCapabilities, Digest,
+    ExecutionCapabilities, ServerCapabilities,
 };
-use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
 use reqwest::Client;
-use starbase_utils::json;
-use std::{error::Error, path::Path, sync::OnceLock};
-use tonic::{
-    transport::{Channel, Endpoint, Server},
-    Code,
-};
+use std::sync::Arc;
+use std::{path::Path, sync::OnceLock};
 use tracing::{trace, warn};
 
 #[derive(Default)]
 pub struct HttpRemoteClient {
-    client: OnceLock<Client>,
+    client: OnceLock<Arc<Client>>,
     compression: RemoteCompression,
     host: String,
     instance_name: String,
 }
 
 impl HttpRemoteClient {
-    fn get_client(&self) -> &Client {
-        self.client.get_or_init(|| Client::new())
+    fn get_client(&self) -> Arc<Client> {
+        Arc::clone(self.client.get_or_init(|| Arc::new(Client::new())))
     }
 }
 
@@ -42,7 +33,7 @@ impl RemoteClient for HttpRemoteClient {
         &mut self,
         config: &RemoteConfig,
         _workspace_root: &Path,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<bool> {
         self.compression = config.cache.compression;
         self.host = config.host.clone();
         self.instance_name = config.cache.instance_name.clone();
@@ -69,7 +60,7 @@ impl RemoteClient for HttpRemoteClient {
             }
         }
 
-        Ok(())
+        Ok(true)
     }
 
     // HTTP API doesn't support capabilities, so we need to fake this
@@ -106,39 +97,39 @@ impl RemoteClient for HttpRemoteClient {
                 self.host, self.instance_name, digest.hash
             ))
             .header("Accept", "application/json")
-            .header("Content-Type", "application/json")
             .send()
             .await
         {
             Ok(response) => {
-                dbg!("get_action_result", &response);
-                // let result = response.into_inner();
-                //
-                dbg!(response.text().await.unwrap());
+                if response.status().is_success() {
+                    let result: ActionResult =
+                        response
+                            .json()
+                            .await
+                            .map_err(|error| RemoteError::HttpCallFailed {
+                                error: Box::new(error),
+                            })?;
 
-                // trace!(
-                //     hash = &digest.hash,
-                //     files = result.output_files.len(),
-                //     links = result.output_symlinks.len(),
-                //     dirs = result.output_directories.len(),
-                //     exit_code = result.exit_code,
-                //     "Cache hit on action result"
-                // );
+                    trace!(
+                        hash = &digest.hash,
+                        files = result.output_files.len(),
+                        links = result.output_symlinks.len(),
+                        dirs = result.output_directories.len(),
+                        exit_code = result.exit_code,
+                        "Cache hit on action result"
+                    );
 
-                // Ok(Some(result))
-                Ok(None)
+                    Ok(Some(result))
+                } else {
+                    trace!(hash = &digest.hash, "Cache miss on action result");
+
+                    Ok(None)
+                }
             }
-            Err(error) => {
-                dbg!(&error);
-                // if matches!(status.code(), Code::NotFound) {
-                //     trace!(hash = &digest.hash, "Cache miss on action result");
-
-                //     Ok(None)
-                // } else {
-                //     Err(map_status_error(status).into())
-                // }
-                Ok(None)
+            Err(error) => Err(RemoteError::HttpCallFailed {
+                error: Box::new(error),
             }
+            .into()),
         }
     }
 
@@ -156,33 +147,42 @@ impl RemoteClient for HttpRemoteClient {
             "Caching action result"
         );
 
-        let mut data = json::format(&result, false)?;
-
-        // Empty bytes arrays are not allowed
-        data = data.replace(r#""stdout_raw":[],"#, "");
-        data = data.replace(r#""stderr_raw":[],"#, "");
-        data = data.replace(r#""contents":[],"#, "");
-
-        dbg!(&result);
-        println!("{}", data);
-
-        let res = self
+        match self
             .get_client()
             .put(format!(
                 "{}/{}/ac/{}",
                 self.host, self.instance_name, digest.hash
             ))
-            .header("Accept", "application/json")
             .header("Content-Type", "application/json")
-            .body(data)
+            .json(&result)
             .send()
             .await
-            .unwrap();
+        {
+            Ok(response) => {
+                let status = response.status();
 
-        dbg!("update_action_result", &res);
-        dbg!(res.text().await.unwrap());
+                // Doesn't return a response body
+                // https://github.com/buchgr/bazel-remote/blob/master/server/http.go#L429
+                if status.is_success() {
+                    trace!(hash = &digest.hash, "Cached action result");
 
-        Ok(None)
+                    Ok(Some(result))
+                } else {
+                    warn!(
+                        hash = &digest.hash,
+                        code = status.as_u16(),
+                        "Failed to cache action result: {}",
+                        status
+                    );
+
+                    Ok(None)
+                }
+            }
+            Err(error) => Err(RemoteError::HttpCallFailed {
+                error: Box::new(error),
+            }
+            .into()),
+        }
     }
 
     async fn batch_read_blobs(
@@ -193,11 +193,85 @@ impl RemoteClient for HttpRemoteClient {
         Ok(vec![])
     }
 
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
+        Ok(vec![])
+    }
+
     async fn batch_update_blobs(
         &self,
         digest: &Digest,
         blobs: Vec<Blob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
+        trace!(
+            hash = &digest.hash,
+            compression = self.compression.to_string(),
+            "Uploading {} output blobs",
+            blobs.len()
+        );
+
+        let mut requests = vec![];
+
+        for blob in blobs {
+            let client = self.get_client();
+            let action_hash = digest.hash.clone();
+            let url = format!(
+                "{}/{}/cas/{}",
+                self.host, self.instance_name, blob.digest.hash
+            );
+
+            requests.push(tokio::spawn(async move {
+                match client.put(url).body(blob.bytes).send().await {
+                    Ok(response) => {
+                        let status = response.status();
+
+                        if status.is_success() {
+                            return Some(blob.digest);
+                        }
+
+                        warn!(
+                            hash = &action_hash,
+                            blob_hash = &blob.digest.hash,
+                            "Failed to upload blob: {status}",
+                        );
+                    }
+                    Err(error) => {
+                        warn!(
+                            hash = &action_hash,
+                            blob_hash = &blob.digest.hash,
+                            "Failed to upload blob: {error}",
+                        );
+                    }
+                }
+
+                None
+            }));
+        }
+
+        let mut digests = vec![];
+        let mut uploaded_count = 0;
+
+        for future in requests {
+            match future.await {
+                Ok(upload) => {
+                    if upload.is_some() {
+                        uploaded_count += 1;
+                    }
+
+                    digests.push(upload);
+                }
+                _ => {
+                    digests.push(None);
+                }
+            }
+        }
+
+        trace!(
+            hash = &digest.hash,
+            "Uploaded {} of {} output blobs",
+            uploaded_count,
+            digests.len()
+        );
+
         Ok(vec![])
     }
 }

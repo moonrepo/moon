@@ -292,6 +292,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if matches!(code, Code::InvalidArgument | Code::FailedPrecondition) {
                     warn!(
+                        hash = &digest.hash,
                         code = ?code,
                         "Failed to cache action result: {}",
                         status.message()
@@ -300,6 +301,7 @@ impl RemoteClient for GrpcRemoteClient {
                     Ok(None)
                 } else if matches!(code, Code::ResourceExhausted) {
                     warn!(
+                        hash = &digest.hash,
                         code = ?code,
                         "Remote service is out of storage space: {}",
                         status.message()
@@ -471,6 +473,7 @@ impl RemoteClient for GrpcRemoteClient {
                     Ok(vec![])
                 } else if matches!(code, Code::ResourceExhausted) {
                     warn!(
+                        hash = &digest.hash,
                         code = ?code,
                         "Remote service exhausted resource: {}",
                         status.message()
@@ -494,6 +497,7 @@ impl RemoteClient for GrpcRemoteClient {
                 if !matches!(code, Code::Ok) {
                     warn!(
                         hash = &digest.hash,
+                        blob_hash = upload.digest.as_ref().map(|d| &d.hash),
                         details = ?status.details,
                         code = ?code,
                         "Failed to upload blob: {}",

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated file locks for certain operations to avoit race collisions when multiple `moon` commands
+  are ran in parallel.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.84.

@@ -6472,9 +6472,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.9.3"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcf0fbbff304c62e8ac3b31d96ac986faf11d47ee2e11d6033412451cfefa45e"
+checksum = "8813b123653ee27546530a4f215c863bd067960c6c5f672b42ff8a7ec8cc9aff"
 dependencies = [
  "async-trait",
  "dirs 5.0.1",

@@ -4,8 +4,8 @@
 
 #### 🚀 Updates
 
-- Updated file locks for certain operations to avoit race collisions when multiple `moon` commands
-  are ran in parallel.
+- Added file locks for certain operations to avoid race collisions when multiple `moon` commands are
+  ran in parallel.
 
 #### ⚙️ Internal
 

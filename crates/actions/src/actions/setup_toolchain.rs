@@ -4,7 +4,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::color;
-use moon_common::path::{encode_component, hash_component};
+use moon_common::path::encode_component;
 use moon_config::UnresolvedVersionSpec;
 use moon_platform::PlatformManager;
 use moon_time::now_millis;
@@ -34,10 +34,13 @@ pub async fn setup_toolchain(
 ) -> miette::Result<ActionStatus> {
     let log_label = node.runtime.label();
     let cache_engine = &app_context.cache_engine;
+    let action_key = node.runtime.target();
 
-    if let Some(value) =
-        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.runtime.target())
-    {
+    let _lock = app_context
+        .cache_engine
+        .create_lock(format!("setupToolchain-{action_key}"))?;
+
+    if let Some(value) = should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", &action_key) {
         debug!(
             env = value,
             "Skipping {} toolchain setup because {} is set",
@@ -51,9 +54,8 @@ pub async fn setup_toolchain(
     debug!("Setting up {} toolchain", log_label);
 
     let mut state = cache_engine.state.load_state::<ToolCacheState>(format!(
-        "toolchain-{}-{}.json",
-        encode_component(node.runtime.id()),
-        hash_component(node.runtime.requirement.to_string()),
+        "setupToolchain-{}.json",
+        encode_component(action_key),
     ))?;
 
     // Acquire a lock for the toolchain ID

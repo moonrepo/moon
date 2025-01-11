@@ -104,10 +104,10 @@ pub fn encode_component(value: impl AsRef<str>) -> String {
     // Handle supported characters from `Id`
     for ch in value.as_ref().chars() {
         match ch {
-            '@' => {
+            '@' | '*' => {
                 // Skip these
             }
-            '.' | '/' => {
+            '/' | ':' => {
                 output.push('-');
             }
             _ => {
@@ -116,7 +116,7 @@ pub fn encode_component(value: impl AsRef<str>) -> String {
         }
     }
 
-    output
+    output.trim_matches(['-', '.']).to_owned()
 }
 
 /// Hash a value that may contain special characters into a valid file name.

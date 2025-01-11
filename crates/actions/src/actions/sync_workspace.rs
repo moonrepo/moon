@@ -22,6 +22,8 @@ pub async fn sync_workspace(
     workspace_graph: WorkspaceGraph,
     toolchain_registry: Arc<ToolchainRegistry>,
 ) -> miette::Result<ActionStatus> {
+    let _lock = app_context.cache_engine.create_lock("syncWorkspace")?;
+
     // Connect to the remote service in this action,
     // as it always runs before tasks, and we don't need it
     // for non-pipeline related features!

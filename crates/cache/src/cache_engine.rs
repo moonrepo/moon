@@ -1,10 +1,11 @@
 use crate::{merge_clean_results, resolve_path, HashEngine, StateEngine};
 use moon_cache_item::*;
 use moon_common::consts;
+use moon_common::path::encode_component;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use starbase_utils::fs::RemoveDirContentsResult;
+use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
 use std::env;
 use std::ffi::OsStr;
@@ -108,6 +109,18 @@ impl CacheEngine {
         );
 
         Ok((result.files_deleted, result.bytes_saved))
+    }
+
+    pub fn create_lock<T: AsRef<str>>(&self, name: T) -> miette::Result<FileLock> {
+        let mut name = encode_component(name.as_ref());
+
+        if !name.ends_with(".lock") {
+            name.push_str(".lock");
+        }
+
+        let guard = fs::lock_file(self.cache_dir.join("locks").join(name))?;
+
+        Ok(guard)
     }
 
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>

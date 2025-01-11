@@ -289,9 +289,15 @@ impl AppSession for CliSession {
         analyze::check_pkl_install()?;
 
         if self.requires_workspace_setup() {
-            self.get_cache_engine()?;
+            let cache_engine = self.get_cache_engine()?;
 
-            analyze::install_proto(&self.console, &self.proto_env, &self.toolchain_config).await?;
+            analyze::install_proto(
+                &self.console,
+                &self.proto_env,
+                &cache_engine,
+                &self.toolchain_config,
+            )
+            .await?;
 
             analyze::register_platforms(
                 &self.console,

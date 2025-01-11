@@ -4,7 +4,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::color;
-use moon_common::path::{encode_component, hash_component};
+use moon_common::path::encode_component;
 use moon_config::UnresolvedVersionSpec;
 use moon_platform::PlatformManager;
 use moon_time::now_millis;

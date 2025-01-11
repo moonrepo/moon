@@ -1,6 +1,5 @@
 use crate::compression::*;
 use crate::fs_digest::Blob;
-use crate::http_endpoints::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
@@ -190,7 +189,73 @@ impl RemoteClient for HttpRemoteClient {
         digest: &Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Blob>> {
-        Ok(vec![])
+        trace!(
+            hash = &digest.hash,
+            compression = self.compression.to_string(),
+            "Downloading {} output blobs",
+            blob_digests.len()
+        );
+
+        let mut requests = vec![];
+
+        for blob_digest in blob_digests {
+            let client = self.get_client();
+            let action_hash = digest.hash.clone();
+            let url = format!(
+                "{}/{}/cas/{}",
+                self.host, self.instance_name, blob_digest.hash
+            );
+
+            requests.push(tokio::spawn(async move {
+                match client.get(url).send().await {
+                    Ok(response) => {
+                        let status = response.status();
+
+                        if status.is_success() {
+                            if let Ok(bytes) = response.bytes().await {
+                                return Some(Blob {
+                                    digest: blob_digest,
+                                    bytes: bytes.to_vec(),
+                                });
+                            }
+                        }
+
+                        warn!(
+                            hash = &action_hash,
+                            blob_hash = &blob_digest.hash,
+                            "Failed to download blob: {status}",
+                        );
+                    }
+                    Err(error) => {
+                        warn!(
+                            hash = &action_hash,
+                            blob_hash = &blob_digest.hash,
+                            "Failed to download blob: {error}",
+                        );
+                    }
+                }
+
+                None
+            }));
+        }
+
+        let mut blobs = vec![];
+        let total_count = requests.len();
+
+        for future in requests {
+            if let Ok(Some(blob)) = future.await {
+                blobs.push(blob);
+            }
+        }
+
+        trace!(
+            hash = &digest.hash,
+            "Downloaded {} of {} output blobs",
+            blobs.len(),
+            total_count
+        );
+
+        Ok(blobs)
     }
 
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {

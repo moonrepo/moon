@@ -41,7 +41,7 @@ pub async fn install_deps(
 
     let _lock = app_context
         .cache_engine
-        .create_lock(format!("deps-{action_key}"))?;
+        .create_lock(format!("install-deps-{action_key}"))?;
 
     if let Some(value) = should_skip_action_matching("MOON_SKIP_INSTALL_DEPS", action_key) {
         debug!(

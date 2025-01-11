@@ -38,7 +38,7 @@ pub async fn setup_toolchain(
 
     let _lock = app_context
         .cache_engine
-        .create_lock(format!("toolchain-{action_key}"))?;
+        .create_lock(format!("setup-toolchain-{action_key}"))?;
 
     if let Some(value) = should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", action_key) {
         debug!(

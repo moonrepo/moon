@@ -1,6 +1,7 @@
 use crate::app_error::AppError;
 use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
+use moon_cache::CacheEngine;
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name, supports_pkl_configs};
 use moon_config::{BunConfig, PlatformType, ToolchainConfig};
 use moon_console::{Checkpoint, Console};
@@ -46,8 +47,11 @@ pub fn check_pkl_install() -> AppResult {
 pub async fn install_proto(
     console: &Console,
     proto_env: &Arc<ProtoEnvironment>,
+    cache_engine: &CacheEngine,
     toolchain_config: &ToolchainConfig,
 ) -> AppResult {
+    let _lock = cache_engine.create_lock("proto-install")?;
+
     let bin_name = exe_name("proto");
     let install_dir = proto_env
         .store

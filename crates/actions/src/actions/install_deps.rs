@@ -37,10 +37,13 @@ pub async fn install_deps(
 
     let pid = process::id().to_string();
     let log_label = runtime.label();
+    let action_key = get_skip_key(runtime, project);
 
-    if let Some(value) =
-        should_skip_action_matching("MOON_SKIP_INSTALL_DEPS", get_skip_key(runtime, project))
-    {
+    let _lock = app_context
+        .cache_engine
+        .create_lock(format!("deps-{action_key}"))?;
+
+    if let Some(value) = should_skip_action_matching("MOON_SKIP_INSTALL_DEPS", action_key) {
         debug!(
             env = value,
             "Skipping {} dependency install because {} is set",

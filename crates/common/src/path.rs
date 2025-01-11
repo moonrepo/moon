@@ -107,7 +107,7 @@ pub fn encode_component(value: impl AsRef<str>) -> String {
             '@' => {
                 // Skip these
             }
-            '.' | '/' => {
+            '.' | '/' | ':' => {
                 output.push('-');
             }
             _ => {

@@ -1,6 +1,7 @@
 use crate::{merge_clean_results, resolve_path, HashEngine, StateEngine};
 use moon_cache_item::*;
 use moon_common::consts;
+use moon_common::path::encode_component;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -110,8 +111,12 @@ impl CacheEngine {
         Ok((result.files_deleted, result.bytes_saved))
     }
 
-    pub fn create_lock(&self, name: &str) -> miette::Result<FileLock> {
-        let guard = fs::lock_file(self.cache_dir.join("locks").join(name))?;
+    pub fn create_lock<T: AsRef<str>>(&self, name: T) -> miette::Result<FileLock> {
+        let guard = fs::lock_file(
+            self.cache_dir
+                .join("locks")
+                .join(encode_component(name.as_ref())),
+        )?;
 
         Ok(guard)
     }

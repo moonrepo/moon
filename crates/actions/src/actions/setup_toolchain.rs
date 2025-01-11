@@ -34,10 +34,13 @@ pub async fn setup_toolchain(
 ) -> miette::Result<ActionStatus> {
     let log_label = node.runtime.label();
     let cache_engine = &app_context.cache_engine;
+    let action_key = node.runtime.target();
 
-    if let Some(value) =
-        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.runtime.target())
-    {
+    let _lock = app_context
+        .cache_engine
+        .create_lock(format!("toolchain-{action_key}"))?;
+
+    if let Some(value) = should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", action_key) {
         debug!(
             env = value,
             "Skipping {} toolchain setup because {} is set",

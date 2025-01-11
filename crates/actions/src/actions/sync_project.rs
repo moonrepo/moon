@@ -20,6 +20,10 @@ pub async fn sync_project(
     // Include tasks for snapshot!
     let project = workspace_graph.get_project_with_tasks(&node.project)?;
 
+    let _lock = app_context
+        .cache_engine
+        .create_lock(format!("syncProject-{}", project.id))?;
+
     if let Some(value) = should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", &project.id) {
         debug!(
             env = value,

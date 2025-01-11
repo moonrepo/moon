@@ -41,7 +41,7 @@ pub async fn install_deps(
 
     let _lock = app_context
         .cache_engine
-        .create_lock(format!("install-deps-{action_key}"))?;
+        .create_lock(format!("installDeps-{action_key}"))?;
 
     if let Some(value) = should_skip_action_matching("MOON_SKIP_INSTALL_DEPS", action_key) {
         debug!(
@@ -289,7 +289,10 @@ fn get_state_path(
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> PathBuf {
-    let state_path = PathBuf::from(format!("deps-{}.json", encode_component(runtime.id())));
+    let state_path = PathBuf::from(format!(
+        "installDeps-{}.json",
+        encode_component(runtime.id())
+    ));
 
     if let Some(project) = project {
         return app_context

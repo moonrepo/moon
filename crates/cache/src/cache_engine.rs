@@ -112,11 +112,13 @@ impl CacheEngine {
     }
 
     pub fn create_lock<T: AsRef<str>>(&self, name: T) -> miette::Result<FileLock> {
-        let guard = fs::lock_file(
-            self.cache_dir
-                .join("locks")
-                .join(encode_component(name.as_ref())),
-        )?;
+        let mut name = encode_component(name.as_ref());
+
+        if !name.ends_with(".lock") {
+            name.push_str(".lock");
+        }
+
+        let guard = fs::lock_file(self.cache_dir.join("locks").join(name))?;
 
         Ok(guard)
     }

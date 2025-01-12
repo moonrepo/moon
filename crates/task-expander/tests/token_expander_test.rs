@@ -1310,31 +1310,6 @@ mod token_expander {
                 }
             );
         }
-
-        #[test]
-        fn converts_dirs_to_globs() {
-            let sandbox = create_empty_sandbox();
-
-            // Dir has to exist!
-            sandbox.create_file("project/source/dir/file", "");
-
-            let project = create_project(sandbox.path());
-            let mut task = create_task();
-
-            task.inputs = vec![InputPath::ProjectFile("dir".into())];
-
-            let context = create_context(sandbox.path());
-            let mut expander = TokenExpander::new(&project, &context);
-
-            assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
-                ExpandedResult {
-                    files: vec![],
-                    globs: vec![WorkspaceRelativePathBuf::from("project/source/dir/**/*"),],
-                    ..ExpandedResult::default()
-                }
-            );
-        }
     }
 
     mod outputs {

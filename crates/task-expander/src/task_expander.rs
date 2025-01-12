@@ -37,19 +37,22 @@ impl<'graph> TaskExpander<'graph> {
         );
 
         // Resolve in this order!
-        self.expand_env(&mut task)?;
-        self.expand_deps(&mut task)?;
-        self.expand_inputs(&mut task)?;
-        self.expand_outputs(&mut task)?;
-        self.expand_args(&mut task)?;
-
         if task.script.is_some() {
             self.expand_script(&mut task)?;
         } else {
             self.expand_command(&mut task)?;
         }
 
+        self.expand_env(&mut task)?;
+        self.expand_deps(&mut task)?;
+        self.expand_inputs(&mut task)?;
+        self.expand_outputs(&mut task)?;
+        self.expand_args(&mut task)?;
         task.state.expanded = true;
+
+        // Run post-expand operations
+        self.move_input_dirs_to_globs(&mut task);
+        self.remove_input_output_overlaps(&mut task);
 
         Ok(task)
     }
@@ -228,22 +231,47 @@ impl<'graph> TaskExpander<'graph> {
         // Expand outputs to file system paths
         let result = self.token.expand_outputs(task)?;
 
-        // Aggregate paths first before globbing, as they are literal
-        for file in result.files {
-            // Outputs must *not* be considered an input,
-            // so if there's an input that matches an output,
-            // remove it! Is there a better way to do this?
-            task.input_files.remove(&file);
-            task.output_files.insert(file);
-        }
-
-        // Aggregate globs second so we can match against the paths
-        for glob in result.globs {
-            // Same treatment here!
-            task.input_globs.remove(&glob);
-            task.output_globs.insert(glob);
-        }
+        task.output_files.extend(result.files);
+        task.output_globs.extend(result.globs);
 
         Ok(())
+    }
+
+    // Input directories are not allowed, as VCS hashing only operates on files.
+    // If we can confirm it's a directory, move it into a glob!
+    pub fn move_input_dirs_to_globs(&mut self, task: &mut Task) {
+        let mut to_remove = vec![];
+
+        for file in &task.input_files {
+            // If this dir is actually an output dir, just remove it
+            if task.output_files.contains(file) {
+                to_remove.push(file.to_owned());
+                continue;
+            }
+
+            // Otherwise check if it's a dir and not a file
+            let abs_file = file.to_path(&self.context.workspace_root);
+
+            if abs_file.exists() && abs_file.is_dir() {
+                task.input_globs.insert(file.join("**/*"));
+                to_remove.push(file.to_owned());
+            }
+        }
+
+        for file in to_remove {
+            task.input_files.remove(&file);
+        }
+    }
+
+    // Outputs must not be considered an input, otherwise the content
+    // hash will constantly change, and the cache will always be busted
+    pub fn remove_input_output_overlaps(&mut self, task: &mut Task) {
+        for file in &task.output_files {
+            task.input_files.remove(file);
+        }
+
+        for glob in &task.output_globs {
+            task.input_globs.remove(glob);
+        }
     }
 }

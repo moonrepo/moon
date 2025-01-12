@@ -7,6 +7,11 @@
 - Added file locks for certain operations to avoid race collisions when multiple `moon` commands are
   ran in parallel.
 
+#### 🐞 Fixes
+
+- Fixed an issue where inferred inputs would include directories that would log a warning and fail
+  to be hashed.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.84.

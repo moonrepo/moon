@@ -6,15 +6,18 @@ use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
 use std::path::Path;
 
+#[derive(Debug)]
 pub struct CommandLine {
     pub command: Vec<OsString>,
     pub input: Vec<OsString>,
+    pub shell: bool,
 }
 
 impl CommandLine {
     pub fn new(command: &Command) -> CommandLine {
         let mut command_line: Vec<OsString> = vec![];
         let mut input_line: Vec<OsString> = vec![];
+        let mut in_shell = false;
 
         // Extract the main command, without shell, for other purposes!
         let mut main_line: Vec<OsString> = vec![];
@@ -27,6 +30,7 @@ impl CommandLine {
         // If wrapped in a shell, the shell binary and arguments
         // must be placed at the start of the line.
         if let Some(shell) = &command.shell {
+            in_shell = true;
             command_line.push(shell.bin.as_os_str().to_owned());
             command_line.extend(shell.command.shell_args.clone());
 
@@ -60,64 +64,60 @@ impl CommandLine {
         CommandLine {
             command: command_line,
             input: input_line,
+            shell: in_shell,
         }
+    }
+
+    pub fn get_line(&self, with_shell: bool, with_input: bool) -> String {
+        let mut command = if !with_shell && self.shell {
+            self.command.last().cloned().unwrap_or_else(OsString::new)
+        } else {
+            join_args_os(&self.command)
+        };
+
+        if with_input && !self.input.is_empty() {
+            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+            let input = join_args_os(&self.input);
+
+            if command
+                .as_os_str()
+                .to_str()
+                .is_some_and(|cmd| cmd.ends_with('-'))
+            {
+                command.push(" ");
+            } else {
+                command.push(" - ");
+            }
+
+            if input.len() > 200 && !debug_input {
+                command.push("(truncated)");
+            } else {
+                command.push(&input);
+            }
+        }
+
+        command.to_string_lossy().trim().replace('\n', " ")
     }
 
     pub fn format(command: &str, workspace_root: &Path, working_dir: &Path) -> String {
-        let dir = Self::format_working_dir(workspace_root, working_dir);
-
-        Self::format_line(command, Some(&dir))
-    }
-
-    pub fn format_line(command: &str, in_dir: Option<&str>) -> String {
-        let command = color::muted_light(command.trim());
-
-        match in_dir {
-            Some(dir) => format!("{command} {}", color::muted(format!("(in {dir})"))),
-            None => command,
-        }
-    }
-
-    pub fn format_working_dir(workspace_root: &Path, working_dir: &Path) -> String {
-        if working_dir == workspace_root {
+        let dir = if working_dir == workspace_root {
             "workspace".into()
         } else if let Ok(dir) = working_dir.strip_prefix(workspace_root) {
             format!(".{}{}", std::path::MAIN_SEPARATOR, dir.to_string_lossy())
         } else {
             ".".into()
-        }
+        };
+
+        format!(
+            "{} {}",
+            color::muted_light(command.trim()),
+            color::muted(format!("(in {dir})"))
+        )
     }
 }
 
 impl Display for CommandLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let command = join_args_os(&self.command);
-
-        write!(f, "{}", command.to_string_lossy())?;
-
-        if !self.input.is_empty() {
-            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-            let input = join_args_os(&self.input);
-
-            if !command
-                .as_os_str()
-                .to_str()
-                .is_some_and(|cmd| cmd.ends_with('-'))
-            {
-                write!(f, " -")?;
-            }
-
-            write!(
-                f,
-                " {}",
-                if input.len() > 200 && !debug_input {
-                    "(truncated)".into()
-                } else {
-                    input.to_string_lossy().trim().replace('\n', " ")
-                }
-            )?;
-        }
-
-        Ok(())
+        write!(f, "{}", self.get_line(true, true))
     }
 }

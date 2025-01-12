@@ -259,18 +259,14 @@ impl Command {
         };
         let working_dir = PathBuf::from(self.cwd.as_deref().unwrap_or(workspace_root.as_os_str()));
 
-        if self.print_command {
-            // if let Some(cmd_line) = self.get_command_line().main_command.to_str() {
-            if let Some(console) = self.console.as_ref() {
-                if !console.out.is_quiet() {
-                    let _ = console.out.write_line(CommandLine::format(
-                        &line.to_string(),
-                        &workspace_root,
-                        &working_dir,
-                    ));
-                }
+        if let Some(console) = self.console.as_ref() {
+            if self.print_command && !console.out.is_quiet() {
+                let _ = console.out.write_line(CommandLine::format(
+                    &line.get_line(false, false),
+                    &workspace_root,
+                    &working_dir,
+                ));
             }
-            // }
         }
 
         // Avoid all this overhead if we're not logging
@@ -279,19 +275,24 @@ impl Command {
         }
 
         let debug_env = env::var("MOON_DEBUG_PROCESS_ENV").is_ok();
-        let env_vars = self
+        let env_vars: FxHashMap<&OsString, &OsString> = self
             .env
             .iter()
-            .filter(|(key, _)| {
-                if debug_env {
-                    true
-                } else {
-                    key.to_str()
+            .filter_map(|(key, value)| {
+                if value.is_none() {
+                    None
+                } else if debug_env
+                    || key
+                        .to_str()
                         .map(|k| k.starts_with("MOON_"))
                         .unwrap_or_default()
+                {
+                    Some((key, value.as_ref().unwrap()))
+                } else {
+                    None
                 }
             })
-            .collect::<FxHashMap<_, _>>();
+            .collect();
 
         debug!(
             env_vars = ?env_vars,

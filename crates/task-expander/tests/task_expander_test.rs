@@ -16,6 +16,73 @@ fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
 mod task_expander {
     use super::*;
 
+    #[test]
+    fn doesnt_overlap_input_file() {
+        let sandbox = create_sandbox("file-group");
+        let project = create_project(sandbox.path());
+
+        let mut task = create_task();
+        task.outputs.push(OutputPath::ProjectFile("out".into()));
+        task.input_files.insert("project/source/out".into());
+
+        let context = create_context(sandbox.path());
+        let task = TaskExpander::new(&project, &context)
+            .expand(&mut task)
+            .unwrap();
+
+        assert!(task.input_files.is_empty());
+        assert_eq!(
+            task.output_files,
+            create_path_set(vec!["project/source/out"])
+        );
+    }
+
+    #[test]
+    fn doesnt_overlap_input_glob() {
+        let sandbox = create_sandbox("file-group");
+        let project = create_project(sandbox.path());
+
+        let mut task = create_task();
+        task.outputs
+            .push(OutputPath::ProjectGlob("out/**/*".into()));
+        task.input_globs.insert("project/source/out/**/*".into());
+
+        let context = create_context(sandbox.path());
+        let task = TaskExpander::new(&project, &context)
+            .expand(&mut task)
+            .unwrap();
+
+        assert!(task.input_globs.is_empty());
+        assert_eq!(
+            task.output_globs,
+            create_path_set(vec!["project/source/out/**/*"])
+        );
+    }
+
+    #[test]
+    fn converts_dirs_to_globs() {
+        let sandbox = create_sandbox("file-group");
+
+        // Dir has to exist!
+        sandbox.create_file("project/source/dir/file", "");
+
+        let project = create_project(sandbox.path());
+
+        let mut task = create_task();
+        task.inputs = vec![InputPath::ProjectFile("dir".into())];
+
+        let context = create_context(sandbox.path());
+        let task = TaskExpander::new(&project, &context)
+            .expand(&mut task)
+            .unwrap();
+
+        assert!(task.input_files.is_empty());
+        assert_eq!(
+            task.input_globs,
+            create_path_set(vec!["project/source/dir/**/*"])
+        );
+    }
+
     mod expand_command {
         use super::*;
 
@@ -826,49 +893,6 @@ mod task_expander {
                 create_path_set(vec!["project/source/task/**/*"])
             );
             assert_eq!(task.output_files, create_path_set(vec!["project/index.js"]));
-        }
-
-        #[test]
-        fn doesnt_overlap_input_file() {
-            let sandbox = create_sandbox("file-group");
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.outputs.push(OutputPath::ProjectFile("out".into()));
-            task.input_files.insert("project/source/out".into());
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
-                .expand_outputs(&mut task)
-                .unwrap();
-
-            assert!(task.input_files.is_empty());
-            assert_eq!(
-                task.output_files,
-                create_path_set(vec!["project/source/out"])
-            );
-        }
-
-        #[test]
-        fn doesnt_overlap_input_glob() {
-            let sandbox = create_sandbox("file-group");
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.outputs
-                .push(OutputPath::ProjectGlob("out/**/*".into()));
-            task.input_globs.insert("project/source/out/**/*".into());
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
-                .expand_outputs(&mut task)
-                .unwrap();
-
-            assert!(task.input_globs.is_empty());
-            assert_eq!(
-                task.output_globs,
-                create_path_set(vec!["project/source/out/**/*"])
-            );
         }
     }
 }

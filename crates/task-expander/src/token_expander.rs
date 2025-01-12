@@ -121,12 +121,9 @@ impl<'graph> TokenExpander<'graph> {
         while self.has_token_function(&script) {
             let result = self.replace_function(task, &script)?;
 
-            if let Some(token) = result.token {
-                if task.options.infer_inputs {
-                    task.input_files.extend(result.files.clone());
-                    task.input_globs.extend(result.globs.clone());
-                }
+            self.infer_inputs(task, &result);
 
+            if let Some(token) = result.token {
                 let mut items = vec![];
 
                 for file in result.files {
@@ -168,10 +165,7 @@ impl<'graph> TokenExpander<'graph> {
             if self.has_token_function(&arg) {
                 let result = self.replace_function(task, &arg)?;
 
-                if task.options.infer_inputs {
-                    task.input_files.extend(result.files.clone());
-                    task.input_globs.extend(result.globs.clone());
-                }
+                self.infer_inputs(task, &result);
 
                 for file in result.files {
                     args.push(self.resolve_path_for_task(task, file)?);
@@ -214,10 +208,7 @@ impl<'graph> TokenExpander<'graph> {
                 let result = self.replace_function(task, &value)?;
                 let mut items = vec![];
 
-                if task.options.infer_inputs {
-                    task.input_files.extend(result.files.clone());
-                    task.input_globs.extend(result.globs.clone());
-                }
+                self.infer_inputs(task, &result);
 
                 for file in result.files {
                     items.push(self.resolve_path_for_task(task, file)?);
@@ -287,15 +278,8 @@ impl<'graph> TokenExpander<'graph> {
                         task,
                         input.to_workspace_relative(&self.project.source),
                     )?;
-                    let abs_file = file.to_path(&self.context.workspace_root);
 
-                    // This is a special case that converts "foo" to "foo/**/*",
-                    // when the input is a directory. This is necessary for VCS hashing.
-                    if abs_file.exists() && abs_file.is_dir() {
-                        result.globs.push(file.join("**/*"));
-                    } else {
-                        result.files.push(file);
-                    }
+                    result.files.push(file);
                 }
                 InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
                     let glob = self.create_path_for_task(
@@ -725,6 +709,13 @@ impl<'graph> TokenExpander<'graph> {
             let abs_path = path.to_logical_path(&self.context.workspace_root);
 
             path::to_virtual_string(diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path))
+        }
+    }
+
+    fn infer_inputs(&self, task: &mut Task, result: &ExpandedResult) {
+        if task.options.infer_inputs {
+            task.input_files.extend(result.files.clone());
+            task.input_globs.extend(result.globs.clone());
         }
     }
 }

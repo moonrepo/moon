@@ -1,5 +1,6 @@
 use crate::command::Command;
 use crate::command_line::CommandLine;
+use crate::output_stream::capture_stream;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
 use moon_common::color;
@@ -96,7 +97,7 @@ impl Command {
         Ok(output)
     }
 
-    pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
+    pub async fn exec_stream_and_capture_output_old(&mut self) -> miette::Result<Output> {
         let (mut command, line) = self.create_async_command();
 
         let mut child = command
@@ -202,6 +203,105 @@ impl Command {
             status,
             stdout: captured_stdout.read().unwrap().join("\n").into_bytes(),
             stderr: captured_stderr.read().unwrap().join("\n").into_bytes(),
+        };
+
+        self.handle_nonzero_status(&output, true)?;
+
+        Ok(output)
+    }
+
+    pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
+        let (mut command, line) = self.create_async_command();
+
+        let mut child = command
+            .stdin(if self.should_pass_stdin() {
+                Stdio::piped()
+            } else {
+                Stdio::inherit()
+            })
+            .stderr(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .map_err(|error| ProcessError::StreamCapture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            })?;
+
+        self.current_id = child.id();
+
+        if self.should_pass_stdin() {
+            self.write_input_to_child(&mut child, &line).await?;
+        }
+
+        // Stream and attempt to capture the output
+        let stderr = child.stderr.take().unwrap();
+        let mut stderr_buffer = Vec::new();
+        let mut stderr_pos = 0;
+
+        let stdout = child.stdout.take().unwrap();
+        let mut stdout_buffer = Vec::new();
+        let mut stdout_pos = 0;
+
+        let prefix = self.get_prefix();
+        let console = self
+            .console
+            .as_ref()
+            .expect("A console is required when streaming output!");
+
+        capture_stream(stdout, stderr, &mut |is_out, data, eof| {
+            let (pos, buf) = if is_out {
+                (&mut stdout_pos, &mut stdout_buffer)
+            } else {
+                (&mut stderr_pos, &mut stderr_buffer)
+            };
+
+            let idx = if eof {
+                data.len()
+            } else {
+                match data[*pos..].iter().rposition(|b| *b == b'\n') {
+                    Some(i) => *pos + i + 1,
+                    None => {
+                        *pos = data.len();
+                        return;
+                    }
+                }
+            };
+
+            let new_lines = &data[..idx];
+
+            for line in String::from_utf8_lossy(new_lines).lines() {
+                let stream = if is_out { &console.out } else { &console.err };
+
+                let _ = if let Some(p) = &prefix {
+                    stream.write_line_with_prefix(line.trim(), p)
+                } else {
+                    stream.write_line(line.trim())
+                };
+            }
+
+            buf.extend(new_lines);
+            data.drain(..idx);
+            *pos = 0;
+        })
+        .await
+        .map_err(|error| ProcessError::StreamCapture {
+            bin: self.get_bin_name(),
+            error: Box::new(error),
+        })?;
+
+        // Attempt to create the child output
+        let status = child
+            .wait()
+            .await
+            .map_err(|error| ProcessError::StreamCapture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            })?;
+
+        let output = Output {
+            status,
+            stdout: stdout_buffer,
+            stderr: stderr_buffer,
         };
 
         self.handle_nonzero_status(&output, true)?;

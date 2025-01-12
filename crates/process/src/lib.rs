@@ -2,6 +2,7 @@ mod command;
 mod command_line;
 mod exec_command;
 mod output;
+mod output_stream;
 mod process_error;
 mod shell;
 

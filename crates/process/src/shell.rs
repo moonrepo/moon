@@ -21,14 +21,14 @@ fn get_default_shell() -> ShellType {
 
 #[inline]
 pub fn is_windows_script<T: AsRef<OsStr>>(bin: T) -> bool {
-    let bin = bin.as_ref().to_string_lossy();
-
-    bin.ends_with(".cmd")
-        || bin.ends_with(".bat")
-        || bin.ends_with(".ps1")
-        || bin.ends_with(".CMD")
-        || bin.ends_with(".BAT")
-        || bin.ends_with(".PS1")
+    bin.as_ref().to_str().is_some_and(|bin| {
+        bin.ends_with(".cmd")
+            || bin.ends_with(".bat")
+            || bin.ends_with(".ps1")
+            || bin.ends_with(".CMD")
+            || bin.ends_with(".BAT")
+            || bin.ends_with(".PS1")
+    })
 }
 
 pub struct Shell {

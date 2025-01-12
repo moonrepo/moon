@@ -2,7 +2,7 @@
 // https://github.com/rust-lang/cargo/blob/master/crates/cargo-util/src/process_builder.rs
 
 use crate::shell::Shell;
-use moon_common::color;
+use moon_common::{color, is_test_env};
 use moon_console::Console;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::hash::Hasher;
@@ -144,9 +144,11 @@ impl Command {
     pub fn inherit_colors(&mut self) -> &mut Self {
         let level = color::supports_color().to_string();
 
-        self.env_remove("NO_COLOR");
-        self.env("FORCE_COLOR", &level);
-        self.env("CLICOLOR_FORCE", &level);
+        if !is_test_env() {
+            self.env_remove("NO_COLOR");
+            self.env("FORCE_COLOR", &level);
+            self.env("CLICOLOR_FORCE", &level);
+        }
 
         // Force a terminal width so that we have consistent sizing
         // in our cached output, and its the same across all machines

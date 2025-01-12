@@ -1,10 +1,10 @@
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
-use moon_common::{color, is_ci, is_test_env};
+use moon_common::{is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{args::join_args, AsyncCommand, Command};
+use moon_process::{args::join_args, Command, CommandLine};
 use moon_project::Project;
 use moon_task::Task;
 use std::process::Output;
@@ -108,7 +108,7 @@ impl<'task> CommandExecutor<'task> {
 
             // Attempt to execute command
             async fn execute_command(
-                mut command: AsyncCommand<'_>,
+                command: &mut Command,
                 stream: bool,
                 interactive: bool,
             ) -> miette::Result<Output> {
@@ -134,7 +134,7 @@ impl<'task> CommandExecutor<'task> {
 
                 // Or run the job to completion
                 result = execute_command(
-                    self.command.create_async(),
+                    &mut self.command,
                     self.stream,
                     self.interactive,
                 ) => result.map(Some),
@@ -345,17 +345,18 @@ impl<'task> CommandExecutor<'task> {
             return Ok(());
         }
 
-        let message = color::muted_light(self.command.inspect().format_command(
-            command_line,
-            &self.app.workspace_root,
-            Some(if self.task.options.run_from_workspace_root {
-                &self.app.workspace_root
-            } else {
-                &self.project.root
-            }),
-        ));
+        let workspace_root = &self.app.workspace_root;
+        let working_dir = if self.task.options.run_from_workspace_root {
+            &self.app.workspace_root
+        } else {
+            &self.project.root
+        };
 
-        self.app.console.out.write_line(message)?;
+        self.app.console.out.write_line(CommandLine::format(
+            command_line,
+            workspace_root,
+            working_dir,
+        ))?;
 
         Ok(())
     }

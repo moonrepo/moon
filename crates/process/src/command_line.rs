@@ -1,8 +1,10 @@
 use crate::command::Command;
 use moon_args::join_args_os;
+use moon_common::color;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
+use std::path::Path;
 
 pub struct CommandLine {
     pub command: Vec<OsString>,
@@ -58,6 +60,31 @@ impl CommandLine {
         CommandLine {
             command: command_line,
             input: input_line,
+        }
+    }
+
+    pub fn format(command: &str, workspace_root: &Path, working_dir: &Path) -> String {
+        let dir = Self::format_working_dir(workspace_root, working_dir);
+
+        Self::format_line(command, Some(&dir))
+    }
+
+    pub fn format_line(command: &str, in_dir: Option<&str>) -> String {
+        let command = color::muted_light(command.trim());
+
+        match in_dir {
+            Some(dir) => format!("{command} {}", color::muted(format!("(in {dir})"))),
+            None => command,
+        }
+    }
+
+    pub fn format_working_dir(workspace_root: &Path, working_dir: &Path) -> String {
+        if working_dir == workspace_root {
+            "workspace".into()
+        } else if let Ok(dir) = working_dir.strip_prefix(workspace_root) {
+            format!(".{}{}", std::path::MAIN_SEPARATOR, dir.to_string_lossy())
+        } else {
+            ".".into()
         }
     }
 }

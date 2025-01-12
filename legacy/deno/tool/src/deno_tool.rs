@@ -224,8 +224,6 @@ impl DependencyManager<()> for DenoTool {
 
         cmd.cwd(working_dir).set_print_command(log);
 
-        let mut cmd = cmd.create_async();
-
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
         } else {

@@ -2,17 +2,20 @@ use crate::command::Command;
 use crate::command_line::CommandLine;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
-use std::ffi::OsStr;
+use moon_common::color;
+use rustc_hash::FxHashMap;
+use std::env;
+use std::ffi::{OsStr, OsString};
+use std::path::PathBuf;
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as AsyncCommand};
 use tokio::task;
+use tracing::{debug, enabled};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
-        // self.inspector.log_command();
-
         let (mut command, line) = self.create_async_command();
         let output: Output;
 
@@ -54,8 +57,6 @@ impl Command {
     }
 
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
-        // self.inspector.log_command();
-
         let (mut command, line) = self.create_async_command();
         let mut child: Child;
 
@@ -96,8 +97,6 @@ impl Command {
     }
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
-        // self.inspector.log_command();
-
         let (mut command, line) = self.create_async_command();
 
         let mut child = command
@@ -211,7 +210,9 @@ impl Command {
     }
 
     fn create_async_command(&self) -> (AsyncCommand, CommandLine) {
-        let command_line = CommandLine::new(&self);
+        let command_line = self.create_command_line();
+
+        self.log_command(&command_line);
 
         let mut command = AsyncCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
@@ -232,6 +233,10 @@ impl Command {
         (command, command_line)
     }
 
+    fn create_command_line(&self) -> CommandLine {
+        CommandLine::new(self)
+    }
+
     fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {
         self.current_id = None;
 
@@ -240,6 +245,60 @@ impl Command {
         }
 
         Ok(())
+    }
+
+    fn log_command(&self, line: &CommandLine) {
+        let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
+        let workspace_root = if let Some(Some(value)) = self.env.get(&workspace_env_key) {
+            PathBuf::from(value)
+        } else {
+            env::var_os(&workspace_env_key).map_or_else(
+                || env::current_dir().unwrap_or(PathBuf::from(".")),
+                PathBuf::from,
+            )
+        };
+        let working_dir = PathBuf::from(self.cwd.as_deref().unwrap_or(workspace_root.as_os_str()));
+
+        if self.print_command {
+            // if let Some(cmd_line) = self.get_command_line().main_command.to_str() {
+            if let Some(console) = self.console.as_ref() {
+                if !console.out.is_quiet() {
+                    let _ = console.out.write_line(CommandLine::format(
+                        &line.to_string(),
+                        &workspace_root,
+                        &working_dir,
+                    ));
+                }
+            }
+            // }
+        }
+
+        // Avoid all this overhead if we're not logging
+        if !enabled!(tracing::Level::DEBUG) {
+            return;
+        }
+
+        let debug_env = env::var("MOON_DEBUG_PROCESS_ENV").is_ok();
+        let env_vars = self
+            .env
+            .iter()
+            .filter(|(key, _)| {
+                if debug_env {
+                    true
+                } else {
+                    key.to_str()
+                        .map(|k| k.starts_with("MOON_"))
+                        .unwrap_or_default()
+                }
+            })
+            .collect::<FxHashMap<_, _>>();
+
+        debug!(
+            env_vars = ?env_vars,
+            working_dir = ?working_dir,
+            "Running command {}",
+            color::shell(line.to_string())
+        );
     }
 
     async fn write_input_to_child(

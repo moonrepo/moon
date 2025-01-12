@@ -274,7 +274,6 @@ async fn clone_and_checkout_git_repository(
             .args(args)
             .cwd(cwd)
             .without_shell()
-            .create_async()
             .exec_capture_output()
             .await?;
 

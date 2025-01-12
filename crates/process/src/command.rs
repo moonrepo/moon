@@ -4,7 +4,8 @@
 use crate::shell::Shell;
 use moon_common::color;
 use moon_console::Console;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHasher};
+use std::hash::Hasher;
 use std::{
     ffi::{OsStr, OsString},
     sync::Arc,
@@ -170,6 +171,37 @@ impl Command {
 
     pub fn get_bin_name(&self) -> String {
         self.bin.to_string_lossy().to_string()
+    }
+
+    pub fn get_cache_key(&self) -> String {
+        let mut hasher = FxHasher::default();
+
+        let mut write = |value: &OsString| {
+            hasher.write(value.as_os_str().as_encoded_bytes());
+        };
+
+        for (key, value) in &self.env {
+            if let Some(value) = value {
+                write(key);
+                write(value);
+            }
+        }
+
+        write(&self.bin);
+
+        for arg in &self.args {
+            write(arg);
+        }
+
+        if let Some(cwd) = &self.cwd {
+            write(cwd);
+        }
+
+        for arg in &self.input {
+            write(arg);
+        }
+
+        format!("{}", hasher.finish())
     }
 
     pub fn get_prefix(&self) -> Option<&str> {

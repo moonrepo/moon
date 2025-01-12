@@ -154,7 +154,6 @@ impl DependencyManager<NodeTool> for NpmTool {
             .args(["dedupe"])
             .cwd(working_dir)
             .set_print_command(log)
-            .create_async()
             .exec_capture_output()
             .await?;
 
@@ -209,8 +208,6 @@ impl DependencyManager<NodeTool> for NpmTool {
             .cwd(working_dir)
             .set_print_command(log);
 
-        let mut cmd = cmd.create_async();
-
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
         } else {
@@ -238,7 +235,7 @@ impl DependencyManager<NodeTool> for NpmTool {
             cmd.args(["--workspace", package_name]);
         }
 
-        cmd.create_async().exec_stream_output().await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

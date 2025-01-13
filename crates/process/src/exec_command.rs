@@ -18,10 +18,10 @@ use tracing::{debug, enabled};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
-        let output: Output;
 
-        if self.should_pass_stdin() {
+        let child = if self.should_pass_stdin() {
             let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
@@ -34,24 +34,31 @@ impl Command {
 
             self.write_input_to_child(&mut child, &line).await?;
 
-            self.current_id = child.id();
-
-            output = child
-                .wait_with_output()
-                .await
-                .map_err(|error| ProcessError::Capture {
-                    bin: self.get_bin_name(),
-                    error: Box::new(error),
-                })?;
+            child
         } else {
-            output = command
-                .output()
-                .await
+            command
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
                 .map_err(|error| ProcessError::Capture {
                     bin: self.get_bin_name(),
                     error: Box::new(error),
-                })?;
-        }
+                })?
+        };
+
+        let shared_child = registry.add_child(child).await;
+
+        let result = shared_child
+            .wait_with_output()
+            .await
+            .map_err(|error| ProcessError::Capture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            });
+
+        registry.remove_child(shared_child).await;
+
+        let output = result?;
 
         self.handle_nonzero_status(&output, true)?;
 
@@ -59,34 +66,41 @@ impl Command {
     }
 
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
-        let mut child: Child;
 
-        if self.should_pass_stdin() {
-            child =
-                command
-                    .stdin(Stdio::piped())
-                    .spawn()
-                    .map_err(|error| ProcessError::Stream {
+        let child =
+            if self.should_pass_stdin() {
+                let mut child = command.stdin(Stdio::piped()).spawn().map_err(|error| {
+                    ProcessError::Stream {
                         bin: self.get_bin_name(),
                         error: Box::new(error),
-                    })?;
+                    }
+                })?;
 
-            self.write_input_to_child(&mut child, &line).await?;
-        } else {
-            child = command.spawn().map_err(|error| ProcessError::Stream {
+                self.write_input_to_child(&mut child, &line).await?;
+
+                child
+            } else {
+                command.spawn().map_err(|error| ProcessError::Stream {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?
+            };
+
+        let shared_child = registry.add_child(child).await;
+
+        let result = shared_child
+            .wait()
+            .await
+            .map_err(|error| ProcessError::Stream {
                 bin: self.get_bin_name(),
                 error: Box::new(error),
-            })?;
-        };
+            });
 
-        self.current_id = child.id();
+        registry.remove_child(shared_child).await;
 
-        let status = child.wait().await.map_err(|error| ProcessError::Stream {
-            bin: self.get_bin_name(),
-            error: Box::new(error),
-        })?;
-
+        let status = result?;
         let output = Output {
             status,
             stderr: vec![],
@@ -98,7 +112,8 @@ impl Command {
         Ok(output)
     }
 
-    pub async fn exec_stream_and_capture_output_old(&mut self) -> miette::Result<Output> {
+    pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
 
         let mut child = command
@@ -115,11 +130,11 @@ impl Command {
                 error: Box::new(error),
             })?;
 
-        self.current_id = child.id();
-
         if self.should_pass_stdin() {
             self.write_input_to_child(&mut child, &line).await?;
         }
+
+        let shared_child = registry.add_child(child).await;
 
         // We need to log the child process output to the parent terminal
         // AND capture stdout/stderr so that we can cache it for future runs.
@@ -127,8 +142,8 @@ impl Command {
         // this *real ugly* implementation to solve it. There's gotta be a
         // better way to do this?
         // https://stackoverflow.com/a/49063262
-        let stderr = BufReader::new(child.stderr.take().unwrap());
-        let stdout = BufReader::new(child.stdout.take().unwrap());
+        let stderr = BufReader::new(shared_child.take_stderr().await.unwrap());
+        let stdout = BufReader::new(shared_child.take_stdout().await.unwrap());
         let mut handles = vec![];
 
         let captured_stderr = Arc::new(RwLock::new(vec![]));
@@ -192,14 +207,17 @@ impl Command {
         }
 
         // Attempt to create the child output
-        let status = child
+        let result = shared_child
             .wait()
             .await
             .map_err(|error| ProcessError::StreamCapture {
                 bin: self.get_bin_name(),
                 error: Box::new(error),
-            })?;
+            });
 
+        registry.remove_child(shared_child).await;
+
+        let status = result?;
         let output = Output {
             status,
             stdout: captured_stdout.read().unwrap().join("\n").into_bytes(),
@@ -211,7 +229,8 @@ impl Command {
         Ok(output)
     }
 
-    pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
+    pub async fn exec_stream_and_capture_output_new(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
 
         let mut child = command
@@ -228,18 +247,18 @@ impl Command {
                 error: Box::new(error),
             })?;
 
-        self.current_id = child.id();
-
         if self.should_pass_stdin() {
             self.write_input_to_child(&mut child, &line).await?;
         }
 
+        let shared_child = registry.add_child(child).await;
+
         // Stream and attempt to capture the output
-        let stderr = child.stderr.take().unwrap();
+        let stderr = shared_child.take_stderr().await.unwrap();
         let mut stderr_buffer = Vec::new();
         let mut stderr_pos = 0;
 
-        let stdout = child.stdout.take().unwrap();
+        let stdout = shared_child.take_stdout().await.unwrap();
         let mut stdout_buffer = Vec::new();
         let mut stdout_pos = 0;
 
@@ -291,14 +310,17 @@ impl Command {
         })?;
 
         // Attempt to create the child output
-        let status = child
+        let result = shared_child
             .wait()
             .await
             .map_err(|error| ProcessError::StreamCapture {
                 bin: self.get_bin_name(),
                 error: Box::new(error),
-            })?;
+            });
 
+        registry.remove_child(shared_child).await;
+
+        let status = result?;
         let output = Output {
             status,
             stdout: stdout_buffer,
@@ -339,8 +361,6 @@ impl Command {
     }
 
     fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {
-        self.current_id = None;
-
         if self.should_error_nonzero() && !output.status.success() {
             return Err(output_to_error(self.get_bin_name(), output, with_message).into());
         }

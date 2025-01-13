@@ -5,6 +5,7 @@ mod output;
 mod output_stream;
 mod process_error;
 mod process_registry;
+mod shared_child;
 mod shell;
 mod signal;
 
@@ -14,5 +15,6 @@ pub use moon_args as args;
 pub use output::*;
 pub use process_error::*;
 pub use process_registry::*;
+pub use shared_child::*;
 pub use shell::*;
 pub use signal::*;

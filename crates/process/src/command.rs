@@ -40,9 +40,6 @@ pub struct Command {
 
     /// Console to write output to
     pub console: Option<Arc<Console>>,
-
-    /// Current ID of a running child process.
-    pub current_id: Option<u32>,
 }
 
 impl Command {
@@ -59,7 +56,6 @@ impl Command {
             print_command: false,
             shell: Some(Shell::default()),
             console: None,
-            current_id: None,
         }
     }
 

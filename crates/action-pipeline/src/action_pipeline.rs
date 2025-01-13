@@ -14,6 +14,7 @@ use moon_action_graph::ActionGraph;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
+use moon_process::ProcessRegistry;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -358,11 +359,9 @@ impl ActionPipeline {
 
     fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<()> {
         tokio::spawn(async move {
-            debug!("Listening for ctrl+c signal");
+            let mut receiver = ProcessRegistry::instance().receive_signal();
 
-            if tokio::signal::ctrl_c().await.is_ok() {
-                debug!("Received ctrl+c signal, shutting down!");
-
+            if receiver.recv().await.is_ok() {
                 cancel_token.cancel();
             }
         })

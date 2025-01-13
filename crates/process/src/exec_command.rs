@@ -3,6 +3,7 @@ use crate::command_line::CommandLine;
 use crate::output_stream::capture_stream;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
+use crate::process_registry::ProcessRegistry;
 use moon_common::color;
 use rustc_hash::FxHashMap;
 use std::env;

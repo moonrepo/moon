@@ -16,6 +16,7 @@ moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_console = { path = "../console" }
 moon_notifier = { path = "../notifier" }
+moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }

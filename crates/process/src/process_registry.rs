@@ -104,9 +104,10 @@ async fn shutdown_processes_with_signal(
     mut receiver: Receiver<SignalType>,
     processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
 ) {
-    // TODO
+    let signal: SignalType;
+
     loop {
-        let _signal = match receiver.recv().await {
+        signal = match receiver.recv().await {
             Ok(signal) => signal,
             Err(RecvError::Closed) => SignalType::Terminate,
             _ => continue,
@@ -123,6 +124,7 @@ async fn shutdown_processes_with_signal(
 
     debug!(
         pids = ?children.keys().collect::<Vec<_>>(),
+        signal = ?signal,
         "Shutting down {} running child processes",
         children.len()
     );
@@ -130,7 +132,7 @@ async fn shutdown_processes_with_signal(
     for (pid, child) in children.drain() {
         trace!(pid, "Killing child process");
 
-        let _ = child.kill().await;
+        let _ = child.kill_with_signal(signal).await;
 
         drop(child);
     }

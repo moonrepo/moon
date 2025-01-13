@@ -1,3 +1,4 @@
+use crate::signal::SignalType;
 use core::unreachable;
 use std::io;
 use std::process::{ExitStatus, Output};
@@ -46,6 +47,40 @@ impl SharedChild {
 
         if let Some(mut child) = child.take() {
             child.kill().await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
+        let mut child = self.1.lock().await;
+
+        if let Some(mut child) = child.take() {
+            let pid = self.id() as i32;
+
+            #[cfg(unix)]
+            {
+                let result = unsafe {
+                    libc::kill(
+                        pid,
+                        match signal {
+                            SignalType::Interrupt => 2,  // SIGINT
+                            SignalType::Terminate => 15, // SIGTERM
+                        },
+                    )
+                };
+
+                if result != 0 {
+                    return Err(io::Error::last_os_error());
+                }
+            }
+
+            #[cfg(windows)]
+            {
+                child.start_kill().await?;
+            }
+
+            child.wait().await?;
         }
 
         Ok(())

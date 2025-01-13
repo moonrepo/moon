@@ -172,6 +172,7 @@ impl ActionPipeline {
 
         while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
+                ProcessRegistry::instance().terminate_children();
                 abort_token.cancel();
                 error = Some(action.get_error());
             }
@@ -192,8 +193,12 @@ impl ActionPipeline {
 
         drop(receiver);
 
-        // Wait for the queue to abort all running tasks
+        // Wait for the queue to abort/close all running tasks
         let _ = queue_handle.await;
+
+        ProcessRegistry::instance()
+            .wait_for_children_to_shutdown()
+            .await;
 
         // Force abort the signal handler
         signal_handle.abort();
@@ -340,7 +345,7 @@ impl ActionPipeline {
             // we need to continually check if they've been aborted or
             // cancelled, otherwise we will end up with zombie processes
             loop {
-                sleep(Duration::from_millis(150)).await;
+                sleep(Duration::from_millis(50)).await;
 
                 // No tasks running, so don't hang forever
                 if job_context.result_sender.is_closed() {

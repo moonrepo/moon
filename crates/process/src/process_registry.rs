@@ -14,7 +14,7 @@ use tracing::{debug, trace, warn};
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
 pub struct ProcessRegistry {
-    processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
+    running: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     signal_sender: Sender<SignalType>,
     signal_wait_handle: JoinHandle<()>,
     signal_shutdown_handle: JoinHandle<()>,
@@ -41,17 +41,17 @@ impl ProcessRegistry {
         });
 
         Self {
-            processes,
+            running: processes,
             signal_sender: sender,
             signal_wait_handle,
             signal_shutdown_handle,
         }
     }
 
-    pub async fn add_child(&self, child: Child) -> SharedChild {
+    pub async fn add_running(&self, child: Child) -> SharedChild {
         let shared = SharedChild::new(child);
 
-        self.processes
+        self.running
             .write()
             .await
             .insert(shared.id(), shared.clone());
@@ -59,31 +59,33 @@ impl ProcessRegistry {
         shared
     }
 
-    pub async fn get_child_by_id(&self, id: u32) -> Option<SharedChild> {
-        self.processes.read().await.get(&id).cloned()
+    pub async fn get_running_by_pid(&self, id: u32) -> Option<SharedChild> {
+        self.running.read().await.get(&id).cloned()
     }
 
-    pub async fn remove_child(&self, child: SharedChild) {
-        self.remove_child_by_id(child.id()).await
+    pub async fn remove_running(&self, child: SharedChild) {
+        self.remove_running_by_pid(child.id()).await
     }
 
-    pub async fn remove_child_by_id(&self, id: u32) {
-        self.processes.write().await.remove(&id);
+    pub async fn remove_running_by_pid(&self, id: u32) {
+        self.running.write().await.remove(&id);
     }
 
     pub fn receive_signal(&self) -> Receiver<SignalType> {
         self.signal_sender.subscribe()
     }
 
-    pub fn terminate_children(&self) {
+    pub fn terminate_running(&self) {
         let _ = self.signal_sender.send(SignalType::Terminate);
     }
 
-    pub async fn wait_for_children_to_shutdown(&self) {
+    pub async fn wait_for_running_to_shutdown(&self) {
         let mut count = 0;
 
         loop {
-            if self.processes.read().await.is_empty() || count >= 5000 {
+            // Wait for all running processes to have stopped,
+            // or if we have waited 5 seconds, just quit
+            if self.running.read().await.is_empty() || count >= 5000 {
                 break;
             }
 

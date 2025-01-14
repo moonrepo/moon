@@ -167,12 +167,13 @@ impl ActionPipeline {
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
 
+        let process_registry = ProcessRegistry::instance();
         let mut actions = vec![];
         let mut error = None;
 
         while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
-                ProcessRegistry::instance().terminate_children();
+                process_registry.terminate_running();
                 abort_token.cancel();
                 error = Some(action.get_error());
             }
@@ -195,10 +196,7 @@ impl ActionPipeline {
 
         // Wait for the queue to abort/close all running tasks
         let _ = queue_handle.await;
-
-        ProcessRegistry::instance()
-            .wait_for_children_to_shutdown()
-            .await;
+        process_registry.wait_for_running_to_shutdown().await;
 
         // Force abort the signal handler
         signal_handle.abort();

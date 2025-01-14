@@ -46,7 +46,7 @@ impl Command {
                 })?
         };
 
-        let shared_child = registry.add_child(child).await;
+        let shared_child = registry.add_running(child).await;
 
         let result = shared_child
             .wait_with_output()
@@ -56,7 +56,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        registry.remove_child(shared_child).await;
+        registry.remove_running(shared_child).await;
 
         let output = result?;
 
@@ -88,7 +88,7 @@ impl Command {
                 })?
             };
 
-        let shared_child = registry.add_child(child).await;
+        let shared_child = registry.add_running(child).await;
 
         let result = shared_child
             .wait()
@@ -98,7 +98,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        registry.remove_child(shared_child).await;
+        registry.remove_running(shared_child).await;
 
         let status = result?;
         let output = Output {
@@ -134,7 +134,7 @@ impl Command {
             self.write_input_to_child(&mut child, &line).await?;
         }
 
-        let shared_child = registry.add_child(child).await;
+        let shared_child = registry.add_running(child).await;
 
         // We need to log the child process output to the parent terminal
         // AND capture stdout/stderr so that we can cache it for future runs.
@@ -215,7 +215,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        registry.remove_child(shared_child).await;
+        registry.remove_running(shared_child).await;
 
         let status = result?;
         let output = Output {
@@ -251,7 +251,7 @@ impl Command {
             self.write_input_to_child(&mut child, &line).await?;
         }
 
-        let shared_child = registry.add_child(child).await;
+        let shared_child = registry.add_running(child).await;
 
         // Stream and attempt to capture the output
         let stderr = shared_child.take_stderr().await.unwrap();
@@ -318,7 +318,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        registry.remove_child(shared_child).await;
+        registry.remove_running(shared_child).await;
 
         let status = result?;
         let output = Output {

@@ -4,6 +4,7 @@ use crate::command_line::CommandLine;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
+use crate::shared_child::SharedChild;
 use moon_common::color;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -48,6 +49,8 @@ impl Command {
 
         let shared_child = registry.add_running(child).await;
 
+        self.log_command(&line, &shared_child);
+
         let result = shared_child
             .wait_with_output()
             .await
@@ -89,6 +92,8 @@ impl Command {
             };
 
         let shared_child = registry.add_running(child).await;
+
+        self.log_command(&line, &shared_child);
 
         let result = shared_child
             .wait()
@@ -206,6 +211,8 @@ impl Command {
             let _ = handle.await;
         }
 
+        self.log_command(&line, &shared_child);
+
         // Attempt to create the child output
         let result = shared_child
             .wait()
@@ -309,6 +316,8 @@ impl Command {
     //         error: Box::new(error),
     //     })?;
 
+    // self.log_command(&line, &shared_child);
+
     //     // Attempt to create the child output
     //     let result = shared_child
     //         .wait()
@@ -334,8 +343,6 @@ impl Command {
 
     fn create_async_command(&self) -> (AsyncCommand, CommandLine) {
         let command_line = self.create_command_line();
-
-        self.log_command(&command_line);
 
         let mut command = AsyncCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
@@ -368,7 +375,7 @@ impl Command {
         Ok(())
     }
 
-    fn log_command(&self, line: &CommandLine) {
+    fn log_command(&self, line: &CommandLine, child: &SharedChild) {
         let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
         let workspace_root = if let Some(Some(value)) = self.env.get(&workspace_env_key) {
             PathBuf::from(value)
@@ -416,6 +423,7 @@ impl Command {
             .collect();
 
         debug!(
+            pid = child.id(),
             env_vars = ?env_vars,
             working_dir = ?working_dir,
             "Running command {}",

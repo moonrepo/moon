@@ -4343,6 +4343,7 @@ dependencies = [
  "moon_common",
  "moon_console",
  "once_cell",
+ "process-wrap",
  "rustc-hash 2.1.0",
  "starbase_shell",
  "system_env",
@@ -5680,8 +5681,10 @@ version = "8.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d35f4dc9988d1326b065b4def5e950c3ed727aa03e3151b86cc9e2aec6b03f54"
 dependencies = [
+ "futures",
  "indexmap 2.7.1",
  "nix",
+ "tokio",
  "tracing",
  "windows 0.59.0",
 ]

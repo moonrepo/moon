@@ -1,18 +1,19 @@
 use crate::signal::*;
+use process_wrap::tokio::TokioChildWrapper;
 use std::io;
 use std::process::{ExitStatus, Output};
 use std::sync::Arc;
-use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
+use tokio::process::{ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
 
 #[derive(Clone)]
 pub struct SharedChild {
-    inner: Arc<Mutex<Option<Child>>>,
+    inner: Arc<Mutex<Option<Box<dyn TokioChildWrapper>>>>,
     pid: u32,
 }
 
 impl SharedChild {
-    pub fn new(child: Child) -> Self {
+    pub fn new(child: Box<dyn TokioChildWrapper>) -> Self {
         Self {
             pid: child.id().unwrap(),
             inner: Arc::new(Mutex::new(Some(child))),
@@ -28,7 +29,7 @@ impl SharedChild {
             .lock()
             .await
             .as_mut()
-            .and_then(|child| child.stdin.take())
+            .and_then(|child| child.stdin().take())
     }
 
     pub async fn take_stdout(&self) -> Option<ChildStdout> {
@@ -36,7 +37,7 @@ impl SharedChild {
             .lock()
             .await
             .as_mut()
-            .and_then(|child| child.stdout.take())
+            .and_then(|child| child.stdout().take())
     }
 
     pub async fn take_stderr(&self) -> Option<ChildStderr> {
@@ -44,14 +45,14 @@ impl SharedChild {
             .lock()
             .await
             .as_mut()
-            .and_then(|child| child.stderr.take())
+            .and_then(|child| child.stderr().take())
     }
 
     pub async fn kill(&self) -> io::Result<()> {
         let mut child = self.inner.lock().await;
 
         if let Some(mut child) = child.take() {
-            child.kill().await?;
+            Box::into_pin(child.kill()).await?;
         }
 
         Ok(())
@@ -64,7 +65,11 @@ impl SharedChild {
             // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L947
             #[cfg(unix)]
             {
-                kill(self.id(), signal)?;
+                child.signal(match signal {
+                    SignalType::Interrupt => 2,  // SIGINT
+                    SignalType::Quit => 3,       // SIGQUIT
+                    SignalType::Terminate => 15, // SIGTERM
+                })?;
             }
 
             // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
@@ -73,27 +78,27 @@ impl SharedChild {
                 child.start_kill()?;
             }
 
-            child.wait().await?;
+            Box::into_pin(child.wait()).await?;
         }
 
         Ok(())
     }
 
-    pub async fn wait(&self) -> io::Result<ExitStatus> {
+    pub(crate) async fn wait(&self) -> io::Result<ExitStatus> {
         let mut child = self.inner.lock().await;
 
         if let Some(child) = child.as_mut() {
-            return child.wait().await;
+            return Box::into_pin(child.wait()).await;
         }
 
         unreachable!()
     }
 
-    pub async fn wait_with_output(&self) -> io::Result<Output> {
+    pub(crate) async fn wait_with_output(&self) -> io::Result<Output> {
         let mut child = self.inner.lock().await;
 
         if let Some(child) = child.take() {
-            return child.wait_with_output().await;
+            return Box::into_pin(child.wait_with_output()).await;
         }
 
         unreachable!()

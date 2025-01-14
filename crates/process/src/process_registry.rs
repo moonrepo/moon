@@ -1,14 +1,14 @@
 use crate::shared_child::*;
 use crate::signal::*;
 use core::time::Duration;
+use process_wrap::tokio::TokioChildWrapper;
 use rustc_hash::FxHashMap;
 use std::sync::{Arc, OnceLock};
-use tokio::process::Child;
 use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
-use tracing::{debug, trace, warn};
+use tracing::debug;
 
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
@@ -49,7 +49,7 @@ impl ProcessRegistry {
         Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::default())))
     }
 
-    pub async fn add_running(&self, child: Child) -> SharedChild {
+    pub async fn add_running(&self, child: Box<dyn TokioChildWrapper>) -> SharedChild {
         let shared = SharedChild::new(child);
 
         self.running
@@ -82,11 +82,23 @@ impl ProcessRegistry {
 
     pub async fn wait_for_running_to_shutdown(&self) {
         let mut count = 0;
+        let mut terminated = false;
 
         loop {
-            // Wait for all running processes to have stopped,
-            // or if we have waited 5 seconds, just quit
-            if self.running.read().await.is_empty() || count >= 5000 {
+            // After 1.5 second of waiting, terminate all running,
+            // as some of them may have "press ctrl+c again" logic
+            if !terminated && count >= 1500 {
+                self.terminate_running();
+                terminated = true;
+            }
+
+            // After 3 seconds of waiting, just exit immediately
+            if count >= 3000 {
+                break;
+            }
+
+            // Wait for all running processes to have stopped
+            if self.running.read().await.is_empty() {
                 break;
             }
 
@@ -133,13 +145,18 @@ async fn shutdown_processes_with_signal(
         children.len()
     );
 
-    for (pid, child) in children.drain() {
-        trace!(pid, "Killing child process");
+    // We are using process groups, so manually killing these
+    // child processes should not be necessary! Instead, just
+    // empty the map so that our wait method doesn't hang...
+    children.clear();
 
-        if let Err(error) = child.kill_with_signal(signal).await {
-            warn!(pid, "Failed to kill child process: {error}");
-        }
+    // for (pid, child) in children.drain() {
+    //     trace!(pid, "Killing child process");
 
-        drop(child);
-    }
+    //     if let Err(error) = child.kill_with_signal(signal).await {
+    //         warn!(pid, "Failed to kill child process: {error}");
+    //     }
+
+    //     drop(child);
+    // }
 }

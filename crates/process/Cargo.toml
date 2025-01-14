@@ -15,12 +15,18 @@ moon_console = { path = "../console" }
 cached = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
+process-wrap = { version = "8.2.0", default-features = false, features = [
+	"job-object",
+	"kill-on-drop",
+	"process-group",
+	"tokio1",
+] }
 rustc-hash = { workspace = true }
 starbase_shell = { workspace = true }
 system_env = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-tokio = { workspace = true, features = ["io-util", "sync"] }
+tokio = { workspace = true, features = ["io-util", "signal", "sync"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.169"

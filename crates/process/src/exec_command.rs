@@ -6,6 +6,7 @@ use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
 use moon_common::color;
+use process_wrap::tokio::*;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -13,9 +14,26 @@ use std::path::PathBuf;
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::{Child, Command as AsyncCommand};
+use tokio::process::Command as TokioCommand;
 use tokio::task;
 use tracing::{debug, enabled};
+
+fn wrap_command(command: TokioCommand) -> TokioCommandWrap {
+    let mut command = TokioCommandWrap::from(command);
+    command.wrap(KillOnDrop);
+
+    #[cfg(unix)]
+    {
+        command.wrap(ProcessGroup::leader());
+    }
+
+    #[cfg(windows)]
+    {
+        command.wrap(JobObject);
+    }
+
+    command
+}
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
@@ -23,23 +41,26 @@ impl Command {
         let (mut command, line) = self.create_async_command();
 
         let child = if self.should_pass_stdin() {
-            let mut child = command
+            command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .map_err(|error| ProcessError::Capture {
-                    bin: self.get_bin_name(),
-                    error: Box::new(error),
-                })?;
+                .stderr(Stdio::piped());
+
+            let mut child =
+                wrap_command(command)
+                    .spawn()
+                    .map_err(|error| ProcessError::Capture {
+                        bin: self.get_bin_name(),
+                        error: Box::new(error),
+                    })?;
 
             self.write_input_to_child(&mut child, &line).await?;
 
             child
         } else {
-            command
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
+            command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+            wrap_command(command)
                 .spawn()
                 .map_err(|error| ProcessError::Capture {
                     bin: self.get_bin_name(),
@@ -72,24 +93,28 @@ impl Command {
         let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
 
-        let child =
-            if self.should_pass_stdin() {
-                let mut child = command.stdin(Stdio::piped()).spawn().map_err(|error| {
-                    ProcessError::Stream {
+        let child = if self.should_pass_stdin() {
+            command.stdin(Stdio::piped());
+
+            let mut child =
+                wrap_command(command)
+                    .spawn()
+                    .map_err(|error| ProcessError::Stream {
                         bin: self.get_bin_name(),
                         error: Box::new(error),
-                    }
-                })?;
+                    })?;
 
-                self.write_input_to_child(&mut child, &line).await?;
+            self.write_input_to_child(&mut child, &line).await?;
 
-                child
-            } else {
-                command.spawn().map_err(|error| ProcessError::Stream {
+            child
+        } else {
+            wrap_command(command)
+                .spawn()
+                .map_err(|error| ProcessError::Stream {
                     bin: self.get_bin_name(),
                     error: Box::new(error),
                 })?
-            };
+        };
 
         let shared_child = registry.add_running(child).await;
 
@@ -121,19 +146,22 @@ impl Command {
         let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
 
-        let mut child = command
+        command
             .stdin(if self.should_pass_stdin() {
                 Stdio::piped()
             } else {
                 Stdio::inherit()
             })
             .stderr(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .map_err(|error| ProcessError::StreamCapture {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?;
+            .stdout(Stdio::piped());
+
+        let mut child =
+            wrap_command(command)
+                .spawn()
+                .map_err(|error| ProcessError::StreamCapture {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?;
 
         if self.should_pass_stdin() {
             self.write_input_to_child(&mut child, &line).await?;
@@ -341,12 +369,11 @@ impl Command {
     //     Ok(output)
     // }
 
-    fn create_async_command(&self) -> (AsyncCommand, CommandLine) {
+    fn create_async_command(&self) -> (TokioCommand, CommandLine) {
         let command_line = self.create_command_line();
 
-        let mut command = AsyncCommand::new(&command_line.command[0]);
+        let mut command = TokioCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
-        command.kill_on_drop(true);
 
         for (key, value) in &self.env {
             if let Some(value) = value {
@@ -433,12 +460,12 @@ impl Command {
 
     async fn write_input_to_child(
         &self,
-        child: &mut Child,
+        child: &mut Box<dyn TokioChildWrapper>,
         line: &CommandLine,
     ) -> miette::Result<()> {
         let input = line.input.join(OsStr::new(" "));
 
-        let mut stdin = child.stdin.take().unwrap_or_else(|| {
+        let mut stdin = child.stdin().take().unwrap_or_else(|| {
             panic!("Unable to write stdin: {}", input.to_string_lossy());
         });
 

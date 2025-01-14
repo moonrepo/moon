@@ -70,7 +70,7 @@ impl SharedChild {
             // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
             #[cfg(windows)]
             {
-                child.start_kill().await?;
+                child.start_kill()?;
             }
 
             child.wait().await?;

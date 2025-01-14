@@ -255,9 +255,7 @@ impl DefaultReporter {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         } else if matches!(
             item.status,
-            ActionPipelineStatus::Aborted
-                | ActionPipelineStatus::Interrupted
-                | ActionPipelineStatus::Terminated
+            ActionPipelineStatus::Interrupted | ActionPipelineStatus::Terminated
         ) {
             elapsed_time = format!(
                 "{} {}",

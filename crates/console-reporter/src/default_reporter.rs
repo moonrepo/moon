@@ -1,4 +1,6 @@
-use moon_action::{Action, ActionNode, ActionStatus, Operation, OperationList};
+use moon_action::{
+    Action, ActionNode, ActionPipelineStatus, ActionStatus, Operation, OperationList,
+};
 use moon_common::color::paint;
 use moon_common::{color, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -251,6 +253,17 @@ impl DefaultReporter {
 
         if passed_count == cached_count && failed_count == 0 {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
+        } else if matches!(
+            item.status,
+            ActionPipelineStatus::Aborted
+                | ActionPipelineStatus::Interrupted
+                | ActionPipelineStatus::Terminated
+        ) {
+            elapsed_time = format!(
+                "{} {}",
+                elapsed_time,
+                color::muted_light(format!("({:?})", item.status).to_lowercase())
+            );
         }
 
         if item.summarize {

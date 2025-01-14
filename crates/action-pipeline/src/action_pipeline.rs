@@ -8,13 +8,14 @@ use crate::subscribers::moonbase_subscriber::MoonbaseSubscriber;
 use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
-use moon_action::{Action, ActionNode};
+use miette::IntoDiagnostic;
+use moon_action::{Action, ActionNode, ActionPipelineStatus};
 use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::ActionGraph;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
-use moon_process::ProcessRegistry;
+use moon_process::{ProcessRegistry, SignalType};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -34,9 +35,9 @@ pub struct ActionPipeline {
     pub summarize: bool,
 
     // State
-    aborted: bool,
     actions: Vec<Action>,
     duration: Option<Duration>,
+    status: ActionPipelineStatus,
 
     // Data
     app_context: Arc<AppContext>,
@@ -55,15 +56,15 @@ impl ActionPipeline {
         debug!("Creating pipeline to run actions");
 
         Self {
-            aborted: false,
-            actions: vec![],
             action_context: Arc::new(ActionContext::default()),
+            actions: vec![],
             app_context,
             bail: false,
             concurrency: num_cpus::get(),
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             report_name: "runReport.json".into(),
+            status: ActionPipelineStatus::Pending,
             summarize: false,
             toolchain_registry,
             workspace_graph,
@@ -102,11 +103,11 @@ impl ActionPipeline {
                 self.emitter
                     .emit(Event::PipelineCompleted {
                         actions: &actions,
-                        aborted: self.aborted,
                         context: &self.action_context,
                         duration: self.duration,
                         error: None,
                         error_report: None,
+                        status: &self.status,
                     })
                     .await?;
 
@@ -116,11 +117,11 @@ impl ActionPipeline {
                 self.emitter
                     .emit(Event::PipelineCompleted {
                         actions: &actions,
-                        aborted: self.aborted,
                         context: &self.action_context,
                         duration: self.duration,
                         error: Some(error.to_string()),
                         error_report: Some(&error),
+                        status: &self.status,
                     })
                     .await?;
 
@@ -182,26 +183,32 @@ impl ActionPipeline {
 
             if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
+                self.status = ActionPipelineStatus::Aborted;
                 break;
             } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (via signal)");
+                self.status = ActionPipelineStatus::Interrupted;
                 break;
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
+                self.status = ActionPipelineStatus::Completed;
                 break;
             }
         }
 
         drop(receiver);
 
-        // Wait for the queue to abort/close all running tasks
-        let _ = queue_handle.await;
+        // Wait for the queue to shutdown all running tasks
+        queue_handle.await.into_diagnostic()?;
         process_registry.wait_for_running_to_shutdown().await;
 
         // Force abort the signal handler
-        signal_handle.abort();
+        if cancel_token.is_cancelled() {
+            self.status = signal_handle.await.into_diagnostic()?;
+        } else {
+            signal_handle.abort();
+        }
 
-        self.aborted = abort_token.is_cancelled();
         self.actions = actions;
         self.duration = Some(start.elapsed());
 
@@ -360,13 +367,21 @@ impl ActionPipeline {
         }))
     }
 
-    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<()> {
+    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<ActionPipelineStatus> {
         tokio::spawn(async move {
             let mut receiver = ProcessRegistry::instance().receive_signal();
 
-            if receiver.recv().await.is_ok() {
+            if let Ok(signal) = receiver.recv().await {
                 cancel_token.cancel();
+
+                return match signal {
+                    SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+                    SignalType::Quit => ActionPipelineStatus::Aborted,
+                    SignalType::Terminate => ActionPipelineStatus::Terminated,
+                };
             }
+
+            ActionPipelineStatus::Interrupted
         })
     }
 

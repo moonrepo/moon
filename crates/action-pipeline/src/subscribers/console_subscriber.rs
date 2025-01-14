@@ -24,25 +24,20 @@ impl Subscriber for ConsoleSubscriber {
             }
             Event::PipelineCompleted {
                 actions,
-                aborted,
                 duration,
                 error_report,
+                status,
                 ..
             } => {
                 let item = PipelineReportItem {
                     duration: *duration,
                     summarize: self.summarize,
+                    status: **status,
                 };
 
-                if *aborted {
-                    self.console
-                        .reporter
-                        .on_pipeline_aborted(actions, &item, *error_report)?;
-                } else {
-                    self.console
-                        .reporter
-                        .on_pipeline_completed(actions, &item, *error_report)?;
-                }
+                self.console
+                    .reporter
+                    .on_pipeline_completed(actions, &item, *error_report)?;
             }
             Event::ActionStarted { action, .. } => {
                 self.console.reporter.on_action_started(action)?;

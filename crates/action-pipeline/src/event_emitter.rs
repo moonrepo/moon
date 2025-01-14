@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use moon_action::{Action, ActionNode, RunTaskNode};
+use moon_action::{Action, ActionNode, ActionPipelineStatus, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_project::Project;
 use moon_task::Target;
@@ -46,12 +46,12 @@ pub enum Event<'data> {
     #[serde(rename_all = "camelCase")]
     PipelineCompleted {
         actions: &'data [Action],
-        aborted: bool,
         context: &'data ActionContext,
         duration: Option<Duration>,
         error: Option<String>,
         #[serde(skip)]
         error_report: Option<&'data miette::Report>,
+        status: &'data ActionPipelineStatus,
     },
 
     // Syncing projects

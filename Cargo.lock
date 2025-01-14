@@ -3680,7 +3680,6 @@ dependencies = [
  "moon_node_tool",
  "moon_platform",
  "moon_plugin",
- "moon_process",
  "moon_project",
  "moon_project_graph",
  "moon_python_lang",

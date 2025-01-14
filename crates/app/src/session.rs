@@ -13,7 +13,6 @@ use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
-use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
@@ -271,8 +270,6 @@ impl AppSession for CliSession {
         }
 
         // Load components
-
-        ProcessRegistry::instance();
 
         if !is_test_env() && is_ci() {
             let vcs = self.get_vcs_adapter()?;

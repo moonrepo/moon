@@ -23,7 +23,6 @@ moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_plugin = { path = "../plugin" }
-moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }

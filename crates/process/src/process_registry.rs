@@ -4,8 +4,7 @@ use core::time::Duration;
 use rustc_hash::FxHashMap;
 use std::sync::{Arc, OnceLock};
 use tokio::process::Child;
-use tokio::sync::broadcast::error::RecvError;
-use tokio::sync::broadcast::{self, Receiver, Sender};
+use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
@@ -20,12 +19,8 @@ pub struct ProcessRegistry {
     signal_shutdown_handle: JoinHandle<()>,
 }
 
-impl ProcessRegistry {
-    pub fn instance() -> Arc<ProcessRegistry> {
-        Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::new())))
-    }
-
-    pub fn new() -> Self {
+impl Default for ProcessRegistry {
+    fn default() -> Self {
         let processes = Arc::new(RwLock::new(FxHashMap::default()));
         let processes_bg = Arc::clone(&processes);
 
@@ -46,6 +41,12 @@ impl ProcessRegistry {
             signal_wait_handle,
             signal_shutdown_handle,
         }
+    }
+}
+
+impl ProcessRegistry {
+    pub fn instance() -> Arc<ProcessRegistry> {
+        Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::default())))
     }
 
     pub async fn add_running(&self, child: Child) -> SharedChild {
@@ -97,6 +98,7 @@ impl ProcessRegistry {
 
 impl Drop for ProcessRegistry {
     fn drop(&mut self) {
+        self.terminate_running();
         self.signal_wait_handle.abort();
         self.signal_shutdown_handle.abort();
     }

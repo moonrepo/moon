@@ -9,7 +9,7 @@ use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
@@ -132,60 +132,10 @@ async fn shutdown_processes_with_signal(
     for (pid, child) in children.drain() {
         trace!(pid, "Killing child process");
 
-        let _ = child.kill_with_signal(signal).await;
+        if let Err(error) = child.kill_with_signal(signal).await {
+            warn!(pid, "Failed to kill child process: {error}");
+        }
 
         drop(child);
     }
-}
-
-#[cfg(unix)]
-async fn wait_for_signal(sender: Sender<SignalType>) {
-    debug!("Listening for SIGINT and SIGTERM signals");
-
-    use tokio::signal::unix::{signal, SignalKind};
-
-    let mut signal_terminate = signal(SignalKind::terminate()).unwrap();
-    let mut signal_interrupt = signal(SignalKind::interrupt()).unwrap();
-
-    let _ = tokio::select! {
-        _ = signal_terminate.recv() => {
-            debug!("Received SIGTERM signal");
-            sender.send(SignalType::Terminate)
-        },
-        _ = signal_interrupt.recv() => {
-            debug!("Received SIGINT signal");
-            sender.send(SignalType::Interrupt)
-        },
-    };
-}
-
-#[cfg(windows)]
-async fn wait_for_signal(sender: Sender<SignalType>) {
-    debug!("Listening for CTRL-C, BREAK, CLOSE, and SHUTDOWN signals");
-
-    use tokio::signal::windows;
-
-    let mut signal_c = windows::ctrl_c().unwrap();
-    let mut signal_break = windows::ctrl_break().unwrap();
-    let mut signal_close = windows::ctrl_close().unwrap();
-    let mut signal_shutdown = windows::ctrl_shutdown().unwrap();
-
-    let _ = tokio::select! {
-        _ = signal_c.recv() => => {
-            debug!("Received CTRL-C signal");
-            sender.send(SignalType::Interrupt)
-        },
-        _ = signal_break.recv() => => {
-            debug!("Received CTRL-BREAK signal");
-            sender.send(SignalType::Interrupt)
-        },
-        _ = signal_close.recv() => => {
-            debug!("Received CTRL-CLOSE signal");
-            sender.send(SignalType::Interrupt)
-        },
-        _ = signal_shutdown.recv() => {
-            debug!("Received CTRL-SHUTDOWN signal");
-            sender.send(SignalType::Terminate)
-        },
-    };
 }

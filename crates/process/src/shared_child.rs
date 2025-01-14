@@ -1,4 +1,4 @@
-use crate::signal::SignalType;
+use crate::signal::*;
 use core::unreachable;
 use std::io;
 use std::process::{ExitStatus, Output};
@@ -56,25 +56,13 @@ impl SharedChild {
         let mut child = self.1.lock().await;
 
         if let Some(mut child) = child.take() {
-            let pid = self.id() as i32;
-
+            // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L947
             #[cfg(unix)]
             {
-                let result = unsafe {
-                    libc::kill(
-                        pid,
-                        match signal {
-                            SignalType::Interrupt => 2,  // SIGINT
-                            SignalType::Terminate => 15, // SIGTERM
-                        },
-                    )
-                };
-
-                if result != 0 {
-                    return Err(io::Error::last_os_error());
-                }
+                kill(self.id(), signal)?;
             }
 
+            // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
             #[cfg(windows)]
             {
                 child.start_kill().await?;

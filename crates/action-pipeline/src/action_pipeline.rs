@@ -244,7 +244,7 @@ impl ActionPipeline {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    job_handles.shutdown().await;
+                    exhaust_job_handles(&mut job_handles, &job_context).await;
 
                     // Return instead of break, so that we avoid
                     // running persistent tasks below
@@ -360,7 +360,7 @@ impl ActionPipeline {
                 if job_context.is_aborted_or_cancelled() {
                     debug!("Shutting down {} persistent jobs", job_handles.len());
 
-                    job_handles.shutdown().await;
+                    exhaust_job_handles(&mut job_handles, &job_context).await;
                     break;
                 }
             }
@@ -490,19 +490,10 @@ async fn dispatch_job_with_permit(
 #[instrument(skip_all)]
 async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>, job_context: &JobContext) -> bool {
     while set.join_next().await.is_some() {
-        // If the pipeline was aborted or cancelled (signal),
-        // loop through and abort all currently running handles
-        if job_context.is_aborted_or_cancelled() {
-            set.shutdown().await;
-            set.detach_all();
-
-            // Aborted
-            return true;
-        }
+        continue;
     }
 
     set.detach_all();
 
-    // Not aborted
-    false
+    job_context.is_aborted_or_cancelled()
 }

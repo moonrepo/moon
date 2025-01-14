@@ -332,6 +332,12 @@ impl Reporter for DefaultReporter {
             return Ok(());
         }
 
+        // A task failed, so instead of showing the stats,
+        // we'll render the error that was bubbled up
+        if matches!(item.status, ActionPipelineStatus::Aborted) {
+            return Ok(());
+        }
+
         // If no summary, only show stats. This is typically for local!
         if !item.summarize {
             self.out.write_newline()?;

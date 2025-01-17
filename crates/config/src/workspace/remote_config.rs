@@ -1,4 +1,5 @@
 use crate::portable_path::FilePath;
+use rustc_hash::FxHashMap;
 use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError, ValidateResult};
 
 fn path_is_required<D, C>(
@@ -12,6 +13,16 @@ fn path_is_required<D, C>(
     }
 
     Ok(())
+}
+
+/// Configures basic HTTP authentication.
+#[derive(Clone, Config, Debug)]
+pub struct RemoteAuthConfig {
+    /// HTTP headers to inject into every request.
+    pub headers: FxHashMap<String, String>,
+
+    /// The name of an environment variable to use as a bearer token.
+    pub token: Option<String>,
 }
 
 derive_enum!(
@@ -81,6 +92,10 @@ pub struct RemoteMtlsConfig {
 /// Configures the remote service, powered by the Bazel Remote Execution API.
 #[derive(Clone, Config, Debug)]
 pub struct RemoteConfig {
+    /// Connect to the host using basic HTTP authentication.
+    #[setting(nested)]
+    pub auth: Option<RemoteAuthConfig>,
+
     /// Configures the action cache (AC) and content addressable cache (CAS).
     #[setting(nested)]
     pub cache: RemoteCacheConfig,
@@ -106,6 +121,6 @@ impl RemoteConfig {
     }
 
     pub fn is_secure(&self) -> bool {
-        self.tls.is_some() || self.mtls.is_some()
+        self.auth.is_some() || self.tls.is_some() || self.mtls.is_some()
     }
 }

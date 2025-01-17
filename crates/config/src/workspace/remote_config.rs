@@ -116,11 +116,15 @@ pub struct RemoteConfig {
 }
 
 impl RemoteConfig {
+    pub fn is_bearer_auth(&self) -> bool {
+        self.auth.as_ref().is_some_and(|auth| auth.token.is_some())
+    }
+
     pub fn is_localhost(&self) -> bool {
         self.host.contains("localhost") || self.host.contains("0.0.0.0")
     }
 
     pub fn is_secure(&self) -> bool {
-        self.auth.is_some() || self.tls.is_some() || self.mtls.is_some()
+        self.is_bearer_auth() || self.tls.is_some() || self.mtls.is_some()
     }
 }

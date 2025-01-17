@@ -47,10 +47,6 @@ pub struct GrpcRemoteClient {
 
 impl GrpcRemoteClient {
     fn inject_auth_headers(&self, mut req: Request<()>) -> Result<Request<()>, Status> {
-        if self.config.mtls.is_some() || self.config.tls.is_some() {
-            return Ok(req);
-        }
-
         if let Some(auth) = &self.config.auth {
             let headers = req.metadata_mut();
 
@@ -101,7 +97,7 @@ impl RemoteClient for GrpcRemoteClient {
                 "(with mTLS)"
             } else if config.tls.is_some() {
                 "(with TLS)"
-            } else if config.auth.is_some() {
+            } else if config.is_bearer_auth() {
                 "(with auth)"
             } else {
                 "(insecure)"
@@ -110,13 +106,13 @@ impl RemoteClient for GrpcRemoteClient {
 
         // Although we use a grpc(s) protocol for the host,
         // tonic only supports http(s), so change it
-        let url = if let Some(suffix) = host.strip_prefix("grpc") {
-            format!("http{suffix}")
-        } else {
-            host.to_owned()
-        };
+        // let url = if let Some(suffix) = host.strip_prefix("grpc") {
+        //     format!("http{suffix}")
+        // } else {
+        //     host.to_owned()
+        // };
 
-        let mut endpoint = Endpoint::from_shared(url)
+        let mut endpoint = Endpoint::from_shared(host.to_owned())
             .map_err(map_transport_error)?
             .user_agent("moon")
             .map_err(map_transport_error)?
@@ -147,7 +143,7 @@ impl RemoteClient for GrpcRemoteClient {
 
         // We can't inject auth headers into this initial connection,
         // so defer the connection until a client is used
-        if self.config.auth.is_some() {
+        if self.config.is_bearer_auth() {
             self.channel = Some(endpoint.connect_lazy());
         } else {
             self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);

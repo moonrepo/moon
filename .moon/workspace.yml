@@ -42,6 +42,8 @@ unstable_remote:
   auth:
     token: 'DEPOT_TOKEN'
     headers:
+      Authorization:
+        'Bearer depot_org_ece2365d877c7f2f437f46de5bf03bd54862e3ca7fde67f079264e971ecb0789'
       'X-Depot-Org': '1xtpjd084j'
       'X-Depot-Project': '90xxfkst9n'
   # cache:

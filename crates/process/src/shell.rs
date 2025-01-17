@@ -33,6 +33,7 @@ pub fn is_windows_script<T: AsRef<OsStr>>(bin: T) -> bool {
 
 pub struct Shell {
     pub bin: PathBuf,
+    pub bin_name: String,
     pub command: ShellCommand,
 }
 
@@ -42,7 +43,8 @@ impl Shell {
         let command = type_of.build().get_exec_command();
 
         Self {
-            bin: find_command_on_path(bin_name.clone()).unwrap_or_else(|| bin_name.into()),
+            bin: find_command_on_path(bin_name.clone()).unwrap_or_else(|| bin_name.clone().into()),
+            bin_name,
             command,
         }
     }

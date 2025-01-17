@@ -22,15 +22,15 @@ fn wrap_command(command: TokioCommand) -> TokioCommandWrap {
     let mut command = TokioCommandWrap::from(command);
     command.wrap(KillOnDrop);
 
-    #[cfg(unix)]
-    {
-        command.wrap(ProcessGroup::leader());
-    }
+    // #[cfg(unix)]
+    // {
+    //     command.wrap(ProcessGroup::leader());
+    // }
 
-    #[cfg(windows)]
-    {
-        command.wrap(JobObject);
-    }
+    // #[cfg(windows)]
+    // {
+    //     command.wrap(JobObject);
+    // }
 
     command
 }
@@ -451,6 +451,7 @@ impl Command {
 
         debug!(
             pid = child.id(),
+            shell = self.shell.as_ref().map(|sh| &sh.bin_name),
             env_vars = ?env_vars,
             working_dir = ?working_dir,
             "Running command {}",

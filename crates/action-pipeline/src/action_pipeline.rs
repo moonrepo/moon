@@ -163,7 +163,7 @@ impl ActionPipeline {
         let signal_handle = self.monitor_signals(cancel_token.clone());
 
         // Dispatch jobs from the graph to run actions
-        let queue_handle = self.dispatch_jobs(action_graph, job_context)?;
+        let queue_handle = self.dispatch_jobs(action_graph, job_context.clone())?;
 
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
@@ -198,16 +198,19 @@ impl ActionPipeline {
 
         drop(receiver);
 
-        // Wait for the queue to shutdown all running tasks
-        queue_handle.await.into_diagnostic()?;
-        process_registry.wait_for_running_to_shutdown().await;
-
-        // Force abort the signal handler
+        // Capture and handle any signals
         if cancel_token.is_cancelled() {
             self.status = signal_handle.await.into_diagnostic()?;
         } else {
             signal_handle.abort();
         }
+
+        // Wait for the queue to shutdown all running tasks
+        process_registry.wait_for_running_to_shutdown().await;
+
+        let mut _job_handles = queue_handle.await.into_diagnostic()?;
+
+        // exhaust_job_handles(&mut job_handles, &job_context).await;
 
         self.actions = actions;
         self.duration = Some(start.elapsed());
@@ -224,7 +227,7 @@ impl ActionPipeline {
         &self,
         action_graph: ActionGraph,
         job_context: JobContext,
-    ) -> miette::Result<JoinHandle<()>> {
+    ) -> miette::Result<JoinHandle<JoinSet<()>>> {
         let node_indices = action_graph.sort_topological()?;
         let app_context = Arc::clone(&self.app_context);
         let action_context = Arc::clone(&self.action_context);
@@ -244,11 +247,9 @@ impl ActionPipeline {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    exhaust_job_handles(&mut job_handles, &job_context).await;
-
                     // Return instead of break, so that we avoid
                     // running persistent tasks below
-                    return;
+                    return job_handles;
                 }
 
                 // If none is returned, then we are waiting on other currently running
@@ -301,18 +302,18 @@ impl ActionPipeline {
                 if node.is_interactive()
                     && exhaust_job_handles(&mut job_handles, &job_context).await
                 {
-                    return;
+                    return job_handles;
                 }
             }
 
             // Ensure all non-persistent actions have finished
             if exhaust_job_handles(&mut job_handles, &job_context).await {
-                return;
+                return job_handles;
             }
 
             // Then run all persistent actions in parallel
             if persistent_indices.is_empty() {
-                return;
+                return job_handles;
             }
 
             debug!(
@@ -346,24 +347,26 @@ impl ActionPipeline {
                     ));
                 });
 
-            // Since these tasks are persistent and never complete,
-            // we need to continually check if they've been aborted or
-            // cancelled, otherwise we will end up with zombie processes
-            loop {
-                sleep(Duration::from_millis(50)).await;
+            // // Since these tasks are persistent and never complete,
+            // // we need to continually check if they've been aborted or
+            // // cancelled, otherwise we will end up with zombie processes
+            // loop {
+            //     sleep(Duration::from_millis(50)).await;
 
-                // No tasks running, so don't hang forever
-                if job_context.result_sender.is_closed() {
-                    break;
-                }
+            //     // No tasks running, so don't hang forever
+            //     if job_context.result_sender.is_closed() {
+            //         break;
+            //     }
 
-                if job_context.is_aborted_or_cancelled() {
-                    debug!("Shutting down {} persistent jobs", job_handles.len());
+            //     if job_context.is_aborted_or_cancelled() {
+            //         debug!("Shutting down {} persistent jobs", job_handles.len());
 
-                    exhaust_job_handles(&mut job_handles, &job_context).await;
-                    break;
-                }
-            }
+            //         exhaust_job_handles(&mut job_handles, &job_context).await;
+            //         break;
+            //     }
+            // }
+
+            job_handles
         }))
     }
 

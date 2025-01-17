@@ -8,7 +8,7 @@ use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
-use tracing::debug;
+use tracing::{debug, trace, warn};
 
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
@@ -145,18 +145,21 @@ async fn shutdown_processes_with_signal(
         children.len()
     );
 
-    // We are using process groups, so manually killing these
-    // child processes should not be necessary! Instead, just
-    // empty the map so that our wait method doesn't hang...
-    children.clear();
+    // children.clear();
 
-    // for (pid, child) in children.drain() {
-    //     trace!(pid, "Killing child process");
+    let mut futures = vec![];
 
-    //     if let Err(error) = child.kill_with_signal(signal).await {
-    //         warn!(pid, "Failed to kill child process: {error}");
-    //     }
+    for (pid, child) in children.drain() {
+        trace!(pid, "Killing child process");
 
-    //     drop(child);
-    // }
+        futures.push(tokio::spawn(async move {
+            if let Err(error) = child.kill_with_signal(signal).await {
+                warn!(pid, "Failed to kill child process: {error}");
+            }
+        }));
+    }
+
+    for future in futures {
+        let _ = future.await;
+    }
 }

@@ -20,6 +20,7 @@ process-wrap = { version = "8.2.0", default-features = false, features = [
 	"kill-on-drop",
 	"process-group",
 	"tokio1",
+	"tracing",
 ] }
 rustc-hash = { workspace = true }
 starbase_shell = { workspace = true }

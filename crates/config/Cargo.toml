@@ -18,7 +18,7 @@ indexmap = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
-rpkl = "0.3.5"
+rpkl = "0.4.0"
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
@@ -31,12 +31,12 @@ schematic = { workspace = true, features = [
 	"type_semver",
 	"validate",
 	"validate_url",
-	"yaml",
+	"yml",
 ] }
 semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yaml = { workspace = true }
+serde_yml = { workspace = true }
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 

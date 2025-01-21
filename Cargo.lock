@@ -3734,13 +3734,13 @@ dependencies = [
  "once_cell",
  "proto_core",
  "regex",
- "rpkl 0.3.5",
+ "rpkl",
  "rustc-hash",
  "schematic",
  "semver",
  "serde",
  "serde_json",
- "serde_yaml",
+ "serde_yml",
  "serial_test",
  "starbase_sandbox",
  "tracing",
@@ -3969,7 +3969,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "serde_yaml",
+ "serde_yml",
  "starbase_styles",
  "starbase_utils",
  "tracing",
@@ -4574,7 +4574,7 @@ dependencies = [
  "predicates",
  "pretty_assertions",
  "rustc-hash",
- "serde_yaml",
+ "serde_yml",
  "starbase_utils",
 ]
 
@@ -5910,18 +5910,6 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90d4fb97471646d778a76c8009623e1303898fdf9f4ba9f404b02a0217b7dfb1"
-dependencies = [
- "dunce",
- "rmp-serde",
- "rmpv",
- "serde",
-]
-
-[[package]]
-name = "rpkl"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830c41bb6db0df94499c9d2581a4748d3b8d90ed5e8150c35cc859989f1b0ff3"
@@ -6098,14 +6086,14 @@ dependencies = [
  "markdown",
  "miette 7.4.0",
  "reqwest",
- "rpkl 0.4.0",
+ "rpkl",
  "schemars",
  "schematic_macros",
  "schematic_types",
  "serde",
  "serde_json",
  "serde_path_to_error",
- "serde_yaml",
+ "serde_yml",
  "starbase_styles",
  "thiserror 2.0.11",
  "toml",
@@ -6132,11 +6120,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "15254cba352d302f26c0e427bf2634e513dff936f8a86c6df4f94843818fa4e3"
 dependencies = [
  "indexmap 2.7.1",
- "rpkl 0.4.0",
+ "rpkl",
  "semver",
  "serde",
  "serde_json",
- "serde_yaml",
+ "serde_yml",
  "toml",
  "url",
 ]
@@ -6257,19 +6245,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serde_yaml"
-version = "0.9.34+deprecated"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
-dependencies = [
- "indexmap 2.7.1",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
 ]
 
 [[package]]
@@ -7500,12 +7475,6 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
-
-[[package]]
-name = "unsafe-libyaml"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
 
 [[package]]
 name = "untrusted"

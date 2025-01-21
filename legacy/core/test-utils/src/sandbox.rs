@@ -133,16 +133,16 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
 
     sandbox.create_file(
         ".moon/workspace.yml",
-        serde_yaml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
+        serde_yml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
     );
 
     sandbox.create_file(
         ".moon/toolchain.yml",
-        serde_yaml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
+        serde_yml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
     );
 
     if let Some(config) = tasks_config {
-        sandbox.create_file(".moon/tasks.yml", serde_yaml::to_string(&config).unwrap());
+        sandbox.create_file(".moon/tasks.yml", serde_yml::to_string(&config).unwrap());
     }
 
     sandbox

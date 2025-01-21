@@ -8,7 +8,7 @@ use dependency_path::PnpmDependencyPath;
 use moon_lang::{config_cache, LockfileDependencyVersions};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use serde_yaml::Value;
+use serde_yml::Value;
 use starbase_utils::yaml::read_file as read_yaml;
 use std::path::{Path, PathBuf};
 
@@ -91,7 +91,7 @@ mod tests {
     use super::*;
     use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, pretty_assertions::assert_eq};
     use moon_utils::string_vec;
-    use serde_yaml::{Mapping, Number};
+    use serde_yml::{Mapping, Number};
 
     #[test]
     fn parses_lockfile() {
@@ -243,11 +243,11 @@ packages:
         .text()
         .unwrap();
 
-        let _: PnpmLock = serde_yaml::from_str(&content).unwrap();
+        let _: PnpmLock = serde_yml::from_str(&content).unwrap();
     }
 
     #[test]
     fn parses_empty_lockfile() {
-        let _: PnpmLock = serde_yaml::from_str("lockfileVersion: '6.0'").unwrap();
+        let _: PnpmLock = serde_yml::from_str("lockfileVersion: '6.0'").unwrap();
     }
 }

@@ -74,7 +74,6 @@ starbase_sandbox = "0.8.2"
 starbase_shell = "0.6.13"
 starbase_styles = { version = "0.4.4", features = ["relative-path"] }
 starbase_utils = { version = "0.10.0", default-features = false, features = [
-    "editor-config",
     "miette",
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }

@@ -64,7 +64,7 @@ starbase = { workspace = true }
 starbase_events = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["editor-config"] }
 system_env = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

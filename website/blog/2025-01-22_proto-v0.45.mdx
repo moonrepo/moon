@@ -3,7 +3,7 @@ slug: proto-v0.45
 title: proto v0.45 - New built-in tools and build from source
 authors: [milesj]
 tags: [tool, build, source]
-# image: ./img/proto/v0.44.png
+image: ./img/proto/v0.45.png
 ---
 
 import Image from '@site/src/components/Image';
@@ -65,7 +65,7 @@ But thanks to our new build from source install strategy (below), Ruby support i
 $ proto install ruby
 ```
 
-## Build from source installs
+## Build from source (unstable)
 
 Up until now, tools could only be installed if they supported pre-built binaries, which was
 typically more than enough. However, there are many languages that do not support pre-builts and
@@ -99,6 +99,13 @@ need to acquire the source code, either by downloading an archive, or cloning a 
 lastly, running through and executing the build instructions/commands.
 
 <Image src={require('./img/proto/v0.45/go-build.png')} width="90%" />
+
+:::info
+
+While this feature is very exciting, it is extremely unstable, so please report any issues, and
+provide any and all feedback!
+
+:::
 
 ## Other changes
 

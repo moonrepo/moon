@@ -4,7 +4,7 @@
 deno = "1.40.0"
 node = "20.8.0"
 npm = "10.1.0"
-pkl = "0.26.3"
+pkl = "0.27.2"
 
 [plugins]
 pkl = "https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml"

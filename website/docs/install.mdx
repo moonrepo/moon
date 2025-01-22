@@ -21,11 +21,10 @@ scripts to download and install moon.
 
 ### proto
 
-moon can be installed and managed in [proto's toolchain](/proto) using a TOML plugin. This will
-install moon to `~/.proto/tools/moon` and make the binary available at `~/.proto/bin`.
+moon can be installed and managed in [proto's toolchain](/proto). This will install moon to
+`~/.proto/tools/moon` and make the binary available at `~/.proto/bin`.
 
 ```shell
-proto plugin add moon "https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml" --to global
 proto install moon
 ```
 
@@ -33,7 +32,7 @@ Furthermore, the version of moon can be pinned on a per-project basis using the
 [`.prototools` config file](/docs/proto/config).
 
 ```toml title=".prototools"
-moon = "1.29.0"
+moon = "1.31.0"
 ```
 
 :::info

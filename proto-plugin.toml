@@ -3,6 +3,9 @@
 
 name = "moon"
 type = "cli"
+deprecations = [
+	"This TOML plugin is no longer necessary as moon is now built-in to proto v0.45.",
+]
 
 [platform.linux]
 download-file = "moon-{arch}-unknown-linux-{libc}"

@@ -4,10 +4,78 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Mon, 06 Jan 2025 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 22 Jan 2025 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[proto v0.45 - New built-in tools and build from source]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.45</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.45</guid>
+            <pubDate>Wed, 22 Jan 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this release, we're very excited to introduce building tools from source, a feature that's been]]></description>
+            <content:encoded><![CDATA[<p>In this release, we're very excited to introduce building tools from source, a feature that's been
+in development for over a year.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-built-in-tools">New built-in tools<a class="hash-link" aria-label="Direct link to New built-in tools" title="Direct link to New built-in tools" href="https://moonrepo.dev/blog/proto-v0.45#new-built-in-tools">​</a></h2>
+<p>It's been quite some time since we've introduced a new official built-in tool, so in this release,
+we have 3!</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moon"><code>moon</code><a class="hash-link" aria-label="Direct link to moon" title="Direct link to moon" href="https://moonrepo.dev/blog/proto-v0.45#moon">​</a></h3>
+<p>This was a no-brainer, and honestly, we probably should have done it much sooner. We were quite
+surprised to see that moon is the 3rd most installed tool in proto, right behind pnpm and node
+respectively. We felt that it was now time to make it official.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> moon</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>If you were using the moon TOML plugin before (below), you can now remove this entry from your
+<code>.prototools</code>.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">plugins</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">moon</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="uv"><code>uv</code><a class="hash-link" aria-label="Direct link to uv" title="Direct link to uv" href="https://moonrepo.dev/blog/proto-v0.45#uv">​</a></h3>
+<p>Additionally, Python interest has grown over recent months, especially with the introduction of
+<a href="https://moonrepo.dev/blog/moon-v1.30">Python support in moon</a>, so we felt it was time to support the new hotness,
+<a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a>! We plan to bring uv integration into moon in the near future.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> uv</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Although uv can also manage Python installations, we suggest using proto to keep everything
+streamlined and isolated.</p></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="ruby"><code>ruby</code><a class="hash-link" aria-label="Direct link to ruby" title="Direct link to ruby" href="https://moonrepo.dev/blog/proto-v0.45#ruby">​</a></h3>
+<p>And lastly, we now support <a href="https://www.ruby-lang.org/en/" target="_blank" rel="noopener noreferrer">Ruby</a>, a popular general purpose
+programming language. Ruby was extremely difficult to support, primarily because Ruby does <em>not</em>
+support the concept of pre-builts, and <em>must</em> be compiled from source files.</p>
+<p>But thanks to our new build from source install strategy (below), Ruby support is now possible.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> ruby</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="build-from-source-unstable">Build from source (unstable)<a class="hash-link" aria-label="Direct link to Build from source (unstable)" title="Direct link to Build from source (unstable)" href="https://moonrepo.dev/blog/proto-v0.45#build-from-source-unstable">​</a></h2>
+<p>Up until now, tools could only be installed if they supported pre-built binaries, which was
+typically more than enough. However, there are many languages that do not support pre-builts and
+must be built from source, such as Ruby, PHP, and up until recently, Python. Building binaries from
+source code is actually quite complicated, as the instructions for doing so is different across
+operating systems, architectures, and even system package managers.</p>
+<p>Regardless, we've spent the past year slowly working on a solution and have finally managed to
+implement something usable, all through a powerful WASM API. And with that, the following tools now
+support build from source.</p>
+<ul>
+<li><code>deno</code></li>
+<li><code>go</code></li>
+<li><code>moon</code></li>
+<li><code>node</code></li>
+<li><code>python</code> (via <code>python-build</code>)</li>
+<li><code>ruby</code> (via <code>ruby-build</code>)</li>
+</ul>
+<p>To actually build from source instead of downloading a prebuilt, simply pass <code>--build</code> to
+<a href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a>. For tools that only support build (like Ruby), the
+<code>--build</code> flag is optional.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> python </span><span class="token parameter variable" style="color:#fef9c3">--build</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>To demonstrate how this works, here's Go being built from source. We start by grouping operations
+into steps, with the first step being the installation of system dependencies (via Homebrew or
+something similar). We then check that certain requirements are met, or abort if unmet. Up next, we
+need to acquire the source code, either by downloading an archive, or cloning a Git repository. And
+lastly, running through and executing the build instructions/commands.</p>
+<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/go-build-de7f9a0ccd072826c49d285e780f1a9d.png" width="90%" alt="" class="inline-block"></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>While this feature is very exciting, it is extremely unstable, so please report any issues, and
+provide any and all feedback!</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.45#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.45.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>]]></content:encoded>
+            <category>tool</category>
+            <category>build</category>
+            <category>source</category>
+        </item>
         <item>
             <title><![CDATA[moon v1.31 - Toolchain progress, glob-based targets, task & remote cache improvements]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.31</link>
@@ -173,7 +241,7 @@ locally.</p>
 <p>This data can now be accessed as JSON by passing the <code>--json</code> flag.</p>
 <div class="language-shel codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shel codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto versions node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">...</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.0.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.1.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.2.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.3.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.4.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.4.1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.5.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.5.1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.6.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.7.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.8.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.9.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.10.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.11.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.12.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.0.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.1.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.2.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.3.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.4.0 - installed 12/19/24</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.5.0 - installed 12/25/24</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.44#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.42.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.44.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
 <li>Added a <code>--yes</code> option to <code>proto outdated</code>, that skips confirmation prompts.</li>
@@ -1472,85 +1540,6 @@ of changes.</p>
             <category>pin</category>
             <category>global</category>
             <category>packages</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.22 - Organizational settings, wildcard env var inputs, and Nx migration]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.22</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.22</guid>
-            <pubDate>Mon, 26 Feb 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[This release introduces new organizational settings for projects, a migrate from Nx extension, and]]></description>
-            <content:encoded><![CDATA[<p>This release introduces new organizational settings for projects, a migrate from Nx extension, and
-more.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="more-organizational-settings">More organizational settings<a class="hash-link" aria-label="Direct link to More organizational settings" title="Direct link to More organizational settings" href="https://moonrepo.dev/blog/moon-v1.22#more-organizational-settings">​</a></h2>
-<p>One aspect of moon that sets us apart from other build systems and tools, is that we have built-in
-support for human-readable project and task metadata. This is extremely useful in organizing and
-managing large repositories, especially when ownership comes into play. This information is also
-used for categorization and filtering for MQL and our editor extensions/plugins.</p>
-<p>To expand on this functionality even further, we're adding a few requests from the community, and
-they are:</p>
-<ul>
-<li>
-<p>New <code>configuration</code> and <code>scaffolding</code> variants for the project <a href="https://moonrepo.dev/docs/config/project#type"><code>type</code></a>
-setting in <a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a>. Perfect for contracts and templates.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'configuration'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-</li>
-<li>
-<p>New <a href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a> setting in <a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a>, for
-categorizing which tech stack the project belongs to. Supports <code>frontend</code>, <code>backend</code>,
-<code>infrastructure</code>, and <code>systems</code>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">stack</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'frontend'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-</li>
-<li>
-<p>New <a href="https://moonrepo.dev/docs/config/project#description-1"><code>description</code></a> setting for tasks, that provides
-human-readable information.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">description</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Builds the project using Vite'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-wildcard-environment-variable-inputs">New wildcard environment variable inputs<a class="hash-link" aria-label="Direct link to New wildcard environment variable inputs" title="Direct link to New wildcard environment variable inputs" href="https://moonrepo.dev/blog/moon-v1.22#new-wildcard-environment-variable-inputs">​</a></h2>
-<p>Task inputs have supported environment variables for quite a while now, but they are explicit, which
-can be tedious too manage when you have many environment variables. To make this easier, we've added
-support for wildcard environment variables, denoted by a <code>*</code>, which will match any environment
-variable with that pattern.</p>
-<p>For example, say we want to track all Node.js and Vite environment variables that start with <code>NODE_</code>
-and <code>VITE_</code> respectively, we can simply do:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'$NODE_*'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'$VITE_*'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<blockquote>
-<p>Do note that this <em>isn't</em> a glob, and the <code>*</code> is merely a substitution for any character!</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-migrate-nx-extension">New <code>migrate-nx</code> extension<a class="hash-link" aria-label="Direct link to new-migrate-nx-extension" title="Direct link to new-migrate-nx-extension" href="https://moonrepo.dev/blog/moon-v1.22#new-migrate-nx-extension">​</a></h2>
-<p>In our previous release, we added support for <a href="https://moonrepo.dev/blog/moon-v1.21">migrating from Turborepo</a>, but what
-about Nx? Nx is a very popular build system with many users. A lot of our current moon users were
-former Nx users, but unfortunately, they had to go through the tedious process of migrating
-everything manually. We wanted to make this process easier for new users, so we created a new
-experimental extension to help with this process,
-<a href="https://moonrepo.dev/docs/guides/extensions#migrate-nx"><code>migrate-nx</code></a>.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ext migrate-nx</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>This extension was quite complicated to implement, as Nx has a <em>ton</em> of features. However, when the
-extension is executed, we'll convert the root <code>nx.json</code> and <code>workspace.json</code> files to
-<a href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.yml</code></a> and related top-level config files, and we'll also
-convert every <code>project.json</code> and <code>package.json</code> (with an <code>nx</code> block) into a
-<a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a> file.</p>
-<p>Conversion is not a perfect 1:1, as moon and Nx are quite different. Please refer to the
-<a href="https://moonrepo.dev/docs/guides/extensions#migrate-nx">official documentation</a> for a list of unsupported settings and
-features.</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>An awesome feature that didn't make it in time for this release, is an npm package for Nx
-compatibility, that will allow Nx executors/plugins to be executed through moon, without the
-requirement of Nx itself. This will allow for a seamless transition from Nx to moon, without the
-need to change any of your existing Nx executors/plugins till later.</p><p>This functionality will be provided by our new
-<a href="https://github.com/moonrepo/moon/tree/master/packages/nx-compat" target="_blank" rel="noopener noreferrer"><code>@moonrepo/nx-compat</code> package</a>,
-which we hope to finish in the coming weeks.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.22#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.22.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added an <code>installArgs</code> setting for bun/npm/pnpm/yarn in <code>.moon/toolchain.yml</code>, to customize the
-args used when installing dependencies.</li>
-<li>Updated the <code>envFile</code> task option to support a list of file paths.</li>
-</ul>]]></content:encoded>
-            <category>project</category>
-            <category>metadata</category>
-            <category>nx</category>
-            <category>migrate</category>
         </item>
     </channel>
 </rss>

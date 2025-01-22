@@ -1,0 +1,113 @@
+---
+slug: proto-v0.45
+title: proto v0.45 - New built-in tools and build from source
+authors: [milesj]
+tags: [tool, build, source]
+image: ./img/proto/v0.45.png
+---
+
+import Image from '@site/src/components/Image';
+
+In this release, we're very excited to introduce building tools from source, a feature that's been
+in development for over a year.
+
+<!--truncate-->
+
+## New built-in tools
+
+It's been quite some time since we've introduced a new official built-in tool, so in this release,
+we have 3!
+
+### `moon`
+
+This was a no-brainer, and honestly, we probably should have done it much sooner. We were quite
+surprised to see that moon is the 3rd most installed tool in proto, right behind pnpm and node
+respectively. We felt that it was now time to make it official.
+
+```shell
+$ proto install moon
+```
+
+If you were using the moon TOML plugin before (below), you can now remove this entry from your
+`.prototools`.
+
+```toml title=".prototools"
+[plugins]
+moon = "https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"
+```
+
+### `uv`
+
+Additionally, Python interest has grown over recent months, especially with the introduction of
+[Python support in moon](./moon-v1.30), so we felt it was time to support the new hotness,
+[uv](https://docs.astral.sh/uv/)! We plan to bring uv integration into moon in the near future.
+
+```shell
+$ proto install uv
+```
+
+:::info
+
+Although uv can also manage Python installations, we suggest using proto to keep everything
+streamlined and isolated.
+
+:::
+
+### `ruby`
+
+And lastly, we now support [Ruby](https://www.ruby-lang.org/en/), a popular general purpose
+programming language. Ruby was extremely difficult to support, primarily because Ruby does _not_
+support the concept of pre-builts, and _must_ be compiled from source files.
+
+But thanks to our new build from source install strategy (below), Ruby support is now possible.
+
+```shell
+$ proto install ruby
+```
+
+## Build from source (unstable)
+
+Up until now, tools could only be installed if they supported pre-built binaries, which was
+typically more than enough. However, there are many languages that do not support pre-builts and
+must be built from source, such as Ruby, PHP, and up until recently, Python. Building binaries from
+source code is actually quite complicated, as the instructions for doing so is different across
+operating systems, architectures, and even system package managers.
+
+Regardless, we've spent the past year slowly working on a solution and have finally managed to
+implement something usable, all through a powerful WASM API. And with that, the following tools now
+support build from source.
+
+- `deno`
+- `go`
+- `moon`
+- `node`
+- `python` (via `python-build`)
+- `ruby` (via `ruby-build`)
+
+To actually build from source instead of downloading a prebuilt, simply pass `--build` to
+[`proto install`](/docs/proto/commands/install). For tools that only support build (like Ruby), the
+`--build` flag is optional.
+
+```shell
+$ proto install python --build
+```
+
+To demonstrate how this works, here's Go being built from source. We start by grouping operations
+into steps, with the first step being the installation of system dependencies (via Homebrew or
+something similar). We then check that certain requirements are met, or abort if unmet. Up next, we
+need to acquire the source code, either by downloading an archive, or cloning a Git repository. And
+lastly, running through and executing the build instructions/commands.
+
+<Image src={require('./img/proto/v0.45/go-build.png')} width="90%" />
+
+:::info
+
+While this feature is very exciting, it is extremely unstable, so please report any issues, and
+provide any and all feedback!
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.45.0) for a full list
+of changes.

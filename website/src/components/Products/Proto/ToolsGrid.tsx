@@ -5,8 +5,10 @@ import Text from '@site/src/ui/typography/Text';
 import Bun from '@site/static/img/tools/bun.svg';
 import Deno from '@site/static/img/tools/deno.svg';
 import Go from '@site/static/img/tools/go.svg';
+import Moon from '@site/static/img/tools/moon.svg';
 import Node from '@site/static/img/tools/node.svg';
 import Python from '@site/static/img/tools/python.svg';
+import Ruby from '@site/static/img/tools/ruby.svg';
 import Rust from '@site/static/img/tools/rust.svg';
 import { loadToolsData, ProtoTool } from '../../../data/proto-tools';
 
@@ -44,6 +46,12 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 				</div>
 
 				<div className="text-center">
+					<Link href="/docs/proto/tools#moon">
+						<Moon width="100%" className="inline-block" />
+					</Link>
+				</div>
+
+				<div className="text-center">
 					<Link href="/docs/proto/tools#node">
 						<Node width="100%" className="inline-block" />
 					</Link>
@@ -56,6 +64,16 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 				<div className="text-center">
 					<Link href="/docs/proto/tools#python">
 						<Python width="100%" className="inline-block" />
+					</Link>
+
+					<Text className="m-0" variant="muted">
+						+ pip, uv
+					</Text>
+				</div>
+
+				<div className="text-center">
+					<Link href="/docs/proto/tools#ruby">
+						<Ruby width="100%" className="inline-block" />
 					</Link>
 				</div>
 

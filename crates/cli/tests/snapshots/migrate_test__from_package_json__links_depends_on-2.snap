@@ -8,9 +8,9 @@ tasks:
   build:
     command:
     - babel
-    - ./src
-    - --out
-    - ./lib
+    - './src'
+    - '--out'
+    - './lib'
     outputs:
     - lib
     toolchain: node

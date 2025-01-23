@@ -279,6 +279,47 @@ impl RemoteService {
         )
         .await?;
 
+        // The stderr/stdout blobs may not have been inlined,
+        // so we need to fetch them manually
+        let mut stdio_digests = vec![];
+
+        if let Some(stderr_digest) = &result.stderr_digest {
+            if result.stderr_raw.is_empty() && stderr_digest.size_bytes > 0 {
+                stdio_digests.push(stderr_digest.to_owned());
+            }
+        }
+
+        if let Some(stdout_digest) = &result.stdout_digest {
+            if result.stdout_raw.is_empty() && stdout_digest.size_bytes > 0 {
+                stdio_digests.push(stdout_digest.to_owned());
+            }
+        }
+
+        if !stdio_digests.is_empty() {
+            for blob in self
+                .client
+                .batch_read_blobs(&state.digest, stdio_digests)
+                .await?
+            {
+                if result
+                    .stderr_digest
+                    .as_ref()
+                    .is_some_and(|dig| dig == &blob.digest)
+                {
+                    result.stderr_raw = blob.bytes;
+                    continue;
+                }
+
+                if result
+                    .stdout_digest
+                    .as_ref()
+                    .is_some_and(|dig| dig == &blob.digest)
+                {
+                    result.stdout_raw = blob.bytes;
+                }
+            }
+        }
+
         Ok(())
     }
 

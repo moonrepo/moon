@@ -13,7 +13,7 @@ use moon_console::TaskReportItem;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_remote::{Digest, RemoteService};
+use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
 use moon_time::{is_stale, now_millis};
@@ -39,9 +39,9 @@ pub struct TaskRunner<'task> {
     hydrater: OutputHydrater<'task>,
 
     // Public for testing
-    pub action_digest: Digest,
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
+    pub remote_state: Option<ActionState<'task>>,
     pub report_item: TaskReportItem,
 }
 
@@ -68,13 +68,10 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             cache,
             archiver: OutputArchiver { app, project, task },
-            action_digest: Digest {
-                hash: String::new(),
-                size_bytes: 0,
-            },
             hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,
+            remote_state: None,
             report_item: TaskReportItem {
                 output_style: task.options.output_style,
                 ..Default::default()
@@ -109,8 +106,6 @@ impl<'task> TaskRunner<'task> {
             );
 
             let hash = self.generate_hash(context, node).await?;
-
-            self.report_item.hash = Some(hash.clone());
 
             // Exit early if this build has already been cached/hashed
             if self.hydrate(context, &hash).await? {
@@ -308,16 +303,16 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in the remote service
-        if let Some(remote) = RemoteService::session() {
-            if remote.is_operation_cached(&self.action_digest).await? {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash, "Cache hit in remote service, will attempt to download output blobs"
-                );
+        // if let Some(remote) = RemoteService::session() {
+        //     if remote.is_operation_cached(&self.action_digest).await? {
+        //         debug!(
+        //             task_target = self.task.target.as_str(),
+        //             hash, "Cache hit in remote service, will attempt to download output blobs"
+        //         );
 
-                return Ok(Some(HydrateFrom::RemoteCache));
-            }
-        }
+        //         return Ok(Some(HydrateFrom::RemoteCache));
+        //     }
+        // }
 
         // Check if archive exists in moonbase (remote storage) by querying the artifacts
         // endpoint. This only checks that the database record exists!
@@ -436,7 +431,7 @@ impl<'task> TaskRunner<'task> {
 
         hasher.hash_content(task_hasher.hash())?;
 
-        // Hash platform fields
+        // Hash toolchain fields
         trace!(
             task_target = self.task.target.as_str(),
             toolchains = ?self.task.toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
@@ -459,11 +454,17 @@ impl<'task> TaskRunner<'task> {
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
+        self.report_item.hash = Some(hash.clone());
 
-        self.action_digest = Digest {
-            hash: hash.clone(),
-            size_bytes: size_bytes as i64,
-        };
+        if RemoteService::is_enabled() {
+            self.remote_state = Some(ActionState::new(
+                Digest {
+                    hash: hash.clone(),
+                    size_bytes: size_bytes as i64,
+                },
+                self.task,
+            ));
+        }
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -559,6 +560,11 @@ impl<'task> TaskRunner<'task> {
                 }
                 .into());
             }
+
+            // Otherwise persist the remote state
+            if let Some(state) = &mut self.remote_state {
+                state.create_action_result_from_operation(last_attempt)?;
+            }
         }
 
         Ok(())
@@ -609,7 +615,7 @@ impl<'task> TaskRunner<'task> {
 
         let archived = match self
             .archiver
-            .archive(&self.action_digest, self.operations.get_last_execution())
+            .archive(hash, self.remote_state.as_mut())
             .await?
         {
             Some(archive_file) => {
@@ -665,19 +671,19 @@ impl<'task> TaskRunner<'task> {
             "Running cache hydration operation"
         );
 
-        if !self
-            .hydrater
-            .hydrate(from, &self.action_digest, &mut operation)
-            .await?
-        {
-            debug!(task_target = self.task.target.as_str(), "Did not hydrate");
+        // if !self
+        //     .hydrater
+        //     .hydrate(from, &self.action_digest, &mut operation)
+        //     .await?
+        // {
+        //     debug!(task_target = self.task.target.as_str(), "Did not hydrate");
 
-            operation.finish(ActionStatus::Invalid);
+        //     operation.finish(ActionStatus::Invalid);
 
-            self.operations.push(operation);
+        //     self.operations.push(operation);
 
-            return Ok(false);
-        }
+        //     return Ok(false);
+        // }
 
         // Did hydrate
         debug!(

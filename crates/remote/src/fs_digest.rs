@@ -157,20 +157,6 @@ impl OutputDigests {
     }
 }
 
-#[instrument]
-pub fn compute_digests_for_outputs(
-    paths: Vec<WorkspaceRelativePathBuf>,
-    workspace_root: &Path,
-) -> miette::Result<OutputDigests> {
-    let mut result = OutputDigests::default();
-
-    for path in paths {
-        result.insert_relative_path(path, workspace_root)?;
-    }
-
-    Ok(result)
-}
-
 fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {
     if let Some(mtime) = &props.mtime {
         let modified = Duration::new(mtime.seconds as u64, mtime.nanos as u32);

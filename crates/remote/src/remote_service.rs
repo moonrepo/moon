@@ -2,6 +2,7 @@ use crate::compression::*;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 // use crate::http_remote_client::HttpRemoteClient;
+use crate::action_state::ActionState;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     command, digest_function, platform::Property, Action, ActionResult, Command, Digest,
@@ -37,6 +38,10 @@ pub struct RemoteService {
 impl RemoteService {
     pub fn session() -> Option<Arc<RemoteService>> {
         INSTANCE.get().cloned()
+    }
+
+    pub fn is_enabled() -> bool {
+        INSTANCE.get().is_some()
     }
 
     #[instrument]
@@ -199,22 +204,29 @@ impl RemoteService {
         Ok(false)
     }
 
-    #[instrument(skip(self, task))]
-    pub async fn save_task(&self, digest: &Digest, task: &Task) -> miette::Result<()> {
+    #[instrument(skip(self, state))]
+    pub async fn save_action(&self, state: &ActionState<'_>) -> miette::Result<()> {
+        if !self.cache_enabled {
+            return Ok(());
+        }
+
+        let Some(digest) = &state.action.command_digest else {
+            return Ok(());
+        };
+
         let missing = self
             .client
             .find_missing_blobs(vec![digest.to_owned()])
             .await?;
 
         if missing.contains(digest) {
-            let _action = self.create_action(digest, task)?;
-            let command = self.create_command(task)?;
+            debug!(hash = &digest.hash, "Caching action and command");
 
             self.client
                 .batch_update_blobs(
                     digest,
                     vec![Blob {
-                        bytes: bincode::serialize(&command).unwrap(),
+                        bytes: state.get_command_as_bytes()?,
                         digest: digest.to_owned(),
                     }],
                 )
@@ -224,78 +236,35 @@ impl RemoteService {
         Ok(())
     }
 
-    #[instrument(skip(self, operation))]
-    pub async fn save_operation(
-        &self,
-        digest: &Digest,
-        operation: &Operation,
-    ) -> miette::Result<()> {
-        if !self.cache_enabled || operation.has_failed() {
+    #[instrument(skip(self, state))]
+    pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+        if !self.cache_enabled {
             return Ok(());
         }
 
-        let operation_label = operation.label().to_owned();
-
-        debug!(
-            hash = &digest.hash,
-            "Caching {} operation",
-            color::muted_light(&operation_label)
-        );
-
-        let result = self.create_action_result_from_operation(operation, None)?;
-        let digest = digest.to_owned();
-        let client = Arc::clone(&self.client);
-
-        self.upload_requests
-            .write()
-            .await
-            .push(tokio::spawn(async move {
-                if let Err(error) = client.update_action_result(&digest, result).await {
-                    warn!(
-                        hash = &digest.hash,
-                        "Failed to cache {} operation: {}",
-                        color::muted_light(operation_label),
-                        color::muted_light(error.to_string()),
-                    );
-                }
-            }));
-
-        Ok(())
-    }
-
-    #[instrument(skip(self, operation, outputs))]
-    pub async fn save_operation_with_outputs(
-        &self,
-        digest: &Digest,
-        operation: &Operation,
-        mut outputs: OutputDigests,
-    ) -> miette::Result<()> {
-        if !self.cache_enabled || operation.has_failed() {
+        let Some((mut result, blobs)) = state.prepare_for_upload() else {
             return Ok(());
+        };
+
+        let Some(digest) = &state.action.command_digest else {
+            return Ok(());
+        };
+
+        if blobs.is_empty() {
+            debug!(hash = &digest.hash, "Caching action result");
+        } else {
+            debug!(hash = &digest.hash, "Caching action result with blobs");
         }
 
-        let operation_label = operation.label().to_owned();
-
-        debug!(
-            hash = &digest.hash,
-            "Caching {} operation with outputs",
-            color::muted_light(&operation_label)
-        );
-
-        let mut result = self.create_action_result_from_operation(operation, Some(&mut outputs))?;
-        result.output_files = outputs.files;
-        result.output_symlinks = outputs.symlinks;
-        result.output_directories = outputs.dirs;
-
-        let digest = digest.to_owned();
         let client = Arc::clone(&self.client);
+        let digest = digest.to_owned();
         let max_size = self.get_max_batch_size();
 
         self.upload_requests
             .write()
             .await
             .push(tokio::spawn(async move {
-                if !outputs.blobs.is_empty() {
+                if !blobs.is_empty() {
                     if let Some(metadata) = &mut result.execution_metadata {
                         metadata.output_upload_start_timestamp =
                             create_timestamp(SystemTime::now());
@@ -304,7 +273,7 @@ impl RemoteService {
                     let upload_result = batch_upload_blobs(
                         client.clone(),
                         digest.clone(),
-                        outputs.blobs,
+                        blobs,
                         max_size as usize,
                     )
                     .await;
@@ -322,8 +291,7 @@ impl RemoteService {
                 if let Err(error) = client.update_action_result(&digest, result).await {
                     warn!(
                         hash = &digest.hash,
-                        "Failed to cache {} operation: {}",
-                        color::muted_light(operation_label),
+                        "Failed to cache action result: {}",
                         color::muted_light(error.to_string()),
                     );
                 }
@@ -404,43 +372,6 @@ impl RemoteService {
             // the tasks above by logging to the console
             let _ = future.await;
         }
-    }
-
-    fn create_command(&self, task: &Task) -> miette::Result<Command> {
-        let mut command = Command {
-            arguments: vec![task.command.clone()],
-            ..Default::default()
-        };
-
-        command.arguments.extend(task.args.clone());
-
-        for (name, value) in BTreeMap::from_iter(task.env.clone()) {
-            command
-                .environment_variables
-                .push(command::EnvironmentVariable { name, value });
-        }
-
-        Ok(command)
-    }
-
-    fn create_action(&self, digest: &Digest, task: &Task) -> miette::Result<Action> {
-        let mut action = Action {
-            command_digest: Some(digest.to_owned()),
-            ..Default::default()
-        };
-
-        if let Some(os_list) = &task.options.os {
-            let platform = action.platform.get_or_insert_default();
-
-            for os in os_list {
-                platform.properties.push(Property {
-                    name: "OSFamily".into(),
-                    value: os.to_string(),
-                });
-            }
-        }
-
-        Ok(action)
     }
 
     fn create_action_result_from_operation(

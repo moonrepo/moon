@@ -273,7 +273,7 @@ impl RemoteService {
         batch_download_blobs(
             self.client.clone(),
             &state.digest,
-            &result,
+            result,
             &self.workspace_root,
             self.get_max_batch_size() as usize,
         )

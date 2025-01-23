@@ -3,7 +3,7 @@ mod utils;
 use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::CacheMode;
-use moon_remote::Digest;
+// use moon_remote::Digest;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_task_runner::TaskRunner;
@@ -11,12 +11,12 @@ use moon_time::now_millis;
 use std::env;
 use utils::*;
 
-fn stub_digest() -> Digest {
-    Digest {
-        hash: "hash123".into(),
-        size_bytes: 0,
-    }
-}
+// fn stub_digest() -> Digest {
+//     Digest {
+//         hash: "hash123".into(),
+//         size_bytes: 0,
+//     }
+// }
 
 mod task_runner {
     use super::*;
@@ -709,7 +709,7 @@ mod task_runner {
 
         fn setup_exec_state(runner: &mut TaskRunner) {
             runner.report_item.hash = Some("hash123".into());
-            runner.action_digest = stub_digest();
+            // runner.action_digest = stub_digest();
         }
 
         #[tokio::test]
@@ -1067,7 +1067,7 @@ mod task_runner {
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
-                runner.action_digest = stub_digest();
+                // runner.action_digest = stub_digest();
             }
 
             #[tokio::test]
@@ -1113,11 +1113,11 @@ mod task_runner {
             use super::*;
             use std::fs;
 
-            fn setup_local_state(container: &TaskRunnerContainer, runner: &mut TaskRunner) {
+            fn setup_local_state(container: &TaskRunnerContainer, _runner: &mut TaskRunner) {
                 container.sandbox.enable_git();
                 container.pack_archive();
 
-                runner.action_digest = stub_digest();
+                // runner.action_digest = stub_digest();
             }
 
             #[tokio::test]

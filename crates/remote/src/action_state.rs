@@ -21,7 +21,7 @@ pub struct ActionState<'task> {
     pub blobs: Vec<Blob>,
 }
 
-impl<'task> ActionState<'task> {
+impl ActionState<'_> {
     pub fn new(digest: Digest, task: &Task) -> ActionState<'_> {
         ActionState {
             task,

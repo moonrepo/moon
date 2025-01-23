@@ -366,7 +366,9 @@ impl RemoteClient for GrpcRemoteClient {
             if let Some(status) = download.status {
                 if status.code != 0 {
                     warn!(
+                        hash = &digest.hash,
                         details = ?status.details,
+                        code = status.code,
                         "Failed to download blob: {}",
                         status.message
                     );

@@ -215,6 +215,8 @@ impl OutputArchiver<'_> {
         operation: &Operation,
     ) -> miette::Result<()> {
         if let Some(remote) = RemoteService::session() {
+            remote.save_task(digest, self.task).await?;
+
             let output_digests = compute_digests_for_outputs(
                 self.task.get_output_files(&self.app.workspace_root, true)?,
                 &self.app.workspace_root,

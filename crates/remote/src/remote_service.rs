@@ -3,14 +3,15 @@ use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 // use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
-use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
+    command, digest_function, platform::Property, Action, ActionResult, Command, Digest,
+    ExecutedActionMetadata, ServerCapabilities,
 };
 use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_common::{color, is_ci};
-use moon_config::RemoteConfig;
+use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
+use moon_task::Task;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -55,15 +56,19 @@ impl RemoteService {
         );
         info!("Please report any issues to GitHub or Discord");
 
-        let mut client: Box<dyn RemoteClient> =
-            if config.host.starts_with("http://") || config.host.starts_with("https://") {
-                // Box::new(HttpRemoteClient::default())
-                return Err(RemoteError::NoHttpClient.into());
-            } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
-                Box::new(GrpcRemoteClient::default())
-            } else {
-                return Err(RemoteError::UnknownHostProtocol.into());
-            };
+        // let mut client: Box<dyn RemoteClient> =
+        //     if config.host.starts_with("http://") || config.host.starts_with("https://") {
+        //         // Box::new(HttpRemoteClient::default())
+        //         return Err(RemoteError::NoHttpClient.into());
+        //     } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
+        //         Box::new(GrpcRemoteClient::default())
+        //     } else {
+        //         return Err(RemoteError::UnknownHostProtocol.into());
+        //     };
+
+        let mut client = match config.api {
+            RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
+        };
 
         client.connect_to_host(config, workspace_root).await?;
 
@@ -88,6 +93,8 @@ impl RemoteService {
         let host = &self.config.host;
         let mut enabled = true;
 
+        dbg!(&self.capabilities);
+
         if let Some(cap) = &self.capabilities.cache_capabilities {
             let sha256_fn = digest_function::Value::Sha256 as i32;
 
@@ -100,27 +107,32 @@ impl RemoteService {
                 );
             }
 
-            let compressor = get_compressor(self.config.cache.compression);
+            let compression = self.config.cache.compression;
+            let compressor = get_compressor(compression);
 
-            if !cap.supported_compressors.contains(&compressor) {
+            if compression != RemoteCompression::None
+                && !cap.supported_compressors.contains(&compressor)
+            {
                 enabled = false;
 
                 warn!(
                     host,
                     "Remote service does not support {} compression, but it has been configured and enabled through the {} setting",
-                    compressor,
-                    color::property("remote.cache.compression"),
+                    compression,
+                    color::property("unstable_remote.cache.compression"),
                 );
             }
 
-            if !cap.supported_batch_update_compressors.contains(&compressor) {
+            if compression != RemoteCompression::None
+                && !cap.supported_batch_update_compressors.contains(&compressor)
+            {
                 enabled = false;
 
                 warn!(
                     host,
                     "Remote service does not support {} compression for batching, but it has been configured and enabled through the {} setting",
-                    compressor,
-                    color::property("remote.cache.compression"),
+                    compression,
+                    color::property("unstable_remote.cache.compression"),
                 );
             }
 
@@ -185,6 +197,31 @@ impl RemoteService {
         }
 
         Ok(false)
+    }
+
+    #[instrument(skip(self, task))]
+    pub async fn save_task(&self, digest: &Digest, task: &Task) -> miette::Result<()> {
+        let missing = self
+            .client
+            .find_missing_blobs(vec![digest.to_owned()])
+            .await?;
+
+        if missing.contains(digest) {
+            let _action = self.create_action(digest, task)?;
+            let command = self.create_command(task)?;
+
+            self.client
+                .batch_update_blobs(
+                    digest,
+                    vec![Blob {
+                        bytes: bincode::serialize(&command).unwrap(),
+                        digest: digest.to_owned(),
+                    }],
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 
     #[instrument(skip(self, operation))]
@@ -367,6 +404,43 @@ impl RemoteService {
             // the tasks above by logging to the console
             let _ = future.await;
         }
+    }
+
+    fn create_command(&self, task: &Task) -> miette::Result<Command> {
+        let mut command = Command {
+            arguments: vec![task.command.clone()],
+            ..Default::default()
+        };
+
+        command.arguments.extend(task.args.clone());
+
+        for (name, value) in BTreeMap::from_iter(task.env.clone()) {
+            command
+                .environment_variables
+                .push(command::EnvironmentVariable { name, value });
+        }
+
+        Ok(command)
+    }
+
+    fn create_action(&self, digest: &Digest, task: &Task) -> miette::Result<Action> {
+        let mut action = Action {
+            command_digest: Some(digest.to_owned()),
+            ..Default::default()
+        };
+
+        if let Some(os_list) = &task.options.os {
+            let platform = action.platform.get_or_insert_default();
+
+            for os in os_list {
+                platform.properties.push(Property {
+                    name: "OSFamily".into(),
+                    value: os.to_string(),
+                });
+            }
+        }
+
+        Ok(action)
     }
 
     fn create_action_result_from_operation(

@@ -23,6 +23,8 @@ pub trait RemoteClient: Send + Sync {
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>>;
 
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>>;
+
     async fn batch_read_blobs(
         &self,
         digest: &Digest,

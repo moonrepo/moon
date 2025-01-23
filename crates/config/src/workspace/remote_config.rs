@@ -15,6 +15,16 @@ fn path_is_required<D, C>(
     Ok(())
 }
 
+derive_enum!(
+    /// The API format of the remote service.
+    #[derive(Copy, ConfigEnum, Default)]
+    pub enum RemoteApi {
+        /// gRPC endpoints.
+        #[default]
+        Grpc,
+    }
+);
+
 /// Configures basic HTTP authentication.
 #[derive(Clone, Config, Debug)]
 pub struct RemoteAuthConfig {
@@ -26,6 +36,7 @@ pub struct RemoteAuthConfig {
 }
 
 derive_enum!(
+    /// Supported blob compression levels.
     #[derive(Copy, ConfigEnum, Default)]
     pub enum RemoteCompression {
         /// No compression.
@@ -92,6 +103,9 @@ pub struct RemoteMtlsConfig {
 /// Configures the remote service, powered by the Bazel Remote Execution API.
 #[derive(Clone, Config, Debug)]
 pub struct RemoteConfig {
+    /// The API format of the remote service.
+    pub api: RemoteApi,
+
     /// Connect to the host using basic HTTP authentication.
     #[setting(nested)]
     pub auth: Option<RemoteAuthConfig>,
@@ -126,5 +140,9 @@ impl RemoteConfig {
 
     pub fn is_secure(&self) -> bool {
         self.is_bearer_auth() || self.tls.is_some() || self.mtls.is_some()
+    }
+
+    pub fn is_secure_protocol(&self) -> bool {
+        self.host.starts_with("https") || self.host.starts_with("grpcs")
     }
 }

@@ -7,20 +7,22 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     action_cache_client::ActionCacheClient, batch_update_blobs_request,
     capabilities_client::CapabilitiesClient,
     content_addressable_storage_client::ContentAddressableStorageClient, digest_function,
-    ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, GetActionResultRequest,
-    GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
+    ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, FindMissingBlobsRequest,
+    GetActionResultRequest, GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
 use moon_common::color;
 use moon_config::RemoteConfig;
 use std::{env, error::Error, path::Path};
 use tonic::{
-    metadata::{MetadataKey, MetadataValue},
+    metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
     transport::{Channel, Endpoint},
     Code, Request, Status,
 };
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
+    dbg!(&error);
+
     RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
@@ -43,15 +45,14 @@ fn map_status_error(error: tonic::Status) -> RemoteError {
 pub struct GrpcRemoteClient {
     channel: Option<Channel>,
     config: RemoteConfig,
+    headers: MetadataMap,
 }
 
 impl GrpcRemoteClient {
-    fn inject_auth_headers(&self, mut req: Request<()>) -> Result<Request<()>, Status> {
+    fn extract_headers(&mut self) {
         if let Some(auth) = &self.config.auth {
-            let headers = req.metadata_mut();
-
             for (key, value) in &auth.headers {
-                headers.insert(
+                self.headers.insert(
                     MetadataKey::from_bytes(key.as_bytes()).unwrap(),
                     MetadataValue::try_from(value).unwrap(),
                 );
@@ -62,19 +63,36 @@ impl GrpcRemoteClient {
 
                 if token.is_empty() {
                     warn!(
-                        "Remote service auth token {} does not exist, unable to authorize",
+                        "Auth token {} does not exist, unable to authorize for remote service",
                         color::property(token_name)
                     );
                 } else {
-                    headers.insert(
+                    self.headers.insert(
                         "Authorization",
                         MetadataValue::try_from(format!("Bearer {token}")).unwrap(),
                     );
                 }
             }
         }
+    }
 
-        dbg!(&req);
+    fn inject_auth_headers(&self, mut req: Request<()>) -> Result<Request<()>, Status> {
+        if self.headers.is_empty() {
+            return Ok(req);
+        }
+
+        let headers = req.metadata_mut();
+
+        for entry in self.headers.iter() {
+            match entry {
+                KeyAndValueRef::Ascii(key, value) => {
+                    headers.insert(key.clone(), value.clone());
+                }
+                KeyAndValueRef::Binary(key, value) => {
+                    headers.insert_bin(key.clone(), value.clone());
+                }
+            };
+        }
 
         Ok(req)
     }
@@ -126,6 +144,10 @@ impl RemoteClient for GrpcRemoteClient {
             endpoint = endpoint
                 .tls_config(create_tls_config(tls, workspace_root)?)
                 .map_err(map_transport_error)?;
+        } else if config.is_secure_protocol() {
+            endpoint = endpoint
+                .tls_config(create_native_tls_config()?)
+                .map_err(map_transport_error)?;
         }
 
         if config.is_localhost() {
@@ -140,6 +162,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         self.config = config.to_owned();
+        self.extract_headers();
 
         // We can't inject auth headers into this initial connection,
         // so defer the connection until a client is used
@@ -192,6 +215,7 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => {
+                dbg!("get_action_result", &response);
                 let result = response.into_inner();
 
                 trace!(
@@ -206,6 +230,8 @@ impl RemoteClient for GrpcRemoteClient {
                 Ok(Some(result))
             }
             Err(status) => {
+                dbg!("get_action_result", &status);
+
                 if matches!(status.code(), Code::NotFound) {
                     trace!(hash = &digest.hash, "Cache miss on action result");
 
@@ -248,11 +274,14 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => {
+                dbg!("update_action_result", &response);
+
                 trace!(hash = &digest.hash, "Cached action result");
 
                 Ok(Some(response.into_inner()))
             }
             Err(status) => {
+                dbg!("update_action_result", &status);
                 let code = status.code();
 
                 if matches!(code, Code::InvalidArgument | Code::FailedPrecondition) {
@@ -275,6 +304,26 @@ impl RemoteClient for GrpcRemoteClient {
                     Err(map_status_error(status).into())
                 }
             }
+        }
+    }
+
+    // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L351
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
+        let mut client = ContentAddressableStorageClient::with_interceptor(
+            self.channel.clone().unwrap(),
+            |req| self.inject_auth_headers(req),
+        );
+
+        match client
+            .find_missing_blobs(FindMissingBlobsRequest {
+                instance_name: self.config.cache.instance_name.clone(),
+                blob_digests,
+                digest_function: digest_function::Value::Sha256 as i32,
+            })
+            .await
+        {
+            Ok(response) => Ok(response.into_inner().missing_blob_digests),
+            Err(status) => Err(map_status_error(status).into()),
         }
     }
 

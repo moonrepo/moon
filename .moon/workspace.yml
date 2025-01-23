@@ -38,7 +38,7 @@ docker:
 unstable_remote:
   # host: 'http://0.0.0.0:8080'
   # host: 'grpcs://0.0.0.0:9092'
-  host: 'grpcs://cache.depot.dev'
+  host: 'https://cache.depot.dev'
   auth:
     token: 'DEPOT_TOKEN'
     headers:

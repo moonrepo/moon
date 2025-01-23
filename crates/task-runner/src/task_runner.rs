@@ -303,16 +303,18 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in the remote service
-        // if let Some(remote) = RemoteService::session() {
-        //     if remote.is_operation_cached(&self.action_digest).await? {
-        //         debug!(
-        //             task_target = self.task.target.as_str(),
-        //             hash, "Cache hit in remote service, will attempt to download output blobs"
-        //         );
+        if let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session()) {
+            if let Some(result) = remote.is_action_cached(state).await? {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash, "Cache hit in remote service, will attempt to download output blobs"
+                );
 
-        //         return Ok(Some(HydrateFrom::RemoteCache));
-        //     }
-        // }
+                state.set_action_result(result);
+
+                return Ok(Some(HydrateFrom::RemoteCache));
+            }
+        }
 
         // Check if archive exists in moonbase (remote storage) by querying the artifacts
         // endpoint. This only checks that the database record exists!
@@ -531,8 +533,13 @@ impl<'task> TaskRunner<'task> {
             executor.execute(context, &mut self.report_item).await?
         };
 
+        // Persist the state locally and for the remote service
         if let Some(last_attempt) = result.attempts.get_last_execution() {
             self.persist_state(last_attempt)?;
+
+            if let Some(state) = &mut self.remote_state {
+                state.create_action_result_from_operation(last_attempt)?;
+            }
         }
 
         // Extract the attempts from the result
@@ -559,11 +566,6 @@ impl<'task> TaskRunner<'task> {
                     }),
                 }
                 .into());
-            }
-
-            // Otherwise persist the remote state
-            if let Some(state) = &mut self.remote_state {
-                state.create_action_result_from_operation(last_attempt)?;
             }
         }
 
@@ -671,19 +673,19 @@ impl<'task> TaskRunner<'task> {
             "Running cache hydration operation"
         );
 
-        // if !self
-        //     .hydrater
-        //     .hydrate(from, &self.action_digest, &mut operation)
-        //     .await?
-        // {
-        //     debug!(task_target = self.task.target.as_str(), "Did not hydrate");
+        if !self
+            .hydrater
+            .hydrate(from, hash, self.remote_state.as_mut())
+            .await?
+        {
+            debug!(task_target = self.task.target.as_str(), "Did not hydrate");
 
-        //     operation.finish(ActionStatus::Invalid);
+            operation.finish(ActionStatus::Invalid);
 
-        //     self.operations.push(operation);
+            self.operations.push(operation);
 
-        //     return Ok(false);
-        // }
+            return Ok(false);
+        }
 
         // Did hydrate
         debug!(
@@ -694,7 +696,45 @@ impl<'task> TaskRunner<'task> {
         // Fill in these values since the command executor does not run!
         if let Some(output) = operation.get_output_mut() {
             output.command = Some(self.task.get_command_line());
-            output.exit_code = Some(self.cache.data.exit_code);
+
+            // If we received an action result from the remote cache,
+            // extract the logs from it
+            if let Some(result) = self
+                .remote_state
+                .as_ref()
+                .and_then(|state| state.action_result.as_ref())
+            {
+                output.exit_code = Some(result.exit_code);
+
+                if !result.stderr_raw.is_empty() {
+                    output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+                }
+
+                if !result.stdout_raw.is_empty() {
+                    output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
+                }
+            }
+            // If not from the remote cache, we need to read the locally
+            // cached stdout/stderr log files
+            else {
+                output.exit_code = Some(self.cache.data.exit_code);
+
+                let state_dir = self
+                    .app
+                    .cache_engine
+                    .state
+                    .get_target_dir(&self.task.target);
+                let err_path = state_dir.join("stderr.log");
+                let out_path = state_dir.join("stdout.log");
+
+                if err_path.exists() {
+                    output.set_stderr(fs::read_file(err_path)?);
+                }
+
+                if out_path.exists() {
+                    output.set_stdout(fs::read_file(out_path)?);
+                }
+            }
         }
 
         // Then finalize the operation and target state
@@ -754,16 +794,38 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn persist_state(&mut self, operation: &Operation) -> miette::Result<()> {
-        write_stdlog_state_files(
-            self.app
-                .cache_engine
-                .state
-                .get_target_dir(&self.task.target),
-            operation,
-        )?;
+        let state_dir = self
+            .app
+            .cache_engine
+            .state
+            .get_target_dir(&self.task.target);
+        let err_path = state_dir.join("stderr.log");
+        let out_path = state_dir.join("stdout.log");
 
         if let Some(output) = operation.get_output() {
             self.cache.data.exit_code = output.get_exit_code();
+
+            fs::write_file(
+                err_path,
+                output
+                    .stderr
+                    .as_ref()
+                    .map(|log| log.as_bytes())
+                    .unwrap_or_default(),
+            )?;
+
+            fs::write_file(
+                out_path,
+                output
+                    .stdout
+                    .as_ref()
+                    .map(|log| log.as_bytes())
+                    .unwrap_or_default(),
+            )?;
+        } else {
+            // Ensure logs from a previous run are removed
+            fs::remove_file(err_path)?;
+            fs::remove_file(out_path)?;
         }
 
         Ok(())

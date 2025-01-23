@@ -21,16 +21,12 @@ use tonic::{
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
-    dbg!(&error);
-
     RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
 }
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
-    dbg!(&error);
-
     match error.source() {
         Some(src) => RemoteError::GrpcCallFailedViaSource {
             error: src.to_string(),
@@ -124,13 +120,13 @@ impl RemoteClient for GrpcRemoteClient {
 
         // Although we use a grpc(s) protocol for the host,
         // tonic only supports http(s), so change it
-        // let url = if let Some(suffix) = host.strip_prefix("grpc") {
-        //     format!("http{suffix}")
-        // } else {
-        //     host.to_owned()
-        // };
+        let url = if let Some(suffix) = host.strip_prefix("grpc") {
+            format!("http{suffix}")
+        } else {
+            host.to_owned()
+        };
 
-        let mut endpoint = Endpoint::from_shared(host.to_owned())
+        let mut endpoint = Endpoint::from_shared(url)
             .map_err(map_transport_error)?
             .user_agent("moon")
             .map_err(map_transport_error)?
@@ -215,7 +211,6 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => {
-                dbg!("get_action_result", &response);
                 let result = response.into_inner();
 
                 trace!(
@@ -230,8 +225,6 @@ impl RemoteClient for GrpcRemoteClient {
                 Ok(Some(result))
             }
             Err(status) => {
-                dbg!("get_action_result", &status);
-
                 if matches!(status.code(), Code::NotFound) {
                     trace!(hash = &digest.hash, "Cache miss on action result");
 
@@ -274,14 +267,11 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => {
-                dbg!("update_action_result", &response);
-
                 trace!(hash = &digest.hash, "Cached action result");
 
                 Ok(Some(response.into_inner()))
             }
             Err(status) => {
-                dbg!("update_action_result", &status);
                 let code = status.code();
 
                 if matches!(code, Code::InvalidArgument | Code::FailedPrecondition) {

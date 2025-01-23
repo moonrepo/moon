@@ -12,9 +12,10 @@ pub struct ActionState<'task> {
     task: &'task Task,
 
     // RE API
-    pub action: Action,
+    pub action: Option<Action>,
     pub action_result: Option<ActionResult>,
-    pub command: Command,
+    pub command: Option<Command>,
+    pub digest: Digest,
 
     // To upload
     pub blobs: Vec<Blob>,
@@ -22,15 +23,26 @@ pub struct ActionState<'task> {
 
 impl<'task> ActionState<'task> {
     pub fn new(digest: Digest, task: &Task) -> ActionState<'_> {
+        ActionState {
+            task,
+            action: None,
+            action_result: None,
+            command: None,
+            digest,
+            blobs: vec![],
+        }
+    }
+
+    pub fn create_action_from_task(&mut self) {
         let mut action = Action {
-            command_digest: Some(digest),
-            do_not_cache: !task.options.cache,
+            command_digest: Some(self.digest.clone()),
+            do_not_cache: !self.task.options.cache,
             input_root_digest: None, // TODO?
             ..Default::default()
         };
 
         // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/platform.md
-        if let Some(os_list) = &task.options.os {
+        if let Some(os_list) = &self.task.options.os {
             let platform = action.platform.get_or_insert_default();
 
             for os in os_list {
@@ -44,26 +56,21 @@ impl<'task> ActionState<'task> {
         // Since we don't support (or plan to) remote execution,
         // then we can ignore all the working directory logic
         let mut command = Command {
-            arguments: vec![task.command.clone()],
+            arguments: vec![self.task.command.clone()],
             output_paths: vec![], // TODO
             ..Default::default()
         };
 
-        command.arguments.extend(task.args.clone());
+        command.arguments.extend(self.task.args.clone());
 
-        for (name, value) in BTreeMap::from_iter(task.env.clone()) {
+        for (name, value) in BTreeMap::from_iter(self.task.env.clone()) {
             command
                 .environment_variables
                 .push(command::EnvironmentVariable { name, value });
         }
 
-        ActionState {
-            task,
-            action,
-            action_result: None,
-            command,
-            blobs: vec![],
-        }
+        self.action = Some(action);
+        self.command = Some(command);
     }
 
     pub fn create_action_result_from_operation(
@@ -103,6 +110,10 @@ impl<'task> ActionState<'task> {
         self.action_result = Some(result);
 
         Ok(())
+    }
+
+    pub fn set_action_result(&mut self, result: ActionResult) {
+        self.action_result = Some(result);
     }
 
     pub fn compute_outputs(&mut self, workspace_root: &Path) -> miette::Result<()> {

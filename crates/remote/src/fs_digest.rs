@@ -14,7 +14,6 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tracing::instrument;
 
 pub struct Blob {
     pub bytes: Vec<u8>,

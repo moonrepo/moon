@@ -4309,7 +4309,6 @@ dependencies = [
  "moon_action",
  "moon_common",
  "moon_config",
- "moon_project",
  "moon_task",
  "reqwest",
  "rustc-hash",

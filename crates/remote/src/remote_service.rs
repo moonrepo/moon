@@ -5,14 +5,11 @@ use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::action_state::ActionState;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    command, digest_function, platform::Property, Action, ActionResult, Command, Digest,
-    ExecutedActionMetadata, ServerCapabilities,
+    digest_function, ActionResult, Digest, ServerCapabilities,
 };
 use miette::IntoDiagnostic;
-use moon_action::Operation;
 use moon_common::{color, is_ci};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_task::Task;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -28,7 +25,6 @@ pub struct RemoteService {
     pub config: RemoteConfig,
     pub workspace_root: PathBuf,
 
-    action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
     capabilities: ServerCapabilities,
     client: Arc<Box<dyn RemoteClient>>,
@@ -61,16 +57,6 @@ impl RemoteService {
         );
         info!("Please report any issues to GitHub or Discord");
 
-        // let mut client: Box<dyn RemoteClient> =
-        //     if config.host.starts_with("http://") || config.host.starts_with("https://") {
-        //         // Box::new(HttpRemoteClient::default())
-        //         return Err(RemoteError::NoHttpClient.into());
-        //     } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
-        //         Box::new(GrpcRemoteClient::default())
-        //     } else {
-        //         return Err(RemoteError::UnknownHostProtocol.into());
-        //     };
-
         let mut client = match config.api {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
         };
@@ -78,7 +64,6 @@ impl RemoteService {
         client.connect_to_host(config, workspace_root).await?;
 
         let mut instance = Self {
-            action_results: scc::HashMap::default(),
             capabilities: client.load_capabilities().await?,
             cache_enabled: false,
             client: Arc::new(client),
@@ -97,8 +82,6 @@ impl RemoteService {
     pub fn validate_capabilities(&mut self) -> miette::Result<()> {
         let host = &self.config.host;
         let mut enabled = true;
-
-        dbg!(&self.capabilities);
 
         if let Some(cap) = &self.capabilities.cache_capabilities {
             let sha256_fn = digest_function::Value::Sha256 as i32;
@@ -182,52 +165,39 @@ impl RemoteService {
             .unwrap_or(4194304 - (1024 * 10))
     }
 
-    #[instrument(skip(self))]
-    pub async fn is_operation_cached(&self, digest: &Digest) -> miette::Result<bool> {
+    #[instrument(skip(self, state))]
+    pub async fn is_action_cached(
+        &self,
+        state: &ActionState<'_>,
+    ) -> miette::Result<Option<ActionResult>> {
         if !self.cache_enabled {
-            return Ok(false);
+            return Ok(None);
         }
 
-        if self.action_results.contains_async(&digest.hash).await {
-            return Ok(true);
-        }
-
-        if let Some(result) = self.client.get_action_result(digest).await? {
-            let _ = self
-                .action_results
-                .insert_async(digest.hash.clone(), result)
-                .await;
-
-            return Ok(true);
-        }
-
-        Ok(false)
+        self.client.get_action_result(&state.digest).await
     }
 
     #[instrument(skip(self, state))]
-    pub async fn save_action(&self, state: &ActionState<'_>) -> miette::Result<()> {
+    pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
         if !self.cache_enabled {
             return Ok(());
         }
 
-        let Some(digest) = &state.action.command_digest else {
-            return Ok(());
-        };
-
         let missing = self
             .client
-            .find_missing_blobs(vec![digest.to_owned()])
+            .find_missing_blobs(vec![state.digest.clone()])
             .await?;
 
-        if missing.contains(digest) {
-            debug!(hash = &digest.hash, "Caching action and command");
+        if missing.contains(&state.digest) {
+            // Create on demand when needed, instead of always
+            state.create_action_from_task();
 
             self.client
                 .batch_update_blobs(
-                    digest,
+                    &state.digest,
                     vec![Blob {
                         bytes: state.get_command_as_bytes()?,
-                        digest: digest.to_owned(),
+                        digest: state.digest.clone(),
                     }],
                 )
                 .await?;
@@ -246,18 +216,8 @@ impl RemoteService {
             return Ok(());
         };
 
-        let Some(digest) = &state.action.command_digest else {
-            return Ok(());
-        };
-
-        if blobs.is_empty() {
-            debug!(hash = &digest.hash, "Caching action result");
-        } else {
-            debug!(hash = &digest.hash, "Caching action result with blobs");
-        }
-
         let client = Arc::clone(&self.client);
-        let digest = digest.to_owned();
+        let digest = state.digest.clone();
         let max_size = self.get_max_batch_size();
 
         self.upload_requests
@@ -300,65 +260,24 @@ impl RemoteService {
         Ok(())
     }
 
-    #[instrument(skip(self, operation))]
-    pub async fn restore_operation(
-        &self,
-        digest: &Digest,
-        operation: &mut Operation,
-    ) -> miette::Result<()> {
+    #[instrument(skip(self, state))]
+    pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
         if !self.cache_enabled {
             return Ok(());
         }
 
-        let Some(result) = self.action_results.get_async(&digest.hash).await else {
+        let Some(result) = &mut state.action_result else {
             return Ok(());
         };
 
-        let operation_label = operation.label().to_owned();
-        let has_outputs = !result.output_files.is_empty()
-            || !result.output_symlinks.is_empty()
-            || !result.output_directories.is_empty();
-
-        if has_outputs {
-            debug!(
-                hash = &digest.hash,
-                "Restoring {} operation with outputs",
-                color::muted_light(&operation_label)
-            );
-        } else {
-            debug!(
-                hash = &digest.hash,
-                "Restoring {} operation",
-                color::muted_light(&operation_label)
-            );
-        }
-
-        if let Some(output) = operation.get_output_mut() {
-            output.exit_code = Some(result.exit_code);
-
-            if !result.stderr_raw.is_empty() {
-                output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
-            }
-
-            if !result.stdout_raw.is_empty() {
-                output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
-            }
-        }
-
         batch_download_blobs(
             self.client.clone(),
-            digest,
+            &state.digest,
             &result,
             &self.workspace_root,
             self.get_max_batch_size() as usize,
         )
         .await?;
-
-        debug!(
-            hash = &digest.hash,
-            "Restored {} operation",
-            color::muted_light(&operation_label)
-        );
 
         Ok(())
     }
@@ -372,46 +291,6 @@ impl RemoteService {
             // the tasks above by logging to the console
             let _ = future.await;
         }
-    }
-
-    fn create_action_result_from_operation(
-        &self,
-        operation: &Operation,
-        outputs: Option<&mut OutputDigests>,
-    ) -> miette::Result<ActionResult> {
-        let mut result = ActionResult {
-            execution_metadata: Some(ExecutedActionMetadata {
-                worker: "moon".into(),
-                execution_start_timestamp: create_timestamp_from_naive(operation.started_at),
-                execution_completed_timestamp: operation
-                    .finished_at
-                    .and_then(create_timestamp_from_naive),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-
-        if let Some(exec) = operation.get_output() {
-            result.exit_code = exec.exit_code.unwrap_or_default();
-
-            if let Some(outputs) = outputs {
-                if let Some(stderr) = &exec.stderr {
-                    let blob = Blob::new(stderr.as_bytes().to_owned());
-
-                    result.stderr_digest = Some(blob.digest.clone());
-                    outputs.blobs.push(blob);
-                }
-
-                if let Some(stdout) = &exec.stdout {
-                    let blob = Blob::new(stdout.as_bytes().to_owned());
-
-                    result.stdout_digest = Some(blob.digest.clone());
-                    outputs.blobs.push(blob);
-                }
-            }
-        }
-
-        Ok(result)
     }
 }
 

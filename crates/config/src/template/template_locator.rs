@@ -9,7 +9,7 @@ use std::fmt;
 use std::str::FromStr;
 
 static GIT: Lazy<Regex> = Lazy::new(|| {
-    Regex::new("^(?<url>[a-z0-9.]+/[a-zA-Z0-9-_./]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap()
+    Regex::new("^(?<url>[a-zA-Z@0-9.-]+/[a-zA-Z0-9-_./]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap()
 });
 
 static NPM: Lazy<Regex> = Lazy::new(|| {

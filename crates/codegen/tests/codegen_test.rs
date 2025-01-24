@@ -119,7 +119,7 @@ mod codegen {
             let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
             let config = GeneratorConfig {
                 templates: vec![TemplateLocator::Git {
-                    remote_url: "github.com/moonrepo/moon-configs".into(),
+                    remote_url: "github.com/moonrepo/moon-configs.git".into(),
                     revision: "master".into(),
                 }],
             };

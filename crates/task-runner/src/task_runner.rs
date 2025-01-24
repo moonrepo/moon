@@ -43,6 +43,7 @@ pub struct TaskRunner<'task> {
     pub operations: OperationList,
     pub remote_state: Option<ActionState<'task>>,
     pub report_item: TaskReportItem,
+    pub target_state: Option<TargetState>,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -76,6 +77,7 @@ impl<'task> TaskRunner<'task> {
                 output_style: task.options.output_style,
                 ..Default::default()
             },
+            target_state: None,
             task,
             app,
             operations: OperationList::default(),
@@ -93,7 +95,7 @@ impl<'task> TaskRunner<'task> {
     ) -> miette::Result<Option<String>> {
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
-            self.skip(context)?;
+            self.skip()?;
 
             return Ok(None);
         }
@@ -108,7 +110,7 @@ impl<'task> TaskRunner<'task> {
             let hash = self.generate_hash(context, node).await?;
 
             // Exit early if this build has already been cached/hashed
-            if self.hydrate(context, &hash).await? {
+            if self.hydrate(&hash).await? {
                 return Ok(Some(hash));
             }
 
@@ -147,6 +149,11 @@ impl<'task> TaskRunner<'task> {
 
         match result {
             Ok(maybe_hash) => {
+                context.set_target_state(
+                    &self.task.target,
+                    self.target_state.take().unwrap_or(TargetState::Passthrough),
+                );
+
                 self.report_item.hash = maybe_hash.clone();
 
                 self.app.console.reporter.on_task_completed(
@@ -163,6 +170,11 @@ impl<'task> TaskRunner<'task> {
                 })
             }
             Err(error) => {
+                context.set_target_state(
+                    &self.task.target,
+                    self.target_state.take().unwrap_or(TargetState::Failed),
+                );
+
                 self.inject_failed_task_execution(Some(&error))?;
 
                 self.app.console.reporter.on_task_completed(
@@ -485,7 +497,7 @@ impl<'task> TaskRunner<'task> {
     ) -> miette::Result<()> {
         // If the task is a no-operation, we should exit early
         if self.task.is_no_op() {
-            self.skip_no_op(context)?;
+            self.skip_no_op()?;
 
             return Ok(());
         }
@@ -546,7 +558,7 @@ impl<'task> TaskRunner<'task> {
         self.operations.merge(result.attempts);
 
         // Update the action state based on the result
-        context.set_target_state(&self.task.target, result.run_state);
+        self.target_state = Some(result.run_state);
 
         // If the execution as a whole failed, return the error.
         // We do this here instead of in `execute` so that we can
@@ -572,8 +584,8 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    #[instrument(skip_all)]
-    pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
+    #[instrument(skip(self))]
+    pub fn skip(&mut self) -> miette::Result<()> {
         debug!(task_target = self.task.target.as_str(), "Skipping task");
 
         self.operations.push(Operation::new_finished(
@@ -581,13 +593,13 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Skipped,
         ));
 
-        context.set_target_state(&self.task.target, TargetState::Skipped);
+        self.target_state = Some(TargetState::Skipped);
 
         Ok(())
     }
 
-    #[instrument(skip(self, context))]
-    pub fn skip_no_op(&mut self, context: &ActionContext) -> miette::Result<()> {
+    #[instrument(skip(self))]
+    pub fn skip_no_op(&mut self) -> miette::Result<()> {
         debug!(
             task_target = self.task.target.as_str(),
             "Skipping task as its a no-operation"
@@ -598,10 +610,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Passed,
         ));
 
-        context.set_target_state(
-            &self.task.target,
-            TargetState::from_hash(self.report_item.hash.as_deref()),
-        );
+        self.target_state = Some(TargetState::from_hash(self.report_item.hash.as_deref()));
 
         Ok(())
     }
@@ -648,8 +657,8 @@ impl<'task> TaskRunner<'task> {
         Ok(archived)
     }
 
-    #[instrument(skip(self, context))]
-    pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
+    #[instrument(skip(self))]
+    pub async fn hydrate(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::output_hydration();
 
         // Not cached
@@ -745,9 +754,8 @@ impl<'task> TaskRunner<'task> {
 
         self.persist_state(&operation)?;
 
-        context.set_target_state(&self.task.target, TargetState::Passed(hash.to_owned()));
-
         self.operations.push(operation);
+        self.target_state = Some(TargetState::Passed(hash.to_owned()));
 
         Ok(true)
     }

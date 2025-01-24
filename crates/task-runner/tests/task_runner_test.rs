@@ -895,9 +895,8 @@ mod task_runner {
         async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
-            let context = ActionContext::default();
 
-            runner.skip(&context).unwrap();
+            runner.skip().unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -909,18 +908,10 @@ mod task_runner {
         async fn sets_skipped_state() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
-            let context = ActionContext::default();
 
-            runner.skip(&context).unwrap();
+            runner.skip().unwrap();
 
-            assert_eq!(
-                context
-                    .target_states
-                    .get(&runner.task.target)
-                    .unwrap()
-                    .get(),
-                &TargetState::Skipped
-            );
+            assert_eq!(runner.target_state.as_ref().unwrap(), &TargetState::Skipped);
         }
     }
 
@@ -931,9 +922,8 @@ mod task_runner {
         async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
-            let context = ActionContext::default();
 
-            runner.skip_no_op(&context).unwrap();
+            runner.skip_no_op().unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -945,16 +935,11 @@ mod task_runner {
         async fn sets_passthrough_state() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
-            let context = ActionContext::default();
 
-            runner.skip_no_op(&context).unwrap();
+            runner.skip_no_op().unwrap();
 
             assert_eq!(
-                context
-                    .target_states
-                    .get(&runner.task.target)
-                    .unwrap()
-                    .get(),
+                runner.target_state.as_ref().unwrap(),
                 &TargetState::Passthrough
             );
         }
@@ -962,17 +947,12 @@ mod task_runner {
         async fn sets_completed_state() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
-            let context = ActionContext::default();
 
             runner.report_item.hash = Some("hash123".into());
-            runner.skip_no_op(&context).unwrap();
+            runner.skip_no_op().unwrap();
 
             assert_eq!(
-                context
-                    .target_states
-                    .get(&runner.task.target)
-                    .unwrap()
-                    .get(),
+                runner.target_state.as_ref().unwrap(),
                 &TargetState::Passed("hash123".into())
             );
         }
@@ -1046,8 +1026,7 @@ mod task_runner {
 
                 let mut runner = container.create_runner();
 
-                let context = ActionContext::default();
-                let result = runner.hydrate(&context, "hash123").await.unwrap();
+                let result = runner.hydrate("hash123").await.unwrap();
 
                 assert!(!result);
 
@@ -1077,8 +1056,7 @@ mod task_runner {
 
                 setup_previous_state(&container, &mut runner);
 
-                let context = ActionContext::default();
-                let result = runner.hydrate(&context, "hash123").await.unwrap();
+                let result = runner.hydrate("hash123").await.unwrap();
 
                 assert!(result);
 
@@ -1095,15 +1073,10 @@ mod task_runner {
 
                 setup_previous_state(&container, &mut runner);
 
-                let context = ActionContext::default();
-                runner.hydrate(&context, "hash123").await.unwrap();
+                runner.hydrate("hash123").await.unwrap();
 
                 assert_eq!(
-                    context
-                        .target_states
-                        .get(&runner.task.target)
-                        .unwrap()
-                        .get(),
+                    runner.target_state.as_ref().unwrap(),
                     &TargetState::Passed("hash123".into())
                 );
             }
@@ -1127,8 +1100,7 @@ mod task_runner {
 
                 setup_local_state(&container, &mut runner);
 
-                let context = ActionContext::default();
-                let result = runner.hydrate(&context, "hash123").await.unwrap();
+                let result = runner.hydrate("hash123").await.unwrap();
 
                 assert!(result);
 
@@ -1145,15 +1117,10 @@ mod task_runner {
 
                 setup_local_state(&container, &mut runner);
 
-                let context = ActionContext::default();
-                runner.hydrate(&context, "hash123").await.unwrap();
+                runner.hydrate("hash123").await.unwrap();
 
                 assert_eq!(
-                    context
-                        .target_states
-                        .get(&runner.task.target)
-                        .unwrap()
-                        .get(),
+                    runner.target_state.as_ref().unwrap(),
                     &TargetState::Passed("hash123".into())
                 );
             }
@@ -1165,8 +1132,7 @@ mod task_runner {
 
                 setup_local_state(&container, &mut runner);
 
-                let context = ActionContext::default();
-                runner.hydrate(&context, "hash123").await.unwrap();
+                runner.hydrate("hash123").await.unwrap();
 
                 let output_file = container.sandbox.path().join("project/file.txt");
 
@@ -1181,8 +1147,7 @@ mod task_runner {
 
                 setup_local_state(&container, &mut runner);
 
-                let context = ActionContext::default();
-                let result = runner.hydrate(&context, "hash123").await.unwrap();
+                let result = runner.hydrate("hash123").await.unwrap();
 
                 assert!(result);
 

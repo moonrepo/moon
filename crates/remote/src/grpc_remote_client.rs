@@ -13,7 +13,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::RemoteConfig;
-use std::{env, path::Path};
+use std::{env, path::Path, str::FromStr};
 use tonic::{
     metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
     transport::{Channel, Endpoint},
@@ -47,8 +47,8 @@ impl GrpcRemoteClient {
         if let Some(auth) = &self.config.auth {
             for (key, value) in &auth.headers {
                 self.headers.insert(
-                    MetadataKey::from_bytes(key.as_bytes()).into_diagnostic()?,
-                    MetadataValue::try_from(value).into_diagnostic()?,
+                    MetadataKey::from_str(key).into_diagnostic()?,
+                    MetadataValue::from_str(value).into_diagnostic()?,
                 );
             }
 
@@ -62,8 +62,8 @@ impl GrpcRemoteClient {
                     );
                 } else {
                     self.headers.insert(
-                        "Authorization",
-                        MetadataValue::try_from(format!("Bearer {token}")).into_diagnostic()?,
+                        MetadataKey::from_str("Authorization").into_diagnostic()?,
+                        MetadataValue::from_str(&format!("Bearer {token}")).into_diagnostic()?,
                     );
                 }
             }

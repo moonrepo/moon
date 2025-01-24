@@ -10,6 +10,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, FindMissingBlobsRequest,
     GetActionResultRequest, GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
+use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::RemoteConfig;
 use std::{env, error::Error, path::Path};
@@ -21,12 +22,14 @@ use tonic::{
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
+    dbg!(&error);
     RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
 }
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
+    dbg!(&error);
     match error.source() {
         Some(src) => RemoteError::GrpcCallFailedViaSource {
             error: src.to_string(),
@@ -45,12 +48,12 @@ pub struct GrpcRemoteClient {
 }
 
 impl GrpcRemoteClient {
-    fn extract_headers(&mut self) {
+    fn extract_headers(&mut self) -> miette::Result<()> {
         if let Some(auth) = &self.config.auth {
             for (key, value) in &auth.headers {
                 self.headers.insert(
-                    MetadataKey::from_bytes(key.as_bytes()).unwrap(),
-                    MetadataValue::try_from(value).unwrap(),
+                    MetadataKey::from_bytes(key.as_bytes()).into_diagnostic()?,
+                    MetadataValue::try_from(value).into_diagnostic()?,
                 );
             }
 
@@ -65,11 +68,13 @@ impl GrpcRemoteClient {
                 } else {
                     self.headers.insert(
                         "Authorization",
-                        MetadataValue::try_from(format!("Bearer {token}")).unwrap(),
+                        MetadataValue::try_from(format!("Bearer {token}")).into_diagnostic()?,
                     );
                 }
             }
         }
+
+        Ok(())
     }
 
     fn inject_auth_headers(&self, mut req: Request<()>) -> Result<Request<()>, Status> {
@@ -158,7 +163,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         self.config = config.to_owned();
-        self.extract_headers();
+        self.extract_headers()?;
 
         // We can't inject auth headers into this initial connection,
         // so defer the connection until a client is used
@@ -364,13 +369,19 @@ impl RemoteClient for GrpcRemoteClient {
 
         for download in response.into_inner().responses {
             if let Some(status) = download.status {
-                if status.code != 0 {
+                let code = Code::from_i32(status.code);
+
+                if !matches!(code, Code::Ok | Code::NotFound) {
                     warn!(
                         hash = &digest.hash,
                         details = ?status.details,
-                        code = status.code,
+                        code = ?code,
                         "Failed to download blob: {}",
-                        status.message
+                        if status.message.is_empty() {
+                            code.to_string()
+                        } else {
+                            status.message
+                        }
                     );
                 }
             }
@@ -378,7 +389,10 @@ impl RemoteClient for GrpcRemoteClient {
             if let Some(digest) = download.digest {
                 blobs.push(Blob {
                     digest,
-                    bytes: decompress_blob(self.config.cache.compression, download.data)?,
+                    bytes: decompress_blob(
+                        get_compression_from_code(download.compressor),
+                        download.data,
+                    )?,
                 });
             }
 
@@ -461,11 +475,19 @@ impl RemoteClient for GrpcRemoteClient {
 
         for upload in response.into_inner().responses {
             if let Some(status) = upload.status {
-                if status.code != 0 {
+                let code = Code::from_i32(status.code);
+
+                if !matches!(code, Code::Ok) {
                     warn!(
+                        hash = &digest.hash,
                         details = ?status.details,
+                        code = ?code,
                         "Failed to upload blob: {}",
-                        status.message
+                        if status.message.is_empty() {
+                            code.to_string()
+                        } else {
+                            status.message
+                        }
                     );
                 }
             }

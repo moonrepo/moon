@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.31.3
 
 #### 🐞 Fixes
 

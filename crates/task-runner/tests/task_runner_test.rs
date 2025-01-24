@@ -726,11 +726,7 @@ mod task_runner {
             runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
-                context
-                    .target_states
-                    .get(&runner.task.target)
-                    .unwrap()
-                    .get(),
+                runner.target_state.as_ref().unwrap(),
                 &TargetState::Passed("hash123".into())
             );
         }
@@ -747,11 +743,7 @@ mod task_runner {
             runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
-                context
-                    .target_states
-                    .get(&runner.task.target)
-                    .unwrap()
-                    .get(),
+                runner.target_state.as_ref().unwrap(),
                 &TargetState::Passthrough
             );
         }
@@ -770,14 +762,7 @@ mod task_runner {
             // Swallow panic so we can check operations
             let _ = runner.execute(&context, &node).await;
 
-            assert_eq!(
-                context
-                    .target_states
-                    .get(&runner.task.target)
-                    .unwrap()
-                    .get(),
-                &TargetState::Failed
-            );
+            assert_eq!(runner.target_state.as_ref().unwrap(), &TargetState::Failed);
         }
 
         #[tokio::test]

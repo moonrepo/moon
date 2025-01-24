@@ -3,7 +3,7 @@
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
-use bazel_remote_apis::google::protobuf::{Timestamp, UInt32Value};
+use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use sha2::{Digest as Sha256Digest, Sha256};
@@ -76,6 +76,7 @@ pub fn compute_node_properties(metadata: &Metadata) -> NodeProperties {
 
     #[cfg(unix)]
     {
+        use bazel_remote_apis::google::protobuf::UInt32Value;
         use std::os::unix::fs::PermissionsExt;
 
         props.unix_mode = Some(UInt32Value {

@@ -161,8 +161,10 @@ impl RemoteService {
                     Some(cap.max_batch_total_size_bytes)
                 }
             })
-            // grpc limit: 4mb - buffer
-            .unwrap_or(4194304 - (1024 * 10))
+            // grpc limit: 4mb
+            .unwrap_or(4194304)
+            // Minus a small buffer
+            - 1024
     }
 
     #[instrument(skip(self, state))]

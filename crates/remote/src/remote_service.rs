@@ -61,11 +61,11 @@ impl RemoteService {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
         };
 
-        client.connect_to_host(config, workspace_root).await?;
+        let enabled = client.connect_to_host(config, workspace_root).await?;
 
         let mut instance = Self {
             capabilities: client.load_capabilities().await?,
-            cache_enabled: false,
+            cache_enabled: enabled,
             client: Arc::new(client),
             config: config.to_owned(),
             upload_requests: Arc::new(RwLock::new(vec![])),
@@ -81,7 +81,7 @@ impl RemoteService {
 
     pub fn validate_capabilities(&mut self) -> miette::Result<()> {
         let host = &self.config.host;
-        let mut enabled = true;
+        let mut enabled = self.cache_enabled;
 
         dbg!(&self.capabilities);
 

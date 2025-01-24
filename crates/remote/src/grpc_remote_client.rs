@@ -43,7 +43,9 @@ pub struct GrpcRemoteClient {
 }
 
 impl GrpcRemoteClient {
-    fn extract_headers(&mut self) -> miette::Result<()> {
+    fn extract_headers(&mut self) -> miette::Result<bool> {
+        let mut enabled = true;
+
         if let Some(auth) = &self.config.auth {
             for (key, value) in &auth.headers {
                 self.headers.insert(
@@ -56,6 +58,8 @@ impl GrpcRemoteClient {
                 let token = env::var(token_name).unwrap_or_default();
 
                 if token.is_empty() {
+                    enabled = false;
+
                     warn!(
                         "Auth token {} does not exist, unable to authorize for remote service",
                         color::property(token_name)
@@ -69,7 +73,7 @@ impl GrpcRemoteClient {
             }
         }
 
-        Ok(())
+        Ok(enabled)
     }
 
     fn inject_auth_headers(&self, mut req: Request<()>) -> Result<Request<()>, Status> {
@@ -100,7 +104,7 @@ impl RemoteClient for GrpcRemoteClient {
         &mut self,
         config: &RemoteConfig,
         workspace_root: &Path,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<bool> {
         let host = &config.host;
 
         trace!(
@@ -158,7 +162,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         self.config = config.to_owned();
-        self.extract_headers()?;
+        let enabled = self.extract_headers()?;
 
         // We can't inject auth headers into this initial connection,
         // so defer the connection until a client is used
@@ -168,7 +172,7 @@ impl RemoteClient for GrpcRemoteClient {
             self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);
         }
 
-        Ok(())
+        Ok(enabled)
     }
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L452
@@ -229,7 +233,19 @@ impl RemoteClient for GrpcRemoteClient {
                     trace!(hash = &digest.hash, "Cache miss on action result");
 
                     Ok(None)
+                }
+                // If we hit an out of range error, the payload is larger than the grpc
+                // limit, and will fail the entire pipeline. Instead of letting that
+                // happen, let's just do a cache miss instead...
+                else if matches!(status.code(), Code::OutOfRange) {
+                    trace!(
+                        hash = &digest.hash,
+                        "Cache miss because the expected payload is too large"
+                    );
+
+                    Ok(None)
                 } else {
+                    dbg!("get_action_result", digest);
                     Err(map_status_error(status).into())
                 }
             }
@@ -291,6 +307,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(None)
                 } else {
+                    dbg!("update_action_result", digest);
                     Err(map_status_error(status).into())
                 }
             }
@@ -354,6 +371,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(vec![])
                 } else {
+                    dbg!("batch_read_blobs", digest);
                     Err(map_status_error(status).into())
                 };
             }
@@ -460,6 +478,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(vec![])
                 } else {
+                    dbg!("batch_update_blobs", digest);
                     Err(map_status_error(status).into())
                 };
             }

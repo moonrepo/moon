@@ -11,7 +11,7 @@ pub trait RemoteClient: Send + Sync {
         &mut self,
         config: &RemoteConfig,
         workspace_root: &Path,
-    ) -> miette::Result<()>;
+    ) -> miette::Result<bool>;
 
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities>;
 

@@ -240,6 +240,18 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+/** The API format of the remote service. */
+export type RemoteApi = 'grpc';
+
+/** Configures basic HTTP authentication. */
+export interface RemoteAuthConfig {
+	/** HTTP headers to inject into every request. */
+	headers: Record<string, string>;
+	/** The name of an environment variable to use as a bearer token. */
+	token: string | null;
+}
+
+/** Supported blob compression levels. */
 export type RemoteCompression = 'none' | 'zstd';
 
 /** Configures the action cache (AC) and content addressable cache (CAS). */
@@ -303,6 +315,15 @@ export interface RemoteTlsConfig {
 
 /** Configures the remote service, powered by the Bazel Remote Execution API. */
 export interface RemoteConfig {
+	/**
+	 * The API format of the remote service.
+	 *
+	 * @default 'grpc'
+	 * @type {'grpc'}
+	 */
+	api: RemoteApi;
+	/** Connect to the host using basic HTTP authentication. */
+	auth: RemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content addressable cache (CAS). */
 	cache: RemoteCacheConfig;
 	/**
@@ -645,6 +666,14 @@ export interface PartialRunnerConfig {
 	logRunningCommand?: boolean | null;
 }
 
+/** Configures basic HTTP authentication. */
+export interface PartialRemoteAuthConfig {
+	/** HTTP headers to inject into every request. */
+	headers?: Record<string, string> | null;
+	/** The name of an environment variable to use as a bearer token. */
+	token?: string | null;
+}
+
 /** Configures the action cache (AC) and content addressable cache (CAS). */
 export interface PartialRemoteCacheConfig {
 	/**
@@ -705,6 +734,14 @@ export interface PartialRemoteTlsConfig {
 
 /** Configures the remote service, powered by the Bazel Remote Execution API. */
 export interface PartialRemoteConfig {
+	/**
+	 * The API format of the remote service.
+	 *
+	 * @default 'grpc'
+	 */
+	api?: RemoteApi | null;
+	/** Connect to the host using basic HTTP authentication. */
+	auth?: PartialRemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content addressable cache (CAS). */
 	cache?: PartialRemoteCacheConfig | null;
 	/**

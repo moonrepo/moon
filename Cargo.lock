@@ -5445,9 +5445,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.45.2"
+version = "0.45.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae536f2d32f333484562152028ab437a89d13bbf7a4a5e5b5599800de9899525"
+checksum = "f5501967c553a6f7fac13228e9bf59335409d30f19a7e389c8c7fed8e85f104e"
 dependencies = [
  "convert_case",
  "dotenvy",

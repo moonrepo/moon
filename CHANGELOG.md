@@ -5,8 +5,8 @@
 #### 🐞 Fixes
 
 - This patch upgrades proto to the latest version to fix some bin locating issues that you may have
-  if you have proto v0.45 installed on your system, which conflicts with the proto v0.44 that moon
-  was installing.
+  encountered if you have proto v0.45 installed on your system, which conflicts with the proto v0.44
+  that moon installs.
 
 #### ⚙️ Internal
 

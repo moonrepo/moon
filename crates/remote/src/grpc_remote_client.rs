@@ -22,12 +22,14 @@ use tonic::{
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
+    dbg!(&error);
     RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
 }
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
+    dbg!(&error);
     RemoteError::GrpcCallFailed {
         error: Box::new(error),
     }

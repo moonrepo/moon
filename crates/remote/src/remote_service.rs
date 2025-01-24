@@ -83,6 +83,8 @@ impl RemoteService {
         let host = &self.config.host;
         let mut enabled = true;
 
+        dbg!(&self.capabilities);
+
         if let Some(cap) = &self.capabilities.cache_capabilities {
             let sha256_fn = digest_function::Value::Sha256 as i32;
 
@@ -362,6 +364,7 @@ async fn batch_upload_blobs(
                 blobs = group.items.len(),
                 size = group.size,
                 max_size,
+                too_large = group.size > max_size,
                 "Batching blobs upload (group {} of {})",
                 group_index + 1,
                 group_total
@@ -426,6 +429,7 @@ async fn batch_download_blobs(
                 blobs = group.items.len(),
                 size = group.size,
                 max_size,
+                too_large = group.size > max_size,
                 "Batching blobs download (group {} of {})",
                 group_index + 1,
                 group_total
@@ -484,7 +488,7 @@ fn partition_into_groups<T>(
 
         // Try and find a partition that this item can go into
         for (index, group) in &groups {
-            if group.size + item_size < max_size {
+            if group.size + item_size <= max_size {
                 index_to_use = *index;
                 break;
             }
@@ -495,12 +499,12 @@ fn partition_into_groups<T>(
             index_to_use = groups.len() as i32;
         }
 
-        let entry = groups.entry(index_to_use).or_insert_with(|| Partition {
+        let group = groups.entry(index_to_use).or_insert_with(|| Partition {
             items: vec![],
             size: 0,
         });
-        entry.size += item_size;
-        entry.items.push(item);
+        group.size += item_size;
+        group.items.push(item);
     }
 
     groups

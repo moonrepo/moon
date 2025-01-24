@@ -6,13 +6,13 @@ tasks:
   lint:
     command:
     - eslint
-    - .
+    - '.'
     toolchain: node
   lint-fix:
     command:
     - moon
     - run
     - common:lint
-    - --
-    - --fix
+    - '--'
+    - '--fix'
     toolchain: node

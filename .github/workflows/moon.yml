@@ -37,6 +37,7 @@ jobs:
           cache-base: '^(master|develop-)'
       - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:
+          DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
           MOON_NODE_VERSION: ${{ matrix.node-version }}
           MOONBASE_SECRET_KEY: ${{ secrets.MOONBASE_SECRET_KEY }}
           MOONBASE_ACCESS_KEY: ${{ secrets.MOONBASE_ACCESS_KEY }}

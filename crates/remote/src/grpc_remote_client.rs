@@ -30,13 +30,8 @@ fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
     dbg!(&error);
-    match error.source() {
-        Some(src) => RemoteError::GrpcCallFailedViaSource {
-            error: src.to_string(),
-        },
-        None => RemoteError::GrpcCallFailed {
-            error: Box::new(error),
-        },
+    RemoteError::GrpcCallFailed {
+        error: Box::new(error),
     }
 }
 

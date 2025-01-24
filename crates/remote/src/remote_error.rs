@@ -5,15 +5,8 @@ use thiserror::Error;
 #[derive(Error, Debug, Diagnostic)]
 pub enum RemoteError {
     #[diagnostic(code(remote::grpc::call_failed))]
-    #[error("Failed to make gRPC call.")]
-    GrpcCallFailed {
-        #[source]
-        error: Box<tonic::Status>,
-    },
-
-    #[diagnostic(code(remote::grpc::call_failed))]
-    #[error("Failed to make gRPC call: {error}")]
-    GrpcCallFailedViaSource { error: String },
+    #[error("Failed to make gRPC call.\n{}: {}", .error.code(), .error.message())]
+    GrpcCallFailed { error: Box<tonic::Status> },
 
     #[diagnostic(code(remote::grpc::connect_failed))]
     #[error("Failed to connect to gRPC host.")]

@@ -22,14 +22,14 @@ use tonic::{
 use tracing::{trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
-    dbg!(&error);
+    // dbg!(&error);
     RemoteError::GrpcConnectFailed {
         error: Box::new(error),
     }
 }
 
 fn map_status_error(error: tonic::Status) -> RemoteError {
-    dbg!(&error);
+    // dbg!(&error);
     RemoteError::GrpcCallFailed {
         error: Box::new(error),
     }
@@ -245,7 +245,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(None)
                 } else {
-                    dbg!("get_action_result", digest);
+                    // dbg!("get_action_result", digest);
                     Err(map_status_error(status).into())
                 }
             }
@@ -307,7 +307,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(None)
                 } else {
-                    dbg!("update_action_result", digest);
+                    // dbg!("update_action_result", digest);
                     Err(map_status_error(status).into())
                 }
             }
@@ -371,7 +371,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(vec![])
                 } else {
-                    dbg!("batch_read_blobs", digest);
+                    // dbg!("batch_read_blobs", digest);
                     Err(map_status_error(status).into())
                 };
             }
@@ -478,7 +478,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(vec![])
                 } else {
-                    dbg!("batch_update_blobs", digest);
+                    // dbg!("batch_update_blobs", digest);
                     Err(map_status_error(status).into())
                 };
             }

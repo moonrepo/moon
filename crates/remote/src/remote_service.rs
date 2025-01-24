@@ -37,7 +37,7 @@ impl RemoteService {
     }
 
     pub fn is_enabled() -> bool {
-        INSTANCE.get().is_some()
+        INSTANCE.get().is_some_and(|remote| remote.cache_enabled)
     }
 
     #[instrument]
@@ -61,29 +61,31 @@ impl RemoteService {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
         };
 
-        let enabled = client.connect_to_host(config, workspace_root).await?;
-
         let mut instance = Self {
-            capabilities: client.load_capabilities().await?,
-            cache_enabled: enabled,
+            cache_enabled: client.connect_to_host(config, workspace_root).await?,
+            capabilities: ServerCapabilities::default(),
             client: Arc::new(client),
             config: config.to_owned(),
             upload_requests: Arc::new(RwLock::new(vec![])),
             workspace_root: workspace_root.to_owned(),
         };
 
-        instance.validate_capabilities()?;
+        instance.validate_capabilities().await?;
 
         let _ = INSTANCE.set(Arc::new(instance));
 
         Ok(())
     }
 
-    pub fn validate_capabilities(&mut self) -> miette::Result<()> {
+    pub async fn validate_capabilities(&mut self) -> miette::Result<()> {
         let host = &self.config.host;
         let mut enabled = self.cache_enabled;
 
-        dbg!(&self.capabilities);
+        if !enabled {
+            return Ok(());
+        }
+
+        self.capabilities = self.client.load_capabilities().await?;
 
         if let Some(cap) = &self.capabilities.cache_capabilities {
             let sha256_fn = digest_function::Value::Sha256 as i32;
@@ -153,7 +155,8 @@ impl RemoteService {
     }
 
     pub fn get_max_batch_size(&self) -> i64 {
-        self.capabilities
+        let max = self
+            .capabilities
             .cache_capabilities
             .as_ref()
             .and_then(|cap| {
@@ -164,9 +167,14 @@ impl RemoteService {
                 }
             })
             // grpc limit: 4mb
-            .unwrap_or(4194304)
-            // Minus a small buffer
-            - 1024
+            .unwrap_or(4194304);
+
+        // Subtract a chunk from the max size, because when down/uploading blobs,
+        // we need to account for the non-blob data in the request/response, like the
+        // compression level, digest strings, etc. All of these "add up" and can
+        // bump the total body size larger than the actual limit. Is there a better
+        // way to handle this? Probably...
+        max - (1024 * 10)
     }
 
     #[instrument(skip(self, state))]
@@ -364,7 +372,6 @@ async fn batch_upload_blobs(
                 blobs = group.items.len(),
                 size = group.size,
                 max_size,
-                too_large = group.size > max_size,
                 "Batching blobs upload (group {} of {})",
                 group_index + 1,
                 group_total
@@ -429,7 +436,6 @@ async fn batch_download_blobs(
                 blobs = group.items.len(),
                 size = group.size,
                 max_size,
-                too_large = group.size > max_size,
                 "Batching blobs download (group {} of {})",
                 group_index + 1,
                 group_total

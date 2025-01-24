@@ -13,7 +13,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::RemoteConfig;
-use std::{env, error::Error, path::Path};
+use std::{env, path::Path};
 use tonic::{
     metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
     transport::{Channel, Endpoint},

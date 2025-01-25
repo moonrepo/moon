@@ -489,6 +489,54 @@ notifier:
 Configures a remote service, primarily for cloud-based caching of artifacts. Learn more about this
 in the [remote caching](../guides/remote-cache) guide.
 
+### `api`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteConfig#api" />
+
+The API format of the remote server. This format dictates which type of client moon uses for
+communicating with. Defaults to `grpc`.
+
+```yaml title=".moon/workspace.yml" {2}
+unstable_remote:
+  api: 'grpc'
+```
+
+### `auth`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteConfig#auth" />
+
+Configures authorization and authentication level features of our remote clients.
+
+#### `headers`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteAuthConfig#headers" />
+
+A mapping of HTTP headers to include in all requests to the remote server. These headers are applied
+to all [API formats and protocols](#api), not just HTTP.
+
+```yaml title=".moon/workspace.yml" {2-4}
+unstable_remote:
+  auth:
+    headers:
+      'X-Custom-Header': 'value'
+```
+
+#### `token`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteAuthConfig#token" />
+
+The name of an environment variable in which to extract a token for
+[Bearer HTTP authorization](https://swagger.io/docs/specification/v3_0/authentication/bearer-authentication/).
+An `Authorization` HTTP header will be included in all requests to the remote server.
+
+If the token does not exist, or is not enabled, remote caching will be disabled.
+
+```yaml title=".moon/workspace.yml" {2-4}
+unstable_remote:
+  auth:
+    token: 'ENV_VAR_NAME'
+```
+
 ### `cache`
 
 <HeadingApiLink to="/api/types/interface/RemoteConfig#cache" />

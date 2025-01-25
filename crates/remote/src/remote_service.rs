@@ -2,15 +2,14 @@ use crate::compression::*;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 // use crate::http_remote_client::HttpRemoteClient;
+use crate::action_state::ActionState;
 use crate::remote_client::RemoteClient;
-use crate::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    digest_function, ActionResult, Digest, ExecutedActionMetadata, ServerCapabilities,
+    digest_function, ActionResult, Digest, ServerCapabilities,
 };
 use miette::IntoDiagnostic;
-use moon_action::Operation;
 use moon_common::{color, is_ci};
-use moon_config::RemoteConfig;
+use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -26,7 +25,6 @@ pub struct RemoteService {
     pub config: RemoteConfig,
     pub workspace_root: PathBuf,
 
-    action_results: scc::HashMap<String, ActionResult>,
     cache_enabled: bool,
     capabilities: ServerCapabilities,
     client: Arc<Box<dyn RemoteClient>>,
@@ -36,6 +34,10 @@ pub struct RemoteService {
 impl RemoteService {
     pub fn session() -> Option<Arc<RemoteService>> {
         INSTANCE.get().cloned()
+    }
+
+    pub fn is_enabled() -> bool {
+        INSTANCE.get().is_some_and(|remote| remote.cache_enabled)
     }
 
     #[instrument]
@@ -55,38 +57,35 @@ impl RemoteService {
         );
         info!("Please report any issues to GitHub or Discord");
 
-        let mut client: Box<dyn RemoteClient> =
-            if config.host.starts_with("http://") || config.host.starts_with("https://") {
-                // Box::new(HttpRemoteClient::default())
-                return Err(RemoteError::NoHttpClient.into());
-            } else if config.host.starts_with("grpc://") || config.host.starts_with("grpcs://") {
-                Box::new(GrpcRemoteClient::default())
-            } else {
-                return Err(RemoteError::UnknownHostProtocol.into());
-            };
-
-        client.connect_to_host(config, workspace_root).await?;
+        let mut client = match config.api {
+            RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
+        };
 
         let mut instance = Self {
-            action_results: scc::HashMap::default(),
-            capabilities: client.load_capabilities().await?,
-            cache_enabled: false,
+            cache_enabled: client.connect_to_host(config, workspace_root).await?,
+            capabilities: ServerCapabilities::default(),
             client: Arc::new(client),
             config: config.to_owned(),
             upload_requests: Arc::new(RwLock::new(vec![])),
             workspace_root: workspace_root.to_owned(),
         };
 
-        instance.validate_capabilities()?;
+        instance.validate_capabilities().await?;
 
         let _ = INSTANCE.set(Arc::new(instance));
 
         Ok(())
     }
 
-    pub fn validate_capabilities(&mut self) -> miette::Result<()> {
+    pub async fn validate_capabilities(&mut self) -> miette::Result<()> {
         let host = &self.config.host;
-        let mut enabled = true;
+        let mut enabled = self.cache_enabled;
+
+        if !enabled {
+            return Ok(());
+        }
+
+        self.capabilities = self.client.load_capabilities().await?;
 
         if let Some(cap) = &self.capabilities.cache_capabilities {
             let sha256_fn = digest_function::Value::Sha256 as i32;
@@ -100,27 +99,32 @@ impl RemoteService {
                 );
             }
 
-            let compressor = get_compressor(self.config.cache.compression);
+            let compression = self.config.cache.compression;
+            let compressor = get_compressor(compression);
 
-            if !cap.supported_compressors.contains(&compressor) {
+            if compression != RemoteCompression::None
+                && !cap.supported_compressors.contains(&compressor)
+            {
                 enabled = false;
 
                 warn!(
                     host,
                     "Remote service does not support {} compression, but it has been configured and enabled through the {} setting",
-                    compressor,
-                    color::property("remote.cache.compression"),
+                    compression,
+                    color::property("unstable_remote.cache.compression"),
                 );
             }
 
-            if !cap.supported_batch_update_compressors.contains(&compressor) {
+            if compression != RemoteCompression::None
+                && !cap.supported_batch_update_compressors.contains(&compressor)
+            {
                 enabled = false;
 
                 warn!(
                     host,
                     "Remote service does not support {} compression for batching, but it has been configured and enabled through the {} setting",
-                    compressor,
-                    color::property("remote.cache.compression"),
+                    compression,
+                    color::property("unstable_remote.cache.compression"),
                 );
             }
 
@@ -151,7 +155,8 @@ impl RemoteService {
     }
 
     pub fn get_max_batch_size(&self) -> i64 {
-        self.capabilities
+        let max = self
+            .capabilities
             .cache_capabilities
             .as_ref()
             .and_then(|cap| {
@@ -161,104 +166,77 @@ impl RemoteService {
                     Some(cap.max_batch_total_size_bytes)
                 }
             })
-            // grpc limit: 4mb - buffer
-            .unwrap_or(4194304 - (1024 * 10))
+            // grpc limit: 4mb
+            .unwrap_or(4194304);
+
+        // Subtract a chunk from the max size, because when down/uploading blobs,
+        // we need to account for the non-blob data in the request/response, like the
+        // compression level, digest strings, etc. All of these "add up" and can
+        // bump the total body size larger than the actual limit. Is there a better
+        // way to handle this? Probably...
+        max - (1024 * 10)
     }
 
-    #[instrument(skip(self))]
-    pub async fn is_operation_cached(&self, digest: &Digest) -> miette::Result<bool> {
-        if !self.cache_enabled {
-            return Ok(false);
-        }
-
-        if self.action_results.contains_async(&digest.hash).await {
-            return Ok(true);
-        }
-
-        if let Some(result) = self.client.get_action_result(digest).await? {
-            let _ = self
-                .action_results
-                .insert_async(digest.hash.clone(), result)
-                .await;
-
-            return Ok(true);
-        }
-
-        Ok(false)
-    }
-
-    #[instrument(skip(self, operation))]
-    pub async fn save_operation(
+    #[instrument(skip(self, state))]
+    pub async fn is_action_cached(
         &self,
-        digest: &Digest,
-        operation: &Operation,
-    ) -> miette::Result<()> {
-        if !self.cache_enabled || operation.has_failed() {
+        state: &ActionState<'_>,
+    ) -> miette::Result<Option<ActionResult>> {
+        if !self.cache_enabled {
+            return Ok(None);
+        }
+
+        self.client.get_action_result(&state.digest).await
+    }
+
+    #[instrument(skip(self, state))]
+    pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+        if !self.cache_enabled {
             return Ok(());
         }
 
-        let operation_label = operation.label().to_owned();
+        let missing = self
+            .client
+            .find_missing_blobs(vec![state.digest.clone()])
+            .await?;
 
-        debug!(
-            hash = &digest.hash,
-            "Caching {} operation",
-            color::muted_light(&operation_label)
-        );
+        if missing.contains(&state.digest) {
+            // Create on demand when needed, instead of always
+            state.create_action_from_task();
 
-        let result = self.create_action_result_from_operation(operation, None)?;
-        let digest = digest.to_owned();
-        let client = Arc::clone(&self.client);
-
-        self.upload_requests
-            .write()
-            .await
-            .push(tokio::spawn(async move {
-                if let Err(error) = client.update_action_result(&digest, result).await {
-                    warn!(
-                        hash = &digest.hash,
-                        "Failed to cache {} operation: {}",
-                        color::muted_light(operation_label),
-                        color::muted_light(error.to_string()),
-                    );
-                }
-            }));
+            self.client
+                .batch_update_blobs(
+                    &state.digest,
+                    vec![Blob {
+                        bytes: state.get_command_as_bytes()?,
+                        digest: state.digest.clone(),
+                    }],
+                )
+                .await?;
+        }
 
         Ok(())
     }
 
-    #[instrument(skip(self, operation, outputs))]
-    pub async fn save_operation_with_outputs(
-        &self,
-        digest: &Digest,
-        operation: &Operation,
-        mut outputs: OutputDigests,
-    ) -> miette::Result<()> {
-        if !self.cache_enabled || operation.has_failed() {
+    #[instrument(skip(self, state))]
+    pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+        if !self.cache_enabled {
             return Ok(());
         }
 
-        let operation_label = operation.label().to_owned();
+        let Some((mut result, blobs)) = state.prepare_for_upload() else {
+            return Ok(());
+        };
 
-        debug!(
-            hash = &digest.hash,
-            "Caching {} operation with outputs",
-            color::muted_light(&operation_label)
-        );
-
-        let mut result = self.create_action_result_from_operation(operation, Some(&mut outputs))?;
-        result.output_files = outputs.files;
-        result.output_symlinks = outputs.symlinks;
-        result.output_directories = outputs.dirs;
-
-        let digest = digest.to_owned();
         let client = Arc::clone(&self.client);
+        let digest = state.digest.clone();
         let max_size = self.get_max_batch_size();
 
         self.upload_requests
             .write()
             .await
             .push(tokio::spawn(async move {
-                if !outputs.blobs.is_empty() {
+                if !blobs.is_empty() {
                     if let Some(metadata) = &mut result.execution_metadata {
                         metadata.output_upload_start_timestamp =
                             create_timestamp(SystemTime::now());
@@ -267,7 +245,7 @@ impl RemoteService {
                     let upload_result = batch_upload_blobs(
                         client.clone(),
                         digest.clone(),
-                        outputs.blobs,
+                        blobs,
                         max_size as usize,
                     )
                     .await;
@@ -285,8 +263,7 @@ impl RemoteService {
                 if let Err(error) = client.update_action_result(&digest, result).await {
                     warn!(
                         hash = &digest.hash,
-                        "Failed to cache {} operation: {}",
-                        color::muted_light(operation_label),
+                        "Failed to cache action result: {}",
                         color::muted_light(error.to_string()),
                     );
                 }
@@ -295,65 +272,65 @@ impl RemoteService {
         Ok(())
     }
 
-    #[instrument(skip(self, operation))]
-    pub async fn restore_operation(
-        &self,
-        digest: &Digest,
-        operation: &mut Operation,
-    ) -> miette::Result<()> {
+    #[instrument(skip(self, state))]
+    pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
         if !self.cache_enabled {
             return Ok(());
         }
 
-        let Some(result) = self.action_results.get_async(&digest.hash).await else {
+        let Some(result) = &mut state.action_result else {
             return Ok(());
         };
 
-        let operation_label = operation.label().to_owned();
-        let has_outputs = !result.output_files.is_empty()
-            || !result.output_symlinks.is_empty()
-            || !result.output_directories.is_empty();
-
-        if has_outputs {
-            debug!(
-                hash = &digest.hash,
-                "Restoring {} operation with outputs",
-                color::muted_light(&operation_label)
-            );
-        } else {
-            debug!(
-                hash = &digest.hash,
-                "Restoring {} operation",
-                color::muted_light(&operation_label)
-            );
-        }
-
-        if let Some(output) = operation.get_output_mut() {
-            output.exit_code = Some(result.exit_code);
-
-            if !result.stderr_raw.is_empty() {
-                output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
-            }
-
-            if !result.stdout_raw.is_empty() {
-                output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
-            }
-        }
-
         batch_download_blobs(
             self.client.clone(),
-            digest,
-            &result,
+            &state.digest,
+            result,
             &self.workspace_root,
             self.get_max_batch_size() as usize,
         )
         .await?;
 
-        debug!(
-            hash = &digest.hash,
-            "Restored {} operation",
-            color::muted_light(&operation_label)
-        );
+        // The stderr/stdout blobs may not have been inlined,
+        // so we need to fetch them manually
+        let mut stdio_digests = vec![];
+
+        if let Some(stderr_digest) = &result.stderr_digest {
+            if result.stderr_raw.is_empty() && stderr_digest.size_bytes > 0 {
+                stdio_digests.push(stderr_digest.to_owned());
+            }
+        }
+
+        if let Some(stdout_digest) = &result.stdout_digest {
+            if result.stdout_raw.is_empty() && stdout_digest.size_bytes > 0 {
+                stdio_digests.push(stdout_digest.to_owned());
+            }
+        }
+
+        if !stdio_digests.is_empty() {
+            for blob in self
+                .client
+                .batch_read_blobs(&state.digest, stdio_digests)
+                .await?
+            {
+                if result
+                    .stderr_digest
+                    .as_ref()
+                    .is_some_and(|dig| dig == &blob.digest)
+                {
+                    result.stderr_raw = blob.bytes;
+                    continue;
+                }
+
+                if result
+                    .stdout_digest
+                    .as_ref()
+                    .is_some_and(|dig| dig == &blob.digest)
+                {
+                    result.stdout_raw = blob.bytes;
+                }
+            }
+        }
 
         Ok(())
     }
@@ -367,46 +344,6 @@ impl RemoteService {
             // the tasks above by logging to the console
             let _ = future.await;
         }
-    }
-
-    fn create_action_result_from_operation(
-        &self,
-        operation: &Operation,
-        outputs: Option<&mut OutputDigests>,
-    ) -> miette::Result<ActionResult> {
-        let mut result = ActionResult {
-            execution_metadata: Some(ExecutedActionMetadata {
-                worker: "moon".into(),
-                execution_start_timestamp: create_timestamp_from_naive(operation.started_at),
-                execution_completed_timestamp: operation
-                    .finished_at
-                    .and_then(create_timestamp_from_naive),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-
-        if let Some(exec) = operation.get_output() {
-            result.exit_code = exec.exit_code.unwrap_or_default();
-
-            if let Some(outputs) = outputs {
-                if let Some(stderr) = &exec.stderr {
-                    let blob = Blob::new(stderr.as_bytes().to_owned());
-
-                    result.stderr_digest = Some(blob.digest.clone());
-                    outputs.blobs.push(blob);
-                }
-
-                if let Some(stdout) = &exec.stdout {
-                    let blob = Blob::new(stdout.as_bytes().to_owned());
-
-                    result.stdout_digest = Some(blob.digest.clone());
-                    outputs.blobs.push(blob);
-                }
-            }
-        }
-
-        Ok(result)
     }
 }
 
@@ -557,7 +494,7 @@ fn partition_into_groups<T>(
 
         // Try and find a partition that this item can go into
         for (index, group) in &groups {
-            if group.size + item_size < max_size {
+            if group.size + item_size <= max_size {
                 index_to_use = *index;
                 break;
             }
@@ -568,12 +505,12 @@ fn partition_into_groups<T>(
             index_to_use = groups.len() as i32;
         }
 
-        let entry = groups.entry(index_to_use).or_insert_with(|| Partition {
+        let group = groups.entry(index_to_use).or_insert_with(|| Partition {
             items: vec![],
             size: 0,
         });
-        entry.size += item_size;
-        entry.items.push(item);
+        group.size += item_size;
+        group.items.push(item);
     }
 
     groups

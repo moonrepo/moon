@@ -97,6 +97,31 @@ unstable_remote:
     domain: 'your-host.com'
 ```
 
+## Cloud-hosted: Depot<VersionLabel version="1.32.0" />
+
+If you'd prefer not to host your own solution, you could use
+[Depot Cache](https://depot.dev/products/cache), a cloud-based caching solution. To make use of
+Depot, follow these steps:
+
+- Create an account on [depot.dev](https://depot.dev)
+- Create an organization
+- Go to organization settings -> API tokens
+- Create a new API token
+- Add the token as a `DEPOT_TOKEN` environment variable to your moon pipelines
+
+Once these steps have been completed, you can enable remote caching in moon with the following
+configuration. If your Depot account has more than 1 organization, you'll need to set the
+`X-Depot-Org` header.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  host: 'grpcs://cache.depot.dev'
+  auth:
+    token: 'DEPOT_TOKEN'
+    headers:
+      'X-Depot-Org': '<your-org-id>'
+```
+
 ## Cloud-hosted: moonbase<VersionLabel version="0.23.3" />
 
 This solution utilizes our [moonbase](/moonbase) service, which is a SaaS cloud offering hosted and

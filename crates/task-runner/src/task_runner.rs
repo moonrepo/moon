@@ -13,7 +13,7 @@ use moon_console::TaskReportItem;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_remote::{Digest, RemoteService};
+use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
 use moon_time::{is_stale, now_millis};
@@ -39,10 +39,11 @@ pub struct TaskRunner<'task> {
     hydrater: OutputHydrater<'task>,
 
     // Public for testing
-    pub action_digest: Digest,
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
+    pub remote_state: Option<ActionState<'task>>,
     pub report_item: TaskReportItem,
+    pub target_state: Option<TargetState>,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -68,17 +69,15 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             cache,
             archiver: OutputArchiver { app, project, task },
-            action_digest: Digest {
-                hash: String::new(),
-                size_bytes: 0,
-            },
             hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,
+            remote_state: None,
             report_item: TaskReportItem {
                 output_style: task.options.output_style,
                 ..Default::default()
             },
+            target_state: None,
             task,
             app,
             operations: OperationList::default(),
@@ -96,7 +95,7 @@ impl<'task> TaskRunner<'task> {
     ) -> miette::Result<Option<String>> {
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
-            self.skip(context)?;
+            self.skip()?;
 
             return Ok(None);
         }
@@ -110,10 +109,8 @@ impl<'task> TaskRunner<'task> {
 
             let hash = self.generate_hash(context, node).await?;
 
-            self.report_item.hash = Some(hash.clone());
-
             // Exit early if this build has already been cached/hashed
-            if self.hydrate(context, &hash).await? {
+            if self.hydrate(&hash).await? {
                 return Ok(Some(hash));
             }
 
@@ -152,6 +149,11 @@ impl<'task> TaskRunner<'task> {
 
         match result {
             Ok(maybe_hash) => {
+                context.set_target_state(
+                    &self.task.target,
+                    self.target_state.take().unwrap_or(TargetState::Passthrough),
+                );
+
                 self.report_item.hash = maybe_hash.clone();
 
                 self.app.console.reporter.on_task_completed(
@@ -168,6 +170,11 @@ impl<'task> TaskRunner<'task> {
                 })
             }
             Err(error) => {
+                context.set_target_state(
+                    &self.task.target,
+                    self.target_state.take().unwrap_or(TargetState::Failed),
+                );
+
                 self.inject_failed_task_execution(Some(&error))?;
 
                 self.app.console.reporter.on_task_completed(
@@ -308,12 +315,14 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in the remote service
-        if let Some(remote) = RemoteService::session() {
-            if remote.is_operation_cached(&self.action_digest).await? {
+        if let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session()) {
+            if let Some(result) = remote.is_action_cached(state).await? {
                 debug!(
                     task_target = self.task.target.as_str(),
                     hash, "Cache hit in remote service, will attempt to download output blobs"
                 );
+
+                state.set_action_result(result);
 
                 return Ok(Some(HydrateFrom::RemoteCache));
             }
@@ -436,7 +445,7 @@ impl<'task> TaskRunner<'task> {
 
         hasher.hash_content(task_hasher.hash())?;
 
-        // Hash platform fields
+        // Hash toolchain fields
         trace!(
             task_target = self.task.target.as_str(),
             toolchains = ?self.task.toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
@@ -459,11 +468,17 @@ impl<'task> TaskRunner<'task> {
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
+        self.report_item.hash = Some(hash.clone());
 
-        self.action_digest = Digest {
-            hash: hash.clone(),
-            size_bytes: size_bytes as i64,
-        };
+        if RemoteService::is_enabled() {
+            self.remote_state = Some(ActionState::new(
+                Digest {
+                    hash: hash.clone(),
+                    size_bytes: size_bytes as i64,
+                },
+                self.task,
+            ));
+        }
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -482,7 +497,7 @@ impl<'task> TaskRunner<'task> {
     ) -> miette::Result<()> {
         // If the task is a no-operation, we should exit early
         if self.task.is_no_op() {
-            self.skip_no_op(context)?;
+            self.skip_no_op()?;
 
             return Ok(());
         }
@@ -530,15 +545,20 @@ impl<'task> TaskRunner<'task> {
             executor.execute(context, &mut self.report_item).await?
         };
 
+        // Persist the state locally and for the remote service
         if let Some(last_attempt) = result.attempts.get_last_execution() {
             self.persist_state(last_attempt)?;
+
+            if let Some(state) = &mut self.remote_state {
+                state.create_action_result_from_operation(last_attempt)?;
+            }
         }
 
         // Extract the attempts from the result
         self.operations.merge(result.attempts);
 
         // Update the action state based on the result
-        context.set_target_state(&self.task.target, result.run_state);
+        self.target_state = Some(result.run_state);
 
         // If the execution as a whole failed, return the error.
         // We do this here instead of in `execute` so that we can
@@ -564,8 +584,8 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    #[instrument(skip_all)]
-    pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
+    #[instrument(skip(self))]
+    pub fn skip(&mut self) -> miette::Result<()> {
         debug!(task_target = self.task.target.as_str(), "Skipping task");
 
         self.operations.push(Operation::new_finished(
@@ -573,13 +593,13 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Skipped,
         ));
 
-        context.set_target_state(&self.task.target, TargetState::Skipped);
+        self.target_state = Some(TargetState::Skipped);
 
         Ok(())
     }
 
-    #[instrument(skip(self, context))]
-    pub fn skip_no_op(&mut self, context: &ActionContext) -> miette::Result<()> {
+    #[instrument(skip(self))]
+    pub fn skip_no_op(&mut self) -> miette::Result<()> {
         debug!(
             task_target = self.task.target.as_str(),
             "Skipping task as its a no-operation"
@@ -590,10 +610,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Passed,
         ));
 
-        context.set_target_state(
-            &self.task.target,
-            TargetState::from_hash(self.report_item.hash.as_deref()),
-        );
+        self.target_state = Some(TargetState::from_hash(self.report_item.hash.as_deref()));
 
         Ok(())
     }
@@ -609,7 +626,7 @@ impl<'task> TaskRunner<'task> {
 
         let archived = match self
             .archiver
-            .archive(&self.action_digest, self.operations.get_last_execution())
+            .archive(hash, self.remote_state.as_mut())
             .await?
         {
             Some(archive_file) => {
@@ -640,8 +657,8 @@ impl<'task> TaskRunner<'task> {
         Ok(archived)
     }
 
-    #[instrument(skip(self, context))]
-    pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
+    #[instrument(skip(self))]
+    pub async fn hydrate(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::output_hydration();
 
         // Not cached
@@ -667,7 +684,7 @@ impl<'task> TaskRunner<'task> {
 
         if !self
             .hydrater
-            .hydrate(from, &self.action_digest, &mut operation)
+            .hydrate(from, hash, self.remote_state.as_mut())
             .await?
         {
             debug!(task_target = self.task.target.as_str(), "Did not hydrate");
@@ -688,7 +705,45 @@ impl<'task> TaskRunner<'task> {
         // Fill in these values since the command executor does not run!
         if let Some(output) = operation.get_output_mut() {
             output.command = Some(self.task.get_command_line());
-            output.exit_code = Some(self.cache.data.exit_code);
+
+            // If we received an action result from the remote cache,
+            // extract the logs from it
+            if let Some(result) = self
+                .remote_state
+                .as_ref()
+                .and_then(|state| state.action_result.as_ref())
+            {
+                output.exit_code = Some(result.exit_code);
+
+                if !result.stderr_raw.is_empty() {
+                    output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+                }
+
+                if !result.stdout_raw.is_empty() {
+                    output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
+                }
+            }
+            // If not from the remote cache, we need to read the locally
+            // cached stdout/stderr log files
+            else {
+                output.exit_code = Some(self.cache.data.exit_code);
+
+                let state_dir = self
+                    .app
+                    .cache_engine
+                    .state
+                    .get_target_dir(&self.task.target);
+                let err_path = state_dir.join("stderr.log");
+                let out_path = state_dir.join("stdout.log");
+
+                if err_path.exists() {
+                    output.set_stderr(fs::read_file(err_path)?);
+                }
+
+                if out_path.exists() {
+                    output.set_stdout(fs::read_file(out_path)?);
+                }
+            }
         }
 
         // Then finalize the operation and target state
@@ -699,9 +754,8 @@ impl<'task> TaskRunner<'task> {
 
         self.persist_state(&operation)?;
 
-        context.set_target_state(&self.task.target, TargetState::Passed(hash.to_owned()));
-
         self.operations.push(operation);
+        self.target_state = Some(TargetState::Passed(hash.to_owned()));
 
         Ok(true)
     }
@@ -748,16 +802,38 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn persist_state(&mut self, operation: &Operation) -> miette::Result<()> {
-        write_stdlog_state_files(
-            self.app
-                .cache_engine
-                .state
-                .get_target_dir(&self.task.target),
-            operation,
-        )?;
+        let state_dir = self
+            .app
+            .cache_engine
+            .state
+            .get_target_dir(&self.task.target);
+        let err_path = state_dir.join("stderr.log");
+        let out_path = state_dir.join("stdout.log");
 
         if let Some(output) = operation.get_output() {
             self.cache.data.exit_code = output.get_exit_code();
+
+            fs::write_file(
+                err_path,
+                output
+                    .stderr
+                    .as_ref()
+                    .map(|log| log.as_bytes())
+                    .unwrap_or_default(),
+            )?;
+
+            fs::write_file(
+                out_path,
+                output
+                    .stdout
+                    .as_ref()
+                    .map(|log| log.as_bytes())
+                    .unwrap_or_default(),
+            )?;
+        } else {
+            // Ensure logs from a previous run are removed
+            fs::remove_file(err_path)?;
+            fs::remove_file(out_path)?;
         }
 
         Ok(())

@@ -11,7 +11,7 @@ pub trait RemoteClient: Send + Sync {
         &mut self,
         config: &RemoteConfig,
         workspace_root: &Path,
-    ) -> miette::Result<()>;
+    ) -> miette::Result<bool>;
 
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities>;
 
@@ -22,6 +22,8 @@ pub trait RemoteClient: Send + Sync {
         digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>>;
+
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>>;
 
     async fn batch_read_blobs(
         &self,

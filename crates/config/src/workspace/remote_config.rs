@@ -1,4 +1,5 @@
 use crate::portable_path::FilePath;
+use rustc_hash::FxHashMap;
 use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError, ValidateResult};
 
 fn path_is_required<D, C>(
@@ -15,6 +16,27 @@ fn path_is_required<D, C>(
 }
 
 derive_enum!(
+    /// The API format of the remote service.
+    #[derive(Copy, ConfigEnum, Default)]
+    pub enum RemoteApi {
+        /// gRPC endpoints.
+        #[default]
+        Grpc,
+    }
+);
+
+/// Configures basic HTTP authentication.
+#[derive(Clone, Config, Debug)]
+pub struct RemoteAuthConfig {
+    /// HTTP headers to inject into every request.
+    pub headers: FxHashMap<String, String>,
+
+    /// The name of an environment variable to use as a bearer token.
+    pub token: Option<String>,
+}
+
+derive_enum!(
+    /// Supported blob compression levels.
     #[derive(Copy, ConfigEnum, Default)]
     pub enum RemoteCompression {
         /// No compression.
@@ -81,6 +103,13 @@ pub struct RemoteMtlsConfig {
 /// Configures the remote service, powered by the Bazel Remote Execution API.
 #[derive(Clone, Config, Debug)]
 pub struct RemoteConfig {
+    /// The API format of the remote service.
+    pub api: RemoteApi,
+
+    /// Connect to the host using basic HTTP authentication.
+    #[setting(nested)]
+    pub auth: Option<RemoteAuthConfig>,
+
     /// Configures the action cache (AC) and content addressable cache (CAS).
     #[setting(nested)]
     pub cache: RemoteCacheConfig,
@@ -101,11 +130,19 @@ pub struct RemoteConfig {
 }
 
 impl RemoteConfig {
+    pub fn is_bearer_auth(&self) -> bool {
+        self.auth.as_ref().is_some_and(|auth| auth.token.is_some())
+    }
+
     pub fn is_localhost(&self) -> bool {
         self.host.contains("localhost") || self.host.contains("0.0.0.0")
     }
 
     pub fn is_secure(&self) -> bool {
-        self.tls.is_some() || self.mtls.is_some()
+        self.is_bearer_auth() || self.tls.is_some() || self.mtls.is_some()
+    }
+
+    pub fn is_secure_protocol(&self) -> bool {
+        self.host.starts_with("https") || self.host.starts_with("grpcs")
     }
 }

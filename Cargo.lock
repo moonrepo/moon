@@ -4303,11 +4303,13 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "bazel-remote-apis",
+ "bincode",
  "chrono",
  "miette 7.4.0",
  "moon_action",
  "moon_common",
  "moon_config",
+ "moon_task",
  "reqwest",
  "rustc-hash",
  "scc",

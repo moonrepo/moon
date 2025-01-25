@@ -16,6 +16,10 @@ use tracing::trace;
 //  - client `*.key` file
 //  - domain name
 
+pub fn create_native_tls_config() -> miette::Result<ClientTlsConfig> {
+    Ok(ClientTlsConfig::new().with_enabled_roots())
+}
+
 // https://github.com/hyperium/tonic/blob/master/examples/src/tls/client.rs
 pub fn create_tls_config(
     config: &RemoteTlsConfig,

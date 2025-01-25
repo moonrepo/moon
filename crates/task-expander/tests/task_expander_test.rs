@@ -26,9 +26,7 @@ mod task_expander {
         task.input_files.insert("project/source/out".into());
 
         let context = create_context(sandbox.path());
-        let task = TaskExpander::new(&project, &context)
-            .expand(&mut task)
-            .unwrap();
+        let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
         assert!(task.input_files.is_empty());
         assert_eq!(
@@ -48,9 +46,7 @@ mod task_expander {
         task.input_globs.insert("project/source/out/**/*".into());
 
         let context = create_context(sandbox.path());
-        let task = TaskExpander::new(&project, &context)
-            .expand(&mut task)
-            .unwrap();
+        let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
         assert!(task.input_globs.is_empty());
         assert_eq!(
@@ -72,9 +68,7 @@ mod task_expander {
         task.inputs = vec![InputPath::ProjectFile("dir".into())];
 
         let context = create_context(sandbox.path());
-        let task = TaskExpander::new(&project, &context)
-            .expand(&mut task)
-            .unwrap();
+        let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
         assert!(task.input_files.is_empty());
         assert_eq!(

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated our unstable remote service (Bazel RE API) with new functionality:
+  - You can now use `http(s)` protocols for gRPC servers, instead of just `grpc(s)`.
+  - Added an `unstable_remote.api` setting, which can be used to inform the server's API format.
+    Defaults to `grpc`.
+  - Added an `unstable_remote.auth` setting, which can be used for HTTP Bearer/token Authorization
+    based endpoints. Can also be used to set headers for all requests.
+  - Added support for Depot cloud-based caching: https://depot.dev/docs/cache/overview
+
 ## 1.31.3
 
 #### 🐞 Fixes

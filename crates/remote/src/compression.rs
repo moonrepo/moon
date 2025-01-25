@@ -23,6 +23,21 @@ pub fn get_compressor(compression: RemoteCompression) -> i32 {
     }
 }
 
+#[allow(dead_code)]
+pub fn get_compression_from_value(compressor: compressor::Value) -> RemoteCompression {
+    match compressor {
+        compressor::Value::Zstd => RemoteCompression::Zstd,
+        _ => RemoteCompression::None,
+    }
+}
+
+pub fn get_compression_from_code(compressor: i32) -> RemoteCompression {
+    match compressor {
+        zstd if zstd == compressor::Value::Zstd as i32 => RemoteCompression::Zstd,
+        _ => RemoteCompression::None,
+    }
+}
+
 pub fn compress_blob(compression: RemoteCompression, bytes: Vec<u8>) -> miette::Result<Vec<u8>> {
     let result = match compression {
         RemoteCompression::None => Ok(bytes),

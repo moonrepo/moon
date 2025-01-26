@@ -19,7 +19,7 @@ use tonic::{
     transport::{Channel, Endpoint},
     Code, Request, Status,
 };
-use tracing::{trace, warn};
+use tracing::{debug, trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
     // dbg!(&error);
@@ -107,7 +107,7 @@ impl RemoteClient for GrpcRemoteClient {
     ) -> miette::Result<bool> {
         let host = &config.host;
 
-        trace!(
+        debug!(
             instance = &config.cache.instance_name,
             "Connecting to gRPC host {} {}",
             color::url(host),

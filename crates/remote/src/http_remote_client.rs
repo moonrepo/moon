@@ -14,19 +14,37 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Client;
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{path::Path, sync::OnceLock};
-use tracing::{trace, warn};
+use tokio::sync::Semaphore;
+use tracing::{debug, trace, warn};
 
-#[derive(Default)]
 pub struct HttpRemoteClient {
     client: OnceLock<Arc<Client>>,
     config: RemoteConfig,
+
+    // Since HTTP doesn't support batching, we will most likely
+    // end up up/downloading too many files in parallel, triggering a
+    // "too many open files" OS error. To circumvent this, we
+    // will use a semaphore and limit the amount of parallels.
+    semaphore: Arc<Semaphore>,
+}
+
+impl Default for HttpRemoteClient {
+    fn default() -> Self {
+        Self {
+            client: OnceLock::new(),
+            config: RemoteConfig::default(),
+            semaphore: Arc::new(Semaphore::new(100)),
+        }
+    }
 }
 
 impl HttpRemoteClient {
     fn create_client(&self, workspace_root: &Path) -> miette::Result<Option<Client>> {
-        let mut client = Client::builder();
-        client = client.user_agent("moon");
+        let mut client = Client::builder()
+            .user_agent("moon")
+            .tcp_keepalive(Duration::from_secs(60));
 
         if let Some(auth) = &self.config.auth {
             let mut headers = HeaderMap::default();
@@ -97,7 +115,7 @@ impl RemoteClient for HttpRemoteClient {
     ) -> miette::Result<bool> {
         let host = &config.host;
 
-        trace!(
+        debug!(
             instance = &config.cache.instance_name,
             "Connecting to HTTP host {} {}",
             color::url(host),
@@ -113,6 +131,12 @@ impl RemoteClient for HttpRemoteClient {
         );
 
         self.config = config.to_owned();
+
+        if self.config.cache.compression != RemoteCompression::None {
+            self.config.cache.compression = RemoteCompression::None;
+
+            debug!("HTTP API does not support compression, disabling");
+        }
 
         // Create client and abort early if not enabled
         match self.create_client(workspace_root)? {
@@ -206,13 +230,10 @@ impl RemoteClient for HttpRemoteClient {
                     Ok(None)
                 }
             }
-            Err(error) => {
-                dbg!("get_action_result", &error);
-                Err(RemoteError::HttpCallFailed {
-                    error: Box::new(error),
-                }
-                .into())
+            Err(error) => Err(RemoteError::HttpCallFailed {
+                error: Box::new(error),
             }
+            .into()),
         }
     }
 
@@ -258,13 +279,10 @@ impl RemoteClient for HttpRemoteClient {
                     Ok(None)
                 }
             }
-            Err(error) => {
-                dbg!("update_action_result", &error);
-                Err(RemoteError::HttpCallFailed {
-                    error: Box::new(error),
-                }
-                .into())
+            Err(error) => Err(RemoteError::HttpCallFailed {
+                error: Box::new(error),
             }
+            .into()),
         }
     }
 
@@ -292,8 +310,13 @@ impl RemoteClient for HttpRemoteClient {
             let client = self.get_client();
             let action_hash = digest.hash.clone();
             let url = self.get_endpoint("cas", &blob_digest.hash);
+            let semaphore = self.semaphore.clone();
 
             requests.push(tokio::spawn(async move {
+                let Ok(_permit) = semaphore.acquire().await else {
+                    return None;
+                };
+
                 match client.get(url).send().await {
                     Ok(response) => {
                         let status = response.status();
@@ -364,8 +387,13 @@ impl RemoteClient for HttpRemoteClient {
             let client = self.get_client();
             let action_hash = digest.hash.clone();
             let url = self.get_endpoint("cas", &blob.digest.hash);
+            let semaphore = self.semaphore.clone();
 
             requests.push(tokio::spawn(async move {
+                let Ok(_permit) = semaphore.acquire().await else {
+                    return None;
+                };
+
                 match client.put(url).body(blob.bytes).send().await {
                     Ok(response) => {
                         let status = response.status();
@@ -418,6 +446,6 @@ impl RemoteClient for HttpRemoteClient {
             digests.len()
         );
 
-        Ok(vec![])
+        Ok(digests)
     }
 }

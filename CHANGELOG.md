@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.31.3
+
+#### 🐞 Fixes
+
+- This patch upgrades proto to the latest version to fix some bin locating issues that you may have
+  encountered if you have proto v0.45 installed on your system, which conflicts with the proto v0.44
+  that moon installs.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.45.1](https://github.com/moonrepo/proto/releases/tag/v0.45.1) (from 0.44.4).
+
 ## 1.31.2
 
 #### 🚀 Updates

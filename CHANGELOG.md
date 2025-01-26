@@ -11,6 +11,7 @@
   - Added an `unstable_remote.auth` setting, which can be used for HTTP Bearer/token Authorization
     based endpoints. Can also be used to set headers for all requests.
   - Added support for Depot cloud-based caching: https://depot.dev/docs/cache/overview
+  - Added support for the HTTP protocol: https://bazel.build/remote/caching#http-caching
 
 ## 1.31.3
 

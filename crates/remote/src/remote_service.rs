@@ -57,8 +57,9 @@ impl RemoteService {
         );
         info!("Please report any issues to GitHub or Discord");
 
-        let mut client = match config.api {
+        let mut client: Box<dyn RemoteClient> = match config.api {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
+            RemoteApi::Http => Box::new(HttpRemoteClient::default()),
         };
 
         let mut instance = Self {
@@ -231,7 +232,6 @@ impl RemoteService {
         let client = Arc::clone(&self.client);
         let digest = state.digest.clone();
         let max_size = self.get_max_batch_size();
-        let compression = self.config.cache.compression;
 
         self.upload_requests
             .write()
@@ -248,7 +248,6 @@ impl RemoteService {
                         digest.clone(),
                         blobs,
                         max_size as usize,
-                        compression,
                     )
                     .await;
 
@@ -290,7 +289,6 @@ impl RemoteService {
             result,
             &self.workspace_root,
             self.get_max_batch_size() as usize,
-            self.config.cache.compression,
         )
         .await?;
 
@@ -353,17 +351,9 @@ impl RemoteService {
 async fn batch_upload_blobs(
     client: Arc<Box<dyn RemoteClient>>,
     digest: Digest,
-    uncompressed_blobs: Vec<Blob>,
+    blobs: Vec<Blob>,
     max_size: usize,
-    compression: RemoteCompression,
 ) -> miette::Result<bool> {
-    let mut blobs = vec![];
-
-    for mut blob in uncompressed_blobs {
-        blob.bytes = compress_blob(compression, blob.bytes)?;
-        blobs.push(blob);
-    }
-
     let blob_groups = partition_into_groups(blobs, max_size, |blob| blob.bytes.len());
 
     if blob_groups.is_empty() {
@@ -416,7 +406,6 @@ async fn batch_download_blobs(
     result: &ActionResult,
     workspace_root: &Path,
     max_size: usize,
-    compression: RemoteCompression,
 ) -> miette::Result<()> {
     let mut file_map = FxHashMap::default();
     let mut digests = vec![];
@@ -460,11 +449,7 @@ async fn batch_download_blobs(
     while let Some(res) = set.join_next().await {
         for blob in res.into_diagnostic()?? {
             if let Some(file) = file_map.get(&blob.digest.hash) {
-                write_output_file(
-                    workspace_root.join(&file.path),
-                    decompress_blob(compression, blob.bytes)?,
-                    file,
-                )?;
+                write_output_file(workspace_root.join(&file.path), blob.bytes, file)?;
             }
         }
     }

@@ -1,13 +1,18 @@
 use crate::compression::*;
 use crate::fs_digest::Blob;
+use crate::http_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionCacheUpdateCapabilities, ActionResult, CacheCapabilities, Digest,
-    ExecutionCapabilities, ServerCapabilities,
+    ServerCapabilities,
 };
+use miette::IntoDiagnostic;
+use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Client;
+use std::env;
 use std::sync::Arc;
 use std::{path::Path, sync::OnceLock};
 use tracing::{trace, warn};
@@ -15,14 +20,71 @@ use tracing::{trace, warn};
 #[derive(Default)]
 pub struct HttpRemoteClient {
     client: OnceLock<Arc<Client>>,
-    compression: RemoteCompression,
-    host: String,
-    instance_name: String,
+    config: RemoteConfig,
 }
 
 impl HttpRemoteClient {
+    fn create_client(&self, workspace_root: &Path) -> miette::Result<Option<Client>> {
+        let mut client = Client::builder();
+        client = client.user_agent("moon");
+
+        if let Some(auth) = &self.config.auth {
+            let mut headers = HeaderMap::default();
+
+            for (key, value) in &auth.headers {
+                headers.insert(
+                    HeaderName::from_bytes(key.as_bytes()).into_diagnostic()?,
+                    HeaderValue::from_str(value).into_diagnostic()?,
+                );
+            }
+
+            if let Some(token_name) = &auth.token {
+                let token = env::var(token_name).unwrap_or_default();
+
+                if token.is_empty() {
+                    warn!(
+                        "Auth token {} does not exist, unable to authorize for remote service",
+                        color::property(token_name)
+                    );
+
+                    return Ok(None);
+                } else {
+                    let mut value =
+                        HeaderValue::from_str(&format!("Bearer {token}")).into_diagnostic()?;
+                    value.set_sensitive(true);
+
+                    headers.insert(
+                        HeaderName::from_bytes("Authorization".as_bytes()).into_diagnostic()?,
+                        value,
+                    );
+                }
+            }
+
+            client = client.default_headers(headers);
+        }
+
+        if let Some(mtls) = &self.config.mtls {
+            client = create_mtls_config(client, mtls, workspace_root)?
+        } else if let Some(tls) = &self.config.tls {
+            client = create_tls_config(client, tls, workspace_root)?
+        } else if self.config.is_secure_protocol() {
+            client = create_native_tls_config(client)?;
+        }
+
+        let client = client.build().into_diagnostic()?;
+
+        Ok(Some(client))
+    }
+
     fn get_client(&self) -> Arc<Client> {
         Arc::clone(self.client.get_or_init(|| Arc::new(Client::new())))
+    }
+
+    fn get_endpoint(&self, path: &str, hash: &str) -> String {
+        format!(
+            "{}/{}/{path}/{hash}",
+            self.config.host, self.config.cache.instance_name
+        )
     }
 }
 
@@ -31,16 +93,41 @@ impl RemoteClient for HttpRemoteClient {
     async fn connect_to_host(
         &mut self,
         config: &RemoteConfig,
-        _workspace_root: &Path,
+        workspace_root: &Path,
     ) -> miette::Result<bool> {
-        self.compression = config.cache.compression;
-        self.host = config.host.clone();
-        self.instance_name = config.cache.instance_name.clone();
+        let host = &config.host;
+
+        trace!(
+            instance = &config.cache.instance_name,
+            "Connecting to HTTP host {} {}",
+            color::url(host),
+            if config.mtls.is_some() {
+                "(with mTLS)"
+            } else if config.tls.is_some() {
+                "(with TLS)"
+            } else if config.is_bearer_auth() {
+                "(with auth)"
+            } else {
+                "(insecure)"
+            }
+        );
+
+        self.config = config.to_owned();
+
+        // Create client and abort early if not enabled
+        match self.create_client(workspace_root)? {
+            Some(client) => {
+                let _ = self.client.set(Arc::new(client));
+            }
+            None => {
+                return Ok(false);
+            }
+        }
 
         // Ignore errors since this endpoint is non-standard
         if let Ok(response) = self
             .get_client()
-            .get(format!("{}/status", self.host))
+            .get(format!("{}/status", self.config.host))
             .send()
             .await
         {
@@ -66,7 +153,7 @@ impl RemoteClient for HttpRemoteClient {
     // based on what `bazel-remote` supports
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities> {
         let digest_functions = vec![digest_function::Value::Sha256 as i32];
-        let compressors = get_acceptable_compressors(self.compression);
+        let compressors = get_acceptable_compressors(RemoteCompression::None);
 
         Ok(ServerCapabilities {
             cache_capabilities: Some(CacheCapabilities {
@@ -78,10 +165,7 @@ impl RemoteClient for HttpRemoteClient {
                 supported_batch_update_compressors: compressors,
                 ..Default::default()
             }),
-            execution_capabilities: Some(ExecutionCapabilities {
-                digest_functions,
-                ..Default::default()
-            }),
+            execution_capabilities: None,
             ..Default::default()
         })
     }
@@ -91,10 +175,7 @@ impl RemoteClient for HttpRemoteClient {
 
         match self
             .get_client()
-            .get(format!(
-                "{}/{}/ac/{}",
-                self.host, self.instance_name, digest.hash
-            ))
+            .get(self.get_endpoint("ac", &digest.hash))
             .header("Accept", "application/json")
             .send()
             .await
@@ -125,10 +206,13 @@ impl RemoteClient for HttpRemoteClient {
                     Ok(None)
                 }
             }
-            Err(error) => Err(RemoteError::HttpCallFailed {
-                error: Box::new(error),
+            Err(error) => {
+                dbg!("get_action_result", &error);
+                Err(RemoteError::HttpCallFailed {
+                    error: Box::new(error),
+                }
+                .into())
             }
-            .into()),
         }
     }
 
@@ -148,10 +232,7 @@ impl RemoteClient for HttpRemoteClient {
 
         match self
             .get_client()
-            .put(format!(
-                "{}/{}/ac/{}",
-                self.host, self.instance_name, digest.hash
-            ))
+            .put(self.get_endpoint("ac", &digest.hash))
             .header("Content-Type", "application/json")
             .json(&result)
             .send()
@@ -177,11 +258,20 @@ impl RemoteClient for HttpRemoteClient {
                     Ok(None)
                 }
             }
-            Err(error) => Err(RemoteError::HttpCallFailed {
-                error: Box::new(error),
+            Err(error) => {
+                dbg!("update_action_result", &error);
+                Err(RemoteError::HttpCallFailed {
+                    error: Box::new(error),
+                }
+                .into())
             }
-            .into()),
         }
+    }
+
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
+        // No way to query this information,
+        // so just assume all are missing?
+        Ok(blob_digests)
     }
 
     async fn batch_read_blobs(
@@ -191,7 +281,7 @@ impl RemoteClient for HttpRemoteClient {
     ) -> miette::Result<Vec<Blob>> {
         trace!(
             hash = &digest.hash,
-            compression = self.compression.to_string(),
+            compression = self.config.cache.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
         );
@@ -201,10 +291,7 @@ impl RemoteClient for HttpRemoteClient {
         for blob_digest in blob_digests {
             let client = self.get_client();
             let action_hash = digest.hash.clone();
-            let url = format!(
-                "{}/{}/cas/{}",
-                self.host, self.instance_name, blob_digest.hash
-            );
+            let url = self.get_endpoint("cas", &blob_digest.hash);
 
             requests.push(tokio::spawn(async move {
                 match client.get(url).send().await {
@@ -258,31 +345,25 @@ impl RemoteClient for HttpRemoteClient {
         Ok(blobs)
     }
 
-    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
-        Ok(vec![])
-    }
-
     async fn batch_update_blobs(
         &self,
         digest: &Digest,
         blobs: Vec<Blob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
+        let compression = self.config.cache.compression;
+        let mut requests = vec![];
+
         trace!(
             hash = &digest.hash,
-            compression = self.compression.to_string(),
+            compression = compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
         );
 
-        let mut requests = vec![];
-
         for blob in blobs {
             let client = self.get_client();
             let action_hash = digest.hash.clone();
-            let url = format!(
-                "{}/{}/cas/{}",
-                self.host, self.instance_name, blob.digest.hash
-            );
+            let url = self.get_endpoint("cas", &blob.digest.hash);
 
             requests.push(tokio::spawn(async move {
                 match client.put(url).body(blob.bytes).send().await {

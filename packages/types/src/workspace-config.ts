@@ -241,7 +241,7 @@ export interface RunnerConfig {
 }
 
 /** The API format of the remote service. */
-export type RemoteApi = 'grpc';
+export type RemoteApi = 'grpc' | 'http';
 
 /** Configures basic HTTP authentication. */
 export interface RemoteAuthConfig {
@@ -251,7 +251,7 @@ export interface RemoteAuthConfig {
 	token: string | null;
 }
 
-/** Supported blob compression levels. */
+/** Supported blob compression levels for gRPC APIs. */
 export type RemoteCompression = 'none' | 'zstd';
 
 /** Configures the action cache (AC) and content addressable cache (CAS). */
@@ -319,7 +319,7 @@ export interface RemoteConfig {
 	 * The API format of the remote service.
 	 *
 	 * @default 'grpc'
-	 * @type {'grpc'}
+	 * @type {'grpc' | 'http'}
 	 */
 	api: RemoteApi;
 	/** Connect to the host using basic HTTP authentication. */

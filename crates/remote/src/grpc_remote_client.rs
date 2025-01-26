@@ -19,7 +19,7 @@ use tonic::{
     transport::{Channel, Endpoint},
     Code, Request, Status,
 };
-use tracing::{trace, warn};
+use tracing::{debug, trace, warn};
 
 fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
     // dbg!(&error);
@@ -107,7 +107,7 @@ impl RemoteClient for GrpcRemoteClient {
     ) -> miette::Result<bool> {
         let host = &config.host;
 
-        trace!(
+        debug!(
             instance = &config.cache.instance_name,
             "Connecting to gRPC host {} {}",
             color::url(host),
@@ -292,6 +292,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if matches!(code, Code::InvalidArgument | Code::FailedPrecondition) {
                     warn!(
+                        hash = &digest.hash,
                         code = ?code,
                         "Failed to cache action result: {}",
                         status.message()
@@ -300,6 +301,7 @@ impl RemoteClient for GrpcRemoteClient {
                     Ok(None)
                 } else if matches!(code, Code::ResourceExhausted) {
                     warn!(
+                        hash = &digest.hash,
                         code = ?code,
                         "Remote service is out of storage space: {}",
                         status.message()
@@ -387,6 +389,7 @@ impl RemoteClient for GrpcRemoteClient {
                 if !matches!(code, Code::Ok | Code::NotFound) {
                     warn!(
                         hash = &digest.hash,
+                        blob_hash = download.digest.as_ref().map(|d| &d.hash),
                         details = ?status.details,
                         code = ?code,
                         "Failed to download blob: {}",
@@ -433,20 +436,21 @@ impl RemoteClient for GrpcRemoteClient {
             |req| self.inject_auth_headers(req),
         );
 
+        let compression = self.config.cache.compression;
+        let mut requests = vec![];
+
         trace!(
             hash = &digest.hash,
-            compression = self.config.cache.compression.to_string(),
+            compression = compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
         );
 
-        let mut requests = vec![];
-
         for blob in blobs {
             requests.push(batch_update_blobs_request::Request {
                 digest: Some(blob.digest),
-                data: compress_blob(self.config.cache.compression, blob.bytes)?,
-                compressor: get_compressor(self.config.cache.compression),
+                data: compress_blob(compression, blob.bytes)?,
+                compressor: get_compressor(compression),
             });
         }
 
@@ -471,6 +475,7 @@ impl RemoteClient for GrpcRemoteClient {
                     Ok(vec![])
                 } else if matches!(code, Code::ResourceExhausted) {
                     warn!(
+                        hash = &digest.hash,
                         code = ?code,
                         "Remote service exhausted resource: {}",
                         status.message()
@@ -494,6 +499,7 @@ impl RemoteClient for GrpcRemoteClient {
                 if !matches!(code, Code::Ok) {
                     warn!(
                         hash = &digest.hash,
+                        blob_hash = upload.digest.as_ref().map(|d| &d.hash),
                         details = ?status.details,
                         code = ?code,
                         "Failed to upload blob: {}",

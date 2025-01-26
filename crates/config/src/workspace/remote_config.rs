@@ -19,9 +19,11 @@ derive_enum!(
     /// The API format of the remote service.
     #[derive(Copy, ConfigEnum, Default)]
     pub enum RemoteApi {
-        /// gRPC endpoints.
+        /// gRPC(S) endpoints.
         #[default]
         Grpc,
+        /// HTTP(S) endpoints.
+        Http,
     }
 );
 
@@ -36,7 +38,7 @@ pub struct RemoteAuthConfig {
 }
 
 derive_enum!(
-    /// Supported blob compression levels.
+    /// Supported blob compression levels for gRPC APIs.
     #[derive(Copy, ConfigEnum, Default)]
     pub enum RemoteCompression {
         /// No compression.

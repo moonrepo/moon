@@ -494,7 +494,10 @@ in the [remote caching](../guides/remote-cache) guide.
 <HeadingApiLink to="/api/types/interface/RemoteConfig#api" />
 
 The API format of the remote server. This format dictates which type of client moon uses for
-communicating with. Defaults to `grpc`.
+communicating with. Supports the following:
+
+- `grpc` (default) - Uses the gRPC API: https://github.com/bazelbuild/remote-apis
+- `http` - Uses the HTTP API: https://bazel.build/remote/caching#http-caching
 
 ```yaml title=".moon/workspace.yml" {2}
 unstable_remote:
@@ -557,6 +560,12 @@ unstable_remote:
     compression: 'zstd'
 ```
 
+:::info
+
+Compression is only applied to gRPC based APIs, not HTTP.
+
+:::
+
 #### `instanceName`
 
 <HeadingApiLink to="/api/types/interface/RemoteCacheConfig#instanceName" />
@@ -578,12 +587,12 @@ unstable_remote:
 
 <HeadingApiLink to="/api/types/interface/RemoteConfig#host" />
 
-The host URL to communicate with when uploading and download artifacts. Supports gRPC through the
-`grpc://` and `grpcs://` protocols. This field is required!
+The host URL to communicate with when uploading and downloading artifacts. Supports both
+`grpc(s)://` and `http(s)://` protocols. This field is required!
 
 ```yaml title=".moon/workspace.yml" {2}
 unstable_remote:
-  host: 'grpc://your-host.com:9092'
+  host: 'grpcs://your-host.com:9092'
 ```
 
 ### `mtls`

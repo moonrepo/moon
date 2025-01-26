@@ -1,8 +1,8 @@
+use crate::action_state::ActionState;
 use crate::compression::*;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
-// use crate::http_remote_client::HttpRemoteClient;
-use crate::action_state::ActionState;
+use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     digest_function, ActionResult, Digest, ServerCapabilities,
@@ -57,8 +57,9 @@ impl RemoteService {
         );
         info!("Please report any issues to GitHub or Discord");
 
-        let mut client = match config.api {
+        let mut client: Box<dyn RemoteClient> = match config.api {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
+            RemoteApi::Http => Box::new(HttpRemoteClient::default()),
         };
 
         let mut instance = Self {

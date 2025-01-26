@@ -15,6 +15,13 @@ pub enum RemoteError {
         error: Box<tonic::transport::Error>,
     },
 
+    #[diagnostic(code(remote::http::call_failed))]
+    #[error("Failed to make HTTP call.")]
+    HttpCallFailed {
+        #[source]
+        error: Box<reqwest::Error>,
+    },
+
     #[diagnostic(code(remote::http::connect_failed))]
     #[error("Failed to connect to HTTP host ({code} {reason}).")]
     HttpConnectFailed { code: u16, reason: String },

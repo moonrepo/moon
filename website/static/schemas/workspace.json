@@ -517,7 +517,8 @@
       "description": "The API format of the remote service.",
       "type": "string",
       "enum": [
-        "grpc"
+        "grpc",
+        "http"
       ]
     },
     "RemoteAuthConfig": {
@@ -574,7 +575,7 @@
       "additionalProperties": false
     },
     "RemoteCompression": {
-      "description": "Supported blob compression levels.",
+      "description": "Supported blob compression levels for gRPC APIs.",
       "type": "string",
       "enum": [
         "none",

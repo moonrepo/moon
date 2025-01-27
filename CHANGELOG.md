@@ -12,6 +12,8 @@
     based endpoints. Can also be used to set headers for all requests.
   - Added support for Depot cloud-based caching: https://depot.dev/docs/cache/overview
   - Added support for the HTTP protocol: https://bazel.build/remote/caching#http-caching
+  - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
+    diagnosing connection/integration issues.
 
 ## 1.31.3
 

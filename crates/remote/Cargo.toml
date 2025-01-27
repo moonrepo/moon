@@ -22,6 +22,7 @@ sha2 = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-rustls = "0.26.1"
 tonic = { version = "0.12.3", default-features = false, features = [
     "channel",
     "gzip",

@@ -35,8 +35,6 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           cache-base: '^(master|develop-)'
-      - uses: ilammy/setup-nasm@v1
-        if: ${{ runner.os == 'Windows' }}
       - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}

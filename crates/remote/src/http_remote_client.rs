@@ -1,5 +1,4 @@
-use crate::compression::*;
-use crate::fs_digest::Blob;
+use crate::blob::*;
 use crate::http_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;

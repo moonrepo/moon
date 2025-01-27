@@ -1,6 +1,21 @@
+use crate::fs_digest::create_digest;
 use crate::remote_error::RemoteError;
-use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
+use bazel_remote_apis::build::bazel::remote::execution::v2::{compressor, Digest};
 use moon_config::RemoteCompression;
+
+pub struct Blob {
+    pub bytes: Vec<u8>,
+    pub digest: Digest,
+}
+
+impl Blob {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        Self {
+            digest: create_digest(&bytes),
+            bytes,
+        }
+    }
+}
 
 // bazel-remote uses zstd and the fastest compression: level 1
 // https://github.com/buchgr/bazel-remote/blob/master/cache/disk/zstdimpl/gozstd.go#L13

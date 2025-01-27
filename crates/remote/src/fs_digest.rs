@@ -1,5 +1,6 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
+use crate::blob::Blob;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
@@ -14,20 +15,6 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-
-pub struct Blob {
-    pub bytes: Vec<u8>,
-    pub digest: Digest,
-}
-
-impl Blob {
-    pub fn new(bytes: Vec<u8>) -> Self {
-        Self {
-            digest: create_digest(&bytes),
-            bytes,
-        }
-    }
-}
 
 pub fn create_digest(bytes: &[u8]) -> Digest {
     let mut hasher = Sha256::default();

@@ -1,4 +1,4 @@
-use crate::fs_digest::Blob;
+use crate::blob::Blob;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, Digest, ServerCapabilities,
 };

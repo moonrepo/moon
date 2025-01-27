@@ -1,5 +1,5 @@
 mod action_state;
-mod compression;
+mod blob;
 mod fs_digest;
 mod grpc_remote_client;
 mod grpc_services;

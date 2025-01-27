@@ -1,5 +1,5 @@
 use crate::action_state::ActionState;
-use crate::compression::*;
+use crate::blob::*;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::http_remote_client::HttpRemoteClient;
@@ -120,7 +120,7 @@ impl RemoteService {
 
                 warn!(
                     host,
-                    "Remote service does not support {} compression, but it has been configured and enabled through the {} setting",
+                    "Remote service does not support {} compression for streaming, but it has been configured and enabled through the {} setting",
                     compression,
                     color::property("unstable_remote.cache.compression"),
                 );

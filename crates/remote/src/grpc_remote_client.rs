@@ -1,5 +1,4 @@
-use crate::compression::*;
-use crate::fs_digest::Blob;
+use crate::blob::*;
 use crate::grpc_services::*;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
@@ -586,7 +585,7 @@ impl RemoteClient for GrpcRemoteClient {
             Ok(response) => {
                 let result = response.into_inner();
 
-                if result.committed_size < total_bytes {
+                if result.committed_size != -1 && result.committed_size < total_bytes {
                     warn!(
                         hash = &digest.hash,
                         blob_hash = &blob.digest.hash,

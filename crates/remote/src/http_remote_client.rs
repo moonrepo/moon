@@ -247,7 +247,7 @@ impl RemoteClient for HttpRemoteClient {
                         hash = &digest.hash,
                         code = status.as_u16(),
                         "Failed to cache action result: {}",
-                        status
+                        color::muted_light(status.to_string()),
                     );
 
                     Ok(None)
@@ -305,14 +305,16 @@ impl RemoteClient for HttpRemoteClient {
                         warn!(
                             hash = &action_hash,
                             blob_hash = &blob_digest.hash,
-                            "Failed to download blob: {status}",
+                            "Failed to download blob: {}",
+                            color::muted_light(status.to_string()),
                         );
                     }
                     Err(error) => {
                         warn!(
                             hash = &action_hash,
                             blob_hash = &blob_digest.hash,
-                            "Failed to download blob: {error}",
+                            "Failed to download blob: {}",
+                            color::muted_light(error.to_string()),
                         );
 
                         if debug_enabled {
@@ -383,14 +385,16 @@ impl RemoteClient for HttpRemoteClient {
                         warn!(
                             hash = &action_hash,
                             blob_hash = &blob.digest.hash,
-                            "Failed to upload blob: {status}",
+                            "Failed to upload blob: {}",
+                            color::muted_light(status.to_string()),
                         );
                     }
                     Err(error) => {
                         warn!(
                             hash = &action_hash,
                             blob_hash = &blob.digest.hash,
-                            "Failed to upload blob: {error}",
+                            "Failed to upload blob: {}",
+                            color::muted_light(error.to_string()),
                         );
 
                         if debug_enabled {

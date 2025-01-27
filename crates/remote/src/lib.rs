@@ -18,7 +18,4 @@ pub use remote_service::*;
 
 // TODO:
 // - Other digest functions besides sha256
-// - Proper error handling
 // - Directory blob types
-// - Write/read bytestream for large blobs
-// - TLS/mTLS issues

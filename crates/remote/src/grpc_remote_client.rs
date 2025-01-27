@@ -310,7 +310,7 @@ impl RemoteClient for GrpcRemoteClient {
                         hash = &digest.hash,
                         code = ?code,
                         "Failed to cache action result: {}",
-                        status.message()
+                        color::muted_light(status.message()),
                     );
 
                     Ok(None)
@@ -319,7 +319,7 @@ impl RemoteClient for GrpcRemoteClient {
                         hash = &digest.hash,
                         code = ?code,
                         "Remote service is out of storage space: {}",
-                        status.message()
+                        color::muted_light(status.message()),
                     );
 
                     Ok(None)
@@ -398,11 +398,11 @@ impl RemoteClient for GrpcRemoteClient {
                         details = ?status.details,
                         code = ?code,
                         "Failed to download blob: {}",
-                        if status.message.is_empty() {
+                        color::muted_light(if status.message.is_empty() {
                             code.to_string()
                         } else {
                             status.message
-                        }
+                        }),
                     );
                 }
             }
@@ -479,7 +479,7 @@ impl RemoteClient for GrpcRemoteClient {
                         hash = &digest.hash,
                         code = ?code,
                         "Remote service exhausted resource: {}",
-                        status.message()
+                        color::muted_light(status.message()),
                     );
 
                     Ok(vec![])
@@ -503,11 +503,11 @@ impl RemoteClient for GrpcRemoteClient {
                         details = ?status.details,
                         code = ?code,
                         "Failed to upload blob: {}",
-                        if status.message.is_empty() {
+                        color::muted_light(if status.message.is_empty() {
                             code.to_string()
                         } else {
                             status.message
-                        }
+                        }),
                     );
                 }
             }
@@ -575,7 +575,8 @@ impl RemoteClient for GrpcRemoteClient {
             warn!(
                 hash = &digest.hash,
                 blob_hash = &blob.digest.hash,
-                "Failed to stream upload blob: {error}",
+                "Failed to stream upload blob: {}",
+                color::muted_light(error.to_string()),
             );
 
             return Ok(None);

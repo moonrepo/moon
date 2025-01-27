@@ -392,28 +392,35 @@ async fn batch_upload_blobs(
         let client = Arc::clone(&client);
         let digest = digest.to_owned();
 
+        // Streaming
         if group.stream {
             set.spawn(async move {
-                if let Err(error) = client
+                match client
                     .stream_update_blob(&digest, group.items.remove(0))
                     .await
                 {
-                    warn!(
-                        hash = &digest.hash,
-                        group = group_index + 1,
-                        "Failed to upload blob: {}",
-                        color::muted_light(error.to_string()),
-                    );
+                    Ok(result) => {
+                        if result.is_some() {
+                            return true;
+                        }
+                    }
+                    Err(error) => {
+                        warn!(
+                            hash = &digest.hash,
+                            group = group_index + 1,
+                            "Failed to stream upload blob: {}",
+                            color::muted_light(error.to_string()),
+                        );
+                    }
+                };
 
-                    return false;
-                }
-
-                true
+                false
             });
 
             continue;
         }
 
+        // Not streaming
         if group_total > 1 {
             trace!(
                 hash = &digest.hash,
@@ -427,18 +434,23 @@ async fn batch_upload_blobs(
         }
 
         set.spawn(async move {
-            if let Err(error) = client.batch_update_blobs(&digest, group.items).await {
-                warn!(
-                    hash = &digest.hash,
-                    group = group_index + 1,
-                    "Failed to upload blobs: {}",
-                    color::muted_light(error.to_string()),
-                );
+            match client.batch_update_blobs(&digest, group.items).await {
+                Ok(result) => {
+                    if result.into_iter().all(|res| res.is_some()) {
+                        return true;
+                    }
+                }
+                Err(error) => {
+                    warn!(
+                        hash = &digest.hash,
+                        group = group_index + 1,
+                        "Failed to upload blobs: {}",
+                        color::muted_light(error.to_string()),
+                    );
+                }
+            };
 
-                return false;
-            }
-
-            true
+            false
         });
     }
 

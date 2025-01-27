@@ -79,6 +79,7 @@ jobs:
       # SCCACHE_NO_DAEMON: 1
       SCCACHE_REGION: us-east-2
       SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
+      AWS_LC_SYS_PREBUILT_NASM: 1
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
@@ -93,6 +94,8 @@ jobs:
           proto-version: '0.45.1' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.5
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      - uses: lukka/get-cmake@latest
+        if: ${{ runner.os == 'Windows' }}
       - name: Checking coverage status
         id: coverage
         shell: bash

@@ -17,7 +17,7 @@ use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 use tokio::sync::RwLock;
 use tokio::task::{JoinHandle, JoinSet};
-use tracing::{debug, info, instrument, trace, warn};
+use tracing::{debug, error, info, instrument, trace, warn};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
@@ -47,6 +47,16 @@ impl RemoteService {
                 host = &config.host,
                 "Remote service is configured with a localhost endpoint, but we are in a CI environment; disabling service",
             );
+
+            return Ok(());
+        }
+
+        // Required until tonic v0.13
+        if tokio_rustls::rustls::crypto::aws_lc_rs::default_provider()
+            .install_default()
+            .is_err()
+        {
+            error!("Failed to initialize cryptography for gRPC!");
 
             return Ok(());
         }

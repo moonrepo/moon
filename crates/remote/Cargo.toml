@@ -31,5 +31,11 @@ tonic = { version = "0.12.3", default-features = false, features = [
 tracing = { workspace = true }
 zstd = "0.13.2"
 
+# Temporary until tonic v0.13
+aws-lc-rs = { version = "1.12.2", default-features = false, features = [
+    "prebuilt-nasm",
+] }
+tokio-rustls = "0.26.1"
+
 [lints]
 workspace = true

@@ -12,16 +12,18 @@ use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Client;
+use starbase_utils::env::bool_var;
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{path::Path, sync::OnceLock};
 use tokio::sync::Semaphore;
-use tracing::{debug, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 pub struct HttpRemoteClient {
     client: OnceLock<Arc<Client>>,
     config: RemoteConfig,
+    debug: bool,
 
     // Since HTTP doesn't support batching, we will most likely
     // end up up/downloading too many files in parallel, triggering a
@@ -35,6 +37,7 @@ impl Default for HttpRemoteClient {
         Self {
             client: OnceLock::new(),
             config: RemoteConfig::default(),
+            debug: false,
             semaphore: Arc::new(Semaphore::new(100)),
         }
     }
@@ -89,7 +92,9 @@ impl HttpRemoteClient {
             client = create_native_tls_config(client)?;
         }
 
-        let client = client.build().into_diagnostic()?;
+        let client = client
+            .build()
+            .map_err(|error| self.map_error("create_client", error))?;
 
         Ok(Some(client))
     }
@@ -104,6 +109,16 @@ impl HttpRemoteClient {
             self.config.host, self.config.cache.instance_name
         )
     }
+
+    fn map_error(&self, method: &str, error: reqwest::Error) -> RemoteError {
+        if self.debug {
+            error!("{method}: {:#?}", error);
+        }
+
+        RemoteError::HttpCallFailed {
+            error: Box::new(error),
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -113,6 +128,8 @@ impl RemoteClient for HttpRemoteClient {
         config: &RemoteConfig,
         workspace_root: &Path,
     ) -> miette::Result<bool> {
+        self.debug = bool_var("MOON_DEBUG_REMOTE");
+
         let host = &config.host;
 
         debug!(
@@ -230,10 +247,7 @@ impl RemoteClient for HttpRemoteClient {
                     Ok(None)
                 }
             }
-            Err(error) => Err(RemoteError::HttpCallFailed {
-                error: Box::new(error),
-            }
-            .into()),
+            Err(error) => Err(self.map_error("get_action_result", error).into()),
         }
     }
 
@@ -279,10 +293,7 @@ impl RemoteClient for HttpRemoteClient {
                     Ok(None)
                 }
             }
-            Err(error) => Err(RemoteError::HttpCallFailed {
-                error: Box::new(error),
-            }
-            .into()),
+            Err(error) => Err(self.map_error("update_action_result", error).into()),
         }
     }
 
@@ -305,6 +316,7 @@ impl RemoteClient for HttpRemoteClient {
         );
 
         let mut requests = vec![];
+        let debug_enabled = self.debug;
 
         for blob_digest in blob_digests {
             let client = self.get_client();
@@ -342,6 +354,10 @@ impl RemoteClient for HttpRemoteClient {
                             blob_hash = &blob_digest.hash,
                             "Failed to download blob: {error}",
                         );
+
+                        if debug_enabled {
+                            trace!("read_blob: {:?}", error);
+                        }
                     }
                 }
 
@@ -383,6 +399,8 @@ impl RemoteClient for HttpRemoteClient {
             blobs.len()
         );
 
+        let debug_enabled = self.debug;
+
         for blob in blobs {
             let client = self.get_client();
             let action_hash = digest.hash.clone();
@@ -414,6 +432,10 @@ impl RemoteClient for HttpRemoteClient {
                             blob_hash = &blob.digest.hash,
                             "Failed to upload blob: {error}",
                         );
+
+                        if debug_enabled {
+                            trace!("update_blob: {:?}", error);
+                        }
                     }
                 }
 

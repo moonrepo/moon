@@ -13,32 +13,20 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::RemoteConfig;
+use starbase_utils::env::bool_var;
 use std::{env, path::Path, str::FromStr};
 use tonic::{
     metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
     transport::{Channel, Endpoint},
     Code, Request, Status,
 };
-use tracing::{debug, trace, warn};
-
-fn map_transport_error(error: tonic::transport::Error) -> RemoteError {
-    // dbg!(&error);
-    RemoteError::GrpcConnectFailed {
-        error: Box::new(error),
-    }
-}
-
-fn map_status_error(error: tonic::Status) -> RemoteError {
-    // dbg!(&error);
-    RemoteError::GrpcCallFailed {
-        error: Box::new(error),
-    }
-}
+use tracing::{debug, error, trace, warn};
 
 #[derive(Default)]
 pub struct GrpcRemoteClient {
     channel: Option<Channel>,
     config: RemoteConfig,
+    debug: bool,
     headers: MetadataMap,
 }
 
@@ -96,6 +84,26 @@ impl GrpcRemoteClient {
 
         Ok(req)
     }
+
+    fn map_status_error(&self, method: &str, error: tonic::Status) -> RemoteError {
+        if self.debug {
+            error!("{method}: {:#?}", error);
+        }
+
+        RemoteError::GrpcCallFailed {
+            error: Box::new(error),
+        }
+    }
+
+    fn map_transport_error(&self, method: &str, error: tonic::transport::Error) -> RemoteError {
+        if self.debug {
+            error!("{method}: {:#?}", error);
+        }
+
+        RemoteError::GrpcConnectFailed {
+            error: Box::new(error),
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -105,6 +113,8 @@ impl RemoteClient for GrpcRemoteClient {
         config: &RemoteConfig,
         workspace_root: &Path,
     ) -> miette::Result<bool> {
+        self.debug = bool_var("MOON_DEBUG_REMOTE");
+
         let host = &config.host;
 
         debug!(
@@ -131,23 +141,23 @@ impl RemoteClient for GrpcRemoteClient {
         };
 
         let mut endpoint = Endpoint::from_shared(url)
-            .map_err(map_transport_error)?
+            .map_err(|error| self.map_transport_error("host", error))?
             .user_agent("moon")
-            .map_err(map_transport_error)?
+            .map_err(|error| self.map_transport_error("user_agent", error))?
             .keep_alive_while_idle(true);
 
         if let Some(mtls) = &config.mtls {
             endpoint = endpoint
                 .tls_config(create_mtls_config(mtls, workspace_root)?)
-                .map_err(map_transport_error)?;
+                .map_err(|error| self.map_transport_error("tls", error))?;
         } else if let Some(tls) = &config.tls {
             endpoint = endpoint
                 .tls_config(create_tls_config(tls, workspace_root)?)
-                .map_err(map_transport_error)?;
+                .map_err(|error| self.map_transport_error("mtls", error))?;
         } else if config.is_secure_protocol() {
             endpoint = endpoint
                 .tls_config(create_native_tls_config()?)
-                .map_err(map_transport_error)?;
+                .map_err(|error| self.map_transport_error("auth", error))?;
         }
 
         if config.is_localhost() {
@@ -169,7 +179,12 @@ impl RemoteClient for GrpcRemoteClient {
         if self.config.is_bearer_auth() {
             self.channel = Some(endpoint.connect_lazy());
         } else {
-            self.channel = Some(endpoint.connect().await.map_err(map_transport_error)?);
+            self.channel = Some(
+                endpoint
+                    .connect()
+                    .await
+                    .map_err(|error| self.map_transport_error("connect_to_host", error))?,
+            );
         }
 
         Ok(enabled)
@@ -189,7 +204,7 @@ impl RemoteClient for GrpcRemoteClient {
                 instance_name: self.config.cache.instance_name.clone(),
             })
             .await
-            .map_err(map_status_error)?;
+            .map_err(|error| self.map_status_error("load_capabilities", error))?;
 
         Ok(response.into_inner())
     }
@@ -245,8 +260,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(None)
                 } else {
-                    // dbg!("get_action_result", digest);
-                    Err(map_status_error(status).into())
+                    Err(self.map_status_error("get_action_result", status).into())
                 }
             }
         }
@@ -309,8 +323,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(None)
                 } else {
-                    // dbg!("update_action_result", digest);
-                    Err(map_status_error(status).into())
+                    Err(self.map_status_error("update_action_result", status).into())
                 }
             }
         }
@@ -332,7 +345,7 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => Ok(response.into_inner().missing_blob_digests),
-            Err(status) => Err(map_status_error(status).into()),
+            Err(status) => Err(self.map_status_error("find_missing_blobs", status).into()),
         }
     }
 
@@ -373,8 +386,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(vec![])
                 } else {
-                    // dbg!("batch_read_blobs", digest);
-                    Err(map_status_error(status).into())
+                    Err(self.map_status_error("batch_read_blobs", status).into())
                 };
             }
         };
@@ -483,8 +495,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                     Ok(vec![])
                 } else {
-                    // dbg!("batch_update_blobs", digest);
-                    Err(map_status_error(status).into())
+                    Err(self.map_status_error("batch_update_blobs", status).into())
                 };
             }
         };

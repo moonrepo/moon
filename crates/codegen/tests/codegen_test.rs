@@ -132,7 +132,7 @@ mod codegen {
                 .templates_dir
                 .join("github.com")
                 .join("moonrepo")
-                .join("moon-configs")
+                .join("moon-configs.git")
                 .exists());
         }
 

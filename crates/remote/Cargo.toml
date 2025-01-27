@@ -28,6 +28,7 @@ tonic = { version = "0.12.3", default-features = false, features = [
     "tls",
     "tls-native-roots",
 ] }
+tower = { version = "0.4.13", features = ["timeout"] }
 tracing = { workspace = true }
 zstd = "0.13.2"
 

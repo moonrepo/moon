@@ -4430,6 +4430,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tonic",
+ "tower 0.4.13",
  "tracing",
  "zstd",
 ]

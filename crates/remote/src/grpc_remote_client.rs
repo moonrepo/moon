@@ -10,17 +10,27 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, FindMissingBlobsRequest,
     GetActionResultRequest, GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
+use bazel_remote_apis::google::bytestream::byte_stream_client::ByteStreamClient;
 use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::RemoteConfig;
 use starbase_utils::env::bool_var;
+use std::sync::OnceLock;
+use std::time::Duration;
 use std::{env, path::Path, str::FromStr};
 use tonic::{
     metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
+    // service::{interceptor::InterceptedService, Interceptor},
     transport::{Channel, Endpoint},
-    Code, Request, Status,
+    Code,
+    Request,
+    Status,
 };
+use tower::{limit::ConcurrencyLimit, timeout::Timeout, ServiceBuilder};
 use tracing::{debug, error, trace, warn};
+
+// type LayeredService = Timeout<ConcurrencyLimit<InterceptedService<Channel, Box<dyn Interceptor>>>>;
+type LayeredService = Timeout<ConcurrencyLimit<Channel>>;
 
 #[derive(Default)]
 pub struct GrpcRemoteClient {
@@ -28,9 +38,52 @@ pub struct GrpcRemoteClient {
     config: RemoteConfig,
     debug: bool,
     headers: MetadataMap,
+
+    ac_client: OnceLock<ActionCacheClient<LayeredService>>,
+    bs_client: OnceLock<ByteStreamClient<LayeredService>>,
+    cap_client: OnceLock<CapabilitiesClient<LayeredService>>,
+    cas_client: OnceLock<ContentAddressableStorageClient<LayeredService>>,
 }
 
 impl GrpcRemoteClient {
+    fn create_clients(&mut self) {
+        let service: LayeredService = ServiceBuilder::new()
+            .timeout(Duration::from_secs(60 * 60))
+            .concurrency_limit(150)
+            // .layer(tonic::service::interceptor(|req| {
+            //     self.inject_auth_headers(req)
+            // }))
+            .service(self.channel.clone().unwrap());
+
+        let _ = self.ac_client.set(ActionCacheClient::new(service.clone()));
+
+        let _ = self.bs_client.set(ByteStreamClient::new(service.clone()));
+
+        let _ = self
+            .cap_client
+            .set(CapabilitiesClient::new(service.clone()));
+
+        let _ = self
+            .cas_client
+            .set(ContentAddressableStorageClient::new(service));
+    }
+
+    fn get_ac_client(&self) -> ActionCacheClient<LayeredService> {
+        self.ac_client.get().unwrap().clone()
+    }
+
+    fn get_bs_client(&self) -> ByteStreamClient<LayeredService> {
+        self.bs_client.get().unwrap().clone()
+    }
+
+    fn get_cap_client(&self) -> CapabilitiesClient<LayeredService> {
+        self.cap_client.get().unwrap().clone()
+    }
+
+    fn get_cas_client(&self) -> ContentAddressableStorageClient<LayeredService> {
+        self.cas_client.get().unwrap().clone()
+    }
+
     fn extract_headers(&mut self) -> miette::Result<bool> {
         let mut enabled = true;
 
@@ -187,19 +240,19 @@ impl RemoteClient for GrpcRemoteClient {
             );
         }
 
+        if enabled {
+            self.create_clients();
+        }
+
         Ok(enabled)
     }
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L452
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities> {
-        let mut client =
-            CapabilitiesClient::with_interceptor(self.channel.clone().unwrap(), |req| {
-                self.inject_auth_headers(req)
-            });
-
         trace!("Loading remote execution API capabilities from gRPC server");
 
-        let response = client
+        let response = self
+            .get_cap_client()
             .get_capabilities(GetCapabilitiesRequest {
                 instance_name: self.config.cache.instance_name.clone(),
             })
@@ -211,14 +264,10 @@ impl RemoteClient for GrpcRemoteClient {
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L170
     async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>> {
-        let mut client =
-            ActionCacheClient::with_interceptor(self.channel.clone().unwrap(), |req| {
-                self.inject_auth_headers(req)
-            });
-
         trace!(hash = &digest.hash, "Checking for a cached action result");
 
-        match client
+        match self
+            .get_ac_client()
             .get_action_result(GetActionResultRequest {
                 instance_name: self.config.cache.instance_name.clone(),
                 action_digest: Some(digest.to_owned()),
@@ -272,11 +321,6 @@ impl RemoteClient for GrpcRemoteClient {
         digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
-        let mut client =
-            ActionCacheClient::with_interceptor(self.channel.clone().unwrap(), |req| {
-                self.inject_auth_headers(req)
-            });
-
         trace!(
             hash = &digest.hash,
             files = result.output_files.len(),
@@ -286,7 +330,8 @@ impl RemoteClient for GrpcRemoteClient {
             "Caching action result"
         );
 
-        match client
+        match self
+            .get_ac_client()
             .update_action_result(UpdateActionResultRequest {
                 instance_name: self.config.cache.instance_name.clone(),
                 action_digest: Some(digest.to_owned()),
@@ -331,12 +376,8 @@ impl RemoteClient for GrpcRemoteClient {
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L351
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
-        let mut client = ContentAddressableStorageClient::with_interceptor(
-            self.channel.clone().unwrap(),
-            |req| self.inject_auth_headers(req),
-        );
-
-        match client
+        match self
+            .get_cas_client()
             .find_missing_blobs(FindMissingBlobsRequest {
                 instance_name: self.config.cache.instance_name.clone(),
                 blob_digests,
@@ -355,11 +396,6 @@ impl RemoteClient for GrpcRemoteClient {
         digest: &Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Blob>> {
-        let mut client = ContentAddressableStorageClient::with_interceptor(
-            self.channel.clone().unwrap(),
-            |req| self.inject_auth_headers(req),
-        );
-
         trace!(
             hash = &digest.hash,
             compression = self.config.cache.compression.to_string(),
@@ -367,7 +403,8 @@ impl RemoteClient for GrpcRemoteClient {
             blob_digests.len()
         );
 
-        let response = match client
+        let response = match self
+            .get_cas_client()
             .batch_read_blobs(BatchReadBlobsRequest {
                 acceptable_compressors: get_acceptable_compressors(self.config.cache.compression),
                 instance_name: self.config.cache.instance_name.clone(),
@@ -443,11 +480,6 @@ impl RemoteClient for GrpcRemoteClient {
         digest: &Digest,
         blobs: Vec<Blob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
-        let mut client = ContentAddressableStorageClient::with_interceptor(
-            self.channel.clone().unwrap(),
-            |req| self.inject_auth_headers(req),
-        );
-
         let compression = self.config.cache.compression;
         let mut requests = vec![];
 
@@ -466,7 +498,8 @@ impl RemoteClient for GrpcRemoteClient {
             });
         }
 
-        let response = match client
+        let response = match self
+            .get_cas_client()
             .batch_update_blobs(BatchUpdateBlobsRequest {
                 instance_name: self.config.cache.instance_name.clone(),
                 requests,

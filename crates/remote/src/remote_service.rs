@@ -56,7 +56,7 @@ impl RemoteService {
             .install_default()
             .is_err()
         {
-            error!("Failed to initialize cryptography for gRPC!");
+            error!("Failed to initialize cryptography for TLS/mTLS!");
 
             return Ok(());
         }
@@ -185,7 +185,7 @@ impl RemoteService {
         // compression level, digest strings, etc. All of these "add up" and can
         // bump the total body size larger than the actual limit. Is there a better
         // way to handle this? Probably...
-        max - (1024 * 10)
+        max - (1024 * 25)
     }
 
     #[instrument(skip(self, state))]
@@ -261,6 +261,7 @@ impl RemoteService {
                     )
                     .await;
 
+                    // Don't save the action result if some of the blobs failed to upload
                     if upload_result.is_err() || upload_result.is_ok_and(|res| !res) {
                         return;
                     }
@@ -364,7 +365,21 @@ async fn batch_upload_blobs(
     blobs: Vec<Blob>,
     max_size: usize,
 ) -> miette::Result<bool> {
-    let blob_groups = partition_into_groups(blobs, max_size, |blob| blob.bytes.len());
+    let missing_blob_digests = client
+        .find_missing_blobs(blobs.iter().map(|blob| blob.digest.clone()).collect())
+        .await?;
+
+    // Everything exists in CAS already!
+    if missing_blob_digests.is_empty() {
+        return Ok(true);
+    }
+
+    let blob_groups = partition_into_groups(
+        blobs,
+        max_size,
+        |blob| blob.bytes.len(),
+        |blob| missing_blob_digests.contains(&blob.digest),
+    );
 
     if blob_groups.is_empty() {
         return Ok(false);
@@ -428,7 +443,8 @@ async fn batch_download_blobs(
         }
     }
 
-    let digest_groups = partition_into_groups(digests, max_size, |dig| dig.size_bytes as usize);
+    let digest_groups =
+        partition_into_groups(digests, max_size, |dig| dig.size_bytes as usize, |_| true);
 
     if digest_groups.is_empty() {
         return Ok(());
@@ -486,10 +502,15 @@ fn partition_into_groups<T>(
     items: Vec<T>,
     max_size: usize,
     get_size: impl Fn(&T) -> usize,
+    is_filtered: impl Fn(&T) -> bool,
 ) -> BTreeMap<i32, Partition<T>> {
     let mut groups = BTreeMap::<i32, Partition<T>>::default();
 
     for item in items {
+        if !is_filtered(&item) {
+            continue;
+        }
+
         let item_size = get_size(&item);
         let mut index_to_use = -1;
 

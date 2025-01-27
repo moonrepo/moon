@@ -11,17 +11,19 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, FindMissingBlobsRequest,
     GetActionResultRequest, GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
-use bazel_remote_apis::google::bytestream::byte_stream_client::ByteStreamClient;
+use bazel_remote_apis::google::bytestream::{byte_stream_client::ByteStreamClient, WriteRequest};
 use http::header::HeaderMap;
 use moon_common::color;
 use moon_config::RemoteConfig;
 use starbase_utils::env::bool_var;
 use std::path::Path;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
+use tokio::sync::Mutex;
+use tokio_util::io::ReaderStream;
 use tonic::{
     transport::{Channel, Endpoint},
-    Code,
+    Code, Request,
 };
 use tower::{limit::ConcurrencyLimit, timeout::Timeout, ServiceBuilder};
 use tracing::{debug, error, trace, warn};
@@ -33,6 +35,7 @@ pub struct GrpcRemoteClient {
     channel: Option<Channel>,
     config: RemoteConfig,
     debug: bool,
+    uuid: OnceLock<uuid::Uuid>,
 
     ac_client: OnceLock<ActionCacheClient<LayeredService>>,
     bs_client: OnceLock<ByteStreamClient<LayeredService>>,
@@ -75,6 +78,21 @@ impl GrpcRemoteClient {
 
     fn get_cas_client(&self) -> ContentAddressableStorageClient<LayeredService> {
         self.cas_client.get().unwrap().clone()
+    }
+
+    fn get_uuid(&self) -> &uuid::Uuid {
+        self.uuid.get_or_init(uuid::Uuid::new_v4)
+    }
+
+    // TODO compression
+    fn get_resource_name(&self, digest: &Digest) -> String {
+        format!(
+            "{}/uploads/{}/blobs/{}/{}",
+            self.config.cache.instance_name,
+            self.get_uuid(),
+            digest.hash,
+            digest.size_bytes,
+        )
     }
 
     fn map_status_error(&self, method: &str, error: tonic::Status) -> RemoteError {
@@ -351,7 +369,7 @@ impl RemoteClient for GrpcRemoteClient {
             })
             .await
         {
-            Ok(res) => res,
+            Ok(response) => response,
             Err(status) => {
                 return if matches!(status.code(), Code::InvalidArgument) {
                     warn!(
@@ -445,7 +463,7 @@ impl RemoteClient for GrpcRemoteClient {
             })
             .await
         {
-            Ok(res) => res,
+            Ok(response) => response,
             Err(status) => {
                 let code = status.code();
 
@@ -509,5 +527,80 @@ impl RemoteClient for GrpcRemoteClient {
         );
 
         Ok(digests)
+    }
+
+    async fn stream_update_blob(
+        &self,
+        digest: &Digest,
+        blob: Blob,
+    ) -> miette::Result<Option<Digest>> {
+        trace!(
+            hash = &digest.hash,
+            blob_hash = &blob.digest.hash,
+            "Streaming upload output blob"
+        );
+
+        let resource_name = self.get_resource_name(&blob.digest);
+        let total_bytes = blob.digest.size_bytes;
+        let stream_error = Arc::new(Mutex::new(None));
+        let stream_error_clone = stream_error.clone();
+
+        let stream = async_stream::stream! {
+            let reader = ReaderStream::new(blob.bytes.as_slice());
+            let mut written_bytes: i64 = 0;
+
+            for await read_result in reader {
+                match read_result {
+                    Ok(chunk) => {
+                        let write_offset = written_bytes;
+                        written_bytes += chunk.len() as i64;
+
+                        yield WriteRequest {
+                            resource_name: resource_name.clone(),
+                            write_offset,
+                            finish_write: written_bytes >= total_bytes,
+                            data: chunk.to_vec(),
+                        }
+                    },
+                    Err(error) => {
+                        *stream_error_clone.lock().await = Some(error);
+                    },
+                }
+            }
+        };
+
+        let result = self.get_bs_client().write(Request::new(stream)).await;
+
+        if let Some(ref error) = *stream_error.lock().await {
+            warn!(
+                hash = &digest.hash,
+                blob_hash = &blob.digest.hash,
+                "Failed to stream upload blob: {error}",
+            );
+
+            return Ok(None);
+        }
+
+        match result {
+            Ok(response) => {
+                let result = response.into_inner();
+
+                if result.committed_size < total_bytes {
+                    warn!(
+                        hash = &digest.hash,
+                        blob_hash = &blob.digest.hash,
+                        "Failed to upload blob, streamed bytes was {}, but we required {total_bytes}",
+                        result.committed_size
+                    );
+
+                    return Ok(None);
+                }
+            }
+            Err(status) => {
+                return Err(self.map_status_error("stream_update_blob", status).into());
+            }
+        };
+
+        Ok(Some(blob.digest))
     }
 }

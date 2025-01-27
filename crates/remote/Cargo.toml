@@ -22,10 +22,13 @@ sha2 = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true, features = ["io"] }
 tracing = { workspace = true }
+uuid = { workspace = true }
 zstd = "0.13.2"
 
 # gRPC
+async-stream = "0.3.6"
 http = "1.1.0"
 tonic = { version = "0.12.3", default-features = false, features = [
     "channel",

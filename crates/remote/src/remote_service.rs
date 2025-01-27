@@ -388,9 +388,31 @@ async fn batch_upload_blobs(
     let group_total = blob_groups.len();
     let mut set = JoinSet::default();
 
-    for (group_index, group) in blob_groups.into_iter() {
+    for (group_index, mut group) in blob_groups.into_iter() {
         let client = Arc::clone(&client);
         let digest = digest.to_owned();
+
+        if group.stream {
+            set.spawn(async move {
+                if let Err(error) = client
+                    .stream_update_blob(&digest, group.items.remove(0))
+                    .await
+                {
+                    warn!(
+                        hash = &digest.hash,
+                        group = group_index + 1,
+                        "Failed to upload blob: {}",
+                        color::muted_light(error.to_string()),
+                    );
+
+                    return false;
+                }
+
+                true
+            });
+
+            continue;
+        }
 
         if group_total > 1 {
             trace!(
@@ -496,6 +518,7 @@ async fn batch_download_blobs(
 struct Partition<T> {
     pub items: Vec<T>,
     pub size: usize,
+    pub stream: bool,
 }
 
 fn partition_into_groups<T>(
@@ -513,22 +536,19 @@ fn partition_into_groups<T>(
 
         let item_size = get_size(&item);
         let mut index_to_use = -1;
+        let mut stream = false;
 
+        // Item is too large, must be streamed
         if item_size >= max_size {
-            warn!(
-                size = item_size,
-                max_size,
-                "Encountered a blob larger than the max size; this is currently not supported until we support the ByteStream API; aborting"
-            );
-
-            return BTreeMap::default();
+            stream = true;
         }
-
         // Try and find a partition that this item can go into
-        for (index, group) in &groups {
-            if group.size + item_size <= max_size {
-                index_to_use = *index;
-                break;
+        else {
+            for (index, group) in &groups {
+                if !group.stream && (group.size + item_size) <= max_size {
+                    index_to_use = *index;
+                    break;
+                }
             }
         }
 
@@ -540,8 +560,10 @@ fn partition_into_groups<T>(
         let group = groups.entry(index_to_use).or_insert_with(|| Partition {
             items: vec![],
             size: 0,
+            stream: false,
         });
         group.size += item_size;
+        group.stream = stream;
         group.items.push(item);
     }
 

@@ -93,6 +93,8 @@ jobs:
           proto-version: '0.45.1' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.5
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      - uses: ilammy/setup-nasm@v1
+        if: ${{ runner.os == 'Windows' }}
       - name: Checking coverage status
         id: coverage
         shell: bash

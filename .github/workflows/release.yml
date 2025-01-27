@@ -103,6 +103,8 @@ jobs:
         with:
           cache: false
           targets: ${{ matrix.target }}
+      - uses: ilammy/setup-nasm@v1
+        if: ${{ runner.os == 'Windows' }}
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}

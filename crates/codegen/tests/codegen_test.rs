@@ -133,7 +133,6 @@ mod codegen {
                 .join("github.com")
                 .join("moonrepo")
                 .join("moon-configs")
-                .join(".git")
                 .exists());
         }
 

@@ -23,7 +23,7 @@ use tonic::{
     transport::{Channel, Endpoint},
     Code,
 };
-use tower::{limit::ConcurrencyLimit, retry::Retry, timeout::Timeout, ServiceBuilder};
+use tower::{limit::ConcurrencyLimit, timeout::Timeout, ServiceBuilder};
 use tracing::{debug, error, trace, warn};
 
 type LayeredService = Timeout<ConcurrencyLimit<RequestHeaders<Channel>>>;
@@ -43,7 +43,6 @@ pub struct GrpcRemoteClient {
 impl GrpcRemoteClient {
     fn create_clients(&mut self, headers: HeaderMap) {
         let service: LayeredService = ServiceBuilder::new()
-            // .retry()
             .timeout(Duration::from_secs(60 * 60))
             .concurrency_limit(150)
             .layer(RequestHeadersLayer::new(headers))

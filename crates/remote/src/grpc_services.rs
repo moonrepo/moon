@@ -1,14 +1,25 @@
 use http::{header::HeaderMap, Request};
+// use std::future::Future;
 use std::task::{Context, Poll};
-use tower::retry::Policy;
+// use tower::retry::Policy;
 use tower::{Layer, Service};
 
-// pub struct RetryPolicy<T>(u8);
+// TODO: blocked
+// https://github.com/hyperium/tonic/issues/733
+// https://github.com/tower-rs/tower/pull/790
+// https://github.com/tower-rs/tower/issues/682
 
-// impl<T, E> Policy<Request<T>, Response<T>, E> for RetryPolicy<T> {
-//     type Future = future::Ready<()>;
+// pub struct RetryPolicy(u8);
 
-//     fn retry(&mut self, req: &mut Req, result: &mut Result<Res, E>) -> Option<Self::Future> {
+// impl<T, E> Policy<Request<T>, Response<T>, E> for RetryPolicy {
+//     // type Future = future::Ready<()>;
+//     type Future: Future<Output = ()>;
+
+//     fn retry(
+//         &mut self,
+//         req: &mut Request<T>,
+//         result: &mut Result<Response<T>, E>,
+//     ) -> Option<Self::Future> {
 //         match result {
 //             Ok(_) => {
 //                 // Treat all `Response`s as success,
@@ -30,7 +41,7 @@ use tower::{Layer, Service};
 //         }
 //     }
 
-//     fn clone_request(&mut self, req: &Req) -> Option<Req> {
+//     fn clone_request(&mut self, req: &Request<T>) -> Option<Request<T>> {
 //         Some(req.clone())
 //     }
 // }

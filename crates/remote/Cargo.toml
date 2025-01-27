@@ -22,15 +22,18 @@ sha2 = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tracing = { workspace = true }
+zstd = "0.13.2"
+
+# gRPC
+http = "1.1.0"
 tonic = { version = "0.12.3", default-features = false, features = [
     "channel",
     "gzip",
     "tls",
     "tls-native-roots",
 ] }
-tower = { version = "0.4.13", features = ["timeout"] }
-tracing = { workspace = true }
-zstd = "0.13.2"
+tower = { version = "0.4.13", features = ["retry", "timeout"] }
 
 # Temporary until tonic v0.13
 aws-lc-rs = { version = "1.12.2", default-features = false, features = [

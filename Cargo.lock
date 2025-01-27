@@ -4415,6 +4415,7 @@ dependencies = [
  "bazel-remote-apis",
  "bincode",
  "chrono",
+ "http 1.1.0",
  "miette 7.4.0",
  "moon_action",
  "moon_common",

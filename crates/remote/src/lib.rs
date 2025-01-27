@@ -2,6 +2,7 @@ mod action_state;
 mod compression;
 mod fs_digest;
 mod grpc_remote_client;
+mod grpc_services;
 mod grpc_tls;
 mod http_remote_client;
 mod http_tls;

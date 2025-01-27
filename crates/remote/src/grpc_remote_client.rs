@@ -1,5 +1,6 @@
 use crate::compression::*;
 use crate::fs_digest::Blob;
+use crate::grpc_services::*;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
@@ -11,33 +12,27 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     GetActionResultRequest, GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
 use bazel_remote_apis::google::bytestream::byte_stream_client::ByteStreamClient;
-use miette::IntoDiagnostic;
+use http::header::HeaderMap;
 use moon_common::color;
 use moon_config::RemoteConfig;
 use starbase_utils::env::bool_var;
+use std::path::Path;
 use std::sync::OnceLock;
 use std::time::Duration;
-use std::{env, path::Path, str::FromStr};
 use tonic::{
-    metadata::{KeyAndValueRef, MetadataKey, MetadataMap, MetadataValue},
-    // service::{interceptor::InterceptedService, Interceptor},
     transport::{Channel, Endpoint},
     Code,
-    Request,
-    Status,
 };
-use tower::{limit::ConcurrencyLimit, timeout::Timeout, ServiceBuilder};
+use tower::{limit::ConcurrencyLimit, retry::Retry, timeout::Timeout, ServiceBuilder};
 use tracing::{debug, error, trace, warn};
 
-// type LayeredService = Timeout<ConcurrencyLimit<InterceptedService<Channel, Box<dyn Interceptor>>>>;
-type LayeredService = Timeout<ConcurrencyLimit<Channel>>;
+type LayeredService = Timeout<ConcurrencyLimit<RequestHeaders<Channel>>>;
 
 #[derive(Default)]
 pub struct GrpcRemoteClient {
     channel: Option<Channel>,
     config: RemoteConfig,
     debug: bool,
-    headers: MetadataMap,
 
     ac_client: OnceLock<ActionCacheClient<LayeredService>>,
     bs_client: OnceLock<ByteStreamClient<LayeredService>>,
@@ -46,13 +41,12 @@ pub struct GrpcRemoteClient {
 }
 
 impl GrpcRemoteClient {
-    fn create_clients(&mut self) {
+    fn create_clients(&mut self, headers: HeaderMap) {
         let service: LayeredService = ServiceBuilder::new()
+            // .retry()
             .timeout(Duration::from_secs(60 * 60))
             .concurrency_limit(150)
-            // .layer(tonic::service::interceptor(|req| {
-            //     self.inject_auth_headers(req)
-            // }))
+            .layer(RequestHeadersLayer::new(headers))
             .service(self.channel.clone().unwrap());
 
         let _ = self.ac_client.set(ActionCacheClient::new(service.clone()));
@@ -84,60 +78,6 @@ impl GrpcRemoteClient {
         self.cas_client.get().unwrap().clone()
     }
 
-    fn extract_headers(&mut self) -> miette::Result<bool> {
-        let mut enabled = true;
-
-        if let Some(auth) = &self.config.auth {
-            for (key, value) in &auth.headers {
-                self.headers.insert(
-                    MetadataKey::from_str(key).into_diagnostic()?,
-                    MetadataValue::from_str(value).into_diagnostic()?,
-                );
-            }
-
-            if let Some(token_name) = &auth.token {
-                let token = env::var(token_name).unwrap_or_default();
-
-                if token.is_empty() {
-                    enabled = false;
-
-                    warn!(
-                        "Auth token {} does not exist, unable to authorize for remote service",
-                        color::property(token_name)
-                    );
-                } else {
-                    self.headers.insert(
-                        MetadataKey::from_str("Authorization").into_diagnostic()?,
-                        MetadataValue::from_str(&format!("Bearer {token}")).into_diagnostic()?,
-                    );
-                }
-            }
-        }
-
-        Ok(enabled)
-    }
-
-    fn inject_auth_headers(&self, mut req: Request<()>) -> Result<Request<()>, Status> {
-        if self.headers.is_empty() {
-            return Ok(req);
-        }
-
-        let headers = req.metadata_mut();
-
-        for entry in self.headers.iter() {
-            match entry {
-                KeyAndValueRef::Ascii(key, value) => {
-                    headers.insert(key.clone(), value.clone());
-                }
-                KeyAndValueRef::Binary(key, value) => {
-                    headers.insert_bin(key.clone(), value.clone());
-                }
-            };
-        }
-
-        Ok(req)
-    }
-
     fn map_status_error(&self, method: &str, error: tonic::Status) -> RemoteError {
         if self.debug {
             error!("{method}: {:#?}", error);
@@ -166,14 +106,10 @@ impl RemoteClient for GrpcRemoteClient {
         config: &RemoteConfig,
         workspace_root: &Path,
     ) -> miette::Result<bool> {
-        self.debug = bool_var("MOON_DEBUG_REMOTE");
-
-        let host = &config.host;
-
         debug!(
             instance = &config.cache.instance_name,
             "Connecting to gRPC host {} {}",
-            color::url(host),
+            color::url(&config.host),
             if config.mtls.is_some() {
                 "(with mTLS)"
             } else if config.tls.is_some() {
@@ -185,12 +121,20 @@ impl RemoteClient for GrpcRemoteClient {
             }
         );
 
+        self.debug = bool_var("MOON_DEBUG_REMOTE");
+        self.config = config.to_owned();
+
+        // Extract headers and abort early if not enabled
+        let Some(headers) = self.extract_headers(config)? else {
+            return Ok(false);
+        };
+
         // Although we use a grpc(s) protocol for the host,
         // tonic only supports http(s), so change it
-        let url = if let Some(suffix) = host.strip_prefix("grpc") {
+        let url = if let Some(suffix) = self.config.host.strip_prefix("grpc") {
             format!("http{suffix}")
         } else {
-            host.to_owned()
+            self.config.host.to_owned()
         };
 
         let mut endpoint = Endpoint::from_shared(url)
@@ -224,9 +168,6 @@ impl RemoteClient for GrpcRemoteClient {
             );
         }
 
-        self.config = config.to_owned();
-        let enabled = self.extract_headers()?;
-
         // We can't inject auth headers into this initial connection,
         // so defer the connection until a client is used
         if self.config.is_bearer_auth() {
@@ -240,11 +181,9 @@ impl RemoteClient for GrpcRemoteClient {
             );
         }
 
-        if enabled {
-            self.create_clients();
-        }
+        self.create_clients(headers);
 
-        Ok(enabled)
+        Ok(true)
     }
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L452

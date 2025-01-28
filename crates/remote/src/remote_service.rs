@@ -184,8 +184,9 @@ impl RemoteService {
         // we need to account for the non-blob data in the request/response, like the
         // compression level, digest strings, etc. All of these "add up" and can
         // bump the total body size larger than the actual limit. Is there a better
-        // way to handle this? Probably...
-        max - (1024 * 25)
+        // way to handle this? Probably, but for now, just reduce the size by 1%,
+        // which is about 42k bytes.
+        max - (max as f64 * 0.01) as i64
     }
 
     #[instrument(skip(self, state))]

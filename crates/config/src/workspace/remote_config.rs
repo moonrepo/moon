@@ -49,6 +49,12 @@ derive_enum!(
     }
 );
 
+impl RemoteCompression {
+    pub fn is_enabled(&self) -> bool {
+        !matches!(self, Self::None)
+    }
+}
+
 /// Configures the action cache (AC) and content addressable cache (CAS).
 #[derive(Clone, Config, Debug)]
 pub struct RemoteCacheConfig {

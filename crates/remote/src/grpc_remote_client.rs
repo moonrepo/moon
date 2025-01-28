@@ -13,7 +13,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::bytestream::{byte_stream_client::ByteStreamClient, WriteRequest};
 use http::header::HeaderMap;
 use moon_common::color;
-use moon_config::RemoteConfig;
+use moon_config::{RemoteCompression, RemoteConfig};
 use starbase_utils::env::bool_var;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
@@ -81,17 +81,6 @@ impl GrpcRemoteClient {
 
     fn get_uuid(&self) -> &uuid::Uuid {
         self.uuid.get_or_init(uuid::Uuid::new_v4)
-    }
-
-    // TODO compression
-    fn get_resource_name(&self, digest: &Digest) -> String {
-        format!(
-            "{}/uploads/{}/blobs/{}/{}",
-            self.config.cache.instance_name,
-            self.get_uuid(),
-            digest.hash,
-            digest.size_bytes,
-        )
     }
 
     fn map_status_error(&self, method: &str, error: tonic::Status) -> RemoteError {
@@ -218,14 +207,20 @@ impl RemoteClient for GrpcRemoteClient {
     }
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L170
-    async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>> {
-        trace!(hash = &digest.hash, "Checking for a cached action result");
+    async fn get_action_result(
+        &self,
+        action_digest: &Digest,
+    ) -> miette::Result<Option<ActionResult>> {
+        trace!(
+            hash = &action_digest.hash,
+            "Checking for a cached action result"
+        );
 
         match self
             .get_ac_client()
             .get_action_result(GetActionResultRequest {
                 instance_name: self.config.cache.instance_name.clone(),
-                action_digest: Some(digest.to_owned()),
+                action_digest: Some(action_digest.to_owned()),
                 inline_stderr: true,
                 inline_stdout: true,
                 digest_function: digest_function::Value::Sha256 as i32,
@@ -237,7 +232,7 @@ impl RemoteClient for GrpcRemoteClient {
                 let result = response.into_inner();
 
                 trace!(
-                    hash = &digest.hash,
+                    hash = &action_digest.hash,
                     files = result.output_files.len(),
                     links = result.output_symlinks.len(),
                     dirs = result.output_directories.len(),
@@ -249,7 +244,7 @@ impl RemoteClient for GrpcRemoteClient {
             }
             Err(status) => {
                 if matches!(status.code(), Code::NotFound) {
-                    trace!(hash = &digest.hash, "Cache miss on action result");
+                    trace!(hash = &action_digest.hash, "Cache miss on action result");
 
                     Ok(None)
                 }
@@ -258,7 +253,7 @@ impl RemoteClient for GrpcRemoteClient {
                 // happen, let's just do a cache miss instead...
                 else if matches!(status.code(), Code::OutOfRange) {
                     trace!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         "Cache miss because the expected payload is too large"
                     );
 
@@ -273,11 +268,11 @@ impl RemoteClient for GrpcRemoteClient {
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L193
     async fn update_action_result(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             files = result.output_files.len(),
             links = result.output_symlinks.len(),
             dirs = result.output_directories.len(),
@@ -289,7 +284,7 @@ impl RemoteClient for GrpcRemoteClient {
             .get_ac_client()
             .update_action_result(UpdateActionResultRequest {
                 instance_name: self.config.cache.instance_name.clone(),
-                action_digest: Some(digest.to_owned()),
+                action_digest: Some(action_digest.to_owned()),
                 action_result: Some(result),
                 digest_function: digest_function::Value::Sha256 as i32,
                 ..Default::default()
@@ -297,7 +292,7 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => {
-                trace!(hash = &digest.hash, "Cached action result");
+                trace!(hash = &action_digest.hash, "Cached action result");
 
                 Ok(Some(response.into_inner()))
             }
@@ -306,7 +301,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if matches!(code, Code::InvalidArgument | Code::FailedPrecondition) {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         code = ?code,
                         "Failed to cache action result: {}",
                         color::muted_light(status.message()),
@@ -315,7 +310,7 @@ impl RemoteClient for GrpcRemoteClient {
                     Ok(None)
                 } else if matches!(code, Code::ResourceExhausted) {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         code = ?code,
                         "Remote service is out of storage space: {}",
                         color::muted_light(status.message()),
@@ -348,11 +343,11 @@ impl RemoteClient for GrpcRemoteClient {
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L403
     async fn batch_read_blobs(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Blob>> {
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             compression = self.config.cache.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
@@ -372,7 +367,7 @@ impl RemoteClient for GrpcRemoteClient {
             Err(status) => {
                 return if matches!(status.code(), Code::InvalidArgument) {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         "Attempted to download more blobs than the allowed limit"
                     );
 
@@ -392,7 +387,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if !matches!(code, Code::Ok | Code::NotFound) {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         blob_hash = download.digest.as_ref().map(|d| &d.hash),
                         details = ?status.details,
                         code = ?code,
@@ -407,20 +402,22 @@ impl RemoteClient for GrpcRemoteClient {
             }
 
             if let Some(digest) = download.digest {
-                blobs.push(Blob {
+                let compression = get_compression_from_code(download.compressor);
+                let mut blob = Blob {
                     digest,
-                    bytes: decompress_blob(
-                        get_compression_from_code(download.compressor),
-                        download.data,
-                    )?,
-                });
+                    bytes: download.data,
+                    compressable: true,
+                };
+
+                blob.decompress(compression)?;
+                blobs.push(blob);
             }
 
             total_count += 1;
         }
 
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             "Downloaded {} of {} output blobs",
             blobs.len(),
             total_count
@@ -432,32 +429,58 @@ impl RemoteClient for GrpcRemoteClient {
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L379
     async fn batch_update_blobs(
         &self,
-        digest: &Digest,
-        blobs: Vec<Blob>,
+        action_digest: &Digest,
+        mut blobs: Vec<Blob>,
+        check_missing: bool,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
-        let mut requests = vec![];
+
+        // Compress the blobs before uploading so that we generate
+        // new digests, and can use those to find any missing entries
+        if compression.is_enabled() {
+            for blob in blobs.iter_mut() {
+                blob.compress(compression)?;
+            }
+        }
+
+        // Check if the blob already exists in CAS, so that we reduce uploads
+        if check_missing {
+            let missing_digests = self
+                .find_missing_blobs(blobs.iter().map(|blob| blob.digest.clone()).collect())
+                .await?;
+
+            // All blobs already exist in CAS, so return their digest
+            if missing_digests.is_empty() {
+                return Ok(blobs.into_iter().map(|blob| Some(blob.digest)).collect());
+            }
+
+            // Otherwise, reduce down the blobs list
+            blobs.retain(|blob| missing_digests.contains(&blob.digest));
+        }
 
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             compression = compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
         );
 
-        for blob in blobs {
-            requests.push(batch_update_blobs_request::Request {
-                digest: Some(blob.digest),
-                data: compress_blob(compression, blob.bytes)?,
-                compressor: get_compressor(compression),
-            });
-        }
-
         let response = match self
             .get_cas_client()
             .batch_update_blobs(BatchUpdateBlobsRequest {
                 instance_name: self.config.cache.instance_name.clone(),
-                requests,
+                requests: blobs
+                    .into_iter()
+                    .map(|blob| batch_update_blobs_request::Request {
+                        digest: Some(blob.digest),
+                        data: blob.bytes,
+                        compressor: get_compressor(if blob.compressable {
+                            compression
+                        } else {
+                            RemoteCompression::None
+                        }),
+                    })
+                    .collect(),
                 digest_function: digest_function::Value::Sha256 as i32,
             })
             .await
@@ -468,14 +491,14 @@ impl RemoteClient for GrpcRemoteClient {
 
                 return if matches!(code, Code::InvalidArgument) {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         "Attempted to upload more blobs than the allowed limit"
                     );
 
                     Ok(vec![])
                 } else if matches!(code, Code::ResourceExhausted) {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         code = ?code,
                         "Remote service exhausted resource: {}",
                         color::muted_light(status.message()),
@@ -497,8 +520,8 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if !matches!(code, Code::Ok) {
                     warn!(
-                        hash = &digest.hash,
-                        blob_hash = upload.digest.as_ref().map(|d| &d.hash),
+                        hash = &action_digest.hash,
+                        blob_hash = upload.digest.as_ref().map(|dig| &dig.hash),
                         details = ?status.details,
                         code = ?code,
                         "Failed to upload blob: {}",
@@ -519,7 +542,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             "Uploaded {} of {} output blobs",
             uploaded_count,
             digests.len()
@@ -539,7 +562,13 @@ impl RemoteClient for GrpcRemoteClient {
             "Streaming upload output blob"
         );
 
-        let resource_name = self.get_resource_name(&blob.digest);
+        let resource_name = format!(
+            "{}/uploads/{}/blobs/{}/{}",
+            self.config.cache.instance_name,
+            self.get_uuid(),
+            blob.digest.hash,
+            blob.digest.size_bytes,
+        );
         let total_bytes = blob.digest.size_bytes;
         let stream_error = Arc::new(Mutex::new(None));
         let stream_error_clone = stream_error.clone();

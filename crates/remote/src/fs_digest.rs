@@ -132,7 +132,11 @@ impl OutputDigests {
                 node_properties: Some(props),
             });
 
-            self.blobs.push(Blob { digest, bytes });
+            self.blobs.push(Blob {
+                digest,
+                bytes,
+                compressable: true,
+            });
         } else if abs_path.is_dir() {
             // TODO use the REAPI directory types
             for abs_file in glob::walk_files(abs_path, ["**/*"])? {

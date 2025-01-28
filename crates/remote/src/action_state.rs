@@ -58,7 +58,7 @@ impl ActionState<'_> {
         // then we can ignore all the working directory logic
         let mut command = Command {
             arguments: vec![self.task.command.clone()],
-            output_paths: vec![], // TODO
+            output_paths: vec![], // TODO?
             ..Default::default()
         };
 
@@ -94,14 +94,16 @@ impl ActionState<'_> {
             result.exit_code = exec.exit_code.unwrap_or_default();
 
             if let Some(stderr) = &exec.stderr {
-                let blob = Blob::new(stderr.as_bytes().to_owned());
+                let mut blob = Blob::new(stderr.as_bytes().to_owned());
+                blob.compressable = false;
 
                 result.stderr_digest = Some(blob.digest.clone());
                 self.blobs.push(blob);
             }
 
             if let Some(stdout) = &exec.stdout {
-                let blob = Blob::new(stdout.as_bytes().to_owned());
+                let mut blob = Blob::new(stdout.as_bytes().to_owned());
+                blob.compressable = false;
 
                 result.stdout_digest = Some(blob.digest.clone());
                 self.blobs.push(blob);
@@ -138,7 +140,7 @@ impl ActionState<'_> {
         bincode::serialize(&self.command).into_diagnostic()
     }
 
-    pub fn prepare_for_upload(&mut self) -> Option<(ActionResult, Vec<Blob>)> {
+    pub fn extract_for_upload(&mut self) -> Option<(ActionResult, Vec<Blob>)> {
         self.action_result
             .take()
             .map(|result| (result, self.blobs.drain(0..).collect::<Vec<_>>()))

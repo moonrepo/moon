@@ -170,12 +170,18 @@ impl RemoteClient for HttpRemoteClient {
         })
     }
 
-    async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>> {
-        trace!(hash = &digest.hash, "Checking for a cached action result");
+    async fn get_action_result(
+        &self,
+        action_digest: &Digest,
+    ) -> miette::Result<Option<ActionResult>> {
+        trace!(
+            hash = &action_digest.hash,
+            "Checking for a cached action result"
+        );
 
         match self
             .get_client()
-            .get(self.get_endpoint("ac", &digest.hash))
+            .get(self.get_endpoint("ac", &action_digest.hash))
             .header("Accept", "application/json")
             .send()
             .await
@@ -191,7 +197,7 @@ impl RemoteClient for HttpRemoteClient {
                             })?;
 
                     trace!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         files = result.output_files.len(),
                         links = result.output_symlinks.len(),
                         dirs = result.output_directories.len(),
@@ -201,7 +207,7 @@ impl RemoteClient for HttpRemoteClient {
 
                     Ok(Some(result))
                 } else {
-                    trace!(hash = &digest.hash, "Cache miss on action result");
+                    trace!(hash = &action_digest.hash, "Cache miss on action result");
 
                     Ok(None)
                 }
@@ -212,11 +218,11 @@ impl RemoteClient for HttpRemoteClient {
 
     async fn update_action_result(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             files = result.output_files.len(),
             links = result.output_symlinks.len(),
             dirs = result.output_directories.len(),
@@ -226,7 +232,7 @@ impl RemoteClient for HttpRemoteClient {
 
         match self
             .get_client()
-            .put(self.get_endpoint("ac", &digest.hash))
+            .put(self.get_endpoint("ac", &action_digest.hash))
             .header("Content-Type", "application/json")
             .json(&result)
             .send()
@@ -238,12 +244,12 @@ impl RemoteClient for HttpRemoteClient {
                 // Doesn't return a response body
                 // https://github.com/buchgr/bazel-remote/blob/master/server/http.go#L429
                 if status.is_success() {
-                    trace!(hash = &digest.hash, "Cached action result");
+                    trace!(hash = &action_digest.hash, "Cached action result");
 
                     Ok(Some(result))
                 } else {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         code = status.as_u16(),
                         "Failed to cache action result: {}",
                         color::muted_light(status.to_string()),
@@ -264,11 +270,11 @@ impl RemoteClient for HttpRemoteClient {
 
     async fn batch_read_blobs(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Blob>> {
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             compression = self.config.cache.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
@@ -279,7 +285,7 @@ impl RemoteClient for HttpRemoteClient {
 
         for blob_digest in blob_digests {
             let client = self.get_client();
-            let action_hash = digest.hash.clone();
+            let action_hash = action_digest.hash.clone();
             let url = self.get_endpoint("cas", &blob_digest.hash);
             let semaphore = self.semaphore.clone();
 
@@ -297,6 +303,7 @@ impl RemoteClient for HttpRemoteClient {
                                 return Some(Blob {
                                     digest: blob_digest,
                                     bytes: bytes.to_vec(),
+                                    compressable: false,
                                 });
                             }
                         }
@@ -336,7 +343,7 @@ impl RemoteClient for HttpRemoteClient {
         }
 
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             "Downloaded {} of {} output blobs",
             blobs.len(),
             total_count
@@ -347,14 +354,15 @@ impl RemoteClient for HttpRemoteClient {
 
     async fn batch_update_blobs(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blobs: Vec<Blob>,
+        _check_missing: bool,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
         let mut requests = vec![];
 
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             compression = compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
@@ -364,7 +372,7 @@ impl RemoteClient for HttpRemoteClient {
 
         for blob in blobs {
             let client = self.get_client();
-            let action_hash = digest.hash.clone();
+            let action_hash = action_digest.hash.clone();
             let url = self.get_endpoint("cas", &blob.digest.hash);
             let semaphore = self.semaphore.clone();
 
@@ -425,7 +433,7 @@ impl RemoteClient for HttpRemoteClient {
         }
 
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             "Uploaded {} of {} output blobs",
             uploaded_count,
             digests.len()

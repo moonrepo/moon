@@ -55,11 +55,14 @@ pub trait RemoteClient: Send + Sync {
 
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities>;
 
-    async fn get_action_result(&self, digest: &Digest) -> miette::Result<Option<ActionResult>>;
+    async fn get_action_result(
+        &self,
+        action_digest: &Digest,
+    ) -> miette::Result<Option<ActionResult>>;
 
     async fn update_action_result(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>>;
 
@@ -67,22 +70,25 @@ pub trait RemoteClient: Send + Sync {
 
     async fn batch_read_blobs(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Blob>>;
 
     async fn batch_update_blobs(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blobs: Vec<Blob>,
+        check_missing: bool,
     ) -> miette::Result<Vec<Option<Digest>>>;
 
     async fn stream_update_blob(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blob: Blob,
     ) -> miette::Result<Option<Digest>> {
-        let mut result = self.batch_update_blobs(digest, vec![blob]).await?;
+        let mut result = self
+            .batch_update_blobs(action_digest, vec![blob], true)
+            .await?;
 
         Ok(result.remove(0))
     }

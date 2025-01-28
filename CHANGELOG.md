@@ -17,6 +17,10 @@
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
 
+#### 🐞 Fixes
+
+- Fixed lots of issues around remote caching.
+
 ## 1.31.3
 
 #### 🐞 Fixes

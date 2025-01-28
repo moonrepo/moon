@@ -221,7 +221,12 @@ impl RemoteService {
                     vec![Blob {
                         bytes: state.get_command_as_bytes()?,
                         digest: state.digest.clone(),
+                        // We need to upload with the digest of the action,
+                        // and if compression is enabled, then this blob
+                        // digest will change once the bytes is compressed
+                        compressable: false,
                     }],
+                    false,
                 )
                 .await?;
         }
@@ -235,7 +240,7 @@ impl RemoteService {
             return Ok(());
         }
 
-        let Some((mut result, blobs)) = state.prepare_for_upload() else {
+        let Some((mut result, blobs)) = state.extract_for_upload() else {
             return Ok(());
         };
 
@@ -361,28 +366,14 @@ impl RemoteService {
 
 async fn batch_upload_blobs(
     client: Arc<Box<dyn RemoteClient>>,
-    digest: Digest,
+    action_digest: Digest,
     blobs: Vec<Blob>,
     max_size: usize,
 ) -> miette::Result<bool> {
-    let missing_blob_digests = client
-        .find_missing_blobs(blobs.iter().map(|blob| blob.digest.clone()).collect())
-        .await?;
-
-    // Everything exists in CAS already!
-    if missing_blob_digests.is_empty() {
-        return Ok(true);
-    }
-
-    let blob_groups = partition_into_groups(
-        blobs,
-        max_size,
-        |blob| blob.bytes.len(),
-        |blob| missing_blob_digests.contains(&blob.digest),
-    );
+    let blob_groups = partition_into_groups(blobs, max_size, |blob| blob.bytes.len());
 
     if blob_groups.is_empty() {
-        return Ok(false);
+        return Ok(true);
     }
 
     let group_total = blob_groups.len();
@@ -390,13 +381,13 @@ async fn batch_upload_blobs(
 
     for (group_index, mut group) in blob_groups.into_iter() {
         let client = Arc::clone(&client);
-        let digest = digest.to_owned();
+        let action_digest = action_digest.to_owned();
 
         // Streaming
         if group.stream {
             set.spawn(async move {
                 match client
-                    .stream_update_blob(&digest, group.items.remove(0))
+                    .stream_update_blob(&action_digest, group.items.remove(0))
                     .await
                 {
                     Ok(result) => {
@@ -406,7 +397,7 @@ async fn batch_upload_blobs(
                     }
                     Err(error) => {
                         warn!(
-                            hash = &digest.hash,
+                            hash = &action_digest.hash,
                             group = group_index + 1,
                             "Failed to stream upload blob: {}",
                             color::muted_light(error.to_string()),
@@ -423,7 +414,7 @@ async fn batch_upload_blobs(
         // Not streaming
         if group_total > 1 {
             trace!(
-                hash = &digest.hash,
+                hash = &action_digest.hash,
                 blobs = group.items.len(),
                 size = group.size,
                 max_size,
@@ -434,7 +425,10 @@ async fn batch_upload_blobs(
         }
 
         set.spawn(async move {
-            match client.batch_update_blobs(&digest, group.items).await {
+            match client
+                .batch_update_blobs(&action_digest, group.items, true)
+                .await
+            {
                 Ok(result) => {
                     if result.into_iter().all(|res| res.is_some()) {
                         return true;
@@ -442,7 +436,7 @@ async fn batch_upload_blobs(
                 }
                 Err(error) => {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         group = group_index + 1,
                         "Failed to upload blobs: {}",
                         color::muted_light(error.to_string()),
@@ -461,24 +455,24 @@ async fn batch_upload_blobs(
 
 async fn batch_download_blobs(
     client: Arc<Box<dyn RemoteClient>>,
-    digest: &Digest,
+    action_digest: &Digest,
     result: &ActionResult,
     workspace_root: &Path,
     max_size: usize,
 ) -> miette::Result<()> {
     let mut file_map = FxHashMap::default();
-    let mut digests = vec![];
+    let mut blob_digests = vec![];
 
     // TODO support directories
     for file in &result.output_files {
         if let Some(digest) = &file.digest {
             file_map.insert(&digest.hash, file);
-            digests.push(digest.to_owned());
+            blob_digests.push(digest.to_owned());
         }
     }
 
     let digest_groups =
-        partition_into_groups(digests, max_size, |dig| dig.size_bytes as usize, |_| true);
+        partition_into_groups(blob_digests, max_size, |dig| dig.size_bytes as usize);
 
     if digest_groups.is_empty() {
         return Ok(());
@@ -489,11 +483,11 @@ async fn batch_download_blobs(
 
     for (group_index, group) in digest_groups.into_iter() {
         let client = Arc::clone(&client);
-        let digest = digest.to_owned();
+        let action_digest = action_digest.to_owned();
 
         if group_total > 1 {
             trace!(
-                hash = &digest.hash,
+                hash = &action_digest.hash,
                 blobs = group.items.len(),
                 size = group.size,
                 max_size,
@@ -503,7 +497,7 @@ async fn batch_download_blobs(
             );
         }
 
-        set.spawn(async move { client.batch_read_blobs(&digest, group.items).await });
+        set.spawn(async move { client.batch_read_blobs(&action_digest, group.items).await });
     }
 
     while let Some(res) = set.join_next().await {
@@ -537,15 +531,10 @@ fn partition_into_groups<T>(
     items: Vec<T>,
     max_size: usize,
     get_size: impl Fn(&T) -> usize,
-    is_filtered: impl Fn(&T) -> bool,
 ) -> BTreeMap<i32, Partition<T>> {
     let mut groups = BTreeMap::<i32, Partition<T>>::default();
 
     for item in items {
-        if !is_filtered(&item) {
-            continue;
-        }
-
         let item_size = get_size(&item);
         let mut index_to_use = -1;
         let mut stream = false;

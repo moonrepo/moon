@@ -44,7 +44,7 @@ impl HashEngine {
         self.hashes_dir.join(format!("{hash}.json"))
     }
 
-    pub fn save_manifest(&self, mut hasher: ContentHasher) -> miette::Result<(String, usize)> {
+    pub fn save_manifest(&self, hasher: &mut ContentHasher) -> miette::Result<String> {
         let hash = hasher.generate_hash()?;
         let path = self.get_manifest_path(&hash);
 
@@ -54,17 +54,17 @@ impl HashEngine {
 
         fs::write_file(&path, data)?;
 
-        Ok((hash, data.len()))
+        Ok(hash)
     }
 
     pub fn save_manifest_without_hasher<T: Serialize>(
         &self,
         label: &str,
         content: T,
-    ) -> miette::Result<(String, usize)> {
+    ) -> miette::Result<String> {
         let mut hasher = ContentHasher::new(label);
         hasher.hash_content(content)?;
 
-        self.save_manifest(hasher)
+        self.save_manifest(&mut hasher)
     }
 }

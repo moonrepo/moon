@@ -1,7 +1,8 @@
 mod action_state;
-mod compression;
+mod blob;
 mod fs_digest;
 mod grpc_remote_client;
+mod grpc_services;
 mod grpc_tls;
 mod http_remote_client;
 mod http_tls;
@@ -17,7 +18,4 @@ pub use remote_service::*;
 
 // TODO:
 // - Other digest functions besides sha256
-// - Proper error handling
 // - Directory blob types
-// - Write/read bytestream for large blobs
-// - TLS/mTLS issues

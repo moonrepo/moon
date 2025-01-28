@@ -154,7 +154,7 @@ impl CacheEngine {
         let name = fs::file_name(&path);
 
         let mut state = self.state.load_state::<CommonCacheState>(&name)?;
-        let (hash, _) = self.hash.save_manifest_without_hasher(&name, data)?;
+        let hash = self.hash.save_manifest_without_hasher(&name, data)?;
 
         if hash != state.data.last_hash {
             let result = op().await?;

@@ -1,5 +1,6 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
+use crate::blob::Blob;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
@@ -14,20 +15,6 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-
-pub struct Blob {
-    pub bytes: Vec<u8>,
-    pub digest: Digest,
-}
-
-impl Blob {
-    pub fn new(bytes: Vec<u8>) -> Self {
-        Self {
-            digest: create_digest(&bytes),
-            bytes,
-        }
-    }
-}
 
 pub fn create_digest(bytes: &[u8]) -> Digest {
     let mut hasher = Sha256::default();
@@ -133,19 +120,19 @@ impl OutputDigests {
             });
         } else if abs_path.is_file() {
             let bytes = fs::read(&abs_path).map_err(map_read_error)?;
-            let digest = create_digest(&bytes);
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
+            let blob = Blob::from(bytes);
 
             self.files.push(OutputFile {
                 path: path_to_string(&abs_path),
-                digest: Some(digest.clone()),
+                digest: Some(blob.digest.clone()),
                 is_executable: is_file_executable(&abs_path, &props),
                 contents: vec![],
                 node_properties: Some(props),
             });
 
-            self.blobs.push(Blob { digest, bytes });
+            self.blobs.push(blob);
         } else if abs_path.is_dir() {
             // TODO use the REAPI directory types
             for abs_file in glob::walk_files(abs_path, ["**/*"])? {

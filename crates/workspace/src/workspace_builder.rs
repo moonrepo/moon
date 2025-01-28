@@ -136,7 +136,7 @@ impl<'app> WorkspaceBuilder<'app> {
         graph_contents.add_configs(graph.hash_required_configs().await?);
         graph_contents.gather_env();
 
-        let (hash, _) = cache_engine
+        let hash = cache_engine
             .hash
             .save_manifest_without_hasher("Workspace graph", &graph_contents)?;
 

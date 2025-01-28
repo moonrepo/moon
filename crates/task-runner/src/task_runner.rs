@@ -462,7 +462,7 @@ impl<'task> TaskRunner<'task> {
             )
             .await?;
 
-        let (hash, size_bytes) = hash_engine.save_manifest(hasher)?;
+        let hash = hash_engine.save_manifest(&mut hasher)?;
 
         operation.meta.set_hash(&hash);
         operation.finish(ActionStatus::Passed);
@@ -471,13 +471,17 @@ impl<'task> TaskRunner<'task> {
         self.report_item.hash = Some(hash.clone());
 
         if RemoteService::is_enabled() {
-            self.remote_state = Some(ActionState::new(
+            let bytes = hasher.into_bytes();
+            let mut state = ActionState::new(
                 Digest {
                     hash: hash.clone(),
-                    size_bytes: size_bytes as i64,
+                    size_bytes: bytes.len() as i64,
                 },
                 self.task,
-            ));
+            );
+            state.bytes = bytes;
+
+            self.remote_state = Some(state);
         }
 
         debug!(

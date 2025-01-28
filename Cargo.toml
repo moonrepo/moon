@@ -27,7 +27,7 @@ clap = { version = "4.5.27", default-features = false, features = [
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.42"
+clap_complete = "4.5.43"
 compact_str = { version = "0.8.1", default-features = false, features = [
     "serde",
 ] }
@@ -55,13 +55,13 @@ reqwest = { version = "0.12.12", default-features = false, features = [
 ] }
 rustc-hash = "2.1.0"
 scc = "2.2.5"
-schematic = { version = "0.17.10", default-features = false, features = [
+schematic = { version = "0.17.11", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
 semver = "1.0.25"
 serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.137"
+serde_json = "1.0.138"
 serde_yml = "0.0.12"
 sha2 = "0.10.8"
 starbase = { version = "0.9.9" }

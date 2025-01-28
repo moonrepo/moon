@@ -4,6 +4,8 @@
 
 #### 🚀 Updates
 
+- Updated Pkl (`.pkl`) based configuration to always be enabled, and is no longer hidden behind an
+  experimental flag.
 - Updated our unstable remote service (Bazel RE API) with new functionality:
   - You can now use `http(s)` protocols for gRPC servers, instead of just `grpc(s)`.
   - Added an `unstable_remote.api` setting, which can be used to inform the server's API format.

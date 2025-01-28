@@ -287,15 +287,6 @@ pub struct Cli {
     pub dump: bool,
 
     #[arg(
-        long = "experimentPklConfig",
-        global = true,
-        env = "MOON_EXPERIMENT_PKL_CONFIG",
-        help = "Enable support for the Pkl (.pkl) configuration format",
-        help_heading = "Experiments"
-    )]
-    pub experiment_pkl: bool,
-
-    #[arg(
         long,
         global = true,
         env = "MOON_LOG",
@@ -350,10 +341,6 @@ impl Cli {
             env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
             env::set_var("EXTISM_MEMDUMP", "wasm-plugin.mem");
             env::set_var("EXTISM_COREDUMP", "wasm-plugin.core");
-        }
-
-        if self.experiment_pkl {
-            env::set_var("MOON_EXPERIMENT_PKL_CONFIG", "true");
         }
     }
 }

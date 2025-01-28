@@ -855,7 +855,7 @@ extensions:
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::with_pkl().load_workspace_config(path)
+                ConfigLoader::default().load_workspace_config(path)
             });
 
             assert_eq!(

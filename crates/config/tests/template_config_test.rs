@@ -391,7 +391,7 @@ variables:
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::with_pkl().load_template_config(path)
+                ConfigLoader::default().load_template_config(path)
             });
 
             assert_eq!(

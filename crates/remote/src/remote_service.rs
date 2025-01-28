@@ -212,20 +212,15 @@ impl RemoteService {
             .await?;
 
         if missing.contains(&state.digest) {
-            // Create on demand when needed, instead of always
-            state.create_action_from_task();
-
+            // This is where moon differs from the Bazel RE API. In Bazel,
+            // we would serialize + hash the `Action` and `Command` types,
+            // and upload those. But those types do not match how our hashing
+            // works, so instead, we're uploading the bytes of our internal
+            // hash manifests. Hopefully this doesn't cause issues!
             self.client
                 .batch_update_blobs(
                     &state.digest,
-                    vec![Blob {
-                        bytes: state.get_command_as_bytes()?,
-                        digest: state.digest.clone(),
-                        // We need to upload with the digest of the action,
-                        // and if compression is enabled, then this blob
-                        // digest will change once the bytes is compressed
-                        compressable: false,
-                    }],
+                    vec![Blob::new(state.digest.clone(), state.bytes.clone())],
                     false,
                 )
                 .await?;

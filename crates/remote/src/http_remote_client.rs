@@ -300,11 +300,7 @@ impl RemoteClient for HttpRemoteClient {
 
                         if status.is_success() {
                             if let Ok(bytes) = response.bytes().await {
-                                return Some(Blob {
-                                    digest: blob_digest,
-                                    bytes: bytes.to_vec(),
-                                    compressable: false,
-                                });
+                                return Some(Blob::new(blob_digest, bytes.to_vec()));
                             }
                         }
 

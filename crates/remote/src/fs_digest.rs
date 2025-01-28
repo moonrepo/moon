@@ -120,23 +120,19 @@ impl OutputDigests {
             });
         } else if abs_path.is_file() {
             let bytes = fs::read(&abs_path).map_err(map_read_error)?;
-            let digest = create_digest(&bytes);
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
+            let blob = Blob::from(bytes);
 
             self.files.push(OutputFile {
                 path: path_to_string(&abs_path),
-                digest: Some(digest.clone()),
+                digest: Some(blob.digest.clone()),
                 is_executable: is_file_executable(&abs_path, &props),
                 contents: vec![],
                 node_properties: Some(props),
             });
 
-            self.blobs.push(Blob {
-                digest,
-                bytes,
-                compressable: true,
-            });
+            self.blobs.push(blob);
         } else if abs_path.is_dir() {
             // TODO use the REAPI directory types
             for abs_file in glob::walk_files(abs_path, ["**/*"])? {

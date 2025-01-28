@@ -3,7 +3,6 @@ use crate::fs_digest::{create_timestamp_from_naive, OutputDigests};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     command, platform, Action, ActionResult, Command, Digest, ExecutedActionMetadata,
 };
-use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_task::Task;
 use std::collections::BTreeMap;
@@ -18,8 +17,11 @@ pub struct ActionState<'task> {
     pub command: Option<Command>,
     pub digest: Digest,
 
-    // To upload
+    // Outputs to upload
     pub blobs: Vec<Blob>,
+
+    // Bytes of our hashed manifest
+    pub bytes: Vec<u8>,
 }
 
 impl ActionState<'_> {
@@ -31,6 +33,7 @@ impl ActionState<'_> {
             command: None,
             digest,
             blobs: vec![],
+            bytes: vec![],
         }
     }
 
@@ -94,16 +97,14 @@ impl ActionState<'_> {
             result.exit_code = exec.exit_code.unwrap_or_default();
 
             if let Some(stderr) = &exec.stderr {
-                let mut blob = Blob::new(stderr.as_bytes().to_owned());
-                blob.compressable = false;
+                let blob = Blob::from(stderr.as_bytes().to_owned());
 
                 result.stderr_digest = Some(blob.digest.clone());
                 self.blobs.push(blob);
             }
 
             if let Some(stdout) = &exec.stdout {
-                let mut blob = Blob::new(stdout.as_bytes().to_owned());
-                blob.compressable = false;
+                let blob = Blob::from(stdout.as_bytes().to_owned());
 
                 result.stdout_digest = Some(blob.digest.clone());
                 self.blobs.push(blob);
@@ -134,10 +135,6 @@ impl ActionState<'_> {
         }
 
         Ok(())
-    }
-
-    pub fn get_command_as_bytes(&self) -> miette::Result<Vec<u8>> {
-        bincode::serialize(&self.command).into_diagnostic()
     }
 
     pub fn extract_for_upload(&mut self) -> Option<(ActionResult, Vec<Blob>)> {

@@ -68,4 +68,11 @@ impl ContentHasher {
 
         Ok(self.content_cache.as_ref().unwrap())
     }
+
+    pub fn into_bytes(mut self) -> Vec<u8> {
+        match self.content_cache.take() {
+            Some(data) => data.into_bytes(),
+            None => vec![],
+        }
+    }
 }

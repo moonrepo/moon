@@ -15,7 +15,7 @@ use bazel_remote_apis::google::bytestream::{
 };
 use http::header::HeaderMap;
 use moon_common::color;
-use moon_config::{RemoteCompression, RemoteConfig};
+use moon_config::RemoteConfig;
 use starbase_utils::env::bool_var;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
@@ -405,14 +405,10 @@ impl RemoteClient for GrpcRemoteClient {
             }
 
             if let Some(digest) = download.digest {
-                let compression = get_compression_from_code(download.compressor);
-                let mut blob = Blob {
-                    digest,
-                    bytes: download.data,
-                    compressable: true,
-                };
+                let mut blob = Blob::new(digest, download.data);
+                blob.compressed = get_compression_from_code(download.compressor);
+                blob.decompress()?;
 
-                blob.decompress(compression)?;
                 blobs.push(blob);
             }
 
@@ -485,7 +481,7 @@ impl RemoteClient for GrpcRemoteClient {
             }
         }
 
-        let blob = Blob::new(bytes);
+        let blob = Blob::from(bytes);
 
         if blob.digest != blob_digest {
             warn!(
@@ -549,11 +545,7 @@ impl RemoteClient for GrpcRemoteClient {
                     .map(|blob| batch_update_blobs_request::Request {
                         digest: Some(blob.digest),
                         data: blob.bytes,
-                        compressor: get_compressor(if blob.compressable {
-                            compression
-                        } else {
-                            RemoteCompression::None
-                        }),
+                        compressor: get_compressor(compression),
                     })
                     .collect(),
                 digest_function: digest_function::Value::Sha256 as i32,

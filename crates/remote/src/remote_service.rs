@@ -481,10 +481,29 @@ async fn batch_download_blobs(
     let group_total = digest_groups.len();
     let mut set = JoinSet::<miette::Result<Vec<Blob>>>::default();
 
-    for (group_index, group) in digest_groups.into_iter() {
+    for (group_index, mut group) in digest_groups.into_iter() {
         let client = Arc::clone(&client);
         let action_digest = action_digest.to_owned();
 
+        // Streaming
+        if group.stream {
+            set.spawn(async move {
+                let mut blobs = vec![];
+
+                if let Some(blob) = client
+                    .stream_read_blob(&action_digest, group.items.remove(0))
+                    .await?
+                {
+                    blobs.push(blob);
+                }
+
+                Ok(blobs)
+            });
+
+            continue;
+        }
+
+        // Not streaming
         if group_total > 1 {
             trace!(
                 hash = &action_digest.hash,

@@ -10,7 +10,9 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, BatchReadBlobsRequest, BatchUpdateBlobsRequest, Digest, FindMissingBlobsRequest,
     GetActionResultRequest, GetCapabilitiesRequest, ServerCapabilities, UpdateActionResultRequest,
 };
-use bazel_remote_apis::google::bytestream::{byte_stream_client::ByteStreamClient, WriteRequest};
+use bazel_remote_apis::google::bytestream::{
+    byte_stream_client::ByteStreamClient, ReadRequest, WriteRequest,
+};
 use http::header::HeaderMap;
 use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
@@ -21,6 +23,7 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio_util::io::ReaderStream;
 use tonic::{
+    codegen::tokio_stream::StreamExt,
     transport::{Channel, Endpoint},
     Code, Request,
 };
@@ -426,6 +429,78 @@ impl RemoteClient for GrpcRemoteClient {
         Ok(blobs)
     }
 
+    async fn stream_read_blob(
+        &self,
+        action_digest: &Digest,
+        blob_digest: Digest,
+    ) -> miette::Result<Option<Blob>> {
+        trace!(
+            hash = &action_digest.hash,
+            blob_hash = &blob_digest.hash,
+            "Streaming download output blob"
+        );
+
+        let resource_name = format!(
+            "{}/blobs/{}/{}",
+            self.config.cache.instance_name, blob_digest.hash, blob_digest.size_bytes,
+        );
+
+        let response = match self
+            .get_bs_client()
+            .read(ReadRequest {
+                resource_name,
+                read_offset: 0,
+                read_limit: 0,
+            })
+            .await
+        {
+            Ok(response) => response,
+            Err(status) => {
+                return if matches!(status.code(), Code::NotFound) {
+                    Ok(None)
+                } else {
+                    Err(self.map_status_error("stream_read_blob", status).into())
+                };
+            }
+        };
+
+        let mut stream = response.into_inner();
+        let mut bytes = Vec::new();
+
+        while let Some(chunk) = stream.next().await {
+            match chunk {
+                Ok(data) => {
+                    bytes.extend(data.data);
+                }
+                Err(error) => {
+                    warn!(
+                        hash = &action_digest.hash,
+                        blob_hash = &blob_digest.hash,
+                        "Failed to stream download blob: {}",
+                        color::muted_light(error.to_string()),
+                    );
+
+                    return Ok(None);
+                }
+            }
+        }
+
+        let blob = Blob::new(bytes);
+
+        if blob.digest != blob_digest {
+            warn!(
+                hash = &action_digest.hash,
+                blob_hash = &blob_digest.hash,
+                "Failed to download blob, mismatched blob digests, received unexpected hash {}",
+                blob.digest.hash
+            );
+
+            return Ok(None);
+        }
+
+        Ok(Some(blob))
+    }
+
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L379
     async fn batch_update_blobs(
         &self,
@@ -553,11 +628,11 @@ impl RemoteClient for GrpcRemoteClient {
 
     async fn stream_update_blob(
         &self,
-        digest: &Digest,
+        action_digest: &Digest,
         blob: Blob,
     ) -> miette::Result<Option<Digest>> {
         trace!(
-            hash = &digest.hash,
+            hash = &action_digest.hash,
             blob_hash = &blob.digest.hash,
             "Streaming upload output blob"
         );
@@ -601,7 +676,7 @@ impl RemoteClient for GrpcRemoteClient {
 
         if let Some(ref error) = *stream_error.lock().await {
             warn!(
-                hash = &digest.hash,
+                hash = &action_digest.hash,
                 blob_hash = &blob.digest.hash,
                 "Failed to stream upload blob: {}",
                 color::muted_light(error.to_string()),
@@ -616,7 +691,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if result.committed_size != -1 && result.committed_size < total_bytes {
                     warn!(
-                        hash = &digest.hash,
+                        hash = &action_digest.hash,
                         blob_hash = &blob.digest.hash,
                         "Failed to upload blob, streamed bytes was {}, but we required {total_bytes}",
                         result.committed_size

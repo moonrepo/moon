@@ -52,6 +52,10 @@ impl Blob {
     }
 
     pub fn decompress(&mut self, compression: RemoteCompression) -> miette::Result<()> {
+        if !self.compressable {
+            return Ok(());
+        }
+
         self.bytes = match compression {
             RemoteCompression::None => {
                 return Ok(());

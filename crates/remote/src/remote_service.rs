@@ -221,7 +221,6 @@ impl RemoteService {
                 .batch_update_blobs(
                     &state.digest,
                     vec![Blob::new(state.digest.clone(), state.bytes.clone())],
-                    false,
                 )
                 .await?;
         }
@@ -362,9 +361,21 @@ impl RemoteService {
 async fn batch_upload_blobs(
     client: Arc<Box<dyn RemoteClient>>,
     action_digest: Digest,
-    blobs: Vec<Blob>,
+    mut blobs: Vec<Blob>,
     max_size: usize,
 ) -> miette::Result<bool> {
+    let missing_digests = client
+        .find_missing_blobs(blobs.iter().map(|blob| blob.digest.clone()).collect())
+        .await?;
+
+    // All blobs already exist in CAS
+    if missing_digests.is_empty() {
+        return Ok(true);
+    }
+
+    // Otherwise, reduce down the blobs list
+    blobs.retain(|blob| missing_digests.contains(&blob.digest));
+
     let blob_groups = partition_into_groups(blobs, max_size, |blob| blob.bytes.len());
 
     if blob_groups.is_empty() {
@@ -420,10 +431,7 @@ async fn batch_upload_blobs(
         }
 
         set.spawn(async move {
-            match client
-                .batch_update_blobs(&action_digest, group.items, true)
-                .await
-            {
+            match client.batch_update_blobs(&action_digest, group.items).await {
                 Ok(result) => {
                     if result.into_iter().all(|res| res.is_some()) {
                         return true;

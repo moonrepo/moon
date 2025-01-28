@@ -502,31 +502,13 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         mut blobs: Vec<Blob>,
-        check_missing: bool,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
 
-        // Compress the blobs before uploading so that we generate
-        // new digests, and can use those to find any missing entries
         if compression.is_enabled() {
             for blob in blobs.iter_mut() {
                 blob.compress(compression)?;
             }
-        }
-
-        // Check if the blob already exists in CAS, so that we reduce uploads
-        if check_missing {
-            let missing_digests = self
-                .find_missing_blobs(blobs.iter().map(|blob| blob.digest.clone()).collect())
-                .await?;
-
-            // All blobs already exist in CAS, so return their digest
-            if missing_digests.is_empty() {
-                return Ok(blobs.into_iter().map(|blob| Some(blob.digest)).collect());
-            }
-
-            // Otherwise, reduce down the blobs list
-            blobs.retain(|blob| missing_digests.contains(&blob.digest));
         }
 
         trace!(

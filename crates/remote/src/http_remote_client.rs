@@ -352,7 +352,6 @@ impl RemoteClient for HttpRemoteClient {
         &self,
         action_digest: &Digest,
         blobs: Vec<Blob>,
-        _check_missing: bool,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
         let mut requests = vec![];

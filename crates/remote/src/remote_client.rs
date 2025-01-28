@@ -90,7 +90,6 @@ pub trait RemoteClient: Send + Sync {
         &self,
         action_digest: &Digest,
         blobs: Vec<Blob>,
-        check_missing: bool,
     ) -> miette::Result<Vec<Option<Digest>>>;
 
     async fn stream_update_blob(
@@ -98,9 +97,7 @@ pub trait RemoteClient: Send + Sync {
         action_digest: &Digest,
         blob: Blob,
     ) -> miette::Result<Option<Digest>> {
-        let mut result = self
-            .batch_update_blobs(action_digest, vec![blob], true)
-            .await?;
+        let mut result = self.batch_update_blobs(action_digest, vec![blob]).await?;
 
         Ok(result.remove(0))
     }

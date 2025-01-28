@@ -38,16 +38,16 @@ docker:
 
 unstable_remote:
   # DEPOT
-  # host: 'grpcs://cache.depot.dev'
-  # auth:
-  #   token: 'DEPOT_TOKEN'
-  #   headers:
-  #     'X-Depot-Org': '1xtpjd084j'
-  #     'X-Depot-Project': '90xxfkst9n'
+  host: 'grpcs://cache.depot.dev'
+  auth:
+    token: 'DEPOT_TOKEN'
+    headers:
+      'X-Depot-Org': '1xtpjd084j'
+      'X-Depot-Project': '90xxfkst9n'
   # BAZEL-REMOTE
-  host: 'grpc://0.0.0.0:9092'
-  cache:
-    compression: 'zstd'
+  # host: 'grpc://0.0.0.0:9092'
+  # cache:
+  #   compression: 'zstd'
   # TLS TESTING
   # mtls:
   #   caCert: 'crates/remote/tests/__fixtures__/certs-local/ca.pem'

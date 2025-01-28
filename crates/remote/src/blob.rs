@@ -31,12 +31,13 @@ impl Blob {
 
     pub fn compress(&mut self, compression: RemoteCompression) -> miette::Result<()> {
         self.compressed = compression;
-        self.bytes = match compression {
+
+        match compression {
             RemoteCompression::None => {
-                return Ok(());
+                // N/A
             }
             RemoteCompression::Zstd => {
-                zstd::encode_all(self.bytes.as_slice(), 1).map_err(|error| {
+                self.bytes = zstd::encode_all(self.bytes.as_slice(), 1).map_err(|error| {
                     RemoteError::CompressFailed {
                         format: compression,
                         error: Box::new(error),

@@ -13,7 +13,7 @@
   - Added support for Depot cloud-based caching: https://depot.dev/docs/cache/overview
   - Added support for the HTTP protocol: https://bazel.build/remote/caching#http-caching
   - Added support for the ByteStream API.
-  - Added timeout and concurrency limit support (non-configurable at the moment).
+  - Added timeout and concurrency limit to clients.
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
 

@@ -210,8 +210,8 @@ impl<'app> CodeGenerator<'app> {
                     remote_url,
                     revision,
                 } => {
-                    let base_url = remote_url.trim_start_matches('/').trim_end_matches(".git");
-                    let url = format!("https://{base_url}.git");
+                    let base_url = remote_url.trim_start_matches('/');
+                    let url = format!("https://{base_url}");
                     let template_location = self.moon_env.templates_dir.join(base_url);
 
                     futures.push(spawn(clone_and_checkout_git_repository(

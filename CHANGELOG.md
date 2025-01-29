@@ -21,7 +21,8 @@
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
 - Improved the Bun toolchain.
-  - Added support for the new 1.2 `bun.lock` file.
+  - Added support for the new 1.2 `bun.lock` file. We do our best to detect this, but we suggest
+    configuring `--save-text-lockfile`.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.
   - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml`

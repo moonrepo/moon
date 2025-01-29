@@ -286,8 +286,6 @@ impl AppSession for CliSession {
             analyze::validate_version_constraint(constraint, &self.cli_version)?;
         }
 
-        analyze::check_pkl_install()?;
-
         if self.requires_workspace_setup() {
             let cache_engine = self.get_cache_engine()?;
 

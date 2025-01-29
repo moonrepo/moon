@@ -128,7 +128,7 @@ mod tasks_builder {
             build.inputs,
             vec![
                 InputPath::ProjectFile("abc".into()),
-                InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
             ]
         );
         assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
@@ -141,7 +141,7 @@ mod tasks_builder {
             run.inputs,
             vec![
                 InputPath::ProjectFile("xyz".into()),
-                InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
             ]
         );
         assert_eq!(run.outputs, vec![]);
@@ -154,7 +154,7 @@ mod tasks_builder {
             test.inputs,
             vec![
                 InputPath::ProjectGlob("**/*".into()),
-                InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
             ]
         );
         assert!(!test.state.local_only);
@@ -175,7 +175,7 @@ mod tasks_builder {
                 build.inputs,
                 vec![
                     InputPath::ProjectFile("abc".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
@@ -188,7 +188,7 @@ mod tasks_builder {
                 run.inputs,
                 vec![
                     InputPath::ProjectFile("xyz".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert_eq!(run.outputs, vec![]);
@@ -927,7 +927,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("**/*".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -936,7 +936,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+                vec![InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())]
             );
             assert!(task.state.empty_inputs);
 
@@ -946,7 +946,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("local/*".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -961,7 +961,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+                vec![InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())]
             );
             assert!(task.state.empty_inputs);
             assert!(task.state.root_level);
@@ -970,7 +970,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+                vec![InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())]
             );
             assert!(task.state.empty_inputs);
             assert!(task.state.root_level);
@@ -981,7 +981,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("local/*".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -999,7 +999,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("**/*".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1009,7 +1009,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+                vec![InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())]
             );
             assert!(task.state.empty_inputs);
             assert!(task.state.root_level);
@@ -1020,7 +1020,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("local/*".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1039,7 +1039,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectGlob("src/**/*".into()),
                     InputPath::WorkspaceFile("workspace-local".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1050,7 +1050,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("local.json".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1059,7 +1059,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+                vec![InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into())]
             );
             assert!(task.state.empty_inputs);
         }
@@ -1105,7 +1105,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectFile("global".into()),
                     InputPath::ProjectFile("local".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1158,7 +1158,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectFile("global".into()),
                     InputPath::ProjectFile("local".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1211,7 +1211,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectFile("local".into()),
                     InputPath::ProjectFile("global".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1264,7 +1264,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectFile("local".into()),
                     InputPath::ProjectFile("global".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1314,7 +1314,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("local".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1358,7 +1358,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("local".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1459,7 +1459,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("global".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1505,7 +1505,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("global".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1550,7 +1550,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("global".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1594,7 +1594,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectFile("global".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
@@ -1858,7 +1858,7 @@ mod tasks_builder {
                     InputPath::ProjectGlob("**/*".into()),
                     InputPath::ProjectGlob("project/**/*".into()),
                     InputPath::WorkspaceFile("workspace.json".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1875,7 +1875,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectGlob("project/**/*".into()),
                     InputPath::WorkspaceFile("workspace.json".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(task.state.empty_inputs);
@@ -1893,7 +1893,7 @@ mod tasks_builder {
                     InputPath::ProjectGlob("local/*".into()),
                     InputPath::ProjectGlob("project/**/*".into()),
                     InputPath::WorkspaceFile("workspace.json".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -2012,7 +2012,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("src/**/*".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                 ]
             );
         }
@@ -2055,7 +2055,7 @@ mod tasks_builder {
                     InputPath::ProjectFile("global-extender".into()),
                     InputPath::ProjectFile("local-base".into()),
                     InputPath::ProjectFile("local-extender".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-extends.yml".into()),
                 ]
             );
@@ -2078,7 +2078,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectFile("global-base".into()),
                     InputPath::ProjectFile("local-extender".into()),
-                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()),
                     InputPath::WorkspaceFile("global/tasks/tag-extends.yml".into()),
                 ]
             );

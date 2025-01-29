@@ -20,12 +20,6 @@ pub struct ConfigLoader {
 }
 
 impl ConfigLoader {
-    pub fn with_pkl() -> Self {
-        Self {
-            finder: ConfigFinder::with_pkl(),
-        }
-    }
-
     pub fn create_project_loader<P: AsRef<Path>>(
         &self,
         project_root: P,

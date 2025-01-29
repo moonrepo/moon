@@ -1455,7 +1455,7 @@ typescript:
         fn loads_pkl() {
             let mut config = test_config(locate_fixture("pkl"), |path| {
                 let proto = ProtoConfig::default();
-                ConfigLoader::with_pkl().load_toolchain_config(path, &proto)
+                ConfigLoader::default().load_toolchain_config(path, &proto)
             });
 
             assert_eq!(

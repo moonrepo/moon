@@ -18,7 +18,7 @@ Runs in CI: Yes
 
  INPUTS 
 
-  - .moon/*.yml
+  - .moon/*.{pkl,yml}
   - tasks/**/*
 
  OUTPUTS 

@@ -155,8 +155,8 @@ impl Platform for RustPlatform {
             return Ok(false);
         };
 
-        if is_root_level_source(project_source)
-            && (deps_root_path == self.workspace_root || deps_root.as_str() == project_source)
+        if is_root_level_source(project_source) && deps_root_path == self.workspace_root
+            || deps_root.as_str() == project_source
         {
             return Ok(true);
         }

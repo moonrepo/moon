@@ -1,6 +1,5 @@
 ---
-title: .moon/tasks.yml, .moon/tasks/**/*.yml
-sidebar_label: .moon/tasks...
+title: .moon/tasks[/**/*].{pkl,yml}
 ---
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
@@ -15,6 +14,12 @@ Projects can override or merge with these settings within their respective [`moo
 ```yaml title=".moon/tasks.yml"
 $schema: 'https://moonrepo.dev/schemas/tasks.json'
 ```
+
+:::info
+
+Inherited tasks configuration can also be written in [Pkl](../guides/pkl-config) instead of YAML.
+
+:::
 
 ## `extends`
 

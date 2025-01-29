@@ -209,6 +209,7 @@ const sidebars: SidebarsConfig = {
 		'guides/extensions',
 		'guides/offline-mode',
 		'guides/open-source',
+		'guides/pkl-config',
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',

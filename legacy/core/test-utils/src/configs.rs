@@ -348,7 +348,7 @@ pub fn get_bun_fixture_configs() -> (
     toolchain_config.node = None;
     toolchain_config.bun = Some(PartialBunConfig {
         infer_tasks_from_scripts: Some(true),
-        version: Some(UnresolvedVersionSpec::parse("1.1.3").unwrap()),
+        version: Some(UnresolvedVersionSpec::parse("1.2.1").unwrap()),
         ..PartialBunConfig::default()
     });
 

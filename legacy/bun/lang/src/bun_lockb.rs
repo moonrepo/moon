@@ -1,4 +1,3 @@
-use cached::proc_macro::cached;
 use moon_lang::LockfileDependencyVersions;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
@@ -6,8 +5,7 @@ use std::sync::Arc;
 use tracing::warn;
 use yarn_lock_parser::parse_str;
 
-#[cached(result)]
-pub fn load_lockfile_dependencies(
+pub fn load_binary_lockfile_dependencies(
     lockfile_text: Arc<String>,
     path: PathBuf,
 ) -> miette::Result<LockfileDependencyVersions> {

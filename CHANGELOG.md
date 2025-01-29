@@ -20,8 +20,12 @@
   - Added timeout and concurrency limit to clients.
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
+- Improved the Bun toolchain.
+  - Added support for the new 1.2 `bun.lock` file.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.
+  - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml`
+    dependencies.
 
 #### 🐞 Fixes
 

@@ -1,37 +1,37 @@
-// These are very flaky in CI, as they error with "Text file busy" nonstop
-#[cfg(not(target_os = "linux"))]
+use moon_config::PartialBunConfig;
+use moon_test_utils::{
+    assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
+    predicates::prelude::*, Sandbox,
+};
+use std::fs;
+
+fn bun_sandbox() -> Sandbox {
+    bun_sandbox_with_config(|_| {})
+}
+
+fn bun_sandbox_with_config<C>(callback: C) -> Sandbox
+where
+    C: FnOnce(&mut PartialBunConfig),
+{
+    let (workspace_config, mut toolchain_config, tasks_config) = get_bun_fixture_configs();
+
+    if let Some(bun_config) = &mut toolchain_config.bun {
+        callback(bun_config);
+    }
+
+    let sandbox = create_sandbox_with_config(
+        "bun",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
 mod bun {
-    use moon_config::PartialBunConfig;
-    use moon_test_utils::{
-        assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
-        predicates::prelude::*, Sandbox,
-    };
-    use std::fs;
-
-    fn bun_sandbox() -> Sandbox {
-        bun_sandbox_with_config(|_| {})
-    }
-
-    fn bun_sandbox_with_config<C>(callback: C) -> Sandbox
-    where
-        C: FnOnce(&mut PartialBunConfig),
-    {
-        let (workspace_config, mut toolchain_config, tasks_config) = get_bun_fixture_configs();
-
-        if let Some(bun_config) = &mut toolchain_config.bun {
-            callback(bun_config);
-        }
-
-        let sandbox = create_sandbox_with_config(
-            "bun",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        sandbox.enable_git();
-        sandbox
-    }
+    use super::*;
 
     #[test]
     fn runs_self() {

@@ -3652,7 +3652,10 @@ dependencies = [
  "cached",
  "miette 7.4.0",
  "moon_lang",
+ "nodejs_package_json",
  "rustc-hash 2.1.0",
+ "serde",
+ "starbase_utils",
  "tracing",
  "yarn-lock-parser",
 ]

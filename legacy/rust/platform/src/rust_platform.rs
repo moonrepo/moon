@@ -342,10 +342,6 @@ impl Platform for RustPlatform {
         let mut operations = vec![];
 
         if !self.config.components.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "rustup component")?;
-
             debug!(
                 target: LOG_TARGET,
                 "Installing rustup components: {}",
@@ -357,16 +353,18 @@ impl Platform for RustPlatform {
 
             operations.push(
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
-                    .track_async(|| tool.exec_rustup(args, working_dir))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "rustup component")?;
+
+                        tool.exec_rustup(args, working_dir).await
+                    })
                     .await?,
             );
         }
 
         if !self.config.targets.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "rustup target")?;
-
             debug!(
                 target: LOG_TARGET,
                 "Installing rustup targets: {}",
@@ -378,28 +376,32 @@ impl Platform for RustPlatform {
 
             operations.push(
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
-                    .track_async(|| tool.exec_rustup(args, working_dir))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "rustup target")?;
+
+                        tool.exec_rustup(args, working_dir).await
+                    })
                     .await?,
             );
         }
 
         if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
-
             operations.push(
                 Operation::task_execution("cargo generate-lockfile")
-                    .track_async(|| tool.exec_cargo(["generate-lockfile"], working_dir))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
+
+                        tool.exec_cargo(["generate-lockfile"], working_dir).await
+                    })
                     .await?,
             );
         }
 
         if !self.config.bins.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "cargo binstall")?;
-
             let globals_dir = self.get_globals_dir(Some(tool));
 
             // Install cargo-binstall if it does not exist
@@ -452,7 +454,13 @@ impl Platform for RustPlatform {
 
                 operations.push(
                     Operation::task_execution(format!("cargo {}", args.join(" ")))
-                        .track_async(|| tool.exec_cargo(args, working_dir))
+                        .track_async(|| async {
+                            self.console
+                                .out
+                                .print_checkpoint(Checkpoint::Setup, "cargo binstall")?;
+
+                            tool.exec_cargo(args, working_dir).await
+                        })
                         .await?,
                 );
             }

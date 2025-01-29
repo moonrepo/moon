@@ -24,15 +24,17 @@ pub async fn install_deps(
     };
 
     if !venv_root.exists() && requirements_path.is_some() {
-        console
-            .out
-            .print_checkpoint(Checkpoint::Setup, "python venv")?;
-
         let args = vec!["-m", "venv", venv_root.to_str().unwrap_or_default()];
 
         operations.push(
             Operation::task_execution(format!("python {}", args.join(" ")))
-                .track_async(|| python.exec_python(args, working_dir, workspace_root))
+                .track_async(|| async {
+                    console
+                        .out
+                        .print_checkpoint(Checkpoint::Setup, "python venv")?;
+
+                    python.exec_python(args, working_dir, workspace_root).await
+                })
                 .await?,
         );
     }

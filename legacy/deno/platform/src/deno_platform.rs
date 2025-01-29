@@ -206,10 +206,6 @@ impl Platform for DenoPlatform {
         let mut operations = vec![];
 
         if !self.config.bins.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "deno install")?;
-
             debug!(
                 target: LOG_TARGET,
                 "Installing Deno binaries: {}",
@@ -249,6 +245,10 @@ impl Platform for DenoPlatform {
                 operations.push(
                     Operation::task_execution(format!("deno {}", args.join(" ")))
                         .track_async(|| async {
+                            self.console
+                                .out
+                                .print_checkpoint(Checkpoint::Setup, "deno install")?;
+
                             deno.create_command(&())?
                                 .args(args)
                                 .cwd(working_dir)
@@ -264,13 +264,16 @@ impl Platform for DenoPlatform {
         if self.config.lockfile {
             debug!(target: LOG_TARGET, "Installing dependencies");
 
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "deno cache")?;
-
             operations.push(
                 Operation::task_execution("deno cache --lock deno.lock --lock-write")
-                    .track_async(|| deno.install_dependencies(&(), working_dir, !is_test_env()))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "deno cache")?;
+
+                        deno.install_dependencies(&(), working_dir, !is_test_env())
+                            .await
+                    })
                     .await?,
             );
         }

@@ -1,5 +1,6 @@
 use moon_action::*;
 use moon_action_pipeline::reports::estimate::{Estimate, TaskEstimate};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_toolchain::Runtime;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
@@ -131,6 +132,7 @@ mod estimate {
                     node: Arc::new(ActionNode::install_workspace_deps(
                         InstallWorkspaceDepsNode {
                             runtime: Runtime::system(),
+                            root: WorkspaceRelativePathBuf::new(),
                         },
                     )),
                     ..Action::default()
@@ -205,6 +207,7 @@ mod estimate {
                     node: Arc::new(ActionNode::install_workspace_deps(
                         InstallWorkspaceDepsNode {
                             runtime: Runtime::system(),
+                            root: WorkspaceRelativePathBuf::new(),
                         },
                     )),
                     ..Action::default()
@@ -280,6 +283,7 @@ mod estimate {
                     node: Arc::new(ActionNode::install_workspace_deps(
                         InstallWorkspaceDepsNode {
                             runtime: Runtime::system(),
+                            root: WorkspaceRelativePathBuf::new(),
                         },
                     )),
                     ..Action::default()

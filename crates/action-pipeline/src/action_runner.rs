@@ -120,6 +120,7 @@ pub async fn run_action(
                 workspace_graph.clone(),
                 &inner.runtime,
                 None,
+                Some(&inner.root),
             )
             .await;
 
@@ -151,6 +152,7 @@ pub async fn run_action(
                 workspace_graph.clone(),
                 &inner.runtime,
                 Some(&project),
+                None,
             )
             .await;
 

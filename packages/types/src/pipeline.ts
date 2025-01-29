@@ -147,6 +147,7 @@ export interface ActionNodeInstallWorkspaceDeps {
 	action: 'install-workspace-deps';
 	params: {
 		runtime: Runtime;
+		root: string;
 	};
 }
 

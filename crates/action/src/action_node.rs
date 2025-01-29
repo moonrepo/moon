@@ -1,3 +1,4 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_target::Target;
 use moon_toolchain::Runtime;
@@ -6,12 +7,15 @@ use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct RuntimeNode {
+pub struct SetupToolchainNode {
     pub runtime: Runtime,
 }
 
-pub type InstallWorkspaceDepsNode = RuntimeNode;
-pub type SetupToolchainNode = RuntimeNode;
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct InstallWorkspaceDepsNode {
+    pub runtime: Runtime,
+    pub root: WorkspaceRelativePathBuf,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ScopedRuntimeNode {
@@ -156,7 +160,15 @@ impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             Self::InstallWorkspaceDeps(inner) => {
-                format!("InstallWorkspaceDeps({})", inner.runtime.target())
+                if inner.root.as_str().is_empty() {
+                    format!("InstallWorkspaceDeps({})", inner.runtime.target())
+                } else {
+                    format!(
+                        "InstallWorkspaceDeps({}, {})",
+                        inner.runtime.target(),
+                        inner.root
+                    )
+                }
             }
             Self::InstallProjectDeps(inner) => {
                 format!(

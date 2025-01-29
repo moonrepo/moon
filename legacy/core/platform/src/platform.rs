@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
+use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList,
@@ -30,9 +31,20 @@ pub trait Platform: Send + Sync {
 
     // PROJECT GRAPH
 
+    fn find_dependency_workspace_root(
+        &self,
+        starting_dir: &str,
+    ) -> miette::Result<WorkspaceRelativePathBuf> {
+        Ok(WorkspaceRelativePathBuf::new())
+    }
+
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
-    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
+    fn is_project_in_dependency_workspace(
+        &self,
+        deps_root: &WorkspaceRelativePath,
+        project_source: &str,
+    ) -> miette::Result<bool> {
         Ok(false)
     }
 

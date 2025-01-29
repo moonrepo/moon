@@ -128,7 +128,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     })
                 ]
             );
@@ -155,7 +156,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     })
                 ]
             );
@@ -184,7 +186,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::install_project_deps(InstallProjectDepsNode {
                         project: Id::raw("out"),
@@ -222,7 +225,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     })
                 ]
             );
@@ -244,7 +248,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     })
                 ]
             );
@@ -278,7 +283,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -318,7 +324,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -508,7 +515,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -574,7 +582,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -631,7 +640,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -697,7 +707,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -763,7 +774,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
@@ -843,7 +855,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: create_node_runtime()
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),

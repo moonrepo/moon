@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added unstable support for multiple package workspaces when installing dependencies.
 - Updated Pkl (`.pkl`) based configuration to always be enabled, and is no longer hidden behind an
   experimental flag.
   - Added official documentation: https://moonrepo.dev/docs/guides/pkl-config
@@ -19,6 +20,8 @@
   - Added timeout and concurrency limit to clients.
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
+- Improved the Rust toolchain.
+  - The root-level project is now properly taken into account when detecting the package workspaces.
 
 #### 🐞 Fixes
 

@@ -1,7 +1,10 @@
 use crate::{actions, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_common::{path::is_root_level_source, Id};
+use moon_common::{
+    path::{is_root_level_source, WorkspaceRelativePath},
+    Id,
+};
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     PythonConfig, UnresolvedVersionSpec,
@@ -93,7 +96,11 @@ impl Platform for PythonPlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
+    fn is_project_in_dependency_workspace(
+        &self,
+        _deps_root: &WorkspaceRelativePath,
+        project_source: &str,
+    ) -> miette::Result<bool> {
         // Single version policy / only a root requirements.txt
         if self.config.root_requirements_only {
             return Ok(true);

@@ -4,7 +4,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default)]
-pub struct ConfigFinder;
+pub struct ConfigFinder {
+    _ignored: bool,
+}
 
 impl ConfigFinder {
     pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
@@ -84,6 +86,7 @@ impl ConfigFinder {
         vec![format!("{name}.yml"), format!("{name}.pkl")]
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     pub fn get_from_dir(&self, dir: PathBuf) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
 

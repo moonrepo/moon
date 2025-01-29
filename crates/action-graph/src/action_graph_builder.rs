@@ -175,6 +175,7 @@ impl<'app> ActionGraphBuilder<'app> {
             .map(|t| &t.toolchains)
             .unwrap_or_else(|| &project.toolchains);
         let mut primary_toolchain = toolchains[0].to_owned();
+        let mut packages_root = WorkspaceRelativePathBuf::default();
 
         // If Bun and Node.js are enabled, they will both attempt to install
         // dependencies in the target root. We need to avoid this problem,
@@ -195,7 +196,11 @@ impl<'app> ActionGraphBuilder<'app> {
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
         if let Ok(platform) = self.platform_manager.get_by_toolchain(&primary_toolchain) {
-            if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
+            packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
+
+            if !platform
+                .is_project_in_dependency_workspace(&packages_root, project.source.as_str())?
+            {
                 in_project = true;
 
                 debug!(
@@ -213,6 +218,7 @@ impl<'app> ActionGraphBuilder<'app> {
         } else {
             ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                 runtime: self.get_runtime(project, &primary_toolchain, false),
+                root: packages_root,
             })
         };
 

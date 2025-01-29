@@ -24,7 +24,7 @@ format-check:
 	cargo fmt --all --check
 
 lint:
-	cargo clippy --workspace --all-targets
+	cargo clippy --workspace --all-targets -- -D warnings
 
 lint-fix:
 	cargo clippy --workspace --all-targets --fix --allow-dirty --allow-staged

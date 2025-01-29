@@ -687,7 +687,7 @@ mod project_graph {
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
-                    WorkspaceRelativePathBuf::from(".moon/*.yml"),
+                    WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
                     WorkspaceRelativePathBuf::from("project/global.*")
                 ])
             );
@@ -737,7 +737,7 @@ mod project_graph {
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
-                    WorkspaceRelativePathBuf::from(".moon/*.yml"),
+                    WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
                     WorkspaceRelativePathBuf::from("tasks/file.*"),
                 ])
             );

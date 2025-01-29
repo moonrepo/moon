@@ -1,9 +1,14 @@
 use crate::{
     find_cargo_lock, get_cargo_home, target_hash::RustTargetHash, toolchain_hash::RustToolchainHash,
 };
+use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_common::{is_ci, path::exe_name, Id};
+use moon_common::{
+    is_ci,
+    path::{exe_name, is_root_level_source, WorkspaceRelativePath, WorkspaceRelativePathBuf},
+    Id,
+};
 use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     RustConfig, UnresolvedVersionSpec,
@@ -117,17 +122,42 @@ impl Platform for RustPlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
-        let Some(lockfile_path) = find_cargo_lock(
-            &self.workspace_root.join(project_source),
+    fn find_dependency_workspace_root(
+        &self,
+        starting_dir: &str,
+    ) -> miette::Result<WorkspaceRelativePathBuf> {
+        let root = find_cargo_lock(
+            &self.workspace_root.join(starting_dir),
             &self.workspace_root,
-        ) else {
+        )
+        .map(|lockfile| lockfile.parent().unwrap().to_path_buf())
+        .unwrap_or(self.workspace_root.clone());
+
+        if let Some(cargo_toml) = CargoTomlCache::read(root.clone())? {
+            if cargo_toml.workspace.is_some() {
+                if let Ok(root) = root.strip_prefix(&self.workspace_root) {
+                    return Ok(WorkspaceRelativePathBuf::from_path(root).into_diagnostic()?);
+                }
+            }
+        }
+
+        Ok(WorkspaceRelativePathBuf::default())
+    }
+
+    fn is_project_in_dependency_workspace(
+        &self,
+        deps_root: &WorkspaceRelativePath,
+        project_source: &str,
+    ) -> miette::Result<bool> {
+        let deps_root = deps_root.to_logical_path(&self.workspace_root);
+
+        let Some(cargo_toml) = CargoTomlCache::read(&deps_root)? else {
             return Ok(false);
         };
 
-        let Some(cargo_toml) = CargoTomlCache::read(lockfile_path.parent().unwrap())? else {
-            return Ok(false);
-        };
+        if is_root_level_source(project_source) && deps_root == self.workspace_root {
+            return Ok(true);
+        }
 
         if let Some(workspace) = cargo_toml.workspace {
             return Ok(

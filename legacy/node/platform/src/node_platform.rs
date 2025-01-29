@@ -1,18 +1,21 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
+use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::path::is_root_level_source;
+use moon_common::path::WorkspaceRelativePath;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
-    TypeScriptConfig, UnresolvedVersionSpec,
+    DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
+    NodePackageManager, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
+    TaskConfig, TasksConfigsMap, TypeScriptConfig, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
-use moon_node_lang::node::get_package_manager_workspaces;
+use moon_node_lang::node::{find_package_manager_workspaces_root, get_package_manager_workspaces};
 use moon_node_lang::PackageJsonCache;
 use moon_node_tool::get_node_env_paths;
 use moon_node_tool::NodeTool;
@@ -116,7 +119,28 @@ impl Platform for NodePlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
+    fn find_dependency_workspace_root(
+        &self,
+        starting_dir: &str,
+    ) -> miette::Result<WorkspaceRelativePathBuf> {
+        let root = find_package_manager_workspaces_root(
+            self.workspace_root.join(starting_dir),
+            matches!(self.config.package_manager, NodePackageManager::Pnpm),
+        )?
+        .unwrap_or(self.packages_root.clone());
+
+        if let Ok(root) = root.strip_prefix(&self.workspace_root) {
+            return Ok(WorkspaceRelativePathBuf::from_path(root).into_diagnostic()?);
+        }
+
+        Ok(WorkspaceRelativePathBuf::default())
+    }
+
+    fn is_project_in_dependency_workspace(
+        &self,
+        deps_root: &WorkspaceRelativePath,
+        project_source: &str,
+    ) -> miette::Result<bool> {
         let mut in_workspace = false;
 
         // Single version policy / only a root package.json
@@ -129,7 +153,10 @@ impl Platform for NodePlatform {
             return Ok(true);
         }
 
-        if let Some(globs) = get_package_manager_workspaces(self.packages_root.clone())? {
+        if let Some(globs) = get_package_manager_workspaces(
+            deps_root.to_logical_path(&self.workspace_root),
+            matches!(self.config.package_manager, NodePackageManager::Pnpm),
+        )? {
             in_workspace = GlobSet::new(&globs)?.matches(project_source);
         }
 

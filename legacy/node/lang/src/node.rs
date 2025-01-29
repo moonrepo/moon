@@ -63,14 +63,14 @@ pub fn find_package_manager_workspaces_root(
 
     while let Some(dir) = current_dir {
         if check_pnpm {
-            if let Some(pnpm_workspace) = PnpmWorkspace::read(dir.to_path_buf())? {
+            if let Some(pnpm_workspace) = PnpmWorkspace::read(dir)? {
                 if !pnpm_workspace.packages.is_empty() {
                     return Ok(Some(dir.to_path_buf()));
                 }
             }
         }
 
-        if let Some(package_json) = PackageJsonCache::read(dir.to_path_buf())? {
+        if let Some(package_json) = PackageJsonCache::read(dir)? {
             if package_json.data.workspaces.is_some() {
                 return Ok(Some(dir.to_path_buf()));
             }

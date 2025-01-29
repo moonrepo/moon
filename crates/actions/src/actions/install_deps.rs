@@ -3,7 +3,7 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
-use moon_common::path::encode_component;
+use moon_common::path::{encode_component, WorkspaceRelativePath};
 use moon_common::{color, is_ci, Id};
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
@@ -30,6 +30,7 @@ pub async fn install_deps(
     workspace_graph: WorkspaceGraph,
     runtime: &Runtime,
     project: Option<&Project>,
+    packages_root: Option<&WorkspaceRelativePath>,
 ) -> miette::Result<ActionStatus> {
     if runtime.is_system() {
         return Ok(ActionStatus::Skipped);
@@ -123,7 +124,13 @@ pub async fn install_deps(
             .as_ref()
             .is_some_and(|hash| hash != &state.data.last_hash)
     {
-        let working_dir = project.map_or(&app_context.workspace_root, |proj| &proj.root);
+        let working_dir = match project {
+            Some(proj) => proj.root.clone(),
+            None => match packages_root {
+                Some(pr) => pr.to_logical_path(&app_context.workspace_root),
+                None => app_context.workspace_root.clone(),
+            },
+        };
 
         // To avoid nested installs caused by child processes, we set this environment
         // variable with the current process ID and compare against it. If the IDs are
@@ -134,12 +141,12 @@ pub async fn install_deps(
         debug!(
             "Installing {} dependencies in {}",
             log_label,
-            color::path(working_dir)
+            color::path(&working_dir)
         );
 
         action.operations.extend(
             platform
-                .install_deps(&action_context, runtime, working_dir)
+                .install_deps(&action_context, runtime, &working_dir)
                 .await?,
         );
 

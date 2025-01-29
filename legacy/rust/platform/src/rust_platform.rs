@@ -136,7 +136,7 @@ impl Platform for RustPlatform {
         if let Some(cargo_toml) = CargoTomlCache::read(root.clone())? {
             if cargo_toml.workspace.is_some() {
                 if let Ok(root) = root.strip_prefix(&self.workspace_root) {
-                    return Ok(WorkspaceRelativePathBuf::from_path(root).into_diagnostic()?);
+                    return WorkspaceRelativePathBuf::from_path(root).into_diagnostic();
                 }
             }
         }
@@ -149,13 +149,15 @@ impl Platform for RustPlatform {
         deps_root: &WorkspaceRelativePath,
         project_source: &str,
     ) -> miette::Result<bool> {
-        let deps_root = deps_root.to_logical_path(&self.workspace_root);
+        let deps_root_path = deps_root.to_logical_path(&self.workspace_root);
 
-        let Some(cargo_toml) = CargoTomlCache::read(&deps_root)? else {
+        let Some(cargo_toml) = CargoTomlCache::read(&deps_root_path)? else {
             return Ok(false);
         };
 
-        if is_root_level_source(project_source) && deps_root == self.workspace_root {
+        if is_root_level_source(project_source)
+            && (deps_root_path == self.workspace_root || deps_root.as_str() == project_source)
+        {
             return Ok(true);
         }
 

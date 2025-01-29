@@ -127,7 +127,7 @@ impl Platform for BunPlatform {
                 .unwrap_or(self.packages_root.clone());
 
         if let Ok(root) = root.strip_prefix(&self.workspace_root) {
-            return Ok(WorkspaceRelativePathBuf::from_path(root).into_diagnostic()?);
+            return WorkspaceRelativePathBuf::from_path(root).into_diagnostic();
         }
 
         Ok(WorkspaceRelativePathBuf::default())

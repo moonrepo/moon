@@ -1101,7 +1101,7 @@ mod task_manager {
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::with_pkl().load_tasks_config_from_path(path.join(".moon/tasks.pkl"))
+                ConfigLoader::default().load_tasks_config_from_path(path.join(".moon/tasks.pkl"))
             });
 
             assert_eq!(

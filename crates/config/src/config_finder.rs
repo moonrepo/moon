@@ -1,27 +1,12 @@
 use moon_common::consts::CONFIG_DIRNAME;
-use moon_common::supports_pkl_configs;
 use schematic::ConfigError;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Debug)]
-pub struct ConfigFinder {
-    pkl: bool,
-}
-
-impl Default for ConfigFinder {
-    fn default() -> Self {
-        Self {
-            pkl: supports_pkl_configs(),
-        }
-    }
-}
+#[derive(Clone, Debug, Default)]
+pub struct ConfigFinder;
 
 impl ConfigFinder {
-    pub fn with_pkl() -> Self {
-        Self { pkl: true }
-    }
-
     pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
         self.get_project_file_names()
             .into_iter()
@@ -90,24 +75,13 @@ impl ConfigFinder {
         }
 
         label.push_str(name);
-
-        if self.pkl {
-            label.push_str(".{plk,yml}");
-        } else {
-            label.push_str(".yml");
-        }
+        label.push_str(".{pkl,yml}");
 
         label
     }
 
     pub fn get_file_names(&self, name: &str) -> Vec<String> {
-        let mut files = vec![format!("{name}.yml")];
-
-        if self.pkl {
-            files.push(format!("{name}.pkl"));
-        }
-
-        files
+        vec![format!("{name}.yml"), format!("{name}.pkl")]
     }
 
     pub fn get_from_dir(&self, dir: PathBuf) -> miette::Result<Vec<PathBuf>> {
@@ -137,7 +111,7 @@ impl ConfigFinder {
                 // so avoid failing when trying to parse it as a config
                 if path
                     .extension()
-                    .is_some_and(|ext| ext == "yml" || ext == "yaml" || self.pkl && ext == "pkl")
+                    .is_some_and(|ext| ext == "yml" || ext == "yaml" || ext == "pkl")
                 {
                     files.push(path);
                 }

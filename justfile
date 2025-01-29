@@ -32,7 +32,7 @@ lint-fix:
 # TESTING
 
 test $MOON_TEST="true" name="":
-	cargo nextest run --workspace --config-file ./.cargo/nextest.toml {{name}}
+	cargo nextest run --workspace --no-fail-fast --config-file ./.cargo/nextest.toml {{name}}
 
 test-ci $MOON_TEST="true":
 	cargo nextest run --workspace --config-file ./.cargo/nextest.toml --profile ci

@@ -647,7 +647,7 @@ workspace:
         #[allow(deprecated)]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::with_pkl().load_project_config(path)
+                ConfigLoader::default().load_project_config(path)
             });
 
             assert_eq!(

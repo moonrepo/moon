@@ -67,9 +67,7 @@ jobs:
         os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     env:
-      # Helps with toolchain tests
-      PROTO_NODE_VERSION: '*'
-      # Configures sccache
+      # sccache
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       # RUST_LOG: trace
@@ -93,6 +91,9 @@ jobs:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.45.1' # Keep in sync
+      # Fixes issues where proto can't find a version because nothing is pinned globally
+      - run: cp .prototools ~/.proto/.prototools
+        if: ${{ runner.os == 'Linux' }}
       - uses: mozilla-actions/sccache-action@v0.0.7
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - uses: lukka/get-cmake@latest

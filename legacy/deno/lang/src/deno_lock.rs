@@ -1,28 +1,30 @@
 use cached::proc_macro::cached;
-use moon_lang::{config_cache, LockfileDependencyVersions};
+use deno_lockfile::{Lockfile, NewLockfileOptions};
+use miette::IntoDiagnostic;
+use moon_lang::LockfileDependencyVersions;
 use rustc_hash::FxHashMap;
-use serde::{Deserialize, Serialize};
-use starbase_utils::json::read_file as read_json;
-use std::path::{Path, PathBuf};
-
-config_cache!(DenoLock, "deno.lock", read_json);
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DenoLock {
-    remote: FxHashMap<String, String>,
-
-    #[serde(skip)]
-    pub path: PathBuf,
-}
+use starbase_utils::fs;
+use std::path::PathBuf;
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
-    if let Some(lockfile) = DenoLock::read(path)? {
-        for (key, value) in lockfile.remote {
-            deps.insert(key, vec![value]);
+    if path.exists() {
+        let lockfile_content = fs::read_file(&path)?;
+        let lockfile = Lockfile::new(NewLockfileOptions {
+            content: &lockfile_content,
+            file_path: path.clone(),
+            overwrite: false,
+        })
+        .into_diagnostic()?;
+
+        for (key, value) in lockfile.content.packages.jsr {
+            deps.insert(format!("jsr:{key}"), vec![value.integrity]);
+        }
+
+        for (key, value) in lockfile.content.packages.npm {
+            deps.insert(format!("npm:{key}"), vec![value.integrity]);
         }
     }
 

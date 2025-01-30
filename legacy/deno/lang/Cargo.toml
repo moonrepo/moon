@@ -9,6 +9,7 @@ moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_typescript_lang = { path = "../../typescript/lang" }
 cached = { workspace = true }
+deno_lockfile = "0.24.0"
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

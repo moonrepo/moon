@@ -22,7 +22,9 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{
+    get_proto_version_env, prepend_path_env_var, DependencyManager, Tool, ToolManager,
+};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
@@ -287,7 +289,16 @@ impl Platform for BunPlatform {
     }
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
-        Ok(Some(("bun.lockb".to_owned(), "package.json".to_owned())))
+        let tool = self.toolchain.get()?;
+
+        Ok(Some((
+            if self.packages_root.join("bun.lock").exists() {
+                "bun.lock".into()
+            } else {
+                tool.get_lock_filename()
+            },
+            tool.get_manifest_filename(),
+        )))
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {

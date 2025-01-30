@@ -1,5 +1,5 @@
 ---
-source: legacy/cli/tests/run_bun_test.rs
+source: crates/cli/tests/run_bun_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ bun install
@@ -8,6 +8,9 @@ stdout
 ▪▪▪▪ bun:unhandledPromise (100ms)
 stderr
 error: Oops
+Oops
+
+Bun v1.2.1 (macOS arm64)
 Error: task_runner::run_failed
 
   × Task bun:unhandledPromise failed to run.

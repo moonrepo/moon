@@ -81,9 +81,12 @@ impl BunTool {
         let cache = match self.lockfile_cache.entry_async(key).await {
             Entry::Occupied(o) => o.get().clone(),
             Entry::Vacant(v) => {
+                let bun_lock = cwd.join("bun.lock");
                 let yarn_lock = cwd.join("yarn.lock");
 
-                let content = if yarn_lock.exists() {
+                let content = if bun_lock.exists() {
+                    Arc::new(fs::read_file(bun_lock)?)
+                } else if yarn_lock.exists() {
                     Arc::new(fs::read_file(yarn_lock)?)
                 } else {
                     let mut cmd = self.create_command(&())?;
@@ -195,6 +198,7 @@ impl DependencyManager<()> for BunTool {
 
         if let Some(version) = get_proto_version_env(&self.tool) {
             cmd.env("PROTO_BUN_VERSION", version);
+            cmd.env("PROTO_NODE_VERSION", "*");
         }
 
         Ok(cmd)
@@ -212,7 +216,18 @@ impl DependencyManager<()> for BunTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from("bun.lockb")
+        String::from(
+            if self
+                .config
+                .install_args
+                .iter()
+                .any(|arg| arg == "--save-text-lockfile")
+            {
+                "bun.lock"
+            } else {
+                "bun.lockb"
+            },
+        )
     }
 
     fn get_manifest_filename(&self) -> String {
@@ -224,16 +239,21 @@ impl DependencyManager<()> for BunTool {
         &self,
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
-        let Some(lockfile_path) =
-            fs::find_upwards_until("bun.lockb", project_root, get_workspace_root())
-        else {
-            return Ok(FxHashMap::default());
-        };
+        let mut lockfile_path =
+            fs::find_upwards_until("bun.lockb", project_root, get_workspace_root());
 
-        Ok(load_lockfile_dependencies(
-            self.load_lockfile(lockfile_path.parent().unwrap()).await?,
-            lockfile_path,
-        )?)
+        if lockfile_path.is_none() {
+            lockfile_path = fs::find_upwards_until("bun.lock", project_root, get_workspace_root());
+        }
+
+        if let Some(lockfile_path) = lockfile_path {
+            return load_lockfile_dependencies(
+                self.load_lockfile(lockfile_path.parent().unwrap()).await?,
+                lockfile_path,
+            );
+        }
+
+        Ok(FxHashMap::default())
     }
 
     #[instrument(skip_all)]

@@ -72,6 +72,14 @@ impl DenoTool {
 
         Ok(deno)
     }
+
+    pub fn is_v2(&self) -> bool {
+        self.config.version.as_ref().is_some_and(|spec| match spec {
+            UnresolvedVersionSpec::Req(req) => req.comparators.iter().any(|c| c.major >= 2),
+            UnresolvedVersionSpec::Semantic(version) => version.major >= 2,
+            _ => false,
+        })
+    }
 }
 
 #[async_trait]
@@ -207,15 +215,14 @@ impl DependencyManager<()> for DenoTool {
     ) -> miette::Result<()> {
         let mut cmd = self.create_command(parent)?;
 
-        cmd.args([
-            "cache",
-            "--lock",
-            "deno.lock",
-            "--lock-write",
-            &self.config.deps_file,
-        ])
-        .cwd(working_dir)
-        .set_print_command(log);
+        if self.is_v2() {
+            cmd.args(["install", "--no-check"]);
+            cmd.args(&self.config.install_args);
+        } else {
+            cmd.args(["cache", "--lock-write", &self.config.deps_file]);
+        }
+
+        cmd.cwd(working_dir).set_print_command(log);
 
         let mut cmd = cmd.create_async();
 

@@ -79,7 +79,6 @@ jobs:
       # SCCACHE_NO_DAEMON: 1
       SCCACHE_REGION: us-east-2
       SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
-      AWS_LC_SYS_PREBUILT_NASM: 1
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
@@ -92,7 +91,10 @@ jobs:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.45.1' # Keep in sync
-      - uses: mozilla-actions/sccache-action@v0.0.5
+      # Fixes issues where proto can't find a version because nothing is pinned globally
+      - run: cp .prototools ~/.proto/.prototools
+        if: ${{ runner.os == 'Linux' }}
+      - uses: mozilla-actions/sccache-action@v0.0.7
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - uses: lukka/get-cmake@latest
         if: ${{ runner.os == 'Windows' }}

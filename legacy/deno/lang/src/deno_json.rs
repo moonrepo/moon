@@ -11,8 +11,9 @@ use std::path::{Path, PathBuf};
 config_cache!(DenoJson, "deno.json", read_json, write_preserved_json);
 
 // This isn't everything, just what we care about
+// https://deno.land/x/deno/cli/schemas/config-file.v1.json
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct DenoJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub compiler_options: Option<CompilerOptions>,
@@ -30,7 +31,7 @@ pub struct DenoJson {
     pub scopes: Option<BTreeMap<String, BTreeMap<String, String>>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tasks: Option<BTreeMap<String, String>>,
+    pub workspace: Option<DenoJsonWorkspace>,
 
     // Non-standard
     #[serde(skip)]
@@ -42,9 +43,30 @@ pub struct DenoJson {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
+pub enum DenoJsonWorkspace {
+    Members(Vec<String>),
+    Config { members: Vec<String> },
+}
+
+impl DenoJsonWorkspace {
+    pub fn get_members(&self) -> &[String] {
+        match self {
+            Self::Members(members) => members,
+            Self::Config { members } => members,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum DenoJsonLock {
     Enabled(bool),
     Path(String),
+    Config {
+        path: String,
+        #[serde(default)]
+        frozen: bool,
+    },
 }
 
 impl DenoJson {

@@ -192,6 +192,7 @@ impl DependencyManager<NodeTool> for BunTool {
 
         if let Some(version) = get_proto_version_env(&self.tool) {
             cmd.env("PROTO_BUN_VERSION", version);
+            cmd.env("PROTO_NODE_VERSION", "*");
         }
 
         if let Some(version) = get_proto_version_env(&node.tool) {
@@ -213,7 +214,18 @@ impl DependencyManager<NodeTool> for BunTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from("bun.lockb")
+        String::from(
+            if self
+                .config
+                .install_args
+                .iter()
+                .any(|arg| arg == "--save-text-lockfile")
+            {
+                "bun.lock"
+            } else {
+                "bun.lockb"
+            },
+        )
     }
 
     fn get_manifest_filename(&self) -> String {

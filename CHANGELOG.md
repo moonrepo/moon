@@ -20,8 +20,18 @@
   - Added timeout and concurrency limit to clients.
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
+- Improved the Bun toolchain.
+  - Added support for the new v1.2 `bun.lock` file. We do our best to detect this, but we suggest
+    configuring `--save-text-lockfile`.
+- Improved the Deno toolchain.
+  - Added support for Deno v2 and `deno install`. Will now run this command instead of `deno cache`.
+  - Added support for v3 and v4 lockfiles (we now use the `deno_lockfile` crate).
+  - Added basic support for workspaces.
+  - Added `deno.installArgs` setting.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.
+  - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml`
+    dependencies.
 
 #### 🐞 Fixes
 

@@ -67,7 +67,9 @@ jobs:
         os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     env:
-      # sccache
+      # Helps with toolchain tests
+      PROTO_NODE_VERSION: '*'
+      # Configures sccache
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       # RUST_LOG: trace
@@ -79,7 +81,6 @@ jobs:
       # SCCACHE_NO_DAEMON: 1
       SCCACHE_REGION: us-east-2
       SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
-      AWS_LC_SYS_PREBUILT_NASM: 1
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1

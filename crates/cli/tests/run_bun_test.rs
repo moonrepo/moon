@@ -257,6 +257,8 @@ mod bun {
             cmd.arg("run").arg("bun:runFromWorkspaceBin");
         });
 
+        assert.debug();
+
         assert_snapshot!(assert.output());
     }
 
@@ -321,6 +323,8 @@ mod bun {
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("packageManager:runDep");
             });
+
+            assert.debug();
 
             assert!(
                 predicate::str::contains("All matched files use Prettier code style!")

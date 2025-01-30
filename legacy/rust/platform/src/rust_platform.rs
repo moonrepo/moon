@@ -154,15 +154,15 @@ impl Platform for RustPlatform {
     ) -> miette::Result<bool> {
         let deps_root_path = deps_root.to_logical_path(&self.workspace_root);
 
-        let Some(cargo_toml) = CargoTomlCache::read(&deps_root_path)? else {
-            return Ok(false);
-        };
-
         if is_root_level_source(project_source) && deps_root_path == self.workspace_root
             || deps_root.as_str() == project_source
         {
             return Ok(true);
         }
+
+        let Some(cargo_toml) = CargoTomlCache::read(&deps_root_path)? else {
+            return Ok(false);
+        };
 
         if let Some(workspace) = cargo_toml.workspace {
             return Ok(

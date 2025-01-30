@@ -4,13 +4,14 @@ use crate::target_hash::DenoTargetHash;
 use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
+use moon_common::path::{is_root_level_source, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci, is_test_env, Id};
 use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig, TypeScriptConfig,
 };
 use moon_console::{Checkpoint, Console};
-use moon_deno_lang::{load_lockfile_dependencies, DenoJson};
+use moon_deno_lang::{find_package_manager_workspaces_root, load_lockfile_dependencies, DenoJson};
 use moon_deno_tool::{get_deno_env_paths, DenoTool};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
@@ -25,6 +26,7 @@ use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use starbase_utils::glob::GlobSet;
 use std::sync::Arc;
 use std::{
     collections::BTreeMap,
@@ -104,6 +106,49 @@ impl Platform for DenoPlatform {
     }
 
     // PROJECT GRAPH
+
+    fn find_dependency_workspace_root(
+        &self,
+        starting_dir: &str,
+    ) -> miette::Result<WorkspaceRelativePathBuf> {
+        let root = find_package_manager_workspaces_root(self.workspace_root.join(starting_dir))?
+            .unwrap_or(self.workspace_root.clone());
+
+        if let Ok(root) = root.strip_prefix(&self.workspace_root) {
+            return WorkspaceRelativePathBuf::from_path(root).into_diagnostic();
+        }
+
+        Ok(WorkspaceRelativePathBuf::default())
+    }
+
+    fn is_project_in_dependency_workspace(
+        &self,
+        deps_root: &WorkspaceRelativePath,
+        project_source: &str,
+    ) -> miette::Result<bool> {
+        let deps_root_path = deps_root.to_logical_path(&self.workspace_root);
+
+        // Root package is always considered within the workspace
+        if is_root_level_source(project_source) && deps_root_path == self.workspace_root {
+            return Ok(true);
+        }
+
+        let Some(deno_json) = DenoJson::read(&deps_root_path)? else {
+            return Ok(false);
+        };
+
+        if let Some(workspace) = deno_json.workspace {
+            let members = workspace
+                .get_members()
+                .iter()
+                .map(|mem| mem.trim_start_matches("./"))
+                .collect::<Vec<_>>();
+
+            return Ok(GlobSet::new(members)?.matches(project_source));
+        }
+
+        Ok(false)
+    }
 
     fn load_project_implicit_dependencies(
         &self,
@@ -203,6 +248,7 @@ impl Platform for DenoPlatform {
         working_dir: &Path,
     ) -> miette::Result<Vec<Operation>> {
         let deno = self.toolchain.get_for_version(&runtime.requirement)?;
+        let is_v2 = deno.is_v2();
         let mut operations = vec![];
 
         if !self.config.bins.is_empty() {
@@ -217,10 +263,15 @@ impl Platform for DenoPlatform {
                     "install",
                     "--allow-net",
                     "--allow-read",
-                    "--no-prompt",
                     "--lock",
                     "deno.lock",
                 ];
+
+                if is_v2 {
+                    args.push("--global");
+                } else {
+                    args.push("--no-prompt");
+                }
 
                 match bin {
                     BinEntry::Name(name) => args.push(name),
@@ -247,7 +298,7 @@ impl Platform for DenoPlatform {
                         .track_async(|| async {
                             self.console
                                 .out
-                                .print_checkpoint(Checkpoint::Setup, "deno install")?;
+                                .print_checkpoint(Checkpoint::Setup, "deno install --global")?;
 
                             deno.create_command(&())?
                                 .args(args)
@@ -264,18 +315,33 @@ impl Platform for DenoPlatform {
         if self.config.lockfile {
             debug!(target: LOG_TARGET, "Installing dependencies");
 
-            operations.push(
-                Operation::task_execution("deno cache --lock deno.lock --lock-write")
-                    .track_async(|| async {
-                        self.console
-                            .out
-                            .print_checkpoint(Checkpoint::Setup, "deno cache")?;
+            if is_v2 {
+                operations.push(
+                    Operation::task_execution("deno install")
+                        .track_async(|| async {
+                            self.console
+                                .out
+                                .print_checkpoint(Checkpoint::Setup, "deno install")?;
 
-                        deno.install_dependencies(&(), working_dir, !is_test_env())
-                            .await
-                    })
-                    .await?,
-            );
+                            deno.install_dependencies(&(), working_dir, !is_test_env())
+                                .await
+                        })
+                        .await?,
+                );
+            } else {
+                operations.push(
+                    Operation::task_execution("deno cache --lock-write")
+                        .track_async(|| async {
+                            self.console
+                                .out
+                                .print_checkpoint(Checkpoint::Setup, "deno cache")?;
+
+                            deno.install_dependencies(&(), working_dir, !is_test_env())
+                                .await
+                        })
+                        .await?,
+                );
+            }
         }
 
         Ok(operations)

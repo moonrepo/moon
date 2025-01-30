@@ -395,7 +395,7 @@ pub fn get_deno_fixture_configs() -> (
     let mut toolchain_config = get_default_toolchain();
     toolchain_config.node = None;
     toolchain_config.deno = Some(PartialDenoConfig {
-        version: Some(UnresolvedVersionSpec::parse("1.40.0").unwrap()),
+        version: Some(UnresolvedVersionSpec::parse("2.1.7").unwrap()),
         ..PartialDenoConfig::default()
     });
 

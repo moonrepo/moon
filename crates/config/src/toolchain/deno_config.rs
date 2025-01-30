@@ -15,6 +15,9 @@ pub struct DenoConfig {
     #[setting(default = "deps.ts")]
     pub deps_file: String,
 
+    /// List of arguments to append to `deno install` commands.
+    pub install_args: Vec<String>,
+
     /// Requires and forces the use of `deno.lock` files.
     pub lockfile: bool,
 

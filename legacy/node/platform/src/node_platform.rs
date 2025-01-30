@@ -142,6 +142,7 @@ impl Platform for NodePlatform {
         project_source: &str,
     ) -> miette::Result<bool> {
         let mut in_workspace = false;
+        let deps_root_path = deps_root.to_logical_path(&self.workspace_root);
 
         // Single version policy / only a root package.json
         if self.config.root_package_only {
@@ -149,12 +150,12 @@ impl Platform for NodePlatform {
         }
 
         // Root package is always considered within the workspace
-        if is_root_level_source(project_source) && self.packages_root == self.workspace_root {
+        if is_root_level_source(project_source) && deps_root_path == self.workspace_root {
             return Ok(true);
         }
 
         if let Some(globs) = get_package_manager_workspaces(
-            deps_root.to_logical_path(&self.workspace_root),
+            deps_root_path,
             matches!(self.config.package_manager, NodePackageManager::Pnpm),
         )? {
             in_workspace = GlobSet::new(&globs)?.matches(project_source);

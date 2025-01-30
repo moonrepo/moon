@@ -43,10 +43,10 @@ pub async fn wait_for_signal(sender: Sender<SignalType>) {
 
     debug!("Listening for CTRL-C, BREAK, CLOSE, and SHUTDOWN signals");
 
-    let mut signal_c = windows::ctrl_c().unwrap(); // Interrupt
-    let mut signal_break = windows::ctrl_break().unwrap(); // Interrupt
-    let mut signal_close = windows::ctrl_close().unwrap(); // Quit
-    let mut signal_shutdown = windows::ctrl_shutdown().unwrap(); // Terminate
+    let mut signal_c = windows::ctrl_c().unwrap();
+    let mut signal_break = windows::ctrl_break().unwrap();
+    let mut signal_close = windows::ctrl_close().unwrap();
+    let mut signal_shutdown = windows::ctrl_shutdown().unwrap();
 
     let _ = tokio::select! {
         _ = signal_c.recv() => {

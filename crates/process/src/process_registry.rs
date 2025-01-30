@@ -1,9 +1,9 @@
 use crate::shared_child::*;
 use crate::signal::*;
 use core::time::Duration;
-use process_wrap::tokio::TokioChildWrapper;
 use rustc_hash::FxHashMap;
 use std::sync::{Arc, OnceLock};
+use tokio::process::Child;
 use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
@@ -49,7 +49,7 @@ impl ProcessRegistry {
         Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::default())))
     }
 
-    pub async fn add_running(&self, child: Box<dyn TokioChildWrapper>) -> SharedChild {
+    pub async fn add_running(&self, child: Child) -> SharedChild {
         let shared = SharedChild::new(child);
 
         self.running
@@ -145,14 +145,12 @@ async fn shutdown_processes_with_signal(
         children.len()
     );
 
-    // children.clear();
-
     let mut futures = vec![];
 
     for (pid, child) in children.drain() {
-        trace!(pid, "Killing child process");
-
         futures.push(tokio::spawn(async move {
+            trace!(pid, "Killing child process");
+
             if let Err(error) = child.kill_with_signal(signal).await {
                 warn!(pid, "Failed to kill child process: {error}");
             }

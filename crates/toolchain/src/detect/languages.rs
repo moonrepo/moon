@@ -1,7 +1,7 @@
 pub type StaticString = &'static str;
 pub type StaticStringList = &'static [StaticString];
 
-pub static BUN: StaticStringList = &["bunfig.toml", "bun.lockb", ".bunrc"];
+pub static BUN: StaticStringList = &["bunfig.toml", "bun.lock", "bun.lockb", ".bunrc"];
 
 pub static DENO: StaticStringList = &["deno.json", "deno.jsonc", "deno.lock", ".dvmrc"];
 

@@ -10,8 +10,8 @@ use moon_common::{
     Id,
 };
 use moon_config::{
-    BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
-    RustConfig, UnresolvedVersionSpec,
+    BinEntry, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
+    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, RustConfig, UnresolvedVersionSpec,
 };
 use moon_console::{Checkpoint, Console};
 use moon_hash::ContentHasher;
@@ -21,7 +21,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_rust_lang::{
     cargo_lock::load_lockfile_dependencies,
-    cargo_toml::CargoTomlCache,
+    cargo_toml::{CargoTomlCache, DepsSet},
     toolchain_toml::{ToolchainToml, ToolchainTomlCache},
 };
 use moon_rust_tool::{get_rust_env_paths, RustTool};
@@ -46,6 +46,8 @@ pub struct RustPlatform {
 
     console: Arc<Console>,
 
+    package_names: FxHashMap<String, Id>,
+
     proto_env: Arc<ProtoEnvironment>,
 
     toolchain: ToolManager<RustTool>,
@@ -63,6 +65,7 @@ impl RustPlatform {
     ) -> Self {
         RustPlatform {
             config: config.to_owned(),
+            package_names: FxHashMap::default(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(Id::raw("rust"), RuntimeReq::Global)),
             workspace_root: workspace_root.to_path_buf(),
@@ -151,15 +154,15 @@ impl Platform for RustPlatform {
     ) -> miette::Result<bool> {
         let deps_root_path = deps_root.to_logical_path(&self.workspace_root);
 
-        let Some(cargo_toml) = CargoTomlCache::read(&deps_root_path)? else {
-            return Ok(false);
-        };
-
         if is_root_level_source(project_source) && deps_root_path == self.workspace_root
             || deps_root.as_str() == project_source
         {
             return Ok(true);
         }
+
+        let Some(cargo_toml) = CargoTomlCache::read(&deps_root_path)? else {
+            return Ok(false);
+        };
 
         if let Some(workspace) = cargo_toml.workspace {
             return Ok(
@@ -176,6 +179,12 @@ impl Platform for RustPlatform {
         projects_list: &ProjectsSourcesList,
         aliases_list: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
+        debug!(
+            target: LOG_TARGET,
+            "Loading names (aliases) from project {}'s",
+            color::file("Cargo.toml")
+        );
+
         // Extract the alias from the Cargo project relative to the lockfile
         for (id, source) in projects_list {
             let project_root = source.to_path(&self.workspace_root);
@@ -190,6 +199,9 @@ impl Platform for RustPlatform {
                             color::id(id)
                         );
 
+                        self.package_names
+                            .insert(package.name.clone(), id.to_owned());
+
                         aliases_list.push((id.to_owned(), package.name));
                     }
                 }
@@ -197,6 +209,45 @@ impl Platform for RustPlatform {
         }
 
         Ok(())
+    }
+
+    #[instrument(skip(self))]
+    fn load_project_implicit_dependencies(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<Vec<DependencyConfig>> {
+        let mut implicit_deps = vec![];
+
+        debug!(
+            target: LOG_TARGET,
+            "Scanning {} for implicit dependency relations",
+            color::id(project_id),
+        );
+
+        if let Some(cargo_toml) = CargoTomlCache::read(self.workspace_root.join(project_source))? {
+            let mut find_implicit_relations = |package_deps: &DepsSet, scope: &DependencyScope| {
+                for (dep_name, dep) in package_deps {
+                    // Only inherit if the dependency is using the local `path = "..."` syntax
+                    if dep.detail().is_some_and(|d| d.path.is_some()) {
+                        if let Some(dep_project_id) = self.package_names.get(dep_name) {
+                            implicit_deps.push(DependencyConfig {
+                                id: dep_project_id.to_owned(),
+                                scope: *scope,
+                                source: DependencySource::Implicit,
+                                via: Some(dep_name.clone()),
+                            });
+                        }
+                    }
+                }
+            };
+
+            find_implicit_relations(&cargo_toml.dependencies, &DependencyScope::Production);
+            find_implicit_relations(&cargo_toml.dev_dependencies, &DependencyScope::Development);
+            find_implicit_relations(&cargo_toml.build_dependencies, &DependencyScope::Build);
+        }
+
+        Ok(implicit_deps)
     }
 
     // TOOLCHAIN
@@ -291,10 +342,6 @@ impl Platform for RustPlatform {
         let mut operations = vec![];
 
         if !self.config.components.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "rustup component")?;
-
             debug!(
                 target: LOG_TARGET,
                 "Installing rustup components: {}",
@@ -306,16 +353,18 @@ impl Platform for RustPlatform {
 
             operations.push(
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
-                    .track_async(|| tool.exec_rustup(args, working_dir))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "rustup component")?;
+
+                        tool.exec_rustup(args, working_dir).await
+                    })
                     .await?,
             );
         }
 
         if !self.config.targets.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "rustup target")?;
-
             debug!(
                 target: LOG_TARGET,
                 "Installing rustup targets: {}",
@@ -327,28 +376,32 @@ impl Platform for RustPlatform {
 
             operations.push(
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
-                    .track_async(|| tool.exec_rustup(args, working_dir))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "rustup target")?;
+
+                        tool.exec_rustup(args, working_dir).await
+                    })
                     .await?,
             );
         }
 
         if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
-
             operations.push(
                 Operation::task_execution("cargo generate-lockfile")
-                    .track_async(|| tool.exec_cargo(["generate-lockfile"], working_dir))
+                    .track_async(|| async {
+                        self.console
+                            .out
+                            .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
+
+                        tool.exec_cargo(["generate-lockfile"], working_dir).await
+                    })
                     .await?,
             );
         }
 
         if !self.config.bins.is_empty() {
-            self.console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "cargo binstall")?;
-
             let globals_dir = self.get_globals_dir(Some(tool));
 
             // Install cargo-binstall if it does not exist
@@ -401,7 +454,13 @@ impl Platform for RustPlatform {
 
                 operations.push(
                     Operation::task_execution(format!("cargo {}", args.join(" ")))
-                        .track_async(|| tool.exec_cargo(args, working_dir))
+                        .track_async(|| async {
+                            self.console
+                                .out
+                                .print_checkpoint(Checkpoint::Setup, "cargo binstall")?;
+
+                            tool.exec_cargo(args, working_dir).await
+                        })
                         .await?,
                 );
             }

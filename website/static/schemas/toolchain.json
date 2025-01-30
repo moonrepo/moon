@@ -293,6 +293,15 @@
           "default": "deps.ts",
           "type": "string"
         },
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to deno install commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `deno install` commands."
+        },
         "lockfile": {
           "title": "lockfile",
           "description": "Requires and forces the use of deno.lock files.",

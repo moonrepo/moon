@@ -1,37 +1,37 @@
-// These are very flaky in CI, as they error with "Text file busy" nonstop
-#[cfg(not(target_os = "linux"))]
+use moon_config::PartialBunConfig;
+use moon_test_utils::{
+    assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
+    predicates::prelude::*, Sandbox,
+};
+use std::fs;
+
+fn bun_sandbox() -> Sandbox {
+    bun_sandbox_with_config(|_| {})
+}
+
+fn bun_sandbox_with_config<C>(callback: C) -> Sandbox
+where
+    C: FnOnce(&mut PartialBunConfig),
+{
+    let (workspace_config, mut toolchain_config, tasks_config) = get_bun_fixture_configs();
+
+    if let Some(bun_config) = &mut toolchain_config.bun {
+        callback(bun_config);
+    }
+
+    let sandbox = create_sandbox_with_config(
+        "bun",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
 mod bun {
-    use moon_config::PartialBunConfig;
-    use moon_test_utils::{
-        assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
-        predicates::prelude::*, Sandbox,
-    };
-    use std::fs;
-
-    fn bun_sandbox() -> Sandbox {
-        bun_sandbox_with_config(|_| {})
-    }
-
-    fn bun_sandbox_with_config<C>(callback: C) -> Sandbox
-    where
-        C: FnOnce(&mut PartialBunConfig),
-    {
-        let (workspace_config, mut toolchain_config, tasks_config) = get_bun_fixture_configs();
-
-        if let Some(bun_config) = &mut toolchain_config.bun {
-            callback(bun_config);
-        }
-
-        let sandbox = create_sandbox_with_config(
-            "bun",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        sandbox.enable_git();
-        sandbox
-    }
+    use super::*;
 
     #[test]
     fn runs_self() {
@@ -162,11 +162,10 @@ mod bun {
             cmd.arg("run").arg("bun:unhandledPromise");
         });
 
-        if cfg!(windows) {
-            assert.code(1);
-        } else {
-            assert_snapshot!(assert.output());
-        }
+        let output = assert.output();
+
+        // Output contains os/arch stuff that we cant snapshot
+        assert!(predicate::str::contains("error: Oops").eval(&output));
     }
 
     #[test]
@@ -345,8 +344,6 @@ mod bun {
         }
     }
 
-    // Need multiple windows versions for this to work
-    #[cfg(not(windows))]
     mod workspace_overrides {
         use super::*;
 
@@ -362,8 +359,8 @@ mod bun {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("1.1.3").eval(&output));
-            assert!(predicate::str::contains("0.8.0").eval(&output));
+            assert!(predicate::str::contains("1.2.1").eval(&output));
+            assert!(predicate::str::contains("1.1.0").eval(&output));
 
             assert.success();
         }

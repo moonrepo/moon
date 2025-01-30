@@ -86,6 +86,8 @@ export interface DenoConfig {
 	 * @default 'deps.ts'
 	 */
 	depsFile?: string;
+	/** List of arguments to append to `deno install` commands. */
+	installArgs: string[];
 	/** Requires and forces the use of `deno.lock` files. */
 	lockfile: boolean;
 	/** Location of the WASM plugin to use for Deno support. */
@@ -485,6 +487,8 @@ export interface PartialDenoConfig {
 	 * @default 'deps.ts'
 	 */
 	depsFile?: string | null;
+	/** List of arguments to append to `deno install` commands. */
+	installArgs?: string[] | null;
 	/** Requires and forces the use of `deno.lock` files. */
 	lockfile?: boolean | null;
 	/** Location of the WASM plugin to use for Deno support. */

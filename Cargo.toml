@@ -27,7 +27,7 @@ clap = { version = "4.5.27", default-features = false, features = [
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.43"
+clap_complete = "4.5.44"
 compact_str = { version = "0.8.1", default-features = false, features = [
     "serde",
 ] }

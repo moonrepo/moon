@@ -348,7 +348,7 @@ pub fn get_bun_fixture_configs() -> (
     toolchain_config.node = None;
     toolchain_config.bun = Some(PartialBunConfig {
         infer_tasks_from_scripts: Some(true),
-        version: Some(UnresolvedVersionSpec::parse("1.1.3").unwrap()),
+        version: Some(UnresolvedVersionSpec::parse("1.2.1").unwrap()),
         ..PartialBunConfig::default()
     });
 
@@ -395,7 +395,7 @@ pub fn get_deno_fixture_configs() -> (
     let mut toolchain_config = get_default_toolchain();
     toolchain_config.node = None;
     toolchain_config.deno = Some(PartialDenoConfig {
-        version: Some(UnresolvedVersionSpec::parse("1.40.0").unwrap()),
+        version: Some(UnresolvedVersionSpec::parse("2.1.7").unwrap()),
         ..PartialDenoConfig::default()
     });
 

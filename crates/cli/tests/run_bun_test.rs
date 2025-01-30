@@ -162,11 +162,10 @@ mod bun {
             cmd.arg("run").arg("bun:unhandledPromise");
         });
 
-        if cfg!(windows) {
-            assert.code(1);
-        } else {
-            assert_snapshot!(assert.output());
-        }
+        let output = assert.output();
+
+        // Output contains os/arch stuff that we cant snapshot
+        assert!(predicate::str::contains("error: Oops").eval(&output));
     }
 
     #[test]
@@ -345,8 +344,6 @@ mod bun {
         }
     }
 
-    // Need multiple windows versions for this to work
-    #[cfg(not(windows))]
     mod workspace_overrides {
         use super::*;
 
@@ -363,7 +360,7 @@ mod bun {
             let output = assert.output();
 
             assert!(predicate::str::contains("1.2.1").eval(&output));
-            assert!(predicate::str::contains("0.8.0").eval(&output));
+            assert!(predicate::str::contains("1.1.0").eval(&output));
 
             assert.success();
         }

@@ -198,6 +198,7 @@ impl DependencyManager<()> for BunTool {
 
         if let Some(version) = get_proto_version_env(&self.tool) {
             cmd.env("PROTO_BUN_VERSION", version);
+            cmd.env("PROTO_NODE_VERSION", "*");
         }
 
         Ok(cmd)

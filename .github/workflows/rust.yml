@@ -92,7 +92,7 @@ jobs:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.45.1' # Keep in sync
-      - uses: mozilla-actions/sccache-action@v0.0.5
+      - uses: mozilla-actions/sccache-action@v0.0.7
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - uses: lukka/get-cmake@latest
         if: ${{ runner.os == 'Windows' }}

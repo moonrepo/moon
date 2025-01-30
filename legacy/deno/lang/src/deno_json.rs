@@ -44,14 +44,14 @@ pub struct DenoJson {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DenoJsonWorkspace {
-    Paths(Vec<String>),
+    Members(Vec<String>),
     Config { members: Vec<String> },
 }
 
 impl DenoJsonWorkspace {
     pub fn get_members(&self) -> &[String] {
         match self {
-            Self::Paths(members) => members,
+            Self::Members(members) => members,
             Self::Config { members } => members,
         }
     }

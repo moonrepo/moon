@@ -16,3 +16,7 @@ tasks:
 toolchain:
   typescript:
     disabled: true
+
+workspace:
+  inheritedTasks:
+    include: []

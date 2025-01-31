@@ -24,7 +24,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{mpsc, RwLock, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
-use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -205,12 +204,23 @@ impl ActionPipeline {
             signal_handle.abort();
         }
 
-        // Wait for the queue to shutdown all running tasks
-        process_registry.wait_for_running_to_shutdown().await;
+        let completed = matches!(self.status, ActionPipelineStatus::Completed);
 
-        let mut _job_handles = queue_handle.await.into_diagnostic()?;
+        // Wait for running child processes to exit
+        process_registry
+            .wait_for_running_to_shutdown(!completed)
+            .await;
 
-        // exhaust_job_handles(&mut job_handles, &job_context).await;
+        if !completed {
+            // Abort any running actions in progress
+            let mut job_handles = queue_handle.await.into_diagnostic()?;
+
+            if !job_handles.is_empty() {
+                debug!("Aborting running actions");
+
+                job_handles.shutdown().await;
+            }
+        }
 
         self.actions = actions;
         self.duration = Some(start.elapsed());
@@ -347,25 +357,6 @@ impl ActionPipeline {
                     ));
                 });
 
-            // // Since these tasks are persistent and never complete,
-            // // we need to continually check if they've been aborted or
-            // // cancelled, otherwise we will end up with zombie processes
-            // loop {
-            //     sleep(Duration::from_millis(50)).await;
-
-            //     // No tasks running, so don't hang forever
-            //     if job_context.result_sender.is_closed() {
-            //         break;
-            //     }
-
-            //     if job_context.is_aborted_or_cancelled() {
-            //         debug!("Shutting down {} persistent jobs", job_handles.len());
-
-            //         exhaust_job_handles(&mut job_handles, &job_context).await;
-            //         break;
-            //     }
-            // }
-
             job_handles
         }))
     }
@@ -377,10 +368,12 @@ impl ActionPipeline {
             if let Ok(signal) = receiver.recv().await {
                 cancel_token.cancel();
 
+                debug!("Received signal, shutting down pipeline");
+
                 return match signal {
                     SignalType::Interrupt => ActionPipelineStatus::Interrupted,
-                    SignalType::Quit => ActionPipelineStatus::Aborted,
                     SignalType::Terminate => ActionPipelineStatus::Terminated,
+                    _ => ActionPipelineStatus::Aborted,
                 };
             }
 

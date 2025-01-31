@@ -404,11 +404,6 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
-        trace!(
-            task_target = self.task.target.as_str(),
-            "Including common task related fields in the hash"
-        );
-
         let mut task_hasher = TaskHasher::new(
             self.project,
             self.task,
@@ -446,12 +441,6 @@ impl<'task> TaskRunner<'task> {
         hasher.hash_content(task_hasher.hash())?;
 
         // Hash toolchain fields
-        trace!(
-            task_target = self.task.target.as_str(),
-            toolchains = ?self.task.toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
-            "Including toolchain specific fields in the hash"
-        );
-
         self.platform_manager
             .get_by_toolchains(&self.task.toolchains)?
             .hash_run_target(
@@ -785,10 +774,6 @@ impl<'task> TaskRunner<'task> {
 
         if let Some(output) = operation.get_output_mut() {
             output.exit_code = Some(-1);
-
-            if let Some(error) = report {
-                output.set_stderr(error.to_string());
-            }
         }
 
         operation.finish(ActionStatus::Aborted);

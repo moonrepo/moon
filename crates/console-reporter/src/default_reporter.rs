@@ -251,9 +251,7 @@ impl DefaultReporter {
         };
         let mut elapsed_time = time::elapsed(item.duration.unwrap_or_default());
 
-        if passed_count == cached_count && failed_count == 0 {
-            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
-        } else if matches!(
+        if matches!(
             item.status,
             ActionPipelineStatus::Interrupted | ActionPipelineStatus::Terminated
         ) {
@@ -262,6 +260,8 @@ impl DefaultReporter {
                 elapsed_time,
                 color::muted_light(format!("({:?})", item.status).to_lowercase())
             );
+        } else if passed_count == cached_count && failed_count == 0 {
+            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 
         if item.summarize {

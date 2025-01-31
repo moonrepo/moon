@@ -5,7 +5,13 @@ console.log(`[${target}] Running`);
 for (let event of ['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGTERM', 'SIGBREAK']) {
 	process.on(event, (signal, code) => {
 		console.log(`[${target}] Received ${signal} (${code})!`);
-		process.exit(128 + code);
+
+		// Give moon some time to kill it
+		if (target !== 'signals:dev-2') {
+			setTimeout(() => {
+				process.exit(128 + code);
+			}, 2500);
+		}
 	});
 }
 

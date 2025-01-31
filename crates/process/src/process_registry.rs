@@ -11,6 +11,7 @@ use tokio::time::sleep;
 use tracing::{debug, trace, warn};
 
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
+const TERMINATE_WAIT_MS: u16 = 2000; // 2 seconds
 
 pub struct ProcessRegistry {
     running: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
@@ -80,21 +81,23 @@ impl ProcessRegistry {
         let _ = self.signal_sender.send(SignalType::Terminate);
     }
 
-    pub async fn wait_for_running_to_shutdown(&self) {
+    pub async fn wait_for_running_to_shutdown(&self, terminate: bool) {
         let mut count = 0;
         let mut terminated = false;
 
         loop {
-            // After 1.5 second of waiting, terminate all running,
-            // as some of them may have "press ctrl+c again" logic
-            if !terminated && count >= 1500 {
-                self.terminate_running();
-                terminated = true;
-            }
+            if terminate {
+                // After a few seconds of waiting, terminate all running,
+                // as some of them may have "press ctrl+c again" logic
+                if !terminated && count >= (TERMINATE_WAIT_MS / 2) {
+                    self.terminate_running();
+                    terminated = true;
+                }
 
-            // After 3 seconds of waiting, just exit immediately
-            if count >= 3000 {
-                break;
+                // After many seconds of waiting, just exit immediately
+                if count >= TERMINATE_WAIT_MS {
+                    break;
+                }
             }
 
             // Wait for all running processes to have stopped
@@ -120,16 +123,11 @@ async fn shutdown_processes_with_signal(
     mut receiver: Receiver<SignalType>,
     processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
 ) {
-    let signal: SignalType;
-
     loop {
-        signal = match receiver.recv().await {
-            Ok(signal) => signal,
-            Err(RecvError::Closed) => SignalType::Terminate,
+        match receiver.recv().await {
+            Ok(_) | Err(RecvError::Closed) => break,
             _ => continue,
         };
-
-        break;
     }
 
     let mut children = processes.write().await;
@@ -138,10 +136,13 @@ async fn shutdown_processes_with_signal(
         return;
     }
 
+    // Force kill after 3 seconds. This aligns with the
+    // `wait_for_running_to_shutdown` method above!
+    sleep(Duration::from_millis(TERMINATE_WAIT_MS as u64)).await;
+
     debug!(
         pids = ?children.keys().collect::<Vec<_>>(),
-        signal = ?signal,
-        "Shutting down {} running child processes",
+        "Killing {} running child processes",
         children.len()
     );
 
@@ -151,7 +152,7 @@ async fn shutdown_processes_with_signal(
         futures.push(tokio::spawn(async move {
             trace!(pid, "Killing child process");
 
-            if let Err(error) = child.kill_with_signal(signal).await {
+            if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
                 warn!(pid, "Failed to kill child process: {error}");
             }
         }));

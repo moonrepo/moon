@@ -423,8 +423,8 @@ impl Command {
         debug!(
             pid = child.id(),
             shell = self.shell.as_ref().map(|sh| &sh.bin_name),
-            env_vars = ?env_vars,
-            working_dir = ?working_dir,
+            env = ?env_vars,
+            cwd = ?working_dir,
             "Running command {}",
             color::shell(line.to_string())
         );

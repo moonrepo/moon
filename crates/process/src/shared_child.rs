@@ -9,13 +9,25 @@ use tokio::sync::Mutex;
 pub struct SharedChild {
     inner: Arc<Mutex<Child>>,
     pid: u32,
+    #[cfg(windows)]
+    handle: std::os::windows::io::RawHandle,
 }
 
 impl SharedChild {
+    #[cfg(unix)]
     pub fn new(child: Child) -> Self {
         Self {
             pid: child.id().unwrap(),
             inner: Arc::new(Mutex::new(child)),
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn new(child: Child) -> Self {
+        Self {
+            pid: child.id().unwrap(),
+            inner: Arc::new(Mutex::new(child)),
+            handle: child.raw_handle().unwrap(),
         }
     }
 
@@ -44,23 +56,22 @@ impl SharedChild {
     }
 
     pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
-        let mut child = self.inner.lock().await;
-
-        dbg!("kill_with_signal", self.id(), signal);
-
-        // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L947
+        // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L940
         #[cfg(unix)]
         {
-            kill(self.id(), signal)?;
+            kill(self.pid, signal)?;
         }
 
         // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
         #[cfg(windows)]
         {
-            child.start_kill()?;
+            terminate(self.handle)?;
         }
 
-        child.wait().await?;
+        // Acquire the child _after_ the kill command, otherwise it waits for
+        // the command to finish running before killing, because the lock is
+        // currently owned by `wait` or `wait_with_output`!
+        self.wait().await?;
 
         Ok(())
     }

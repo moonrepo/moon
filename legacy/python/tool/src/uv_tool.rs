@@ -3,7 +3,7 @@ use moon_config::UvConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::Command;
-use moon_python_lang::LockfileDependencyVersions;
+use moon_python_lang::{uv, LockfileDependencyVersions};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool,
@@ -12,6 +12,7 @@ use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::env;
 use std::path::Path;
 use std::sync::Arc;
@@ -183,15 +184,13 @@ impl DependencyManager<PythonTool> for UvTool {
         &self,
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
-        // TODO
-        // let Some(lockfile_path) =
-        //     fs::find_upwards_until("pnpm-lock.yaml", project_root, get_workspace_root())
-        // else {
-        //     return Ok(FxHashMap::default());
-        // };
+        let Some(lockfile_path) =
+            fs::find_upwards_until("uv.lock", project_root, get_workspace_root())
+        else {
+            return Ok(FxHashMap::default());
+        };
 
-        // Ok(pnpm::load_lockfile_dependencies(lockfile_path)?)
-        Ok(FxHashMap::default())
+        Ok(uv::load_lockfile_dependencies(lockfile_path)?)
     }
 
     #[instrument(skip_all)]

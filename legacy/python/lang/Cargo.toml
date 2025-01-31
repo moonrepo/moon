@@ -10,6 +10,8 @@ cached = { workspace = true }
 miette = { workspace = true }
 pep-508 = "0.4.0"
 rustc-hash = { workspace = true }
+serde = { workspace = true }
+starbase_utils = { workspace = true, features = ["toml"] }
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }

@@ -4479,6 +4479,8 @@ dependencies = [
  "moon_test_utils",
  "pep-508",
  "rustc-hash 2.1.0",
+ "serde",
+ "starbase_utils",
 ]
 
 [[package]]

@@ -1,0 +1,22 @@
+language: 'javascript'
+
+tasks:
+  dev-1:
+    command: 'node signals.mjs'
+    preset: 'server'
+  dev-2:
+    command: 'node signals.mjs'
+    preset: 'server'
+  dev-3:
+    command: 'node signals.mjs'
+    preset: 'server'
+  dev:
+    deps: ['dev-1', 'dev-2', 'dev-3']
+
+toolchain:
+  typescript:
+    disabled: true
+
+workspace:
+  inheritedTasks:
+    include: []

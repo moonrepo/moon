@@ -85,12 +85,11 @@ impl ProcessCache {
 
     pub async fn run_command_with_formatter(
         &self,
-        command: Command,
+        mut command: Command,
         trim: bool,
         format: impl FnOnce(String) -> String,
     ) -> miette::Result<Arc<String>> {
-        let mut executor = command.create_async();
-        let cache_key = executor.inspector.get_cache_key();
+        let cache_key = command.get_cache_key();
 
         // First check if the data has already been cached
         if let Some(cache) = self.cache.read_async(&cache_key, |_, v| v.clone()).await {
@@ -101,7 +100,7 @@ impl ProcessCache {
         let cache = match self.cache.entry_async(cache_key).await {
             Entry::Occupied(o) => o.get().clone(),
             Entry::Vacant(v) => {
-                let output = executor.exec_capture_output().await?;
+                let output = command.exec_capture_output().await?;
                 let value = output_to_string(&output.stdout);
                 let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
 
@@ -116,11 +115,10 @@ impl ProcessCache {
 
     pub async fn run_command_without_cache(
         &self,
-        command: Command,
+        mut command: Command,
         trim: bool,
     ) -> miette::Result<Arc<String>> {
-        let mut executor = command.create_async();
-        let output = executor.exec_capture_output().await?;
+        let output = command.exec_capture_output().await?;
         let value = output_to_string(&output.stdout);
 
         Ok(Arc::new(if trim { value.trim().to_owned() } else { value }))

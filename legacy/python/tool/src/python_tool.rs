@@ -106,7 +106,7 @@ impl PythonTool {
             cmd.env("PROTO_PYTHON_VERSION", version);
         }
 
-        cmd.create_async().exec_stream_output().await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

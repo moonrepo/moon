@@ -88,7 +88,6 @@ impl RustTool {
             )
             .cwd(working_dir)
             .with_console(self.console.clone())
-            .create_async()
             .exec_stream_output()
             .await?;
 
@@ -109,7 +108,6 @@ impl RustTool {
             )
             .cwd(working_dir)
             .with_console(self.console.clone())
-            .create_async()
             .exec_stream_output()
             .await?;
 

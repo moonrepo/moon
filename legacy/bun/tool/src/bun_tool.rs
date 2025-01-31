@@ -93,7 +93,7 @@ impl BunTool {
                     cmd.arg("bun.lockb");
                     cmd.cwd(cwd);
 
-                    let output = cmd.create_async().exec_capture_output().await?;
+                    let output = cmd.exec_capture_output().await?;
 
                     Arc::new(output_to_string(&output.stdout))
                 };
@@ -270,8 +270,6 @@ impl DependencyManager<()> for BunTool {
             .cwd(working_dir)
             .set_print_command(log);
 
-        let mut cmd = cmd.create_async();
-
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
         } else {
@@ -295,7 +293,7 @@ impl DependencyManager<()> for BunTool {
             cmd.arg("--production");
         }
 
-        cmd.create_async().exec_stream_output().await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

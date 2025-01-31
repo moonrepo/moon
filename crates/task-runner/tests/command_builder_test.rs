@@ -15,7 +15,7 @@ fn get_env<'a>(command: &'a Command, key: &str) -> Option<&'a str> {
     command
         .env
         .get(&OsString::from(key))
-        .map(|v| v.to_str().unwrap())
+        .map(|v| v.as_ref().unwrap().to_str().unwrap())
 }
 
 fn get_args(command: &Command) -> Vec<&str> {
@@ -34,7 +34,10 @@ mod command_builder {
         let container = TaskRunnerContainer::new("builder", "base").await;
         let command = container.create_command(ActionContext::default()).await;
 
-        assert_eq!(command.cwd, Some(container.sandbox.path().join("project")));
+        assert_eq!(
+            command.cwd.as_deref(),
+            Some(container.sandbox.path().join("project").as_os_str())
+        );
     }
 
     #[tokio::test]
@@ -46,7 +49,10 @@ mod command_builder {
             })
             .await;
 
-        assert_eq!(command.cwd, Some(container.sandbox.path().to_path_buf()));
+        assert_eq!(
+            command.cwd.as_deref(),
+            Some(container.sandbox.path().as_os_str())
+        );
     }
 
     mod args {

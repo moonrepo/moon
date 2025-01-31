@@ -1,7 +1,7 @@
 use crate::buffer::ConsoleBuffer;
 use crate::console::ConsoleTheme;
 use miette::Error as Report;
-use moon_action::{Action, ActionNode, Operation, OperationList};
+use moon_action::{Action, ActionNode, ActionPipelineStatus, Operation, OperationList};
 use moon_config::TaskOutputStyle;
 use moon_target::Target;
 use std::sync::Arc;
@@ -11,6 +11,7 @@ use std::time::Duration;
 pub struct PipelineReportItem {
     pub duration: Option<Duration>,
     pub summarize: bool,
+    pub status: ActionPipelineStatus,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -33,15 +34,6 @@ pub trait Reporter: Send + Sync {
     }
 
     fn on_pipeline_completed(
-        &self,
-        _actions: &[Action],
-        _item: &PipelineReportItem,
-        _error: Option<&Report>,
-    ) -> miette::Result<()> {
-        Ok(())
-    }
-
-    fn on_pipeline_aborted(
         &self,
         _actions: &[Action],
         _item: &PipelineReportItem,

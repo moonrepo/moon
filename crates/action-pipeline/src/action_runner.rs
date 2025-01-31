@@ -184,8 +184,6 @@ pub async fn run_action(
             )
             .await;
 
-            dbg!(&result);
-
             emitter
                 .emit(Event::TaskRan {
                     error: extract_error(&result),

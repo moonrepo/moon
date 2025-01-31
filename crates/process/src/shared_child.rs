@@ -10,7 +10,7 @@ pub struct SharedChild {
     inner: Arc<Mutex<Child>>,
     pid: u32,
     #[cfg(windows)]
-    handle: std::os::windows::io::RawHandle,
+    handle: RawHandle,
 }
 
 impl SharedChild {
@@ -26,8 +26,8 @@ impl SharedChild {
     pub fn new(child: Child) -> Self {
         Self {
             pid: child.id().unwrap(),
+            handle: RawHandle(child.raw_handle().unwrap()),
             inner: Arc::new(Mutex::new(child)),
-            handle: child.raw_handle().unwrap(),
         }
     }
 
@@ -55,7 +55,11 @@ impl SharedChild {
         Ok(())
     }
 
-    pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
+    pub async fn kill_with_signal(
+        &self,
+        #[cfg(unix)] signal: SignalType,
+        #[cfg(windows)] _signal: SignalType,
+    ) -> io::Result<()> {
         // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L940
         #[cfg(unix)]
         {

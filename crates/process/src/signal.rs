@@ -58,8 +58,6 @@ mod unix {
         if result != 0 {
             let error = io::Error::last_os_error();
 
-            dbg!(result, &error);
-
             // "No such process" error, so it may have been killed already
             // https://man7.org/linux/man-pages/man3/errno.3.html
             if error.raw_os_error().is_some_and(|code| code == 3) {
@@ -86,6 +84,12 @@ mod windows {
     extern "system" {
         fn TerminateProcess(hProcess: *mut c_void, uExitCode: c_uint) -> c_int;
     }
+
+    #[derive(Clone)]
+    struct RawHandle(*mut c_void);
+
+    unsafe impl Send for RawHandle {}
+    unsafe impl Sync for RawHandle {}
 
     pub async fn wait_for_signal(sender: Sender<SignalType>) {
         use tokio::signal::windows;
@@ -117,8 +121,8 @@ mod windows {
         };
     }
 
-    pub fn terminate(handle: *mut c_void) -> io::Result<()> {
-        if unsafe { TerminateProcess(handle, 1) } == 0 {
+    pub fn terminate(handle: RawHandle) -> io::Result<()> {
+        if unsafe { TerminateProcess(handle.0, 1) } == 0 {
             Err(io::Error::last_os_error())
         } else {
             Ok(())

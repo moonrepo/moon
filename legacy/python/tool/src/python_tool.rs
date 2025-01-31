@@ -134,6 +134,36 @@ impl PythonTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
+    pub async fn exec_venv(
+        &self,
+        venv_root: &Path,
+        working_dir: &Path,
+        workspace_root: &Path,
+    ) -> miette::Result<()> {
+        match self.config.package_manager {
+            PythonPackageManager::Pip => {
+                self.exec_python(
+                    ["-m", "venv", venv_root.to_str().unwrap_or_default()],
+                    working_dir,
+                    workspace_root,
+                )
+                .await?;
+            }
+            PythonPackageManager::Uv => {
+                let uv = self.get_uv()?;
+
+                uv.create_command_with_paths(self, working_dir)?
+                    .args(["venv", venv_root.to_str().unwrap_or_default()])
+                    .cwd(working_dir)
+                    .exec_stream_output()
+                    .await?;
+            }
+        };
+
+        Ok(())
+    }
+
     pub fn get_pip(&self) -> miette::Result<&PipTool> {
         match &self.pip {
             Some(pip) => Ok(pip),
@@ -158,6 +188,12 @@ impl PythonTool {
         }
 
         panic!("No package manager, how's this possible?");
+    }
+
+    pub fn find_venv_root(&self, starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
+        let depman = self.get_package_manager();
+
+        fs::find_upwards_root_until(depman.get_manifest_filename(), starting_dir, workspace_root)
     }
 }
 

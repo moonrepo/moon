@@ -1,4 +1,3 @@
-pub mod pip_requirements;
+pub mod pip;
 
 pub use moon_lang::LockfileDependencyVersions;
-pub use pip_requirements::*;

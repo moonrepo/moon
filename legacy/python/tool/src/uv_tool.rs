@@ -48,6 +48,16 @@ impl UvTool {
         })
     }
 
+    pub fn create_command_with_paths(
+        &self,
+        python: &PythonTool,
+        working_dir: &Path,
+    ) -> miette::Result<Command> {
+        let mut cmd = self.create_command(python)?;
+        self.inject_command_paths(&mut cmd, python, working_dir);
+        Ok(cmd)
+    }
+
     fn inject_command_paths(&self, cmd: &mut Command, python: &PythonTool, working_dir: &Path) {
         if !self.global {
             cmd.env(

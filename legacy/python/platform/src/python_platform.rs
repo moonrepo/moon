@@ -14,7 +14,7 @@ use moon_hash::ContentHasher;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
-use moon_python_lang::pip_requirements::load_lockfile_dependencies;
+use moon_python_lang::pip::load_lockfile_dependencies;
 use moon_python_tool::{find_requirements_txt, get_python_tool_paths, PythonTool};
 use moon_task::Task;
 use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
@@ -142,9 +142,12 @@ impl Platform for PythonPlatform {
     }
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
+        let tool = self.toolchain.get()?;
+        let depman = tool.get_package_manager();
+
         Ok(Some((
-            "requirements.txt".to_owned(),
-            "requirements.txt".to_owned(),
+            depman.get_lock_filename(),
+            depman.get_manifest_filename(),
         )))
     }
 

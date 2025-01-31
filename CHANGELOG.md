@@ -30,6 +30,8 @@
   - Added `deno.installArgs` setting.
 - Improved the Python toolchain.
   - Added unstable uv support. Can be enabled with the new `python.packageManager` setting.
+    - Right now, has basic toolchain support, including dependency install and virtual environments.
+  - Renamed `python.rootRequirementsOnly` to `python.rootVenvOnly`.
   - Will now inherit versions from the root `.prototools`.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.

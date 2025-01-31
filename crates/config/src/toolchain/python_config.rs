@@ -37,7 +37,8 @@ pub struct UvConfig {
 
 #[derive(Clone, Config, Debug, PartialEq)]
 pub struct PythonConfig {
-    /// The package manager to use for installing dependencies.
+    /// The package manager to use for installing dependencies and managing
+    /// the virtual environment.
     pub package_manager: PythonPackageManager,
 
     /// Options for pip, when used as a package manager.
@@ -47,9 +48,10 @@ pub struct PythonConfig {
     /// Location of the WASM plugin to use for Python support.
     pub plugin: Option<PluginLocator>,
 
-    /// Assumes only the root `requirements.txt` is used for dependencies.
+    /// Assumes a workspace root virtual environment is used for dependencies.
     /// Can be used to support the "one version policy" pattern.
-    pub root_requirements_only: bool,
+    #[setting(alias = "rootRequirementsOnly")]
+    pub root_venv_only: bool,
 
     /// Options for uv, when used as a package manager.
     #[setting(nested)]

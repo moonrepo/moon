@@ -14,18 +14,18 @@ pub async fn install_deps(
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
     let venv_parent = python.find_venv_root(working_dir, workspace_root);
-    let has_manifest = venv_parent.is_some();
 
-    let venv_root = if python.config.root_requirements_only {
+    let venv_root = if python.config.root_venv_only {
         workspace_root.join(&python.config.venv_name)
     } else {
         venv_parent
-            .clone()
-            .unwrap_or_else(|| working_dir.to_path_buf())
+            .as_ref()
+            .and_then(|vp| vp.parent())
+            .unwrap_or(working_dir)
             .join(&python.config.venv_name)
     };
 
-    if !venv_root.exists() && has_manifest {
+    if !venv_root.exists() && venv_parent.is_some() {
         let command = match python.config.package_manager {
             PythonPackageManager::Pip => "python -m venv",
             PythonPackageManager::Uv => "uv venv",

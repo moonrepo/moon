@@ -102,7 +102,7 @@ impl Platform for PythonPlatform {
         project_source: &str,
     ) -> miette::Result<bool> {
         // Single version policy / only a root requirements.txt
-        if self.config.root_requirements_only {
+        if self.config.root_venv_only {
             return Ok(true);
         }
 

@@ -272,10 +272,10 @@ export interface PipConfig {
 }
 
 export interface UvConfig {
-	/** List of arguments to append to `uv install` commands. */
-	installArgs: string[];
 	/** Location of the WASM plugin to use for uv support. */
 	plugin: PluginLocator | null;
+	/** List of arguments to append to `uv sync` commands. */
+	syncArgs: string[];
 	/**
 	 * The version of uv to download, install, and run `uv` tasks with.
 	 *
@@ -286,7 +286,8 @@ export interface UvConfig {
 
 export interface PythonConfig {
 	/**
-	 * The package manager to use for installing dependencies.
+	 * The package manager to use for installing dependencies and managing
+	 * the virtual environment.
 	 *
 	 * @default 'pip'
 	 * @type {'pip' | 'uv'}
@@ -297,10 +298,10 @@ export interface PythonConfig {
 	/** Location of the WASM plugin to use for Python support. */
 	plugin: PluginLocator | null;
 	/**
-	 * Assumes only the root `requirements.txt` is used for dependencies.
+	 * Assumes a workspace root virtual environment is used for dependencies.
 	 * Can be used to support the "one version policy" pattern.
 	 */
-	rootRequirementsOnly: boolean;
+	rootVenvOnly: boolean;
 	/** Options for uv, when used as a package manager. */
 	uv: UvConfig | null;
 	/**
@@ -687,10 +688,10 @@ export interface PartialPipConfig {
 }
 
 export interface PartialUvConfig {
-	/** List of arguments to append to `uv install` commands. */
-	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for uv support. */
 	plugin?: PluginLocator | null;
+	/** List of arguments to append to `uv sync` commands. */
+	syncArgs?: string[] | null;
 	/**
 	 * The version of uv to download, install, and run `uv` tasks with.
 	 *
@@ -701,7 +702,8 @@ export interface PartialUvConfig {
 
 export interface PartialPythonConfig {
 	/**
-	 * The package manager to use for installing dependencies.
+	 * The package manager to use for installing dependencies and managing
+	 * the virtual environment.
 	 *
 	 * @default 'pip'
 	 */
@@ -711,10 +713,10 @@ export interface PartialPythonConfig {
 	/** Location of the WASM plugin to use for Python support. */
 	plugin?: PluginLocator | null;
 	/**
-	 * Assumes only the root `requirements.txt` is used for dependencies.
+	 * Assumes a workspace root virtual environment is used for dependencies.
 	 * Can be used to support the "one version policy" pattern.
 	 */
-	rootRequirementsOnly?: boolean | null;
+	rootVenvOnly?: boolean | null;
 	/** Options for uv, when used as a package manager. */
 	uv?: PartialUvConfig | null;
 	/**

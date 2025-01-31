@@ -667,7 +667,7 @@
       "properties": {
         "packageManager": {
           "title": "packageManager",
-          "description": "The package manager to use for installing dependencies.",
+          "description": "The package manager to use for installing dependencies and managing the virtual environment.",
           "default": "pip",
           "allOf": [
             {
@@ -696,11 +696,10 @@
             }
           ]
         },
-        "rootRequirementsOnly": {
-          "title": "rootRequirementsOnly",
-          "description": "Assumes only the root requirements.txt is used for dependencies. Can be used to support the \"one version policy\" pattern.",
-          "type": "boolean",
-          "markdownDescription": "Assumes only the root `requirements.txt` is used for dependencies. Can be used to support the \"one version policy\" pattern."
+        "rootVenvOnly": {
+          "title": "rootVenvOnly",
+          "description": "Assumes a workspace root virtual environment is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "type": "boolean"
         },
         "uv": {
           "title": "uv",
@@ -949,15 +948,6 @@
     "UvConfig": {
       "type": "object",
       "properties": {
-        "installArgs": {
-          "title": "installArgs",
-          "description": "List of arguments to append to uv install commands.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "markdownDescription": "List of arguments to append to `uv install` commands."
-        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use for uv support.",
@@ -969,6 +959,15 @@
               "type": "null"
             }
           ]
+        },
+        "syncArgs": {
+          "title": "syncArgs",
+          "description": "List of arguments to append to uv sync commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `uv sync` commands."
         },
         "version": {
           "title": "version",

@@ -273,6 +273,10 @@ impl ToolchainConfig {
             };
         }
 
+        if let Some(python_config) = &mut self.python {
+            python_config.inherit_proto(proto_config)?;
+        }
+
         Ok(())
     }
 }

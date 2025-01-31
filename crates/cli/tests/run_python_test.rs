@@ -1,27 +1,21 @@
-use moon_config::{PartialPipConfig, PartialPythonConfig};
+use moon_config::{PartialPipConfig, PartialPythonConfig, PartialUvConfig, PythonPackageManager};
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_python_fixture_configs, Sandbox,
+    assert_snapshot, create_sandbox_with_config, get_python_fixture_configs,
+    predicates::prelude::*, Sandbox,
 };
 use proto_core::UnresolvedVersionSpec;
 
 fn python_sandbox(config: PartialPythonConfig) -> Sandbox {
-    python_sandbox_with_config(|_| {}, config)
+    python_sandbox_with_config("python", config)
 }
 
-fn python_sandbox_with_config<C>(callback: C, config: PartialPythonConfig) -> Sandbox
-where
-    C: FnOnce(&mut PartialPythonConfig),
-{
+fn python_sandbox_with_config(fixture: &str, config: PartialPythonConfig) -> Sandbox {
     let (workspace_config, mut toolchain_config, tasks_config) = get_python_fixture_configs();
 
     toolchain_config.python = Some(config);
 
-    if let Some(python_config) = &mut toolchain_config.python {
-        callback(python_config);
-    }
-
     let sandbox = create_sandbox_with_config(
-        "python",
+        fixture,
         Some(workspace_config),
         Some(toolchain_config),
         Some(tasks_config),
@@ -31,39 +25,81 @@ where
     sandbox
 }
 
-#[test]
-fn runs_standard_script() {
-    let sandbox = python_sandbox(PartialPythonConfig {
-        version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
-        ..PartialPythonConfig::default()
-    });
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("python:standard");
-    });
+mod python {
+    use super::*;
 
-    assert_snapshot!(assert.output());
-}
+    #[test]
+    fn runs_standard_script() {
+        let sandbox = python_sandbox(PartialPythonConfig {
+            version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
+            ..PartialPythonConfig::default()
+        });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("python:standard");
+        });
 
-#[test]
-fn runs_install_deps_via_args() {
-    let sandbox = python_sandbox(PartialPythonConfig {
-        version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
-        pip: Some(PartialPipConfig {
-            install_args: Some(vec![
-                "--quiet".to_string(),
-                "--disable-pip-version-check".to_string(),
-                "poetry==1.8.4".to_string(),
-            ]),
-        }),
-        ..PartialPythonConfig::default()
-    });
+        assert_snapshot!(assert.output());
+    }
 
-    // Needed for venv
-    sandbox.create_file("base/requirements.txt", "");
+    mod pip {
+        use super::*;
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("python:poetry");
-    });
+        #[test]
+        fn runs_install_deps_via_args() {
+            let sandbox = python_sandbox(PartialPythonConfig {
+                version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
+                pip: Some(PartialPipConfig {
+                    install_args: Some(vec![
+                        "--quiet".to_string(),
+                        "--disable-pip-version-check".to_string(),
+                        "poetry==1.8.4".to_string(),
+                    ]),
+                }),
+                ..PartialPythonConfig::default()
+            });
 
-    assert_snapshot!(assert.output());
+            // Needed for venv
+            sandbox.create_file("base/requirements.txt", "");
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("python:poetry");
+            });
+
+            assert_snapshot!(assert.output());
+        }
+    }
+
+    mod uv {
+        use super::*;
+
+        #[test]
+        fn runs_install_deps_via_args() {
+            let sandbox = python_sandbox_with_config(
+                "python-uv",
+                PartialPythonConfig {
+                    version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
+                    package_manager: Some(PythonPackageManager::Uv),
+                    uv: Some(PartialUvConfig {
+                        version: Some(UnresolvedVersionSpec::parse("0.5.26").unwrap()),
+                        ..PartialUvConfig::default()
+                    }),
+                    ..PartialPythonConfig::default()
+                },
+            );
+
+            sandbox.debug_configs();
+            sandbox.debug_files();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("python:uv");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("uv 0.5.26").eval(&output));
+            assert!(
+                predicate::str::contains("Creating virtual environment at: .venv").eval(&output)
+            );
+        }
+    }
 }

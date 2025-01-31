@@ -5,6 +5,8 @@ deno = "2.1.7"
 node = "20.8.0"
 npm = "10.1.0"
 pkl = "0.27.2"
+python = "3.11.10"
+uv = "0.5.26"
 
 [plugins]
 pkl = "https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml"

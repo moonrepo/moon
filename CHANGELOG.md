@@ -29,7 +29,7 @@
   - Added basic support for workspaces.
   - Added `deno.installArgs` setting.
 - Improved the Python toolchain.
-  - Added uv support. Can be enabled with the new `python.packageManager` setting.
+  - Added unstable uv support. Can be enabled with the new `python.packageManager` setting.
   - Will now inherit versions from the root `.prototools`.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.

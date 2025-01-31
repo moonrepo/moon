@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_python_test.rs
+expression: assert.output()
+---
+▪▪▪▪ pip install
+▪▪▪▪ python:standard
+Python 3.11.10
+▪▪▪▪ python:standard (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

@@ -1,4 +1,5 @@
 use crate::pip_tool::PipTool;
+use crate::uv_tool::UvTool;
 use moon_config::{PythonConfig, PythonPackageManager};
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
@@ -16,10 +17,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
 use tracing::instrument;
-
-pub fn find_requirements_txt(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
-    fs::find_upwards_until("requirements.txt", starting_dir, workspace_root)
-}
 
 pub fn get_python_tool_paths(
     python_tool: &PythonTool,
@@ -51,6 +48,8 @@ pub struct PythonTool {
     proto_env: Arc<ProtoEnvironment>,
 
     pip: Option<PipTool>,
+
+    uv: Option<UvTool>,
 }
 
 impl PythonTool {
@@ -72,6 +71,7 @@ impl PythonTool {
             proto_env: Arc::clone(&proto_env),
             console: Arc::clone(&console),
             pip: None,
+            uv: None,
         };
 
         if use_global_tool_on_path("python") || req.is_global() {
@@ -93,7 +93,11 @@ impl PythonTool {
                     .await?,
                 );
             }
-            PythonPackageManager::Uv => {}
+            PythonPackageManager::Uv => {
+                python.uv = Some(
+                    UvTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.uv).await?,
+                );
+            }
         };
 
         Ok(python)
@@ -137,7 +141,18 @@ impl PythonTool {
         }
     }
 
+    pub fn get_uv(&self) -> miette::Result<&UvTool> {
+        match &self.uv {
+            Some(uv) => Ok(uv),
+            None => Err(ToolError::UnknownTool("uv".into()).into()),
+        }
+    }
+
     pub fn get_package_manager(&self) -> &(dyn DependencyManager<Self> + Send + Sync) {
+        if self.uv.is_some() {
+            return self.get_uv().unwrap();
+        }
+
         if self.pip.is_some() {
             return self.get_pip().unwrap();
         }
@@ -199,6 +214,10 @@ impl Tool for PythonTool {
 
         if let Some(pip) = &mut self.pip {
             installed += pip.setup(last_versions).await?;
+        }
+
+        if let Some(uv) = &mut self.uv {
+            installed += uv.setup(last_versions).await?;
         }
 
         Ok(installed)

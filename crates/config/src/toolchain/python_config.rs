@@ -24,11 +24,11 @@ pub struct PipConfig {
 
 #[derive(Clone, Config, Debug, PartialEq, Serialize)]
 pub struct UvConfig {
-    /// List of arguments to append to `uv install` commands.
-    pub install_args: Vec<String>,
-
     /// Location of the WASM plugin to use for uv support.
     pub plugin: Option<PluginLocator>,
+
+    /// List of arguments to append to `uv sync` commands.
+    pub sync_args: Vec<String>,
 
     /// The version of uv to download, install, and run `uv` tasks with.
     #[setting(env = "MOON_UV_VERSION")]

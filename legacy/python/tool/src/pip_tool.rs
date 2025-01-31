@@ -1,4 +1,4 @@
-use crate::python_tool::{find_requirements_txt, get_python_tool_paths, PythonTool};
+use crate::python_tool::{get_python_tool_paths, PythonTool};
 use moon_config::PipConfig;
 use moon_console::Console;
 use moon_process::Command;
@@ -10,10 +10,15 @@ use moon_tool::{
 use moon_utils::get_workspace_root;
 use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::instrument;
+
+pub fn find_requirements_txt(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
+    fs::find_upwards_until("requirements.txt", starting_dir, workspace_root)
+}
 
 pub struct PipTool {
     pub config: PipConfig,

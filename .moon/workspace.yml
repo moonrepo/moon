@@ -10,7 +10,7 @@ projects:
     - './packages/*'
     - '!packages/cli'
     - '!packages/core-*'
-    - 'scenarios/*'
+    # - 'scenarios/*'
     - 'website'
 
 generator:

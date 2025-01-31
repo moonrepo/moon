@@ -116,7 +116,7 @@ mod windows {
     }
 
     #[derive(Clone)]
-    pub struct RawHandle(*mut c_void);
+    pub struct RawHandle(pub *mut c_void);
 
     unsafe impl Send for RawHandle {}
     unsafe impl Sync for RawHandle {}

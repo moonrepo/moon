@@ -263,14 +263,37 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+/** The available package managers for Python. */
+export type PythonPackageManager = 'pip' | 'uv';
+
 export interface PipConfig {
 	/** List of arguments to append to `pip install` commands. */
 	installArgs: string[] | null;
 }
 
+export interface UvConfig {
+	/** List of arguments to append to `uv install` commands. */
+	installArgs: string[] | null;
+	/** Location of the WASM plugin to use for uv support. */
+	plugin: PluginLocator | null;
+	/**
+	 * The version of uv to download, install, and run `uv` tasks with.
+	 *
+	 * @envvar MOON_UV_VERSION
+	 */
+	version: UnresolvedVersionSpec | null;
+}
+
 export interface PythonConfig {
+	/**
+	 * The package manager to use for installing dependencies.
+	 *
+	 * @default 'pip'
+	 * @type {'pip' | 'uv'}
+	 */
+	packageManager: PythonPackageManager;
 	/** Options for pip, when used as a package manager. */
-	pip: PipConfig | null;
+	pip: PipConfig;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin: PluginLocator | null;
 	/**
@@ -278,6 +301,8 @@ export interface PythonConfig {
 	 * Can be used to support the "one version policy" pattern.
 	 */
 	rootRequirementsOnly: boolean;
+	/** Options for uv, when used as a package manager. */
+	uv: UvConfig | null;
 	/**
 	 * Defines the virtual environment name, which will be created in the workspace root.
 	 * Project dependencies will be installed into this.
@@ -661,7 +686,26 @@ export interface PartialPipConfig {
 	installArgs?: string[] | null;
 }
 
+export interface PartialUvConfig {
+	/** List of arguments to append to `uv install` commands. */
+	installArgs?: string[] | null;
+	/** Location of the WASM plugin to use for uv support. */
+	plugin?: PluginLocator | null;
+	/**
+	 * The version of uv to download, install, and run `uv` tasks with.
+	 *
+	 * @envvar MOON_UV_VERSION
+	 */
+	version?: UnresolvedVersionSpec | null;
+}
+
 export interface PartialPythonConfig {
+	/**
+	 * The package manager to use for installing dependencies.
+	 *
+	 * @default 'pip'
+	 */
+	packageManager?: PythonPackageManager | null;
 	/** Options for pip, when used as a package manager. */
 	pip?: PartialPipConfig | null;
 	/** Location of the WASM plugin to use for Python support. */
@@ -671,6 +715,8 @@ export interface PartialPythonConfig {
 	 * Can be used to support the "one version policy" pattern.
 	 */
 	rootRequirementsOnly?: boolean | null;
+	/** Options for uv, when used as a package manager. */
+	uv?: PartialUvConfig | null;
 	/**
 	 * Defines the virtual environment name, which will be created in the workspace root.
 	 * Project dependencies will be installed into this.

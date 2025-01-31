@@ -28,6 +28,9 @@
   - Added support for v3 and v4 lockfiles (we now use the `deno_lockfile` crate).
   - Added basic support for workspaces.
   - Added `deno.installArgs` setting.
+- Improved the Python toolchain.
+  - Added uv support. Can be enabled with the new `python.packageManager` setting.
+  - Will now inherit versions from the root `.prototools`.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.
   - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml`

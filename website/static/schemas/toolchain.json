@@ -672,15 +672,22 @@
     "PythonConfig": {
       "type": "object",
       "properties": {
+        "packageManager": {
+          "title": "packageManager",
+          "description": "The package manager to use for installing dependencies.",
+          "default": "pip",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PythonPackageManager"
+            }
+          ]
+        },
         "pip": {
           "title": "pip",
           "description": "Options for pip, when used as a package manager.",
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/PipConfig"
-            },
-            {
-              "type": "null"
             }
           ]
         },
@@ -701,6 +708,18 @@
           "description": "Assumes only the root requirements.txt is used for dependencies. Can be used to support the \"one version policy\" pattern.",
           "type": "boolean",
           "markdownDescription": "Assumes only the root `requirements.txt` is used for dependencies. Can be used to support the \"one version policy\" pattern."
+        },
+        "uv": {
+          "title": "uv",
+          "description": "Options for uv, when used as a package manager.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UvConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "venvName": {
           "title": "venvName",
@@ -723,6 +742,14 @@
         }
       },
       "additionalProperties": false
+    },
+    "PythonPackageManager": {
+      "description": "The available package managers for Python.",
+      "type": "string",
+      "enum": [
+        "pip",
+        "uv"
+      ]
     },
     "RustConfig": {
       "description": "Configures and enables the Rust platform. Docs: https://moonrepo.dev/docs/config/toolchain#rust",
@@ -925,6 +952,53 @@
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",
       "type": "string",
       "markdownDescription": "Represents an unresolved version or alias that must be resolved to a fully-qualified version."
+    },
+    "UvConfig": {
+      "type": "object",
+      "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to uv install commands.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "List of arguments to append to `uv install` commands."
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use for uv support.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of uv to download, install, and run uv tasks with.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The version of uv to download, install, and run `uv` tasks with."
+        }
+      },
+      "additionalProperties": false
     },
     "YarnConfig": {
       "description": "Options for Yarn, when used as a package manager.",

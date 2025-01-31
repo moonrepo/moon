@@ -79,18 +79,6 @@ mod windows {
     use super::*;
     use std::os::raw::{c_int, c_uint, c_void};
 
-    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
-    // https://docs.rs/windows-sys/latest/windows_sys/Win32/System/Threading/fn.TerminateProcess.html
-    extern "system" {
-        fn TerminateProcess(hProcess: *mut c_void, uExitCode: c_uint) -> c_int;
-    }
-
-    #[derive(Clone)]
-    struct RawHandle(*mut c_void);
-
-    unsafe impl Send for RawHandle {}
-    unsafe impl Sync for RawHandle {}
-
     pub async fn wait_for_signal(sender: Sender<SignalType>) {
         use tokio::signal::windows;
 
@@ -120,6 +108,18 @@ mod windows {
             },
         };
     }
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
+    // https://docs.rs/windows-sys/latest/windows_sys/Win32/System/Threading/fn.TerminateProcess.html
+    extern "system" {
+        fn TerminateProcess(hProcess: *mut c_void, uExitCode: c_uint) -> c_int;
+    }
+
+    #[derive(Clone)]
+    pub struct RawHandle(*mut c_void);
+
+    unsafe impl Send for RawHandle {}
+    unsafe impl Sync for RawHandle {}
 
     pub fn terminate(handle: RawHandle) -> io::Result<()> {
         if unsafe { TerminateProcess(handle.0, 1) } == 0 {

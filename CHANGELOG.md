@@ -32,7 +32,7 @@
   - The root-level project is now properly taken into account when detecting the package workspaces.
   - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml`
     dependencies.
-- Reworked child process handling to properly handle signals and shutdown accordingly. Additionally,
+- Reworked child process handling to better handle signals and shutdown accordingly. Additionally,
   when the pipeline receives a signal, we now display the status that shutdown the pipeline in the
   summary.
 

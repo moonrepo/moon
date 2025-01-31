@@ -69,7 +69,7 @@ impl SharedChild {
         // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
         #[cfg(windows)]
         {
-            terminate(self.handle)?;
+            terminate(self.handle.clone())?;
         }
 
         // Acquire the child _after_ the kill command, otherwise it waits for

@@ -608,17 +608,10 @@
         "installArgs": {
           "title": "installArgs",
           "description": "List of arguments to append to pip install commands.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "markdownDescription": "List of arguments to append to `pip install` commands."
         }
       },
@@ -959,17 +952,10 @@
         "installArgs": {
           "title": "installArgs",
           "description": "List of arguments to append to uv install commands.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "markdownDescription": "List of arguments to append to `uv install` commands."
         },
         "plugin": {

@@ -268,12 +268,12 @@ export type PythonPackageManager = 'pip' | 'uv';
 
 export interface PipConfig {
 	/** List of arguments to append to `pip install` commands. */
-	installArgs: string[] | null;
+	installArgs: string[];
 }
 
 export interface UvConfig {
 	/** List of arguments to append to `uv install` commands. */
-	installArgs: string[] | null;
+	installArgs: string[];
 	/** Location of the WASM plugin to use for uv support. */
 	plugin: PluginLocator | null;
 	/**

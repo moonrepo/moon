@@ -1,10 +1,11 @@
-use moon_config::PythonConfig;
+use crate::pip_tool::PipTool;
+use moon_config::{PythonConfig, PythonPackageManager};
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
-    prepend_path_env_var, use_global_tool_on_path, Tool,
+    prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
 use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
@@ -48,6 +49,8 @@ pub struct PythonTool {
     console: Arc<Console>,
 
     proto_env: Arc<ProtoEnvironment>,
+
+    pip: Option<PipTool>,
 }
 
 impl PythonTool {
@@ -66,8 +69,9 @@ impl PythonTool {
                 config.plugin.as_ref().unwrap(),
             )
             .await?,
-            proto_env,
-            console,
+            proto_env: Arc::clone(&proto_env),
+            console: Arc::clone(&console),
+            pip: None,
         };
 
         if use_global_tool_on_path("python") || req.is_global() {
@@ -75,6 +79,21 @@ impl PythonTool {
             python.config.version = None;
         } else {
             python.config.version = req.to_spec();
+        };
+
+        match config.package_manager {
+            PythonPackageManager::Pip => {
+                python.pip = Some(
+                    PipTool::new(
+                        Arc::clone(&proto_env),
+                        Arc::clone(&console),
+                        &config.pip,
+                        python.global,
+                    )
+                    .await?,
+                );
+            }
+            PythonPackageManager::Uv => {}
         };
 
         Ok(python)
@@ -109,6 +128,21 @@ impl PythonTool {
         cmd.exec_stream_output().await?;
 
         Ok(())
+    }
+
+    pub fn get_pip(&self) -> miette::Result<&PipTool> {
+        match &self.pip {
+            Some(pip) => Ok(pip),
+            None => Err(ToolError::UnknownTool("pip".into()).into()),
+        }
+    }
+
+    pub fn get_package_manager(&self) -> &(dyn DependencyManager<Self> + Send + Sync) {
+        if self.pip.is_some() {
+            return self.get_pip().unwrap();
+        }
+
+        panic!("No package manager, how's this possible?");
     }
 }
 
@@ -162,6 +196,10 @@ impl Tool for PythonTool {
         }
 
         self.tool.locate_globals_dirs().await?;
+
+        if let Some(pip) = &mut self.pip {
+            installed += pip.setup(last_versions).await?;
+        }
 
         Ok(installed)
     }

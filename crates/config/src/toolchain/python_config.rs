@@ -19,13 +19,13 @@ derive_enum!(
 #[derive(Clone, Config, Debug, PartialEq, Serialize)]
 pub struct PipConfig {
     /// List of arguments to append to `pip install` commands.
-    pub install_args: Option<Vec<String>>,
+    pub install_args: Vec<String>,
 }
 
 #[derive(Clone, Config, Debug, PartialEq, Serialize)]
 pub struct UvConfig {
     /// List of arguments to append to `uv install` commands.
-    pub install_args: Option<Vec<String>>,
+    pub install_args: Vec<String>,
 
     /// Location of the WASM plugin to use for uv support.
     pub plugin: Option<PluginLocator>,

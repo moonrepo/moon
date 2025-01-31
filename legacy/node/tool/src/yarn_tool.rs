@@ -70,7 +70,6 @@ impl YarnTool {
         for plugin in &self.config.plugins {
             self.create_command(node)?
                 .args(["plugin", "import", plugin])
-                .create_async()
                 .exec_capture_output()
                 .await?;
         }
@@ -207,7 +206,6 @@ impl DependencyManager<NodeTool> for YarnTool {
                 .arg("dedupe")
                 .cwd(working_dir)
                 .set_print_command(log)
-                .create_async()
                 .exec_capture_output()
                 .await?;
         } else {
@@ -261,8 +259,6 @@ impl DependencyManager<NodeTool> for YarnTool {
             .cwd(working_dir)
             .set_print_command(log);
 
-        let mut cmd = cmd.create_async();
-
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
         } else {
@@ -304,7 +300,7 @@ impl DependencyManager<NodeTool> for YarnTool {
             cmd.arg("--production");
         }
 
-        cmd.create_async().exec_stream_output().await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

@@ -1,7 +1,7 @@
 use crate::event_emitter::{Event, Subscriber};
 use crate::reports::estimate::Estimate;
 use async_trait::async_trait;
-use moon_action::Action;
+use moon_action::{Action, ActionPipelineStatus};
 use moon_action_context::ActionContext;
 use moon_cache::CacheEngine;
 use serde::Serialize;
@@ -22,6 +22,8 @@ pub struct RunReport<'data> {
     /// Estimates around how much time was saved using moon,
     /// compared to another product or baseline.
     pub comparison_estimate: Estimate,
+
+    pub status: &'data ActionPipelineStatus,
 }
 
 pub struct ReportsSubscriber {
@@ -50,6 +52,7 @@ impl Subscriber for ReportsSubscriber {
         if let Event::PipelineCompleted {
             actions,
             duration: Some(duration),
+            status,
             ..
         } = event
         {
@@ -62,6 +65,7 @@ impl Subscriber for ReportsSubscriber {
                 context: &self.action_context,
                 duration,
                 comparison_estimate: estimate,
+                status,
             };
 
             self.cache_engine.write(&self.report_name, &report)?;

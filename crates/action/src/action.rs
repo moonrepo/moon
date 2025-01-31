@@ -8,6 +8,17 @@ use std::time::{Duration, Instant};
 
 #[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
+pub enum ActionPipelineStatus {
+    Aborted,
+    Completed,
+    Interrupted,
+    Terminated,
+    #[default]
+    Pending,
+}
+
+#[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,
     CachedFromRemote,

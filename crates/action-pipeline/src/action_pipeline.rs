@@ -8,12 +8,14 @@ use crate::subscribers::moonbase_subscriber::MoonbaseSubscriber;
 use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
-use moon_action::{Action, ActionNode};
+use miette::IntoDiagnostic;
+use moon_action::{Action, ActionNode, ActionPipelineStatus};
 use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::ActionGraph;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
+use moon_process::{ProcessRegistry, SignalType};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -22,7 +24,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{mpsc, RwLock, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
-use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -33,9 +34,9 @@ pub struct ActionPipeline {
     pub summarize: bool,
 
     // State
-    aborted: bool,
     actions: Vec<Action>,
     duration: Option<Duration>,
+    status: ActionPipelineStatus,
 
     // Data
     app_context: Arc<AppContext>,
@@ -54,15 +55,15 @@ impl ActionPipeline {
         debug!("Creating pipeline to run actions");
 
         Self {
-            aborted: false,
-            actions: vec![],
             action_context: Arc::new(ActionContext::default()),
+            actions: vec![],
             app_context,
             bail: false,
             concurrency: num_cpus::get(),
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             report_name: "runReport.json".into(),
+            status: ActionPipelineStatus::Pending,
             summarize: false,
             toolchain_registry,
             workspace_graph,
@@ -101,11 +102,11 @@ impl ActionPipeline {
                 self.emitter
                     .emit(Event::PipelineCompleted {
                         actions: &actions,
-                        aborted: self.aborted,
                         context: &self.action_context,
                         duration: self.duration,
                         error: None,
                         error_report: None,
+                        status: &self.status,
                     })
                     .await?;
 
@@ -115,11 +116,11 @@ impl ActionPipeline {
                 self.emitter
                     .emit(Event::PipelineCompleted {
                         actions: &actions,
-                        aborted: self.aborted,
                         context: &self.action_context,
                         duration: self.duration,
                         error: Some(error.to_string()),
                         error_report: Some(&error),
+                        status: &self.status,
                     })
                     .await?;
 
@@ -161,16 +162,18 @@ impl ActionPipeline {
         let signal_handle = self.monitor_signals(cancel_token.clone());
 
         // Dispatch jobs from the graph to run actions
-        let queue_handle = self.dispatch_jobs(action_graph, job_context)?;
+        let queue_handle = self.dispatch_jobs(action_graph, job_context.clone())?;
 
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
 
+        let process_registry = ProcessRegistry::instance();
         let mut actions = vec![];
         let mut error = None;
 
         while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
+                process_registry.terminate_running();
                 abort_token.cancel();
                 error = Some(action.get_error());
             }
@@ -179,25 +182,46 @@ impl ActionPipeline {
 
             if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
+                self.status = ActionPipelineStatus::Aborted;
                 break;
             } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (via signal)");
+                self.status = ActionPipelineStatus::Interrupted;
                 break;
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
+                self.status = ActionPipelineStatus::Completed;
                 break;
             }
         }
 
         drop(receiver);
 
-        // Wait for the queue to abort all running tasks
-        let _ = queue_handle.await;
+        // Capture and handle any signals
+        if cancel_token.is_cancelled() {
+            self.status = signal_handle.await.into_diagnostic()?;
+        } else {
+            signal_handle.abort();
+        }
 
-        // Force abort the signal handler
-        signal_handle.abort();
+        let completed = matches!(self.status, ActionPipelineStatus::Completed);
 
-        self.aborted = abort_token.is_cancelled();
+        // Wait for running child processes to exit
+        process_registry
+            .wait_for_running_to_shutdown(!completed)
+            .await;
+
+        if !completed {
+            // Abort any running actions in progress
+            let mut job_handles = queue_handle.await.into_diagnostic()?;
+
+            if !job_handles.is_empty() {
+                debug!("Aborting running actions");
+
+                job_handles.shutdown().await;
+            }
+        }
+
         self.actions = actions;
         self.duration = Some(start.elapsed());
 
@@ -213,7 +237,7 @@ impl ActionPipeline {
         &self,
         action_graph: ActionGraph,
         job_context: JobContext,
-    ) -> miette::Result<JoinHandle<()>> {
+    ) -> miette::Result<JoinHandle<JoinSet<()>>> {
         let node_indices = action_graph.sort_topological()?;
         let app_context = Arc::clone(&self.app_context);
         let action_context = Arc::clone(&self.action_context);
@@ -233,11 +257,9 @@ impl ActionPipeline {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    job_handles.shutdown().await;
-
                     // Return instead of break, so that we avoid
                     // running persistent tasks below
-                    return;
+                    return job_handles;
                 }
 
                 // If none is returned, then we are waiting on other currently running
@@ -290,18 +312,18 @@ impl ActionPipeline {
                 if node.is_interactive()
                     && exhaust_job_handles(&mut job_handles, &job_context).await
                 {
-                    return;
+                    return job_handles;
                 }
             }
 
             // Ensure all non-persistent actions have finished
             if exhaust_job_handles(&mut job_handles, &job_context).await {
-                return;
+                return job_handles;
             }
 
             // Then run all persistent actions in parallel
             if persistent_indices.is_empty() {
-                return;
+                return job_handles;
             }
 
             debug!(
@@ -335,36 +357,27 @@ impl ActionPipeline {
                     ));
                 });
 
-            // Since these tasks are persistent and never complete,
-            // we need to continually check if they've been aborted or
-            // cancelled, otherwise we will end up with zombie processes
-            loop {
-                sleep(Duration::from_millis(150)).await;
-
-                // No tasks running, so don't hang forever
-                if job_context.result_sender.is_closed() {
-                    break;
-                }
-
-                if job_context.is_aborted_or_cancelled() {
-                    debug!("Shutting down {} persistent jobs", job_handles.len());
-
-                    job_handles.shutdown().await;
-                    break;
-                }
-            }
+            job_handles
         }))
     }
 
-    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<()> {
+    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<ActionPipelineStatus> {
         tokio::spawn(async move {
-            debug!("Listening for ctrl+c signal");
+            let mut receiver = ProcessRegistry::instance().receive_signal();
 
-            if tokio::signal::ctrl_c().await.is_ok() {
-                debug!("Received ctrl+c signal, shutting down!");
-
+            if let Ok(signal) = receiver.recv().await {
                 cancel_token.cancel();
+
+                debug!("Received signal, shutting down pipeline");
+
+                return match signal {
+                    SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+                    SignalType::Terminate => ActionPipelineStatus::Terminated,
+                    _ => ActionPipelineStatus::Aborted,
+                };
             }
+
+            ActionPipelineStatus::Interrupted
         })
     }
 
@@ -473,19 +486,10 @@ async fn dispatch_job_with_permit(
 #[instrument(skip_all)]
 async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>, job_context: &JobContext) -> bool {
     while set.join_next().await.is_some() {
-        // If the pipeline was aborted or cancelled (signal),
-        // loop through and abort all currently running handles
-        if job_context.is_aborted_or_cancelled() {
-            set.shutdown().await;
-            set.detach_all();
-
-            // Aborted
-            return true;
-        }
+        continue;
     }
 
     set.detach_all();
 
-    // Not aborted
-    false
+    job_context.is_aborted_or_cancelled()
 }

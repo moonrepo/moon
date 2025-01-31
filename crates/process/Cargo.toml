@@ -20,7 +20,10 @@ starbase_shell = { workspace = true }
 system_env = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-tokio = { workspace = true, features = ["io-util"] }
+tokio = { workspace = true, features = ["io-util", "signal", "sync"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.169"
 
 [lints]
 workspace = true

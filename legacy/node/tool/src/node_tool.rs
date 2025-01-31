@@ -154,11 +154,7 @@ impl NodeTool {
             }
         };
 
-        cmd.args(args)
-            .cwd(working_dir)
-            .create_async()
-            .exec_stream_output()
-            .await?;
+        cmd.args(args).cwd(working_dir).exec_stream_output().await?;
 
         Ok(())
     }

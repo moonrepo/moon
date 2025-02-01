@@ -40,6 +40,9 @@
 - Reworked child process handling to better handle signals and shutdown accordingly. Additionally,
   when the pipeline receives a signal, we now display the status that shutdown the pipeline in the
   summary.
+- Reworked the new task `inferInputs` option to not infer environment variables from popular CI/CD
+  providers, as those values constantly change, causing tasks to always be affected. If you would
+  like to reference these values, add them as an explicit input.
 
 #### 🐞 Fixes
 

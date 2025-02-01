@@ -597,6 +597,25 @@ mod token_expander {
             assert_eq!(expander.expand_command(&mut task).unwrap(), "$FOO");
             assert!(task.input_env.is_empty());
         }
+
+        #[test]
+        fn doesnt_inherit_inputs_from_env_var_that_is_blacklisted() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.command = "$CI_HEAD/$COMMIT_SHA".into();
+            task.options.infer_inputs = true;
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_command(&mut task).unwrap(),
+                "$CI_HEAD/$COMMIT_SHA"
+            );
+            assert!(task.input_env.is_empty());
+        }
     }
 
     mod args {

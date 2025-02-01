@@ -409,9 +409,9 @@ checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
 name = "async-trait"
-version = "0.1.85"
+version = "0.1.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f934833b4b7233644e5848f235df3f57ed8c80f1528a26c3dfa13d2147fa056"
+checksum = "644dd749086bf3771a2fbc5f256fdb982d53f011c7d5d560304eafeecebce79d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -925,9 +925,9 @@ dependencies = [
 
 [[package]]
 name = "cd_env"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c9c2cfcda51cac8c90cdcdc1b4f798919d1b4c5df4519439de53d28806f122e"
+checksum = "7056fc524b158b94b531ed092ec94962da35889d8b571231057f17b12b9d48ed"
 dependencies = [
  "serde",
 ]
@@ -998,9 +998,9 @@ checksum = "6e4de3bc4ea267985becf712dc6d9eed8b04c953b3fcfb339ebc87acd9804901"
 
 [[package]]
 name = "ci_env"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e66a762324db3d46862b0751d1953dec257e201433ddaba83d16f4512831cbd"
+checksum = "e80f7afabbbe272f95a9b0f107d9b5418a37956a5ee22cf7c95f94f8cfaf64ae"
 dependencies = [
  "serde",
 ]
@@ -3387,14 +3387,14 @@ dependencies = [
 
 [[package]]
 name = "miette"
-version = "7.4.0"
+version = "7.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "317f146e2eb7021892722af37cf1b971f0a70c8406f487e24952667616192c64"
+checksum = "1a955165f87b37fd1862df2a59547ac542c77ef6d17c666f619d1ad22dd89484"
 dependencies = [
  "backtrace",
  "backtrace-ext",
  "cfg-if",
- "miette-derive 7.4.0",
+ "miette-derive 7.5.0",
  "owo-colors",
  "supports-color",
  "supports-hyperlinks",
@@ -3418,9 +3418,9 @@ dependencies = [
 
 [[package]]
 name = "miette-derive"
-version = "7.4.0"
+version = "7.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23c9b935fbe1d6cbd1dac857b54a688145e2d93f48db36010514d0f612d0ad67"
+checksum = "bf45bf44ab49be92fd1227a3be6fc6f617f1a337c06af54981048574d8783147"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3507,7 +3507,7 @@ checksum = "b52c1b33ff98142aecea13138bd399b68aa7ab5d9546c300988c345004001eea"
 name = "moon_action"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_target",
  "moon_time",
@@ -3535,7 +3535,7 @@ name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [
  "graph-cycles",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_affected",
@@ -3561,7 +3561,7 @@ name = "moon_action_pipeline"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
@@ -3592,7 +3592,7 @@ dependencies = [
 name = "moon_actions"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_app_context",
@@ -3626,7 +3626,7 @@ name = "moon_affected"
 version = "0.0.1"
 dependencies = [
  "clap",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_project",
  "moon_target",
@@ -3646,7 +3646,7 @@ dependencies = [
  "cd_env",
  "ci_env",
  "md5",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_cache",
  "moon_common",
  "moon_config",
@@ -3680,7 +3680,7 @@ dependencies = [
  "dialoguer",
  "diff",
  "indicatif",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
@@ -3768,7 +3768,7 @@ dependencies = [
 name = "moon_args"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "shell-words",
  "thiserror 2.0.11",
 ]
@@ -3778,7 +3778,7 @@ name = "moon_bun_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_lang",
  "nodejs_package_json",
  "rustc-hash 2.1.0",
@@ -3792,7 +3792,7 @@ dependencies = [
 name = "moon_bun_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_bun_tool",
@@ -3824,7 +3824,7 @@ dependencies = [
 name = "moon_bun_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_bun_lang",
  "moon_config",
  "moon_console",
@@ -3844,7 +3844,7 @@ dependencies = [
 name = "moon_cache"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_cache_item",
  "moon_common",
  "moon_hash",
@@ -3860,7 +3860,7 @@ dependencies = [
 name = "moon_cache_item"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -3908,7 +3908,7 @@ dependencies = [
  "clap",
  "content_inspector",
  "convert_case",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -3931,7 +3931,7 @@ dependencies = [
 name = "moon_codeowners"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_config",
  "moon_hash",
  "serde",
@@ -3946,7 +3946,7 @@ version = "0.0.11"
 dependencies = [
  "compact_str",
  "dirs 6.0.0",
- "miette 7.4.0",
+ "miette 7.5.0",
  "regex",
  "relative-path",
  "rustc-hash 2.1.0",
@@ -3962,7 +3962,7 @@ version = "0.0.13"
 dependencies = [
  "httpmock",
  "indexmap 2.7.1",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -3987,7 +3987,7 @@ dependencies = [
 name = "moon_config_schema"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_config",
  "schematic",
 ]
@@ -3997,7 +3997,7 @@ name = "moon_console"
 version = "0.0.1"
 dependencies = [
  "inquire",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_common",
  "moon_config",
@@ -4011,7 +4011,7 @@ dependencies = [
 name = "moon_console_reporter"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_common",
  "moon_config",
@@ -4026,7 +4026,7 @@ version = "0.0.1"
 dependencies = [
  "cached",
  "deno_lockfile",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_lang",
  "moon_logger",
  "moon_typescript_lang",
@@ -4040,7 +4040,7 @@ dependencies = [
 name = "moon_deno_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4067,7 +4067,7 @@ dependencies = [
 name = "moon_deno_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -4086,7 +4086,7 @@ dependencies = [
 name = "moon_docker"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_target",
  "starbase_sandbox",
@@ -4098,7 +4098,7 @@ dependencies = [
 name = "moon_env"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "starbase_utils",
  "tracing",
@@ -4109,7 +4109,7 @@ name = "moon_extension_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_config",
  "moon_pdk_api",
  "moon_plugin",
@@ -4122,7 +4122,7 @@ name = "moon_file_group"
 version = "0.0.3"
 dependencies = [
  "common-path",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "once_cell",
@@ -4136,7 +4136,7 @@ dependencies = [
 name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "petgraph",
  "rustc-hash 2.1.0",
  "serde",
@@ -4147,7 +4147,7 @@ dependencies = [
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "serde",
  "sha2",
  "starbase_utils",
@@ -4158,7 +4158,7 @@ dependencies = [
 name = "moon_javascript_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_args",
  "moon_common",
  "moon_config",
@@ -4177,7 +4177,7 @@ dependencies = [
 name = "moon_lang"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "rustc-hash 2.1.0",
 ]
 
@@ -4194,7 +4194,7 @@ name = "moon_node_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_bun_lang",
  "moon_lang",
  "moon_logger",
@@ -4217,7 +4217,7 @@ dependencies = [
 name = "moon_node_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4249,7 +4249,7 @@ dependencies = [
 name = "moon_node_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_config",
  "moon_console",
  "moon_logger",
@@ -4271,7 +4271,7 @@ name = "moon_notifier"
 version = "0.0.1"
 dependencies = [
  "ci_env",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_time",
  "reqwest",
@@ -4321,7 +4321,7 @@ name = "moon_platform"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4342,7 +4342,7 @@ dependencies = [
  "async-trait",
  "convert_case",
  "extism",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_env",
  "moon_pdk_api",
@@ -4366,7 +4366,7 @@ version = "0.0.1"
 dependencies = [
  "cached",
  "libc",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_args",
  "moon_common",
  "moon_console",
@@ -4383,7 +4383,7 @@ dependencies = [
 name = "moon_project"
 version = "0.0.3"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_file_group",
@@ -4396,7 +4396,7 @@ dependencies = [
 name = "moon_project_builder"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_file_group",
@@ -4414,7 +4414,7 @@ dependencies = [
 name = "moon_project_constraints"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_project",
@@ -4425,7 +4425,7 @@ dependencies = [
 name = "moon_project_expander"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_project",
@@ -4440,7 +4440,7 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_cache",
  "moon_common",
  "moon_config",
@@ -4467,7 +4467,7 @@ name = "moon_python_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -4483,7 +4483,7 @@ dependencies = [
 name = "moon_python_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4513,7 +4513,7 @@ dependencies = [
 name = "moon_python_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -4534,7 +4534,7 @@ dependencies = [
 name = "moon_query"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "pest",
@@ -4554,7 +4554,7 @@ dependencies = [
  "bazel-remote-apis",
  "chrono",
  "http 1.2.0",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_common",
  "moon_config",
@@ -4583,7 +4583,7 @@ dependencies = [
  "cached",
  "cargo-lock",
  "cargo_toml",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -4597,7 +4597,7 @@ dependencies = [
 name = "moon_rust_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4627,7 +4627,7 @@ dependencies = [
 name = "moon_rust_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -4645,7 +4645,7 @@ dependencies = [
 name = "moon_system_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action_context",
  "moon_config",
  "moon_console",
@@ -4666,7 +4666,7 @@ name = "moon_target"
 version = "0.0.10"
 dependencies = [
  "compact_str",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "once_cell",
  "regex",
@@ -4680,7 +4680,7 @@ dependencies = [
 name = "moon_task"
 version = "0.0.3"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -4695,7 +4695,7 @@ dependencies = [
 name = "moon_task_args"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_args",
  "moon_config",
 ]
@@ -4704,7 +4704,7 @@ dependencies = [
 name = "moon_task_builder"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -4722,8 +4722,10 @@ dependencies = [
 name = "moon_task_expander"
 version = "0.0.1"
 dependencies = [
+ "cd_env",
+ "ci_env",
  "dotenvy",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_args",
  "moon_common",
  "moon_config",
@@ -4745,7 +4747,7 @@ dependencies = [
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_graph_utils",
@@ -4763,7 +4765,7 @@ dependencies = [
 name = "moon_task_hasher"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -4783,7 +4785,7 @@ dependencies = [
 name = "moon_task_runner"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_action",
  "moon_action_context",
  "moon_affected",
@@ -4867,7 +4869,7 @@ name = "moon_tool"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_lang",
  "moon_process",
@@ -4895,7 +4897,7 @@ name = "moon_toolchain_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_pdk_api",
@@ -4911,7 +4913,7 @@ name = "moon_typescript_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -4926,7 +4928,7 @@ dependencies = [
 name = "moon_typescript_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -4953,7 +4955,7 @@ dependencies = [
  "dunce",
  "humantime",
  "md5",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "once_cell",
  "pathdiff",
@@ -4971,7 +4973,7 @@ dependencies = [
  "futures",
  "git-url-parse",
  "ignore",
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_process",
  "once_cell",
@@ -4991,7 +4993,7 @@ dependencies = [
 name = "moon_vcs_hooks"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -5009,7 +5011,7 @@ dependencies = [
 name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_cache",
  "moon_common",
  "moon_config",
@@ -5036,7 +5038,7 @@ dependencies = [
 name = "moon_workspace_graph"
 version = "0.0.1"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "moon_common",
  "moon_graph_utils",
  "moon_project_graph",
@@ -5807,7 +5809,7 @@ dependencies = [
  "dotenvy",
  "indexmap 2.7.1",
  "iocraft",
- "miette 7.4.0",
+ "miette 7.5.0",
  "minisign-verify",
  "once_cell",
  "proto_pdk_api",
@@ -5841,7 +5843,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c369db05bac18030b65ad06d97ae415e5512a3b5279763ef35ff9d85bde5194"
 dependencies = [
- "miette 7.4.0",
+ "miette 7.5.0",
  "reqwest",
  "starbase_archive",
  "starbase_styles",
@@ -6459,7 +6461,7 @@ dependencies = [
  "garde",
  "indexmap 2.7.1",
  "markdown",
- "miette 7.4.0",
+ "miette 7.5.0",
  "reqwest",
  "rpkl",
  "schemars",
@@ -6924,7 +6926,7 @@ checksum = "985934bcffec6009ca2eb721b93fd7b87aee8605e9d134205d8d7e6ba141a158"
 dependencies = [
  "async-trait",
  "chrono",
- "miette 7.4.0",
+ "miette 7.5.0",
  "starbase_styles",
  "tokio",
  "tracing",
@@ -6942,7 +6944,7 @@ dependencies = [
  "binstall-tar",
  "bzip2",
  "flate2",
- "miette 7.4.0",
+ "miette 7.5.0",
  "rustc-hash 2.1.0",
  "starbase_styles",
  "starbase_utils",
@@ -6961,7 +6963,7 @@ checksum = "dfb2fd7146c0e55b53ab44aa4a178d4f27f2fd5ce33718054207cf8aaeacc020"
 dependencies = [
  "crossterm 0.28.1",
  "iocraft",
- "miette 7.4.0",
+ "miette 7.5.0",
  "parking_lot",
  "starbase_styles",
  "tokio",
@@ -6975,7 +6977,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c91281d505ce323e248572ca04176cf43763cd7a98175de1157b8dd5f1a96709"
 dependencies = [
  "async-trait",
- "miette 7.4.0",
+ "miette 7.5.0",
  "starbase_macros",
  "tokio",
 ]
@@ -7026,7 +7028,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65b486cfc419b43fee8b42a87f8d654c1c1d439df34cdf1bfa152cc6bdf8456d"
 dependencies = [
  "dirs 6.0.0",
- "miette 7.4.0",
+ "miette 7.5.0",
  "owo-colors",
  "relative-path",
  "supports-color",
@@ -7043,7 +7045,7 @@ dependencies = [
  "ec4rs",
  "fs4",
  "json-strip-comments",
- "miette 7.4.0",
+ "miette 7.5.0",
  "regex",
  "reqwest",
  "serde",
@@ -8023,7 +8025,7 @@ dependencies = [
  "compact_str",
  "extism",
  "http-cache-reqwest",
- "miette 7.4.0",
+ "miette 7.5.0",
  "once_cell",
  "regex",
  "reqwest",

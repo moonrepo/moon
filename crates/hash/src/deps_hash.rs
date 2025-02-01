@@ -6,9 +6,9 @@ pub type DepsAliasesMap = BTreeMap<String, DepsMap>;
 
 hash_content!(
     pub struct DepsHash<'cfg> {
-        aliases: BTreeMap<&'cfg str, BTreeMap<&'cfg str, &'cfg str>>,
-        dependencies: BTreeMap<&'cfg str, &'cfg str>,
-        name: String,
+        pub aliases: BTreeMap<&'cfg str, BTreeMap<&'cfg str, &'cfg str>>,
+        pub dependencies: BTreeMap<&'cfg str, &'cfg str>,
+        pub name: String,
     }
 );
 

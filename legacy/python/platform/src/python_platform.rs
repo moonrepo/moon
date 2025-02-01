@@ -6,16 +6,16 @@ use moon_common::{
     Id,
 };
 use moon_config::{
-    HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
-    PythonConfig, UnresolvedVersionSpec,
+    HasherConfig, HasherOptimization, PlatformType, ProjectConfig, ProjectsAliasesList,
+    ProjectsSourcesList, PythonConfig, PythonPackageManager, UnresolvedVersionSpec,
 };
 use moon_console::Console;
-use moon_hash::ContentHasher;
+use moon_hash::{ContentHasher, DepsHash};
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
-use moon_python_lang::pip_requirements::load_lockfile_dependencies;
-use moon_python_tool::{find_requirements_txt, get_python_tool_paths, PythonTool};
+use moon_python_lang::{pip, uv};
+use moon_python_tool::{get_python_tool_paths, PythonTool};
 use moon_task::Task;
 use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
 use moon_utils::async_trait;
@@ -102,7 +102,7 @@ impl Platform for PythonPlatform {
         project_source: &str,
     ) -> miette::Result<bool> {
         // Single version policy / only a root requirements.txt
-        if self.config.root_requirements_only {
+        if self.config.root_venv_only {
             return Ok(true);
         }
 
@@ -142,9 +142,12 @@ impl Platform for PythonPlatform {
     }
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
+        let tool = self.toolchain.get()?;
+        let depman = tool.get_package_manager();
+
         Ok(Some((
-            "requirements.txt".to_owned(),
-            "requirements.txt".to_owned(),
+            depman.get_lock_filename(),
+            depman.get_manifest_filename(),
         )))
     }
 
@@ -242,17 +245,38 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let deps = BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
+        match self.config.package_manager {
+            PythonPackageManager::Pip => {
+                if let Ok(data) = pip::load_lockfile_dependencies(manifest_path.to_path_buf()) {
+                    let mut hash = DepsHash::new("unknown".into());
+                    let mut project_deps = BTreeMap::default();
 
-        hasher.hash_content(PythonToolchainHash {
-            version: self
-                .config
-                .version
-                .as_ref()
-                .map(|v| v.to_string())
-                .unwrap_or_default(),
-            dependencies: deps,
-        })?;
+                    for (key, req) in data {
+                        project_deps.insert(key, req.join(""));
+                    }
+
+                    hash.add_deps(&project_deps);
+                    hasher.hash_content(hash)?;
+                }
+            }
+            PythonPackageManager::Uv => {
+                if let Some(data) = uv::PyProjectTomlCache::read(manifest_path)? {
+                    if let Some(project) = data.project {
+                        let mut hash = DepsHash::new(project.name);
+                        let mut project_deps = BTreeMap::default();
+
+                        if let Some(deps) = project.dependencies {
+                            for dep in deps {
+                                project_deps.insert(dep.name.to_string(), dep.to_string());
+                            }
+                        }
+
+                        hash.add_deps(&project_deps);
+                        hasher.hash_content(hash)?;
+                    }
+                }
+            }
+        };
 
         Ok(())
     }
@@ -261,25 +285,62 @@ impl Platform for PythonPlatform {
     async fn hash_run_target(
         &self,
         project: &Project,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         hasher: &mut ContentHasher,
-        _hasher_config: &HasherConfig,
+        hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let mut deps = BTreeMap::new();
-
-        if let Some(pip_requirements) = find_requirements_txt(&project.root, &self.workspace_root) {
-            deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
-        }
-
-        hasher.hash_content(PythonToolchainHash {
+        let python_tool = self.toolchain.get_for_version(&runtime.requirement).ok();
+        let mut content = PythonToolchainHash {
             version: self
                 .config
                 .version
                 .as_ref()
                 .map(|v| v.to_string())
                 .unwrap_or_default(),
-            dependencies: deps,
-        })?;
+            dependencies: BTreeMap::new(),
+        };
+
+        let resolved_dependencies =
+            if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
+                && python_tool.is_some()
+            {
+                python_tool
+                    .unwrap()
+                    .get_package_manager()
+                    .get_resolved_dependencies(&project.root)
+                    .await?
+            } else {
+                FxHashMap::default()
+            };
+
+        match self.config.package_manager {
+            // Since the manifest and lockfile are the same (requirements.txt),
+            // just inherit the resolved dependencies as-is
+            PythonPackageManager::Pip => {
+                content.dependencies.extend(resolved_dependencies);
+            }
+            PythonPackageManager::Uv => {
+                if let Some(data) = uv::PyProjectTomlCache::read(&project.root)? {
+                    if let Some(project) = data.project {
+                        if let Some(deps) = project.dependencies {
+                            for dep in deps {
+                                let name = dep.name.to_string();
+
+                                if let Some(resolved_versions) = resolved_dependencies.get(&name) {
+                                    let mut sorted_deps = resolved_versions.to_owned().clone();
+                                    sorted_deps.sort();
+                                    content.dependencies.insert(name, sorted_deps);
+                                } else {
+                                    content.dependencies.insert(name, vec![dep.to_string()]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        hasher.hash_content(content)?;
 
         Ok(())
     }

@@ -185,6 +185,12 @@ impl ToolchainConfig {
             if let Some(version) = &python_config.version {
                 inject("PROTO_PYTHON_VERSION", version);
             }
+
+            if let Some(uv_config) = &python_config.uv {
+                if let Some(version) = &uv_config.version {
+                    inject("PROTO_UV_VERSION", version);
+                }
+            }
         }
 
         // We don't include Rust since it's a special case!
@@ -220,6 +226,7 @@ impl ToolchainConfig {
         is_using_tool_version!(self, node, pnpm);
         is_using_tool_version!(self, node, yarn);
         is_using_tool_version!(self, python);
+        is_using_tool_version!(self, python, uv);
         is_using_tool_version!(self, rust);
 
         // Special case
@@ -264,6 +271,10 @@ impl ToolchainConfig {
                     bun_config.install_args = bunpm_config.install_args.clone();
                 }
             };
+        }
+
+        if let Some(python_config) = &mut self.python {
+            python_config.inherit_proto(proto_config)?;
         }
 
         Ok(())

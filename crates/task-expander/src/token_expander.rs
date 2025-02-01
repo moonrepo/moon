@@ -684,7 +684,37 @@ impl<'graph> TokenExpander<'graph> {
             &mut found,
         );
 
-        if task.options.infer_inputs {
+        if task.options.infer_inputs && !found.is_empty() {
+            let mut blacklist = vec![
+                "CI_",
+                "GIT_",
+                "BUILD_",
+                "PR_",
+                "PULL_",
+                "COMMIT_HASH",
+                "COMMIT_REF",
+                "COMMIT_SHA",
+                "HEAD",
+                "BASE",
+                "BRANCH",
+            ];
+            let ci = ci_env::get_environment();
+            let cd = cd_env::get_environment();
+
+            if let Some(ci_prefix) = ci.as_ref().and_then(|ci| ci.env_prefix.as_ref()) {
+                blacklist.push(ci_prefix);
+            }
+
+            if let Some(cd_prefix) = cd.as_ref().and_then(|cd| cd.env_prefix.as_ref()) {
+                blacklist.push(cd_prefix);
+            }
+
+            found.retain(|key| {
+                blacklist
+                    .iter()
+                    .all(|prefix| key != prefix && !key.starts_with(prefix))
+            });
+
             task.input_env.extend(found);
         }
 

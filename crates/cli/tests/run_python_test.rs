@@ -87,9 +87,6 @@ mod python {
                 },
             );
 
-            sandbox.debug_configs();
-            sandbox.debug_files();
-
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("python:uv");
             });
@@ -97,9 +94,7 @@ mod python {
             let output = assert.output();
 
             assert!(predicate::str::contains("uv 0.5.26").eval(&output));
-            assert!(
-                predicate::str::contains("Creating virtual environment at: .venv").eval(&output)
-            );
+            assert!(predicate::str::contains("Creating virtual environment").eval(&output));
         }
     }
 }

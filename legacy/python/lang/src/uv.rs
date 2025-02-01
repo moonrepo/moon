@@ -1,9 +1,21 @@
 use cached::proc_macro::cached;
-use moon_lang::LockfileDependencyVersions;
+use moon_lang::{config_cache_container, LockfileDependencyVersions};
+use pyproject_toml::PyProjectToml;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use starbase_utils::toml;
-use std::path::PathBuf;
+use starbase_utils::{fs, toml};
+use std::path::{Path, PathBuf};
+
+fn read_file(path: &Path) -> miette::Result<PyProjectToml> {
+    Ok(toml::parse(fs::read_file(path)?)?)
+}
+
+config_cache_container!(
+    PyProjectTomlCache,
+    PyProjectToml,
+    "package-lock.json",
+    read_file
+);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "kebab-case")]

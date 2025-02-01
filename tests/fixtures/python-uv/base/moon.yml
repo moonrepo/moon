@@ -1,0 +1,12 @@
+language: python
+
+tasks:
+  standard:
+    command: python
+    args:
+      - --version
+
+  uv:
+    command: uv
+    args:
+      - --version

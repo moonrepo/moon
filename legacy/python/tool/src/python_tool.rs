@@ -1,10 +1,12 @@
-use moon_config::PythonConfig;
+use crate::pip_tool::PipTool;
+use crate::uv_tool::UvTool;
+use moon_config::{PythonConfig, PythonPackageManager};
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
-    prepend_path_env_var, use_global_tool_on_path, Tool,
+    prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
 use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
@@ -15,10 +17,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
 use tracing::instrument;
-
-pub fn find_requirements_txt(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
-    fs::find_upwards_until("requirements.txt", starting_dir, workspace_root)
-}
 
 pub fn get_python_tool_paths(
     python_tool: &PythonTool,
@@ -48,6 +46,10 @@ pub struct PythonTool {
     console: Arc<Console>,
 
     proto_env: Arc<ProtoEnvironment>,
+
+    pip: Option<PipTool>,
+
+    uv: Option<UvTool>,
 }
 
 impl PythonTool {
@@ -66,8 +68,10 @@ impl PythonTool {
                 config.plugin.as_ref().unwrap(),
             )
             .await?,
-            proto_env,
-            console,
+            proto_env: Arc::clone(&proto_env),
+            console: Arc::clone(&console),
+            pip: None,
+            uv: None,
         };
 
         if use_global_tool_on_path("python") || req.is_global() {
@@ -75,6 +79,25 @@ impl PythonTool {
             python.config.version = None;
         } else {
             python.config.version = req.to_spec();
+        };
+
+        match config.package_manager {
+            PythonPackageManager::Pip => {
+                python.pip = Some(
+                    PipTool::new(
+                        Arc::clone(&proto_env),
+                        Arc::clone(&console),
+                        &config.pip,
+                        python.global,
+                    )
+                    .await?,
+                );
+            }
+            PythonPackageManager::Uv => {
+                python.uv = Some(
+                    UvTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.uv).await?,
+                );
+            }
         };
 
         Ok(python)
@@ -109,6 +132,68 @@ impl PythonTool {
         cmd.exec_stream_output().await?;
 
         Ok(())
+    }
+
+    #[instrument(skip_all)]
+    pub async fn exec_venv(
+        &self,
+        venv_root: &Path,
+        working_dir: &Path,
+        workspace_root: &Path,
+    ) -> miette::Result<()> {
+        match self.config.package_manager {
+            PythonPackageManager::Pip => {
+                self.exec_python(
+                    ["-m", "venv", venv_root.to_str().unwrap_or_default()],
+                    working_dir,
+                    workspace_root,
+                )
+                .await?;
+            }
+            PythonPackageManager::Uv => {
+                let uv = self.get_uv()?;
+
+                uv.create_command_with_paths(self, working_dir)?
+                    .args(["venv", venv_root.to_str().unwrap_or_default()])
+                    .cwd(working_dir)
+                    .exec_stream_output()
+                    .await?;
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn get_pip(&self) -> miette::Result<&PipTool> {
+        match &self.pip {
+            Some(pip) => Ok(pip),
+            None => Err(ToolError::UnknownTool("pip".into()).into()),
+        }
+    }
+
+    pub fn get_uv(&self) -> miette::Result<&UvTool> {
+        match &self.uv {
+            Some(uv) => Ok(uv),
+            None => Err(ToolError::UnknownTool("uv".into()).into()),
+        }
+    }
+
+    pub fn get_package_manager(&self) -> &(dyn DependencyManager<Self> + Send + Sync) {
+        if self.uv.is_some() {
+            return self.get_uv().unwrap();
+        }
+
+        if self.pip.is_some() {
+            return self.get_pip().unwrap();
+        }
+
+        panic!("No package manager, how's this possible?");
+    }
+
+    pub fn find_venv_root(&self, starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
+        let depman = self.get_package_manager();
+
+        fs::find_upwards_root_until(depman.get_manifest_filename(), starting_dir, workspace_root)
     }
 }
 
@@ -162,6 +247,14 @@ impl Tool for PythonTool {
         }
 
         self.tool.locate_globals_dirs().await?;
+
+        if let Some(pip) = &mut self.pip {
+            installed += pip.setup(last_versions).await?;
+        }
+
+        if let Some(uv) = &mut self.uv {
+            installed += uv.setup(last_versions).await?;
+        }
 
         Ok(installed)
     }

@@ -498,6 +498,7 @@ pub fn get_python_fixture_configs() -> (
     };
 
     let mut toolchain_config = get_default_toolchain();
+    toolchain_config.node = None;
     toolchain_config.python = Some(PartialPythonConfig {
         version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
         ..PartialPythonConfig::default()

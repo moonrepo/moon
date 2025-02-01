@@ -4,7 +4,10 @@
 
 #### 🚀 Updates
 
-- Added unstable support for multiple package workspaces when installing dependencies.
+- Added unstable support for multiple package workspaces when installing dependencies and resolving
+  lockfiles.
+  - For example, you can now have multiple `yarn.lock` files throughout the repository, allowing for
+    multiple Yarn/Node workspaces.
 - Updated Pkl (`.pkl`) based configuration to always be enabled, and is no longer hidden behind an
   experimental flag.
   - Added official documentation: https://moonrepo.dev/docs/guides/pkl-config
@@ -29,9 +32,10 @@
   - Added basic support for workspaces.
   - Added `deno.installArgs` setting.
 - Improved the Python toolchain.
-  - Added unstable uv support. Can be enabled with the new `python.packageManager` setting.
+  - Added unstable uv support. Can be enabled with the new `python.packageManager` and `python.uv`
+    settings.
     - Right now, has basic toolchain support, including dependency install and virtual environments.
-  - Renamed `python.rootRequirementsOnly` to `python.rootVenvOnly`.
+  - Renamed `python.rootRequirementsOnly` to `python.rootVenvOnly` (old name still works).
   - Will now inherit versions from the root `.prototools`.
 - Improved the Rust toolchain.
   - The root-level project is now properly taken into account when detecting the package workspaces.
@@ -42,11 +46,15 @@
   summary.
 - Reworked the new task `inferInputs` option to not infer environment variables from popular CI/CD
   providers, as those values constantly change, causing tasks to always be affected. If you would
-  like to reference these values, add them as an explicit input.
+  like to reference these values, add them as an explicit inputs.
 
 #### 🐞 Fixes
 
-- Fixed lots of issues around remote caching.
+- Fixed lots of issues around remote caching. Should be "stable" now.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.84.1.
 
 ## 1.31.3
 

@@ -702,11 +702,11 @@ impl<'graph> TokenExpander<'graph> {
             let cd = cd_env::get_environment();
 
             if let Some(ci_prefix) = ci.as_ref().and_then(|ci| ci.env_prefix.as_ref()) {
-                blacklist.push(&ci_prefix);
+                blacklist.push(ci_prefix);
             }
 
             if let Some(cd_prefix) = cd.as_ref().and_then(|cd| cd.env_prefix.as_ref()) {
-                blacklist.push(&cd_prefix);
+                blacklist.push(cd_prefix);
             }
 
             found.retain(|key| {

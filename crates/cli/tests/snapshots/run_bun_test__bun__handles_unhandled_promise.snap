@@ -10,7 +10,7 @@ stderr
 error: Oops
 Oops
 
-Bun v1.2.1 (macOS arm64)
+Bun v1.2.2 (macOS arm64)
 Error: task_runner::run_failed
 
   × Task bun:unhandledPromise failed to run.

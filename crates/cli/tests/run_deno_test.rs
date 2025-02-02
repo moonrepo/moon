@@ -44,7 +44,7 @@ mod deno {
         let output = assert.output();
 
         // Output contains arch info
-        assert!(predicate::str::contains("deno 2.1.7").eval(&output));
+        assert!(predicate::str::contains("deno 2.1.9").eval(&output));
     }
 
     #[test]
@@ -230,7 +230,7 @@ mod deno {
 
         // Output includes the arch, so can't be snapshotted
         assert!(predicate::str::contains("deno platform").eval(&output));
-        assert!(predicate::str::contains("deno 2.1.7").eval(&output));
+        assert!(predicate::str::contains("deno 2.1.9").eval(&output));
     }
 
     mod workspace_overrides {
@@ -248,7 +248,7 @@ mod deno {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("2.1.7").eval(&output));
+            assert!(predicate::str::contains("2.1.9").eval(&output));
             assert!(predicate::str::contains("1.30.0").eval(&output));
 
             assert.success();

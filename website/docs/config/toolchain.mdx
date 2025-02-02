@@ -181,13 +181,24 @@ deno:
   depsFile: 'src/deps.ts'
 ```
 
+### `installArgs`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#installArgs" />
+
+Customize the arguments that will be passed to the `deno install` command (Deno >= v2), when the
+`InstallDeps` action is triggered in the pipeline. These arguments are used both locally and in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+deno:
+  installArgs: ['--frozen']
+```
+
 ### `lockfile`
 
 <HeadingApiLink to="/api/types/interface/DenoConfig#lockfile" />
 
-Enables lockfile (`deno.lock`) support for Deno dependencies. When enabled, will run
-[`deno cache`](https://deno.land/manual/basics/modules/integrity_checking) as part of the dependency
-installation action. Defaults to `false`.
+Enables lockfile (`deno.lock`) support for Deno dependencies. When enabled, will run `deno cache`
+(v1) or `deno install` (v2+) as part of the dependency installation action. Defaults to `false`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 deno:
@@ -757,17 +768,29 @@ Python installation's are based on pre-built binaries provided by
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
-### `rootRequirementsOnly`
+### `packageManager`<VersionLabel version="1.32.0" />
 
-<HeadingApiLink to="/api/types/interface/PythonConfig#rootRequirementsOnly" />
+<HeadingApiLink to="/api/types/interface/PythonConfig#packageManager" />
 
-Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
-the root `requirements.txt`, and only installing dependencies in the workspace root, and not within
-individual projects. It also bypasses all `workspaces` checks to determine package locations.
+Defines which package manager to utilize. Supports `pip` (default) or `uv`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
-  rootRequirementsOnly: true
+  packageManager: 'uv'
+```
+
+### `rootVenvOnly`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#rootvenvonly" />
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `requirements.txt` (pip) or `uv.lock` (uv), and only installing dependencies in the
+workspace root, and not within individual projects. It also bypasses all `workspaces` checks to
+determine package locations.
+
+```yaml title=".moon/toolchain.yml" {2}
+python:
+  rootVenvOnly: true
 ```
 
 ### `venvName`
@@ -790,7 +813,7 @@ Optional fields for defining pip specific configuration.
 
 #### `installArgs`
 
-<HeadingApiLink to="/api/types/interface/PipConfig#installArgs" />
+<HeadingApiLink to="/api/types/interface/PipConfig#installargs" />
 
 Customize the arguments that will be passed to the pip install command, when the `InstallDeps`
 action is triggered in the pipeline. These arguments are used both locally and in CI.
@@ -799,6 +822,41 @@ action is triggered in the pipeline. These arguments are used both locally and i
 python:
   pip:
     installArgs: ['--trusted-host company.repo.com', '-i https://company.repo.com/simple']
+```
+
+### `uv`<VersionLabel version="1.32.0" />
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#uv" />
+
+Optional fields for defining uv specific configuration.
+
+#### `syncArgs`
+
+<HeadingApiLink to="/api/types/interface/UvConfig#syncargs" />
+
+Customize the arguments that will be passed to the uv sync command, when the `InstallDeps` action is
+triggered in the pipeline. These arguments are used both locally and in CI.
+
+```yaml title=".moon/toolchain.yml" {4}
+python:
+  packageManager: 'uv'
+  uv:
+    syncArgs: ['--all-packages']
+```
+
+#### `version`
+
+<HeadingApiLink to="/api/types/interface/UvConfig#version" />
+
+Defines the explicit uv toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `uv` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {4}
+python:
+  packageManager: 'uv'
+  uv:
+    version: '0.5.26'
 ```
 
 ## Rust

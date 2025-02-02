@@ -64,10 +64,10 @@ some key differences to be aware of!
 - `default` is a
   [special feature](https://pkl-lang.org/main/current/language-reference/index.html#default-element)
   in Pkl and cannot be used as a setting name. This only applies to
-  [`template.yml`](../config/template#default), but can be worked around by using `defaultValue`
+  [`template.pkl`](../config/template#default), but can be worked around by using `defaultValue`
   instead.
 
-```pkl title="template.yml"
+```pkl title="template.pkl"
 variables {
   ["age"] {
     type = "number"
@@ -91,7 +91,7 @@ tasks {
 
 ## Example configs
 
-### `.moon/workspace.yml`
+### `.moon/workspace.pkl`
 
 ```pkl
 projects {
@@ -106,7 +106,7 @@ vcs {
 }
 ```
 
-### `.moon/toolchain.yml`
+### `.moon/toolchain.pkl`
 
 ```pkl
 node {
@@ -120,7 +120,7 @@ node {
 }
 ```
 
-### `moon.yml`
+### `moon.pkl`
 
 ```pkl
 type = "application"

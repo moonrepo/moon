@@ -23,6 +23,7 @@
   - Added timeout and concurrency limit to clients.
   - Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
     diagnosing connection/integration issues.
+  - Improved handling of TLS/mTLS connections.
 - Improved the Bun toolchain.
   - Added support for the new v1.2 `bun.lock` file. We do our best to detect this, but we suggest
     configuring `--save-text-lockfile`.
@@ -34,11 +35,13 @@
 - Improved the Python toolchain.
   - Added unstable uv support. Can be enabled with the new `python.packageManager` and `python.uv`
     settings.
-    - Right now, has basic toolchain support, including dependency install and virtual environments.
+    - Right now, has basic toolchain support, including dependency installs and virtual
+      environments.
   - Renamed `python.rootRequirementsOnly` to `python.rootVenvOnly` (old name still works).
   - Will now inherit versions from the root `.prototools`.
 - Improved the Rust toolchain.
-  - The root-level project is now properly taken into account when detecting the package workspaces.
+  - The root-level project is now properly taken into account when detecting if a project is within
+    the Cargo workspace.
   - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml`
     dependencies.
 - Reworked child process handling to better handle signals and shutdown accordingly. Additionally,

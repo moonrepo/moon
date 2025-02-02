@@ -4,7 +4,7 @@ expression: assert.output()
 ---
 ▪▪▪▪ bun:viaScript
 bun platform
-1.2.1
+1.2.2
 ▪▪▪▪ bun:viaScript (100ms)
 
 Tasks: 1 completed

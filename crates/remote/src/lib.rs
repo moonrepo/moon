@@ -19,3 +19,5 @@ pub use remote_service::*;
 // TODO:
 // - Other digest functions besides sha256
 // - Directory blob types
+// - retries
+// - metrics

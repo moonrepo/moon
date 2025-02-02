@@ -1,0 +1,188 @@
+---
+slug: moon-v1.32
+title: moon v1.32 - Remote cache and built-in toolchain improvements
+authors: [milesj]
+tags: [platform, toolchain, remote, cache, pkl, config]
+image: ./img/moon/v1.32.png
+---
+
+In this release we focused primarily on remote caching and toolchain improvements.
+
+<!--truncate-->
+
+## Improved remote caching stability
+
+The main focus of this release was the stability of our remote caching implementation, by fixing all
+bugs and edge cases, and adding support for missing or new features.
+
+### New settings
+
+To support new features (below), we are introducing 2 new settings,
+[`unstable_remote.api`](/docs/config/workspace#api) and
+[`unstable_remote.auth`](/docs/config/workspace#auth). The `api` setting defines what API format the
+remote server supports and expects client requests to be sent in, either `grpc` (default) or `http`.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  api: 'grpc'
+```
+
+While the `auth` setting does 2 things; allows HTTP headers to be configured that will be injected
+into all gRPC/HTTP requests, and a token (via environment variable) to be used for bearer
+authorization (instead of TLS/mTLS).
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  auth:
+    headers:
+      'X-Custom-Header': 'value'
+```
+
+### HTTP API support
+
+If you don't want or can't use gRPC, we now support the
+[HTTP caching protocol](https://bazel.build/remote/caching#http-caching). This is a very simple API
+that uploads action results to `/ac/` endpoints, and output blobs to `/cas/` endpoints (content
+addressable storage). The HTTP API is _very_ simple and does not support any of the features
+provided by gRPC, like batch uploading/downloading, streaming, or missing blob detection.
+
+To use this protocol, set the new `api` setting to `http`, and configure an HTTP host.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  api: 'http'
+  host: 'https://cache.yourhost.com'
+```
+
+### ByteStream support
+
+We now support the ByteStream API for gRPC servers, which will automatically download and upload
+blobs larger than 4mb by streaming chunks of data. Previously, if we encountered a blob larger than
+4mb, we would abort uploading to the cache for that action, so subseqeuent runs would always be a
+cache miss.
+
+### Depot cloud hosting
+
+Our good friends at Depot ([depot.dev](https://depot.dev/)) recently announced
+[Depot Cache](https://depot.dev/blog/introducing-depot-cache), a cloud-based caching solution that's
+compatible with the Bazel remote execution/caching API. We were very excited to read this
+announcement, and wanted to get it working in moon immediately. It took a bit of work, and uncovered
+a lot of bugs on our end, but we eventually got it working!
+
+To make use of Depot Cache, create an account on their end, and then configure moon with the
+following.
+
+```yaml
+unstable_remote:
+  host: 'grpcs://cache.depot.dev'
+  auth:
+    token: 'DEPOT_TOKEN'
+    # If you have multiple org's
+    headers:
+      'X-Depot-Org': '<id>'
+```
+
+You'll need to set the `DEPOT_TOKEN` environment variable on every machine that will use remote
+caching.
+[Learn more about this flow in our documentation](/docs/guides/remote-cache#cloud-hosted-depot).
+
+:::info
+
+moon itself now uses Depot Cache for its remote caching, and it has been working quite well! You can
+see it in action within each pull request.
+
+:::
+
+### Miscellaneous
+
+- You can now use `http(s)` protocols for gRPC servers, instead of just `grpc(s)`.
+- Added timeouts and concurrency limits to our internal clients. In the future, we will also support
+  retrying.
+- Added a `MOON_DEBUG_REMOTE` environment variable, which can be used to debug internal errors for
+  diagnosing connection/integration issues.
+- Improved handling of TLS/mTLS connections.
+
+## Improved built-in toolchains
+
+It's been quite some time since we've made any changes to our existing built-in toolchains, and
+since there's been many updates in the ecosystem (like Deno v2), we felt it was time to do a pass on
+them and introduce some improvements.
+
+### Bun
+
+- Added support for the new text-based `bun.lock` file in
+  [Bun v1.2](https://bun.sh/blog/bun-v1.2#introducing-bun-lock).
+  - We do our best to detect between the text and binary formats, but we suggest configuring
+    `--save-text-lockfile` in [`bun.installArgs`](/docs/config/toolchain#installargs) to be
+    explicit.
+
+### Deno
+
+- Added support for [Deno v2](https://deno.com/blog/v2.0).
+  - Now supports all lockfile versions (1-4), thanks to the official `deno_lockfile` crate.
+  - Now uses `deno install` in v2+ instead of `deno cache` that was used in v1.
+  - Added a new [`deno.installArgs`](/docs/config/toolchain#installargs-1) setting.
+- Added support for workspaces that were introduced in [Deno v1.45](https://deno.com/blog/v1.45).
+  - When a project is within a workspace, it will now install dependencies once in the workspace,
+    instead of in each project.
+
+### Python
+
+- Added unstable [uv support](https://docs.astral.sh/uv/). Can be enabled with the new
+  [`python.packageManager`](/docs/config/toolchain#packagemanager-1) and
+  [`python.uv`](/docs/config/toolchain#uv) settings.
+  - Right now, has basic toolchain support, including dependency installs and virtual environments.
+  - Uses `uv venv` instead of `python venv` and `uv sync` instead of `pip install`.
+  - Relies on `pyproject.toml` and `uv.lock` instead of `requirements.txt`.
+- Renamed the `python.rootRequirementsOnly` setting to
+  [`python.rootVenvOnly`](/docs/config/toolchain#rootvenvonly). Open for discussion on the name of
+  this setting.
+- Will now inherit versions from the root `.prototools`.
+
+```yaml title=".moon/toolchain.yml"
+python:
+  version: '3.12.0'
+  packageManager: 'uv'
+  uv:
+    version: '0.5.26'
+```
+
+### Rust
+
+- The root-level project is now properly taken into account when detecting if a project is within
+  the Cargo workspace.
+- Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml` dependencies
+  (only `path` allowed).
+
+## Pkl configuration now available
+
+In [moon v1.29](./moon-v1.29) we introduced support for Pkl-based (`.pkl`) configuration as an
+alternative to YAML (`.yml`), but it was hidden behind an experimental flag. Going forward, you can
+now use Pkl without having to enable the experimental flag, and can remove any references to
+`--experimentPklConfig` or `MOON_EXPERIMENT_PKL_CONFIG`.
+
+Additionally, we now have [official documentation on what Pkl is](/docs/guides/pkl-config), how to
+use it, and some examples of what it looks like. Check it out!
+
+:::info
+
+Based on feedback from the community, and our current thoughts on the configuration problem, at this
+point in time, we plan to support multiple configuration formats instead of choosing one, and will
+most likely include support for JSON/JSONC in v2. We're also open to other formats that may work
+well in moon, and are compatible with our current codebase.
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.32.0) for a full list
+of changes.
+
+- Added unstable support for multiple package workspaces when installing dependencies and resolving
+  lockfiles.
+- Reworked child process handling to better handle signals and shutdown accordingly. Additionally,
+  when the pipeline receives a signal, we now display the status that shutdown the pipeline in the
+  summary.
+- Reworked the new task `inferInputs` option to not infer environment variables from popular CI/CD
+  providers, as those values constantly change, causing tasks to always be affected. If you would
+  like to reference these values, add them as an explicit inputs.

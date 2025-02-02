@@ -2,11 +2,157 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2025-01-22T00:00:00.000Z</updated>
+    <updated>2025-02-03T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.32 - Remote cache and built-in toolchain improvements]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.32</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.32"/>
+        <updated>2025-02-03T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release we focused primarily on remote caching and toolchain improvements.]]></summary>
+        <content type="html"><![CDATA[<p>In this release we focused primarily on remote caching and toolchain improvements.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-remote-caching-stability">Improved remote caching stability<a class="hash-link" aria-label="Direct link to Improved remote caching stability" title="Direct link to Improved remote caching stability" href="https://moonrepo.dev/blog/moon-v1.32#improved-remote-caching-stability">​</a></h2>
+<p>The main focus of this release was the stability of our remote caching implementation, by fixing all
+bugs and edge cases, and adding support for missing or new features.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-settings">New settings<a class="hash-link" aria-label="Direct link to New settings" title="Direct link to New settings" href="https://moonrepo.dev/blog/moon-v1.32#new-settings">​</a></h3>
+<p>To support new features (below), we are introducing 2 new settings,
+<a href="https://moonrepo.dev/docs/config/workspace#api"><code>unstable_remote.api</code></a> and
+<a href="https://moonrepo.dev/docs/config/workspace#auth"><code>unstable_remote.auth</code></a>. The <code>api</code> setting defines what API format the
+remote server supports and expects client requests to be sent in, either <code>grpc</code> (default) or <code>http</code>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">api</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'grpc'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>While the <code>auth</code> setting does 2 things; allows HTTP headers to be configured that will be injected
+into all gRPC/HTTP requests, and a token (via environment variable) to be used for bearer
+authorization (instead of TLS/mTLS).</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">auth</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">headers</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">'X-Custom-Header'</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'value'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="http-api-support">HTTP API support<a class="hash-link" aria-label="Direct link to HTTP API support" title="Direct link to HTTP API support" href="https://moonrepo.dev/blog/moon-v1.32#http-api-support">​</a></h3>
+<p>If you don't want or can't use gRPC, we now support the
+<a href="https://bazel.build/remote/caching#http-caching" target="_blank" rel="noopener noreferrer">HTTP caching protocol</a>. This is a very simple API
+that uploads action results to <code>/ac/</code> endpoints, and output blobs to <code>/cas/</code> endpoints (content
+addressable storage). The HTTP API is <em>very</em> simple and does not support any of the features
+provided by gRPC, like batch uploading/downloading, streaming, or missing blob detection.</p>
+<p>To use this protocol, set the new <code>api</code> setting to <code>http</code>, and configure an HTTP host.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">api</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'http'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'https://cache.yourhost.com'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="bytestream-support">ByteStream support<a class="hash-link" aria-label="Direct link to ByteStream support" title="Direct link to ByteStream support" href="https://moonrepo.dev/blog/moon-v1.32#bytestream-support">​</a></h3>
+<p>We now support the ByteStream API for gRPC servers, which will automatically download and upload
+blobs larger than 4mb by streaming chunks of data. Previously, if we encountered a blob larger than
+4mb, we would abort uploading to the cache for that action, so subseqeuent runs would always be a
+cache miss.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="depot-cloud-hosting">Depot cloud hosting<a class="hash-link" aria-label="Direct link to Depot cloud hosting" title="Direct link to Depot cloud hosting" href="https://moonrepo.dev/blog/moon-v1.32#depot-cloud-hosting">​</a></h3>
+<p>Our good friends at Depot (<a href="https://depot.dev/" target="_blank" rel="noopener noreferrer">depot.dev</a>) recently announced
+<a href="https://depot.dev/blog/introducing-depot-cache" target="_blank" rel="noopener noreferrer">Depot Cache</a>, a cloud-based caching solution that's
+compatible with the Bazel remote execution/caching API. We were very excited to read this
+announcement, and wanted to get it working in moon immediately. It took a bit of work, and uncovered
+a lot of bugs on our end, but we eventually got it working!</p>
+<p>To make use of Depot Cache, create an account on their end, and then configure moon with the
+following.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'grpcs://cache.depot.dev'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">auth</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">token</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'DEPOT_TOKEN'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># If you have multiple org's</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">headers</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">'X-Depot-Org'</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'&lt;id&gt;'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>You'll need to set the <code>DEPOT_TOKEN</code> environment variable on every machine that will use remote
+caching.
+<a href="https://moonrepo.dev/docs/guides/remote-cache#cloud-hosted-depot">Learn more about this flow in our documentation</a>.</p>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>moon itself now uses Depot Cache for its remote caching, and it has been working quite well! You can
+see it in action within each pull request.</p></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="miscellaneous">Miscellaneous<a class="hash-link" aria-label="Direct link to Miscellaneous" title="Direct link to Miscellaneous" href="https://moonrepo.dev/blog/moon-v1.32#miscellaneous">​</a></h3>
+<ul>
+<li>You can now use <code>http(s)</code> protocols for gRPC servers, instead of just <code>grpc(s)</code>.</li>
+<li>Added timeouts and concurrency limits to our internal clients. In the future, we will also support
+retrying.</li>
+<li>Added a <code>MOON_DEBUG_REMOTE</code> environment variable, which can be used to debug internal errors for
+diagnosing connection/integration issues.</li>
+<li>Improved handling of TLS/mTLS connections.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-built-in-toolchains">Improved built-in toolchains<a class="hash-link" aria-label="Direct link to Improved built-in toolchains" title="Direct link to Improved built-in toolchains" href="https://moonrepo.dev/blog/moon-v1.32#improved-built-in-toolchains">​</a></h2>
+<p>It's been quite some time since we've made any changes to our existing built-in toolchains, and
+since there's been many updates in the ecosystem (like Deno v2), we felt it was time to do a pass on
+them and introduce some improvements.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="bun">Bun<a class="hash-link" aria-label="Direct link to Bun" title="Direct link to Bun" href="https://moonrepo.dev/blog/moon-v1.32#bun">​</a></h3>
+<ul>
+<li>Added support for the new text-based <code>bun.lock</code> file in
+<a href="https://bun.sh/blog/bun-v1.2#introducing-bun-lock" target="_blank" rel="noopener noreferrer">Bun v1.2</a>.<!-- -->
+<ul>
+<li>We do our best to detect between the text and binary formats, but we suggest configuring
+<code>--save-text-lockfile</code> in <a href="https://moonrepo.dev/docs/config/toolchain#installargs"><code>bun.installArgs</code></a> to be
+explicit.</li>
+</ul>
+</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="deno">Deno<a class="hash-link" aria-label="Direct link to Deno" title="Direct link to Deno" href="https://moonrepo.dev/blog/moon-v1.32#deno">​</a></h3>
+<ul>
+<li>Added support for <a href="https://deno.com/blog/v2.0" target="_blank" rel="noopener noreferrer">Deno v2</a>.<!-- -->
+<ul>
+<li>Now supports all lockfile versions (1-4), thanks to the official <code>deno_lockfile</code> crate.</li>
+<li>Now uses <code>deno install</code> in v2+ instead of <code>deno cache</code> that was used in v1.</li>
+<li>Added a new <a href="https://moonrepo.dev/docs/config/toolchain#installargs-1"><code>deno.installArgs</code></a> setting.</li>
+</ul>
+</li>
+<li>Added support for workspaces that were introduced in <a href="https://deno.com/blog/v1.45" target="_blank" rel="noopener noreferrer">Deno v1.45</a>.<!-- -->
+<ul>
+<li>When a project is within a workspace, it will now install dependencies once in the workspace,
+instead of in each project.</li>
+</ul>
+</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="python">Python<a class="hash-link" aria-label="Direct link to Python" title="Direct link to Python" href="https://moonrepo.dev/blog/moon-v1.32#python">​</a></h3>
+<ul>
+<li>Added unstable <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv support</a>. Can be enabled with the new
+<a href="https://moonrepo.dev/docs/config/toolchain#packagemanager-1"><code>python.packageManager</code></a> and
+<a href="https://moonrepo.dev/docs/config/toolchain#uv"><code>python.uv</code></a> settings.<!-- -->
+<ul>
+<li>Right now, has basic toolchain support, including dependency installs and virtual environments.</li>
+<li>Uses <code>uv venv</code> instead of <code>python venv</code> and <code>uv sync</code> instead of <code>pip install</code>.</li>
+<li>Relies on <code>pyproject.toml</code> and <code>uv.lock</code> instead of <code>requirements.txt</code>.</li>
+</ul>
+</li>
+<li>Renamed the <code>python.rootRequirementsOnly</code> setting to
+<a href="https://moonrepo.dev/docs/config/toolchain#rootvenvonly"><code>python.rootVenvOnly</code></a>. Open for discussion on the name of
+this setting.</li>
+<li>Will now inherit versions from the root <code>.prototools</code>.</li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/toolchain.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'3.12.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'uv'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">uv</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'0.5.26'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="rust">Rust<a class="hash-link" aria-label="Direct link to Rust" title="Direct link to Rust" href="https://moonrepo.dev/blog/moon-v1.32#rust">​</a></h3>
+<ul>
+<li>The root-level project is now properly taken into account when detecting if a project is within
+the Cargo workspace.</li>
+<li>Project dependencies (<code>dependsOn</code>) are now automatically inferred from <code>Cargo.toml</code> dependencies
+(only <code>path</code> allowed).</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="pkl-configuration-now-available">Pkl configuration now available<a class="hash-link" aria-label="Direct link to Pkl configuration now available" title="Direct link to Pkl configuration now available" href="https://moonrepo.dev/blog/moon-v1.32#pkl-configuration-now-available">​</a></h2>
+<p>In <a href="https://moonrepo.dev/blog/moon-v1.29">moon v1.29</a> we introduced support for Pkl-based (<code>.pkl</code>) configuration as an
+alternative to YAML (<code>.yml</code>), but it was hidden behind an experimental flag. Going forward, you can
+now use Pkl without having to enable the experimental flag, and can remove any references to
+<code>--experimentPklConfig</code> or <code>MOON_EXPERIMENT_PKL_CONFIG</code>.</p>
+<p>Additionally, we now have <a href="https://moonrepo.dev/docs/guides/pkl-config">official documentation on what Pkl is</a>, how to
+use it, and some examples of what it looks like. Check it out!</p>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Based on feedback from the community, and our current thoughts on the configuration problem, at this
+point in time, we plan to support multiple configuration formats instead of choosing one, and will
+most likely include support for JSON/JSONC in v2. We're also open to other formats that may work
+well in moon, and are compatible with our current codebase.</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.32#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.32.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added unstable support for multiple package workspaces when installing dependencies and resolving
+lockfiles.</li>
+<li>Reworked child process handling to better handle signals and shutdown accordingly. Additionally,
+when the pipeline receives a signal, we now display the status that shutdown the pipeline in the
+summary.</li>
+<li>Reworked the new task <code>inferInputs</code> option to not infer environment variables from popular CI/CD
+providers, as those values constantly change, causing tasks to always be affected. If you would
+like to reference these values, add them as an explicit inputs.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="platform" term="platform"/>
+        <category label="toolchain" term="toolchain"/>
+        <category label="remote" term="remote"/>
+        <category label="cache" term="cache"/>
+        <category label="pkl" term="pkl"/>
+        <category label="config" term="config"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.45 - New built-in tools and build from source]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.45</id>
@@ -582,7 +728,7 @@ interested in trying out Pkl, you can with the following:</p>
 Pkl uses a client-server communication model.<!-- -->
 <ul>
 <li>Can also be installed with proto:
-<code>proto plugin add https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml</code></li>
+<code>proto plugin add pkl https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml</code></li>
 </ul>
 </li>
 <li>Use the <code>.pkl</code> file extension instead of <code>.yml</code>.</li>
@@ -1544,80 +1690,5 @@ of changes.</p>
         <category label="template" term="template"/>
         <category label="tack" term="tack"/>
         <category label="inheritance" term="inheritance"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.31 - Improved version pinning, removed global packages management, and more]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.31</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.31"/>
-        <updated>2024-03-01T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In preparation for an official v1 release, we've improved stability, the overall developer]]></summary>
-        <content type="html"><![CDATA[<p>In preparation for an official v1 release, we've improved stability, the overall developer
-experience, we're renaming some commands, and removing the "global packages" functionality.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-version-pinning">Improved version pinning<a class="hash-link" aria-label="Direct link to Improved version pinning" title="Direct link to Improved version pinning" href="https://moonrepo.dev/blog/proto-v0.31#improved-version-pinning">​</a></h2>
-<p>Based on feedback from the community, we've made some slight changes to pinning to reduce confusion.
-The biggest points of contention were, "Why does <code>proto install --pin</code> pin globally?", and "Why
-doesn't <code>proto pin</code> resolve the version like <code>proto install --pin</code> does?".</p>
-<p>To remedy the first issue, we've updated the <code>--pin</code> argument to optionally support a string value
-of "local" or "global". When local, will pin to the <code>.prototools</code> file in the current directory,
-otherwise it will pin to <code>~/.proto/.prototools</code>.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--pin</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># global</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--pin</span><span class="token plain"> global</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--pin</span><span class="token plain"> </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">local</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>As for the second issue, we've introduced a new option called <code>--resolve</code>, which will resolve the
-version to a fully qualified semantic version (or fail). This isn't the default functionality, as to
-not break existing workflows, and because you may want to actually pin "1" instead of "1.2.3".</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto pin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token number" style="color:#94dded">1</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># 1</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto pin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token number" style="color:#94dded">1</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--resolve</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># 1.2.3</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="removed-global-package-management-breaking">Removed global package management (breaking)<a class="hash-link" aria-label="Direct link to Removed global package management (breaking)" title="Direct link to Removed global package management (breaking)" href="https://moonrepo.dev/blog/proto-v0.31#removed-global-package-management-breaking">​</a></h2>
-<p>A while back we introduced the <code>proto install-global</code> and <code>proto uninstall-global</code> commands as a
-means for managing global packages. This was added to solve issues with the Node.js ecosystem,
-primarily around standardizing where global packages would be installed across all package managers.
-On top of this, we also introduced a "command interception" feature, which would error telling you
-to use proto's command instead of the package manager's.</p>
-<p>As a whole, this feature was <em>very</em> disruptive to users, caused a lot of confusion, was simply
-poorly implemented, and honestly wasn't really necessary for tools outside of Node.js. Because of
-all of this, we've decided to entirely remove our global package management functionality, this
-includes:</p>
-<ul>
-<li><code>proto install-global</code> command</li>
-<li><code>proto uninstall-global</code> command</li>
-<li><code>proto list-global</code> command</li>
-<li><code>intercept-globals</code> setting for node/npm/pnpm/yarn</li>
-<li><code>globals</code> setting for TOML plugins</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-npmpnpmyarn-shared-globals-dir-setting">New npm/pnpm/yarn <code>shared-globals-dir</code> setting<a class="hash-link" aria-label="Direct link to new-npmpnpmyarn-shared-globals-dir-setting" title="Direct link to new-npmpnpmyarn-shared-globals-dir-setting" href="https://moonrepo.dev/blog/proto-v0.31#new-npmpnpmyarn-shared-globals-dir-setting">​</a></h2>
-<p>Since we removed our global packages support (above), we had to also remove the <code>intercept-globals</code>
-setting from our Node.js related WASM plugins. However, we still believed in the benefit it
-provided, primarily around standardizing where global packages would be installed across all package
-managers.</p>
-<p>To still support this in some capacity, we've introduced a new <code>shared-globals-dir</code> setting for npm,
-pnpm, and yarn. This setting still standardizes the install path, <em>but instead</em> of intercepting
-commands like it did before, it now appends the global package install commands with additional
-arguments or environment variables. This should be entirely transparent to you!</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.npm</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">shared-globals-dir</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>An example of how this now works:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># &lt; v0.31</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">proto install-global </span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> typescript</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># &gt;= v0.31</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--global</span><span class="token plain"> typescript</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Under the hood becomes...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token assign-left variable" style="color:#fef9c3">PREFIX</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">/.proto/tools/node/globals </span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--global</span><span class="token plain"> typescript</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="renamed-commands-breaking">Renamed commands (breaking)<a class="hash-link" aria-label="Direct link to Renamed commands (breaking)" title="Direct link to Renamed commands (breaking)" href="https://moonrepo.dev/blog/proto-v0.31#renamed-commands-breaking">​</a></h2>
-<p>We're still not happy with some of the current command names, especially around tools and plugins,
-so we've renamed a few of them. They are:</p>
-<ul>
-<li>Renamed the <code>proto tool</code> commands to <code>proto plugin</code>. An alias still exists for the time being.</li>
-<li>Removed the <code>proto tool list-plugins</code> command, and merged its functionality into
-<code>proto plugin list</code>.</li>
-</ul>
-<p>As for the <code>proto plugin list</code> command, we've removed the versions and aliases from the output by
-default, and wrapped them in new <code>--versions</code> and <code>--aliases</code> options.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.31#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.31.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Fixed an issue where empty version strings were being parsed, causing failures.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="version" term="version"/>
-        <category label="pin" term="pin"/>
-        <category label="global" term="global"/>
-        <category label="packages" term="packages"/>
     </entry>
 </feed>

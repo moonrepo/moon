@@ -513,6 +513,44 @@
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
     },
+    "RemoteApi": {
+      "description": "The API format of the remote service.",
+      "type": "string",
+      "enum": [
+        "grpc",
+        "http"
+      ]
+    },
+    "RemoteAuthConfig": {
+      "description": "Configures basic HTTP authentication.",
+      "type": "object",
+      "properties": {
+        "headers": {
+          "title": "headers",
+          "description": "HTTP headers to inject into every request.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "token": {
+          "title": "token",
+          "description": "The name of an environment variable to use as a bearer token.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "RemoteCacheConfig": {
       "description": "Configures the action cache (AC) and content addressable cache (CAS).",
       "type": "object",
@@ -537,6 +575,7 @@
       "additionalProperties": false
     },
     "RemoteCompression": {
+      "description": "Supported blob compression levels for gRPC APIs.",
       "type": "string",
       "enum": [
         "none",
@@ -547,6 +586,28 @@
       "description": "Configures the remote service, powered by the Bazel Remote Execution API.",
       "type": "object",
       "properties": {
+        "api": {
+          "title": "api",
+          "description": "The API format of the remote service.",
+          "default": "grpc",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RemoteApi"
+            }
+          ]
+        },
+        "auth": {
+          "title": "auth",
+          "description": "Connect to the host using basic HTTP authentication.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RemoteAuthConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "cache": {
           "title": "cache",
           "description": "Configures the action cache (AC) and content addressable cache (CAS).",

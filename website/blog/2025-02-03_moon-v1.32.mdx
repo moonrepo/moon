@@ -1,12 +1,12 @@
 ---
 slug: moon-v1.32
-title: moon v1.32 - ???
+title: moon v1.32 - Remote cache and built-in toolchain improvements
 authors: [milesj]
 tags: [platform, toolchain, remote, cache, pkl, config]
-# image: ./img/moon/v1.32.png
+image: ./img/moon/v1.32.png
 ---
 
-TODO
+In this release we focused primarily on remote caching and toolchain improvements.
 
 <!--truncate-->
 
@@ -153,6 +153,25 @@ python:
   the Cargo workspace.
 - Project dependencies (`dependsOn`) are now automatically inferred from `Cargo.toml` dependencies
   (only `path` allowed).
+
+## Pkl configuration now available
+
+In [moon v1.29](./moon-v1.29) we introduced support for Pkl-based (`.pkl`) configuration as an
+alternative to YAML (`.yml`), but it was hidden behind an experimental flag. Going forward, you can
+now use Pkl without having to enable the experimental flag, and can remove any references to
+`--experimentPklConfig` or `MOON_EXPERIMENT_PKL_CONFIG`.
+
+Additionally, we now have [official documentation on what Pkl is](/docs/guides/pkl-config), how to
+use it, and some examples of what it looks like. Check it out!
+
+:::info
+
+Based on feedback from the community, and our current thoughts on the configuration problem, at this
+point in time, we plan to support multiple configuration formats instead of choosing one, and will
+most likely include support for JSON/JSONC in v2. We're also open to other formats that may work
+well in moon, and are compatible with our current codebase.
+
+:::
 
 ## Other changes
 

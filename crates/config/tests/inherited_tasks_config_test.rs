@@ -543,7 +543,7 @@ mod task_manager {
 
         assert_eq!(
             keys,
-            vec!["*", "dotnet", "dotnet-application", "node", "node-library",]
+            vec!["*", "dotnet", "dotnet-application", "node", "node-library"]
         );
 
         let mut inputs = manager
@@ -567,6 +567,33 @@ mod task_manager {
 
     mod lookup_order {
         use super::*;
+
+        #[test]
+        fn includes_bash() {
+            let manager = InheritedTasksManager::default();
+
+            assert_eq!(
+                manager.get_lookup_order(
+                    &[Id::raw("bash"), Id::raw("system")],
+                    &StackType::Backend,
+                    &ProjectType::Library,
+                    &[]
+                ),
+                vec![
+                    "*",
+                    "backend",
+                    "backend-library",
+                    "system",
+                    "bash",
+                    "system-backend",
+                    "bash-backend",
+                    "system-library",
+                    "bash-library",
+                    "system-backend-library",
+                    "bash-backend-library"
+                ]
+            );
+        }
 
         #[test]
         fn includes_js() {
@@ -910,7 +937,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/rust.yml",]
+                vec!["tasks.yml", "tasks/rust.yml"]
             );
         }
 

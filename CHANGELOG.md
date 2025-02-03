@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `bash` and `batch` project language's would not inherit tasks.
+
 ## 1.32.0
 
 #### 🚀 Updates

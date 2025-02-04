@@ -236,6 +236,14 @@ export interface RunnerConfig {
 	 * @default true
 	 */
 	inheritColorsForPipedTasks?: boolean;
+	/**
+	 * Threshold in milliseconds in which to force kill running child
+	 * processes after the pipeline receives an external signal. A value
+	 * of 0 will not kill the process and let them run to completion.
+	 *
+	 * @default 2000
+	 */
+	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand: boolean;
 }
@@ -662,6 +670,14 @@ export interface PartialRunnerConfig {
 	 * @default true
 	 */
 	inheritColorsForPipedTasks?: boolean | null;
+	/**
+	 * Threshold in milliseconds in which to force kill running child
+	 * processes after the pipeline receives an external signal. A value
+	 * of 0 will not kill the process and let them run to completion.
+	 *
+	 * @default 2000
+	 */
+	killProcessThreshold?: number | null;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand?: boolean | null;
 }

@@ -278,6 +278,8 @@ impl AppSession for CliSession {
             startup::signin_to_moonbase(&vcs).await?;
         }
 
+        ProcessRegistry::register(self.workspace_config.runner.kill_process_threshold);
+
         Ok(None)
     }
 

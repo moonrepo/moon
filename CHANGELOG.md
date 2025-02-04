@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a `runner.killProcessThreshold` setting to control the threshold in which to force kill
+  child processes when a signal is received.
+
 #### 🐞 Fixes
 
 - Fixed an issue where `bash` and `batch` project language's would not inherit tasks.

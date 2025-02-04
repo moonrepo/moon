@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where `bash` and `batch` project language's would not inherit tasks.
+- Fixed some `bun.lock` parsing issues.
 
 ## 1.32.0
 

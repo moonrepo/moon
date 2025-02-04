@@ -5,7 +5,7 @@
 #### 🚀 Updates
 
 - Added a `runner.killProcessThreshold` setting to control the threshold in which to force kill
-  child processes when a signal is received.
+  child processes when a signal is received. Defaults to 2 seconds.
 
 #### 🐞 Fixes
 

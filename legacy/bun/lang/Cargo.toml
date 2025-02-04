@@ -8,12 +8,14 @@ publish = false
 moon_lang = { path = "../../core/lang" }
 cached = { workspace = true }
 miette = { workspace = true }
-nodejs_package_json = "0.3.1"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }
 tracing = { workspace = true }
 yarn-lock-parser = "0.10.0"
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

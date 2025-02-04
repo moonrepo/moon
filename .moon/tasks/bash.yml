@@ -1,0 +1,4 @@
+# This is for testing scenarios
+tasks:
+  echo:
+    command: 'echo "moon"'

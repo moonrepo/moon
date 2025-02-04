@@ -150,7 +150,7 @@ pub struct WorkspaceConfig {
     pub remote: Option<RemoteConfig>,
 
     /// Configures aspects of the task runner (also known as the action pipeline).
-    #[setting(nested)]
+    #[setting(nested, alias = "pipeline")]
     pub runner: RunnerConfig,
 
     /// Collects anonymous usage information, and checks for new moon versions.

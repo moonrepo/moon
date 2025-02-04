@@ -11,17 +11,23 @@ use tokio::time::sleep;
 use tracing::{debug, trace, warn};
 
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
-const TERMINATE_WAIT_MS: u16 = 2000; // 2 seconds
 
 pub struct ProcessRegistry {
     running: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     signal_sender: Sender<SignalType>,
     signal_wait_handle: JoinHandle<()>,
     signal_shutdown_handle: JoinHandle<()>,
+    threshold: u32,
 }
 
 impl Default for ProcessRegistry {
     fn default() -> Self {
+        Self::new(2000) // 2 seconds
+    }
+}
+
+impl ProcessRegistry {
+    pub fn new(threshold: u32) -> Self {
         let processes = Arc::new(RwLock::new(FxHashMap::default()));
         let processes_bg = Arc::clone(&processes);
 
@@ -33,7 +39,7 @@ impl Default for ProcessRegistry {
         });
 
         let signal_shutdown_handle = tokio::spawn(async move {
-            shutdown_processes_with_signal(receiver, processes_bg).await;
+            shutdown_processes_with_signal(receiver, processes_bg, threshold).await;
         });
 
         Self {
@@ -41,11 +47,14 @@ impl Default for ProcessRegistry {
             signal_sender: sender,
             signal_wait_handle,
             signal_shutdown_handle,
+            threshold,
         }
     }
-}
 
-impl ProcessRegistry {
+    pub fn register(threshold: u32) {
+        let _ = INSTANCE.set(Arc::new(ProcessRegistry::new(threshold)));
+    }
+
     pub fn instance() -> Arc<ProcessRegistry> {
         Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::default())))
     }
@@ -86,16 +95,16 @@ impl ProcessRegistry {
         let mut terminated = false;
 
         loop {
-            if terminate {
+            if terminate && self.threshold > 0 {
                 // After a few seconds of waiting, terminate all running,
                 // as some of them may have "press ctrl+c again" logic
-                if !terminated && count >= (TERMINATE_WAIT_MS / 2) {
+                if !terminated && count >= (self.threshold as f64 / 1.5) as u32 {
                     self.terminate_running();
                     terminated = true;
                 }
 
                 // After many seconds of waiting, just exit immediately
-                if count >= TERMINATE_WAIT_MS {
+                if count >= self.threshold {
                     break;
                 }
             }
@@ -122,6 +131,7 @@ impl Drop for ProcessRegistry {
 async fn shutdown_processes_with_signal(
     mut receiver: Receiver<SignalType>,
     processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
+    threshold: u32,
 ) {
     loop {
         match receiver.recv().await {
@@ -136,13 +146,11 @@ async fn shutdown_processes_with_signal(
         return;
     }
 
-    // Force kill after 3 seconds. This aligns with the
-    // `wait_for_running_to_shutdown` method above!
-    sleep(Duration::from_millis(TERMINATE_WAIT_MS as u64)).await;
+    sleep(Duration::from_millis(threshold as u64)).await;
 
     debug!(
         pids = ?children.keys().collect::<Vec<_>>(),
-        "Killing {} running child processes",
+        "Shutting down {} running child processes",
         children.len()
     );
 
@@ -150,10 +158,18 @@ async fn shutdown_processes_with_signal(
 
     for (pid, child) in children.drain() {
         futures.push(tokio::spawn(async move {
-            trace!(pid, "Killing child process");
+            if threshold == 0 {
+                trace!(pid, "Waiting on child process");
 
-            if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
-                warn!(pid, "Failed to kill child process: {error}");
+                if let Err(error) = child.wait().await {
+                    warn!(pid, "Failed to wait on child process: {error}");
+                }
+            } else {
+                trace!(pid, "Killing child process");
+
+                if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
+                    warn!(pid, "Failed to kill child process: {error}");
+                }
             }
         }));
     }

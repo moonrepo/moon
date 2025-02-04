@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `runner.killProcessThreshold` setting to control the threshold in which to force kill
+  child processes when a signal is received. Defaults to 2 seconds.
+
+#### 🐞 Fixes
+
+- Fixed an issue where `bash` and `batch` project language's would not inherit tasks.
+- Fixed some `bun.lock` parsing issues.
+
 ## 1.32.0
 
 #### 🚀 Updates

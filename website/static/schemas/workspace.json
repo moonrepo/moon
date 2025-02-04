@@ -749,6 +749,12 @@
           "default": true,
           "type": "boolean"
         },
+        "killProcessThreshold": {
+          "title": "killProcessThreshold",
+          "description": "Threshold in milliseconds in which to force kill running child processes after the pipeline receives an external signal. A value of 0 will not kill the process and let them run to completion.",
+          "default": 2000,
+          "type": "number"
+        },
         "logRunningCommand": {
           "title": "logRunningCommand",
           "description": "Logs the task's command and arguments when running the task.",

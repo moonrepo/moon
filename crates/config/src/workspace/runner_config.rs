@@ -20,6 +20,12 @@ pub struct RunnerConfig {
     #[setting(default = true)]
     pub inherit_colors_for_piped_tasks: bool,
 
+    /// Threshold in milliseconds in which to force kill running child
+    /// processes after the pipeline receives an external signal. A value
+    /// of 0 will not kill the process and let them run to completion.
+    #[setting(default = 2000)]
+    pub kill_process_threshold: u32,
+
     /// Logs the task's command and arguments when running the task.
     pub log_running_command: bool,
 }

@@ -936,6 +936,7 @@ extensions:
                     auto_clean_cache: false,
                     cache_lifetime: "1 day".into(),
                     inherit_colors_for_piped_tasks: false,
+                    kill_process_threshold: 2000,
                     log_running_command: true
                 }
             );

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `proto` documentation to reflect changes to version tokens: https://moonrepo.dev/docs/proto/non-wasm-plugin#platform-variations
+
 ## 1.32.1
 
 #### 🚀 Updates

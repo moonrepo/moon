@@ -138,12 +138,20 @@ impl Command {
     }
 
     pub fn inherit_colors(&mut self) -> &mut Self {
-        let level = color::supports_color().to_string();
-
+        // Don't show colors in our own tests, as it disrupts snapshots
         if !is_test_env() {
-            self.env_remove("NO_COLOR");
-            self.env("FORCE_COLOR", &level);
-            self.env("CLICOLOR_FORCE", &level);
+            let no_color = OsString::from("NO_COLOR");
+            let force_color = OsString::from("FORCE_COLOR");
+
+            // Only inherit colors if the current command hasn't
+            // explicitly configured these variables
+            if !self.env.contains_key(&no_color) && !self.env.contains_key(&force_color) {
+                let level = color::supports_color().to_string();
+
+                self.env_remove(no_color);
+                self.env(force_color, &level);
+                self.env("CLICOLOR_FORCE", &level);
+            }
         }
 
         // Force a terminal width so that we have consistent sizing

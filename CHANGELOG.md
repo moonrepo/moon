@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `NO_COLOR` or `FORCE_COLOR` would be overwritten for task child processes.
+
 ## 1.32.1
 
 #### 🚀 Updates

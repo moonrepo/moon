@@ -111,16 +111,16 @@ mod project_builder {
             project.dependencies,
             vec![
                 DependencyConfig {
-                    id: "bar".try_into().unwrap(),
-                    source: DependencySource::Explicit,
-                    ..Default::default()
-                },
-                DependencyConfig {
                     id: "foo".try_into().unwrap(),
                     source: DependencySource::Explicit,
                     scope: DependencyScope::Development,
                     ..Default::default()
-                }
+                },
+                DependencyConfig {
+                    id: "bar".try_into().unwrap(),
+                    source: DependencySource::Explicit,
+                    ..Default::default()
+                },
             ]
         );
     }

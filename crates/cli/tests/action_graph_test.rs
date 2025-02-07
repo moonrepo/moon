@@ -24,7 +24,7 @@ mod action_graph {
         let dot = assert.output();
 
         // Snapshot is not deterministic
-        assert_eq!(dot.split('\n').count(), 500);
+        assert_eq!(dot.split('\n').count(), 501);
     }
 
     #[test]

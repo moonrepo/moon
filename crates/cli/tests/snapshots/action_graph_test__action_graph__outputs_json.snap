@@ -9,12 +9,12 @@ expression: assert.output()
       "label": "SyncWorkspace"
     },
     {
-      "id": 1,
-      "label": "SetupToolchain(node:18.0.0)"
-    },
-    {
       "id": 3,
       "label": "SyncProject(node, basic)"
+    },
+    {
+      "id": 1,
+      "label": "SetupToolchain(node:18.0.0)"
     },
     {
       "id": 4,

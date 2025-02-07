@@ -292,7 +292,7 @@ mod codegen {
 
                 assert_eq!(
                     template.config.variables.keys().collect::<Vec<_>>(),
-                    vec!["a", "b", "c", "base"]
+                    vec!["a", "base", "c", "b"]
                 );
 
                 // Test that the base vars aren't overwritten

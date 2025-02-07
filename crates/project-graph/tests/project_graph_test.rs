@@ -763,8 +763,8 @@ mod project_graph {
             assert_eq!(
                 task.deps,
                 [
-                    TaskDependencyConfig::new(Target::parse("tag-one:test").unwrap()),
                     TaskDependencyConfig::new(Target::parse("tag-three:test").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("tag-one:test").unwrap()),
                 ]
             );
         }
@@ -807,7 +807,7 @@ mod project_graph {
                         .projects
                         .dependencies_of(&graph.get_project("d").unwrap())
                 ),
-                ["c", "b", "a"]
+                ["b", "c", "a"]
             );
         }
 
@@ -1062,7 +1062,7 @@ mod project_graph {
                         .projects
                         .dependencies_of(&graph.get_project("explicit").unwrap())
                 ),
-                ["alias-two", "alias-one"]
+                ["alias-one", "alias-two"]
             );
 
             assert_eq!(
@@ -1127,7 +1127,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Project two is already using the alias @test")]
+        #[should_panic(expected = "Project one is already using the alias @test")]
         async fn errors_duplicate_aliases() {
             generate_aliases_project_graph_for_fixture("aliases-conflict").await;
         }

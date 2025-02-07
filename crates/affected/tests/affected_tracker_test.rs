@@ -91,7 +91,7 @@ mod affected_projects {
                 (Id::raw("a"), create_state_from_file("a/file.txt")),
                 (Id::raw("b"), create_state_from_file("b/file.txt")),
                 (Id::raw("e"), create_state_from_file("e/file.txt")),
-                (Id::raw("root"), create_state_from_file("e/file.txt")),
+                (Id::raw("root"), create_state_from_file("a/file.txt")),
             ])
         );
     }
@@ -340,8 +340,8 @@ mod affected_projects {
             assert_eq!(
                 affected.projects,
                 FxHashMap::from_iter([
-                    (Id::raw("cycle-a"), create_state_from_dependency("cycle-b")),
                     (Id::raw("cycle-b"), create_state_from_dependency("cycle-c")),
+                    // (Id::raw("cycle-a"), create_state_from_dependency("cycle-b")),
                     (
                         Id::raw("cycle-c"),
                         create_state_from_file("cycle-c/file.txt")

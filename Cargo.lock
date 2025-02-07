@@ -1018,9 +1018,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.27"
+version = "4.5.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "769b0145982b4b48713e01ec42d61614425f27b7058bda7180a3a41f30104796"
+checksum = "3e77c3243bd94243c03672cb5154667347c457ca271254724f9f393aee1c05ff"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1060,9 +1060,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.24"
+version = "4.5.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54b755194d6389280185988721fffba69495eed5ee9feeee9a599b53db80318c"
+checksum = "bf4ced95c6f4a675af3da73304b9ac4ed991640c36374e4b46795c49e17cf1ed"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -1265,7 +1265,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "log",
  "regalloc2",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "smallvec",
  "target-lexicon",
 ]
@@ -2468,9 +2468,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33b65cd1687caf2c7fff496741a2f264c26f54e6d6cec03dac8f276fa4e5430e"
+checksum = "7e883defacf53960c7717d9e928dc8667be9501d9f54e6a8b7703d7a30320e9c"
 dependencies = [
  "async-trait",
  "bincode",
@@ -2484,9 +2484,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache-reqwest"
-version = "0.15.0"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "735586904a5ce0c13877c57cb4eb8195eb7c11ec1ffd64d4db053fb8559ca62e"
+checksum = "e076afd9d376f09073b515ce95071b29393687d98ed521948edb899195595ddf"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3512,7 +3512,7 @@ dependencies = [
  "moon_target",
  "moon_time",
  "moon_toolchain",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
 ]
 
@@ -3524,7 +3524,7 @@ dependencies = [
  "moon_affected",
  "moon_common",
  "moon_target",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "serde",
  "tokio",
@@ -3549,7 +3549,7 @@ dependencies = [
  "moon_test_utils2",
  "moon_workspace_graph",
  "petgraph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_sandbox",
  "thiserror 2.0.11",
  "tokio",
@@ -3581,7 +3581,7 @@ dependencies = [
  "moon_workspace_graph",
  "num_cpus",
  "petgraph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "tokio",
  "tokio-util",
@@ -3613,7 +3613,7 @@ dependencies = [
  "moon_vcs_hooks",
  "moon_workspace_graph",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "serde",
  "starbase_utils",
@@ -3633,7 +3633,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils2",
  "moon_workspace_graph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "tokio",
  "tracing",
@@ -3654,7 +3654,7 @@ dependencies = [
  "moon_time",
  "proto_core",
  "reqwest",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "semver",
  "serde",
  "starbase_utils",
@@ -3736,7 +3736,7 @@ dependencies = [
  "proto_installer",
  "regex",
  "reqwest",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "semver",
  "serde",
@@ -3780,7 +3780,7 @@ dependencies = [
  "cached",
  "miette 7.5.0",
  "moon_lang",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -3812,7 +3812,7 @@ dependencies = [
  "moon_typescript_platform",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "serde",
  "starbase_styles",
@@ -3834,7 +3834,7 @@ dependencies = [
  "moon_toolchain",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "starbase_utils",
  "tracing",
@@ -3886,7 +3886,7 @@ dependencies = [
  "moon_test_utils2",
  "moon_vcs",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serial_test",
  "sigpipe",
  "starbase",
@@ -3917,7 +3917,7 @@ dependencies = [
  "moon_time",
  "once_cell",
  "regex",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",
@@ -3949,7 +3949,7 @@ dependencies = [
  "miette 7.5.0",
  "regex",
  "relative-path",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "serde",
  "starbase_styles",
@@ -3970,7 +3970,7 @@ dependencies = [
  "proto_core",
  "regex",
  "rpkl",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "semver",
  "serde",
@@ -4030,7 +4030,7 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_typescript_lang",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
@@ -4058,7 +4058,7 @@ dependencies = [
  "moon_typescript_platform",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_utils",
 ]
@@ -4077,7 +4077,7 @@ dependencies = [
  "moon_toolchain",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_utils",
  "tracing",
 ]
@@ -4113,7 +4113,7 @@ dependencies = [
  "moon_config",
  "moon_pdk_api",
  "moon_plugin",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "tracing",
 ]
 
@@ -4138,7 +4138,7 @@ version = "0.0.1"
 dependencies = [
  "miette 7.5.0",
  "petgraph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_utils",
 ]
@@ -4168,7 +4168,7 @@ dependencies = [
  "moon_toolchain",
  "moon_utils",
  "once_cell",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_styles",
  "tracing",
 ]
@@ -4178,7 +4178,7 @@ name = "moon_lang"
 version = "0.0.1"
 dependencies = [
  "miette 7.5.0",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
 ]
 
 [[package]]
@@ -4203,7 +4203,7 @@ dependencies = [
  "nodejs_package_json",
  "package-lock-json-parser",
  "reqwest",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "serde_json",
  "serde_yml",
@@ -4237,7 +4237,7 @@ dependencies = [
  "moon_typescript_platform",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "serde",
  "starbase_styles",
@@ -4259,7 +4259,7 @@ dependencies = [
  "moon_toolchain",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "starbase_styles",
  "starbase_utils",
@@ -4299,7 +4299,7 @@ version = "0.0.13"
 dependencies = [
  "moon_common",
  "moon_config",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "serde",
  "warpgate_api",
@@ -4332,7 +4332,7 @@ dependencies = [
  "moon_task",
  "moon_tool",
  "moon_toolchain",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
 ]
 
 [[package]]
@@ -4371,7 +4371,7 @@ dependencies = [
  "moon_common",
  "moon_console",
  "once_cell",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_shell",
  "system_env",
  "thiserror 2.0.11",
@@ -4404,7 +4404,7 @@ dependencies = [
  "moon_task",
  "moon_task_builder",
  "moon_toolchain",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_sandbox",
  "tokio",
  "tracing",
@@ -4429,7 +4429,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_project",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.11",
@@ -4452,7 +4452,7 @@ dependencies = [
  "moon_test_utils2",
  "moon_workspace",
  "petgraph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "starbase_events",
  "starbase_sandbox",
@@ -4473,7 +4473,7 @@ dependencies = [
  "moon_test_utils",
  "pep508_rs",
  "pyproject-toml",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
@@ -4501,7 +4501,7 @@ dependencies = [
  "moon_tool",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
@@ -4524,7 +4524,7 @@ dependencies = [
  "moon_toolchain",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_styles",
  "starbase_utils",
  "tracing",
@@ -4560,7 +4560,7 @@ dependencies = [
  "moon_config",
  "moon_task",
  "reqwest",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "serde",
  "sha2",
@@ -4587,7 +4587,7 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
@@ -4615,7 +4615,7 @@ dependencies = [
  "moon_tool",
  "moon_utils",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
@@ -4636,7 +4636,7 @@ dependencies = [
  "moon_tool",
  "moon_toolchain",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_utils",
  "tracing",
 ]
@@ -4685,7 +4685,7 @@ dependencies = [
  "moon_config",
  "moon_target",
  "once_cell",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -4711,7 +4711,7 @@ dependencies = [
  "moon_task",
  "moon_task_args",
  "moon_toolchain",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_sandbox",
  "thiserror 2.0.11",
  "tokio",
@@ -4736,7 +4736,7 @@ dependencies = [
  "moon_time",
  "pathdiff",
  "regex",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.11",
@@ -4756,7 +4756,7 @@ dependencies = [
  "moon_task",
  "moon_task_expander",
  "petgraph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "thiserror 2.0.11",
  "tracing",
 ]
@@ -4773,7 +4773,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils2",
  "moon_vcs",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -4826,7 +4826,7 @@ dependencies = [
  "moon_config",
  "predicates",
  "pretty_assertions",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde_yml",
  "starbase_utils",
 ]
@@ -4875,7 +4875,7 @@ dependencies = [
  "moon_process",
  "moon_toolchain",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_styles",
  "thiserror 2.0.11",
  "tokio",
@@ -4903,7 +4903,7 @@ dependencies = [
  "moon_pdk_api",
  "moon_plugin",
  "proto_core",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "tokio",
  "tracing",
 ]
@@ -4937,7 +4937,7 @@ dependencies = [
  "moon_test_utils",
  "moon_typescript_lang",
  "moon_utils",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
@@ -4978,7 +4978,7 @@ dependencies = [
  "moon_process",
  "once_cell",
  "regex",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "scc",
  "semver",
  "serde",
@@ -4998,7 +4998,7 @@ dependencies = [
  "moon_config",
  "moon_hash",
  "moon_vcs",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -5026,7 +5026,7 @@ dependencies = [
  "moon_vcs",
  "moon_workspace_graph",
  "petgraph",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_events",
  "starbase_utils",
@@ -5111,7 +5111,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "008b3dcf2b6ccd151efab4145717974b21588f105f2bc9004983b6cc2e00cf9e"
 dependencies = [
  "indexmap 2.7.1",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "semver",
  "serde",
  "serde_json",
@@ -5198,9 +5198,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.20.2"
+version = "1.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
+checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
 
 [[package]]
 name = "open"
@@ -5418,7 +5418,7 @@ dependencies = [
  "once_cell",
  "pep440_rs",
  "regex",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "smallvec",
  "thiserror 1.0.69",
@@ -5801,9 +5801,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.45.3"
+version = "0.45.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5501967c553a6f7fac13228e9bf59335409d30f19a7e389c8c7fed8e85f104e"
+checksum = "797314bb5103f886e249512a6f75f6afaf447f1bccaaffe87bb15ca4c5c903ac"
 dependencies = [
  "convert_case",
  "dotenvy",
@@ -5816,7 +5816,7 @@ dependencies = [
  "proto_shim",
  "regex",
  "reqwest",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "semver",
  "serde",
@@ -5855,11 +5855,11 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.25.2"
+version = "0.25.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1692357bb8d5b8f3e72ceeaa4de08a7061303af98a1431bc99cb2ecc7faa1bc6"
+checksum = "6ea12a9ce4d3da85d0d31e70b4cf2ecd9a2b6f1fb429440f1f47cbd293986423"
 dependencies = [
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "semver",
  "serde",
@@ -5924,7 +5924,7 @@ dependencies = [
  "pin-project-lite",
  "quinn-proto",
  "quinn-udp",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "rustls",
  "socket2",
  "thiserror 2.0.11",
@@ -5942,7 +5942,7 @@ dependencies = [
  "getrandom 0.2.15",
  "rand",
  "ring",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "rustls",
  "rustls-pki-types",
  "slab",
@@ -6076,7 +6076,7 @@ checksum = "12908dbeb234370af84d0579b9f68258a0f67e201412dd9a2814e6f45b2fc0f0"
 dependencies = [
  "hashbrown 0.14.5",
  "log",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "slice-group-by",
  "smallvec",
 ]
@@ -6311,9 +6311,9 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc-hash"
-version = "2.1.0"
+version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7fb8039b3032c191086b10f11f319a6e99e1e82889c5cc6046f515c9db1d497"
+checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 
 [[package]]
 name = "rustix"
@@ -6424,9 +6424,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "2.3.0"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28e1c91382686d21b5ac7959341fcb9780fa7c03773646995a87c950fa7be640"
+checksum = "ea091f6cac2595aa38993f04f4ee692ed43757035c36e67c180b6828356385b1"
 dependencies = [
  "sdd",
  "serde",
@@ -6945,7 +6945,7 @@ dependencies = [
  "bzip2",
  "flate2",
  "miette 7.5.0",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "starbase_styles",
  "starbase_utils",
  "thiserror 2.0.11",
@@ -7227,10 +7227,11 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9a979a53e292779a66c9d2031dbfd13e744e8a6e82bfd474f2a2d46cc0257b0"
+checksum = "8933d50ec9d990e96bccda759c4879fcddad0019d728dcdfbddadb338c14f0c6"
 dependencies = [
+ "regex",
  "schematic",
  "serde",
  "serde_json",
@@ -7750,7 +7751,7 @@ dependencies = [
  "clean-path",
  "indexmap 2.7.1",
  "relative-path",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "serde",
  "serde_json",
 ]
@@ -7926,11 +7927,11 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.12.1"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3758f5e68192bb96cc8f9b7e2c2cfdabb435499a28499a42f8f984092adad4b"
+checksum = "ced87ca4be083373936a67f8de945faa23b6b42384bd5b64434850802c6dccd0"
 dependencies = [
- "getrandom 0.2.15",
+ "getrandom 0.3.1",
 ]
 
 [[package]]
@@ -8017,9 +8018,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.21.0"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf4d1e21be4094e4317812f9f59e01a74c87f413c8e34b1c7358275407e1f820"
+checksum = "b1cec9d93ba9186222e7bb479c370b5c798deff562538cf83d6bbe2863985d5d"
 dependencies = [
  "async-trait",
  "compact_str",
@@ -8050,12 +8051,12 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "440add01f721de08a49e9b2d2899ce79845c9994c60f8e1088b5b1c3676df127"
+checksum = "cd55b83b4eb34010c4b746a6dcc58a4e1a6ca427d9af859cebd612c303ecbfdb"
 dependencies = [
  "anyhow",
- "rustc-hash 2.1.0",
+ "rustc-hash 2.1.1",
  "schematic",
  "serde",
  "serde_json",
@@ -8065,9 +8066,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fb4e029f9d89cde89882d4099f6e059cf4672a1304be8e733e927685629faba"
+checksum = "a5b3026977b91282a5a6458f501e7e23e84a8e04d0e3ddf3c36fea0e950a909f"
 dependencies = [
  "extism-pdk",
  "serde",

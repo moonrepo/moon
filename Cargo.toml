@@ -23,7 +23,7 @@ cached = "0.54.0"
 chrono = { version = "0.4.39", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.27", default-features = false, features = [
+clap = { version = "4.5.28", default-features = false, features = [
     "std",
     "error-context",
 ] }
@@ -38,7 +38,7 @@ futures = "0.3.31"
 indexmap = "2.7.1"
 md5 = "0.7.0"
 miette = "7.5.0"
-once_cell = "1.20.1"
+once_cell = "1.20.3"
 pathdiff = "0.2.3"
 petgraph = { version = "0.6.5", default-features = false, features = [
     "serde-1",
@@ -53,8 +53,8 @@ reqwest = { version = "0.12.12", default-features = false, features = [
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",
 ] }
-rustc-hash = "2.1.0"
-scc = "2.2.5"
+rustc-hash = "2.1.1"
+scc = "2.3.3"
 schematic = { version = "0.17.11", default-features = false, features = [
     "schema",
 ] }
@@ -90,18 +90,18 @@ tokio = { version = "1.43.0", default-features = false, features = [
 ] }
 tokio-util = "0.7.13"
 tracing = "0.1.41"
-uuid = { version = "1.12.1", features = ["v4"] }
+uuid = { version = "1.13.1", features = ["v4"] }
 
 # proto/plugin related
 extism = "=1.9.1"
 extism-pdk = "1.3.0"
-proto_core = "0.45.3"
+proto_core = "0.45.4"
 proto_installer = "0.9.0"
-system_env = "0.7.0"
+system_env = "0.7.1"
 version_spec = "0.7.2"
-warpgate = "0.21.0"
-warpgate_api = "0.11.0"
-warpgate_pdk = "0.9.0"
+warpgate = "0.21.1"
+warpgate_api = "0.11.1"
+warpgate_pdk = "0.9.1"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

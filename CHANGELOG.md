@@ -6,6 +6,11 @@
 
 - Fixed an issue where `NO_COLOR` or `FORCE_COLOR` would be overwritten for task child processes.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.45.2](https://github.com/moonrepo/proto/releases/tag/v0.45.2) (from 0.45.1).
+- Updated dependencies.
+
 ## 1.32.1
 
 #### 🚀 Updates

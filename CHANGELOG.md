@@ -4,7 +4,9 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where `moon setup` wouldn't load configuration.
 - Fixed an issue where `moon docker scaffold` would unexpectedly install the toolchain languages.
+- Fixed an issue where changing `python.version` wouldn't regenerate the Python virtual environment.
 
 ## 1.32.2
 

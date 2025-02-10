@@ -109,6 +109,7 @@ impl PythonTool {
         args: I,
         working_dir: &Path,
         workspace_root: &Path,
+        with_paths: bool,
     ) -> miette::Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -118,12 +119,20 @@ impl PythonTool {
 
         cmd.args(args)
             .envs(get_proto_env_vars())
-            .env(
-                "PATH",
-                prepend_path_env_var(get_python_tool_paths(self, working_dir, workspace_root)),
-            )
             .cwd(working_dir)
             .with_console(self.console.clone());
+
+        if with_paths {
+            cmd.env(
+                "PATH",
+                prepend_path_env_var(get_python_tool_paths(self, working_dir, workspace_root)),
+            );
+        } else {
+            cmd.env(
+                "PATH",
+                prepend_path_env_var(get_proto_paths(&self.proto_env)),
+            );
+        }
 
         if let Some(version) = get_proto_version_env(&self.tool) {
             cmd.env("PROTO_PYTHON_VERSION", version);
@@ -144,17 +153,27 @@ impl PythonTool {
         match self.config.package_manager {
             PythonPackageManager::Pip => {
                 self.exec_python(
-                    ["-m", "venv", venv_root.to_str().unwrap_or_default()],
+                    [
+                        "-m",
+                        "venv",
+                        venv_root.to_str().unwrap_or_default(),
+                        "--clear",
+                    ],
                     working_dir,
                     workspace_root,
+                    false,
                 )
                 .await?;
             }
             PythonPackageManager::Uv => {
                 let uv = self.get_uv()?;
 
-                uv.create_command_with_paths(self, working_dir)?
-                    .args(["venv", venv_root.to_str().unwrap_or_default()])
+                uv.create_command(self)?
+                    .args([
+                        "venv",
+                        venv_root.to_str().unwrap_or_default(),
+                        "--no-python-downloads",
+                    ])
                     .cwd(working_dir)
                     .exec_stream_output()
                     .await?;

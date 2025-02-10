@@ -9,6 +9,7 @@ use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_time::to_millis;
 use moon_workspace_graph::WorkspaceGraph;
+use proto_core::UnresolvedVersionSpec;
 use starbase_utils::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -19,6 +20,7 @@ cache_item!(
     pub struct DependenciesCacheState {
         pub last_hash: String,
         pub last_install_time: u128,
+        pub last_tool_version: Option<UnresolvedVersionSpec>,
     }
 );
 
@@ -103,8 +105,9 @@ pub async fn install_deps(
     )
     .await?;
 
-    // Extract lockfile timestamp
+    // Extract lockfile timestamp and tool version
     let mut lockfile_timestamp = track_lockfile(&app_context, project, &lockfile_name)?;
+    let tool_version = runtime.requirement.to_spec();
 
     // Only install deps if a cache miss
     let mut state = app_context
@@ -123,6 +126,8 @@ pub async fn install_deps(
         || manifests_hash
             .as_ref()
             .is_some_and(|hash| hash != &state.data.last_hash)
+        // Toolchain version has changed
+        || state.data.last_tool_version != tool_version
     {
         let working_dir = match project {
             Some(proj) => proj.root.clone(),
@@ -155,6 +160,7 @@ pub async fn install_deps(
 
         state.data.last_hash = manifests_hash.unwrap_or_default();
         state.data.last_install_time = lockfile_timestamp;
+        state.data.last_tool_version = tool_version;
         state.save()?;
 
         return Ok(ActionStatus::Passed);

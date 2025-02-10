@@ -45,6 +45,9 @@ pub static PYTHON: StaticStringList = &[
     // poetry
     "poetry.toml",
     "poetry.lock",
+    // uv
+    "uv.toml",
+    "uv.lock",
 ];
 
 pub static RUBY: StaticStringList = &["Gemfile", "Gemfile.lock", ".bundle", ".ruby-version"];

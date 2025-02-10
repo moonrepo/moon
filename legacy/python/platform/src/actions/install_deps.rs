@@ -4,7 +4,22 @@ use moon_config::PythonPackageManager;
 use moon_console::{Checkpoint, Console};
 use moon_logger::error;
 use moon_python_tool::PythonTool;
+use proto_core::VersionSpec;
+use starbase_utils::fs;
 use std::path::Path;
+
+fn is_venv_diff_version(venv_root: &Path, python_version: VersionSpec) -> miette::Result<bool> {
+    let cfg_path = venv_root.join("pyvenv.cfg");
+
+    if !cfg_path.exists() {
+        return Ok(false);
+    }
+
+    let cfg = fs::read_file(cfg_path)?;
+    let version_line = format!("version = {python_version}");
+
+    Ok(!cfg.contains(&version_line))
+}
 
 pub async fn install_deps(
     python: &PythonTool,
@@ -19,17 +34,23 @@ pub async fn install_deps(
         workspace_root.join(&python.config.venv_name)
     } else {
         venv_parent
-            .as_ref()
-            .and_then(|vp| vp.parent())
+            .as_deref()
             .unwrap_or(working_dir)
             .join(&python.config.venv_name)
     };
 
-    if !venv_root.exists() && venv_parent.is_some() {
+    if !venv_root.exists() && venv_parent.is_some()
+        || venv_root.exists()
+            && is_venv_diff_version(&venv_root, python.tool.get_resolved_version())?
+    {
         let command = match python.config.package_manager {
             PythonPackageManager::Pip => "python -m venv",
             PythonPackageManager::Uv => "uv venv",
         };
+
+        // Ensure the venv doesn't exist, otherwise we'll have stale
+        // artifacts between each activation
+        fs::remove_dir_all(&venv_root)?;
 
         operations.push(
             Operation::task_execution(command)

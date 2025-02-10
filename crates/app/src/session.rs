@@ -1,5 +1,6 @@
 use crate::app::{Cli, Commands};
 use crate::app_error::AppError;
+use crate::commands::docker::DockerCommands;
 use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
@@ -201,17 +202,22 @@ impl CliSession {
         self.workspace_config.telemetry
     }
 
-    pub fn requires_workspace_setup(&self) -> bool {
+    pub fn requires_workspace_configured(&self) -> bool {
         !matches!(
             self.cli.command,
-            Commands::Completions(_) | Commands::Init(_) | Commands::Setup
+            Commands::Completions(_) | Commands::Init(_)
         )
     }
 
     pub fn requires_toolchain_installed(&self) -> bool {
         matches!(
             self.cli.command,
-            Commands::Bin(_) | Commands::Docker { .. } | Commands::Node { .. } | Commands::Teardown
+            Commands::Bin(_)
+                | Commands::Docker {
+                    command: DockerCommands::Prune {}
+                }
+                | Commands::Node { .. }
+                | Commands::Teardown
         )
     }
 
@@ -238,7 +244,7 @@ impl AppSession for CliSession {
 
         self.working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;
 
-        self.workspace_root = if self.requires_workspace_setup() {
+        self.workspace_root = if self.requires_workspace_configured() {
             startup::find_workspace_root(&self.working_dir)?
         } else {
             self.working_dir.clone()
@@ -253,7 +259,7 @@ impl AppSession for CliSession {
 
         // Load configs
 
-        if self.requires_workspace_setup() {
+        if self.requires_workspace_configured() {
             let (workspace_config, tasks_config, toolchain_config) = try_join!(
                 startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),
                 startup::load_tasks_configs(self.config_loader.clone(), &self.workspace_root),
@@ -289,7 +295,7 @@ impl AppSession for CliSession {
             analyze::validate_version_constraint(constraint, &self.cli_version)?;
         }
 
-        if self.requires_workspace_setup() {
+        if self.requires_workspace_configured() {
             let cache_engine = self.get_cache_engine()?;
 
             analyze::install_proto(

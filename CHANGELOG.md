@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon docker scaffold` would unexpectedly install the toolchain languages.
+
 ## 1.32.2
 
 #### 🐞 Fixes

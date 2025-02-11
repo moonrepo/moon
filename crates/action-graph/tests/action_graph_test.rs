@@ -903,7 +903,8 @@ mod action_graph {
 
                 // Empty set works fine, just needs to be some
                 let touched_files = FxHashSet::default();
-                builder.set_touched_files(&touched_files).unwrap();
+                builder.set_touched_files(touched_files).unwrap();
+                builder.set_affected();
 
                 builder
                     .run_task(&project, &task, &RunRequirements::default())
@@ -934,7 +935,8 @@ mod action_graph {
                 task.input_files.insert(file.clone());
 
                 let touched_files = FxHashSet::from_iter([file]);
-                builder.set_touched_files(&touched_files).unwrap();
+                builder.set_touched_files(touched_files).unwrap();
+                builder.set_affected();
                 builder.mock_affected(|affected| {
                     affected
                         .mark_task_affected(&task, AffectedBy::AlwaysAffected)
@@ -967,7 +969,8 @@ mod action_graph {
 
                 let touched_files =
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]);
-                builder.set_touched_files(&touched_files).unwrap();
+                builder.set_touched_files(touched_files).unwrap();
+                builder.set_affected();
                 builder.mock_affected(|affected| {
                     affected
                         .mark_task_affected(&task, AffectedBy::AlwaysAffected)

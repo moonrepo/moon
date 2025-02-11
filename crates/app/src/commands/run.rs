@@ -152,13 +152,13 @@ pub async fn run_target(
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut action_graph_builder = session.build_action_graph(&workspace_graph).await?;
+    action_graph_builder.set_touched_files(touched_files)?;
 
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;
     }
 
     if should_run_affected {
-        action_graph_builder.set_touched_files(&touched_files)?;
         action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep)?;
     }
 

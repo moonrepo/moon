@@ -240,7 +240,7 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
-        let mut affected_tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+        let mut affected_tracker = AffectedTracker::new(&workspace_graph, touched_files);
 
         #[allow(deprecated)]
         if args.dependents {
@@ -377,7 +377,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
 
-        let mut affected_tracker = AffectedTracker::new(&workspace_graph, &touched_files);
+        let mut affected_tracker = AffectedTracker::new(&workspace_graph, touched_files);
         affected_tracker.with_task_scopes(args.upstream, args.downstream);
         affected_tracker.track_tasks()?;
 

@@ -2,6 +2,8 @@ name: Release
 
 env:
   APP_NAME: moon
+  # For setup-rust
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 on:
   # Manually release cli/core packages

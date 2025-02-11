@@ -17,12 +17,10 @@ use moon_config::{
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
-use moon_task::Target;
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
+use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{
-    GraphExpanderContext, TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata,
-};
+use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::prelude::*;
@@ -64,7 +62,7 @@ pub struct WorkspaceBuilder<'app> {
     project_data: FxHashMap<Id, ProjectBuildData>,
 
     /// The project DAG.
-    project_graph: ProjectGraphType,
+    project_graph: DiGraph<NodeState<Project>, DependencyScope>,
 
     /// Projects that have explicitly renamed themselves with the `id` setting.
     /// Maps original ID to renamed ID.
@@ -82,7 +80,7 @@ pub struct WorkspaceBuilder<'app> {
     task_data: FxHashMap<Target, TaskBuildData>,
 
     /// The task DAG.
-    task_graph: TaskGraphType,
+    task_graph: DiGraph<NodeState<Task>, DependencyType>,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -96,12 +94,12 @@ impl<'app> WorkspaceBuilder<'app> {
             context: Some(Arc::new(context)),
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
-            project_graph: ProjectGraphType::default(),
+            project_graph: DiGraph::default(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
             task_data: FxHashMap::default(),
-            task_graph: TaskGraphType::default(),
+            task_graph: DiGraph::default(),
         };
 
         graph.preload_build_data().await?;
@@ -224,7 +222,13 @@ impl<'app> WorkspaceBuilder<'app> {
             .collect::<FxHashMap<_, _>>();
 
         let project_graph = Arc::new(ProjectGraph::new(
-            self.project_graph,
+            self.project_graph.filter_map(
+                |_, node| match node {
+                    NodeState::Loading => None,
+                    NodeState::Loaded(project) => Some(project.to_owned()),
+                },
+                |_, edge| Some(*edge),
+            ),
             project_metadata,
             graph_context.clone(),
         ));
@@ -243,7 +247,13 @@ impl<'app> WorkspaceBuilder<'app> {
             .collect::<FxHashMap<_, _>>();
 
         let task_graph = Arc::new(TaskGraph::new(
-            self.task_graph,
+            self.task_graph.filter_map(
+                |_, node| match node {
+                    NodeState::Loading => None,
+                    NodeState::Loaded(task) => Some(task.to_owned()),
+                },
+                |_, edge| Some(*edge),
+            ),
             task_metadata,
             graph_context,
             Arc::clone(&project_graph),
@@ -290,7 +300,12 @@ impl<'app> WorkspaceBuilder<'app> {
             }
         }
 
-        // Not loaded, build the project
+        // Not loaded, insert a temporary node so that we have an index
+        let index = self.project_graph.add_node(NodeState::Loading);
+
+        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
+
+        // Build the project
         let project = self.build_project(&id).await?;
 
         cycle.insert(id.clone());
@@ -314,16 +329,8 @@ impl<'app> WorkspaceBuilder<'app> {
             );
         }
 
-        // Clone the dependencies instead of the entire project
-        let project_dependencies = project.dependencies.clone();
-
-        // Insert the project into the graph
-        let index = self.project_graph.add_node(project);
-
-        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
-
         // Then build dependency projects
-        for dep_config in project_dependencies {
+        for dep_config in &project.dependencies {
             if cycle.contains(&dep_config.id) {
                 debug!(
                     project_id = id.as_str(),
@@ -341,6 +348,9 @@ impl<'app> WorkspaceBuilder<'app> {
                 self.project_graph.add_edge(index, dep.1, dep_config.scope);
             }
         }
+
+        // And finally, update the node weight state
+        *self.project_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(project);
 
         cycle.clear();
 
@@ -429,9 +439,11 @@ impl<'app> WorkspaceBuilder<'app> {
     pub async fn load_tasks(&mut self) -> miette::Result<()> {
         let mut targets = vec![];
 
-        for project in self.project_graph.node_weights() {
-            for task in project.tasks.values() {
-                targets.push(task.target.clone());
+        for weight in self.project_graph.node_weights() {
+            if let NodeState::Loaded(project) = weight {
+                for task in project.tasks.values() {
+                    targets.push(task.target.clone());
+                }
             }
         }
 
@@ -466,7 +478,17 @@ impl<'app> WorkspaceBuilder<'app> {
             .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
             .await?;
 
-        let project = self.project_graph.node_weight_mut(project_index).unwrap();
+        let NodeState::Loaded(project) = self.project_graph.node_weight_mut(project_index).unwrap()
+        else {
+            panic!("Unable to load task, owning project is in a non-loaded state!");
+        };
+
+        // Not loaded, insert a temporary node so that we have an index
+        let index = self.task_graph.add_node(NodeState::Loading);
+
+        self.task_data.get_mut(&target).unwrap().node_index = Some(index);
+
+        // Build the task (remove from project)
         let mut task = project.tasks.remove(&target.task_id).unwrap();
 
         cycle.insert(target.clone());
@@ -485,9 +507,7 @@ impl<'app> WorkspaceBuilder<'app> {
         .build()?;
 
         // Then resolve dependency tasks
-        let mut edges = vec![];
-
-        for dep_config in &mut task.deps {
+        for dep_config in &task.deps {
             if cycle.contains(&dep_config.target) {
                 debug!(
                     task_target = target.as_str(),
@@ -498,24 +518,21 @@ impl<'app> WorkspaceBuilder<'app> {
                 continue;
             }
 
-            edges.push((
-                Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?,
+            let dep_index = Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?;
+
+            self.task_graph.add_edge(
+                index,
+                dep_index,
                 if dep_config.optional.is_some_and(|v| v) {
                     DependencyType::Optional
                 } else {
                     DependencyType::Required
                 },
-            ));
+            );
         }
 
-        // And finally add to the graph
-        let index = self.task_graph.add_node(task);
-
-        self.task_data.get_mut(&target).unwrap().node_index = Some(index);
-
-        for edge in edges {
-            self.task_graph.add_edge(index, edge.0, edge.1);
-        }
+        // And finally, update the node weight state
+        *self.task_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(task);
 
         cycle.clear();
 
@@ -568,20 +585,29 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let default_scope = DependencyScope::Build;
 
-        for (project_index, project) in self.project_graph.node_references() {
+        for (project_index, project_state) in self.project_graph.node_references() {
+            let NodeState::Loaded(project) = project_state else {
+                continue;
+            };
+
             let deps: Vec<_> = self
                 .project_graph
                 .neighbors_directed(project_index, Direction::Outgoing)
                 .flat_map(|dep_index| {
-                    self.project_graph.node_weight(dep_index).map(|dep| {
-                        (
-                            dep,
-                            // Is this safe?
-                            self.project_graph
-                                .find_edge(project_index, dep_index)
-                                .and_then(|ei| self.project_graph.edge_weight(ei))
-                                .unwrap_or(&default_scope),
-                        )
+                    self.project_graph.node_weight(dep_index).and_then(|dep| {
+                        match dep {
+                            NodeState::Loading => None,
+                            NodeState::Loaded(dep) => {
+                                Some((
+                                    dep,
+                                    // Is this safe?
+                                    self.project_graph
+                                        .find_edge(project_index, dep_index)
+                                        .and_then(|ei| self.project_graph.edge_weight(ei))
+                                        .unwrap_or(&default_scope),
+                                ))
+                            }
+                        }
                     })
                 })
                 .collect();

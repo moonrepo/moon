@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::debug;
 
-#[derive(Default, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub affected: Option<Affected>,
     pub json: bool,

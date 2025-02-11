@@ -329,7 +329,7 @@ mod project_graph {
                     (
                         Id::raw("a"),
                         ProjectBuildData {
-                            node_index: Some(NodeIndex::from(2)),
+                            node_index: Some(NodeIndex::from(1)),
                             source: "a".into(),
                             ..Default::default()
                         }
@@ -337,7 +337,7 @@ mod project_graph {
                     (
                         Id::raw("b"),
                         ProjectBuildData {
-                            node_index: Some(NodeIndex::from(1)),
+                            node_index: Some(NodeIndex::from(2)),
                             source: "b".into(),
                             ..Default::default()
                         }
@@ -345,7 +345,7 @@ mod project_graph {
                     (
                         Id::raw("c"),
                         ProjectBuildData {
-                            node_index: Some(NodeIndex::from(0)),
+                            node_index: Some(NodeIndex::from(3)),
                             source: "c".into(),
                             ..Default::default()
                         }
@@ -353,7 +353,7 @@ mod project_graph {
                     (
                         Id::raw("d"),
                         ProjectBuildData {
-                            node_index: Some(NodeIndex::from(3)),
+                            node_index: Some(NodeIndex::from(0)),
                             source: "d".into(),
                             ..Default::default()
                         }
@@ -871,7 +871,7 @@ mod project_graph {
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
-                    ["a", "c", "some-depends-on"]
+                    ["some-depends-on", "a", "c"]
                 );
             }
 
@@ -884,7 +884,7 @@ mod project_graph {
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
-                    ["b", "c", "from-task-deps"]
+                    ["from-task-deps", "b", "c"]
                 );
 
                 let deps = &graph.get_project("from-task-deps").unwrap().dependencies;
@@ -904,7 +904,7 @@ mod project_graph {
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
-                    ["root", "from-root-task-deps"]
+                    ["from-root-task-deps", "root"]
                 );
 
                 let deps = &graph

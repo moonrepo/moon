@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a project could be inserted into the project graph multiple times.
+
 ## 1.32.3
 
 #### 🐞 Fixes

@@ -291,7 +291,7 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         // Not loaded, build the project
-        let mut project = self.build_project(&id).await?;
+        let project = self.build_project(&id).await?;
 
         cycle.insert(id.clone());
 
@@ -303,10 +303,27 @@ impl<'app> WorkspaceBuilder<'app> {
                 .push(id.clone());
         }
 
-        // Then build dependency projects
-        let mut edges = vec![];
+        // Then persist task build data
+        for task in project.tasks.values() {
+            self.task_data.insert(
+                task.target.clone(),
+                TaskBuildData {
+                    options: task.options.clone(),
+                    ..Default::default()
+                },
+            );
+        }
 
-        for dep_config in &mut project.dependencies {
+        // Clone the dependencies instead of the entire project
+        let project_dependencies = project.dependencies.clone();
+
+        // Insert the project into the graph
+        let index = self.project_graph.add_node(project);
+
+        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
+
+        // Then build dependency projects
+        for dep_config in project_dependencies {
             if cycle.contains(&dep_config.id) {
                 debug!(
                     project_id = id.as_str(),
@@ -318,37 +335,11 @@ impl<'app> WorkspaceBuilder<'app> {
             }
 
             let dep = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await?;
-            let dep_id = dep.0;
 
             // Don't link the root project to any project, but still load it
             if !dep_config.is_root_scope() {
-                edges.push((dep.1, dep_config.scope));
+                self.project_graph.add_edge(index, dep.1, dep_config.scope);
             }
-
-            // TODO is this needed?
-            if dep_id != dep_config.id {
-                dep_config.id = dep_id;
-            }
-        }
-
-        // Create task build data
-        for task in project.tasks.values() {
-            self.task_data.insert(
-                task.target.clone(),
-                TaskBuildData {
-                    options: task.options.clone(),
-                    ..Default::default()
-                },
-            );
-        }
-
-        // And finally add to the graph
-        let index = self.project_graph.add_node(project);
-
-        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
-
-        for edge in edges {
-            self.project_graph.add_edge(index, edge.0, edge.1);
         }
 
         cycle.clear();

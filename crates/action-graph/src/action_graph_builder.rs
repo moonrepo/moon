@@ -44,7 +44,7 @@ pub struct ActionGraphBuilder<'app> {
 
     // Affected states
     affected: Option<AffectedTracker<'app>>,
-    touched_files: Option<&'app FxHashSet<WorkspaceRelativePathBuf>>,
+    touched_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
     initial_targets: FxHashSet<Target>,
@@ -124,6 +124,19 @@ impl<'app> ActionGraphBuilder<'app> {
         Runtime::system()
     }
 
+    pub fn set_affected(&mut self) {
+        let Some(touched_files) = &self.touched_files else {
+            return;
+        };
+
+        if self.affected.is_none() {
+            self.affected = Some(AffectedTracker::new(
+                self.workspace_graph,
+                touched_files.to_owned(),
+            ));
+        }
+    }
+
     pub fn set_affected_scopes(
         &mut self,
         upstream: UpstreamScope,
@@ -138,9 +151,10 @@ impl<'app> ActionGraphBuilder<'app> {
             self.workspace_graph.get_tasks_with_internal()?;
         }
 
+        self.set_affected();
         self.affected
             .as_mut()
-            .expect("Affected tracker not set!")
+            .unwrap()
             .with_scopes(upstream, downstream);
 
         Ok(())
@@ -154,10 +168,9 @@ impl<'app> ActionGraphBuilder<'app> {
 
     pub fn set_touched_files(
         &mut self,
-        touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
+        touched_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<()> {
         self.touched_files = Some(touched_files);
-        self.affected = Some(AffectedTracker::new(self.workspace_graph, touched_files));
 
         Ok(())
     }

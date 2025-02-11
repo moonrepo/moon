@@ -13,7 +13,7 @@ pub struct AffectedTracker<'app> {
     ci: bool,
 
     workspace_graph: &'app WorkspaceGraph,
-    touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
+    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 
     projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
     project_downstream: DownstreamScope,
@@ -27,7 +27,7 @@ pub struct AffectedTracker<'app> {
 impl<'app> AffectedTracker<'app> {
     pub fn new(
         workspace_graph: &'app WorkspaceGraph,
-        touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
+        touched_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> Self {
         debug!("Creating affected tracker");
 

@@ -19,6 +19,10 @@ on:
       - Cargo.toml
       - rust-toolchain.toml
 
+env:
+  # For setup-rust
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   ci:
     name: CI

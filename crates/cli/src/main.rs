@@ -32,9 +32,7 @@ fn get_version() -> String {
 
 fn get_tracing_modules() -> Vec<String> {
     let mut modules = string_vec![
-        "moon",
-        "proto",
-        "schematic",
+        "moon", "proto", // "schematic",
         "starbase",
         "warpgate",
         // Remote testing

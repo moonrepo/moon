@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a project could be inserted into the project graph multiple times.
+- Fixed an issue where touched files would sometimes not be available outside of affected scopes.
+
 ## 1.32.3
 
 #### 🐞 Fixes

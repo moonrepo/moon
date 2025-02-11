@@ -203,7 +203,7 @@ async fn generate_action_graph(
     session: &CliSession,
     workspace_graph: &WorkspaceGraph,
     targets: &TargetList,
-    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
+    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 ) -> miette::Result<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
@@ -257,7 +257,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
         &session,
         &workspace_graph,
         &targets,
-        &touched_files,
+        touched_files,
     )
     .await?;
 

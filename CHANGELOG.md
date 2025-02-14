@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated Python uv to support aliases by inferring `project.name` from `pyproject.toml`.
+
 #### 🐞 Fixes
 
 - Fixed an issue where no touched files would be found when pushing commits on the default branch.

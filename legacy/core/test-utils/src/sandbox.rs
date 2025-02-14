@@ -67,6 +67,11 @@ impl Sandbox {
                 .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
         });
 
+        // Add another commit so we can do HEAD~1 tests
+        self.run_git(|cmd| {
+            cmd.args(["commit", "-m", "Bump", "--allow-empty"]);
+        });
+
         self
     }
 

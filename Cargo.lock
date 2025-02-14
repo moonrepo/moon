@@ -7023,9 +7023,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.4.12"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65b486cfc419b43fee8b42a87f8d654c1c1d439df34cdf1bfa152cc6bdf8456d"
+checksum = "27604aa17f1a81b57033ca1a466fa5a39f24211a3f06e98d64f804af1c665bc5"
 dependencies = [
  "dirs 6.0.0",
  "miette 7.5.0",

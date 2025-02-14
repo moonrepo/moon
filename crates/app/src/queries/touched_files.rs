@@ -61,18 +61,13 @@ pub async fn query_touched_files(
     let base = base_value.as_deref().unwrap_or(&default_branch);
     let head_value = env::var("MOON_HEAD").ok().or(options.head.clone());
     let head = head_value.as_deref().unwrap_or("HEAD");
-    let mut check_against_previous = base_value.is_none()
-        && vcs.is_default_branch(&current_branch)
-        && (options.default_branch || head == "HEAD");
 
-    // If head points to the same revision as the default branch,
-    // then check against the previous commit
-    if !options.local
-        && head == "HEAD"
-        && vcs.get_local_branch_revision().await? == vcs.get_default_branch_revision().await?
-    {
-        check_against_previous = true;
-    }
+    let check_against_previous = (
+        // No base but is default branch
+        base_value.is_none() && vcs.is_default_branch(&current_branch)
+        // Base but is default branch
+        || vcs.is_default_branch(base)
+    ) && (options.default_branch || head == "HEAD");
 
     // Don't check for shallow if base is set,
     // since we can assume the user knows what they're doing

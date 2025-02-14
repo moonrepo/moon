@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where no touched files would be found when pushing commits on the default branch.
+- Fixed an issue where `pyproject.toml` would sometimes not be parsed.
 
 ## 1.32.4
 

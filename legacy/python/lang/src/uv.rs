@@ -13,7 +13,7 @@ fn read_file(path: &Path) -> miette::Result<PyProjectToml> {
 config_cache_container!(
     PyProjectTomlCache,
     PyProjectToml,
-    "package-lock.json",
+    "pyproject.toml",
     read_file
 );
 

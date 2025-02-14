@@ -4,7 +4,11 @@
 
 #### 🚀 Updates
 
-- Updated Python uv to support aliases by inferring `project.name` from `pyproject.toml`.
+- Updated Python uv with new features:
+  - Project aliases are inferred from `project.name` in `pyproject.toml`.
+  - Implicit project dependencies are inferred from `project.dependencies` in `pyproject.toml`.
+    - Requires a bare identifier with no version/url/origin markers.
+    - Currently does not support `tool.uv` or workspaces.
 
 #### 🐞 Fixes
 

@@ -7,8 +7,9 @@ use moon_common::{
     Id,
 };
 use moon_config::{
-    HasherConfig, HasherOptimization, PlatformType, ProjectConfig, ProjectsAliasesList,
-    ProjectsSourcesList, PythonConfig, PythonPackageManager, UnresolvedVersionSpec,
+    DependencyConfig, DependencyScope, DependencySource, HasherConfig, HasherOptimization,
+    PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, PythonConfig,
+    PythonPackageManager, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
@@ -156,6 +157,48 @@ impl Platform for PythonPlatform {
         }
 
         Ok(())
+    }
+
+    #[instrument(skip(self))]
+    fn load_project_implicit_dependencies(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<Vec<DependencyConfig>> {
+        let mut implicit_deps = vec![];
+
+        debug!(
+            "Scanning {} for implicit dependency relations",
+            color::id(project_id),
+        );
+
+        // TODO: support parsing `tool.uv` sections
+        if let Some(data) = uv::PyProjectTomlCache::read(self.workspace_root.join(project_source))?
+        {
+            if let Some(project) = data.project {
+                if let Some(deps) = project.dependencies {
+                    for dep in deps {
+                        let dep_name = dep.name.to_string();
+
+                        if dep.extras.is_empty()
+                            && dep.version_or_url.is_none()
+                            && dep.origin.is_none()
+                        {
+                            if let Some(dep_project_id) = self.package_names.get(&dep_name) {
+                                implicit_deps.push(DependencyConfig {
+                                    id: dep_project_id.to_owned(),
+                                    scope: DependencyScope::Production,
+                                    source: DependencySource::Implicit,
+                                    via: Some(dep_name.clone()),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(implicit_deps)
     }
 
     // TOOLCHAIN

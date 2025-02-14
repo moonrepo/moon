@@ -62,12 +62,12 @@ pub async fn query_touched_files(
     let head_value = env::var("MOON_HEAD").ok().or(options.head.clone());
     let head = head_value.as_deref().unwrap_or("HEAD");
 
-    let check_against_previous = (
-        // No base but is default branch
-        base_value.is_none() && vcs.is_default_branch(&current_branch)
-        // Base but is default branch
-        || vcs.is_default_branch(base)
-    ) && (options.default_branch || head == "HEAD");
+    // Determine whether we should check against the previous
+    // commit using a HEAD~1 query
+    let check_against_previous = base_value.is_none()
+        && head_value.is_none()
+        && vcs.is_default_branch(&current_branch)
+        && options.default_branch;
 
     // Don't check for shallow if base is set,
     // since we can assume the user knows what they're doing
@@ -180,10 +180,12 @@ pub async fn load_touched_files(
         }
     }
 
+    let ci = is_ci();
     let result = query_touched_files(
         vcs,
         &QueryTouchedFilesOptions {
-            local: !is_ci(),
+            default_branch: ci,
+            local: !ci,
             ..QueryTouchedFilesOptions::default()
         },
     )

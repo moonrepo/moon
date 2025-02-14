@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where no touched files would be found when pushing commits on the default branch.
+
 ## 1.32.4
 
 #### 🐞 Fixes

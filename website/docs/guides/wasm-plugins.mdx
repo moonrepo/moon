@@ -158,76 +158,85 @@ extern "ExtismHost" {
     fn host_log(input: Json<HostLogInput>);
     fn send_request(input: Json<SendRequestInput>) -> Json<SendRequestOutput>;
     fn set_env_var(key: String, value: String);
-    fn to_virtual_path(path: String) -> String;
+    fn to_virtual_path(path: String) -> Json<VirtualPath>;
 }
 ```
 
 :::info
 
-To simplify development, we provide built-in macros for the host functions above. Continue reading
-for more information on these macros.
+To simplify development, we provide built-in functions and macros for the host functions above.
+Continue reading for more information on these macros.
 
 :::
 
 #### Converting paths
 
 When working with virtual paths, you may need to convert them to real paths, and vice versa. The
-[`virtual_path!`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.virtual_path.html) and
-[`real_path!`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.real_path.html) macros can be
-used for such situations, which use the `to_virtual_path` and `from_virtual_path` host functions
-respectively.
+[`into_virtual_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.into_virtual_path.html)
+and [`into_real_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.into_real_path.html)
+functions can be used for such situations, which use the `to_virtual_path` and `from_virtual_path`
+host functions respectively.
 
 ```rust
-// For strings
-let virt = virtual_path!("/some/real/path");
-let real = real_path!("/some/virtual/path");
-
-// For `Path` and `PathBuf`
-let virt = virtual_path!(buf, PathBuf::from("/some/real/path"));
-let real = real_path!(buf, PathBuf::from("/some/virtual/path"));
+// Supports strings or paths
+let virt = into_virtual_path("/some/real/path")?;
+let real = into_real_path(PathBuf::from("/some/virtual/path"))?;
 ```
 
 #### Environment variables
 
-The [`host_env!`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_env.html) macro can be
-used to read and write environment variables on the host, using the `set_env_var` and `get_env_var`
-host functions respectively.
+The [`get_host_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.get_host_env_var.html)
+and [`set_host_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.set_host_env_var.html)
+functions can be used to read and write environment variables on the host, using the `set_env_var`
+and `get_env_var` host functions respectively.
 
 ```rust
 // Set a value
-host_env!("ENV_VAR", "value");
-
-// Append to path
-host_env!("PATH", "/userhome/some/virtual/path");
+set_host_env_var("ENV_VAR", "value")?;
 
 // Get a value (returns an `Option`)
-let value = host_env!("ENV_VAR");
+let value = get_host_env_var("ENV_VAR")?;
+```
+
+Additionally, the
+[`add_host_paths`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.add_host_paths.html) function
+can be used to append paths to the `PATH` environment variable.
+
+```rust
+// Append to path
+add_host_paths(["/userhome/some/virtual/path"])?;
 ```
 
 #### Executing commands
 
 The [`exec_command!`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.exec_command.html)
 macro can be used to execute a command on the host, using the `exec_command` host function. If the
-command does not exist on `PATH`, an error is thrown.
+command does not exist on `PATH`, an error is thrown. This macros supports three modes: pipe,
+inherit, and raw (returns `Result`).
 
-This macros supports three modes: pipe, inherit, and raw (returns `Result`). If you want full
-control, use the input mode and provide
-[`ExecCommandInput`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/struct.ExecCommandInput.html).
+```rust
+let result = exec_command!(raw, "which", ["node"]);
+```
+
+If you want a simpler API, the
+[`exec`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.exec.html),
+[`exec_captured`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.exec_captured.html) (pipe),
+and [`exec_streamed`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.exec_streamed.html)
+(inherit) functions can be used.
 
 ```rust
 // Pipe stdout/stderr
-let output = exec_command!("which", ["node"]);
-let output = exec_command!(pipe, "npm", ["install"]);
+let output = exec_captured("which", ["node"])?;
 
 // Inherit stdout/stderr
-exec_command!(inherit, "npm", ["install"]);
+exec_streamed("npm", ["install"])?;
 
 // Full control
-exec_command!(input, ExecCommandInput {
+exec(ExecCommandInput {
     command: "npm".into(),
     args: vec!["install".into()],
     ..ExecCommandInput::default()
-});
+})?;
 ```
 
 #### Sending requests

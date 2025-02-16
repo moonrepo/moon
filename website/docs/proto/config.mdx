@@ -263,6 +263,54 @@ telemetry = false
 > The data we track is publicly available and
 > [can be found here](https://github.com/moonrepo/proto/blob/master/legacy/cli/src/telemetry.rs).
 
+### `[settings.build]`<VersionLabel version="0.46.0" />
+
+Can be used to customize the build from source flow.
+
+#### `exclude-packages`
+
+Configures a list of packages that should be excluded during installation.
+
+```toml title=".prototools"
+[settings.build]
+exclude-packages = ["git", "python3", "libssl-dev"]
+```
+
+#### `install-system-packages`
+
+When enabled, will install packages required for building using the system package manager. Defaults
+to `true`.
+
+```toml title=".prototools"
+[settings.build]
+install-system-packages = false
+```
+
+#### `system-package-manager`
+
+Customize the system package manager to use when installing system packages and their dependencies.
+By default we attempt to detect the package manager to use from the environment.
+
+This setting accepts a map, where the key is the name of the
+[operating system](https://doc.rust-lang.org/std/env/consts/constant.OS.html), and the value is the
+[package manager](https://docs.rs/system_env/latest/system_env/enum.SystemPackageManager.html) to
+use. Both the key and value are in kebab-case.
+
+```toml title=".prototools"
+[settings.build.system-package-manager]
+windows = "choco"
+```
+
+#### `write-log-file`
+
+When a build has completed, write a log file to the current directory. This is always `true` when a
+build fails, but `false` otherwise.
+
+```toml title=".prototools"
+[settings.build]
+write-log-file = true
+```
+
 ### `[settings.http]`
 
 Can be used to customize the HTTP client used by proto, primarily for requesting files to download,

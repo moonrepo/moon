@@ -23,7 +23,7 @@ cached = "0.54.0"
 chrono = { version = "0.4.39", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.28", default-features = false, features = [
+clap = { version = "4.5.29", default-features = false, features = [
     "std",
     "error-context",
 ] }
@@ -73,7 +73,7 @@ starbase_events = "0.6.8"
 starbase_sandbox = "0.8.2"
 starbase_shell = "0.6.13"
 starbase_styles = { version = "0.4.14", features = ["relative-path"] }
-starbase_utils = { version = "0.10.1", default-features = false, features = [
+starbase_utils = { version = "0.10.2", default-features = false, features = [
     "editor-config",
     "miette",
 ] }
@@ -93,15 +93,15 @@ tracing = "0.1.41"
 uuid = { version = "1.13.1", features = ["v4"] }
 
 # proto/plugin related
-extism = "=1.9.1"
+extism = "=1.10.0"
 extism-pdk = "1.3.0"
-proto_core = "0.45.4"
-proto_installer = "0.9.0"
-system_env = "0.7.1"
-version_spec = "0.7.2"
-warpgate = "0.21.1"
-warpgate_api = "0.11.1"
-warpgate_pdk = "0.9.1"
+proto_core = "0.47.1"
+proto_installer = "0.11.0"
+system_env = "0.7.2"
+version_spec = "0.8.1"
+warpgate = "0.22.1"
+warpgate_api = "0.12.1"
+warpgate_pdk = "0.11.0"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

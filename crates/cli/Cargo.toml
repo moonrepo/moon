@@ -22,9 +22,9 @@ tracing = { workspace = true }
 
 # For extism/wastime (keep in sync with proto)
 extism = { workspace = true }
-wasmtime = "26.0.1"
-wasi-common = "26.0.1"
-wiggle = "26.0.1"
+wasmtime = "29.0.1"
+wasi-common = "29.0.1"
+wiggle = "29.0.1"
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }

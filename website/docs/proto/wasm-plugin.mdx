@@ -42,6 +42,7 @@ The following fields are available on the
 - `proto_version` - The version of proto executing the plugin. Note that this version may be for the
   [`proto_core` crate](https://crates.io/crates/proto_core), and not the CLI. Patch numbers will
   drift, but major and minor numbers should be in sync.
+- `temp_dir` - A virtual path to a temporary unique to this tool. <VersionLabel version="0.45.0" />
 - `tool_dir` - A virtual path to the tool's directory for the current version.
 - `version` - The current version or alias. If not resolved, will be "latest".
 
@@ -98,13 +99,13 @@ and must return a human-readable name and plugin type.
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
-    Ok(Json(ToolMetadataOutput {
+pub fn register_tool(_: ()) -> FnResult<Json<RegisterToolOutput>> {
+    Ok(Json(RegisterToolOutput {
         name: "Node.js".into(),
         type_of: PluginType::Language,
         minimum_proto_version: Some(Version::new(0, 42, 0)),
         plugin_version: Version::parse(env!("CARGO_PKG_VERSION")).ok(),
-        ..ToolMetadataOutput::default()
+        ..RegisterToolOutput::default()
     }))
 }
 ```
@@ -115,7 +116,7 @@ to `proto` commands (e.g. `proto install <id>`).
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadataOutput>> {
+pub fn register_tool(Json(input): Json<RegisterToolInput>) -> FnResult<Json<RegisterToolOutput>> {
   input.id
   // ...
 }
@@ -129,8 +130,8 @@ used to generate outputs such as JSON schemas, or TypeScript types.
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
-    Ok(Json(ToolMetadataOutput {
+pub fn register_tool(_: ()) -> FnResult<Json<RegisterToolOutput>> {
+    Ok(Json(RegisterToolOutput {
         // ...
         config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
     }))
@@ -451,10 +452,10 @@ async fn registers_metadata() {
     let plugin = sandbox.create_plugin("id").await;
 
     assert_eq!(
-        plugin.register_tool(ToolMetadataInput::default()).await,
-        ToolMetadataOutput {
+        plugin.register_tool(RegisterToolInput::default()).await,
+        RegisterToolOutput {
             name: "Name".into(),
-            ..ToolMetadataOutput::default()
+            ..RegisterToolOutput::default()
         }
     );
 }

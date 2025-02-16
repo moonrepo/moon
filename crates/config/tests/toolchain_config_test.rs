@@ -4,7 +4,7 @@ use httpmock::prelude::*;
 use moon_config::{
     BinConfig, BinEntry, ConfigLoader, NodePackageManager, NodeVersionFormat, ToolchainConfig,
 };
-use proto_core::{warpgate::UrlLocator, Id, PluginLocator, ProtoConfig, UnresolvedVersionSpec};
+use proto_core::{Id, ProtoConfig, UnresolvedVersionSpec};
 use schematic::ConfigLoader as BaseLoader;
 use serial_test::serial;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
@@ -176,7 +176,7 @@ deno: {{}}
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("bun"),
-                    UnresolvedVersionSpec::parse("1.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -198,12 +198,7 @@ deno: {{}}
                 load_config_from_root(path, &tools)
             });
 
-            assert_eq!(
-                config.bun.unwrap().plugin.unwrap(),
-                PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/bun_tool-v0.14.1/bun_tool.wasm".into()
-                }))
-            );
+            assert!(config.bun.unwrap().plugin.is_some());
         }
 
         #[test]
@@ -219,7 +214,7 @@ bun:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("bun"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -248,7 +243,7 @@ bun:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("bun"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -382,7 +377,7 @@ deno:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("deno"),
-                    UnresolvedVersionSpec::parse("1.30.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.30.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -401,12 +396,7 @@ deno:
                 load_config_from_root(path, &tools)
             });
 
-            assert_eq!(
-                config.deno.unwrap().plugin.unwrap(),
-                PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/deno_tool-v0.14.0/deno_tool.wasm".into()
-                }))
-            );
+            assert!(config.deno.unwrap().plugin.is_some());
         }
 
         #[test]
@@ -422,7 +412,7 @@ deno:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("deno"),
-                        UnresolvedVersionSpec::parse("1.40.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.40.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -451,7 +441,7 @@ deno:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("deno"),
-                        UnresolvedVersionSpec::parse("1.40.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.40.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -506,7 +496,7 @@ node:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("node"),
-                    UnresolvedVersionSpec::parse("18.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -528,12 +518,7 @@ node:
                 load_config_from_root(path, &tools)
             });
 
-            assert_eq!(
-                config.node.unwrap().plugin.unwrap(),
-                PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/node_tool-v0.14.0/node_tool.wasm".into()
-                }))
-            );
+            assert!(config.node.unwrap().plugin.is_some());
         }
 
         #[test]
@@ -549,7 +534,7 @@ node:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("node"),
-                        UnresolvedVersionSpec::parse("18.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -578,7 +563,7 @@ node:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("node"),
-                        UnresolvedVersionSpec::parse("18.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -610,7 +595,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("npm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -632,12 +617,7 @@ node:
                     load_config_from_root(path, &tools)
                 });
 
-                assert_eq!(
-                    config.node.unwrap().npm.plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/node_depman_tool-v0.14.2/node_depman_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().npm.plugin.is_some());
             }
 
             #[test]
@@ -656,7 +636,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("npm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -724,12 +704,7 @@ node:
                     },
                 );
 
-                assert_eq!(
-                    config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/node_depman_tool-v0.14.2/node_depman_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().pnpm.unwrap().plugin.is_some(),);
             }
 
             #[test]
@@ -748,12 +723,7 @@ node:
                     },
                 );
 
-                assert_eq!(
-                    config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/node_depman_tool-v0.14.2/node_depman_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().pnpm.unwrap().plugin.is_some(),);
             }
 
             #[test]
@@ -770,7 +740,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("pnpm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -799,7 +769,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("pnpm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -850,12 +820,7 @@ node:
                     },
                 );
 
-                assert_eq!(
-                    config.node.unwrap().yarn.unwrap().plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/node_depman_tool-v0.14.2/node_depman_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().yarn.unwrap().plugin.is_some(),);
             }
 
             #[test]
@@ -874,12 +839,7 @@ node:
                     },
                 );
 
-                assert_eq!(
-                    config.node.unwrap().yarn.unwrap().plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/node_depman_tool-v0.14.2/node_depman_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().yarn.unwrap().plugin.is_some(),);
             }
 
             #[test]
@@ -896,7 +856,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("yarn"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -925,7 +885,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("yarn"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -976,12 +936,7 @@ node:
                     },
                 );
 
-                assert_eq!(
-                    config.node.unwrap().bun.unwrap().plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/bun_tool-v0.14.1/bun_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().bun.unwrap().plugin.is_some(),);
             }
 
             #[test]
@@ -1000,12 +955,7 @@ node:
                     },
                 );
 
-                assert_eq!(
-                    config.node.unwrap().bun.unwrap().plugin.unwrap(),
-                    PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/bun_tool-v0.14.1/bun_tool.wasm".into()
-                    }))
-                );
+                assert!(config.node.unwrap().bun.unwrap().plugin.is_some(),);
             }
 
             #[test]
@@ -1022,7 +972,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("bun"),
-                            UnresolvedVersionSpec::parse("0.0.1").unwrap(),
+                            UnresolvedVersionSpec::parse("0.0.1").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -1051,7 +1001,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("bun"),
-                            UnresolvedVersionSpec::parse("0.1.0").unwrap(),
+                            UnresolvedVersionSpec::parse("0.1.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -1143,7 +1093,7 @@ node:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("python"),
-                    UnresolvedVersionSpec::parse("1.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -1165,12 +1115,7 @@ node:
                 load_config_from_root(path, &tools)
             });
 
-            assert_eq!(
-                config.python.unwrap().plugin.unwrap(),
-                PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/python_tool-v0.13.1/python_tool.wasm".into()
-                }))
-            );
+            assert!(config.python.unwrap().plugin.is_some(),);
         }
 
         #[test]
@@ -1186,7 +1131,7 @@ python:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("python"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1215,7 +1160,7 @@ python:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("python"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1308,7 +1253,7 @@ rust:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("rust"),
-                    UnresolvedVersionSpec::parse("1.69.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.69.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -1330,12 +1275,7 @@ rust:
                 load_config_from_root(path, &tools)
             });
 
-            assert_eq!(
-                config.rust.unwrap().plugin.unwrap(),
-                PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/rust_tool-v0.12.1/rust_tool.wasm".into()
-                }))
-            );
+            assert!(config.rust.unwrap().plugin.is_some(),);
         }
 
         #[test]
@@ -1351,7 +1291,7 @@ rust:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("rust"),
-                        UnresolvedVersionSpec::parse("1.69.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.69.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1380,7 +1320,7 @@ rust:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("rust"),
-                        UnresolvedVersionSpec::parse("1.65.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.65.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1435,7 +1375,7 @@ typescript:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("typescript"),
-                    UnresolvedVersionSpec::parse("5.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("5.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)

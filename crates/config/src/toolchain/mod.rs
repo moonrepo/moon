@@ -51,7 +51,7 @@ macro_rules! inherit_tool {
                         version
                     );
 
-                    config.version = Some(version.to_owned());
+                    config.version = Some(version.req.to_owned());
                 }
             }
 
@@ -90,7 +90,7 @@ macro_rules! inherit_tool_required {
                         version
                     );
 
-                    self.$tool.version = Some(version.to_owned());
+                    self.$tool.version = Some(version.req.to_owned());
                 }
             }
 

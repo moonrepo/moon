@@ -95,7 +95,7 @@ jobs:
         with:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
-          proto-version: '0.45.2' # Keep in sync
+          proto-version: '0.46.0' # Keep in sync
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
         if: ${{ runner.os == 'Linux' }}

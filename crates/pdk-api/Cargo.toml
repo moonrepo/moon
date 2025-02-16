@@ -1,6 +1,6 @@
 [package]
 name = "moon_pdk_api"
-version = "0.0.13"
+version = "0.0.14"
 edition = "2021"
 license = "MIT"
 description = "Core APIs for creating moon WASM plugins."
@@ -10,7 +10,7 @@ publish = true
 
 [dependencies]
 moon_common = { version = "0.0.11", path = "../common" }
-moon_config = { version = "0.0.13", path = "../config" }
+moon_config = { version = "0.0.14", path = "../config" }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["schema_serde"] }
 serde = { workspace = true }

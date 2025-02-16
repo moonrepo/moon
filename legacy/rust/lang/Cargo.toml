@@ -8,7 +8,7 @@ publish = false
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 cached = { workspace = true }
-cargo-lock = "10.0.1"
+cargo-lock = "10.1.0"
 cargo_toml = "0.21.0"
 miette = { workspace = true }
 rustc-hash = { workspace = true }

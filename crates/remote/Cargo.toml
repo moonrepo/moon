@@ -10,7 +10,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
-bazel-remote-apis = { version = "0.14.0", features = ["serde"] }
+bazel-remote-apis = { version = "0.15.0", features = ["serde"] }
 chrono = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true, features = ["json", "rustls-tls"] }
@@ -28,7 +28,7 @@ zstd = "0.13.2"
 
 # gRPC
 async-stream = "0.3.6"
-http = "1.1.0"
+http = "1.2.0"
 tonic = { version = "0.12.3", default-features = false, features = [
     "channel",
     "gzip",

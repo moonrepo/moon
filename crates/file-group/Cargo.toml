@@ -10,7 +10,7 @@ publish = true
 
 [dependencies]
 moon_common = { version = "0.0.11", path = "../common" }
-moon_config = { version = "0.0.13", path = "../config" }
+moon_config = { version = "0.0.14", path = "../config" }
 common-path = "1.0.0"
 miette = { workspace = true }
 once_cell = { workspace = true }

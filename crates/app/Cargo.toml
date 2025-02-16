@@ -37,7 +37,7 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.9.0"
+bytes = "1.10.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
@@ -71,7 +71,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 # Visualizer
-open = "5.3.1"
+open = "5.3.2"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"
@@ -79,7 +79,7 @@ tiny_http = "0.12.0"
 # TODO remove
 console = { workspace = true }
 dialoguer = { version = "0.11.0", default-features = false }
-indicatif = "0.17.9"
+indicatif = "0.17.11"
 moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }

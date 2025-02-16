@@ -1,6 +1,6 @@
 [package]
 name = "moon_pdk"
-version = "0.0.13"
+version = "0.0.14"
 edition = "2021"
 license = "MIT"
 description = "A plugin development kit for creating moon WASM plugins."
@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_pdk_api = { version = "0.0.13", path = "../pdk-api" }
+moon_pdk_api = { version = "0.0.14", path = "../pdk-api" }
 clap = { workspace = true, features = ["derive"] }
 extism-pdk = { workspace = true }
 serde = { workspace = true }

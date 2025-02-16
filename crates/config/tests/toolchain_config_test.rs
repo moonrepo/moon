@@ -176,7 +176,7 @@ deno: {{}}
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("bun"),
-                    UnresolvedVersionSpec::parse("1.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -219,7 +219,7 @@ bun:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("bun"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -248,7 +248,7 @@ bun:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("bun"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -382,7 +382,7 @@ deno:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("deno"),
-                    UnresolvedVersionSpec::parse("1.30.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.30.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -422,7 +422,7 @@ deno:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("deno"),
-                        UnresolvedVersionSpec::parse("1.40.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.40.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -451,7 +451,7 @@ deno:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("deno"),
-                        UnresolvedVersionSpec::parse("1.40.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.40.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -506,7 +506,7 @@ node:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("node"),
-                    UnresolvedVersionSpec::parse("18.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -549,7 +549,7 @@ node:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("node"),
-                        UnresolvedVersionSpec::parse("18.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -578,7 +578,7 @@ node:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("node"),
-                        UnresolvedVersionSpec::parse("18.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -610,7 +610,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("npm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -656,7 +656,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("npm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -770,7 +770,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("pnpm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -799,7 +799,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("pnpm"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -896,7 +896,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("yarn"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -925,7 +925,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("yarn"),
-                            UnresolvedVersionSpec::parse("8.0.0").unwrap(),
+                            UnresolvedVersionSpec::parse("8.0.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -1022,7 +1022,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("bun"),
-                            UnresolvedVersionSpec::parse("0.0.1").unwrap(),
+                            UnresolvedVersionSpec::parse("0.0.1").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -1051,7 +1051,7 @@ node:
                         let mut proto = ProtoConfig::default();
                         proto.versions.insert(
                             Id::raw("bun"),
-                            UnresolvedVersionSpec::parse("0.1.0").unwrap(),
+                            UnresolvedVersionSpec::parse("0.1.0").unwrap().into(),
                         );
 
                         load_config_from_root(path, &proto)
@@ -1143,7 +1143,7 @@ node:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("python"),
-                    UnresolvedVersionSpec::parse("1.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -1186,7 +1186,7 @@ python:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("python"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1215,7 +1215,7 @@ python:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("python"),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1308,7 +1308,7 @@ rust:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("rust"),
-                    UnresolvedVersionSpec::parse("1.69.0").unwrap(),
+                    UnresolvedVersionSpec::parse("1.69.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)
@@ -1351,7 +1351,7 @@ rust:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("rust"),
-                        UnresolvedVersionSpec::parse("1.69.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.69.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1380,7 +1380,7 @@ rust:
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(
                         Id::raw("rust"),
-                        UnresolvedVersionSpec::parse("1.65.0").unwrap(),
+                        UnresolvedVersionSpec::parse("1.65.0").unwrap().into(),
                     );
 
                     load_config_from_root(path, &proto)
@@ -1435,7 +1435,7 @@ typescript:
                 let mut proto = ProtoConfig::default();
                 proto.versions.insert(
                     Id::raw("typescript"),
-                    UnresolvedVersionSpec::parse("5.0.0").unwrap(),
+                    UnresolvedVersionSpec::parse("5.0.0").unwrap().into(),
                 );
 
                 load_config_from_root(path, &proto)

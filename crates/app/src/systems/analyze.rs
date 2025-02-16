@@ -12,7 +12,7 @@ use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_toolchain_plugin::ToolchainRegistry;
-use proto_core::{is_offline, ProtoEnvironment, ProtoError};
+use proto_core::{is_offline, ProtoEnvError, ProtoEnvironment};
 use proto_installer::*;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
@@ -85,7 +85,7 @@ pub async fn install_proto(
 
             return Ok(None);
         } else {
-            return Err(ProtoError::InternetConnectionRequired.into());
+            return Err(ProtoEnvError::RequiredInternetConnection.into());
         }
     }
 

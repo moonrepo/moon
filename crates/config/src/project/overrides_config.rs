@@ -11,6 +11,7 @@ cacheable!(
     pub enum ProjectToolchainEntry {
         Disabled, // null
         Enabled(bool),
+        #[setting(nested)]
         Config(ToolchainPluginConfig),
     }
 );
@@ -61,6 +62,7 @@ cacheable!(
 cacheable!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Clone, Config, Debug, PartialEq)]
+    #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {
         /// The default toolchain for all tasks within the project,
         /// if their toolchain is unknown.

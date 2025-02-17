@@ -57,8 +57,23 @@ pub async fn query_touched_files(
 
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
-    let base_revision = env::var("MOON_BASE").ok().or(options.base.clone());
-    let head_revision = env::var("MOON_HEAD").ok().or(options.head.clone());
+    let base_value = env::var("MOON_BASE").ok().or(options.base.clone());
+    let base = base_value.as_deref().unwrap_or(&default_branch);
+    let head_value = env::var("MOON_HEAD").ok().or(options.head.clone());
+    let head = head_value.as_deref().unwrap_or("HEAD");
+
+    // Determine whether we should check against the previous
+    // commit using a HEAD~1 query
+    let check_against_previous = base_value.is_none()
+        && head_value.is_none()
+        && vcs.is_default_branch(&current_branch)
+        && options.default_branch;
+
+    // Don't check for shallow if base is set,
+    // since we can assume the user knows what they're doing
+    if base_value.is_none() {
+        check_shallow!(vcs);
+    }
 
     // Check locally touched files
     let touched_files_map = if options.local {
@@ -66,15 +81,8 @@ pub async fn query_touched_files(
 
         vcs.get_touched_files().await?
     }
-    // Otherwise compare against remote
-    else if base_revision.is_none()
-        && options.default_branch
-        && vcs.is_default_branch(&current_branch)
-    {
-        // Since base is not set, ensure we're not in a
-        // shallow checkout
-        check_shallow!(vcs);
-
+    // Otherwise compare against previous commit
+    else if check_against_previous {
         trace!(
             "Against previous revision, as we're on the default branch \"{}\"",
             current_branch
@@ -82,16 +90,9 @@ pub async fn query_touched_files(
 
         vcs.get_touched_files_against_previous_revision(&default_branch)
             .await?
-    } else {
-        // Don't check for shallow since base is set,
-        // and we can assume the user knows what they're doing
-        if base_revision.is_none() {
-            check_shallow!(vcs);
-        }
-
-        let base = base_revision.as_deref().unwrap_or(&default_branch);
-        let head = head_revision.as_deref().unwrap_or("HEAD");
-
+    }
+    // Otherwise against remote between 2 revisions
+    else {
         trace!(
             "Against remote using base \"{}\" with head \"{}\"",
             base,
@@ -139,12 +140,10 @@ pub async fn query_touched_files(
         .map(|f| WorkspaceRelativePathBuf::from(standardize_separators(f)))
         .collect();
 
-    if !touched_files.is_empty() {
-        debug!(
-            files = ?touched_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
-            "Found touched files",
-        );
-    }
+    debug!(
+        files = ?touched_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
+        "Found touched files",
+    );
 
     Ok(QueryTouchedFilesResult {
         files: touched_files,
@@ -181,10 +180,12 @@ pub async fn load_touched_files(
         }
     }
 
+    let ci = is_ci();
     let result = query_touched_files(
         vcs,
         &QueryTouchedFilesOptions {
-            local: !is_ci(),
+            default_branch: ci,
+            local: !ci,
             ..QueryTouchedFilesOptions::default()
         },
     )

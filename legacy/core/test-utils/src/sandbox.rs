@@ -60,11 +60,12 @@ impl Sandbox {
 
         // And commit them... this seems like a lot of overhead?
         self.run_git(|cmd| {
-            cmd.args(["commit", "-m", "Fixtures"])
-                .env("GIT_AUTHOR_NAME", "moon tests")
-                .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
-                .env("GIT_COMMITTER_NAME", "moon tests")
-                .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
+            cmd.args(["commit", "-m", "Fixtures"]);
+        });
+
+        // Add another commit so we can do HEAD~1 tests
+        self.run_git(|cmd| {
+            cmd.args(["commit", "-m", "Bump", "--allow-empty"]);
         });
 
         self
@@ -75,7 +76,11 @@ impl Sandbox {
         C: FnOnce(&mut StdCommand),
     {
         let mut cmd = StdCommand::new(if cfg!(windows) { "git.exe" } else { "git" });
-        cmd.current_dir(self.path());
+        cmd.current_dir(self.path())
+            .env("GIT_AUTHOR_NAME", "moon tests")
+            .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
+            .env("GIT_COMMITTER_NAME", "moon tests")
+            .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
 
         handler(&mut cmd);
 

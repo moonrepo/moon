@@ -2,12 +2,14 @@ use crate::{actions, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::{
+    color,
     path::{is_root_level_source, WorkspaceRelativePath},
     Id,
 };
 use moon_config::{
-    HasherConfig, HasherOptimization, PlatformType, ProjectConfig, ProjectsAliasesList,
-    ProjectsSourcesList, PythonConfig, PythonPackageManager, UnresolvedVersionSpec,
+    DependencyConfig, DependencyScope, DependencySource, HasherConfig, HasherOptimization,
+    PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, PythonConfig,
+    PythonPackageManager, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
@@ -26,12 +28,14 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 pub struct PythonPlatform {
     pub config: PythonConfig,
 
     console: Arc<Console>,
+
+    package_names: FxHashMap<String, Id>,
 
     proto_env: Arc<ProtoEnvironment>,
 
@@ -53,6 +57,7 @@ impl PythonPlatform {
             toolchain: ToolManager::new(Runtime::new(Id::raw("python"), RuntimeReq::Global)),
             workspace_root: workspace_root.to_path_buf(),
             console,
+            package_names: FxHashMap::default(),
         }
     }
 }
@@ -116,11 +121,87 @@ impl Platform for PythonPlatform {
     #[instrument(skip_all)]
     fn load_project_graph_aliases(
         &mut self,
-        _projects_list: &ProjectsSourcesList,
-        _aliases_list: &mut ProjectsAliasesList,
+        projects_list: &ProjectsSourcesList,
+        aliases_list: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
-        // Not supported
+        if self.config.package_manager == PythonPackageManager::Uv {
+            debug!(
+                "Loading names (aliases) from project {}'s",
+                color::file("pyproject.toml")
+            );
+
+            for (project_id, project_source) in projects_list {
+                if let Some(data) =
+                    uv::PyProjectTomlCache::read(project_source.to_path(&self.workspace_root))?
+                {
+                    if let Some(project) = data.project {
+                        let package_name = project.name;
+
+                        self.package_names
+                            .insert(package_name.clone(), project_id.to_owned());
+
+                        if package_name == project_id.as_str() {
+                            continue;
+                        }
+
+                        debug!(
+                            "Inheriting alias {} for project {}",
+                            color::label(&package_name),
+                            color::id(project_id)
+                        );
+
+                        aliases_list.push((project_id.to_owned(), package_name.clone()));
+                    }
+                }
+            }
+        }
+
         Ok(())
+    }
+
+    #[instrument(skip(self))]
+    fn load_project_implicit_dependencies(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<Vec<DependencyConfig>> {
+        let mut implicit_deps = vec![];
+
+        if self.config.package_manager == PythonPackageManager::Uv {
+            debug!(
+                "Scanning {} for implicit dependency relations",
+                color::id(project_id),
+            );
+
+            // TODO: support parsing `tool.uv` sections
+            if let Some(data) =
+                uv::PyProjectTomlCache::read(self.workspace_root.join(project_source))?
+            {
+                if let Some(project) = data.project {
+                    if let Some(deps) = project.dependencies {
+                        for dep in deps {
+                            let dep_name = dep.name.to_string();
+
+                            if dep.extras.is_empty()
+                                && dep.version_or_url.is_none()
+                                && dep.origin.is_none()
+                            {
+                                if let Some(dep_project_id) = self.package_names.get(&dep_name) {
+                                    implicit_deps.push(DependencyConfig {
+                                        id: dep_project_id.to_owned(),
+                                        scope: DependencyScope::Production,
+                                        source: DependencySource::Implicit,
+                                        via: Some(dep_name.clone()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(implicit_deps)
     }
 
     // TOOLCHAIN

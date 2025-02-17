@@ -13,7 +13,7 @@ fn read_file(path: &Path) -> miette::Result<PyProjectToml> {
 config_cache_container!(
     PyProjectTomlCache,
     PyProjectToml,
-    "package-lock.json",
+    "pyproject.toml",
     read_file
 );
 
@@ -35,7 +35,7 @@ pub struct UvLockPackage {
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct UvLock {
-    pub packages: Vec<UvLockPackage>,
+    pub package: Vec<UvLockPackage>,
 }
 
 #[cached(result)]
@@ -43,7 +43,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDepen
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
     let lockfile: UvLock = toml::read_file(&path)?;
 
-    for package in lockfile.packages {
+    for package in lockfile.package {
         let dep = deps.entry(package.name).or_default();
         dep.push(package.version);
         dep.push(package.sdist.hash);

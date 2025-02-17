@@ -6,6 +6,7 @@ pub use crate::queries::touched_files::*;
 use crate::session::CliSession;
 use clap::{Args, Subcommand};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_common::is_ci;
 use moon_vcs::TouchedStatus;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -443,7 +444,7 @@ pub struct QueryTouchedFilesArgs {
         long = "defaultBranch",
         help = "When on the default branch, compare against the previous revision"
     )]
-    default_branch: bool,
+    default_branch: Option<bool>,
 
     #[arg(long, help = "Current branch, commit, or revision to compare with")]
     head: Option<String>,
@@ -465,7 +466,7 @@ pub async fn touched_files(session: CliSession, args: QueryTouchedFilesArgs) -> 
 
     let options = QueryTouchedFilesOptions {
         base: args.base,
-        default_branch: args.default_branch,
+        default_branch: args.default_branch.unwrap_or_else(is_ci),
         head: args.head,
         json: args.json,
         local: args.local,

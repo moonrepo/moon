@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.32.5
+
+#### 🚀 Updates
+
+- Updated Python uv with new features:
+  - Project aliases are inferred from `project.name` in `pyproject.toml`.
+  - Implicit project dependencies are inferred from `project.dependencies` in `pyproject.toml`.
+    - Requires a bare identifier with no version/url/origin markers.
+    - Currently does not support `tool.uv` or workspaces.
+
+#### 🐞 Fixes
+
+- Fixed an issue where no touched files would be found when pushing commits on the default branch.
+- Fixed an issue where `pyproject.toml` or `uv.lock` would sometimes not be parsed.
+
 ## 1.32.4
 
 #### 🐞 Fixes

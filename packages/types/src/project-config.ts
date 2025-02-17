@@ -143,6 +143,20 @@ export interface ProjectToolchainCommonToolConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
+export type PluginLocator = string;
+
+/** Configures an individual toolchain. */
+export interface ToolchainPluginConfig {
+	/** Arbitrary configuration that'll be passed to the WASM plugin. */
+	config: Record<string, unknown>;
+	/** Location of the WASM plugin to use. */
+	plugin: PluginLocator | null;
+	/** The version of the toolchain to download and install. */
+	version: UnresolvedVersionSpec | null;
+}
+
+export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
+
 /** Overrides top-level `typescript` settings. */
 export interface ProjectToolchainTypeScriptConfig {
 	/** Disables all TypeScript functionality for this project. */
@@ -176,6 +190,8 @@ export interface ProjectToolchainConfig {
 	python: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust: ProjectToolchainCommonToolConfig | null;
+	/** Overrides toolchains by their ID. */
+	toolchains: Record<string, ProjectToolchainEntry>;
 	/** Overrides `typescript` settings. */
 	typescript: ProjectToolchainTypeScriptConfig | null;
 }
@@ -392,6 +408,18 @@ export interface PartialProjectToolchainCommonToolConfig {
 	version?: UnresolvedVersionSpec | null;
 }
 
+/** Configures an individual toolchain. */
+export interface PartialToolchainPluginConfig {
+	/** Arbitrary configuration that'll be passed to the WASM plugin. */
+	config?: Record<string, unknown> | null;
+	/** Location of the WASM plugin to use. */
+	plugin?: PluginLocator | null;
+	/** The version of the toolchain to download and install. */
+	version?: UnresolvedVersionSpec | null;
+}
+
+export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
+
 /** Overrides top-level `typescript` settings. */
 export interface PartialProjectToolchainTypeScriptConfig {
 	/** Disables all TypeScript functionality for this project. */
@@ -425,6 +453,8 @@ export interface PartialProjectToolchainConfig {
 	python?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides toolchains by their ID. */
+	toolchains?: Record<string, PartialProjectToolchainEntry> | null;
 	/** Overrides `typescript` settings. */
 	typescript?: PartialProjectToolchainTypeScriptConfig | null;
 }

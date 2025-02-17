@@ -3,7 +3,11 @@
 /* eslint-disable */
 
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
-import type { UnresolvedVersionSpec } from './toolchain-config';
+import type {
+	PartialToolchainPluginConfig,
+	ToolchainPluginConfig,
+	UnresolvedVersionSpec,
+} from './toolchain-config';
 
 /** The task-to-task relationship of the dependency. */
 export type DependencyType = 'cleanup' | 'required' | 'optional';
@@ -140,18 +144,6 @@ export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */
-	version: UnresolvedVersionSpec | null;
-}
-
-export type PluginLocator = string;
-
-/** Configures an individual toolchain. */
-export interface ToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config: Record<string, unknown>;
-	/** Location of the WASM plugin to use. */
-	plugin: PluginLocator | null;
-	/** The version of the toolchain to download and install. */
 	version: UnresolvedVersionSpec | null;
 }
 
@@ -405,16 +397,6 @@ export interface PartialProjectMetadataConfig {
 /** Overrides top-level toolchain settings. */
 export interface PartialProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/** Configures an individual toolchain. */
-export interface PartialToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config?: Record<string, unknown> | null;
-	/** Location of the WASM plugin to use. */
-	plugin?: PluginLocator | null;
-	/** The version of the toolchain to download and install. */
 	version?: UnresolvedVersionSpec | null;
 }
 

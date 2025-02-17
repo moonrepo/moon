@@ -127,12 +127,12 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn load<I>(&self, id: I) -> miette::Result<PluginInstance<T>>
     where
-        I: AsRef<Id> + fmt::Debug,
+        I: AsRef<str>,
     {
-        let id = id.as_ref();
+        let id = Id::raw(id.as_ref());
 
-        if self.is_registered(id) {
-            return self.get_instance(id).await;
+        if self.is_registered(&id) {
+            return self.get_instance(&id).await;
         }
 
         Err(PluginError::UnknownId {
@@ -150,13 +150,13 @@ impl<T: Plugin> PluginRegistry<T> {
         mut op: F,
     ) -> miette::Result<()>
     where
-        I: AsRef<Id> + fmt::Debug,
+        I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
-        let id = id.as_ref();
+        let id = Id::raw(id.as_ref());
 
-        if self.plugins.contains(id) {
+        if self.plugins.contains(&id) {
             return Err(PluginError::ExistingId {
                 id: id.to_string(),
                 ty: self.type_of,
@@ -171,7 +171,7 @@ impl<T: Plugin> PluginRegistry<T> {
         );
 
         // Load the WASM file (this must happen first because of async)
-        let plugin_file = self.loader.load_plugin(id, locator).await?;
+        let plugin_file = self.loader.load_plugin(&id, locator).await?;
 
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(
@@ -185,7 +185,7 @@ impl<T: Plugin> PluginRegistry<T> {
         );
 
         // Create the manifest and let the consumer configure it
-        let mut manifest = self.create_manifest(id, plugin_file)?;
+        let mut manifest = self.create_manifest(&id, plugin_file)?;
 
         op(&mut manifest)?;
 
@@ -212,7 +212,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
-        I: AsRef<Id> + fmt::Debug,
+        I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
     {
         self.load_with_config(id, locator, |_| Ok(())).await

@@ -1,17 +1,21 @@
 use async_trait::async_trait;
+use moon_common::Id;
 use moon_pdk_api::{
-    MoonContext, RegisterToolchainInput, SyncWorkspaceInput, SyncWorkspaceOutput,
-    RegisterToolchainOutput,
+    MoonContext, RegisterToolchainInput, RegisterToolchainOutput, SyncProjectInput,
+    SyncProjectOutput, SyncWorkspaceInput, SyncWorkspaceOutput,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
 use std::fmt;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
+pub type ToolchainMetadata = RegisterToolchainOutput;
+
 pub struct ToolchainPlugin {
     pub id: PluginId,
-    pub metadata: RegisterToolchainOutput,
+    pub metadata: ToolchainMetadata,
 
     plugin: Arc<PluginContainer>,
 
@@ -20,7 +24,7 @@ pub struct ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn sync_workspace(
         &self,
         context: MoonContext,
@@ -36,35 +40,49 @@ impl ToolchainPlugin {
             .call_func_with("sync_workspace", SyncWorkspaceInput { context })
             .await?;
 
+        debug!(toolchain_id = self.id.as_str(), "Synced workspace");
+
         Ok(Some(output))
     }
 
-    // #[instrument(skip_all)]
-    // pub async fn sync_project(
-    //     &self,
-    //     project: SyncProjectRecord,
-    //     dependencies: FxHashMap<Id, SyncProjectRecord>,
-    //     context: MoonContext,
-    // ) -> miette::Result<()> {
-    //     if !self.plugin.has_func("sync_project").await {
-    //         return Ok(());
-    //     }
+    #[instrument(skip(self))]
+    pub async fn sync_project(
+        &self,
+        project_id: Id,
+        project_dependencies: Vec<Id>,
+        context: MoonContext,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut files = vec![];
 
-    //     debug!(toolchain_id = self.id.as_str(), "Syncing project");
+        if !self.plugin.has_func("sync_project").await {
+            return Ok(files);
+        }
 
-    //     self.plugin
-    //         .call_func_without_output(
-    //             "sync_project",
-    //             SyncProjectInput {
-    //                 context,
-    //                 dependencies,
-    //                 project,
-    //             },
-    //         )
-    //         .await?;
+        debug!(toolchain_id = self.id.as_str(), "Syncing project");
 
-    //     Ok(())
-    // }
+        let output: SyncProjectOutput = self
+            .plugin
+            .call_func_with(
+                "sync_project",
+                SyncProjectInput {
+                    context,
+                    project_dependencies,
+                    project_id,
+                },
+            )
+            .await?;
+
+        for file in output.changed_files {
+            files.push(
+                file.real_path()
+                    .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
+            );
+        }
+
+        debug!(toolchain_id = self.id.as_str(), changed_files = ?files, "Synced project");
+
+        Ok(files)
+    }
 }
 
 #[async_trait]

@@ -3824,6 +3824,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_console",
+ "moon_toolchain_plugin",
  "moon_vcs",
 ]
 
@@ -4916,6 +4917,7 @@ dependencies = [
  "moon_rust_platform",
  "moon_system_platform",
  "moon_task_graph",
+ "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace",
  "moon_workspace_graph",

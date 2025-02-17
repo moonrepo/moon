@@ -15,6 +15,18 @@ pub struct ToolchainRegistry {
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 
+impl Default for ToolchainRegistry {
+    fn default() -> Self {
+        Self {
+            configs: FxHashMap::default(),
+            registry: Arc::new(PluginRegistry::new(
+                PluginType::Toolchain,
+                PluginHostData::default(),
+            )),
+        }
+    }
+}
+
 impl ToolchainRegistry {
     pub fn new(host_data: PluginHostData) -> Self {
         Self {

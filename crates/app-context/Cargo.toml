@@ -9,6 +9,7 @@ moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_vcs = { path = "../vcs" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 
 [lints]
 workspace = true

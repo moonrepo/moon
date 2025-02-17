@@ -2,7 +2,6 @@ mod install_deps;
 mod run_task;
 mod setup_toolchain;
 mod sync_project;
-mod sync_project_wasm;
 mod sync_workspace;
 
 pub use install_deps::*;

@@ -108,9 +108,13 @@ pub async fn sync_workspace(
         let sync_context = toolchain_registry.create_context();
 
         for plugin_id in toolchain_registry.get_plugin_ids() {
-            if let Some(result) = toolchain_registry
-                .load(plugin_id)
-                .await?
+            let toolchain = toolchain_registry.load(plugin_id).await?;
+
+            if !toolchain.has_func("sync_workspace").await {
+                continue;
+            }
+
+            if let Some(result) = toolchain
                 .sync_workspace(SyncWorkspaceInput {
                     context: sync_context.clone(),
                 })

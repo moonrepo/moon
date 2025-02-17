@@ -57,7 +57,7 @@ pub async fn run_action(
         }
 
         ActionNode::SyncProject(inner) => {
-            let project = workspace_graph.get_project(&inner.project)?;
+            let project = workspace_graph.get_project(&inner.project_id)?;
 
             emitter
                 .emit(Event::ProjectSyncing {
@@ -136,7 +136,7 @@ pub async fn run_action(
         }
 
         ActionNode::InstallProjectDeps(inner) => {
-            let project = workspace_graph.get_project(&inner.project)?;
+            let project = workspace_graph.get_project(&inner.project_id)?;
 
             emitter
                 .emit(Event::DependenciesInstalling {

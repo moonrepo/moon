@@ -8,6 +8,7 @@ use proto_core::Tool;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tracing::{debug, instrument};
 
 pub type ToolchainMetadata = RegisterToolchainOutput;
@@ -19,10 +20,14 @@ pub struct ToolchainPlugin {
     plugin: Arc<PluginContainer>,
 
     #[allow(dead_code)]
-    tool: Option<Tool>,
+    tool: Option<RwLock<Tool>>,
 }
 
 impl ToolchainPlugin {
+    pub async fn has_func(&self, func: &str) -> bool {
+        self.plugin.has_func(func).await
+    }
+
     #[instrument(skip(self))]
     pub async fn sync_workspace(
         &self,
@@ -85,14 +90,14 @@ impl Plugin for ToolchainPlugin {
             // Only create the proto tool instance if we know that
             // the WASM file has support for it!
             tool: if plugin.has_func("register_tool").await {
-                Some(
+                Some(RwLock::new(
                     Tool::new(
                         registration.id.clone(),
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )
                     .await?,
-                )
+                ))
             } else {
                 None
             },

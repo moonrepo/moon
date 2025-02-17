@@ -7,7 +7,7 @@ use tracing::instrument;
 
 pub struct ExtensionPlugin {
     pub id: PluginId,
-    pub metadata: ExtensionMetadataOutput,
+    pub metadata: RegisterExtensionOutput,
 
     plugin: Arc<PluginContainer>,
 }
@@ -28,10 +28,10 @@ impl Plugin for ExtensionPlugin {
     async fn new(registration: PluginRegistration) -> miette::Result<Self> {
         let plugin = Arc::new(registration.container);
 
-        let metadata: ExtensionMetadataOutput = plugin
+        let metadata: RegisterExtensionOutput = plugin
             .cache_func_with(
                 "register_extension",
-                ExtensionMetadataInput {
+                RegisterExtensionInput {
                     id: registration.id.to_string(),
                 },
             )

@@ -44,7 +44,7 @@ pub async fn sync_project(
         .save_project_snapshot(&project.id, &project)?;
 
     // Collect all project dependencies so we can pass them along.
-    // We can't pass the graph itself because of circuler references between crates!
+    // We can't pass the graph itself because of circular references between crates!
     let mut dependencies = FxHashMap::default();
 
     for dep_config in &project.dependencies {

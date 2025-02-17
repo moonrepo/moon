@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
-    MoonContext, SyncWorkspaceInput, SyncWorkspaceOutput, ToolchainMetadataInput,
-    ToolchainMetadataOutput,
+    MoonContext, RegisterToolchainInput, SyncWorkspaceInput, SyncWorkspaceOutput,
+    RegisterToolchainOutput,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
@@ -11,7 +11,7 @@ use tracing::{debug, instrument};
 
 pub struct ToolchainPlugin {
     pub id: PluginId,
-    pub metadata: ToolchainMetadataOutput,
+    pub metadata: RegisterToolchainOutput,
 
     plugin: Arc<PluginContainer>,
 
@@ -72,10 +72,10 @@ impl Plugin for ToolchainPlugin {
     async fn new(registration: PluginRegistration) -> miette::Result<Self> {
         let plugin = Arc::new(registration.container);
 
-        let metadata: ToolchainMetadataOutput = plugin
+        let metadata: RegisterToolchainOutput = plugin
             .cache_func_with(
                 "register_toolchain",
-                ToolchainMetadataInput {
+                RegisterToolchainInput {
                     id: registration.id.to_string(),
                 },
             )

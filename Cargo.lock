@@ -4351,7 +4351,11 @@ version = "0.0.14"
 dependencies = [
  "clap",
  "extism-pdk",
+ "moon_common",
  "moon_pdk_api",
+ "moon_project",
+ "moon_task",
+ "rustc-hash 2.1.1",
  "serde",
  "warpgate_pdk",
 ]
@@ -4412,6 +4416,7 @@ dependencies = [
  "moon_target",
  "moon_workspace_graph",
  "proto_core",
+ "rustc-hash 2.1.1",
  "scc",
  "serde_json",
  "starbase_sandbox",

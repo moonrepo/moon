@@ -191,7 +191,8 @@ impl Platform for RustPlatform {
 
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
-                    self.package_names.insert(package.name.clone(), id.to_owned());
+                    self.package_names
+                        .insert(package.name.clone(), id.to_owned());
 
                     if package.name != id.as_str() {
                         debug!(

@@ -14,6 +14,7 @@ moon_config = { version = "0.0.14", path = "../config" }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["schema_serde"] }
 serde = { workspace = true }
+serde_json = { workspace = true }
 warpgate_api = { workspace = true }
 
 [features]

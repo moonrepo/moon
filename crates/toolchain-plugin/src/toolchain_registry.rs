@@ -1,9 +1,10 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use miette::IntoDiagnostic;
-use moon_config::ToolchainPluginConfig;
+use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_plugin::{PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
+use starbase_utils::json;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
@@ -33,6 +34,29 @@ impl ToolchainRegistry {
             configs: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
         }
+    }
+
+    pub fn create_merged_config(
+        &self,
+        id: &str,
+        toolchain_config: &ToolchainConfig,
+        project_config: &ProjectConfig,
+    ) -> json::JsonValue {
+        let mut data = json::JsonValue::default();
+
+        if let Some(root_config) = toolchain_config.toolchains.get(id) {
+            data = json::JsonValue::Object(root_config.config.clone().into_iter().collect());
+        }
+
+        if let Some(ProjectToolchainEntry::Config(leaf_config)) =
+            project_config.toolchain.toolchains.get(id)
+        {
+            let next = json::JsonValue::Object(leaf_config.config.clone().into_iter().collect());
+
+            data = json::merge(&data, &next);
+        }
+
+        data
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&PluginId> {

@@ -54,6 +54,9 @@ api_struct!(
 api_struct!(
     /// Input passed to the `sync_project` function.
     pub struct SyncProjectInput {
+        /// Merged toolchain configuration.
+        pub config: serde_json::Value,
+
         /// Current moon context.
         pub context: MoonContext,
 

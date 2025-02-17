@@ -7,6 +7,7 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_pdk_api::SyncWorkspaceInput;
 use moon_remote::RemoteService;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
@@ -110,7 +111,9 @@ pub async fn sync_workspace(
             if let Some(result) = toolchain_registry
                 .load(plugin_id)
                 .await?
-                .sync_workspace(sync_context.clone())
+                .sync_workspace(SyncWorkspaceInput {
+                    context: sync_context.clone(),
+                })
                 .await?
             {
                 sync_results.push(result);

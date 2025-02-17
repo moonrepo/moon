@@ -1,8 +1,7 @@
 use async_trait::async_trait;
-use moon_common::Id;
 use moon_pdk_api::{
-    MoonContext, RegisterToolchainInput, RegisterToolchainOutput, SyncProjectInput,
-    SyncProjectOutput, SyncWorkspaceInput, SyncWorkspaceOutput,
+    RegisterToolchainInput, RegisterToolchainOutput, SyncProjectInput, SyncProjectOutput,
+    SyncWorkspaceInput, SyncWorkspaceOutput,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
@@ -27,7 +26,7 @@ impl ToolchainPlugin {
     #[instrument(skip(self))]
     pub async fn sync_workspace(
         &self,
-        context: MoonContext,
+        input: SyncWorkspaceInput,
     ) -> miette::Result<Option<SyncWorkspaceOutput>> {
         if !self.plugin.has_func("sync_workspace").await {
             return Ok(None);
@@ -35,10 +34,8 @@ impl ToolchainPlugin {
 
         debug!(toolchain_id = self.id.as_str(), "Syncing workspace");
 
-        let output: SyncWorkspaceOutput = self
-            .plugin
-            .call_func_with("sync_workspace", SyncWorkspaceInput { context })
-            .await?;
+        let output: SyncWorkspaceOutput =
+            self.plugin.call_func_with("sync_workspace", input).await?;
 
         debug!(toolchain_id = self.id.as_str(), "Synced workspace");
 
@@ -46,12 +43,7 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn sync_project(
-        &self,
-        project_id: Id,
-        project_dependencies: Vec<Id>,
-        context: MoonContext,
-    ) -> miette::Result<Vec<PathBuf>> {
+    pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
 
         if !self.plugin.has_func("sync_project").await {
@@ -60,17 +52,7 @@ impl ToolchainPlugin {
 
         debug!(toolchain_id = self.id.as_str(), "Syncing project");
 
-        let output: SyncProjectOutput = self
-            .plugin
-            .call_func_with(
-                "sync_project",
-                SyncProjectInput {
-                    context,
-                    project_dependencies,
-                    project_id,
-                },
-            )
-            .await?;
+        let output: SyncProjectOutput = self.plugin.call_func_with("sync_project", input).await?;
 
         for file in output.changed_files {
             files.push(

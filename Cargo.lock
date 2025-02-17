@@ -4370,6 +4370,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "schematic",
  "serde",
+ "serde_json",
  "warpgate_api",
 ]
 
@@ -4974,6 +4975,7 @@ dependencies = [
  "moon_plugin",
  "proto_core",
  "rustc-hash 2.1.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

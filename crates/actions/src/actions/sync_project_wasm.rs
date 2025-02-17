@@ -3,6 +3,7 @@ use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
+use moon_pdk_api::SyncProjectInput;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
@@ -54,19 +55,30 @@ pub async fn sync_project(
 
     // Loop through each toolchain and sync
     let mut changed_files = vec![];
-    let context = app_context.toolchain_registry.create_context();
+    let toolchain_registry = &app_context.toolchain_registry;
 
-    for toolchain_id in &project.toolchains {
-        if let Ok(toolchain) = app_context.toolchain_registry.load(toolchain_id).await {
-            changed_files.extend(
-                toolchain
-                    .sync_project(
-                        project.id.clone(),
-                        project_dependencies.clone(),
-                        context.clone(),
-                    )
-                    .await?,
+    if toolchain_registry.has_plugins() {
+        let context = toolchain_registry.create_context();
+
+        for toolchain_id in &project.toolchains {
+            let config = toolchain_registry.create_merged_config(
+                toolchain_id,
+                &app_context.toolchain_config,
+                &project.config,
             );
+
+            if let Ok(toolchain) = toolchain_registry.load(toolchain_id).await {
+                changed_files.extend(
+                    toolchain
+                        .sync_project(SyncProjectInput {
+                            config,
+                            context: context.clone(),
+                            project_dependencies: project_dependencies.clone(),
+                            project_id: project.id.clone(),
+                        })
+                        .await?,
+                );
+            }
         }
     }
 

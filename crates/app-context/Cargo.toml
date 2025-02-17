@@ -8,8 +8,8 @@ publish = false
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
-moon_vcs = { path = "../vcs" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
+moon_vcs = { path = "../vcs" }
 
 [lints]
 workspace = true

@@ -5,9 +5,11 @@ use std::fmt;
 use std::sync::Arc;
 use tracing::instrument;
 
+pub type ExtensionMetadata = RegisterExtensionOutput;
+
 pub struct ExtensionPlugin {
     pub id: PluginId,
-    pub metadata: RegisterExtensionOutput,
+    pub metadata: ExtensionMetadata,
 
     plugin: Arc<PluginContainer>,
 }

@@ -1,6 +1,7 @@
 mod args;
 mod extension;
 mod funcs;
+mod macros;
 mod toolchain;
 
 pub use args::*;

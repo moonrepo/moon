@@ -24,7 +24,6 @@ cacheable!(
         pub alias: Option<String>,
 
         /// Project configuration loaded from "moon.*", if it exists.
-        #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.

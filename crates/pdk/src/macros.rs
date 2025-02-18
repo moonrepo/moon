@@ -1,10 +1,10 @@
 #[macro_export]
-macro_rules! json_config {
+macro_rules! shared_config {
     ($container:ident, $model:ident) => {
         pub struct $container {
+            pub path: moon_pdk::VirtualPath,
             data: $model,
             dirty: Vec<String>,
-            path: moon_pdk::VirtualPath,
         }
 
         impl std::ops::Deref for $container {
@@ -30,12 +30,24 @@ macro_rules! json_config {
                 }
             }
 
-            pub fn load(path: &moon_pdk::VirtualPath) -> AnyResult<Self> {
+            pub fn is_dirty(&self) -> bool {
+                !self.dirty.is_empty()
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! json_config {
+    ($container:ident, $model:ident) => {
+        moon_pdk::shared_config!($container, $model);
+
+        impl $container {
+            pub fn load(path: moon_pdk::VirtualPath) -> AnyResult<Self> {
                 Ok(Self {
-                    data: starbase_utils::json::read_file(path.any_path())
-                        .map_err(moon_pdk::map_miette_error)?,
+                    data: starbase_utils::json::read_file(path.any_path())?,
                     dirty: vec![],
-                    path: path.to_owned(),
+                    path,
                 })
             }
 
@@ -46,11 +58,10 @@ macro_rules! json_config {
 
                 use starbase_utils::json;
 
-                let mut data: json::JsonValue =
-                    json::read_file(self.path.any_path()).map_err(moon_pdk::map_miette_error)?;
+                let mut data: json::JsonValue = json::read_file(self.path.any_path())?;
 
                 for field in &self.dirty {
-                    match self.save_field(field)? {
+                    match self.save_field(field, data.get(field))? {
                         Some(value) => {
                             data[field] = value;
                         }
@@ -62,7 +73,29 @@ macro_rules! json_config {
                     };
                 }
 
+                host_log!(
+                    "Saving <path>{}</path> with changed fields {}",
+                    self.path.display(),
+                    self.dirty
+                        .into_iter()
+                        .map(|dirty| format!("<property>{dirty}</property>"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+
+                json::write_file_with_config(self.path.any_path(), &data, true)?;
+
                 Ok(Some(self.path))
+            }
+
+            pub fn save_model(self) -> AnyResult<moon_pdk::VirtualPath> {
+                use starbase_utils::json;
+
+                host_log!("Saving <path>{}</path>", self.path.display());
+
+                json::write_file_with_config(self.path.any_path(), &self.data, true)?;
+
+                Ok(self.path)
             }
         }
     };

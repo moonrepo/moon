@@ -73,5 +73,8 @@ api_struct!(
     pub struct SyncProjectOutput {
         /// List of files that have been changed because of the sync action.
         pub changed_files: Vec<VirtualPath>,
+
+        /// Whether the action was skipped or not.
+        pub skipped: bool,
     }
 );

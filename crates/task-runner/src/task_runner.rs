@@ -10,6 +10,7 @@ use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
+use moon_pdk_api::HashTaskContentsInput;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
@@ -451,6 +452,34 @@ impl<'task> TaskRunner<'task> {
             )
             .await?;
 
+        for toolchain_id in self.project.get_enabled_toolchains() {
+            let registry = &self.app.toolchain_registry;
+
+            if let Ok(toolchain) = registry.load(toolchain_id).await {
+                if !toolchain.has_func("hash_task_contents").await {
+                    continue;
+                }
+
+                let contents = toolchain
+                    .hash_task_contents(HashTaskContentsInput {
+                        context: registry.create_context(),
+                        project: self.project.to_fragment(),
+                        task: self.task.to_fragment(),
+                        toolchain_config: registry.create_merged_config(
+                            toolchain_id,
+                            &self.app.toolchain_config,
+                            &self.project.config,
+                        ),
+                    })
+                    .await?;
+
+                for content in contents {
+                    hasher.hash_content(content)?;
+                }
+            }
+        }
+
+        // Generate the hash and persist values
         let hash = hash_engine.save_manifest(&mut hasher)?;
 
         operation.meta.set_hash(&hash);

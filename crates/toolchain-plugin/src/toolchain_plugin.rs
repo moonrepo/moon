@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
-    RegisterToolchainInput, RegisterToolchainOutput, SyncProjectInput, SyncProjectOutput,
-    SyncWorkspaceInput, SyncWorkspaceOutput,
+    HashTaskContentsInput, HashTaskContentsOutput, RegisterToolchainInput, RegisterToolchainOutput,
+    SyncProjectInput, SyncProjectOutput, SyncWorkspaceInput, SyncWorkspaceOutput,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
+use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -69,6 +70,27 @@ impl ToolchainPlugin {
         debug!(toolchain_id = self.id.as_str(), changed_files = ?files, "Synced project");
 
         Ok(files)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn hash_task_contents(
+        &self,
+        input: HashTaskContentsInput,
+    ) -> miette::Result<Vec<JsonValue>> {
+        if !self.plugin.has_func("hash_task_contents").await {
+            return Ok(vec![]);
+        }
+
+        debug!(toolchain_id = self.id.as_str(), "Hashing task contents");
+
+        let output: HashTaskContentsOutput = self
+            .plugin
+            .call_func_with("hash_task_contents", input)
+            .await?;
+
+        debug!(toolchain_id = self.id.as_str(), "Hashed task contents");
+
+        Ok(output.contents)
     }
 }
 

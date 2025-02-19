@@ -83,6 +83,18 @@ impl Project {
             .collect::<Vec<_>>()
     }
 
+    /// Return a list of all toolchains that are enabled for this project.
+    /// Toolchains can be disabled through config.
+    pub fn get_enabled_toolchains(&self) -> Vec<&Id> {
+        self.toolchains
+            .iter()
+            .filter(|id| match self.config.toolchain.toolchains.get(*id) {
+                None => true,
+                Some(cfg) => cfg.is_enabled(),
+            })
+            .collect()
+    }
+
     /// Return true if the root-level project.
     pub fn is_root_level(&self) -> bool {
         is_root_level_source(&self.source)
@@ -100,15 +112,7 @@ impl Project {
             dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),
-            toolchains: self
-                .toolchains
-                .clone()
-                .into_iter()
-                .filter(|id| match self.config.toolchain.toolchains.get(id) {
-                    None => true,
-                    Some(cfg) => cfg.is_enabled(),
-                })
-                .collect(),
+            toolchains: self.get_enabled_toolchains().into_iter().cloned().collect(),
         }
     }
 }

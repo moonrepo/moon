@@ -305,6 +305,7 @@ cacheable!(
         pub target: Target,
 
         /// Toolchains the task belongs to.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
     }
 );

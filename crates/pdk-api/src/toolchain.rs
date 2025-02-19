@@ -1,5 +1,4 @@
 use crate::common::*;
-use moon_common::Id;
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use schematic::Schema;
@@ -59,8 +58,8 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Other project IDs that the project being synced depends on.
-        pub project_dependencies: Vec<Id>,
+        /// Other projects that the project being synced depends on.
+        pub project_dependencies: Vec<ProjectFragment>,
 
         /// Fragment of the project being synced.
         pub project: ProjectFragment,

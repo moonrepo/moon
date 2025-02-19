@@ -52,12 +52,18 @@ pub async fn sync_project(
 
     // Collect all project dependencies so we can pass them along
     let mut dependencies = FxHashMap::default();
+    let mut dependency_fragments = vec![];
 
     for dep_config in &project.dependencies {
-        dependencies.insert(
-            dep_config.id.to_owned(),
-            workspace_graph.get_project(&dep_config.id)?,
-        );
+        let dep_project = workspace_graph.get_project(&dep_config.id)?;
+
+        dependency_fragments.push({
+            let mut fragment = dep_project.to_fragment();
+            fragment.dependency_scope = Some(dep_config.scope);
+            fragment
+        });
+
+        dependencies.insert(dep_config.id.to_owned(), dep_project);
     }
 
     // Sync the projects and return true if any files have been mutated
@@ -82,7 +88,7 @@ pub async fn sync_project(
                 let label = format!("{toolchain_id}:sync_project");
                 let input = SyncProjectInput {
                     context: context.clone(),
-                    project_dependencies: dependencies.keys().cloned().collect(),
+                    project_dependencies: dependency_fragments.clone(),
                     project: project.to_fragment(),
                     toolchain_config: toolchain_registry.create_merged_config(
                         toolchain_id,

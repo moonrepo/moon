@@ -1,6 +1,6 @@
 use crate::utils::should_skip_action_matching;
 use miette::IntoDiagnostic;
-use moon_action::{Action, ActionStatus, SyncProjectNode};
+use moon_action::{Action, ActionStatus, Operation, SyncProjectNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
@@ -12,9 +12,9 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument, warn};
 
-#[instrument(skip(_action, action_context, app_context, workspace_graph))]
+#[instrument(skip(action, action_context, app_context, workspace_graph))]
 pub async fn sync_project(
-    _action: &mut Action,
+    action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     workspace_graph: WorkspaceGraph,
@@ -67,7 +67,6 @@ pub async fn sync_project(
         .await?;
 
     // Loop through each toolchain and sync
-    let mut changed_files = vec![];
     let toolchain_registry = &app_context.toolchain_registry;
 
     if toolchain_registry.has_plugins() {
@@ -80,27 +79,36 @@ pub async fn sync_project(
                     continue;
                 }
 
+                let label = format!("{toolchain_id}:sync_project");
                 let input = SyncProjectInput {
-                    config: toolchain_registry.create_merged_config(
+                    context: context.clone(),
+                    project_dependencies: dependencies.keys().cloned().collect(),
+                    project: project.to_fragment(),
+                    toolchain_config: toolchain_registry.create_merged_config(
                         toolchain_id,
                         &app_context.toolchain_config,
                         &project.config,
                     ),
-                    context: context.clone(),
-                    project_dependencies: dependencies.keys().cloned().collect(),
-                    project: project.to_fragment(),
                 };
 
-                set.spawn(async move { toolchain.sync_project(input).await });
+                set.spawn(async move {
+                    Operation::sync_operation(label)
+                        .track_async_changed(|| async { toolchain.sync_project(input).await })
+                        .await
+                });
             }
         }
 
         while let Some(result) = set.join_next().await {
-            changed_files.extend(result.into_diagnostic()??);
-        }
+            let operation = result.into_diagnostic()??;
 
-        if !changed_files.is_empty() {
-            mutated_files = true;
+            if let Some(sync) = operation.get_sync_result() {
+                if !sync.changed_files.is_empty() {
+                    mutated_files = true;
+                }
+            }
+
+            action.operations.push(operation);
         }
     }
 

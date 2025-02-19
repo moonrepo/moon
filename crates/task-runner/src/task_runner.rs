@@ -567,7 +567,7 @@ impl<'task> TaskRunner<'task> {
                     target: self.task.target.clone(),
                     error: Box::new(ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
-                        status: last_attempt.get_output_status(),
+                        status: last_attempt.get_exec_output_status(),
                     }),
                 }
                 .into());
@@ -696,7 +696,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Fill in these values since the command executor does not run!
-        if let Some(output) = operation.get_output_mut() {
+        if let Some(output) = operation.get_exec_output_mut() {
             output.command = Some(self.task.get_command_line());
 
             // If we received an action result from the remote cache,
@@ -772,7 +772,7 @@ impl<'task> TaskRunner<'task> {
 
         let mut operation = Operation::task_execution(&self.task.command);
 
-        if let Some(output) = operation.get_output_mut() {
+        if let Some(output) = operation.get_exec_output_mut() {
             output.exit_code = Some(-1);
         }
 
@@ -799,7 +799,7 @@ impl<'task> TaskRunner<'task> {
         let err_path = state_dir.join("stderr.log");
         let out_path = state_dir.join("stdout.log");
 
-        if let Some(output) = operation.get_output() {
+        if let Some(output) = operation.get_exec_output() {
             self.cache.data.exit_code = output.get_exit_code();
 
             fs::write_file(

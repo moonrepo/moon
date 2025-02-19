@@ -105,7 +105,7 @@ impl DefaultReporter {
         item: &TaskReportItem,
     ) -> miette::Result<()> {
         let print = || -> miette::Result<()> {
-            if let Some(output) = operation.get_output() {
+            if let Some(output) = operation.get_exec_output() {
                 if let Some(out) = &output.stdout {
                     if !out.is_empty() {
                         if let Some(prefix) = &item.output_prefix {

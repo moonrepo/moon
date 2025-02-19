@@ -4,8 +4,8 @@ use moon_common::{
     serde::is_wasm_bridge,
 };
 use moon_config::{
-    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
-    StackType,
+    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, PlatformType,
+    ProjectConfig, ProjectType, StackType,
 };
 use moon_file_group::FileGroup;
 use moon_task::{Target, Task};
@@ -23,6 +23,7 @@ cacheable!(
         pub alias: Option<String>,
 
         /// Project configuration loaded from "moon.*", if it exists.
+        #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.
@@ -96,9 +97,18 @@ impl Project {
     /// Convert the project into a fragment.
     pub fn to_fragment(&self) -> ProjectFragment {
         ProjectFragment {
+            dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),
-            toolchains: self.toolchains.clone(),
+            toolchains: self
+                .toolchains
+                .clone()
+                .into_iter()
+                .filter(|id| match self.config.toolchain.toolchains.get(id) {
+                    None => true,
+                    Some(cfg) => cfg.is_enabled(),
+                })
+                .collect(),
         }
     }
 }
@@ -128,13 +138,20 @@ cacheable!(
     /// Fragment of a project including important fields.
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct ProjectFragment {
+        /// When treated as a dependency for another project,
+        /// the scope of that dependency relationship.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub dependency_scope: Option<DependencyScope>,
+
         /// ID of the project.
         pub id: Id,
 
         /// Workspace relative path to the project root.
         pub source: String,
 
-        /// Toolchains the project belongs to.
+        /// Toolchains the project belongs to. Does not include
+        /// toolchains that have been disabled through config.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
     }
 );

@@ -103,6 +103,6 @@ api_struct!(
     /// Output returned from the `hash_task_contents` function.
     pub struct HashTaskContentsOutput {
         /// Contents that should be included during hash generation.
-        pub contents: Option<serde_json::Value>,
+        pub contents: Vec<serde_json::Value>,
     }
 );

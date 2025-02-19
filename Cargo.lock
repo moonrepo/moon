@@ -4367,6 +4367,8 @@ version = "0.0.14"
 dependencies = [
  "moon_common",
  "moon_config",
+ "moon_project",
+ "moon_task",
  "rustc-hash 2.1.1",
  "schematic",
  "serde",

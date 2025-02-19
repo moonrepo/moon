@@ -88,7 +88,7 @@ pub async fn sync_project(
                     ),
                     context: context.clone(),
                     project_dependencies: dependencies.keys().cloned().collect(),
-                    project_id: project.id.clone(),
+                    project: project.to_fragment(),
                 };
 
                 set.spawn(async move { toolchain.sync_project(input).await });

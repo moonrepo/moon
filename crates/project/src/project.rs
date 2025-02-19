@@ -92,6 +92,15 @@ impl Project {
     pub fn matches_locator(&self, locator: &str) -> bool {
         self.id.as_str() == locator || self.alias.as_ref().is_some_and(|alias| alias == locator)
     }
+
+    /// Convert the project into a fragment.
+    pub fn to_fragment(&self) -> ProjectFragment {
+        ProjectFragment {
+            id: self.id.clone(),
+            source: self.source.to_string(),
+            toolchains: self.toolchains.clone(),
+        }
+    }
 }
 
 impl PartialEq for Project {
@@ -114,3 +123,18 @@ impl fmt::Display for Project {
         write!(f, "{}", self.id)
     }
 }
+
+cacheable!(
+    /// Fragment of a project including important fields.
+    #[derive(Clone, Debug, Default, PartialEq)]
+    pub struct ProjectFragment {
+        /// ID of the project.
+        pub id: Id,
+
+        /// Workspace relative path to the project root.
+        pub source: String,
+
+        /// Toolchains the project belongs to.
+        pub toolchains: Vec<Id>,
+    }
+);

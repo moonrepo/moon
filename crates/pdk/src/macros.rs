@@ -1,10 +1,11 @@
 #[macro_export]
 macro_rules! shared_config {
     ($container:ident, $model:ident) => {
+        #[derive(Default)]
         pub struct $container {
+            pub data: $model,
+            pub dirty: Vec<String>,
             pub path: moon_pdk::VirtualPath,
-            data: $model,
-            dirty: Vec<String>,
         }
 
         impl std::ops::Deref for $container {
@@ -73,15 +74,18 @@ macro_rules! json_config {
                     };
                 }
 
-                host_log!(
-                    "Saving <path>{}</path> with changed fields {}",
-                    self.path.display(),
-                    self.dirty
-                        .into_iter()
-                        .map(|dirty| format!("<property>{dirty}</property>"))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                );
+                #[cfg(feature = "wasm")]
+                {
+                    host_log!(
+                        "Saving <path>{}</path> with changed fields {}",
+                        self.path.display(),
+                        self.dirty
+                            .into_iter()
+                            .map(|dirty| format!("<property>{dirty}</property>"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
+                }
 
                 json::write_file_with_config(self.path.any_path(), &data, true)?;
 
@@ -91,7 +95,10 @@ macro_rules! json_config {
             pub fn save_model(self) -> AnyResult<moon_pdk::VirtualPath> {
                 use starbase_utils::json;
 
-                host_log!("Saving <path>{}</path>", self.path.display());
+                #[cfg(feature = "wasm")]
+                {
+                    host_log!("Saving <path>{}</path>", self.path.display());
+                }
 
                 json::write_file_with_config(self.path.any_path(), &self.data, true)?;
 

@@ -1,5 +1,7 @@
 use crate::common::*;
 use moon_common::Id;
+use moon_project::ProjectFragment;
+use moon_task::TaskFragment;
 use schematic::Schema;
 use warpgate_api::{api_struct, VirtualPath};
 
@@ -63,8 +65,8 @@ api_struct!(
         /// Other project IDs that the project being synced depends on.
         pub project_dependencies: Vec<Id>,
 
-        /// ID of the project being synced.
-        pub project_id: Id,
+        /// Fragment of the project being synced.
+        pub project: ProjectFragment,
     }
 );
 
@@ -76,5 +78,32 @@ api_struct!(
 
         /// Whether the action was skipped or not.
         pub skipped: bool,
+    }
+);
+
+// RUN TASK
+
+api_struct!(
+    /// Input passed to the `hash_task_contents` function.
+    pub struct HashTaskContentsInput {
+        /// Merged toolchain configuration.
+        pub config: serde_json::Value,
+
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Fragment of the project that the task belongs to.
+        pub project: ProjectFragment,
+
+        /// Fragment of the task being hashed.
+        pub task: TaskFragment,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `hash_task_contents` function.
+    pub struct HashTaskContentsOutput {
+        /// Contents that should be included during hash generation.
+        pub contents: Option<serde_json::Value>,
     }
 );

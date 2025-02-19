@@ -56,9 +56,6 @@ api_struct!(
 api_struct!(
     /// Input passed to the `sync_project` function.
     pub struct SyncProjectInput {
-        /// Merged toolchain configuration.
-        pub config: serde_json::Value,
-
         /// Current moon context.
         pub context: MoonContext,
 
@@ -67,6 +64,9 @@ api_struct!(
 
         /// Fragment of the project being synced.
         pub project: ProjectFragment,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -86,9 +86,6 @@ api_struct!(
 api_struct!(
     /// Input passed to the `hash_task_contents` function.
     pub struct HashTaskContentsInput {
-        /// Merged toolchain configuration.
-        pub config: serde_json::Value,
-
         /// Current moon context.
         pub context: MoonContext,
 
@@ -97,6 +94,9 @@ api_struct!(
 
         /// Fragment of the task being hashed.
         pub task: TaskFragment,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

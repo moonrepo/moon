@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::process::ExitStatus;
 use std::sync::Arc;
 
@@ -8,7 +9,8 @@ pub struct OperationMetaHash {
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct OperationMetaLabel {
+pub struct OperationMetaSync {
+    pub changed_files: Vec<PathBuf>,
     pub label: String,
 }
 
@@ -57,7 +59,7 @@ pub enum OperationMeta {
     NoOperation,
     OutputHydration(Box<OperationMetaOutput>),
     ProcessExecution(Box<OperationMetaOutput>),
-    SyncOperation(Box<OperationMetaLabel>),
+    SyncOperation(Box<OperationMetaSync>),
     TaskExecution(Box<OperationMetaOutput>),
 
     // Metrics

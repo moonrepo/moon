@@ -23,6 +23,7 @@ moon_time = { path = "../time" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs_hooks = { path = "../vcs-hooks" }
 moon_workspace_graph = { path = "../workspace-graph" }
+convert_case = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }

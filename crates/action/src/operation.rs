@@ -9,13 +9,18 @@ use std::process::Output;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Operation {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Duration>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<NaiveDateTime>,
 
     pub meta: OperationMeta,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub operations: Vec<Operation>,
 
     pub started_at: NaiveDateTime,
 
@@ -31,6 +36,7 @@ impl Operation {
             duration: None,
             finished_at: None,
             meta,
+            operations: vec![],
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
@@ -44,6 +50,7 @@ impl Operation {
             duration: None,
             finished_at: Some(time),
             meta,
+            operations: vec![],
             started_at: time,
             start_time: None,
             status,

@@ -3632,6 +3632,7 @@ dependencies = [
 name = "moon_actions"
 version = "0.0.1"
 dependencies = [
+ "convert_case",
  "miette 7.5.0",
  "moon_action",
  "moon_action_context",
@@ -4948,6 +4949,7 @@ name = "moon_toolchain_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "futures",
  "miette 7.5.0",
  "moon_common",
  "moon_config",

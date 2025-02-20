@@ -18,6 +18,7 @@ pub struct InstallWorkspaceDepsNode {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScopedRuntimeNode {
     pub project_id: Id,
     pub runtime: Runtime,

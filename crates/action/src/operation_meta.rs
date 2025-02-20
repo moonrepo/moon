@@ -4,13 +4,18 @@ use std::process::ExitStatus;
 use std::sync::Arc;
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaHash {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hash: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaSync {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub changed_files: Vec<PathBuf>,
+
     pub label: String,
 }
 

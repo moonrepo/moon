@@ -32,7 +32,7 @@ api_struct!(
     }
 );
 
-// SYNC WORKSPACE
+// SYNC WORKSPACE / PROJECT
 
 api_struct!(
     /// Input passed to the `sync_workspace` function.
@@ -41,16 +41,6 @@ api_struct!(
         pub context: MoonContext,
     }
 );
-
-api_struct!(
-    /// Output returned from the `sync_workspace` function.
-    pub struct SyncWorkspaceOutput {
-        /// Operations to perform.
-        pub operations: Vec<Operation>,
-    }
-);
-
-// SYNC PROJECT
 
 api_struct!(
     /// Input passed to the `sync_project` function.
@@ -70,10 +60,17 @@ api_struct!(
 );
 
 api_struct!(
-    /// Output returned from the `sync_project` function.
-    pub struct SyncProjectOutput {
-        /// List of files that have been changed because of the sync action.
+    /// Output returned from the `sync_workspace` and `sync_project` functions.
+    #[serde(default)]
+    pub struct SyncOutput {
+        /// List of files that have been changed because of the sync.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations_performed: Vec<Operation>,
 
         /// Whether the action was skipped or not.
         pub skipped: bool,

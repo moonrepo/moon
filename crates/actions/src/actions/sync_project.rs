@@ -1,6 +1,6 @@
+use crate::operations::convert_plugin_sync_operation_with_output;
 use crate::utils::should_skip_action_matching;
-use miette::IntoDiagnostic;
-use moon_action::{Action, ActionStatus, Operation, SyncProjectNode};
+use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
@@ -9,7 +9,6 @@ use moon_platform::PlatformManager;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
-use tokio::task::JoinSet;
 use tracing::{debug, instrument, warn};
 
 #[instrument(skip(action, action_context, app_context, workspace_graph))]
@@ -73,50 +72,35 @@ pub async fn sync_project(
         .await?;
 
     // Loop through each toolchain and sync
-    let toolchain_registry = &app_context.toolchain_registry;
-
-    if toolchain_registry.has_plugins() {
-        let context = toolchain_registry.create_context();
-        let mut set = JoinSet::new();
-
-        for toolchain_id in &project.toolchains {
-            if let Ok(toolchain) = toolchain_registry.load(toolchain_id).await {
-                if !toolchain.has_func("sync_project").await {
-                    continue;
-                }
-
-                let label = format!("{toolchain_id}:sync_project");
-                let input = SyncProjectInput {
-                    context: context.clone(),
-                    project_dependencies: dependency_fragments.clone(),
-                    project: project.to_fragment(),
-                    toolchain_config: toolchain_registry.create_merged_config(
-                        toolchain_id,
-                        &app_context.toolchain_config,
-                        &project.config,
-                    ),
-                };
-
-                set.spawn(async move {
-                    Operation::sync_operation(label)
-                        .track_async_changed(|| async { toolchain.sync_project(input).await })
-                        .await
-                });
+    for sync_result in app_context
+        .toolchain_registry
+        .sync_project(project.get_enabled_toolchains(), |registry, toolchain| {
+            SyncProjectInput {
+                context: registry.create_context(),
+                project_dependencies: dependency_fragments.clone(),
+                project: project.to_fragment(),
+                toolchain_config: registry.create_merged_config(
+                    &toolchain.id,
+                    &app_context.toolchain_config,
+                    &project.config,
+                ),
             }
+        })
+        .await?
+    {
+        if !sync_result.output.changed_files.is_empty() {
+            mutated_files = true;
         }
 
-        while let Some(result) = set.join_next().await {
-            let operation = result.into_diagnostic()??;
-
-            if let Some(sync) = operation.get_sync_result() {
-                if !sync.changed_files.is_empty() {
-                    mutated_files = true;
-                }
-            }
-
-            action.operations.push(operation);
-        }
+        action
+            .operations
+            .push(convert_plugin_sync_operation_with_output(
+                sync_result.operation,
+                sync_result.output,
+            ));
     }
+
+    // TODO track changed files and print them
 
     // If files have been modified in CI, we should update the status to warning,
     // as these modifications should be committed to the repo!

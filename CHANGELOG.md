@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where aliases would not be inherited for some toolchains.
+
 ## 1.32.5
 
 #### 🚀 Updates

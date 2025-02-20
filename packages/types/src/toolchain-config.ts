@@ -419,7 +419,7 @@ export interface TypeScriptConfig {
 }
 
 /**
- * Configures all tools and platforms required for tasks.
+ * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
 export interface ToolchainConfig {
@@ -430,8 +430,8 @@ export interface ToolchainConfig {
 	/** Configures and enables the Deno platform. */
 	deno: DenoConfig | null;
 	/**
-	 * Extends one or many toolchain configuration files. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many toolchain configuration files.
+	 * Supports a relative file path or a secure URL.
 	 */
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
@@ -834,7 +834,7 @@ export interface PartialTypeScriptConfig {
 }
 
 /**
- * Configures all tools and platforms required for tasks.
+ * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
 export interface PartialToolchainConfig {
@@ -845,8 +845,8 @@ export interface PartialToolchainConfig {
 	/** Configures and enables the Deno platform. */
 	deno?: PartialDenoConfig | null;
 	/**
-	 * Extends one or many toolchain configuration files. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many toolchain configuration files.
+	 * Supports a relative file path or a secure URL.
 	 */
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */

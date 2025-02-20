@@ -1,8 +1,30 @@
+use crate::toolchain::ToolchainPluginConfig;
 use moon_common::cacheable;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
+
+cacheable!(
+    #[derive(Clone, Config, Debug, PartialEq)]
+    #[serde(untagged)]
+    pub enum ProjectToolchainEntry {
+        Disabled, // null
+        Enabled(bool),
+        #[setting(nested)]
+        Config(ToolchainPluginConfig),
+    }
+);
+
+impl ProjectToolchainEntry {
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            Self::Disabled => false,
+            Self::Enabled(state) => *state,
+            Self::Config(_) => true,
+        }
+    }
+}
 
 cacheable!(
     /// Overrides top-level toolchain settings.
@@ -40,6 +62,7 @@ cacheable!(
 cacheable!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Clone, Config, Debug, PartialEq)]
+    #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {
         /// The default toolchain for all tasks within the project,
         /// if their toolchain is unknown.
@@ -68,6 +91,10 @@ cacheable!(
         /// Overrides `typescript` settings.
         #[setting(nested)]
         pub typescript: Option<ProjectToolchainTypeScriptConfig>,
+
+        /// Overrides toolchains by their ID.
+        #[setting(flatten, nested)]
+        pub toolchains: FxHashMap<Id, ProjectToolchainEntry>,
     }
 );
 

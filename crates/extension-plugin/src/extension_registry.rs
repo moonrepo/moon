@@ -1,8 +1,7 @@
 use crate::extension_plugin::ExtensionPlugin;
 use moon_config::ExtensionConfig;
 use moon_plugin::{
-    serialize_config, PluginError, PluginHostData, PluginId, PluginInstance, PluginRegistry,
-    PluginType,
+    serialize_config, PluginError, PluginHostData, PluginId, PluginRegistry, PluginType,
 };
 use rustc_hash::FxHashMap;
 use std::ops::Deref;
@@ -15,6 +14,18 @@ pub struct ExtensionRegistry {
     registry: Arc<PluginRegistry<ExtensionPlugin>>,
 }
 
+impl Default for ExtensionRegistry {
+    fn default() -> Self {
+        Self {
+            configs: FxHashMap::default(),
+            registry: Arc::new(PluginRegistry::new(
+                PluginType::Extension,
+                PluginHostData::default(),
+            )),
+        }
+    }
+}
+
 impl ExtensionRegistry {
     pub fn new(host_data: PluginHostData) -> Self {
         Self {
@@ -23,7 +34,7 @@ impl ExtensionRegistry {
         }
     }
 
-    pub async fn load(&self, id: &PluginId) -> miette::Result<PluginInstance<ExtensionPlugin>> {
+    pub async fn load(&self, id: &PluginId) -> miette::Result<Arc<ExtensionPlugin>> {
         if self.is_registered(id) {
             return self.get_instance(id).await;
         }

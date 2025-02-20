@@ -4,28 +4,11 @@ use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
 use version_spec::UnresolvedVersionSpec;
-use warpgate_api::PluginLocator;
 
 #[cfg(feature = "proto")]
 use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 
-/// Configures an individual toolchain.
-#[derive(Clone, Config, Debug, PartialEq)]
-#[config(allow_unknown_fields)]
-pub struct ToolchainPluginConfig {
-    /// Location of the WASM plugin to use.
-    #[setting(required)]
-    pub plugin: Option<PluginLocator>,
-
-    /// The version of the toolchain to download and install.
-    pub version: Option<UnresolvedVersionSpec>,
-
-    /// Arbitrary configuration that'll be passed to the WASM plugin.
-    #[setting(flatten)]
-    pub config: FxHashMap<String, serde_json::Value>,
-}
-
-/// Configures all tools and platforms required for tasks.
+/// Configures all tools and platforms.
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Config, Debug)]
 #[config(allow_unknown_fields)]
@@ -36,8 +19,8 @@ pub struct ToolchainConfig {
     )]
     pub schema: String,
 
-    /// Extends one or many toolchain configuration files. Supports a relative
-    /// file path or a secure URL.
+    /// Extends one or many toolchain configuration files.
+    /// Supports a relative file path or a secure URL.
     #[setting(extend, validate = validate::extends_from)]
     pub extends: Option<schematic::ExtendsFrom>,
 

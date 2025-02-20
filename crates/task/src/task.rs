@@ -250,6 +250,14 @@ impl Task {
 
         self.is_build_type() || self.is_test_type()
     }
+
+    /// Convert the task into a fragment.
+    pub fn to_fragment(&self) -> TaskFragment {
+        TaskFragment {
+            target: self.target.clone(),
+            toolchains: self.toolchains.clone(),
+        }
+    }
 }
 
 impl Default for Task {
@@ -288,3 +296,16 @@ impl fmt::Display for Task {
         write!(f, "{}", self.target)
     }
 }
+
+cacheable!(
+    /// Fragment of a task including important fields.
+    #[derive(Clone, Debug, Default, PartialEq)]
+    pub struct TaskFragment {
+        /// Target of the task.
+        pub target: Target,
+
+        /// Toolchains the task belongs to.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub toolchains: Vec<Id>,
+    }
+);

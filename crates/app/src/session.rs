@@ -93,13 +93,14 @@ impl CliSession {
         ActionGraphBuilder::new(workspace_graph)
     }
 
-    pub fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
+    pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
             console: Arc::new(self.console.clone()),
             vcs: self.get_vcs_adapter()?,
             toolchain_config: Arc::clone(&self.toolchain_config),
+            toolchain_registry: self.get_toolchain_registry().await?,
             workspace_config: Arc::clone(&self.workspace_config),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),

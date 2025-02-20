@@ -1,3 +1,4 @@
+mod toolchain_actions;
 mod toolchain_plugin;
 mod toolchain_registry;
 

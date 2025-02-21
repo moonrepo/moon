@@ -245,12 +245,36 @@ mod task_expander {
             env::set_var("FOO_BAR", "foo-bar");
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
-                .expand_args(&mut task)
+            let task = TaskExpander::new(&project, &context)
+                .expand(&mut task)
                 .unwrap();
 
             env::remove_var("FOO_BAR");
             env::remove_var("BAR_BAZ");
+
+            assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
+        }
+
+        #[test]
+        fn replaces_env_vars_from_file() {
+            let sandbox = create_empty_sandbox();
+            sandbox.create_file(".env", "FOO_BAR=foo-bar\nBAR_BAZ=bar-baz");
+
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env".into())]);
+            task.args = vec![
+                "a".into(),
+                "$FOO_BAR".into(),
+                "b".into(),
+                "c/${BAR_BAZ}/d".into(),
+            ];
+
+            let context = create_context(sandbox.path());
+            let task = TaskExpander::new(&project, &context)
+                .expand(&mut task)
+                .unwrap();
 
             assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
         }
@@ -265,8 +289,8 @@ mod task_expander {
             task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
-                .expand_args(&mut task)
+            let task = TaskExpander::new(&project, &context)
+                .expand(&mut task)
                 .unwrap();
 
             assert_eq!(task.args, ["a", "foo-bar-self", "b"]);

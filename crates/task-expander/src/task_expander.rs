@@ -161,12 +161,17 @@ impl<'graph> TaskExpander<'graph> {
                 "Loading environment variables from .env files",
             );
 
-            let mut missing_paths = vec![];
             let mut merged_env_vars = FxHashMap::default();
 
             // The file may not have been committed, so avoid crashing
             for env_path in env_paths {
                 if env_path.exists() {
+                    trace!(
+                        task_target = task.target.as_str(),
+                        env_file = ?env_path,
+                        "Loading .env file",
+                    );
+
                     let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
                         path: env_path.to_path_buf(),
                         error: Box::new(error),
@@ -179,7 +184,11 @@ impl<'graph> TaskExpander<'graph> {
                         merged_env_vars.insert(key, val);
                     }
                 } else {
-                    missing_paths.push(env_path);
+                    trace!(
+                        task_target = task.target.as_str(),
+                        env_file = ?env_path,
+                        "Skipping .env file because it doesn't exist",
+                    );
                 }
             }
 

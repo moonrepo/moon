@@ -724,7 +724,18 @@ mod project_graph {
             let graph = generate_workspace_graph("expansion").await;
             let task = graph.get_task_from_project("tasks", "build").unwrap();
 
-            assert_eq!(task.args, string_vec!["a", "../other.yaml", "b"]);
+            assert_eq!(
+                task.args,
+                string_vec![
+                    "a",
+                    if cfg!(windows) {
+                        "..\\other.yaml"
+                    } else {
+                        "../other.yaml"
+                    },
+                    "b"
+                ]
+            );
 
             assert_eq!(
                 task.input_files,

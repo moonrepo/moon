@@ -245,9 +245,7 @@ mod task_expander {
             env::set_var("FOO_BAR", "foo-bar");
 
             let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project, &context)
-                .expand(&mut task)
-                .unwrap();
+            let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
             env::remove_var("FOO_BAR");
             env::remove_var("BAR_BAZ");
@@ -272,9 +270,7 @@ mod task_expander {
             ];
 
             let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project, &context)
-                .expand(&mut task)
-                .unwrap();
+            let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
             assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
         }
@@ -289,9 +285,7 @@ mod task_expander {
             task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
 
             let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project, &context)
-                .expand(&mut task)
-                .unwrap();
+            let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
             assert_eq!(task.args, ["a", "foo-bar-self", "b"]);
         }

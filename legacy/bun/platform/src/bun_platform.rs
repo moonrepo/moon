@@ -181,7 +181,9 @@ impl Platform for BunPlatform {
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
 
-                    aliases_list.push((project_id.to_owned(), package_name.clone()));
+                    if package_name != project_id.as_str() {
+                        aliases_list.push((project_id.to_owned(), package_name.clone()));
+                    }
                 }
             }
         }

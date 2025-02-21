@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -277,7 +277,7 @@ mod token_expander {
                 expander
                     .replace_variable(&task, Cow::Borrowed("$projectRoot"))
                     .unwrap(),
-                project.root.to_string_lossy()
+                path::to_string(&project.root).unwrap()
             );
             assert_eq!(
                 expander
@@ -313,13 +313,13 @@ mod token_expander {
                 expander
                     .replace_variable(&task, Cow::Borrowed("$workingDir"))
                     .unwrap(),
-                sandbox.path().to_string_lossy()
+                path::to_string(sandbox.path()).unwrap()
             );
             assert_eq!(
                 expander
                     .replace_variable(&task, Cow::Borrowed("$workspaceRoot"))
                     .unwrap(),
-                sandbox.path().to_string_lossy()
+                path::to_string(sandbox.path()).unwrap()
             );
 
             assert!(predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}")

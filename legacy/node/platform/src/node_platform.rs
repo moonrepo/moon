@@ -181,17 +181,12 @@ impl Platform for NodePlatform {
                 PackageJsonCache::read(project_source.to_path(&self.workspace_root))?
             {
                 if let Some(package_name) = package_json.data.name {
-                    debug!(
-                        target: LOG_TARGET,
-                        "Inheriting alias {} for project {}",
-                        color::label(&package_name),
-                        color::id(project_id)
-                    );
-
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
 
-                    aliases_list.push((project_id.to_owned(), package_name.clone()));
+                    if package_name != project_id.as_str() {
+                        aliases_list.push((project_id.to_owned(), package_name.clone()));
+                    }
                 }
             }
         }

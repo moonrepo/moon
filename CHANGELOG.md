@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where aliases would not be inherited for some toolchains.
+- Fixed some token variable interpolation for paths on Windows.
+
 ## 1.32.5
 
 #### 🚀 Updates

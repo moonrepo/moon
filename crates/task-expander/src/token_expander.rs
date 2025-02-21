@@ -13,9 +13,10 @@ use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::borrow::Cow;
 use std::env;
 use std::mem;
+use std::path::Path;
+use std::{borrow::Cow, path::MAIN_SEPARATOR};
 use tracing::{debug, instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
@@ -580,8 +581,8 @@ impl<'graph> TokenExpander<'graph> {
             "arch" => Cow::Borrowed(env::consts::ARCH),
             "os" => Cow::Borrowed(env::consts::OS),
             "osFamily" => Cow::Borrowed(env::consts::FAMILY),
-            "workingDir" => Cow::Owned(path::to_string(&self.context.working_dir)?),
-            "workspaceRoot" => Cow::Owned(path::to_string(&self.context.workspace_root)?),
+            "workingDir" => Cow::Owned(self.stringify_path(&self.context.working_dir)?),
+            "workspaceRoot" => Cow::Owned(self.stringify_path(&self.context.workspace_root)?),
             // Project
             "language" => Cow::Owned(project.language.to_string()),
             "project" => Cow::Borrowed(project.id.as_str()),
@@ -592,7 +593,7 @@ impl<'graph> TokenExpander<'graph> {
             "projectChannel" => get_metadata(|md| md.channel.as_deref()),
             "projectName" => get_metadata(|md| md.name.as_deref()),
             "projectOwner" => get_metadata(|md| md.owner.as_deref()),
-            "projectRoot" => Cow::Owned(path::to_string(&project.root)?),
+            "projectRoot" => Cow::Owned(self.stringify_path(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
             "projectStack" => Cow::Owned(project.stack.to_string()),
             "projectType" => Cow::Owned(project.type_of.to_string()),
@@ -728,18 +729,41 @@ impl<'graph> TokenExpander<'graph> {
     ) -> miette::Result<String> {
         // From workspace root to any file
         if task.options.run_from_workspace_root {
-            Ok(format!("./{}", path))
+            Ok(format!(".{}{}", MAIN_SEPARATOR, path))
 
             // From project root to project file
         } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
-            Ok(format!("./{}", proj_path))
+            Ok(format!(".{}{}", MAIN_SEPARATOR, proj_path))
 
             // From project root to non-project file
         } else {
             let abs_path = path.to_logical_path(&self.context.workspace_root);
 
-            path::to_virtual_string(diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path))
+            self.stringify_path(&diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path))
         }
+    }
+
+    fn stringify_path(&self, orig_value: &Path) -> miette::Result<String> {
+        let value = path::to_string(orig_value)?;
+
+        // https://cygwin.com/cygwin-ug-net/cygpath.html
+        #[cfg(windows)]
+        if env::var("MSYSTEM").is_ok_and(|value| value == "MINGW32" || value == "MINGW64") {
+            let mut value = moon_common::standardize_separators(value);
+
+            if orig_value.is_absolute() {
+                for drive in 'A'..='Z' {
+                    if let Some(suffix) = value.strip_prefix(&format!("{drive}:/")) {
+                        value = format!("/{}/{suffix}", drive.to_ascii_lowercase());
+                        break;
+                    }
+                }
+            }
+
+            return Ok(value);
+        }
+
+        Ok(value)
     }
 
     fn infer_inputs(&self, task: &mut Task, result: &ExpandedResult) {

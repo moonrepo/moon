@@ -13,10 +13,10 @@ use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::borrow::Cow;
 use std::env;
 use std::mem;
 use std::path::Path;
-use std::{borrow::Cow, path::MAIN_SEPARATOR};
 use tracing::{debug, instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
@@ -729,11 +729,11 @@ impl<'graph> TokenExpander<'graph> {
     ) -> miette::Result<String> {
         // From workspace root to any file
         if task.options.run_from_workspace_root {
-            Ok(format!(".{}{}", MAIN_SEPARATOR, path))
+            Ok(format!("./{}", path))
 
             // From project root to project file
         } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
-            Ok(format!(".{}{}", MAIN_SEPARATOR, proj_path))
+            Ok(format!("./{}", proj_path))
 
             // From project root to non-project file
         } else {
@@ -749,7 +749,7 @@ impl<'graph> TokenExpander<'graph> {
         // https://cygwin.com/cygwin-ug-net/cygpath.html
         #[cfg(windows)]
         if env::var("MSYSTEM").is_ok_and(|value| value == "MINGW32" || value == "MINGW64") {
-            let mut value = moon_common::standardize_separators(value);
+            let mut value = moon_common::path::standardize_separators(value);
 
             if orig_value.is_absolute() {
                 for drive in 'A'..='Z' {

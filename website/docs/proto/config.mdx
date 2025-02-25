@@ -130,16 +130,11 @@ rust = "stable"
 ### Lock `proto` version<VersionLabel version="0.39.0" />
 
 You can also pin the version of proto that you want all tools to execute with by adding a `proto`
-version entry. This entry _does not_ support partial versions and _must_ contain a fully-qualified
-semantic version.
+version entry. This approach uses shims and dynamic version detection like other tools.
 
 ```toml title=".prototools"
 proto = "0.38.0"
 ```
-
-Locking is currently enforced through [`proto activate`](./commands/activate), and when activated,
-all shims (tools) will be executed with that explicit version of proto. This _does not_ apply to the
-version of proto globally installed (in some situations), or for binaries linked in `~/.proto/bin`.
 
 ## Available settings
 

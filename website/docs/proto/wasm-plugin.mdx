@@ -42,7 +42,8 @@ The following fields are available on the
 - `proto_version` - The version of proto executing the plugin. Note that this version may be for the
   [`proto_core` crate](https://crates.io/crates/proto_core), and not the CLI. Patch numbers will
   drift, but major and minor numbers should be in sync.
-- `temp_dir` - A virtual path to a temporary unique to this tool. <VersionLabel version="0.45.0" />
+- `temp_dir` - A virtual path to a temporary directory unique to this tool.
+  <VersionLabel version="0.45.0" />
 - `tool_dir` - A virtual path to the tool's directory for the current version.
 - `version` - The current version or alias. If not resolved, will be "latest".
 
@@ -159,6 +160,8 @@ The following fields are available:
 - `download_url` (required) - A secure URL to download the tool/archive.
 - `download_name` - File name of the archive to download. If not provided, will attempt to extract
   it from the URL.
+- `checksum` - The checksum hash itself. Will be used if no other option was provided.
+  <VersionLabel version="0.47.0" />
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 - `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig` files.
@@ -353,7 +356,7 @@ the `detect_version_files` function and optional `parse_version_file` function. 
 
 ```rust
 #[plugin_fn]
-pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionOutput>> {
+pub fn detect_version_files(input: Json<DetectVersionInput>) -> FnResult<Json<DetectVersionOutput>> {
     Ok(Json(DetectVersionOutput {
         files: vec![
             ".nvmrc".into(),

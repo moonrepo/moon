@@ -117,8 +117,8 @@ configuration file. This file takes precedence during [version detection](./dete
 created/updated with [`proto pin`](./commands/pin).
 
 At its most basic level, you can map tools to specific versions, for the directory the file is
-located in. A [version](./version-spec) can either be a fully-qualified version, a partial version,
-a range or requirement, or an alias.
+located in. A [version](./tool-spec) can either be a fully-qualified version, a partial version, a
+range or requirement, or an alias.
 
 ```toml title=".prototools"
 node = "16.16.0"
@@ -424,6 +424,18 @@ bundled-npm = true
 
 [tools.npm]
 shared-globals-dir = true
+```
+
+#### `backend`<VersionLabel version="0.47.0" />
+
+The [registry backend](./tool-spec#backends) to utilize when downloading, installing, and running
+the tool. Supports the following:
+
+- [`asdf`](https://asdf-vm.com/)
+
+```toml title=".prototools"
+[tools.node]
+backend = "asdf"
 ```
 
 ### `[tools.*.aliases]`

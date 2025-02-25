@@ -1,5 +1,5 @@
 ---
-title: Version specification
+title: Tool specification
 ---
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
@@ -9,8 +9,8 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Since proto is a toolchain for multiple tools, each with differing version formats, we must align
 them on a standard specification that can resolve and store safely. To handle this, we've
-implemented our own solution called the version specification. This specification currently supports
-semantic and calendar based versions, each with their own guidelines and caveats.
+implemented our own solution called the tool and version specification. This specification currently
+supports semantic and calendar based versions, each with their own guidelines and caveats.
 
 :::info
 
@@ -19,11 +19,48 @@ to re-format it into one of the specifications below.
 
 :::
 
+## Backends<VersionLabel version="0.47.0" />
+
+A backend is an internal system that allows proto to use plugins from 3rd-party package/version
+managers within proto, greatly expanding the amount of tools that proto can install and support.
+This functionality is achieved through special WASM plugins under the hood.
+
+To make use of a backend, prefix the version in `.prototools` with the backend's unique identifier.
+For example, we can install Zig via asdf.
+
+```toml title=".prototools"
+zig = "asdf:0.13.0"
+```
+
+The approach above only utilizes the backend for that specific version. If you want to utilize the
+backend for all versions (without using the version prefix), you can use the
+[`tools.*.backend`](./config#backend) setting.
+
+```toml title=".prototools"
+zig = "0.13.0"
+
+[tools.zig]
+backend = "asdf"
+```
+
+### `asdf`
+
+The `asdf` backend will utilize the [asdf version manager](https://asdf-vm.com/) for downloading and
+installing a tool, loading versions, and locating executables. This backend implementation _does
+not_ use the `asdf` binary itself, and instead emulates the environment as best we can. Because of
+this, some tools may not be usable through proto.
+
+> The `latest-stable`, `exec-env`, `exec-path`, `post-*`, `pre-*`, and `help.*` asdf scripts are
+> currently not supported by this backend.
+
 ## Semantic versions
 
 The most common format is [semver](https://semver.org/), also known as a semantic version. This
-format requires major, minor, and patch numbers, with optional pre-release and build metadata. The
-following formats are allowed:
+format requires major, minor, and patch numbers, with optional pre-release and build metadata.
+
+```toml title=".prototools"
+tool = "1.2.3"
+```
 
 ### Syntax
 
@@ -43,7 +80,11 @@ following formats are allowed:
 
 Another popular format is [calver](https://calver.org/), also known as a calendar version, which
 uses the calendar year, month, and day as version numbers. This format also supports pre-release and
-build metadata, but with different syntax than semver. The following formats are allowed:
+build metadata, but with different syntax than semver.
+
+```toml title=".prototools"
+tool = "2025-02-26"
+```
 
 ### Syntax
 
@@ -79,8 +120,13 @@ build metadata, but with different syntax than semver. The following formats are
 Besides an explicit version, we also support partial versions known as version requirements or
 version ranges. These are quite complex as we need to support both semver and calver in unison, as
 well as support partial/incomplete numbers (missing patch/day, missing minor/month, etc). We do our
-best to support as many combinations as possible, but we suggest aligning with the following
-formats:
+best to support as many combinations as possible.
+
+```toml title=".prototools"
+tool-a = "^1"
+tool-b = "~2.1"
+tool-c = ">=2000-10"
+```
 
 ### Syntax
 

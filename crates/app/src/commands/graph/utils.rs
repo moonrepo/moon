@@ -25,7 +25,7 @@ pub struct RenderContext {
 pub async fn setup_server() -> miette::Result<(Server, Tera)> {
     let port = match env::var("MOON_PORT") {
         Ok(p) => p.parse::<u16>().unwrap(),
-        Err(..) => 8000,
+        Err(..) => 0, // Uses an available port
     };
     let host = match env::var("MOON_HOST") {
         Ok(h) => h,

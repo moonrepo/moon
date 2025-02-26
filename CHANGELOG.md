@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `moon task-graph`, `moon-project-graph`, and `moon action-graph` to request a port
+  dynamically, instead of defaulting to 8000.
+
 #### 🐞 Fixes
 
 - Fixed an issue where Git based template locations would fail if the initial `git clone` failed.

@@ -4,10 +4,71 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Mon, 03 Feb 2025 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 25 Feb 2025 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[proto v0.47 - New backend system & asdf support]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.47</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.47</guid>
+            <pubDate>Tue, 25 Feb 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this release, we're stoked to release backends, a new type of plugin that enables the use of]]></description>
+            <content:encoded><![CDATA[<p>In this release, we're stoked to release backends, a new type of plugin that enables the use of
+3rd-party plugins.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-backend-asdf">New backend: <code>asdf</code><a class="hash-link" aria-label="Direct link to new-backend-asdf" title="Direct link to new-backend-asdf" href="https://moonrepo.dev/blog/proto-v0.47#new-backend-asdf">​</a></h2>
+<p>Since proto's inception, we've been asked the question "how's this different than asdf?", or "why
+not just use asdf?". The answer to both of these questions is still the same 3 things:</p>
+<ul>
+<li>To start, asdf isn't multi-platform, it's Unix only and doesn't support Windows (proto does).</li>
+<li>Secondly, asdf is powered by Bash scripts, which means a bash-compatible interpreter or shell is
+required (proto uses WASM).</li>
+<li>And lastly, proto is built on Rust, so it's extremely fast and reliable.</li>
+</ul>
+<p>With all that said, asdf has a massive <a href="https://github.com/asdf-vm/asdf-plugins" target="_blank" rel="noopener noreferrer">plugin registry</a>
+compared to proto's, and it would take a really long time for proto to reach parity. Because of
+this, we've been working on a new plugin type called a "<a href="https://moonrepo.dev/docs/proto/tool-spec#backends">backend</a>",
+which allows 3rd-party plugins to be utilized within proto for downloading and installing tools,
+locating executables, and more.</p>
+<p>Of course, our first backend is <a href="https://asdf-vm.com/" target="_blank" rel="noopener noreferrer">asdf</a>. To install a tool from asdf's
+registry, prefix the version in <code>.prototools</code> with <a href="https://moonrepo.dev/docs/proto/tool-spec#backends"><code>asdf:</code></a>, or
+configure the <a href="https://moonrepo.dev/docs/proto/config#backend"><code>backend</code></a> setting.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># For this single version</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">zig</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"asdf:0.13.0"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># For all versions</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">zig</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.13.0"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.zig</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">backend</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"asdf"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>This backend implementation <em>does not</em> use the <code>asdf</code> binary itself, and instead emulates the
+environment as best we can. Because of this, some tools may not be usable through proto, especially
+those that rely on the <code>exec-env</code> script. Furthermore, the 2 bullet points above are unfortunately
+still restrictions: This is Unix only and requires Bash.</p>
+<blockquote>
+<p>In the next release, we'll investigate the use of Scoop or Chocolatey as a potential backend for
+Windows users. If you're interested in this endeavor, send us a message in Discord!</p>
+</blockquote>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-built-in-tool-poetry">New built-in tool: <code>poetry</code><a class="hash-link" aria-label="Direct link to new-built-in-tool-poetry" title="Direct link to new-built-in-tool-poetry" href="https://moonrepo.dev/blog/proto-v0.47#new-built-in-tool-poetry">​</a></h2>
+<p>In <a href="https://moonrepo.dev/blog/proto-v0.45">v0.45</a> we introduced 3 new tools, and in this release, we're releasing 1 more! We
+want to expand our Python support, and since we already support pip and uv, we wanted to also
+support Poetry, which has been requested by the community many times now. Poetry installation works
+quite differently than other tools, so please report any issues or improvements.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> poetry</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="proto-now-shims-itself">proto now shims itself<a class="hash-link" aria-label="Direct link to proto now shims itself" title="Direct link to proto now shims itself" href="https://moonrepo.dev/blog/proto-v0.47#proto-now-shims-itself">​</a></h2>
+<p>Until now, proto was a stand-alone binary that existed on <code>PATH</code> and was not coupled to proto's
+store (<code>~/.proto</code>) outside of possibly existing in <code>~/.proto/bin</code> for convenience. Over the past
+couple of releases, we've been working on supporting proto as an
+<a href="https://github.com/moonrepo/plugins/tree/master/tools/proto" target="_blank" rel="noopener noreferrer">official tool</a> within proto, so
+commands like <code>proto install proto</code> and <code>proto pin proto 0.45</code> actually function correctly.</p>
+<p>Starting in this release, when proto is installed via proto, either through <code>proto install</code> or
+<code>proto upgrade</code>, a shim will be created at <code>~/.proto/shims/proto</code>, allowing for runtime version
+detection and pinning. This basically means you can now pin a project to a certain version of proto
+like any other tool, for example:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">proto</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.46"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.47#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.47.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Updated offline connection checks to also ping IPv6 addresses for Google &amp; CloudFlare DNS.</li>
+</ul>]]></content:encoded>
+            <category>backend</category>
+            <category>plugin</category>
+            <category>asdf</category>
+        </item>
         <item>
             <title><![CDATA[moon v1.32 - Remote cache and built-in toolchain improvements]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.32</link>
@@ -1189,7 +1250,7 @@ but every so often you run into a tool that uses another format, <a href="https:
 different enough that they could not be parsed successfully. Well no longer, as we spent the time
 writing our own custom parser to differentiate between the 2 formats. This process is quite
 complicated, and has many restrictions and caveats, so we took the time to document it under the
-name <a href="https://moonrepo.dev/docs/proto/version-spec">version specification</a>.</p>
+name <a href="https://moonrepo.dev/docs/proto/tool-spec">version specification</a>.</p>
 <p>The biggest difference between semver and calver syntax, is that semver is dot-separated, while
 calver is dash-separated. The day part (patch) is also optional in calver.</p>
 <div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>We wrote a ton of tests to cover all the formats and edge cases we could think of, but if you run
@@ -1534,83 +1595,6 @@ environment variable on Windows. To disable this functionality, pass <code>--no-
             <category>detection</category>
             <category>status</category>
             <category>outdated</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.23</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.23</guid>
-            <pubDate>Mon, 25 Mar 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[It's been a month since our last release, and we're excited to land major codegen and task]]></description>
-            <content:encoded><![CDATA[<p>It's been a month since our last release, and we're excited to land major codegen and task
-improvements.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="template--generator-improvements">Template &amp; generator improvements<a class="hash-link" aria-label="Direct link to Template &amp; generator improvements" title="Direct link to Template &amp; generator improvements" href="https://moonrepo.dev/blog/moon-v1.23#template--generator-improvements">​</a></h2>
-<p>Based on feedback and requests from community, we've made quite a few improvements to our code
-generation workflow!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="git-and-npm-template-locators">Git and npm template locators<a class="hash-link" aria-label="Direct link to Git and npm template locators" title="Direct link to Git and npm template locators" href="https://moonrepo.dev/blog/moon-v1.23#git-and-npm-template-locators">​</a></h3>
-<p>Our <a href="https://moonrepo.dev/docs/config/workspace#templates"><code>generator.templates</code></a> setting has only supported file system
-paths, relative from the workspace root. This has made it quite difficult to share templates across
-repositories, but no longer!</p>
-<p>Template locations now support Git repositories and npm packages, through the <code>git:</code> and <code>npm:</code>
-prefixes respectively. The <code>git:</code> locator requires a Git repository URL and explicit revision
-(branch, commit, etc), while the <code>npm:</code> locator requires a package name and explicit version. For
-example:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">generator</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">templates</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'git://github.com/moonrepo/templates#master'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'npm://@moonrepo/templates#1.2.3'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<blockquote>
-<p>Learn more about this in the official
-<a href="https://moonrepo.dev/docs/guides/codegen#configuring-template-locations">code generation guide</a>!</p>
-</blockquote>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="custom-template-names">Custom template names<a class="hash-link" aria-label="Direct link to Custom template names" title="Direct link to Custom template names" href="https://moonrepo.dev/blog/moon-v1.23#custom-template-names">​</a></h3>
-<p>Historically, a template's name was derived from the directory the
-<a href="https://moonrepo.dev/docs/config/template"><code>template.yml</code></a> file was located in. While this works great for small repos,
-it falls apart for large monorepos when there's multiple teams defining templates, as the chance of
-name collisions arise.</p>
-<p>To combat this problem, we're introducing a new <a href="https://moonrepo.dev/docs/config/template#id"><code>id</code> setting</a> for
-templates, which allows you to customize the exact name of the template. This setting is optional,
-and if not provided, the name will be derived from the directory as before.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'my-template'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-variable-settings">New variable settings<a class="hash-link" aria-label="Direct link to New variable settings" title="Direct link to New variable settings" href="https://moonrepo.dev/blog/moon-v1.23#new-variable-settings">​</a></h3>
-<p>And lastly, we're introducing some additions and improvements to template
-<a href="https://moonrepo.dev/docs/config/template#variables"><code>variables</code></a>.</p>
-<ul>
-<li>A new <code>order</code> setting, which defines the order in which variables are prompted to the user.</li>
-<li>A new <code>internal</code> setting, which avoids the value being set from the CLI.</li>
-<li>Enum <code>default</code> values now support a list of values (cannot be provided by the CLI yet).</li>
-<li>Enum <code>prompt</code>s are now optional, and will fallback to the default value if not provided.</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="stack-based-task-inheritance">Stack-based task inheritance<a class="hash-link" aria-label="Direct link to Stack-based task inheritance" title="Direct link to Stack-based task inheritance" href="https://moonrepo.dev/blog/moon-v1.23#stack-based-task-inheritance">​</a></h2>
-<p>Last month in <a href="https://moonrepo.dev/blog/moon-v1.22">moon v1.22</a>, we introduced the <a href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a>
-setting for organizing projects into what tech stack they belong to. This is primarily for
-organizational purposes, and improving our project constraints implementation.</p>
-<p>Based on community feeedback, we've expanded the <code>stack</code> setting to also apply for
-<a href="http://localhost:3000/docs/concepts/task-inheritance#scope-by-project-metadata" target="_blank" rel="noopener noreferrer">task inheritance</a>.
-You can now inherit tasks for the stack itself, or through a combination of the project language,
-platform, and type. For example:</p>
-<ul>
-<li><code>.moon/tasks/backend.yml</code></li>
-<li><code>.moon/tasks/javascript-backend.yml</code></li>
-<li><code>.moon/tasks/frontend-library.yml</code></li>
-<li><code>.moon/tasks/bun-frontend-application.yml</code></li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="internal-tasks">Internal tasks<a class="hash-link" aria-label="Direct link to Internal tasks" title="Direct link to Internal tasks" href="https://moonrepo.dev/blog/moon-v1.23#internal-tasks">​</a></h2>
-<p>We're introducing a new <a href="https://moonrepo.dev/docs/concepts/task#modes">task mode</a> called internal, which can be enabled
-with the <a href="https://moonrepo.dev/docs/config/project#internal"><code>internal</code></a> task option. Internal tasks are tasks that are
-not meant to be ran explicitly by the user (via <a href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a> or
-<a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>), but are used internally as dependencies of other tasks.</p>
-<p>This functionality provides another way to organize your tasks.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">prepare</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'intermediate-step'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">internal</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.23#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.23.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added a <code>variables()</code> function for templates that returns an object of all variables available.</li>
-<li>Updated <code>moon project</code> and <code>moon task</code> to include the configuration files that tasks inherit from.</li>
-<li>Updated <code>moon task</code> to include the modes it belongs to.</li>
-</ul>]]></content:encoded>
-            <category>tasks</category>
-            <category>codegen</category>
-            <category>template</category>
-            <category>tack</category>
-            <category>inheritance</category>
         </item>
     </channel>
 </rss>

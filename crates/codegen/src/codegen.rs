@@ -281,7 +281,7 @@ async fn clone_and_checkout_git_repository(
     }
 
     // Clone or fetch the repository
-    if template_location.exists() {
+    if template_location.join(".git").exists() {
         debug!(
             location = ?template_location,
             "Repository already exists, fetching latest",

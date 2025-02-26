@@ -9,6 +9,7 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where `moon *-graph` commands could not be CTRL+C'd.
 - Fixed an issue where Git based template locations would fail if the initial `git clone` failed.
 
 ## 1.32.6

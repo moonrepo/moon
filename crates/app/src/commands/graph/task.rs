@@ -1,10 +1,9 @@
-use super::utils::{respond_to_request, setup_server, task_graph_repr};
+use super::utils::{run_server, task_graph_repr};
 use crate::session::CliSession;
 use clap::Args;
 use moon_task::Target;
 use moon_task_graph::{GraphToDot, GraphToJson};
 use starbase::AppResult;
-use starbase_styles::color;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -46,16 +45,7 @@ pub async fn task_graph(session: CliSession, args: TaskGraphArgs) -> AppResult {
         return Ok(None);
     }
 
-    let graph_info = task_graph_repr(&task_graph).await;
-    let (server, mut tera) = setup_server().await?;
-    let url = format!("http://{}", server.server_addr());
-    let _ = open::that(&url);
-
-    println!("Started server on {}", color::url(url));
-
-    for req in server.incoming_requests() {
-        respond_to_request(req, &mut tera, &graph_info, "Task graph".to_owned())?;
-    }
+    run_server("Task graph", task_graph_repr(&task_graph).await).await?;
 
     Ok(None)
 }

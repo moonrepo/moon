@@ -1,10 +1,9 @@
-use super::utils::{project_graph_repr, respond_to_request, setup_server};
+use super::utils::{project_graph_repr, run_server};
 use crate::session::CliSession;
 use clap::Args;
 use moon_common::Id;
 use moon_project_graph::{GraphToDot, GraphToJson};
 use starbase::AppResult;
-use starbase_styles::color;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -46,16 +45,7 @@ pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppRe
         return Ok(None);
     }
 
-    let graph_info = project_graph_repr(&project_graph).await;
-    let (server, mut tera) = setup_server().await?;
-    let url = format!("http://{}", server.server_addr());
-    let _ = open::that(&url);
-
-    println!("Started server on {}", color::url(url));
-
-    for req in server.incoming_requests() {
-        respond_to_request(req, &mut tera, &graph_info, "Project graph".to_owned())?;
-    }
+    run_server("Project graph", project_graph_repr(&project_graph).await).await?;
 
     Ok(None)
 }

@@ -1,17 +1,20 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
 use moon_action_graph::ActionGraph;
+use moon_common::color;
+use moon_process::ProcessRegistry;
 use moon_project_graph::{GraphConversions, ProjectGraph};
 use moon_task_graph::TaskGraph;
 use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
-use starbase::AppResult;
 use starbase_utils::json;
 use std::env;
 use std::fmt::Display;
+use std::sync::Arc;
 use tera::{Context, Tera};
 use tiny_http::{Header, Request, Response, Server};
+use tokio::task::{spawn, JoinHandle};
 
 const INDEX_HTML: &str = include_str!("graph.html.tera");
 
@@ -22,7 +25,7 @@ pub struct RenderContext {
     pub js_url: String,
 }
 
-pub async fn setup_server() -> miette::Result<(Server, Tera)> {
+pub async fn setup_server() -> miette::Result<(Arc<Server>, Tera)> {
     let port = match env::var("MOON_PORT") {
         Ok(p) => p.parse::<u16>().unwrap(),
         Err(..) => 0, // Uses an available port
@@ -35,7 +38,7 @@ pub async fn setup_server() -> miette::Result<(Server, Tera)> {
     let server = Server::http(address).unwrap();
     let tera = Tera::default();
 
-    Ok((server, tera))
+    Ok((Arc::new(server), tera))
 }
 
 pub fn extract_nodes_and_edges_from_graph<T: Display>(
@@ -100,7 +103,7 @@ pub fn respond_to_request(
     tera: &mut Tera,
     graph: &GraphInfoDto,
     page_title: String,
-) -> AppResult {
+) -> miette::Result<()> {
     let response = match req.url() {
         "/graph-data" => {
             let mut response = Response::from_data(json::format(graph, false)?);
@@ -132,7 +135,7 @@ pub fn respond_to_request(
 
     req.respond(response).unwrap_or_default();
 
-    Ok(None)
+    Ok(())
 }
 
 // Use the local version of the JS file when in development mode otherwise the CDN URL.
@@ -143,5 +146,45 @@ pub fn get_js_url() -> String {
             true => "http://localhost:5000/assets/index.js".to_string(),
             false => "https://unpkg.com/@moonrepo/visualizer@latest".to_string(),
         },
+    }
+}
+
+pub async fn run_server(title: &str, graph_info: GraphInfoDto) -> miette::Result<()> {
+    let (server, mut tera) = setup_server().await?;
+    let url = format!("http://{}", server.server_addr());
+    let _ = open::that(&url);
+
+    println!("Started server on {}", color::url(url));
+
+    let server_clone = server.clone();
+    let handle1: JoinHandle<miette::Result<()>> = spawn(async move {
+        let mut listener = ProcessRegistry::instance().receive_signal();
+
+        if listener.recv().await.is_ok() {
+            server_clone.unblock();
+        }
+
+        Ok(())
+    });
+
+    let title = title.to_owned();
+    let handle2: JoinHandle<miette::Result<()>> = spawn(async move {
+        for req in server.incoming_requests() {
+            respond_to_request(req, &mut tera, &graph_info, title.clone())?;
+        }
+
+        Ok(())
+    });
+
+    tokio::try_join!(flatten(handle1), flatten(handle2))?;
+
+    Ok(())
+}
+
+async fn flatten(handle: JoinHandle<miette::Result<()>>) -> miette::Result<()> {
+    match handle.await {
+        Ok(Ok(result)) => Ok(result),
+        Ok(Err(err)) => Err(err),
+        Err(err) => Err(miette::miette!("{err}")),
     }
 }

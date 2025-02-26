@@ -1,0 +1,86 @@
+---
+slug: proto-v0.47
+title: proto v0.47 - New backend system & asdf support
+authors: [milesj]
+tags: [backend, plugin, asdf]
+# image: ./img/proto/v0.45.png
+---
+
+In this release, we're stoked to release backends, a new type of plugin that enables the use of
+3rd-party plugins.
+
+<!--truncate-->
+
+## New backend: `asdf`
+
+Since proto's inception, we've been asked the question "how's this different than asdf?", or "why
+not just use asdf?". The answer to both of these questions is still the same 3 things:
+
+- To start, asdf isn't multi-platform, it's Unix only and doesn't support Windows (proto does).
+- Secondly, asdf is powered by Bash scripts, which means a bash-compatible interpreter or shell is
+  required (proto uses WASM).
+- And lastly, proto is built on Rust, so it's extremely fast and reliable.
+
+With all that said, asdf has a massive [plugin registry](https://github.com/asdf-vm/asdf-plugins)
+compared to proto's, and it would take a really long time for proto to reach parity. Because of
+this, we've been working on a new plugin type called a "[backend](/docs/proto/tool-spec#backends)",
+which allows 3rd-party plugins to be utilized within proto for downloading and installing tools,
+locating executables, and more.
+
+Of course, our first backend is [asdf](https://asdf-vm.com/). To install a tool from asdf's
+registry, prefix the version in `.prototools` with [`asdf:`](/docs/proto/tool-spec#backends), or
+configure the [`backend`](/docs/proto/config#backend) setting.
+
+```toml title=".prototools"
+# For this single version
+zig = "asdf:0.13.0"
+
+# For all versions
+zig = "0.13.0"
+
+[tools.zig]
+backend = "asdf"
+```
+
+This backend implementation _does not_ use the `asdf` binary itself, and instead emulates the
+environment as best we can. Because of this, some tools may not be usable through proto, especially
+those that rely on the `exec-env` script. Furthermore, the 2 bullet points above are unfortunately
+still restrictions: This is Unix only and requires Bash.
+
+> In the next release, we'll investigate the use of Scoop or Chocolatey as a potential backend for
+> Windows users. If you're interested in this endeavor, send us a message in Discord!
+
+## New built-in tool: `poetry`
+
+In [v0.45](./proto-v0.45) we introduced 3 new tools, and in this release, we're releasing 1 more! We
+want to expand our Python support, and since we already support pip and uv, we wanted to also
+support Poetry, which has been requested by the community many times now. Poetry installation works
+quite differently than other tools, so please report any issues or improvements.
+
+```shell
+$ proto install poetry
+```
+
+## proto now shims itself
+
+Until now, proto was a stand-alone binary that existed on `PATH` and was not coupled to proto's
+store (`~/.proto`) outside of possibly existing in `~/.proto/bin` for convenience. Over the past
+couple of releases, we've been working on supporting proto as an
+[official tool](https://github.com/moonrepo/plugins/tree/master/tools/proto) within proto, so
+commands like `proto install proto` and `proto pin proto 0.45` actually function correctly.
+
+Starting in this release, when proto is installed via proto, either through `proto install` or
+`proto upgrade`, a shim will be created at `~/.proto/shims/proto`, allowing for runtime version
+detection and pinning. This basically means you can now pin a project to a certain version of proto
+like any other tool, for example:
+
+```toml title=".prototools"
+proto = "0.46"
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.47.0) for a full list
+of changes.
+
+- Updated offline connection checks to also ping IPv6 addresses for Google & CloudFlare DNS.

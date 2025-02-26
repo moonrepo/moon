@@ -242,6 +242,10 @@ const config: Config = {
 						from: '/docs/proto/toml-plugin',
 						to: '/docs/proto/non-wasm-plugin',
 					},
+					{
+						from: '/docs/proto/version-spec',
+						to: '/docs/proto/tool-spec',
+					},
 				],
 			},
 		],

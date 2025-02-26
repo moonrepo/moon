@@ -258,7 +258,7 @@ to extract version information.
 #### Version patterns
 
 When a version is found, either from a git tag or manifest key, we attempt to parse it into a
-[valid version](./version-spec) using a Rust based regex pattern and the `version-pattern` setting.
+[valid version](./tool-spec) using a Rust based regex pattern and the `version-pattern` setting.
 
 This pattern uses named regex capture groups (`(?<name>...)`) to build the version, and to support
 found versions that are not fully-qualified (they may be missing patch or minor versions). The

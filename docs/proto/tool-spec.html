@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.82f0abb4.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.2b9fd987.js" defer="defer"></script>
 <script src="/assets/js/main.bfb77ed4.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -40,10 +40,22 @@ backend for all versions (without using the version prefix), you can use the
 installing a tool, loading versions, and locating executables. This backend implementation <em>does
 not</em> use the <code>asdf</code> binary itself, and instead emulates the environment as best we can. Because of
 this, some tools may not be usable through proto.</p>
-<blockquote>
-<p>The <code>latest-stable</code>, <code>exec-env</code>, <code>exec-path</code>, <code>post-*</code>, <code>pre-*</code>, and <code>help.*</code> asdf scripts are
-currently not supported by this backend.</p>
-</blockquote>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">&lt;id&gt; </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&quot;asdf:20&quot;</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>By default, the ID pinned in <code>.prototools</code> is the
+<a href="https://asdf-vm.com/plugins/create.html#plugin-shortname-index" target="_blank" rel="noopener noreferrer">asdf shortname</a> used when cloning a
+repository. If the ID is different than the shortname (<code>node</code> vs <code>nodejs</code>), you can configure the
+<code>asdf-shortname</code> setting.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&quot;asdf:20&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.node</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">asdf-shortname</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&quot;nodejs&quot;</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>The following settings are supported:</p>
+<ul>
+<li><code>asdf-shortname</code> (string) - The name of the <a href="https://github.com/asdf-vm/asdf-plugins" target="_blank" rel="noopener noreferrer">asdf plugin</a>
+if different than the configured ID.</li>
+<li><code>asdf-repository</code> (string) - The Git repository URL in which to locate
+<a href="https://asdf-vm.com/plugins/create.html#scripts-overview" target="_blank" rel="noopener noreferrer">scripts</a>. If not defined, is extracted
+from the shortname plugin index.</li>
+<li><code>exes</code> (string[]) - List of executable file names (relative from <code>bin</code>) to be linked as a
+shim/bin. If not defined, we&#x27;ll automatically scan the <code>bin</code> directory.</li>
+</ul>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="semantic-versions">Semantic versions<a class="hash-link" aria-label="Direct link to Semantic versions" title="Direct link to Semantic versions" href="/docs/proto/tool-spec#semantic-versions">​</a></h2>
 <p>The most common format is <a href="https://semver.org/" target="_blank" rel="noopener noreferrer">semver</a>, also known as a semantic version. This
 format requires major, minor, and patch numbers, with optional pre-release and build metadata.</p>
@@ -55,7 +67,7 @@ format requires major, minor, and patch numbers, with optional pre-release and b
 <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;-&lt;pre&gt;+&lt;build&gt;</code> - 1.2.3-alpha.0+nightly456</li>
 <li><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;+&lt;build&gt;</code> - 1.2.3+nightly456</li>
 </ul>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="guidelines">Guidelines<a class="hash-link" aria-label="Direct link to Guidelines" title="Direct link to Guidelines" href="/docs/proto/tool-spec#guidelines"> ​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="guidelines">Guidelines<a class="hash-link" aria-label="Direct link to Guidelines" title="Direct link to Guidelines" href="/docs/proto/tool-spec#guidelines">​</a></h3>
 <ul>
 <li>major, minor, patch - <code>0-9</code> of any length</li>
 <li>pre, build - <code>a-z</code>, <code>0-9</code>, <code>-</code>, <code>.</code></li>

@@ -8,7 +8,7 @@ use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
-use moon_app::{commands, systems::bootstrap, Cli, CliSession, Commands};
+use moon_app::{Cli, CliSession, Commands, commands, systems::bootstrap};
 use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
@@ -25,7 +25,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
 
-    env::set_var("MOON_VERSION", version);
+    unsafe { env::set_var("MOON_VERSION", version) };
 
     version.to_owned()
 }
@@ -113,7 +113,9 @@ async fn main() -> MainResult {
     if let (Some(home_dir), Ok(current_dir)) = (dirs::home_dir(), env::current_dir()) {
         if is_globally_installed(&home_dir) {
             if let Some(local_bin) = has_locally_installed(&home_dir, &current_dir) {
-                debug!("Binary is running from a global path, but we found a local binary to use instead");
+                debug!(
+                    "Binary is running from a global path, but we found a local binary to use instead"
+                );
                 debug!("Will now execute the local binary and replace this running process");
 
                 let start_index = if has_executable { 1 } else { 0 };

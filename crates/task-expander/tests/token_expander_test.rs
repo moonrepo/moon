@@ -322,37 +322,43 @@ mod token_expander {
                 path::to_string(sandbox.path()).unwrap()
             );
 
-            assert!(predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}")
-                .unwrap()
-                .eval(
-                    &expander
-                        .replace_variable(&task, Cow::Borrowed("$date"))
-                        .unwrap()
-                ));
-
-            assert!(predicate::str::is_match("[0-9]{2}:[0-9]{2}:[0-9]{2}")
-                .unwrap()
-                .eval(
-                    &expander
-                        .replace_variable(&task, Cow::Borrowed("$time"))
-                        .unwrap()
-                ));
-
-            assert!(predicate::str::is_match(
-                "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}:[0-9]{2}:[0-9]{2}"
-            )
-            .unwrap()
-            .eval(
-                &expander
-                    .replace_variable(&task, Cow::Borrowed("$datetime"))
+            assert!(
+                predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}")
                     .unwrap()
-            ));
+                    .eval(
+                        &expander
+                            .replace_variable(&task, Cow::Borrowed("$date"))
+                            .unwrap()
+                    )
+            );
 
-            assert!(predicate::str::is_match("[0-9]{10}").unwrap().eval(
-                &expander
-                    .replace_variable(&task, Cow::Borrowed("$timestamp"))
+            assert!(
+                predicate::str::is_match("[0-9]{2}:[0-9]{2}:[0-9]{2}")
                     .unwrap()
-            ));
+                    .eval(
+                        &expander
+                            .replace_variable(&task, Cow::Borrowed("$time"))
+                            .unwrap()
+                    )
+            );
+
+            assert!(
+                predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}:[0-9]{2}:[0-9]{2}")
+                    .unwrap()
+                    .eval(
+                        &expander
+                            .replace_variable(&task, Cow::Borrowed("$datetime"))
+                            .unwrap()
+                    )
+            );
+
+            assert!(
+                predicate::str::is_match("[0-9]{10}").unwrap().eval(
+                    &expander
+                        .replace_variable(&task, Cow::Borrowed("$timestamp"))
+                        .unwrap()
+                )
+            );
 
             assert_eq!(
                 expander
@@ -1053,10 +1059,12 @@ mod token_expander {
 
             task.inputs = vec![InputPath::EnvVarGlob("FOO_*".into())];
 
-            env::set_var("FOO_ONE", "1");
-            env::set_var("FOO_TWO", "2");
-            env::set_var("FOO_THREE", "3");
-            env::set_var("BAR_ONE", "1");
+            unsafe {
+                env::set_var("FOO_ONE", "1");
+                env::set_var("FOO_TWO", "2");
+                env::set_var("FOO_THREE", "3");
+                env::set_var("BAR_ONE", "1");
+            }
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1072,10 +1080,12 @@ mod token_expander {
                 }
             );
 
-            env::remove_var("FOO_ONE");
-            env::remove_var("FOO_TWO");
-            env::remove_var("FOO_THREE");
-            env::remove_var("BAR_ONE");
+            unsafe {
+                env::remove_var("FOO_ONE");
+                env::remove_var("FOO_TWO");
+                env::remove_var("FOO_THREE");
+                env::remove_var("BAR_ONE");
+            }
         }
 
         #[test]

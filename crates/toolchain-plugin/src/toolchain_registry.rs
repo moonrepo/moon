@@ -1,7 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use miette::IntoDiagnostic;
 use moon_config::ToolchainPluginConfig;
-use moon_plugin::{serialize_config, PluginHostData, PluginId, PluginRegistry, PluginType};
+use moon_plugin::{PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
 use std::ops::Deref;

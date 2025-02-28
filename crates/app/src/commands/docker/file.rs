@@ -1,6 +1,6 @@
 use crate::session::CliSession;
 use clap::Args;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_console::prompts::{Select, Text};
 use moon_docker::*;
 use moon_project::Project;

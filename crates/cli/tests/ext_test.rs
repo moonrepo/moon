@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::PartialExtensionConfig;
 use moon_test_utils::{create_sandbox_with_config, create_sandbox_with_factory, predicates};
-use proto_core::{warpgate::FileLocator, PluginLocator};
+use proto_core::{PluginLocator, warpgate::FileLocator};
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 

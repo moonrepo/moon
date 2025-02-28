@@ -1,6 +1,6 @@
-use crate::{target::Target, TargetScope};
+use crate::{TargetScope, target::Target};
 use moon_common::Id;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

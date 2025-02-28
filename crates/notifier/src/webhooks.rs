@@ -1,4 +1,4 @@
-use ci_env::{get_environment, CiEnvironment};
+use ci_env::{CiEnvironment, get_environment};
 use moon_common::color;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;

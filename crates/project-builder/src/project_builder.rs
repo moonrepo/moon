@@ -1,5 +1,5 @@
 use moon_common::path::WorkspaceRelativePath;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_config::{
     ConfigLoader, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
     InheritedTasksResult, LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig,

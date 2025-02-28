@@ -1,5 +1,5 @@
 use crate::session::CliSession;
-use moon_codegen::{templates_command, CodeGenerator, TemplatesArgs};
+use moon_codegen::{CodeGenerator, TemplatesArgs, templates_command};
 use starbase::AppResult;
 use std::sync::Arc;
 use tracing::instrument;

@@ -1,11 +1,11 @@
-use crate::python_tool::{get_python_tool_paths, PythonTool};
+use crate::python_tool::{PythonTool, get_python_tool_paths};
 use moon_config::PipConfig;
 use moon_console::Console;
 use moon_process::Command;
-use moon_python_lang::{pip, LockfileDependencyVersions};
+use moon_python_lang::{LockfileDependencyVersions, pip};
 use moon_tool::{
-    async_trait, get_proto_env_vars, get_proto_version_env, prepend_path_env_var,
-    DependencyManager, Tool,
+    DependencyManager, Tool, async_trait, get_proto_env_vars, get_proto_version_env,
+    prepend_path_env_var,
 };
 use moon_utils::get_workspace_root;
 use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};

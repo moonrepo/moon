@@ -12,7 +12,7 @@ use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_toolchain_plugin::ToolchainRegistry;
-use proto_core::{is_offline, ProtoEnvError, ProtoEnvironment};
+use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
@@ -53,10 +53,12 @@ pub async fn install_proto(
     debug!(proto = ?install_dir.join(&bin_name), "Checking if proto is installed");
 
     // Set the version so that proto lookup paths take it into account
-    env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
-    env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
-    env::set_var("PROTO_VERSION_CHECK", "false");
-    env::set_var("PROTO_LOOKUP_DIR", &install_dir);
+    unsafe {
+        env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
+        env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
+        env::set_var("PROTO_VERSION_CHECK", "false");
+        env::set_var("PROTO_LOOKUP_DIR", &install_dir);
+    };
 
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!

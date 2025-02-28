@@ -2,7 +2,7 @@ use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{validate, Config, PathSegment, ValidateError};
+use schematic::{Config, PathSegment, ValidateError, validate};
 use semver::VersionReq;
 
 // We can't use serde based types in the enum below to handle validation,

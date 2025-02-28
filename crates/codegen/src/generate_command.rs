@@ -6,12 +6,12 @@ use clap::builder::{
 use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Args, Command};
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
+use moon_console::Console;
 use moon_console::prompts::list_option::ListOption;
 use moon_console::prompts::validator::Validation;
 use moon_console::prompts::{Confirm, CustomType, MultiSelect, Select, Text};
-use moon_console::Console;
 use rustc_hash::FxHashMap;
-use std::io::{stdout, IsTerminal};
+use std::io::{IsTerminal, stdout};
 use tera::Context as TemplateContext;
 use tracing::{debug, instrument};
 

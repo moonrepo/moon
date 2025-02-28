@@ -1,6 +1,6 @@
 use moon_config::PartialTypeScriptConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_typescript_fixture_configs, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, get_typescript_fixture_configs,
 };
 use std::fs::{self, read_to_string};
 
@@ -116,10 +116,12 @@ mod refs {
     fn syncs_depends_on_as_refs() {
         let sandbox = typescript_sandbox(|_| {});
 
-        assert!(!sandbox
-            .path()
-            .join("syncs-deps-refs/tsconfig.json")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("syncs-deps-refs/tsconfig.json")
+                .exists()
+        );
 
         sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("syncs-deps-refs:noop");
@@ -163,19 +165,23 @@ mod refs {
             cfg.sync_project_references = Some(false);
         });
 
-        assert!(!sandbox
-            .path()
-            .join("syncs-deps-refs/tsconfig.json")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("syncs-deps-refs/tsconfig.json")
+                .exists()
+        );
 
         sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("syncs-deps-refs:noop");
         });
 
-        assert!(!sandbox
-            .path()
-            .join("syncs-deps-refs/tsconfig.json")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("syncs-deps-refs/tsconfig.json")
+                .exists()
+        );
     }
 
     #[test]
@@ -189,12 +195,14 @@ mod refs {
         });
 
         // should not have anything
-        assert_snapshot!(read_to_string(
-            sandbox
-                .path()
-                .join("syncs-deps-refs-project-disabled/tsconfig.json")
-        )
-        .unwrap());
+        assert_snapshot!(
+            read_to_string(
+                sandbox
+                    .path()
+                    .join("syncs-deps-refs-project-disabled/tsconfig.json")
+            )
+            .unwrap()
+        );
     }
 }
 
@@ -226,12 +234,14 @@ mod out_dir {
             cmd.arg("run").arg("out-dir-routing-no-options:noop");
         });
 
-        assert_snapshot!(read_to_string(
-            sandbox
-                .path()
-                .join("out-dir-routing-no-options/tsconfig.json")
-        )
-        .unwrap());
+        assert_snapshot!(
+            read_to_string(
+                sandbox
+                    .path()
+                    .join("out-dir-routing-no-options/tsconfig.json")
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -259,12 +269,14 @@ mod out_dir {
             cmd.arg("run").arg("out-dir-routing-project-disabled:noop");
         });
 
-        assert_snapshot!(read_to_string(
-            sandbox
-                .path()
-                .join("out-dir-routing-project-disabled/tsconfig.json")
-        )
-        .unwrap());
+        assert_snapshot!(
+            read_to_string(
+                sandbox
+                    .path()
+                    .join("out-dir-routing-project-disabled/tsconfig.json")
+            )
+            .unwrap()
+        );
     }
 }
 
@@ -329,11 +341,13 @@ mod paths {
             cmd.arg("run").arg("syncs-paths-refs-project-disabled:noop");
         });
 
-        assert_snapshot!(read_to_string(
-            sandbox
-                .path()
-                .join("syncs-paths-refs-project-disabled/tsconfig.json")
-        )
-        .unwrap());
+        assert_snapshot!(
+            read_to_string(
+                sandbox
+                    .path()
+                    .join("syncs-paths-refs-project-disabled/tsconfig.json")
+            )
+            .unwrap()
+        );
     }
 }

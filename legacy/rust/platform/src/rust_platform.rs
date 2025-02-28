@@ -5,9 +5,8 @@ use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::{
-    is_ci,
-    path::{exe_name, is_root_level_source, WorkspaceRelativePath, WorkspaceRelativePathBuf},
-    Id,
+    Id, is_ci,
+    path::{WorkspaceRelativePath, WorkspaceRelativePathBuf, exe_name, is_root_level_source},
 };
 use moon_config::{
     BinEntry, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
@@ -24,9 +23,9 @@ use moon_rust_lang::{
     cargo_toml::{CargoTomlCache, DepsSet},
     toolchain_toml::{ToolchainToml, ToolchainTomlCache},
 };
-use moon_rust_tool::{get_rust_env_paths, RustTool};
+use moon_rust_tool::{RustTool, get_rust_env_paths};
 use moon_task::Task;
-use moon_tool::{prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{Tool, ToolManager, prepend_path_env_var};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;

@@ -1,8 +1,8 @@
 #![allow(clippy::disallowed_types)]
 
 use moon_config::*;
-use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use schematic::schema::SchemaGenerator;
+use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use std::collections::HashMap;
 use std::path::Path;
 

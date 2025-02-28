@@ -6,7 +6,7 @@ use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::sync::{mpsc, Arc, RwLock};
+use std::sync::{Arc, RwLock, mpsc};
 use std::thread::spawn;
 use tracing::{debug, trace};
 

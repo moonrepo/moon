@@ -1,5 +1,5 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     DependencyConfig, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
 };

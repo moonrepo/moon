@@ -1,5 +1,5 @@
 use crate::WorkspaceGraph;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_project_graph::Project;
 use moon_query::*;
 use std::{fmt::Debug, sync::Arc};

@@ -1,4 +1,4 @@
-use warpgate_api::{api_enum, api_struct, ExecCommandInput, VirtualPath};
+use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct};
 
 api_struct!(
     /// Information about the current moon workspace.

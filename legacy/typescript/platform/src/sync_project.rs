@@ -3,8 +3,8 @@ use moon_config::TypeScriptConfig;
 use moon_node_lang::PackageJsonCache;
 use moon_project::Project;
 use moon_typescript_lang::{
-    tsconfig::{CompilerOptionsPathsMap, CompilerPath, ExtendsField},
     TsConfigJson, TsConfigJsonCache,
+    tsconfig::{CompilerOptionsPathsMap, CompilerPath, ExtendsField},
 };
 use moon_utils::{
     get_cache_dir,

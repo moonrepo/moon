@@ -32,9 +32,14 @@ Furthermore, a tool should have a primary executable file that can be executed w
 through proto's shims. Additionally, a tool can also provide secondary executable files. For
 example, `npm` (the primary) also provides `npx` and `node-gyp` (secondaries).
 
+### What is a backend?
+
+A backend is a special type of tool that provides additional integration with 3rd-party plugins,
+greatly expanding what can be installed and managed with proto.
+
 ### What is a plugin?
 
-A plugin is a WASM (or JSON, TOML, YAML) file for a tool.
+A plugin is a WASM (or JSON, TOML, YAML) file for a tool or backend.
 
 The terms tool and plugin are often used interchangeably, but plugin primarily refers to the WASM
 portion of a tool, while tool refers to the entire package: metadata, business logic, branding, so

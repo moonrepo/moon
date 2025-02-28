@@ -1,9 +1,9 @@
 use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, MergeType, TemplateFile};
-use crate::{filters, funcs, CodegenError};
+use crate::{CodegenError, filters, funcs};
 use miette::IntoDiagnostic;
-use moon_common::path::{to_virtual_string, RelativePathBuf};
 use moon_common::Id;
+use moon_common::path::{RelativePathBuf, to_virtual_string};
 use moon_config::{ConfigLoader, TemplateConfig};
 use once_cell::sync::Lazy;
 use regex::Regex;

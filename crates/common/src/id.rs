@@ -2,7 +2,7 @@ use compact_str::CompactString;
 use miette::Diagnostic;
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de};
 use starbase_styles::{Style, Stylize};
 use std::sync::OnceLock;
 use std::{borrow::Borrow, fmt, ops::Deref, str::FromStr};

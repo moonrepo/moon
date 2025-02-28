@@ -1,7 +1,7 @@
 use moon_config::TypeScriptConfig;
 use moon_hash::hash_content;
-use moon_typescript_lang::tsconfig::CompilerOptions;
 use moon_typescript_lang::TsConfigJsonCache;
+use moon_typescript_lang::tsconfig::CompilerOptions;
 use std::{collections::BTreeMap, path::Path};
 
 hash_content!(

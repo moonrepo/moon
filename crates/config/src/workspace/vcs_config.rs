@@ -1,5 +1,5 @@
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, Config, ConfigEnum};
+use schematic::{Config, ConfigEnum, derive_enum};
 
 derive_enum!(
     /// The VCS being utilized by the repository.

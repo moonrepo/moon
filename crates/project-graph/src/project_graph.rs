@@ -1,6 +1,6 @@
 use crate::project_graph_error::ProjectGraphError;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::Id;
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_config::DependencyScope;
 use moon_graph_utils::*;
 use moon_project::Project;

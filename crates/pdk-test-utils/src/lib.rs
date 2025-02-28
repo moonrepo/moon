@@ -9,9 +9,9 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use warpgate::{
-    host::{create_host_functions, HostData},
-    inject_default_manifest_config, test_utils, Id, PluginContainer, PluginLoader, PluginManifest,
-    Wasm,
+    Id, PluginContainer, PluginLoader, PluginManifest, Wasm,
+    host::{HostData, create_host_functions},
+    inject_default_manifest_config, test_utils,
 };
 
 pub use moon_pdk_api::*;

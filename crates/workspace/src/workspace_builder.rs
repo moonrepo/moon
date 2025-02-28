@@ -6,9 +6,8 @@ use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::*;
 use moon_cache::CacheEngine;
 use moon_common::{
-    color, consts,
-    path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf},
-    Id,
+    Id, color, consts,
+    path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string},
 };
 use moon_config::{
     ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectsSourcesList,

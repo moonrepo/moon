@@ -1,6 +1,6 @@
 use crate::fs_digest::create_digest;
 use crate::remote_error::RemoteError;
-use bazel_remote_apis::build::bazel::remote::execution::v2::{compressor, Digest};
+use bazel_remote_apis::build::bazel::remote::execution::v2::{Digest, compressor};
 use moon_config::RemoteCompression;
 
 #[derive(Clone)]

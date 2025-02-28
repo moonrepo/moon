@@ -1,4 +1,4 @@
-use schematic::{derive_enum, Config, ConfigEnum};
+use schematic::{Config, ConfigEnum, derive_enum};
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 

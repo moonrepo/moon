@@ -1,13 +1,13 @@
 use miette::IntoDiagnostic;
 use moon_common::is_ci;
-use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
+use moon_common::path::{WorkspaceRelativePathBuf, standardize_separators};
 use moon_vcs::{BoxedVcs, TouchedStatus};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::json;
 use std::env;
-use std::io::{stdin, IsTerminal, Read};
+use std::io::{IsTerminal, Read, stdin};
 use tracing::{debug, trace, warn};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
@@ -95,8 +95,7 @@ pub async fn query_touched_files(
     else {
         trace!(
             "Against remote using base \"{}\" with head \"{}\"",
-            base,
-            head,
+            base, head,
         );
 
         vcs.get_touched_files_between_revisions(base, head).await?

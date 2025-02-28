@@ -1,6 +1,6 @@
 use moon_common::{Id, IdError};
-use schematic::{derive_enum, ConfigEnum};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use schematic::{ConfigEnum, derive_enum};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::str::FromStr;
 
 /// Supported programming languages that each project can be written in.

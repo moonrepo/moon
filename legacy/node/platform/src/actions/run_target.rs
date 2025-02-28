@@ -2,7 +2,7 @@ use crate::target_hash::NodeTargetHash;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 use moon_logger::trace;
-use moon_node_lang::{node, PackageJsonCache};
+use moon_node_lang::{PackageJsonCache, node};
 use moon_node_tool::NodeTool;
 use moon_process::Command;
 use moon_project::Project;

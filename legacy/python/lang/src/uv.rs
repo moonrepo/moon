@@ -1,5 +1,5 @@
 use cached::proc_macro::cached;
-use moon_lang::{config_cache_container, LockfileDependencyVersions};
+use moon_lang::{LockfileDependencyVersions, config_cache_container};
 use pyproject_toml::PyProjectToml;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};

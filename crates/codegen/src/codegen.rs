@@ -1,9 +1,9 @@
 use crate::codegen_error::CodegenError;
 use crate::template::Template;
 use miette::IntoDiagnostic;
-use moon_common::path::RelativePathBuf;
 use moon_common::Id;
-use moon_config::{load_template_config_template, ConfigFinder, GeneratorConfig, TemplateLocator};
+use moon_common::path::RelativePathBuf;
+use moon_config::{ConfigFinder, GeneratorConfig, TemplateLocator, load_template_config_template};
 use moon_env::MoonEnvironment;
 use moon_process::Command;
 use moon_time::now_millis;

@@ -3,13 +3,13 @@ use crate::http_tls::*;
 use crate::remote_client::RemoteClient;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    digest_function, ActionCacheUpdateCapabilities, ActionResult, CacheCapabilities, Digest,
-    ServerCapabilities,
+    ActionCacheUpdateCapabilities, ActionResult, CacheCapabilities, Digest, ServerCapabilities,
+    digest_function,
 };
 use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
-use reqwest::header::HeaderMap;
 use reqwest::Client;
+use reqwest::header::HeaderMap;
 use starbase_utils::env::bool_var;
 use std::sync::Arc;
 use std::time::Duration;

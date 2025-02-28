@@ -2,7 +2,7 @@ use crate::app_error::AppError;
 use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
 use bytes::Buf;
-use miette::{miette, IntoDiagnostic};
+use miette::{IntoDiagnostic, miette};
 use moon_api::Launchpad;
 use moon_common::consts::BIN_NAME;
 use starbase::AppResult;

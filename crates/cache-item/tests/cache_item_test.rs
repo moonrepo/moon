@@ -8,19 +8,21 @@ fn run_with_mode<T, F>(mode: CacheMode, callback: F) -> T
 where
     F: FnOnce() -> T,
 {
-    env::set_var(
-        "MOON_CACHE",
-        match mode {
-            CacheMode::Off => "off",
-            CacheMode::Read => "read",
-            CacheMode::ReadWrite => "read-write",
-            CacheMode::Write => "write",
-        },
-    );
+    unsafe {
+        env::set_var(
+            "MOON_CACHE",
+            match mode {
+                CacheMode::Off => "off",
+                CacheMode::Read => "read",
+                CacheMode::ReadWrite => "read-write",
+                CacheMode::Write => "write",
+            },
+        )
+    };
 
     let result = callback();
 
-    env::remove_var("MOON_CACHE");
+    unsafe { env::remove_var("MOON_CACHE") };
 
     result
 }

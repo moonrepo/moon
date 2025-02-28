@@ -6,14 +6,14 @@ use moon_action::{
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_config::TaskDependencyConfig;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
-use moon_query::{build_query, Criteria};
+use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
-use moon_workspace_graph::{tasks::TaskGraphError, GraphConnections, WorkspaceGraph};
+use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;

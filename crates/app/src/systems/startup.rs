@@ -12,7 +12,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::spawn;
-use tokio::task::{block_in_place, JoinError};
+use tokio::task::{JoinError, block_in_place};
 use tracing::{debug, instrument};
 
 // We need to load configuration in a blocking task, because config
@@ -179,7 +179,7 @@ pub async fn load_tasks_configs(
 pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moonbase>>> {
     if vcs.is_enabled() && env::var("MOONBASE_REPO_SLUG").is_err() {
         if let Ok(slug) = vcs.get_repository_slug().await {
-            env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
+            unsafe { env::set_var("MOONBASE_REPO_SLUG", slug.as_str()) };
         }
     }
 

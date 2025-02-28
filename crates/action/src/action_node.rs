@@ -1,5 +1,5 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::Target;
 use moon_toolchain::Runtime;
 use rustc_hash::{FxHashMap, FxHasher};

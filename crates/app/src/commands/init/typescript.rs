@@ -1,6 +1,6 @@
 use super::InitOptions;
-use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
+use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_typescript_config_template;
 use moon_console::Console;

@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::Diagnostic;
 use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_common::{is_test_env, Style, Stylize};
+use moon_common::{Style, Stylize, is_test_env};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;

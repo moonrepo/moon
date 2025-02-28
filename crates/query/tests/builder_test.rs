@@ -1,6 +1,6 @@
 use moon_config::{LanguageType, ProjectType, StackType, TaskType};
 use moon_query::{
-    build_query, ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator,
+    ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator, build_query,
 };
 use std::borrow::Cow;
 

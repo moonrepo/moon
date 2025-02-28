@@ -3,7 +3,7 @@ use crate::portable_path::FilePath;
 use crate::shapes::{InputPath, OneOrMany};
 use moon_common::cacheable;
 use schematic::schema::{StringType, UnionType};
-use schematic::{derive_enum, Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
+use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError, derive_enum};
 use std::env::consts;
 use std::str::FromStr;
 

@@ -30,7 +30,10 @@ pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
     warn!(
         "The command {} is deprecated, update your task to run through a package manager instead. For example, {}.",
         color::shell("moon node run-script"),
-        color::shell(format!("{} run {}", node.config.package_manager, &args.name)),
+        color::shell(format!(
+            "{} run {}",
+            node.config.package_manager, &args.name
+        )),
     );
 
     let mut command = node.get_package_manager().create_command(node)?;

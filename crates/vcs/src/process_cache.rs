@@ -1,6 +1,6 @@
-use moon_process::{output_to_string, Command};
-use scc::hash_cache::Entry;
+use moon_process::{Command, output_to_string};
 use scc::HashCache;
+use scc::hash_cache::Entry;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

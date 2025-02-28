@@ -1,6 +1,6 @@
 use crate::portable_path::FilePath;
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError, ValidateResult};
+use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, derive_enum, validate};
 
 fn path_is_required<D, C>(
     value: &FilePath,

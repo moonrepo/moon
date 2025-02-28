@@ -1,5 +1,5 @@
-use super::prompts::{fully_qualify_version, prompt_version};
 use super::InitOptions;
+use super::prompts::{fully_qualify_version, prompt_version};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;

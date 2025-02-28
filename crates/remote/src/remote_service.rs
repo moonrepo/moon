@@ -5,7 +5,7 @@ use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    digest_function, ActionResult, Digest, ServerCapabilities,
+    ActionResult, Digest, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
 use moon_common::{color, is_ci};

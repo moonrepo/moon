@@ -1,4 +1,4 @@
-use console::{style, Style};
+use console::{Style, style};
 use dialoguer::theme::ColorfulTheme;
 use indicatif::{ProgressBar, ProgressStyle};
 use starbase_styles::color::Color;

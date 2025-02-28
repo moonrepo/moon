@@ -1,5 +1,5 @@
-use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
+use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt::Display;
 use std::hash::Hash;

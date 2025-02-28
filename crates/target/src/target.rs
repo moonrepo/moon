@@ -1,11 +1,11 @@
 use crate::target_error::TargetError;
 use crate::target_scope::TargetScope;
 use compact_str::CompactString;
-use moon_common::{color, Id, Style, Stylize, ID_CHARS};
+use moon_common::{ID_CHARS, Id, Style, Stylize, color};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::{cmp::Ordering, fmt};
 use tracing::instrument;
 

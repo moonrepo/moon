@@ -1,8 +1,8 @@
 use crate::extension_plugin::ExtensionPlugin;
 use moon_config::ExtensionConfig;
 use moon_plugin::{
-    serialize_config, PluginError, PluginHostData, PluginId, PluginInstance, PluginRegistry,
-    PluginType,
+    PluginError, PluginHostData, PluginId, PluginInstance, PluginRegistry, PluginType,
+    serialize_config,
 };
 use rustc_hash::FxHashMap;
 use std::ops::Deref;

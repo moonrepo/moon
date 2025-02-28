@@ -174,9 +174,10 @@ mod add_project_ref {
 
         assert_eq!(tsc.data.references, None);
 
-        assert!(tsc
-            .add_project_ref(PathBuf::from("/sibling"), "tsconfig.json")
-            .unwrap());
+        assert!(
+            tsc.add_project_ref(PathBuf::from("/sibling"), "tsconfig.json")
+                .unwrap()
+        );
 
         assert_eq!(
             tsc.data.references.unwrap(),
@@ -201,9 +202,10 @@ mod add_project_ref {
             ..Default::default()
         };
 
-        assert!(!tsc
-            .add_project_ref(PathBuf::from("/sibling"), "tsconfig.json")
-            .unwrap());
+        assert!(
+            !tsc.add_project_ref(PathBuf::from("/sibling"), "tsconfig.json")
+                .unwrap()
+        );
 
         assert_eq!(
             tsc.data.references.unwrap(),
@@ -226,9 +228,10 @@ mod add_project_ref {
 
         assert_eq!(tsc.data.references, None);
 
-        assert!(tsc
-            .add_project_ref(PathBuf::from("/sibling"), "tsconfig.ref.json")
-            .unwrap());
+        assert!(
+            tsc.add_project_ref(PathBuf::from("/sibling"), "tsconfig.ref.json")
+                .unwrap()
+        );
 
         assert_eq!(
             tsc.data.references.unwrap(),
@@ -252,9 +255,10 @@ mod add_project_ref {
 
         assert_eq!(tsc.data.references, None);
 
-        assert!(tsc
-            .add_project_ref(PathBuf::from("C:\\base\\sibling"), "tsconfig.json")
-            .unwrap());
+        assert!(
+            tsc.add_project_ref(PathBuf::from("C:\\base\\sibling"), "tsconfig.json")
+                .unwrap()
+        );
 
         assert_eq!(
             tsc.data.references.unwrap(),
@@ -279,9 +283,10 @@ mod add_project_ref {
             ..Default::default()
         };
 
-        assert!(tsc
-            .add_project_ref(PathBuf::from("/brother"), "tsconfig.json")
-            .unwrap());
+        assert!(
+            tsc.add_project_ref(PathBuf::from("/brother"), "tsconfig.json")
+                .unwrap()
+        );
 
         assert_eq!(
             tsc.data.references.unwrap(),

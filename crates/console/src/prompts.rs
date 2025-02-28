@@ -3,7 +3,7 @@ use inquire::error::InquireResult;
 use inquire::ui::{
     Attributes, Color as UiColor, ErrorMessageRenderConfig, RenderConfig, StyleSheet, Styled,
 };
-use moon_common::color::{no_color, Color};
+use moon_common::color::{Color, no_color};
 use std::fmt::Display;
 
 pub use inquire::*;

@@ -5,7 +5,7 @@ pub mod workspace;
 
 use cached::proc_macro::cached;
 use dependency_path::PnpmDependencyPath;
-use moon_lang::{config_cache, LockfileDependencyVersions};
+use moon_lang::{LockfileDependencyVersions, config_cache};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_yml::Value;
@@ -221,13 +221,30 @@ packages:
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("pnpm-lock.yaml")).unwrap(),
             FxHashMap::from_iter([
-                ("array-union".to_owned(), string_vec!["sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="]),
-                ("solid-jest".to_owned(), string_vec!["sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A=="]),
+                (
+                    "array-union".to_owned(),
+                    string_vec![
+                        "sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="
+                    ]
+                ),
+                (
+                    "solid-jest".to_owned(),
+                    string_vec![
+                        "sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A=="
+                    ]
+                ),
                 (
                     "@babel/plugin-syntax-async-generators".to_owned(),
-                    string_vec!["sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw=="]
+                    string_vec![
+                        "sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw=="
+                    ]
                 ),
-                ("@ampproject/remapping".to_owned(), string_vec!["sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w=="]),
+                (
+                    "@ampproject/remapping".to_owned(),
+                    string_vec![
+                        "sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w=="
+                    ]
+                ),
             ])
         );
 

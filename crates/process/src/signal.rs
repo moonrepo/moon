@@ -18,7 +18,7 @@ mod unix {
     use super::*;
 
     pub async fn wait_for_signal(sender: Sender<SignalType>) {
-        use tokio::signal::unix::{signal, SignalKind};
+        use tokio::signal::unix::{SignalKind, signal};
 
         debug!("Listening for SIGINT, SIGQUIT, and SIGTERM signals");
 

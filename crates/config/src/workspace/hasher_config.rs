@@ -1,5 +1,5 @@
 use crate::portable_path::GlobPath;
-use schematic::{derive_enum, Config, ConfigEnum};
+use schematic::{Config, ConfigEnum, derive_enum};
 
 derive_enum!(
     /// The optimization to use when hashing.

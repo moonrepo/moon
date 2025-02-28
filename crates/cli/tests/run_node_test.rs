@@ -4,8 +4,8 @@ use moon_config::{
     PartialWorkspaceProjects, PartialYarnConfig,
 };
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
-    get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
+    get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
@@ -352,9 +352,11 @@ fn avoids_postinstall_recursion() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("postinstallRecursion:noop")
-        .count(1)
-        .eval(&output));
+    assert!(
+        predicate::str::contains("postinstallRecursion:noop")
+            .count(1)
+            .eval(&output)
+    );
 
     assert.success();
 }
@@ -453,11 +455,13 @@ mod install_deps {
             cmd.arg("run").arg("node:standard");
         });
 
-        assert!(sandbox
-            .path()
-            // 18.0.0
-            .join(".moon/cache/states/setupToolchain-node-18.0.0.json")
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                // 18.0.0
+                .join(".moon/cache/states/setupToolchain-node-18.0.0.json")
+                .exists()
+        );
     }
 
     #[test]
@@ -480,9 +484,11 @@ mod install_deps {
                 .arg("baz:noop");
         });
 
-        assert!(predicate::str::contains("npm install")
-            .count(3)
-            .eval(&assert.output()));
+        assert!(
+            predicate::str::contains("npm install")
+                .count(3)
+                .eval(&assert.output())
+        );
 
         assert!(sandbox.path().join("foo/package-lock.json").exists());
         assert!(sandbox.path().join("bar/package-lock.json").exists());
@@ -731,19 +737,25 @@ mod npm {
                 .arg("npm:noop");
         });
 
-        assert!(predicate::str::contains("npm install")
-            .count(2)
-            .eval(&assert.output()));
+        assert!(
+            predicate::str::contains("npm install")
+                .count(2)
+                .eval(&assert.output())
+        );
 
         assert!(sandbox.path().join("package-lock.json").exists());
-        assert!(sandbox
-            .path()
-            .join("not-in-workspace/package-lock.json")
-            .exists());
-        assert!(sandbox
-            .path()
-            .join("not-in-workspace/node_modules")
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join("not-in-workspace/package-lock.json")
+                .exists()
+        );
+        assert!(
+            sandbox
+                .path()
+                .join("not-in-workspace/node_modules")
+                .exists()
+        );
 
         assert.success();
     }
@@ -960,16 +972,20 @@ mod yarn1 {
                 .arg("yarn1:noop");
         });
 
-        assert!(predicate::str::contains("yarn install")
-            .count(2)
-            .eval(&assert.output()));
+        assert!(
+            predicate::str::contains("yarn install")
+                .count(2)
+                .eval(&assert.output())
+        );
 
         assert!(sandbox.path().join("yarn.lock").exists());
         assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
-        assert!(sandbox
-            .path()
-            .join("not-in-workspace/node_modules")
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join("not-in-workspace/node_modules")
+                .exists()
+        );
 
         assert.success();
     }
@@ -1062,16 +1078,20 @@ mod yarn {
                 .arg("yarn:noop");
         });
 
-        assert!(predicate::str::contains("yarn install")
-            .count(2)
-            .eval(&assert.output()));
+        assert!(
+            predicate::str::contains("yarn install")
+                .count(2)
+                .eval(&assert.output())
+        );
 
         assert!(sandbox.path().join("yarn.lock").exists());
         assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
-        assert!(sandbox
-            .path()
-            .join("not-in-workspace/node_modules")
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join("not-in-workspace/node_modules")
+                .exists()
+        );
 
         assert.success();
     }
@@ -1153,10 +1173,12 @@ mod bun {
 
         assert!(sandbox.path().join("bun.lockb").exists());
         assert!(sandbox.path().join("not-in-workspace/bun.lockb").exists());
-        assert!(sandbox
-            .path()
-            .join("not-in-workspace/node_modules")
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join("not-in-workspace/node_modules")
+                .exists()
+        );
 
         assert.success();
     }

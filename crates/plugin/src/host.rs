@@ -1,5 +1,5 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
-use moon_common::{color, serde::*, Id};
+use moon_common::{Id, color, serde::*};
 use moon_env::MoonEnvironment;
 use moon_target::Target;
 use moon_workspace_graph::WorkspaceGraph;
@@ -7,7 +7,7 @@ use proto_core::ProtoEnvironment;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{instrument, trace};
-use warpgate::host::{create_host_functions as create_shared_host_functions, HostData};
+use warpgate::host::{HostData, create_host_functions as create_shared_host_functions};
 
 #[derive(Clone, Default)]
 pub struct PluginHostData {

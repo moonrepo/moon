@@ -1,10 +1,10 @@
-use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
+use crate::project::{TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps};
 use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
-use moon_common::{cacheable, Id};
+use moon_common::{Id, cacheable};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
-use schematic::{merge, validate, Config, MergeResult};
+use schematic::{Config, MergeResult, merge, validate};
 use std::collections::BTreeMap;
 use std::hash::{BuildHasherDefault, Hash};
 use std::path::PathBuf;

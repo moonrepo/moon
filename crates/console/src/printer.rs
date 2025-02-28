@@ -1,6 +1,6 @@
 use crate::buffer::ConsoleBuffer;
 use starbase_styles::color::owo::{OwoColorize, XtermColors};
-use starbase_styles::color::{self, no_color, Color, OwoStyle};
+use starbase_styles::color::{self, Color, OwoStyle, no_color};
 
 const STEP_CHAR: &str = "▪";
 const CACHED_COLORS: [u8; 4] = [57, 63, 69, 75]; // blue

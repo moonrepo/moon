@@ -1,7 +1,7 @@
 [package]
 name = "moon_time"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Date and time utilities."
 homepage = "https://moonrepo.dev/moon"

@@ -119,16 +119,20 @@ mod task_expander {
             let mut task = create_task();
             task.command = "./$FOO/${BAR}/$BAZ_QUX".into();
 
-            env::set_var("FOO", "foo");
-            env::set_var("BAZ_QUX", "baz-qux");
+            unsafe {
+                env::set_var("FOO", "foo");
+                env::set_var("BAZ_QUX", "baz-qux");
+            }
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
-            env::remove_var("FOO");
-            env::remove_var("BAZ_QUX");
+            unsafe {
+                env::remove_var("FOO");
+                env::remove_var("BAZ_QUX");
+            }
 
             assert_eq!(task.command, "./foo/${BAR}/baz-qux");
         }
@@ -241,14 +245,18 @@ mod task_expander {
                 "c/${BAR_BAZ}/d".into(),
             ];
 
-            env::set_var("BAR_BAZ", "bar-baz");
-            env::set_var("FOO_BAR", "foo-bar");
+            unsafe {
+                env::set_var("BAR_BAZ", "bar-baz");
+                env::set_var("FOO_BAR", "foo-bar");
+            }
 
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
-            env::remove_var("FOO_BAR");
-            env::remove_var("BAR_BAZ");
+            unsafe {
+                env::remove_var("FOO_BAR");
+                env::remove_var("BAR_BAZ");
+            }
 
             assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
         }
@@ -447,14 +455,18 @@ mod task_expander {
             task.env.insert("KEY2".into(), "inner-${FOO}".into());
             task.env.insert("KEY3".into(), "$KEY1-self".into());
 
-            env::set_var("FOO", "foo");
+            unsafe {
+                env::set_var("FOO", "foo");
+            }
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            env::remove_var("FOO");
+            unsafe {
+                env::remove_var("FOO");
+            }
 
             assert_eq!(
                 task.env,
@@ -526,14 +538,18 @@ mod task_expander {
             task.env
                 .insert("KEY".into(), "$project-$FOO-$unknown".into());
 
-            env::set_var("FOO", "foo");
+            unsafe {
+                env::set_var("FOO", "foo");
+            }
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            env::remove_var("FOO");
+            unsafe {
+                env::remove_var("FOO");
+            }
 
             assert_eq!(
                 task.env,
@@ -574,14 +590,14 @@ mod task_expander {
             let mut task = create_task();
             task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
 
-            env::set_var("EXTERNAL", "external-value");
+            unsafe { env::set_var("EXTERNAL", "external-value") };
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            env::remove_var("EXTERNAL");
+            unsafe { env::remove_var("EXTERNAL") };
 
             assert_eq!(
                 task.env,
@@ -617,7 +633,7 @@ mod task_expander {
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());
 
-            env::set_var("MYPATH", "/another/path");
+            unsafe { env::set_var("MYPATH", "/another/path") };
 
             let mut task = create_task();
             task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
@@ -629,7 +645,7 @@ mod task_expander {
 
             assert_eq!(task.env.get("MYPATH").unwrap(), "/path:/another/path");
 
-            env::remove_var("MYPATH");
+            unsafe { env::remove_var("MYPATH") };
         }
 
         #[test]

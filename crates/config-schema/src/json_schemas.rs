@@ -1,6 +1,6 @@
 use moon_config::*;
-use schematic::schema::json_schema::{JsonSchemaOptions, JsonSchemaRenderer};
 use schematic::schema::SchemaGenerator;
+use schematic::schema::json_schema::{JsonSchemaOptions, JsonSchemaRenderer};
 use std::path::Path;
 
 fn create_jsonschema_renderer() -> JsonSchemaRenderer {

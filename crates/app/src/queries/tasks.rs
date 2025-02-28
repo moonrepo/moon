@@ -1,6 +1,6 @@
 use super::convert_to_regex;
 use moon_affected::Affected;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_task::Task;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};

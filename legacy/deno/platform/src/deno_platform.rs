@@ -4,15 +4,15 @@ use crate::target_hash::DenoTargetHash;
 use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_common::path::{is_root_level_source, WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_common::{color, is_ci, is_test_env, Id};
+use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf, is_root_level_source};
+use moon_common::{Id, color, is_ci, is_test_env};
 use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig, TypeScriptConfig,
 };
 use moon_console::{Checkpoint, Console};
-use moon_deno_lang::{find_package_manager_workspaces_root, load_lockfile_dependencies, DenoJson};
-use moon_deno_tool::{get_deno_env_paths, DenoTool};
+use moon_deno_lang::{DenoJson, find_package_manager_workspaces_root, load_lockfile_dependencies};
+use moon_deno_tool::{DenoTool, get_deno_env_paths};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -20,7 +20,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{
-    get_proto_version_env, prepend_path_env_var, DependencyManager, Tool, ToolManager,
+    DependencyManager, Tool, ToolManager, get_proto_version_env, prepend_path_env_var,
 };
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;

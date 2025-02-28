@@ -1,7 +1,7 @@
 use crate::shapes::OneOrMany;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{validate, Config, ValidateError};
+use schematic::{Config, ValidateError, validate};
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {

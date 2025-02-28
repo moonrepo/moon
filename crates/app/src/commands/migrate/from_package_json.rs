@@ -5,8 +5,8 @@ use moon_common::Id;
 use moon_config::{
     DependencyScope, NodePackageManager, PartialDependencyConfig, PartialProjectDependsOn,
 };
-use moon_node_lang::package_json::DependenciesMap;
 use moon_node_lang::PackageJsonCache;
+use moon_node_lang::package_json::DependenciesMap;
 use moon_node_platform::create_tasks_from_scripts;
 use rustc_hash::FxHashMap;
 use starbase::AppResult;

@@ -1,7 +1,7 @@
 [package]
 name = "moon_task_expander"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Expands tasks with runtime information."
 homepage = "https://moonrepo.dev/moon"

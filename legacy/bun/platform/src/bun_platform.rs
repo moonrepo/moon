@@ -3,11 +3,11 @@ use crate::infer_tasks_from_scripts;
 use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_bun_tool::{get_bun_env_paths, BunTool};
-use moon_common::path::is_root_level_source;
+use moon_bun_tool::{BunTool, get_bun_env_paths};
+use moon_common::Id;
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::Id;
+use moon_common::path::is_root_level_source;
 use moon_config::{
     BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
@@ -16,14 +16,14 @@ use moon_config::{
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
-use moon_node_lang::node::{find_package_manager_workspaces_root, get_package_manager_workspaces};
 use moon_node_lang::PackageJsonCache;
+use moon_node_lang::node::{find_package_manager_workspaces_root, get_package_manager_workspaces};
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{
-    get_proto_version_env, prepend_path_env_var, DependencyManager, Tool, ToolManager,
+    DependencyManager, Tool, ToolManager, get_proto_version_env, prepend_path_env_var,
 };
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};

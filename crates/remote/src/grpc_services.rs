@@ -1,4 +1,4 @@
-use http::{header::HeaderMap, Request};
+use http::{Request, header::HeaderMap};
 // use std::future::Future;
 use std::task::{Context, Poll};
 // use tower::retry::Policy;

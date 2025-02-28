@@ -2,7 +2,7 @@ use crate::helpers::create_theme;
 use crate::session::CliSession;
 use dialoguer::{Confirm, Input, Select};
 use miette::IntoDiagnostic;
-use moon_codegen::{gather_variables, CodeGenerator, FileState};
+use moon_codegen::{CodeGenerator, FileState, gather_variables};
 use starbase::AppResult;
 use starbase_styles::color;
 use std::path::PathBuf;

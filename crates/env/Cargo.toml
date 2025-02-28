@@ -1,7 +1,7 @@
 [package]
 name = "moon_env"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "The moon store and workspace environment."
 homepage = "https://moonrepo.dev/moon"

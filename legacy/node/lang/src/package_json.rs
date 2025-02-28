@@ -2,7 +2,7 @@
 
 use cached::proc_macro::cached;
 use moon_lang::config_cache_model;
-use starbase_utils::json::{self, read_file as read_json, JsonValue};
+use starbase_utils::json::{self, JsonValue, read_file as read_json};
 use std::path::{Path, PathBuf};
 
 pub use nodejs_package_json::*;

@@ -97,12 +97,12 @@ impl FromStr for TemplateLocator {
                 "file" => {
                     return Ok(TemplateLocator::File {
                         path: FilePath::from_str(inner_value)?,
-                    })
+                    });
                 }
                 "glob" => {
                     return Ok(TemplateLocator::Glob {
                         glob: GlobPath::from_str(inner_value)?,
-                    })
+                    });
                 }
                 other => {
                     return Err(ParseError::new(format!(

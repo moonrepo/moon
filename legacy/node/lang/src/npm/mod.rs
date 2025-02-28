@@ -1,7 +1,7 @@
 use cached::proc_macro::cached;
 use miette::IntoDiagnostic;
-use moon_lang::{config_cache_container, LockfileDependencyVersions};
-use package_lock_json_parser::{parse, PackageLockJson};
+use moon_lang::{LockfileDependencyVersions, config_cache_container};
+use package_lock_json_parser::{PackageLockJson, parse};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
@@ -166,11 +166,15 @@ mod tests {
             FxHashMap::from_iter([
                 (
                     "@babel/helper-function-name".to_owned(),
-                    string_vec!["sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A=="]
+                    string_vec![
+                        "sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A=="
+                    ]
                 ),
                 (
                     "rollup-plugin-polyfill-node".to_owned(),
-                    string_vec!["sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ=="]
+                    string_vec![
+                        "sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ=="
+                    ]
                 ),
             ])
         );
@@ -244,12 +248,11 @@ mod tests {
             FxHashMap::from_iter([
                 (
                     "yaml".to_owned(),
-                    string_vec!["sha512-CBKFWExMn46Foo4cldiChEzn7S7SRV+wqiluAb6xmueD/fGyRHIhX8m14vVGgeFWjN540nKCNVj6P21eQjgTuA=="]
+                    string_vec![
+                        "sha512-CBKFWExMn46Foo4cldiChEzn7S7SRV+wqiluAb6xmueD/fGyRHIhX8m14vVGgeFWjN540nKCNVj6P21eQjgTuA=="
+                    ]
                 ),
-                (
-                    "libnpmdiff".to_owned(),
-                    string_vec!["5.0.17"]
-                )
+                ("libnpmdiff".to_owned(), string_vec!["5.0.17"])
             ])
         );
 

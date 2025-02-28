@@ -1,7 +1,7 @@
 use pest::{
+    Parser,
     error::Error,
     iterators::{Pair, Pairs},
-    Parser,
 };
 use pest_derive::Parser;
 use std::borrow::Cow;

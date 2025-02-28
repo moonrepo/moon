@@ -1,12 +1,12 @@
-use crate::python_tool::{get_python_tool_paths, PythonTool};
+use crate::python_tool::{PythonTool, get_python_tool_paths};
 use moon_config::UvConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::Command;
-use moon_python_lang::{uv, LockfileDependencyVersions};
+use moon_python_lang::{LockfileDependencyVersions, uv};
 use moon_tool::{
-    async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
-    use_global_tool_on_path, DependencyManager, Tool,
+    DependencyManager, Tool, async_trait, get_proto_env_vars, get_proto_version_env,
+    load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
 };
 use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;

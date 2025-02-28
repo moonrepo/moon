@@ -111,7 +111,7 @@ mod windows {
 
     // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
     // https://docs.rs/windows-sys/latest/windows_sys/Win32/System/Threading/fn.TerminateProcess.html
-    extern "system" {
+    unsafe extern "system" {
         fn TerminateProcess(hProcess: *mut c_void, uExitCode: c_uint) -> c_int;
     }
 

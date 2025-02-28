@@ -1,7 +1,7 @@
 use crate::blob::*;
-use crate::fs_digest::{create_timestamp_from_naive, OutputDigests};
+use crate::fs_digest::{OutputDigests, create_timestamp_from_naive};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    command, platform, Action, ActionResult, Command, Digest, ExecutedActionMetadata,
+    Action, ActionResult, Command, Digest, ExecutedActionMetadata, command, platform,
 };
 use moon_action::Operation;
 use moon_task::Task;

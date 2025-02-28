@@ -5,7 +5,7 @@ use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::sync::Arc;
-use tokio::sync::{mpsc::Sender, RwLock, Semaphore};
+use tokio::sync::{RwLock, Semaphore, mpsc::Sender};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]

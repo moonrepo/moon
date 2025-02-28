@@ -271,12 +271,14 @@ mod command_builder {
                 })
                 .await;
 
-            assert!(command
-                .shell
-                .unwrap()
-                .bin
-                .to_string_lossy()
-                .contains("bash"));
+            assert!(
+                command
+                    .shell
+                    .unwrap()
+                    .bin
+                    .to_string_lossy()
+                    .contains("bash")
+            );
         }
     }
 

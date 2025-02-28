@@ -358,8 +358,7 @@ impl<'a> ScriptParser<'a> {
             if INVALID_CD.is_match(script) {
                 warn!(
                     "Changing directories (cd ...) is not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable to handle it: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
-                    name,
-                    self.project_id,
+                    name, self.project_id,
                 );
 
                 continue;
@@ -369,8 +368,7 @@ impl<'a> ScriptParser<'a> {
             if INVALID_REDIRECT.is_match(script) {
                 warn!(
                     "Redirects (<, >, etc) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable that does the redirect: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
-                    name,
-                    self.project_id,
+                    name, self.project_id,
                 );
 
                 continue;
@@ -380,8 +378,7 @@ impl<'a> ScriptParser<'a> {
             if INVALID_PIPE.is_match(script) {
                 warn!(
                     "Pipes (|) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable that does the piping: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
-                    name,
-                    self.project_id,
+                    name, self.project_id,
                 );
 
                 continue;
@@ -391,8 +388,7 @@ impl<'a> ScriptParser<'a> {
             if INVALID_OPERATOR.is_match(script) {
                 warn!(
                     "OR operator (||) is not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable to handle it: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
-                    name,
-                    self.project_id,
+                    name, self.project_id,
                 );
 
                 continue;

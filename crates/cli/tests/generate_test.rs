@@ -1,6 +1,6 @@
 use moon_common::path::standardize_separators;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, predicates::prelude::*,
 };
 use std::fs;
 
@@ -436,13 +436,14 @@ mod frontmatter {
 
         assert.success();
 
-        assert!(sandbox
-            .path()
-            .join("./test/components/SmallButton.tsx")
-            .exists());
-        assert_snapshot!(fs::read_to_string(
-            sandbox.path().join("./test/components/SmallButton.tsx")
-        )
-        .unwrap());
+        assert!(
+            sandbox
+                .path()
+                .join("./test/components/SmallButton.tsx")
+                .exists()
+        );
+        assert_snapshot!(
+            fs::read_to_string(sandbox.path().join("./test/components/SmallButton.tsx")).unwrap()
+        );
     }
 }

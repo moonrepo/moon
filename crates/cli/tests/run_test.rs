@@ -6,9 +6,9 @@ use moon_config::{
 use moon_task::Target;
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils::{
-    assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
+    Sandbox, assert_debug_snapshot, assert_snapshot, create_sandbox_with_config,
+    get_cases_fixture_configs,
     predicates::{self, prelude::*},
-    Sandbox,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
@@ -191,9 +191,11 @@ fn disambiguates_same_tasks_with_diff_args_envs() {
     let output = assert.output();
 
     // The order changes so we can't snapshot it
-    assert!(predicate::str::contains("taskDeps:base")
-        .count(11) // 4 start + 4 end + 3 output prefixes
-        .eval(&output));
+    assert!(
+        predicate::str::contains("taskDeps:base")
+            .count(11) // 4 start + 4 end + 3 output prefixes
+            .eval(&output)
+    );
     assert!(predicate::str::contains("a b c").eval(&output));
     assert!(predicate::str::contains("TEST_VAR=value").eval(&output));
     assert!(predicate::str::contains("TEST_VAR=value x y z").eval(&output));
@@ -276,10 +278,12 @@ mod configs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains(
-            "projects: expected a list of globs, a map of projects, or both"
-        )
-        .eval(&output));
+        assert!(
+            predicate::str::contains(
+                "projects: expected a list of globs, a map of projects, or both"
+            )
+            .eval(&output)
+        );
     }
 
     #[test]
@@ -789,18 +793,22 @@ mod outputs {
         let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
 
         // hash
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{hash}.json"))
+                .exists()
+        );
 
         // outputs
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{hash}.tar.gz"))
+                .exists()
+        );
     }
 
     #[test]
@@ -815,18 +823,22 @@ mod outputs {
         let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFiles");
 
         // hash
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{hash}.json"))
+                .exists()
+        );
 
         // outputs
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{hash}.tar.gz"))
+                .exists()
+        );
     }
 
     #[test]
@@ -841,18 +853,22 @@ mod outputs {
         let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolder");
 
         // hash
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{hash}.json"))
+                .exists()
+        );
 
         // outputs
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{hash}.tar.gz"))
+                .exists()
+        );
     }
 
     #[test]
@@ -867,18 +883,22 @@ mod outputs {
         let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolders");
 
         // hash
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{hash}.json"))
+                .exists()
+        );
 
         // outputs
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{hash}.tar.gz"))
+                .exists()
+        );
     }
 
     #[test]
@@ -893,18 +913,22 @@ mod outputs {
         let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
         // hash
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{hash}.json"))
+                .exists()
+        );
 
         // outputs
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"))
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{hash}.tar.gz"))
+                .exists()
+        );
     }
 
     #[test]
@@ -1176,10 +1200,12 @@ mod outputs {
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-            assert!(!sandbox
-                .path()
-                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                .exists());
+            assert!(
+                !sandbox
+                    .path()
+                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
+                    .exists()
+            );
         }
 
         #[test]
@@ -1199,10 +1225,12 @@ mod outputs {
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-            assert!(sandbox
-                .path()
-                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
+                    .exists()
+            );
         }
 
         #[test]
@@ -1222,10 +1250,12 @@ mod outputs {
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-            assert!(sandbox
-                .path()
-                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
+                    .exists()
+            );
         }
 
         #[test]
@@ -1245,10 +1275,12 @@ mod outputs {
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-            assert!(!sandbox
-                .path()
-                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                .exists());
+            assert!(
+                !sandbox
+                    .path()
+                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
+                    .exists()
+            );
         }
 
         #[test]
@@ -1318,10 +1350,12 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            assert!(predicates::str::contains(
-                "Dependencies scope (^:) is not supported in run contexts."
-            )
-            .eval(&assert.output()));
+            assert!(
+                predicates::str::contains(
+                    "Dependencies scope (^:) is not supported in run contexts."
+                )
+                .eval(&assert.output())
+            );
         }
 
         #[test]
@@ -1484,10 +1518,12 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains(
-            "Target(s) files:noop not affected by touched files (using status all)"
-        )
-        .eval(&output));
+        assert!(
+            predicate::str::contains(
+                "Target(s) files:noop not affected by touched files (using status all)"
+            )
+            .eval(&output)
+        );
     }
 
     #[test]
@@ -1648,10 +1684,12 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains(
-            "Target(s) files:noop not affected by touched files (using status deleted)"
-        )
-        .eval(&output));
+        assert!(
+            predicate::str::contains(
+                "Target(s) files:noop not affected by touched files (using status deleted)"
+            )
+            .eval(&output)
+        );
     }
 
     #[test]
@@ -1791,10 +1829,12 @@ mod affected {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains(
-                "Target(s) root:noop not affected by touched files (using status deleted)"
-            )
-            .eval(&output));
+            assert!(
+                predicate::str::contains(
+                    "Target(s) root:noop not affected by touched files (using status deleted)"
+                )
+                .eval(&output)
+            );
         }
     }
 }

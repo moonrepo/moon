@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use miette::Diagnostic;
-use moon_common::{consts, Id, Style, Stylize};
+use moon_common::{Id, Style, Stylize, consts};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]

@@ -458,10 +458,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("npm/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
 
         // npm installs prod deps for unfocused
         // assert!(!sandbox.path().join("node_modules/react").exists());
@@ -490,10 +492,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("pnpm/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
         assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
@@ -520,10 +524,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("npm/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
         assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
@@ -550,10 +556,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("yarn/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
 
         // yarn 1 does not support focusing
         // assert!(!sandbox.path().join("node_modules/react").exists());

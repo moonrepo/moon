@@ -1,7 +1,7 @@
 [package]
 name = "moon_task_runner"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "System for running tasks."
 homepage = "https://moonrepo.dev/moon"

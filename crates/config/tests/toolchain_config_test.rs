@@ -231,7 +231,7 @@ bun:
         #[test]
         #[serial]
         fn inherits_version_from_env_var() {
-            env::set_var("MOON_BUN_VERSION", "1.0.0");
+            unsafe { env::set_var("MOON_BUN_VERSION", "1.0.0") };
 
             let config = test_load_config(
                 FILENAME,
@@ -250,7 +250,7 @@ bun:
                 },
             );
 
-            env::remove_var("MOON_BUN_VERSION");
+            unsafe { env::remove_var("MOON_BUN_VERSION") };
 
             assert_eq!(
                 config.bun.unwrap().version.unwrap(),
@@ -429,7 +429,7 @@ deno:
         #[test]
         #[serial]
         fn inherits_version_from_env_var() {
-            env::set_var("MOON_DENO_VERSION", "1.20.0");
+            unsafe { env::set_var("MOON_DENO_VERSION", "1.20.0") };
 
             let config = test_load_config(
                 FILENAME,
@@ -448,7 +448,7 @@ deno:
                 },
             );
 
-            env::remove_var("MOON_DENO_VERSION");
+            unsafe { env::remove_var("MOON_DENO_VERSION") };
 
             assert_eq!(
                 config.deno.unwrap().version.unwrap(),
@@ -551,7 +551,7 @@ node:
         #[test]
         #[serial]
         fn inherits_version_from_env_var() {
-            env::set_var("MOON_NODE_VERSION", "19.0.0");
+            unsafe { env::set_var("MOON_NODE_VERSION", "19.0.0") };
 
             let config = test_load_config(
                 FILENAME,
@@ -570,7 +570,7 @@ node:
                 },
             );
 
-            env::remove_var("MOON_NODE_VERSION");
+            unsafe { env::remove_var("MOON_NODE_VERSION") };
 
             assert_eq!(
                 config.node.unwrap().version.unwrap(),
@@ -623,7 +623,7 @@ node:
             #[test]
             #[serial]
             fn inherits_version_from_env_var() {
-                env::set_var("MOON_NPM_VERSION", "10.0.0");
+                unsafe { env::set_var("MOON_NPM_VERSION", "10.0.0") };
 
                 let config = test_load_config(
                     FILENAME,
@@ -643,7 +643,7 @@ node:
                     },
                 );
 
-                env::remove_var("MOON_NPM_VERSION");
+                unsafe { env::remove_var("MOON_NPM_VERSION") };
 
                 assert_eq!(
                     config.node.unwrap().npm.version.unwrap(),
@@ -756,7 +756,7 @@ node:
             #[test]
             #[serial]
             fn inherits_version_from_env_var() {
-                env::set_var("MOON_PNPM_VERSION", "10.0.0");
+                unsafe { env::set_var("MOON_PNPM_VERSION", "10.0.0") };
 
                 let config = test_load_config(
                     FILENAME,
@@ -776,7 +776,7 @@ node:
                     },
                 );
 
-                env::remove_var("MOON_PNPM_VERSION");
+                unsafe { env::remove_var("MOON_PNPM_VERSION") };
 
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().version.unwrap(),
@@ -872,7 +872,7 @@ node:
             #[test]
             #[serial]
             fn inherits_version_from_env_var() {
-                env::set_var("MOON_YARN_VERSION", "10.0.0");
+                unsafe { env::set_var("MOON_YARN_VERSION", "10.0.0") };
 
                 let config = test_load_config(
                     FILENAME,
@@ -892,7 +892,7 @@ node:
                     },
                 );
 
-                env::remove_var("MOON_YARN_VERSION");
+                unsafe { env::remove_var("MOON_YARN_VERSION") };
 
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().version.unwrap(),
@@ -988,7 +988,7 @@ node:
             #[test]
             #[serial]
             fn inherits_version_from_env_var() {
-                env::set_var("MOON_BUN_VERSION", "1.0.0");
+                unsafe { env::set_var("MOON_BUN_VERSION", "1.0.0") };
 
                 let config = test_load_config(
                     FILENAME,
@@ -1008,7 +1008,7 @@ node:
                     },
                 );
 
-                env::remove_var("MOON_BUN_VERSION");
+                unsafe { env::remove_var("MOON_BUN_VERSION") };
 
                 assert_eq!(
                     config.node.unwrap().bun.unwrap().version.unwrap(),
@@ -1148,7 +1148,7 @@ python:
         #[test]
         #[serial]
         fn inherits_version_from_env_var() {
-            env::set_var("MOON_PYTHON_VERSION", "1.0.0");
+            unsafe { env::set_var("MOON_PYTHON_VERSION", "1.0.0") };
 
             let config = test_load_config(
                 FILENAME,
@@ -1167,7 +1167,7 @@ python:
                 },
             );
 
-            env::remove_var("MOON_PYTHON_VERSION");
+            unsafe { env::remove_var("MOON_PYTHON_VERSION") };
 
             assert_eq!(
                 config.python.unwrap().version.unwrap(),
@@ -1308,7 +1308,7 @@ rust:
         #[test]
         #[serial]
         fn inherits_version_from_env_var() {
-            env::set_var("MOON_RUST_VERSION", "1.70.0");
+            unsafe { env::set_var("MOON_RUST_VERSION", "1.70.0") };
 
             let config = test_load_config(
                 FILENAME,
@@ -1327,7 +1327,7 @@ rust:
                 },
             );
 
-            env::remove_var("MOON_RUST_VERSION");
+            unsafe { env::remove_var("MOON_RUST_VERSION") };
 
             assert_eq!(
                 config.rust.unwrap().version.unwrap(),

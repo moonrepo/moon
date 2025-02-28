@@ -10,8 +10,8 @@ use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
-    host::HostData, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
-    PluginLoader, PluginLocator, PluginManifest, Wasm,
+    Id, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm, host::HostData,
+    inject_default_manifest_config, to_virtual_path,
 };
 
 #[allow(dead_code)]

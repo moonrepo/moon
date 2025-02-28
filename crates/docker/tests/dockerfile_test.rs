@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_docker::{generate_dockerfile, GenerateDockerfileOptions};
+use moon_docker::{GenerateDockerfileOptions, generate_dockerfile};
 use moon_target::Target;
 use starbase_sandbox::assert_snapshot;
 

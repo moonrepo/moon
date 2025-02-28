@@ -1,6 +1,6 @@
 use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};

@@ -3,7 +3,7 @@ slug: proto-v0.47
 title: proto v0.47 - New backend system & asdf support
 authors: [milesj]
 tags: [backend, plugin, asdf]
-# image: ./img/proto/v0.45.png
+image: ./img/proto/v0.47.png
 ---
 
 In this release, we're stoked to release backends, a new type of plugin that enables the use of
@@ -44,8 +44,8 @@ backend = "asdf"
 
 This backend implementation _does not_ use the `asdf` binary itself, and instead emulates the
 environment as best we can. Because of this, some tools may not be usable through proto, especially
-those that rely on the `exec-env` script. Furthermore, the 2 bullet points above are unfortunately
-still restrictions: This is Unix only and requires Bash.
+those that rely on `asdf` itself. Furthermore, the 2 bullet points above are unfortunately still
+restrictions: This is Unix only and requires Bash.
 
 > In the next release, we'll investigate the use of Scoop or Chocolatey as a potential backend for
 > Windows users. If you're interested in this endeavor, send us a message in Discord!

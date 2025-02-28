@@ -50,8 +50,31 @@ installing a tool, loading versions, and locating executables. This backend impl
 not_ use the `asdf` binary itself, and instead emulates the environment as best we can. Because of
 this, some tools may not be usable through proto.
 
-> The `latest-stable`, `exec-env`, `exec-path`, `post-*`, `pre-*`, and `help.*` asdf scripts are
-> currently not supported by this backend.
+```toml title=".prototools"
+<id> = "asdf:20"
+```
+
+By default, the ID pinned in `.prototools` is the
+[asdf shortname](https://asdf-vm.com/plugins/create.html#plugin-shortname-index) used when cloning a
+repository. If the ID is different than the shortname (`node` vs `nodejs`), you can configure the
+`asdf-shortname` setting.
+
+```toml title=".prototools"
+node = "asdf:20"
+
+[tools.node]
+asdf-shortname = "nodejs"
+```
+
+The following settings are supported:
+
+- `asdf-shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins)
+  if different than the configured ID.
+- `asdf-repository` (string) - The Git repository URL in which to locate
+  [scripts](https://asdf-vm.com/plugins/create.html#scripts-overview). If not defined, is extracted
+  from the shortname plugin index.
+- `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
+  shim/bin. If not defined, we'll automatically scan the `bin` directory.
 
 ## Semantic versions
 

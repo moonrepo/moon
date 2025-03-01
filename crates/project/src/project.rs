@@ -144,7 +144,7 @@ cacheable!(
     pub struct ProjectFragment {
         /// When treated as a dependency for another project,
         /// the scope of that dependency relationship.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub dependency_scope: Option<DependencyScope>,
 
         /// ID of the project.
@@ -155,7 +155,7 @@ cacheable!(
 
         /// Toolchains the project belongs to. Does not include
         /// toolchains that have been disabled through config.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
     }
 );

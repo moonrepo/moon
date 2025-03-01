@@ -6,7 +6,11 @@ use warpgate_pdk::AnyResult;
 
 /// Get configuration for the current toolchain plugin.
 pub fn get_toolchain_config<T: Default + DeserializeOwned>(value: json::Value) -> AnyResult<T> {
-    let config = json::from_value(value)?;
+    let config = if value.is_object() {
+        json::from_value(value)?
+    } else {
+        T::default()
+    };
 
     Ok(config)
 }

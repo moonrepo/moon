@@ -6,13 +6,15 @@ use moon_pdk_api::{
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fmt;
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::ops::Deref;
 use std::path::PathBuf;
 use warpgate::{
     Id, PluginContainer, PluginLoader, PluginManifest, Wasm, host::*,
     inject_default_manifest_config, test_utils::*,
 };
+
 pub struct MoonWasmSandbox {
     pub sandbox: Sandbox,
     pub home_dir: PathBuf,
@@ -160,6 +162,34 @@ impl MoonWasmSandbox {
         });
 
         PluginContainer::new(id, manifest, funcs).unwrap()
+    }
+
+    pub fn enable_logging(&self) {
+        let log_file = std::env::current_dir().unwrap().join(
+            self.wasm_file
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default()
+                .replace(".wasm", ".log"),
+        );
+
+        // Remove the file otherwise it keeps growing
+        if log_file.exists() {
+            let _ = fs::remove_file(&log_file);
+        }
+
+        let _ = extism::set_log_callback(
+            move |line| {
+                let mut file = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&log_file)
+                    .unwrap();
+
+                file.write_all(line.as_bytes()).unwrap();
+            },
+            "trace",
+        );
     }
 }
 

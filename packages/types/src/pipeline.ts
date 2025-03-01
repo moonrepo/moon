@@ -183,7 +183,7 @@ export interface ActionNodeSyncProject {
 	action: 'sync-project';
 	params: {
 		runtime: Runtime;
-		project_id: string;
+		projectId: string;
 	};
 }
 

@@ -1,6 +1,8 @@
-use crate::wrappers::ExtensionTestWrapper;
-use moon_pdk_api::{RegisterExtensionInput, RegisterExtensionOutput};
-// use proto_core::{Backend, ProtoEnvironment, Tool, inject_proto_manifest_config};
+use crate::wrappers::*;
+use moon_pdk_api::{
+    RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
+    RegisterToolchainOutput,
+};
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -63,6 +65,7 @@ impl MoonWasmSandbox {
 
         // Create config
         let mut config = self.create_config();
+        config.plugin_id(&id);
 
         op(&mut config);
 
@@ -80,36 +83,53 @@ impl MoonWasmSandbox {
             .await
             .unwrap();
 
-        ExtensionTestWrapper { metadata, plugin }
+        ExtensionTestWrapper {
+            metadata,
+            plugin,
+            root: self.root.clone(),
+        }
     }
 
-    // pub async fn create_toolchain_with_config(
-    //     &self,
-    //     id: &str,
-    //     mut op: impl FnMut(&mut ConfigBuilder),
-    // ) -> ExtensionTestWrapper {
-    //     let id = Id::new(id).unwrap();
+    pub async fn create_toolchain(&self, id: &str) -> ToolchainTestWrapper {
+        self.create_toolchain_with_config(id, |_| {}).await
+    }
 
-    //     // Create proto
-    //     let mut proto = ProtoEnvironment::new_testing(&self.root).unwrap();
-    //     proto.working_dir = self.root.clone();
+    pub async fn create_toolchain_with_config(
+        &self,
+        id: &str,
+        mut op: impl FnMut(&mut ConfigBuilder),
+    ) -> ToolchainTestWrapper {
+        let id = Id::new(id).unwrap();
 
-    //     // Create manifest
-    //     let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
+        // Create manifest
+        let mut manifest = PluginManifest::new([Wasm::file(self.wasm_file.clone())]);
 
-    //     inject_default_manifest_config(&id, &proto.home_dir, &mut manifest).unwrap();
-    //     inject_proto_manifest_config(&id, &proto, &mut manifest).unwrap();
+        // Create config
+        let mut config = self.create_config();
+        config.plugin_id(&id);
 
-    //     // Create config
-    //     let mut config = self.create_config();
-    //     op(&mut config);
+        op(&mut config);
 
-    //     manifest.config.extend(config.build());
+        manifest.config.extend(config.build());
 
-    //     ExtensionTestWrapper {
-    //         plugin: self.create_plugin_container(id),
-    //     }
-    // }
+        // Create plugin
+        let plugin = self.create_plugin_container(id, manifest);
+        let metadata: RegisterToolchainOutput = plugin
+            .cache_func_with(
+                "register_toolchain",
+                RegisterToolchainInput {
+                    id: plugin.id.to_string(),
+                },
+            )
+            .await
+            .unwrap();
+
+        ToolchainTestWrapper {
+            metadata,
+            plugin,
+            root: self.root.clone(),
+        }
+    }
 
     fn create_plugin_container(&self, id: Id, mut manifest: PluginManifest) -> PluginContainer {
         let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));

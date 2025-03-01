@@ -4385,6 +4385,7 @@ dependencies = [
  "moon_pdk_api",
  "serde",
  "serde_json",
+ "starbase_sandbox",
  "warpgate",
 ]
 

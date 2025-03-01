@@ -199,7 +199,7 @@ impl ActionNode {
                 }
             }
             Self::SyncProject(inner) => {
-                format!("SyncProject({})", inner.project_id)
+                format!("SyncProject({}, {})", inner.runtime.id(), inner.project_id)
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),

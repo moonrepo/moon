@@ -1,8 +1,9 @@
-use moon_pdk_api::{ExecuteExtensionInput, MoonContext};
+use moon_pdk_api::{ExecuteExtensionInput, MoonContext, RegisterExtensionOutput};
 use std::path::Path;
 use warpgate::PluginContainer;
 
 pub struct ExtensionTestWrapper {
+    pub metadata: RegisterExtensionOutput,
     pub plugin: PluginContainer,
 }
 

@@ -155,7 +155,7 @@ export interface ActionNodeInstallProjectDeps {
 	action: 'install-project-deps';
 	params: {
 		runtime: Runtime;
-		project_id: string;
+		projectId: string;
 	};
 }
 

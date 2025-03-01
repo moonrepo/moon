@@ -35,7 +35,7 @@ mod command_executor {
         assert_eq!(result.attempts.len(), 1);
 
         let attempt = result.attempts.first().unwrap();
-        let output = attempt.get_output().unwrap();
+        let output = attempt.get_exec_output().unwrap();
 
         assert_eq!(attempt.status, ActionStatus::Passed);
         assert!(attempt.meta.is_task_execution());
@@ -70,7 +70,7 @@ mod command_executor {
         assert_eq!(result.attempts.len(), 1);
 
         let attempt = result.attempts.first().unwrap();
-        let output = attempt.get_output().unwrap();
+        let output = attempt.get_exec_output().unwrap();
 
         assert_eq!(attempt.status, ActionStatus::Failed);
         assert!(attempt.meta.is_task_execution());
@@ -102,7 +102,7 @@ mod command_executor {
 
         for i in 0..4 {
             let attempt = &result.attempts[i];
-            let output = attempt.get_output().unwrap();
+            let output = attempt.get_exec_output().unwrap();
 
             assert_eq!(attempt.status, ActionStatus::Failed);
             assert!(attempt.meta.is_task_execution());

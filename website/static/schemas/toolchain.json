@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Configures all tools and platforms required for tasks. Docs: https://moonrepo.dev/docs/config/toolchain",
+  "description": "Configures all tools and platforms. Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
     "$schema": {

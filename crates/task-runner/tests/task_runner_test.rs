@@ -782,7 +782,7 @@ mod task_runner {
             assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Passed);
 
-            let output = operation.get_output().unwrap();
+            let output = operation.get_exec_output().unwrap();
 
             assert_eq!(output.exit_code, Some(0));
             assert_eq!(output.stdout.as_ref().unwrap().trim(), "test");
@@ -807,7 +807,7 @@ mod task_runner {
             assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Failed);
 
-            let output = operation.get_output().unwrap();
+            let output = operation.get_exec_output().unwrap();
 
             assert_eq!(output.exit_code, Some(1));
         }
@@ -1135,7 +1135,7 @@ mod task_runner {
                 assert!(result);
 
                 let operation = runner.operations.last().unwrap();
-                let output = operation.get_output().unwrap();
+                let output = operation.get_exec_output().unwrap();
 
                 assert_eq!(output.exit_code.unwrap(), 0);
                 assert_eq!(output.stderr.as_deref().unwrap(), "stderr");

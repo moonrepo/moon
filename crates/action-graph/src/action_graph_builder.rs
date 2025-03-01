@@ -225,7 +225,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         let node = if in_project {
             ActionNode::install_project_deps(InstallProjectDepsNode {
-                project: project.id.to_owned(),
+                project_id: project.id.to_owned(),
                 runtime: self.get_runtime(project, &primary_toolchain, true),
             })
         } else {
@@ -678,7 +678,7 @@ impl<'app> ActionGraphBuilder<'app> {
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
         let node = ActionNode::sync_project(SyncProjectNode {
-            project: project.id.clone(),
+            project_id: project.id.clone(),
             runtime: self.get_runtime(project, &project.toolchains[0], true),
         });
 

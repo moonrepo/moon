@@ -3655,6 +3655,7 @@ dependencies = [
 name = "moon_actions"
 version = "0.0.1"
 dependencies = [
+ "convert_case 0.8.0",
  "miette 7.5.0",
  "moon_action",
  "moon_action_context",
@@ -3824,6 +3825,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_console",
+ "moon_toolchain_plugin",
  "moon_vcs",
 ]
 
@@ -4351,7 +4353,11 @@ version = "0.0.14"
 dependencies = [
  "clap",
  "extism-pdk",
+ "moon_common",
  "moon_pdk_api",
+ "moon_project",
+ "moon_task",
+ "rustc-hash 2.1.1",
  "serde",
  "warpgate_pdk",
 ]
@@ -4362,9 +4368,12 @@ version = "0.0.14"
 dependencies = [
  "moon_common",
  "moon_config",
+ "moon_project",
+ "moon_task",
  "rustc-hash 2.1.1",
  "schematic",
  "serde",
+ "serde_json",
  "warpgate_api",
 ]
 
@@ -4412,6 +4421,7 @@ dependencies = [
  "moon_target",
  "moon_workspace_graph",
  "proto_core",
+ "rustc-hash 2.1.1",
  "scc",
  "serde_json",
  "starbase_sandbox",
@@ -4859,6 +4869,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_pdk_api",
  "moon_platform",
  "moon_process",
  "moon_project",
@@ -4911,6 +4922,7 @@ dependencies = [
  "moon_rust_platform",
  "moon_system_platform",
  "moon_task_graph",
+ "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace",
  "moon_workspace_graph",
@@ -4960,6 +4972,7 @@ name = "moon_toolchain_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "futures",
  "miette 7.5.0",
  "moon_common",
  "moon_config",
@@ -4967,6 +4980,7 @@ dependencies = [
  "moon_plugin",
  "proto_core",
  "rustc-hash 2.1.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

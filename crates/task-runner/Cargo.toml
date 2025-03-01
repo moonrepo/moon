@@ -18,6 +18,7 @@ moon_cache_item = { path = "../cache-item" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
+moon_pdk_api = { path = "../pdk-api" }
 # TODO remove
 moon_platform = { path = "../../legacy/core/platform" }
 moon_process = { path = "../process" }

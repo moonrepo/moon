@@ -2,7 +2,7 @@ use crate::common::*;
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use schematic::Schema;
-use warpgate_api::{api_struct, VirtualPath};
+use warpgate_api::{VirtualPath, api_struct};
 
 // METADATA
 

@@ -5,7 +5,9 @@ use moon_pdk_api::{
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
+use starbase_utils::glob;
 use std::fmt;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, instrument};
@@ -73,6 +75,27 @@ impl ToolchainPlugin {
         }
 
         output
+    }
+
+    pub fn has_files_in_dir(&self, dir: &Path) -> miette::Result<bool> {
+        let mut patterns = vec![];
+        patterns.extend(&self.metadata.config_file_globs);
+
+        if let Some(file) = &self.metadata.manifest_file_name {
+            patterns.push(file);
+        }
+
+        if let Some(file) = &self.metadata.lock_file_name {
+            patterns.push(file);
+        }
+
+        if patterns.is_empty() {
+            return Ok(false);
+        }
+
+        let results = glob::walk(dir, patterns)?;
+
+        Ok(!results.is_empty())
     }
 
     pub async fn has_func(&self, func: &str) -> bool {

@@ -18,7 +18,7 @@ futures = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
+starbase_utils = { workspace = true, features = ["glob", "json"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 

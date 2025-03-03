@@ -113,8 +113,8 @@ impl<'task> CommandExecutor<'task> {
                 interactive: bool,
             ) -> miette::Result<Output> {
                 match (stream, interactive) {
-                    (true, true) | (false, true) => command.exec_stream_output().await,
-                    (true, false) => command.exec_stream_and_capture_output().await,
+                    (true, false) | (true, true) => command.exec_stream_and_capture_output().await,
+                    (false, true) => command.exec_stream_output().await,
                     _ => command.exec_capture_output().await,
                 }
             }

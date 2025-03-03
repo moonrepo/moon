@@ -1,6 +1,6 @@
 [package]
 name = "moon_target"
-version = "0.0.10"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 description = "Project + task target identifier."
@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_common = { version = "0.0.11", path = "../common" }
+moon_common = { version = "0.1.0", path = "../common" }
 compact_str = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }

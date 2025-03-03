@@ -93,7 +93,7 @@ impl ActionState<'_> {
             ..Default::default()
         };
 
-        if let Some(exec) = operation.get_output() {
+        if let Some(exec) = operation.get_exec_output() {
             result.exit_code = exec.exit_code.unwrap_or_default();
 
             if let Some(stderr) = &exec.stderr {

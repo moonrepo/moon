@@ -1,12 +1,11 @@
-use crate::operations::{
-    run_plugin_operation, sync_codeowners, sync_config_schemas, sync_vcs_hooks,
-};
+use crate::operations::*;
 use crate::utils::should_skip_action;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_pdk_api::SyncWorkspaceInput;
 use moon_remote::RemoteService;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
@@ -51,14 +50,14 @@ pub async fn sync_workspace(
         let app_context = Arc::clone(&app_context);
 
         operation_futures.push(task::spawn(async move {
-            let op = Operation::sync_operation("Config schemas")
-                .track_async_with_check(
-                    || sync_config_schemas(&app_context, false),
-                    |result| result,
-                )
-                .await?;
-
-            Ok(vec![op])
+            Ok(vec![
+                Operation::sync_operation("system:configSchemas")
+                    .track_async_with_check(
+                        || sync_config_schemas(&app_context, false),
+                        |result| result,
+                    )
+                    .await?,
+            ])
         }));
     }
 
@@ -71,14 +70,14 @@ pub async fn sync_workspace(
         let app_context = Arc::clone(&app_context);
 
         operation_futures.push(task::spawn(async move {
-            let op = Operation::sync_operation("Codeowners")
-                .track_async_with_check(
-                    || sync_codeowners(&app_context, &workspace_graph, false),
-                    |result| result.is_some(),
-                )
-                .await?;
-
-            Ok(vec![op])
+            Ok(vec![
+                Operation::sync_operation("system:codeowners")
+                    .track_async_with_check(
+                        || sync_codeowners(&app_context, &workspace_graph, false),
+                        |result| result.is_some(),
+                    )
+                    .await?,
+            ])
         }));
     }
 
@@ -92,42 +91,34 @@ pub async fn sync_workspace(
         let app_context = Arc::clone(&app_context);
 
         operation_futures.push(task::spawn(async move {
-            let op = Operation::sync_operation("VCS hooks")
-                .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
-                .await?;
-
-            Ok(vec![op])
+            Ok(vec![
+                Operation::sync_operation("system:vcsHooks")
+                    .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
+                    .await?,
+            ])
         }));
     }
 
     if toolchain_registry.has_plugins() {
         debug!("Syncing operations from toolchains");
 
-        let mut sync_results = vec![];
-        let sync_context = toolchain_registry.create_context();
+        operation_futures.push(task::spawn(async move {
+            let mut ops = vec![];
 
-        for plugin_id in toolchain_registry.get_plugin_ids() {
-            if let Some(result) = toolchain_registry
-                .load(plugin_id)
-                .await?
-                .sync_workspace(sync_context.clone())
+            for sync_result in toolchain_registry
+                .sync_workspace(|registry, _| SyncWorkspaceInput {
+                    context: registry.create_context(),
+                })
                 .await?
             {
-                sync_results.push(result);
+                ops.push(convert_plugin_sync_operation_with_output(
+                    sync_result.operation,
+                    sync_result.output,
+                ));
             }
-        }
 
-        for result in sync_results {
-            operation_futures.push(task::spawn(async move {
-                let mut ops = vec![];
-
-                for op in result.operations {
-                    ops.push(run_plugin_operation(op).await?);
-                }
-
-                Ok(ops)
-            }));
-        }
+            Ok(ops)
+        }));
     }
 
     for future in operation_futures {

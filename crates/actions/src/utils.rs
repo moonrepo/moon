@@ -1,7 +1,7 @@
 use std::env;
 
 pub fn should_skip_action(key: &str) -> Option<String> {
-    should_skip_action_matching(key, "")
+    should_skip_action_matching(key, "true")
 }
 
 pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> Option<String> {

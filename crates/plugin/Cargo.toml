@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_env = { path = "../env" }
-moon_pdk_api = { version = "0.0.14", path = "../pdk-api" }
+moon_pdk_api = { version = "0.1.0", path = "../pdk-api" }
 moon_target = { path = "../target" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
@@ -19,6 +19,7 @@ convert_case = { workspace = true }
 extism = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
+rustc-hash = { workspace = true }
 scc = { workspace = true }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }

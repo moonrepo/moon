@@ -42,7 +42,7 @@ pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
         .map(color::id)
         .collect::<Vec<_>>()
         .join(", ");
-    let context = session.get_app_context()?;
+    let context = session.get_app_context().await?;
 
     if args.clean {
         unsync_vcs_hooks(&context).await?;

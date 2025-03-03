@@ -18,8 +18,9 @@ pub struct InstallWorkspaceDepsNode {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScopedRuntimeNode {
-    pub project: Id,
+    pub project_id: Id,
     pub runtime: Runtime,
 }
 
@@ -174,7 +175,7 @@ impl ActionNode {
                 format!(
                     "InstallProjectDeps({}, {})",
                     inner.runtime.target(),
-                    inner.project
+                    inner.project_id
                 )
             }
             Self::RunTask(inner) => {
@@ -198,7 +199,7 @@ impl ActionNode {
                 }
             }
             Self::SyncProject(inner) => {
-                format!("SyncProject({}, {})", inner.runtime.id(), inner.project)
+                format!("SyncProject({}, {})", inner.runtime.id(), inner.project_id)
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),

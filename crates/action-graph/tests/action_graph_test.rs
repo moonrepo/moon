@@ -190,7 +190,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::install_project_deps(InstallProjectDepsNode {
-                        project: Id::raw("out"),
+                        project_id: Id::raw("out"),
                         runtime: create_node_runtime()
                     }),
                 ]
@@ -287,7 +287,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
@@ -328,7 +328,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
@@ -363,14 +363,14 @@ mod action_graph {
                         runtime: create_rust_runtime()
                     }),
                     ActionNode::install_project_deps(InstallProjectDepsNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_rust_runtime()
                     }),
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target, create_rust_runtime()))
@@ -519,7 +519,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(
@@ -586,7 +586,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task({
@@ -644,7 +644,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task({
@@ -711,7 +711,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(
@@ -778,7 +778,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task({
@@ -859,7 +859,7 @@ mod action_graph {
                         root: WorkspaceRelativePathBuf::new(),
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(
@@ -998,7 +998,7 @@ mod action_graph {
                             runtime: Runtime::system()
                         }),
                         ActionNode::sync_project(SyncProjectNode {
-                            project: Id::raw("deps-affected"),
+                            project_id: Id::raw("deps-affected"),
                             runtime: Runtime::system()
                         }),
                         ActionNode::run_task(RunTaskNode::new(
@@ -2007,7 +2007,7 @@ mod action_graph {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     })
                 ]
@@ -2033,11 +2033,11 @@ mod action_graph {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("foo"),
+                        project_id: Id::raw("foo"),
                         runtime: Runtime::system()
                     })
                 ]
@@ -2069,15 +2069,15 @@ mod action_graph {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("foo"),
+                        project_id: Id::raw("foo"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("qux"),
+                        project_id: Id::raw("qux"),
                         runtime: Runtime::system()
                     }),
                 ]
@@ -2105,11 +2105,11 @@ mod action_graph {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("foo"),
+                        project_id: Id::raw("foo"),
                         runtime: Runtime::system()
                     })
                 ]
@@ -2139,14 +2139,14 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_rust_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("qux"),
+                        project_id: Id::raw("qux"),
                         runtime: create_rust_runtime()
                     }),
                 ]
@@ -2176,7 +2176,7 @@ mod action_graph {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("bar"),
+                        project_id: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
                     ActionNode::setup_toolchain(SetupToolchainNode {
@@ -2186,7 +2186,7 @@ mod action_graph {
                         )
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project: Id::raw("baz"),
+                        project_id: Id::raw("baz"),
                         runtime: Runtime::new_override(
                             Id::raw("node"),
                             create_runtime_with_version(Version::new(18, 0, 0))

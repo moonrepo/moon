@@ -15,6 +15,7 @@ moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_project_graph = { path = "../project-graph" }
 moon_task_graph = { path = "../task-graph" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }

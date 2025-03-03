@@ -161,12 +161,6 @@ impl DefaultReporter {
                 continue;
             }
 
-            if let Some(attempt) = action.operations.get_last_execution() {
-                if attempt.has_failed() {
-                    self.print_operation_output(attempt, &TaskReportItem::default())?;
-                }
-            }
-
             self.out.print_checkpoint(
                 Checkpoint::RunFailed,
                 match &*action.node {
@@ -174,6 +168,16 @@ impl DefaultReporter {
                     _ => &action.label,
                 },
             )?;
+
+            if let Some(attempt) = action.operations.get_last_execution() {
+                if attempt.has_failed() {
+                    self.print_operation_output(attempt, &TaskReportItem::default())?;
+                }
+            }
+
+            // Force flush so the output is rendered in the correct order
+            self.out.flush()?;
+            self.err.flush()?;
 
             self.out.write_newline()?;
         }

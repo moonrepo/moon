@@ -3,10 +3,8 @@ use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
-use scc::hash_map::OccupiedEntry;
 use starbase_utils::fs;
 use std::fmt;
-use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
@@ -19,7 +17,7 @@ pub struct PluginRegistry<T: Plugin> {
     pub host_data: PluginHostData,
 
     loader: PluginLoader,
-    plugins: Arc<scc::HashMap<Id, T>>,
+    plugins: Arc<scc::HashMap<Id, Arc<T>>>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
@@ -101,7 +99,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, T>> {
+    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, Arc<T>>> {
         Arc::clone(&self.plugins)
     }
 
@@ -109,12 +107,12 @@ impl<T: Plugin> PluginRegistry<T> {
         &self.virtual_paths
     }
 
-    pub async fn get_instance(&self, id: &Id) -> miette::Result<PluginInstance<T>> {
+    pub async fn get_instance(&self, id: &Id) -> miette::Result<Arc<T>> {
         Ok(self
             .plugins
             .get_async(id)
             .await
-            .map(|entry| PluginInstance { entry })
+            .map(|entry| Arc::clone(entry.get()))
             .ok_or_else(|| PluginError::UnknownId {
                 id: id.to_string(),
                 ty: self.type_of,
@@ -125,14 +123,14 @@ impl<T: Plugin> PluginRegistry<T> {
         self.plugins.contains(id)
     }
 
-    pub async fn load<I>(&self, id: I) -> miette::Result<PluginInstance<T>>
+    pub async fn load<I>(&self, id: I) -> miette::Result<Arc<T>>
     where
-        I: AsRef<Id> + fmt::Debug,
+        I: AsRef<str>,
     {
-        let id = id.as_ref();
+        let id = Id::raw(id.as_ref());
 
-        if self.is_registered(id) {
-            return self.get_instance(id).await;
+        if self.is_registered(&id) {
+            return self.get_instance(&id).await;
         }
 
         Err(PluginError::UnknownId {
@@ -150,13 +148,13 @@ impl<T: Plugin> PluginRegistry<T> {
         mut op: F,
     ) -> miette::Result<()>
     where
-        I: AsRef<Id> + fmt::Debug,
+        I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
-        let id = id.as_ref();
+        let id = Id::raw(id.as_ref());
 
-        if self.plugins.contains(id) {
+        if self.plugins.contains(&id) {
             return Err(PluginError::ExistingId {
                 id: id.to_string(),
                 ty: self.type_of,
@@ -171,7 +169,7 @@ impl<T: Plugin> PluginRegistry<T> {
         );
 
         // Load the WASM file (this must happen first because of async)
-        let plugin_file = self.loader.load_plugin(id, locator).await?;
+        let plugin_file = self.loader.load_plugin(&id, locator).await?;
 
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(
@@ -185,7 +183,7 @@ impl<T: Plugin> PluginRegistry<T> {
         );
 
         // Create the manifest and let the consumer configure it
-        let mut manifest = self.create_manifest(id, plugin_file)?;
+        let mut manifest = self.create_manifest(&id, plugin_file)?;
 
         op(&mut manifest)?;
 
@@ -212,7 +210,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
-        I: AsRef<Id> + fmt::Debug,
+        I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
     {
         self.load_with_config(id, locator, |_| Ok(())).await
@@ -225,7 +223,7 @@ impl<T: Plugin> PluginRegistry<T> {
             "Registered plugin",
         );
 
-        let _ = self.plugins.insert(id, plugin);
+        let _ = self.plugins.insert(id, Arc::new(plugin));
     }
 }
 
@@ -240,20 +238,20 @@ impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
     }
 }
 
-pub struct PluginInstance<'l, T: Plugin> {
-    entry: OccupiedEntry<'l, Id, T>,
-}
+// pub struct PluginInstance<'l, T: Plugin> {
+//     entry: OccupiedEntry<'l, Id, T>,
+// }
 
-impl<T: Plugin> Deref for PluginInstance<'_, T> {
-    type Target = T;
+// impl<T: Plugin> Deref for PluginInstance<'_, T> {
+//     type Target = T;
 
-    fn deref(&self) -> &Self::Target {
-        self.entry.get()
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         self.entry.get()
+//     }
+// }
 
-impl<T: Plugin> DerefMut for PluginInstance<'_, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.entry.get_mut()
-    }
-}
+// impl<T: Plugin> DerefMut for PluginInstance<'_, T> {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         self.entry.get_mut()
+//     }
+// }

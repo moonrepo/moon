@@ -3655,6 +3655,7 @@ dependencies = [
 name = "moon_actions"
 version = "0.0.1"
 dependencies = [
+ "convert_case 0.8.0",
  "miette 7.5.0",
  "moon_action",
  "moon_action_context",
@@ -3824,6 +3825,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_console",
+ "moon_toolchain_plugin",
  "moon_vcs",
 ]
 
@@ -4005,7 +4007,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "0.0.11"
+version = "0.1.0"
 dependencies = [
  "compact_str 0.9.0",
  "dirs 6.0.0",
@@ -4021,7 +4023,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.0.14"
+version = "0.1.0"
 dependencies = [
  "httpmock",
  "indexmap 2.7.1",
@@ -4182,7 +4184,7 @@ dependencies = [
 
 [[package]]
 name = "moon_file_group"
-version = "0.0.3"
+version = "0.1.0"
 dependencies = [
  "common-path",
  "miette 7.5.0",
@@ -4347,35 +4349,43 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.0.14"
+version = "0.1.0"
 dependencies = [
  "clap",
  "extism-pdk",
+ "moon_common",
  "moon_pdk_api",
+ "moon_project",
+ "moon_task",
+ "rustc-hash 2.1.1",
  "serde",
  "warpgate_pdk",
 ]
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.0.14"
+version = "0.1.0"
 dependencies = [
  "moon_common",
  "moon_config",
+ "moon_project",
+ "moon_task",
  "rustc-hash 2.1.1",
  "schematic",
  "serde",
+ "serde_json",
  "warpgate_api",
 ]
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "0.0.15"
+version = "0.1.0"
 dependencies = [
  "extism",
  "moon_pdk_api",
  "serde",
  "serde_json",
+ "starbase_sandbox",
  "warpgate",
 ]
 
@@ -4412,6 +4422,7 @@ dependencies = [
  "moon_target",
  "moon_workspace_graph",
  "proto_core",
+ "rustc-hash 2.1.1",
  "scc",
  "serde_json",
  "starbase_sandbox",
@@ -4444,7 +4455,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "0.0.3"
+version = "0.1.0"
 dependencies = [
  "miette 7.5.0",
  "moon_common",
@@ -4726,7 +4737,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "0.0.10"
+version = "0.1.0"
 dependencies = [
  "compact_str 0.9.0",
  "miette 7.5.0",
@@ -4741,7 +4752,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "0.0.3"
+version = "0.1.0"
 dependencies = [
  "miette 7.5.0",
  "moon_common",
@@ -4859,6 +4870,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_pdk_api",
  "moon_platform",
  "moon_process",
  "moon_project",
@@ -4911,6 +4923,7 @@ dependencies = [
  "moon_rust_platform",
  "moon_system_platform",
  "moon_task_graph",
+ "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace",
  "moon_workspace_graph",
@@ -4960,6 +4973,7 @@ name = "moon_toolchain_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "futures",
  "miette 7.5.0",
  "moon_common",
  "moon_config",
@@ -4967,6 +4981,7 @@ dependencies = [
  "moon_plugin",
  "proto_core",
  "rustc-hash 2.1.1",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

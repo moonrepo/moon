@@ -21,7 +21,9 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "PartialTaskDependency".into(),
                 "PartialTaskDependencyConfig".into(),
                 "PartialTaskOptionsConfig".into(),
+                "PartialToolchainPluginConfig".into(),
                 "PlatformType".into(),
+                "PluginLocator".into(),
                 "TaskArgs".into(),
                 "TaskConfig".into(),
                 "TaskDependency".into(),
@@ -36,6 +38,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskUnixShell".into(),
                 "TaskWindowsShell".into(),
                 "TaskType".into(),
+                "ToolchainPluginConfig".into(),
                 "UnresolvedVersionSpec".into(),
             ],
             external_types: HashMap::from_iter([
@@ -49,7 +52,11 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 ),
                 (
                     "./toolchain-config".into(),
-                    vec!["UnresolvedVersionSpec".into()],
+                    vec![
+                        "PartialToolchainPluginConfig".into(),
+                        "ToolchainPluginConfig".into(),
+                        "UnresolvedVersionSpec".into(),
+                    ],
                 ),
             ]),
             ..Default::default()

@@ -155,7 +155,7 @@ export interface ActionNodeInstallProjectDeps {
 	action: 'install-project-deps';
 	params: {
 		runtime: Runtime;
-		project: string;
+		projectId: string;
 	};
 }
 
@@ -183,7 +183,7 @@ export interface ActionNodeSyncProject {
 	action: 'sync-project';
 	params: {
 		runtime: Runtime;
-		project: string;
+		projectId: string;
 	};
 }
 

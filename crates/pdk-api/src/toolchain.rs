@@ -1,12 +1,14 @@
 use crate::common::*;
+use moon_project::ProjectFragment;
+use moon_task::TaskFragment;
 use schematic::Schema;
-use warpgate_api::api_struct;
+use warpgate_api::{VirtualPath, api_struct};
 
 // METADATA
 
 api_struct!(
     /// Input passed to the `register_toolchain` function.
-    pub struct ToolchainMetadataInput {
+    pub struct RegisterToolchainInput {
         /// ID of the toolchain, as it was configured.
         pub id: String,
     }
@@ -14,17 +16,45 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `register_toolchain` function.
-    pub struct ToolchainMetadataOutput {
+    #[serde(default)]
+    pub struct RegisterToolchainOutput {
+        /// A list of config file names/globs, excluding lockfiles and
+        /// manifest, used by this toolchain. Will be used for detection.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub config_file_globs: Vec<String>,
+
         /// Schema shape of the tool's configuration.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub config_schema: Option<Schema>,
+
+        /// Optional description about what the toolchain does.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+
+        /// The name of the lock file used for dependency installs.
+        /// Will be used for detection.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub lock_file_name: Option<String>,
+
+        /// The name of the manifest file that contains project and
+        /// dependency information. Will be used for detection.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub manifest_file_name: Option<String>,
+
+        /// Name of the toolchain.
+        pub name: String,
 
         /// Version of the plugin.
         pub plugin_version: String,
+
+        /// The name of the directory that contains installed dependencies.
+        /// Will be used for detection.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub vendor_dir_name: Option<String>,
     }
 );
 
-// SYNC WORKSPACE
+// SYNC WORKSPACE / PROJECT
 
 api_struct!(
     /// Input passed to the `sync_workspace` function.
@@ -35,22 +65,63 @@ api_struct!(
 );
 
 api_struct!(
-    /// Output returned from the `sync_workspace` function.
-    pub struct SyncWorkspaceOutput {
-        /// Operations to perform.
-        pub operations: Vec<Operation>,
+    /// Input passed to the `sync_project` function.
+    pub struct SyncProjectInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Other projects that the project being synced depends on.
+        pub project_dependencies: Vec<ProjectFragment>,
+
+        /// Fragment of the project being synced.
+        pub project: ProjectFragment,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
-// SYNC PROJECT
+api_struct!(
+    /// Output returned from the `sync_workspace` and `sync_project` functions.
+    #[serde(default)]
+    pub struct SyncOutput {
+        /// List of files that have been changed because of the sync.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub changed_files: Vec<VirtualPath>,
 
-// api_struct!(
-//     /// Input passed to the `sync_project` function.
-//     pub struct SyncProjectInput {
-//         /// Current moon context.
-//         pub context: MoonContext,
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations_performed: Vec<Operation>,
 
-//         /// Other projects that the project being synced depends on.
-//         // pub dependencies: FxHashMap<Id, SyncProjectRecord>,
-//     }
-// );
+        /// Whether the action was skipped or not.
+        pub skipped: bool,
+    }
+);
+
+// RUN TASK
+
+api_struct!(
+    /// Input passed to the `hash_task_contents` function.
+    pub struct HashTaskContentsInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Fragment of the project that the task belongs to.
+        pub project: ProjectFragment,
+
+        /// Fragment of the task being hashed.
+        pub task: TaskFragment,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `hash_task_contents` function.
+    pub struct HashTaskContentsOutput {
+        /// Contents that should be included during hash generation.
+        pub contents: Vec<serde_json::Value>,
+    }
+);

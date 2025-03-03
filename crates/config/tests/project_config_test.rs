@@ -5,7 +5,8 @@ use std::path::Path;
 use moon_common::Id;
 use moon_config::{
     ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths,
-    PlatformType, ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
+    PlatformType, ProjectConfig, ProjectDependsOn, ProjectToolchainEntry, ProjectType, TaskArgs,
+    ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
@@ -603,6 +604,83 @@ toolchain:
 
             assert!(!ts.disabled);
             assert_eq!(ts.route_out_dir_to_cache, Some(true));
+        }
+
+        #[test]
+        fn can_disable_with_null() {
+            let config = test_load_config(
+                "moon.yml",
+                r"
+toolchain:
+    example: null
+",
+                |path| load_config_from_root(path, "."),
+            );
+
+            assert_eq!(
+                config.toolchain.toolchains.get("example").unwrap(),
+                &ProjectToolchainEntry::Disabled
+            );
+        }
+
+        #[test]
+        fn can_disable_with_false() {
+            let config = test_load_config(
+                "moon.yml",
+                r"
+toolchain:
+    example: false
+",
+                |path| load_config_from_root(path, "."),
+            );
+
+            assert_eq!(
+                config.toolchain.toolchains.get("example").unwrap(),
+                &ProjectToolchainEntry::Enabled(false)
+            );
+        }
+
+        #[test]
+        fn can_enable_with_true() {
+            let config = test_load_config(
+                "moon.yml",
+                r"
+toolchain:
+    example: true
+",
+                |path| load_config_from_root(path, "."),
+            );
+
+            assert_eq!(
+                config.toolchain.toolchains.get("example").unwrap(),
+                &ProjectToolchainEntry::Enabled(true)
+            );
+        }
+
+        #[test]
+        fn can_set_customg_config() {
+            let config = test_load_config(
+                "moon.yml",
+                r"
+toolchain:
+    example:
+        version: '1.2.3'
+        custom: true
+",
+                |path| load_config_from_root(path, "."),
+            );
+
+            assert_eq!(
+                config.toolchain.toolchains.get("example").unwrap(),
+                &ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                    plugin: None,
+                    version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
+                    config: FxHashMap::from_iter([(
+                        "custom".into(),
+                        serde_json::Value::Bool(true)
+                    )]),
+                })
+            );
         }
     }
 

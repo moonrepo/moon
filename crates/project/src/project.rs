@@ -4,8 +4,8 @@ use moon_common::{
     serde::is_wasm_bridge,
 };
 use moon_config::{
-    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
-    StackType,
+    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, PlatformType,
+    ProjectConfig, ProjectType, StackType,
 };
 use moon_file_group::FileGroup;
 use moon_task::{Target, Task};
@@ -83,6 +83,18 @@ impl Project {
             .collect::<Vec<_>>()
     }
 
+    /// Return a list of all toolchains that are enabled for this project.
+    /// Toolchains can be disabled through config.
+    pub fn get_enabled_toolchains(&self) -> Vec<&Id> {
+        self.toolchains
+            .iter()
+            .filter(|id| match self.config.toolchain.toolchains.get(*id) {
+                None => true,
+                Some(cfg) => cfg.is_enabled(),
+            })
+            .collect()
+    }
+
     /// Return true if the root-level project.
     pub fn is_root_level(&self) -> bool {
         is_root_level_source(&self.source)
@@ -92,6 +104,16 @@ impl Project {
     /// current project.
     pub fn matches_locator(&self, locator: &str) -> bool {
         self.id.as_str() == locator || self.alias.as_ref().is_some_and(|alias| alias == locator)
+    }
+
+    /// Convert the project into a fragment.
+    pub fn to_fragment(&self) -> ProjectFragment {
+        ProjectFragment {
+            dependency_scope: None,
+            id: self.id.clone(),
+            source: self.source.to_string(),
+            toolchains: self.get_enabled_toolchains().into_iter().cloned().collect(),
+        }
     }
 }
 
@@ -115,3 +137,25 @@ impl fmt::Display for Project {
         write!(f, "{}", self.id)
     }
 }
+
+cacheable!(
+    /// Fragment of a project including important fields.
+    #[derive(Clone, Debug, Default, PartialEq)]
+    pub struct ProjectFragment {
+        /// When treated as a dependency for another project,
+        /// the scope of that dependency relationship.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub dependency_scope: Option<DependencyScope>,
+
+        /// ID of the project.
+        pub id: Id,
+
+        /// Workspace relative path to the project root.
+        pub source: String,
+
+        /// Toolchains the project belongs to. Does not include
+        /// toolchains that have been disabled through config.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub toolchains: Vec<Id>,
+    }
+);

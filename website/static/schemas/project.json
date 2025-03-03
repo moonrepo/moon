@@ -383,6 +383,10 @@
         "unknown"
       ]
     },
+    "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
+      "type": "string"
+    },
     "ProjectDependsOn": {
       "description": "Expanded information about a project dependency.",
       "anyOf": [
@@ -656,6 +660,17 @@
           ],
           "markdownDescription": "Overrides `rust` settings."
         },
+        "toolchains": {
+          "title": "toolchains",
+          "description": "Overrides toolchains by their ID.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ProjectToolchainEntry"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "typescript": {
           "title": "typescript",
           "description": "Overrides typescript settings.",
@@ -672,6 +687,19 @@
       },
       "additionalProperties": false,
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
+    },
+    "ProjectToolchainEntry": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/definitions/ToolchainPluginConfig"
+        }
+      ]
     },
     "ProjectToolchainTypeScriptConfig": {
       "description": "Overrides top-level typescript settings.",
@@ -1579,6 +1607,55 @@
         "pwsh",
         "xonsh"
       ]
+    },
+    "ToolchainPluginConfig": {
+      "description": "Configures an individual toolchain.",
+      "type": "object",
+      "properties": {
+        "config": {
+          "title": "config",
+          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of the toolchain to download and install.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

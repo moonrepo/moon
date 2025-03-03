@@ -441,7 +441,10 @@ impl<'proj> TasksBuilder<'proj> {
         // If a script, wipe out inherited arguments, and extract the first command
         if let Some(script) = &task.script {
             task.args.clear();
-            task.toolchains = vec![Id::raw("system")];
+
+            if task.toolchains.is_empty() {
+                task.toolchains.push(Id::raw("system"));
+            }
 
             if let Some(i) = script.find(' ') {
                 task.command = script[0..i].to_owned();

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where task output wasn't captured for the "review" section in a run summary.
+- Fixed an issue where a task with a `script` would always be forced to the "system" toolchain.
+
 ## 1.32.7
 
 #### 🚀 Updates

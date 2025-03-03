@@ -401,9 +401,9 @@ impl Platform for RustPlatform {
             );
         }
 
-        if !self.config.bins.is_empty() {
-            let globals_dir = self.get_globals_dir(Some(tool));
+        let globals_dir = self.get_globals_dir(Some(tool));
 
+        if !self.config.bins.is_empty() {
             // Install cargo-binstall if it does not exist
             if !globals_dir.join(exe_name("cargo-binstall")).exists() {
                 debug!(
@@ -436,9 +436,11 @@ impl Platform for RustPlatform {
 
             for bin in &self.config.bins {
                 let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
-
-                match bin {
-                    BinEntry::Name(name) => args.push(name),
+                let name = match bin {
+                    BinEntry::Name(inner) => {
+                        args.push(inner);
+                        inner
+                    }
                     BinEntry::Config(cfg) => {
                         if cfg.local && is_ci() {
                             continue;
@@ -446,18 +448,21 @@ impl Platform for RustPlatform {
 
                         if cfg.force {
                             args.push("--force");
+                            // force = cfg.force;
                         }
 
                         args.push(&cfg.bin);
+                        &cfg.bin
                     }
                 };
 
                 operations.push(
                     Operation::task_execution(format!("cargo {}", args.join(" ")))
                         .track_async(|| async {
-                            self.console
-                                .out
-                                .print_checkpoint(Checkpoint::Setup, "cargo binstall")?;
+                            self.console.out.print_checkpoint(
+                                Checkpoint::Setup,
+                                format!("cargo binstall {name}"),
+                            )?;
 
                             tool.exec_cargo(args, working_dir).await
                         })

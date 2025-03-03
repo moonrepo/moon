@@ -3,6 +3,8 @@ import dagre from 'cytoscape-dagre';
 
 cytoscape.use(dagre);
 
+console.log(asds);
+
 export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefinition) {
 	return cytoscape({
 		container: element,

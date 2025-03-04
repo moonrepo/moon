@@ -120,13 +120,11 @@ impl CliSession {
     }
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
-        let workspace_graph = self.get_workspace_graph().await?;
-
         let item = self.extension_registry.get_or_init(|| {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph,
+                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
             // Convert moon IDs to plugin IDs
@@ -157,13 +155,11 @@ impl CliSession {
     }
 
     pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
-        let workspace_graph = self.get_workspace_graph().await?;
-
         let item = self.toolchain_registry.get_or_init(|| {
             let mut registry = ToolchainRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph,
+                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
             // Convert moon IDs to plugin IDs
@@ -228,8 +224,16 @@ impl CliSession {
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
         let result = builder.build().await?;
 
-        let _ = self.project_graph.set(result.projects);
-        let _ = self.task_graph.set(result.tasks);
+        // Set the internal graphs
+        let _ = self.project_graph.set(result.projects.clone());
+        let _ = self.task_graph.set(result.tasks.clone());
+
+        // Update the plugin registries with the graph
+        let extensions = self.get_extension_registry().await?;
+        *extensions.host_data.workspace_graph.write().unwrap() = result.clone();
+
+        let toolchains = self.get_toolchain_registry().await?;
+        *toolchains.host_data.workspace_graph.write().unwrap() = result;
 
         Ok(())
     }

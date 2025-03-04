@@ -1,5 +1,6 @@
 use moon_cache::CacheEngine;
 use moon_config::*;
+use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 use moon_workspace_graph::WorkspaceGraph;
@@ -110,6 +111,7 @@ impl WorkspaceMocker {
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
+            toolchain_registry: Arc::new(ToolchainRegistry::default()),
             vcs: self.vcs.clone(),
             working_dir: &self.workspace_root,
             workspace_config: &self.workspace_config,

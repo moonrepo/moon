@@ -12,9 +12,11 @@ use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
 };
+use moon_toolchain_plugin::ToolchainRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
@@ -23,6 +25,7 @@ pub struct ProjectBuilderContext<'app> {
     pub monorepo: bool,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
+    pub toolchain_registry: Arc<ToolchainRegistry>,
     pub workspace_root: &'app Path,
 }
 
@@ -144,6 +147,7 @@ impl<'app> ProjectBuilder<'app> {
                     color::property("toolchain.default"),
                 );
             } else {
+                // TODO deprecate in v2
                 toolchains.extend(detect_project_toolchains(
                     self.context.workspace_root,
                     &self.root,

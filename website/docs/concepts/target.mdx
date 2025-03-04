@@ -57,7 +57,7 @@ the target in quotes, or escape it like so `\#`.
 
 ## Run scopes
 
-These scopes are only available on the command line when running targets.
+These scopes are only available on the command line when running tasks with `moon run` or `moon ci`.
 
 ### All projects
 
@@ -67,6 +67,16 @@ can utilize the all projects scope by omitting the project name from the target:
 ```shell
 # Run `lint` in all projects
 $ moon run :lint
+```
+
+### Closest project `~`<VersionLabel version="1.33.0" />
+
+If you are within a project folder, or an arbitrarily nested folder, and want to run a task in the
+closest project (traversing upwards), the `~` scope can be used.
+
+```shell
+# Run `lint` in the closest project
+$ moon run ~:lint
 ```
 
 ## Config scopes

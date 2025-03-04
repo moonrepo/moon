@@ -40,7 +40,7 @@ md5 = "0.7.0"
 miette = "7.5.0"
 once_cell = "1.20.3"
 pathdiff = "0.2.3"
-petgraph = { version = "0.6.5", default-features = false, features = [
+petgraph = { version = "0.7.1", default-features = false, features = [
     "serde-1",
 ] }
 relative-path = { version = "1.9.3" }

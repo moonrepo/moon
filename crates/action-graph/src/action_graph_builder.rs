@@ -620,7 +620,14 @@ impl<'app> ActionGraphBuilder<'app> {
                     }
                 }
                 TargetLocator::Qualified(target) => {
-                    initial_targets.push(target);
+                    if target.scope == TargetScope::OwnSelf {
+                        initial_targets.push(Target::new(
+                            &self.workspace_graph.get_project_from_path(None)?.id,
+                            target.task_id,
+                        )?);
+                    } else {
+                        initial_targets.push(target);
+                    }
                 }
                 TargetLocator::TaskFromWorkingDir(task_id) => {
                     initial_targets.push(Target::new(

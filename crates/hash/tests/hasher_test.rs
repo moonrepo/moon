@@ -1,4 +1,4 @@
-use moon_hash::{hash_content, ContentHasher};
+use moon_hash::{ContentHasher, hash_content};
 
 hash_content!(
     struct ContentOne<'l> {

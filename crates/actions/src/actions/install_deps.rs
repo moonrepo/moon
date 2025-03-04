@@ -3,8 +3,8 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
-use moon_common::path::{encode_component, WorkspaceRelativePath};
-use moon_common::{color, is_ci, Id};
+use moon_common::path::{WorkspaceRelativePath, encode_component};
+use moon_common::{Id, color, is_ci};
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_time::to_millis;
@@ -141,7 +141,7 @@ pub async fn install_deps(
         // variable with the current process ID and compare against it. If the IDs are
         // the same then multiple installs are happening in parallel in the same
         // process (via the pipeline), otherwise it's a child process.
-        env::set_var("INTERNAL_MOON_INSTALLING_DEPS", pid);
+        unsafe { env::set_var("INTERNAL_MOON_INSTALLING_DEPS", pid) };
 
         debug!(
             "Installing {} dependencies in {}",

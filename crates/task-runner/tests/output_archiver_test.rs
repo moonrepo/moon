@@ -39,11 +39,13 @@ mod output_archiver {
             let archiver = container.create_archiver();
 
             assert!(archiver.archive("hash123", None).await.unwrap().is_some());
-            assert!(container
-                .sandbox
-                .path()
-                .join(".moon/cache/outputs/hash123.tar.gz")
-                .exists());
+            assert!(
+                container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/outputs/hash123.tar.gz")
+                    .exists()
+            );
         }
 
         #[tokio::test]
@@ -75,7 +77,7 @@ mod output_archiver {
 
             assert!(archiver.archive("hash123", None).await.unwrap().is_none());
 
-            env::remove_var("MOON_CACHE");
+            unsafe { env::remove_var("MOON_CACHE") };
         }
 
         #[tokio::test]
@@ -92,7 +94,7 @@ mod output_archiver {
 
             assert!(archiver.archive("hash123", None).await.unwrap().is_none());
 
-            env::remove_var("MOON_CACHE");
+            unsafe { env::remove_var("MOON_CACHE") };
         }
 
         #[tokio::test]

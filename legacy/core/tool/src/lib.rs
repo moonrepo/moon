@@ -11,12 +11,12 @@ pub use tool::*;
 
 use moon_common::consts::PROTO_CLI_VERSION;
 use proto_core::{
-    inject_proto_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool,
+    Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, inject_proto_manifest_config,
 };
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-use warpgate::{inject_default_manifest_config, Wasm};
+use warpgate::{Wasm, inject_default_manifest_config};
 
 pub fn use_global_tool_on_path(key: &str) -> bool {
     env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|value| {

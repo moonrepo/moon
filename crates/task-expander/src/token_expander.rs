@@ -5,7 +5,7 @@ use moon_common::{
     color,
     path::{self, WorkspaceRelativePathBuf},
 };
-use moon_config::{patterns, InputPath, OutputPath, ProjectMetadataConfig};
+use moon_config::{InputPath, OutputPath, ProjectMetadataConfig, patterns};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::Task;
@@ -438,7 +438,7 @@ impl<'graph> TokenExpander<'graph> {
                             target: task.target.to_string(),
                             token: token.to_owned(),
                         }
-                        .into())
+                        .into());
                     }
                 };
             }
@@ -478,7 +478,7 @@ impl<'graph> TokenExpander<'graph> {
                             target: task.target.to_string(),
                             token: token.to_owned(),
                         }
-                        .into())
+                        .into());
                     }
                 };
             }
@@ -530,7 +530,7 @@ impl<'graph> TokenExpander<'graph> {
                 return Err(TokenExpanderError::UnknownToken {
                     token: token.to_owned(),
                 }
-                .into())
+                .into());
             }
         };
 

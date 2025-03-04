@@ -2,9 +2,8 @@ use crate::{actions, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::{
-    color,
-    path::{is_root_level_source, WorkspaceRelativePath},
-    Id,
+    Id, color,
+    path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, HasherConfig, HasherOptimization,
@@ -17,9 +16,9 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_python_lang::{pip, uv};
-use moon_python_tool::{get_python_tool_paths, PythonTool};
+use moon_python_tool::{PythonTool, get_python_tool_paths};
 use moon_task::Task;
-use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{Tool, ToolManager, get_proto_version_env, prepend_path_env_var};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;

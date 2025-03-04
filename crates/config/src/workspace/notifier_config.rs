@@ -1,4 +1,4 @@
-use schematic::{validate, Config};
+use schematic::{Config, validate};
 
 /// Configures how and where notifications are sent.
 #[derive(Clone, Config, Debug, PartialEq)]

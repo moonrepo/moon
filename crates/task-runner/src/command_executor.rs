@@ -4,7 +4,7 @@ use moon_app_context::AppContext;
 use moon_common::{is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{args::join_args, Command, CommandLine};
+use moon_process::{Command, CommandLine, args::join_args};
 use moon_project::Project;
 use moon_task::Task;
 use std::process::Output;

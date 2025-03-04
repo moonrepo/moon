@@ -87,10 +87,12 @@ mod dockerfile {
             })
             .success();
 
-        assert!(sandbox
-            .path()
-            .join("has-tasks/nested/Dockerfile.prod")
-            .exists());
+        assert!(
+            sandbox
+                .path()
+                .join("has-tasks/nested/Dockerfile.prod")
+                .exists()
+        );
     }
 
     #[test]

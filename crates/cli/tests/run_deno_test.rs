@@ -1,7 +1,7 @@
 use moon_config::PartialDenoConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_deno_fixture_configs, predicates::prelude::*,
-    Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, get_deno_fixture_configs,
+    predicates::prelude::*,
 };
 use std::fs;
 

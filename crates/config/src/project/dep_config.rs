@@ -1,5 +1,5 @@
-use moon_common::{cacheable, Id};
-use schematic::{derive_enum, Config, ConfigEnum};
+use moon_common::{Id, cacheable};
+use schematic::{Config, ConfigEnum, derive_enum};
 
 derive_enum!(
     /// The task-to-task relationship of the dependency.

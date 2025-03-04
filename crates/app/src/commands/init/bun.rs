@@ -1,7 +1,7 @@
-use super::prompts::prompt_version;
 use super::InitOptions;
-use dialoguer::theme::ColorfulTheme;
+use super::prompts::prompt_version;
 use dialoguer::Confirm;
+use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
 use moon_console::Console;

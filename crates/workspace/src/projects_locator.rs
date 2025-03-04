@@ -1,6 +1,6 @@
 use crate::workspace_builder::WorkspaceBuilderContext;
-use moon_common::path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf};
-use moon_common::{color, consts, Id};
+use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
+use moon_common::{Id, color, consts};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use starbase_utils::{fs, glob};
 use tracing::{debug, instrument, warn};

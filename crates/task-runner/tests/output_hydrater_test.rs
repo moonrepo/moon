@@ -24,10 +24,12 @@ mod output_hydrater {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             let hydrater = container.create_hydrator();
 
-            assert!(hydrater
-                .hydrate(HydrateFrom::PreviousOutput, "hash123", None)
-                .await
-                .unwrap());
+            assert!(
+                hydrater
+                    .hydrate(HydrateFrom::PreviousOutput, "hash123", None)
+                    .await
+                    .unwrap()
+            );
         }
 
         #[tokio::test]
@@ -44,12 +46,14 @@ mod output_hydrater {
                 .cache_engine
                 .force_mode(CacheMode::Off);
 
-            assert!(!hydrater
-                .hydrate(HydrateFrom::LocalCache, "hash123", None)
-                .await
-                .unwrap());
+            assert!(
+                !hydrater
+                    .hydrate(HydrateFrom::LocalCache, "hash123", None)
+                    .await
+                    .unwrap()
+            );
 
-            env::remove_var("MOON_CACHE");
+            unsafe { env::remove_var("MOON_CACHE") };
         }
 
         #[tokio::test]
@@ -66,12 +70,14 @@ mod output_hydrater {
                 .cache_engine
                 .force_mode(CacheMode::Write);
 
-            assert!(!hydrater
-                .hydrate(HydrateFrom::LocalCache, "hash123", None)
-                .await
-                .unwrap());
+            assert!(
+                !hydrater
+                    .hydrate(HydrateFrom::LocalCache, "hash123", None)
+                    .await
+                    .unwrap()
+            );
 
-            env::remove_var("MOON_CACHE");
+            unsafe { env::remove_var("MOON_CACHE") };
         }
 
         #[tokio::test]
@@ -96,11 +102,13 @@ mod output_hydrater {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.pack_archive();
 
-            assert!(!container
-                .sandbox
-                .path()
-                .join(".moon/cache/states/project/file-outputs/stdout.log")
-                .exists());
+            assert!(
+                !container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/states/project/file-outputs/stdout.log")
+                    .exists()
+            );
 
             let hydrater = container.create_hydrator();
 
@@ -109,11 +117,13 @@ mod output_hydrater {
                 .await
                 .unwrap();
 
-            assert!(container
-                .sandbox
-                .path()
-                .join(".moon/cache/states/project/file-outputs/stdout.log")
-                .exists());
+            assert!(
+                container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/states/project/file-outputs/stdout.log")
+                    .exists()
+            );
         }
     }
 }

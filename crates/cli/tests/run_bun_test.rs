@@ -1,7 +1,7 @@
 use moon_config::PartialBunConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
-    predicates::prelude::*, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
+    predicates::prelude::*,
 };
 use std::fs;
 

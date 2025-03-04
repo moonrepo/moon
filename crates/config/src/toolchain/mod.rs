@@ -3,6 +3,7 @@ mod bun_config;
 mod deno_config;
 mod moon_config;
 mod node_config;
+mod plugin_config;
 mod python_config;
 mod rust_config;
 mod typescript_config;
@@ -12,6 +13,7 @@ pub use bun_config::*;
 pub use deno_config::*;
 pub use moon_config::*;
 pub use node_config::*;
+pub use plugin_config::*;
 pub use python_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
@@ -51,7 +53,7 @@ macro_rules! inherit_tool {
                         version
                     );
 
-                    config.version = Some(version.to_owned());
+                    config.version = Some(version.req.to_owned());
                 }
             }
 
@@ -90,7 +92,7 @@ macro_rules! inherit_tool_required {
                         version
                     );
 
-                    self.$tool.version = Some(version.to_owned());
+                    self.$tool.version = Some(version.req.to_owned());
                 }
             }
 

@@ -3,7 +3,7 @@
 use cached::proc_macro::cached;
 use moon_lang::config_cache_model;
 use moon_utils::path::to_relative_virtual_string;
-use starbase_utils::json::{self, read_file as read_json, JsonValue};
+use starbase_utils::json::{self, JsonValue, read_file as read_json};
 use std::path::{Path, PathBuf};
 
 pub use typescript_tsconfig_json::*;

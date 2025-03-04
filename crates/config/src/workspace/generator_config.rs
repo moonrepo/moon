@@ -1,6 +1,6 @@
 use crate::portable_path::FilePath;
 use crate::template::TemplateLocator;
-use schematic::{validate, Config, DefaultValueResult};
+use schematic::{Config, DefaultValueResult, validate};
 
 fn default_templates<C>(_ctx: &C) -> DefaultValueResult<Vec<TemplateLocator>> {
     Ok(Some(vec![TemplateLocator::File {

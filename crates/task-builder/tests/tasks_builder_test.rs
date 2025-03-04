@@ -1,5 +1,5 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::*;
 use moon_target::Target;
 use moon_task::Task;
@@ -693,15 +693,17 @@ mod tasks_builder {
 
             let task = tasks.get("env-file-project").unwrap();
 
-            assert!(task
-                .inputs
-                .contains(&InputPath::ProjectFile(".env.test".into())));
+            assert!(
+                task.inputs
+                    .contains(&InputPath::ProjectFile(".env.test".into()))
+            );
 
             let task = tasks.get("env-file-workspace").unwrap();
 
-            assert!(task
-                .inputs
-                .contains(&InputPath::WorkspaceFile(".env.shared".into())));
+            assert!(
+                task.inputs
+                    .contains(&InputPath::WorkspaceFile(".env.shared".into()))
+            );
         }
 
         #[tokio::test]

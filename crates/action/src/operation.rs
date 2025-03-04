@@ -4,17 +4,23 @@ use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
+use std::path::PathBuf;
 use std::process::Output;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Operation {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Duration>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<NaiveDateTime>,
 
     pub meta: OperationMeta,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub operations: Vec<Operation>,
 
     pub started_at: NaiveDateTime,
 
@@ -30,6 +36,7 @@ impl Operation {
             duration: None,
             finished_at: None,
             meta,
+            operations: vec![],
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
@@ -43,13 +50,14 @@ impl Operation {
             duration: None,
             finished_at: Some(time),
             meta,
+            operations: vec![],
             started_at: time,
             start_time: None,
             status,
         }
     }
 
-    pub fn get_output(&self) -> Option<&OperationMetaOutput> {
+    pub fn get_exec_output(&self) -> Option<&OperationMetaOutput> {
         match &self.meta {
             OperationMeta::OutputHydration(output)
             | OperationMeta::ProcessExecution(output)
@@ -58,7 +66,7 @@ impl Operation {
         }
     }
 
-    pub fn get_output_mut(&mut self) -> Option<&mut OperationMetaOutput> {
+    pub fn get_exec_output_mut(&mut self) -> Option<&mut OperationMetaOutput> {
         match &mut self.meta {
             OperationMeta::OutputHydration(output)
             | OperationMeta::ProcessExecution(output)
@@ -67,8 +75,8 @@ impl Operation {
         }
     }
 
-    pub fn get_output_status(&self) -> String {
-        self.get_output()
+    pub fn get_exec_output_status(&self) -> String {
+        self.get_exec_output()
             .and_then(|output| {
                 if let Some(code) = output.exit_code {
                     return Some(format!("exit code {code}"));
@@ -81,6 +89,20 @@ impl Operation {
                 None
             })
             .unwrap_or_else(|| "unknown failure".into())
+    }
+
+    pub fn get_sync_result(&self) -> Option<&OperationMetaSync> {
+        match &self.meta {
+            OperationMeta::SyncOperation(output) => Some(output),
+            _ => None,
+        }
+    }
+
+    pub fn get_sync_result_mut(&mut self) -> Option<&mut OperationMetaSync> {
+        match &mut self.meta {
+            OperationMeta::SyncOperation(output) => Some(output),
+            _ => None,
+        }
     }
 
     pub fn label(&self) -> &str {
@@ -106,7 +128,7 @@ impl Operation {
     }
 
     pub fn finish_from_output(&mut self, process_output: Output) {
-        if let Some(output) = self.get_output_mut() {
+        if let Some(output) = self.get_exec_output_mut() {
             output.exit_code = process_output.status.code();
             output.exit_status = Some(process_output.status);
             output.set_stderr(String::from_utf8(process_output.stderr).unwrap_or_default());
@@ -135,7 +157,7 @@ impl Operation {
     }
 
     pub fn has_output(&self) -> bool {
-        self.get_output().is_some_and(|output| {
+        self.get_exec_output().is_some_and(|output| {
             output.stderr.as_ref().is_some_and(|err| !err.is_empty())
                 || output.stdout.as_ref().is_some_and(|out| !out.is_empty())
         })
@@ -169,6 +191,22 @@ impl Operation {
         Fut: Future<Output = miette::Result<T>>,
     {
         Self::do_track_async(&mut self, func).await.map(|_| self)
+    }
+
+    pub async fn track_async_changed<F, Fut>(mut self, func: F) -> miette::Result<Self>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<Vec<PathBuf>>>,
+    {
+        let result = func().await;
+
+        if let Ok(files) = &result {
+            if let Some(sync) = self.get_sync_result_mut() {
+                sync.changed_files.extend(files.clone());
+            }
+        }
+
+        self.handle_track(result, |_| true).map(|_| self)
     }
 
     pub async fn track_async_with_check<T, F, Fut, C>(
@@ -241,7 +279,8 @@ impl Operation {
     }
 
     pub fn sync_operation(label: impl AsRef<str>) -> Self {
-        Self::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
+        Self::new(OperationMeta::SyncOperation(Box::new(OperationMetaSync {
+            changed_files: vec![],
             label: label.as_ref().to_owned(),
         })))
     }

@@ -1,7 +1,7 @@
 use moon_config::{PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_default_toolchain, predicates::str::contains,
-    Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, get_default_toolchain,
+    predicates::str::contains,
 };
 use starbase_utils::string_vec;
 use std::fs;
@@ -59,10 +59,9 @@ mod from_package_json {
             ]);
         });
 
-        assert_snapshot!(fs::read_to_string(
-            sandbox.path().join("package-json/common/package.json")
-        )
-        .unwrap());
+        assert_snapshot!(
+            fs::read_to_string(sandbox.path().join("package-json/common/package.json")).unwrap()
+        );
 
         assert_snapshot!(
             fs::read_to_string(sandbox.path().join("package-json/common/moon.yml")).unwrap()

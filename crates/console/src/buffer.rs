@@ -2,10 +2,10 @@ use miette::IntoDiagnostic;
 use parking_lot::Mutex;
 use std::io::{self, IsTerminal, Write};
 use std::mem;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-use std::sync::Arc;
-use std::thread::{sleep, spawn, JoinHandle};
+use std::thread::{JoinHandle, sleep, spawn};
 use std::time::Duration;
 use tracing::{trace, warn};
 

@@ -5,7 +5,7 @@ use moon_common::color;
 use moon_process::ProcessRegistry;
 use moon_project_graph::{GraphConversions, ProjectGraph};
 use moon_task_graph::TaskGraph;
-use petgraph::{graph::NodeIndex, Graph};
+use petgraph::{Graph, graph::NodeIndex};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use starbase_utils::json;
@@ -14,7 +14,7 @@ use std::fmt::Display;
 use std::sync::Arc;
 use tera::{Context, Tera};
 use tiny_http::{Header, Request, Response, Server};
-use tokio::task::{spawn, JoinHandle};
+use tokio::task::{JoinHandle, spawn};
 
 const INDEX_HTML: &str = include_str!("graph.html.tera");
 

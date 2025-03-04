@@ -5,7 +5,7 @@ use moon_plugin::{
     PluginType,
 };
 use moon_workspace_graph::WorkspaceGraph;
-use proto_core::{warpgate::FileLocator, ProtoEnvironment};
+use proto_core::{ProtoEnvironment, warpgate::FileLocator};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::fs;
 use std::path::Path;

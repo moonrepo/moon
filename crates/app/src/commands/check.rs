@@ -1,4 +1,4 @@
-use crate::commands::run::{run_target, RunArgs};
+use crate::commands::run::{RunArgs, run_target};
 use crate::session::CliSession;
 use clap::Args;
 use moon_common::Id;

@@ -6,7 +6,7 @@ use warpgate_api::*;
 
 api_struct!(
     /// Input passed to the `register_extension` function.
-    pub struct ExtensionMetadataInput {
+    pub struct RegisterExtensionInput {
         /// ID of the toolchain, as it was configured.
         pub id: String,
     }
@@ -14,7 +14,7 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `register_extension` function.
-    pub struct ExtensionMetadataOutput {
+    pub struct RegisterExtensionOutput {
         /// Schema shape of the tool's configuration.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub config_schema: Option<Schema>,

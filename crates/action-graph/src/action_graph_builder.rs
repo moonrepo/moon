@@ -6,14 +6,14 @@ use moon_action::{
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_config::TaskDependencyConfig;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
-use moon_query::{build_query, Criteria};
+use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
-use moon_workspace_graph::{tasks::TaskGraphError, GraphConnections, WorkspaceGraph};
+use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -225,7 +225,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         let node = if in_project {
             ActionNode::install_project_deps(InstallProjectDepsNode {
-                project: project.id.to_owned(),
+                project_id: project.id.to_owned(),
                 runtime: self.get_runtime(project, &primary_toolchain, true),
             })
         } else {
@@ -620,7 +620,14 @@ impl<'app> ActionGraphBuilder<'app> {
                     }
                 }
                 TargetLocator::Qualified(target) => {
-                    initial_targets.push(target);
+                    if target.scope == TargetScope::OwnSelf {
+                        initial_targets.push(Target::new(
+                            &self.workspace_graph.get_project_from_path(None)?.id,
+                            target.task_id,
+                        )?);
+                    } else {
+                        initial_targets.push(target);
+                    }
                 }
                 TargetLocator::TaskFromWorkingDir(task_id) => {
                     initial_targets.push(Target::new(
@@ -678,7 +685,7 @@ impl<'app> ActionGraphBuilder<'app> {
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
         let node = ActionNode::sync_project(SyncProjectNode {
-            project: project.id.clone(),
+            project_id: project.id.clone(),
             runtime: self.get_runtime(project, &project.toolchains[0], true),
         });
 

@@ -3,10 +3,10 @@
 
 use convert_case::{Case, Casing};
 use moon_common::path::{PathExt, RelativePathBuf};
-use starbase_utils::json::{serde_json::to_value, JsonValue as Value};
+use starbase_utils::json::{JsonValue as Value, serde_json::to_value};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tera::{try_get_value, Error, Result};
+use tera::{Error, Result, try_get_value};
 
 // STRINGS
 

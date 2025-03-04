@@ -10,6 +10,7 @@ use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
+use moon_pdk_api::HashTaskContentsInput;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
@@ -451,6 +452,28 @@ impl<'task> TaskRunner<'task> {
             )
             .await?;
 
+        for content in self
+            .app
+            .toolchain_registry
+            .hash_task_contents(
+                self.project.get_enabled_toolchains(),
+                |registry, toolchain| HashTaskContentsInput {
+                    context: registry.create_context(),
+                    project: self.project.to_fragment(),
+                    task: self.task.to_fragment(),
+                    toolchain_config: registry.create_merged_config(
+                        &toolchain.id,
+                        &self.app.toolchain_config,
+                        &self.project.config,
+                    ),
+                },
+            )
+            .await?
+        {
+            hasher.hash_content(content)?;
+        }
+
+        // Generate the hash and persist values
         let hash = hash_engine.save_manifest(&mut hasher)?;
 
         operation.meta.set_hash(&hash);
@@ -567,7 +590,7 @@ impl<'task> TaskRunner<'task> {
                     target: self.task.target.clone(),
                     error: Box::new(ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
-                        status: last_attempt.get_output_status(),
+                        status: last_attempt.get_exec_output_status(),
                     }),
                 }
                 .into());
@@ -696,7 +719,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Fill in these values since the command executor does not run!
-        if let Some(output) = operation.get_output_mut() {
+        if let Some(output) = operation.get_exec_output_mut() {
             output.command = Some(self.task.get_command_line());
 
             // If we received an action result from the remote cache,
@@ -772,7 +795,7 @@ impl<'task> TaskRunner<'task> {
 
         let mut operation = Operation::task_execution(&self.task.command);
 
-        if let Some(output) = operation.get_output_mut() {
+        if let Some(output) = operation.get_exec_output_mut() {
             output.exit_code = Some(-1);
         }
 
@@ -799,7 +822,7 @@ impl<'task> TaskRunner<'task> {
         let err_path = state_dir.join("stderr.log");
         let out_path = state_dir.join("stdout.log");
 
-        if let Some(output) = operation.get_output() {
+        if let Some(output) = operation.get_exec_output() {
             self.cache.data.exit_code = output.get_exit_code();
 
             fs::write_file(

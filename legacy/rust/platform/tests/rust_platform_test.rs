@@ -297,11 +297,11 @@ mod target_command {
         task.command = "nextest".into();
         task.args = string_vec!["run", "-w"];
 
-        env::set_var("CARGO_HOME", sandbox.path());
+        unsafe { env::set_var("CARGO_HOME", sandbox.path()) };
 
         let command = create_target_command(task).await;
 
-        env::remove_var("CARGO_HOME");
+        unsafe { env::remove_var("CARGO_HOME") };
 
         assert_eq!(command.bin, "cargo");
         assert_eq!(command.args, &["nextest", "run", "-w"]);
@@ -317,11 +317,11 @@ mod target_command {
         task.command = "cargo-nextest".into();
         task.args = string_vec!["run", "-w"];
 
-        env::set_var("CARGO_HOME", sandbox.path());
+        unsafe { env::set_var("CARGO_HOME", sandbox.path()) };
 
         let command = create_target_command(task).await;
 
-        env::remove_var("CARGO_HOME");
+        unsafe { env::remove_var("CARGO_HOME") };
 
         assert_eq!(command.bin, "cargo");
         assert_eq!(command.args, &["nextest", "run", "-w"]);

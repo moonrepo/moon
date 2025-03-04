@@ -1,7 +1,7 @@
 use crate::app::Cli;
 use crate::session::CliSession;
 use clap::{Args, CommandFactory};
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 use clap_complete_nushell::Nushell;
 use miette::IntoDiagnostic;
 use starbase::AppResult;

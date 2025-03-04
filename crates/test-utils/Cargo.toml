@@ -1,7 +1,7 @@
 [package]
 name = "moon_test_utils2"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Testing utilities."
 homepage = "https://moonrepo.dev/moon"
@@ -15,6 +15,7 @@ moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_project_graph = { path = "../project-graph" }
 moon_task_graph = { path = "../task-graph" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }

@@ -3,8 +3,8 @@ use crate::prompts::create_theme;
 use crate::reporter::*;
 use inquire::ui::RenderConfig;
 use moon_common::is_formatted_output;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 use tracing::trace;
 

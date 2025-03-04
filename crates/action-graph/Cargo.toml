@@ -1,7 +1,7 @@
 [package]
 name = "moon_action_graph"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Dependency graph for actions (tasks)."
 homepage = "https://moonrepo.dev/moon"
@@ -21,7 +21,7 @@ moon_task = { path = "../task" }
 moon_task_args = { path = "../task-args" }
 moon_query = { path = "../query" }
 moon_workspace_graph = { path = "../workspace-graph" }
-graph-cycles = "0.1.0"
+graph-cycles = "0.2.0"
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

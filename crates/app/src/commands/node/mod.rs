@@ -1,6 +1,6 @@
 mod run_script;
 
-pub use run_script::{run_script, RunScriptArgs};
+pub use run_script::{RunScriptArgs, run_script};
 
 use clap::Subcommand;
 

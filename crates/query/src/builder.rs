@@ -1,4 +1,4 @@
-use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
+use crate::parser::{AstNode, ComparisonOperator, LogicalOperator, parse_query};
 use crate::query_error::QueryError;
 use moon_common::color;
 use moon_config::{LanguageType, ProjectType, StackType, TaskType};

@@ -35,7 +35,7 @@ pub enum ActionStatus {
 }
 
 #[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Action {
     pub allow_failure: bool,
 

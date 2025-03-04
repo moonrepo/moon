@@ -4,8 +4,8 @@ use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::CacheMode;
 use moon_task::Target;
-use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_task_runner::TaskRunner;
+use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_time::now_millis;
 use std::env;
 use utils::*;
@@ -112,13 +112,15 @@ mod task_runner {
 
                 runner.run_with_panic(&context, &node).await.unwrap();
 
-                assert!(container
-                    .sandbox
-                    .path()
-                    .join(".moon/cache/states")
-                    .join(container.project_id)
-                    .join("create-file/lastRun.json")
-                    .exists());
+                assert!(
+                    container
+                        .sandbox
+                        .path()
+                        .join(".moon/cache/states")
+                        .join(container.project_id)
+                        .join("create-file/lastRun.json")
+                        .exists()
+                );
             }
 
             #[tokio::test]
@@ -278,13 +280,15 @@ mod task_runner {
 
                 runner.run_with_panic(&context, &node).await.unwrap();
 
-                assert!(container
-                    .sandbox
-                    .path()
-                    .join(".moon/cache/states")
-                    .join(container.project_id)
-                    .join("without-cache/lastRun.json")
-                    .exists());
+                assert!(
+                    container
+                        .sandbox
+                        .path()
+                        .join(".moon/cache/states")
+                        .join(container.project_id)
+                        .join("without-cache/lastRun.json")
+                        .exists()
+                );
             }
 
             #[tokio::test]
@@ -312,10 +316,12 @@ mod task_runner {
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
 
-                assert!(result
-                    .operations
-                    .iter()
-                    .all(|op| op.meta.is_task_execution()));
+                assert!(
+                    result
+                        .operations
+                        .iter()
+                        .all(|op| op.meta.is_task_execution())
+                );
             }
 
             #[tokio::test]
@@ -481,7 +487,7 @@ mod task_runner {
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
-                env::remove_var("MOON_CACHE");
+                unsafe { env::remove_var("MOON_CACHE") };
             }
 
             #[tokio::test]
@@ -500,7 +506,7 @@ mod task_runner {
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
-                env::remove_var("MOON_CACHE");
+                unsafe { env::remove_var("MOON_CACHE") };
             }
         }
 
@@ -687,12 +693,14 @@ mod task_runner {
 
             let hash = runner.generate_hash(&context, &node).await.unwrap();
 
-            assert!(container
-                .sandbox
-                .path()
-                .join(".moon/cache/hashes")
-                .join(format!("{hash}.json"))
-                .exists());
+            assert!(
+                container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/hashes")
+                    .join(format!("{hash}.json"))
+                    .exists()
+            );
         }
     }
 
@@ -774,7 +782,7 @@ mod task_runner {
             assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Passed);
 
-            let output = operation.get_output().unwrap();
+            let output = operation.get_exec_output().unwrap();
 
             assert_eq!(output.exit_code, Some(0));
             assert_eq!(output.stdout.as_ref().unwrap().trim(), "test");
@@ -799,7 +807,7 @@ mod task_runner {
             assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Failed);
 
-            let output = operation.get_output().unwrap();
+            let output = operation.get_exec_output().unwrap();
 
             assert_eq!(output.exit_code, Some(1));
         }
@@ -817,13 +825,15 @@ mod task_runner {
 
             runner.execute(&context, &node).await.unwrap();
 
-            assert!(container
-                .sandbox
-                .path()
-                .join(".moon/cache/states")
-                .join(container.project_id)
-                .join("success/stdout.log")
-                .exists());
+            assert!(
+                container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/states")
+                    .join(container.project_id)
+                    .join("success/stdout.log")
+                    .exists()
+            );
         }
 
         #[tokio::test]
@@ -1125,7 +1135,7 @@ mod task_runner {
                 assert!(result);
 
                 let operation = runner.operations.last().unwrap();
-                let output = operation.get_output().unwrap();
+                let output = operation.get_exec_output().unwrap();
 
                 assert_eq!(output.exit_code.unwrap(), 0);
                 assert_eq!(output.stderr.as_deref().unwrap(), "stderr");

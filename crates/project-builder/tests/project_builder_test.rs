@@ -1,5 +1,5 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     BunConfig, ConfigLoader, DenoConfig, DependencyConfig, DependencyScope, DependencySource,
     LanguageType, NodeConfig, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,

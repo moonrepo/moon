@@ -4,7 +4,7 @@ use cached::proc_macro::cached;
 use moon_lang::config_cache;
 use moon_typescript_lang::tsconfig::CompilerOptions;
 use serde::{Deserialize, Serialize};
-use starbase_utils::json::{self, read_file as read_json, JsonValue};
+use starbase_utils::json::{self, JsonValue, read_file as read_json};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 

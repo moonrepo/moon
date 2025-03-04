@@ -1,6 +1,6 @@
 use miette::Diagnostic;
 use moon_toolchain::Runtime;
-use starbase_styles::{color, Style, Stylize};
+use starbase_styles::{Style, Stylize, color};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]

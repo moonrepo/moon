@@ -1,4 +1,4 @@
-use moon_query::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
+use moon_query::{AstNode, ComparisonOperator, LogicalOperator, parse_query};
 
 mod mql_parse {
     use super::*;

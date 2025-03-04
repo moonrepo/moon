@@ -241,6 +241,8 @@ impl AppSession for CliSession {
     async fn startup(&mut self) -> AppResult {
         self.console.set_reporter(DefaultReporter::default());
 
+        startup::create_moonx_shims()?;
+
         // Determine paths
 
         self.working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;

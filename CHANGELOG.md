@@ -11,6 +11,8 @@
     binary.
 - Added support for `moon run ~:build`, which will run the `build` task in the closest project
   (traversing upwards).
+- Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
+  set, and will fallback to `$HOME/.moon`.
 
 #### ⚙️ Internal
 

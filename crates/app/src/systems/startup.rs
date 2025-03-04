@@ -197,7 +197,7 @@ pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moo
 }
 
 #[instrument(skip_all)]
-pub async fn create_moonx_shims() -> miette::Result<()> {
+pub fn create_moonx_shims() -> miette::Result<()> {
     let Ok(exe_file) = env::current_exe() else {
         return Ok(());
     };

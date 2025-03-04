@@ -15,7 +15,7 @@ ENV PATH=/root/.cargo/bin:$PATH
 
 COPY .cargo .cargo
 COPY rust-toolchain.toml .
-RUN rustup update
+RUN rustup update && rustup toolchain install
 # RUN cargo install cargo-chef --version ^0.1
 
 # FROM base-gnu AS plan-gnu
@@ -65,7 +65,7 @@ RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
 COPY rust-toolchain.toml .
-RUN rustup update && rustup target add x86_64-unknown-linux-musl
+RUN rustup update && rustup toolchain install && rustup target add x86_64-unknown-linux-musl
 
 # FROM base-musl-amd64 AS plan-musl-amd64
 # COPY Cargo* .
@@ -114,7 +114,7 @@ RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 # RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
 COPY rust-toolchain.toml .
-RUN rustup update && rustup target add aarch64-unknown-linux-musl
+RUN rustup update && rustup toolchain install && rustup target add aarch64-unknown-linux-musl
 
 # FROM base-musl-arm64 AS plan-musl-arm64
 # COPY Cargo* .

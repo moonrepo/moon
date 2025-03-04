@@ -1,6 +1,6 @@
 use crate::bins_hash::DenoBinsHash;
 use crate::deps_hash::DenoDepsHash;
-use crate::target_hash::DenoTargetHash;
+use crate::target_hash::{DenoTargetHash, TypeScriptTargetHash};
 use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
@@ -430,14 +430,14 @@ impl Platform for DenoPlatform {
 
         hasher.hash_content(target_hash)?;
 
-        // if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
-        //     if let Some(compiler_options) = &deno_json.compiler_options {
-        //         let mut ts_hash = TypeScriptTargetHash::default();
-        //         ts_hash.hash_compiler_options(compiler_options);
+        if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
+            if let Some(compiler_options) = &deno_json.compiler_options {
+                let mut ts_hash = TypeScriptTargetHash::default();
+                ts_hash.hash_compiler_options(compiler_options);
 
-        //         hasher.hash_content(ts_hash)?;
-        //     }
-        // }
+                hasher.hash_content(ts_hash)?;
+            }
+        }
 
         Ok(())
     }

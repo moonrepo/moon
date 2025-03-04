@@ -219,7 +219,7 @@ async fn scaffold_workspace(
             has_root_project = true;
         }
 
-        scaffold_workspace_project(&session, &docker_workspace_root, &project, &shared_globs)
+        scaffold_workspace_project(session, &docker_workspace_root, &project, &shared_globs)
             .await?;
     }
 

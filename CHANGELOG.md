@@ -9,8 +9,10 @@
 
 #### 🚀 Updates
 
-- Added new toolchain plugin integrations.
-  - Updated `moon docker` commands to utilize the new APIs.
+- Added new toolchain plugin integrations for specific features.
+  - Integrated into the `SyncWorkspace` and `SyncProject` actions.
+  - Integrated into all `moon docker` commands.
+  - Integrated into the task hashing process.
 - Added a new `moonx` executable, which is a shorthand for `moon run`.
   - Right now the implementation uses Bash/PowerShell shims, but will be migrated to a true binary
     executable once we rework our release process.

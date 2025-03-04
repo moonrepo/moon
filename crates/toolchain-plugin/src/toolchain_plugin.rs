@@ -108,10 +108,29 @@ impl ToolchainPlugin {
             "Extracting docker metadata"
         );
 
-        let output: DockerMetadataOutput = self
+        let mut output: DockerMetadataOutput = self
             .plugin
             .cache_func_with("docker_metadata", input)
             .await?;
+
+        // Include toolchain metadata in docker
+        let mut add_glob = |glob: &str| {
+            if !output.scaffold_globs.iter().any(|g| g == glob) {
+                output.scaffold_globs.push(glob.to_owned());
+            }
+        };
+
+        if let Some(name) = &self.metadata.lock_file_name {
+            add_glob(name);
+        }
+
+        if let Some(name) = &self.metadata.manifest_file_name {
+            add_glob(name);
+        }
+
+        if let Some(name) = &self.metadata.vendor_dir_name {
+            add_glob(&format!("!{name}/**/*"));
+        }
 
         debug!(toolchain_id = self.id.as_str(), "Extracted docker metadata");
 

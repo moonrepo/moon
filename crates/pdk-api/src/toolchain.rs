@@ -2,7 +2,7 @@ use crate::common::*;
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use schematic::Schema;
-use warpgate_api::{VirtualPath, api_struct};
+use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 // METADATA
 
@@ -150,6 +150,17 @@ api_struct!(
     }
 );
 
+api_unit_enum!(
+    /// The different scaffolding phases.
+    pub enum ScaffoldDockerPhase {
+        /// Only config files (manifests, lockfiles, etc).
+        #[default]
+        Configs,
+        /// All sources within a project.
+        Sources,
+    }
+);
+
 api_struct!(
     /// Input passed to the `scaffold_docker` function.
     pub struct ScaffoldDockerInput {
@@ -159,14 +170,15 @@ api_struct!(
         /// The directory in which to copy files from.
         pub input_dir: VirtualPath,
 
-        /// The project if scaffolding an individual project.
-        /// If none, we're scaffolding the workspace root.
+        /// The directory in which to copy files to.
+        pub output_dir: VirtualPath,
+
+        /// The current scaffolding phase.
+        pub phase: ScaffoldDockerPhase,
+
+        /// The project being scaffolding.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub project: Option<ProjectFragment>,
-
-        /// The directory in which to copy files to.
-        /// This is the `.moon/docker` path.
-        pub output_dir: VirtualPath,
     }
 );
 

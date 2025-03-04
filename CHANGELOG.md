@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Removed the `--include` option from `moon docker scaffold` (it's been long deprecated). Use the
+  `docker` settings instead.
+
 #### 🚀 Updates
 
+- Added new toolchain plugin integrations.
+  - Updated `moon docker` commands to utilize the new APIs.
 - Added a new `moonx` executable, which is a shorthand for `moon run`.
   - Right now the implementation uses Bash/PowerShell shims, but will be migrated to a true binary
     executable once we rework our release process.
@@ -13,6 +20,15 @@
   (traversing upwards).
 - Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
   set, and will fallback to `$HOME/.moon`.
+
+#### 🧩 Plugins
+
+- Added new toolchain WASM APIs.
+  - `docker_metadata` - Defined metadata related to `docker` commands.
+  - `hash_task_contents` - Inject content into the task hashing process.
+  - `scaffold_docker` - Custom operations to run during `docker scaffold`.
+  - `sync_project` - Run syncing operations per project.
+  - `sync_workspace` - Run syncing operations at the workspace root.
 
 #### ⚙️ Internal
 

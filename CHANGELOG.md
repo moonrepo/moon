@@ -9,6 +9,8 @@
     executable once we rework our release process.
   - The shims are dynamically created the first time moon runs, relative to the executed `moon`
     binary.
+- Added support for `moon run ~:build`, which will run the `build` task in the closest project
+  (traversing upwards).
 
 #### ⚙️ Internal
 

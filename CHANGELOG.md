@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new `moonx` executable, which is a shorthand for `moon run`.
+  - Right now the implementation uses Bash/PowerShell shims, but will be migrated to a true binary
+    executable once we rework our release process.
+  - The shims are dynamically created the first time moon runs, relative to the executed `moon`
+    binary.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.47.2](https://github.com/moonrepo/proto/releases/tag/v0.47.0) (from 0.45.2).

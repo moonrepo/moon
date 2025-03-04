@@ -135,7 +135,6 @@ pub async fn register_platforms(
             PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -148,7 +147,6 @@ pub async fn register_platforms(
             PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -161,7 +159,6 @@ pub async fn register_platforms(
             PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -181,7 +178,6 @@ pub async fn register_platforms(
                     PlatformType::Bun.get_toolchain_id(),
                     Box::new(BunPlatform::new(
                         &bun_config,
-                        &toolchain_config.typescript,
                         workspace_root,
                         Arc::clone(proto_env),
                         Arc::clone(&console),

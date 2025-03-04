@@ -3794,7 +3794,6 @@ dependencies = [
  "moon_tool",
  "moon_toolchain",
  "moon_toolchain_plugin",
- "moon_typescript_lang",
  "moon_vcs",
  "moon_workspace",
  "moon_workspace_graph",
@@ -3879,7 +3878,6 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
- "moon_typescript_platform",
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
@@ -4099,11 +4097,11 @@ dependencies = [
  "miette 7.5.0",
  "moon_lang",
  "moon_logger",
- "moon_typescript_lang",
  "rustc-hash 2.1.1",
  "serde",
  "starbase_styles",
  "starbase_utils",
+ "typescript_tsconfig_json",
 ]
 
 [[package]]
@@ -4125,7 +4123,6 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
- "moon_typescript_platform",
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
@@ -4304,7 +4301,6 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
- "moon_typescript_platform",
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
@@ -4988,42 +4984,6 @@ dependencies = [
  "rustc-hash 2.1.1",
  "starbase_utils",
  "tokio",
- "tracing",
-]
-
-[[package]]
-name = "moon_typescript_lang"
-version = "0.0.1"
-dependencies = [
- "cached",
- "miette 7.5.0",
- "moon_lang",
- "moon_logger",
- "moon_test_utils",
- "moon_utils",
- "serde_json",
- "starbase_styles",
- "starbase_utils",
- "typescript_tsconfig_json",
-]
-
-[[package]]
-name = "moon_typescript_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.5.0",
- "moon_common",
- "moon_config",
- "moon_hash",
- "moon_node_lang",
- "moon_project",
- "moon_test_utils",
- "moon_typescript_lang",
- "moon_utils",
- "rustc-hash 2.1.1",
- "serde",
- "starbase_styles",
- "starbase_utils",
  "tracing",
 ]
 
@@ -7895,9 +7855,9 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typescript_tsconfig_json"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "304bec14e5e1c54d3c0db1edfd20dc3656debd9660765614daa16134940169f3"
+checksum = "29383fcd199604d8a038dfa15c11e7c560cc64f381cf2919b705e5d8f0482f97"
 dependencies = [
  "clean-path",
  "indexmap 2.7.1",

@@ -4,7 +4,6 @@ use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_typescript_config_template;
 use moon_console::Console;
-use moon_typescript_lang::TsConfigJsonCache;
 use starbase_styles::color;
 use std::path::Path;
 use tera::{Context, Tera};
@@ -16,7 +15,7 @@ pub fn render_template(context: Context) -> miette::Result<String> {
 
 #[instrument(skip_all)]
 pub async fn init_typescript(
-    dest_dir: &Path,
+    _dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
@@ -53,20 +52,12 @@ pub async fn init_typescript(
         console.out.flush()?;
     }
 
-    let project_refs = if let Ok(Some(tsconfig)) = TsConfigJsonCache::read(dest_dir) {
-        tsconfig
-            .data
-            .compiler_options
-            .and_then(|o| o.composite)
-            .unwrap_or(tsconfig.data.references.is_some())
-    } else {
-        options.yes
-            || options.minimal
-            || Confirm::with_theme(theme)
-                .with_prompt(format!("Use project {}?", color::property("references")))
-                .interact()
-                .into_diagnostic()?
-    };
+    let project_refs = options.yes
+        || options.minimal
+        || Confirm::with_theme(theme)
+            .with_prompt(format!("Use project {}?", color::property("references")))
+            .interact()
+            .into_diagnostic()?;
 
     let mut route_cache = false;
     let mut sync_paths = false;

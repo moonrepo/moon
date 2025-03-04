@@ -2,11 +2,11 @@
 
 use cached::proc_macro::cached;
 use moon_lang::config_cache;
-use moon_typescript_lang::tsconfig::CompilerOptions;
 use serde::{Deserialize, Serialize};
 use starbase_utils::json::{self, JsonValue, read_file as read_json};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use typescript_tsconfig_json::CompilerOptions;
 
 config_cache!(DenoJson, "deno.json", read_json, write_preserved_json);
 

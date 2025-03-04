@@ -8,7 +8,7 @@ use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf, is_root
 use moon_common::{Id, color, is_ci, is_test_env};
 use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
-    ProjectConfig, TypeScriptConfig,
+    ProjectConfig,
 };
 use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{DenoJson, find_package_manager_workspaces_root, load_lockfile_dependencies};
@@ -22,7 +22,6 @@ use moon_task::Task;
 use moon_tool::{
     DependencyManager, Tool, ToolManager, get_proto_version_env, prepend_path_env_var,
 };
-use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
@@ -44,15 +43,12 @@ pub struct DenoPlatform {
 
     toolchain: ToolManager<DenoTool>,
 
-    typescript_config: Option<TypeScriptConfig>,
-
     workspace_root: PathBuf,
 }
 
 impl DenoPlatform {
     pub fn new(
         config: &DenoConfig,
-        typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
         console: Arc<Console>,
@@ -61,7 +57,6 @@ impl DenoPlatform {
             config: config.to_owned(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(Id::raw("deno"), RuntimeReq::Global)),
-            typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
             console,
         }
@@ -435,25 +430,14 @@ impl Platform for DenoPlatform {
 
         hasher.hash_content(target_hash)?;
 
-        if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
-            if let Some(compiler_options) = &deno_json.compiler_options {
-                let mut ts_hash = TypeScriptTargetHash::default();
-                ts_hash.hash_compiler_options(compiler_options);
+        // if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
+        //     if let Some(compiler_options) = &deno_json.compiler_options {
+        //         let mut ts_hash = TypeScriptTargetHash::default();
+        //         ts_hash.hash_compiler_options(compiler_options);
 
-                hasher.hash_content(ts_hash)?;
-            }
-        }
-
-        // Do we need this if we're using compiler options from deno.json?
-        if let Some(typescript_config) = &self.typescript_config {
-            let ts_hash = TypeScriptTargetHash::generate(
-                typescript_config,
-                &self.workspace_root,
-                &project.root,
-            )?;
-
-            hasher.hash_content(ts_hash)?;
-        }
+        //         hasher.hash_content(ts_hash)?;
+        //     }
+        // }
 
         Ok(())
     }

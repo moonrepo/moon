@@ -97,7 +97,6 @@ moon_rust_lang = { path = "../../legacy/rust/lang" }
 moon_rust_tool = { path = "../../legacy/rust/tool" }
 moon_rust_platform = { path = "../../legacy/rust/platform" }
 moon_system_platform = { path = "../../legacy/system/platform" }
-moon_typescript_lang = { path = "../../legacy/typescript/lang" }
 
 [dev-dependencies]
 serial_test = { workspace = true }

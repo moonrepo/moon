@@ -4905,6 +4905,7 @@ dependencies = [
  "predicates",
  "pretty_assertions",
  "rustc-hash 2.1.1",
+ "serde_json",
  "serde_yml",
  "starbase_utils",
 ]

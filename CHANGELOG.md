@@ -9,7 +9,7 @@
 
 #### 🚀 Updates
 
-- Added new toolchain plugin integrations for specific features.
+- Added new toolchain WASM plugin integrations for specific features.
   - Integrated into the `SyncWorkspace` and `SyncProject` actions.
   - Integrated into all `moon docker` commands.
   - Integrated into the task hashing process.

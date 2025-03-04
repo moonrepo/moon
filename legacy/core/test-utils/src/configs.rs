@@ -1,6 +1,8 @@
 use crate::create_input_paths;
+use moon_common::Id;
 use moon_config::*;
 use rustc_hash::FxHashMap;
+use serde_json::Value;
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
@@ -19,13 +21,18 @@ pub fn get_default_toolchain() -> PartialToolchainConfig {
             }),
             ..PartialNodeConfig::default()
         }),
-        typescript: Some(PartialTypeScriptConfig {
-            create_missing_config: Some(false),
-            route_out_dir_to_cache: Some(false),
-            sync_project_references: Some(false),
-            sync_project_references_to_paths: Some(false),
-            ..PartialTypeScriptConfig::default()
-        }),
+        toolchains: Some(FxHashMap::from_iter([(
+            Id::raw("typescript"),
+            PartialToolchainPluginConfig {
+                config: Some(FxHashMap::from_iter([
+                    ("createMissingConfig".into(), Value::Bool(false)),
+                    ("routeOutDirToCache".into(), Value::Bool(false)),
+                    ("syncProjectReferences".into(), Value::Bool(false)),
+                    ("syncProjectReferencesToPaths".into(), Value::Bool(false)),
+                ])),
+                ..PartialToolchainPluginConfig::default()
+            },
+        )])),
         ..PartialToolchainConfig::default()
     }
 }
@@ -609,9 +616,14 @@ pub fn get_typescript_fixture_configs() -> (
         },
     ));
 
-    if let Some(ts_config) = &mut toolchain_config.typescript {
-        ts_config.create_missing_config = Some(true);
-        ts_config.sync_project_references = Some(true);
+    if let Some(ts) = &mut toolchain_config
+        .toolchains
+        .get_or_insert_default()
+        .get_mut("typescript")
+    {
+        let ts_config = ts.config.get_or_insert_default();
+        ts_config.insert("createMissingConfig".into(), Value::Bool(true));
+        ts_config.insert("syncProjectReferences".into(), Value::Bool(true));
     }
 
     (workspace_config, toolchain_config, tasks_config)

@@ -6,6 +6,7 @@ use moon_config::{
 };
 use proto_core::{Id, ProtoConfig, UnresolvedVersionSpec};
 use schematic::ConfigLoader as BaseLoader;
+use serde_json::Value;
 use serial_test::serial;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
@@ -32,7 +33,7 @@ mod toolchain_config {
 
     // #[test]
     // #[should_panic(
-    //     expected = "unknown field `unknown`, expected one of `$schema`, `extends`, `bun`, `deno`, `node`, `rust`, `typescript`"
+    //     expected = "unknown field `unknown`, expected one of `$schema`, `extends`, `bun`, `deno`, `node`, `rust`"
     // )]
     // fn error_unknown_field() {
     //     test_load_config(FILENAME, "unknown: 123", |path| {
@@ -50,7 +51,6 @@ mod toolchain_config {
         assert!(config.node.is_none());
         assert!(config.python.is_none());
         assert!(config.rust.is_none());
-        assert!(config.typescript.is_none());
     }
 
     mod extends {
@@ -92,11 +92,20 @@ node: {}";
                 Ok(load_config_from_file(path))
             });
 
-            let typescript = config.typescript.unwrap();
+            let cfg = config.toolchains.get("typescript").unwrap();
 
-            assert_eq!(typescript.root_config_file_name, "tsconfig.root.json");
-            assert!(!typescript.create_missing_config);
-            assert!(typescript.sync_project_references);
+            assert_eq!(
+                cfg.config.get("rootConfigFileName").unwrap(),
+                &Value::String("tsconfig.root.json".to_owned())
+            );
+            assert_eq!(
+                cfg.config.get("createMissingConfig").unwrap(),
+                &Value::Bool(false)
+            );
+            assert_eq!(
+                cfg.config.get("syncProjectReferences").unwrap(),
+                &Value::Bool(true)
+            );
         }
 
         #[test]
@@ -1340,18 +1349,6 @@ rust:
         use super::*;
 
         #[test]
-        fn uses_defaults() {
-            let config = test_load_config(FILENAME, "typescript: {}", |path| {
-                load_config_from_root(path, &ProtoConfig::default())
-            });
-
-            let cfg = config.typescript.unwrap();
-
-            assert_eq!(cfg.project_config_file_name, "tsconfig.json".to_owned());
-            assert!(cfg.sync_project_references);
-        }
-
-        #[test]
         fn sets_values() {
             let config = test_load_config(
                 FILENAME,
@@ -1363,32 +1360,23 @@ typescript:
                 |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
-            let cfg = config.typescript.unwrap();
+            let cfg = config.toolchains.get("typescript").unwrap();
 
-            assert_eq!(cfg.project_config_file_name, "tsconf.json".to_owned());
-            assert!(!cfg.sync_project_references);
-        }
-
-        #[test]
-        fn enables_via_proto() {
-            let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ProtoConfig::default();
-                proto.versions.insert(
-                    Id::raw("typescript"),
-                    UnresolvedVersionSpec::parse("5.0.0").unwrap().into(),
-                );
-
-                load_config_from_root(path, &proto)
-            });
-
-            assert!(config.typescript.is_some());
-            // assert_eq!(config.typescript.unwrap().version.unwrap(), "1.30.0");
+            assert_eq!(
+                cfg.config.get("projectConfigFileName").unwrap(),
+                &Value::String("tsconf.json".to_owned())
+            );
+            assert_eq!(
+                cfg.config.get("syncProjectReferences").unwrap(),
+                &Value::Bool(false)
+            );
         }
     }
 
     mod pkl {
         use super::*;
         use moon_config::*;
+        use rustc_hash::FxHashMap;
         use starbase_sandbox::locate_fixture;
 
         #[test]
@@ -1426,20 +1414,27 @@ typescript:
                 }
             );
             assert_eq!(
-                config.typescript.take().unwrap(),
-                TypeScriptConfig {
-                    create_missing_config: false,
-                    include_project_reference_sources: true,
-                    include_shared_types: true,
-                    plugin: None,
-                    project_config_file_name: "tsconfig.app.json".into(),
-                    root: ".".into(),
-                    root_config_file_name: "tsconfig.root.json".into(),
-                    root_options_config_file_name: "tsconfig.opts.json".into(),
-                    route_out_dir_to_cache: true,
-                    sync_project_references: false,
-                    sync_project_references_to_paths: true
-                }
+                config.toolchains.get("typescript").unwrap().config,
+                FxHashMap::from_iter([
+                    ("createMissingConfig".into(), Value::Bool(false)),
+                    ("includeProjectReferenceSources".into(), Value::Bool(true)),
+                    ("includeSharedTypes".into(), Value::Bool(true)),
+                    (
+                        "projectConfigFileName".into(),
+                        Value::String("tsconfig.app.json".into())
+                    ),
+                    (
+                        "rootConfigFileName".into(),
+                        Value::String("tsconfig.root.json".into())
+                    ),
+                    (
+                        "rootOptionsConfigFileName".into(),
+                        Value::String("tsconfig.opts.json".into())
+                    ),
+                    ("routeOutDirToCache".into(), Value::Bool(true)),
+                    ("syncProjectReferences".into(), Value::Bool(false)),
+                    ("syncProjectReferencesToPaths".into(), Value::Bool(true)),
+                ])
             );
         }
     }

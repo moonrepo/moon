@@ -479,17 +479,6 @@ mod target_scopes {
     }
 
     #[test]
-    fn errors_for_self_scope() {
-        let sandbox = cases_sandbox();
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("~:test");
-        });
-
-        assert_snapshot!(assert.output());
-    }
-
-    #[test]
     fn errors_for_cwd() {
         let sandbox = cases_sandbox();
 

@@ -4,6 +4,7 @@ use warpgate_api::PluginLocator;
 /// Configures and enables the TypeScript platform.
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
 #[derive(Clone, Config, Debug, PartialEq)]
+#[deprecated]
 pub struct TypeScriptConfig {
     /// When `syncProjectReferences` is enabled, will create a `tsconfig.json`
     /// in referenced projects if it does not exist.

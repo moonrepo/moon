@@ -5,6 +5,8 @@ use clap::Args;
 use moon_common::consts::*;
 use moon_common::{Id, path};
 use moon_config::LanguageType;
+use moon_pdk_api::{DockerMetadataInput, ScaffoldDockerInput};
+use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use moon_toolchain::detect::detect_language_files;
@@ -20,9 +22,32 @@ use tracing::{debug, instrument, warn};
 pub struct DockerScaffoldArgs {
     #[arg(required = true, help = "List of project IDs to copy sources for")]
     ids: Vec<Id>,
+}
 
-    #[arg(long, help = "Additional file globs to include in sources")]
-    include: Vec<String>,
+async fn get_toolchain_globs(
+    session: &CliSession,
+    project: Option<&Project>,
+) -> miette::Result<Vec<String>> {
+    let outputs = session
+        .get_toolchain_registry()
+        .await?
+        .docker_metadata(|registry, toolchain| DockerMetadataInput {
+            context: registry.create_context(),
+            toolchain_config: match project {
+                Some(proj) => registry.create_merged_config(
+                    &toolchain.id,
+                    &session.toolchain_config,
+                    &proj.config,
+                ),
+                None => registry.create_config(&toolchain.id, &session.toolchain_config),
+            },
+        })
+        .await?;
+
+    Ok(outputs
+        .into_iter()
+        .flat_map(|output| output.scaffold_globs)
+        .collect())
 }
 
 fn copy_files_from_paths(paths: Vec<PathBuf>, source: &Path, dest: &Path) -> AppResult {
@@ -150,13 +175,8 @@ async fn scaffold_workspace(
                         }
                     }
                     LanguageType::TypeScript => {
-                        if let Some(typescript_config) = &session.toolchain_config.typescript {
-                            files_to_copy
-                                .push(typescript_config.project_config_file_name.to_owned());
-                            files_to_copy.push(typescript_config.root_config_file_name.to_owned());
-                            files_to_copy
-                                .push(typescript_config.root_options_config_file_name.to_owned());
-                        }
+                        files_to_copy.push("tsconfig.json".to_owned());
+                        files_to_copy.push("tsconfig.options.json".to_owned());
                     }
                     _ => {}
                 }
@@ -280,37 +300,67 @@ async fn scaffold_sources_project(
     project_id: &Id,
     manifest: &mut DockerManifest,
 ) -> AppResult {
-    let project = project_graph.get(project_id)?;
-    let mut include_globs = vec!["!node_modules/**", "!target/**/*", "!vendor/**"];
-
     manifest.focused_projects.insert(project_id.to_owned());
 
+    let project = project_graph.get(project_id)?;
+    let mut globs = get_toolchain_globs(session, Some(&project)).await?;
+
+    globs.extend([
+        "!node_modules/**".into(),
+        "!target/**/*".into(),
+        "!vendor/**".into(),
+    ]);
+
     if project.config.docker.scaffold.include.is_empty() {
-        include_globs.push("**/*");
+        globs.push("**/*".into());
     } else {
-        include_globs.extend(
+        globs.extend(
             project
                 .config
                 .docker
                 .scaffold
                 .include
                 .iter()
-                .map(|glob| glob.as_str()),
+                .map(|glob| glob.to_string())
+                .collect::<Vec<_>>(),
         );
     }
 
     debug!(
         project_id = project_id.as_str(),
-        globs = ?include_globs,
-        "Copying sources from project {}",
+        globs = ?globs,
+        "Copying sources for project {}",
         color::id(project_id),
     );
 
     copy_files_from_paths(
-        glob::walk_files(&project.root, include_globs)?,
+        glob::walk_files(&project.root, &globs)?,
         &session.workspace_root,
         docker_sources_root,
     )?;
+
+    let toolchains = project.get_enabled_toolchains();
+
+    if !toolchains.is_empty() {
+        debug!(
+            project_id = project_id.as_str(),
+            toolchains = ?toolchains,
+            "Copying toolchain related sources for project {}",
+            color::id(project_id),
+        );
+
+        session
+            .get_toolchain_registry()
+            .await?
+            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+                context: registry.create_context(),
+                input_dir: toolchain.to_virtual_path(&project.root),
+                project: Some(project.to_fragment()),
+                output_dir: toolchain
+                    .to_virtual_path(project.source.to_logical_path(docker_sources_root)),
+            })
+            .await?;
+    }
 
     for dep_cfg in &project.dependencies {
         // Avoid root-level projects as it will pull in all sources,
@@ -343,7 +393,6 @@ async fn scaffold_sources(
     project_graph: &ProjectGraph,
     docker_root: &Path,
     project_ids: &[Id],
-    include: &[String],
 ) -> AppResult {
     let docker_sources_root = docker_root.join("sources");
 
@@ -377,25 +426,6 @@ async fn scaffold_sources(
         }
     }
 
-    // Include via globs
-    if !include.is_empty() {
-        warn!(
-            "The --include argument is deprecated, use the {} settings instead",
-            color::property("docker")
-        );
-
-        debug!(
-            include = ?include,
-            "Including additional sources"
-        );
-
-        copy_files_from_paths(
-            glob::walk_files(&session.workspace_root, include)?,
-            &session.workspace_root,
-            &docker_sources_root,
-        )?;
-    }
-
     json::write_file(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
 
     // Sync to the workspace scaffold for staged builds
@@ -408,7 +438,7 @@ async fn scaffold_sources(
     Ok(None)
 }
 
-pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
+fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
     let ignore_file = workspace_root.join(".dockerignore");
     let mut is_ignored = false;
 
@@ -467,19 +497,12 @@ pub async fn scaffold(session: CliSession, args: DockerScaffoldArgs) -> AppResul
     fs::remove_dir_all(&docker_root)?;
     fs::create_dir_all(&docker_root)?;
 
-    // Create the workspace skeleton
+    // Create the skeleton
     let project_graph = session.get_project_graph().await?;
 
     scaffold_workspace(&session, &project_graph, &docker_root).await?;
 
-    scaffold_sources(
-        &session,
-        &project_graph,
-        &docker_root,
-        &args.ids,
-        &args.include,
-    )
-    .await?;
+    scaffold_sources(&session, &project_graph, &docker_root, &args.ids).await?;
 
     Ok(None)
 }

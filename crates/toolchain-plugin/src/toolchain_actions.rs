@@ -1,7 +1,10 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
-use moon_pdk_api::{HashTaskContentsInput, SyncOutput, SyncProjectInput, SyncWorkspaceInput};
+use moon_pdk_api::{
+    DockerMetadataInput, DockerMetadataOutput, HashTaskContentsInput, ScaffoldDockerInput,
+    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
+};
 use starbase_utils::json::JsonValue;
 
 // These implementations aggregate the call results from all toolchains
@@ -9,6 +12,27 @@ use starbase_utils::json::JsonValue;
 // depending on the need of the call site.
 
 impl ToolchainRegistry {
+    pub async fn docker_metadata<InFn>(
+        &self,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<DockerMetadataOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DockerMetadataInput,
+    {
+        let ids = self.get_plugin_ids();
+
+        let results = self
+            .call_func_all(
+                "docker_metadata",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.docker_metadata(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
     pub async fn hash_task_contents<InFn>(
         &self,
         ids: Vec<&Id>,
@@ -30,6 +54,26 @@ impl ToolchainRegistry {
             .into_iter()
             .flat_map(|result| result.output.contents)
             .collect())
+    }
+
+    pub async fn scaffold_docker<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ScaffoldDockerOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ScaffoldDockerInput,
+    {
+        let results = self
+            .call_func_all(
+                "scaffold_docker",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.scaffold_docker(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
     }
 
     pub async fn sync_project<InFn>(

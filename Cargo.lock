@@ -3775,6 +3775,7 @@ dependencies = [
  "moon_node_lang",
  "moon_node_platform",
  "moon_node_tool",
+ "moon_pdk_api",
  "moon_platform",
  "moon_plugin",
  "moon_process",

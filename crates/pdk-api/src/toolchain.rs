@@ -125,3 +125,56 @@ api_struct!(
         pub contents: Vec<serde_json::Value>,
     }
 );
+
+// DOCKER
+
+api_struct!(
+    /// Input passed to the `docker_metadata` function.
+    pub struct DockerMetadataInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `docker_metadata` function.
+    pub struct DockerMetadataOutput {
+        /// List of files as globs to copy over during
+        /// the scaffolding process. Applies to both project
+        /// and workspace level scaffolding.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub scaffold_globs: Vec<String>,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `scaffold_docker` function.
+    pub struct ScaffoldDockerInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// The directory in which to copy files from.
+        pub input_dir: VirtualPath,
+
+        /// The project if scaffolding an individual project.
+        /// If none, we're scaffolding the workspace root.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub project: Option<ProjectFragment>,
+
+        /// The directory in which to copy files to.
+        /// This is the `.moon/docker` path.
+        pub output_dir: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `scaffold_docker` function.
+    pub struct ScaffoldDockerOutput {
+        /// List of files that were copied into the scaffold.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub copied_files: Vec<VirtualPath>,
+    }
+);

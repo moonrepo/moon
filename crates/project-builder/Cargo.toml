@@ -16,6 +16,7 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
 moon_toolchain = { path = "../toolchain" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 tracing = { workspace = true }

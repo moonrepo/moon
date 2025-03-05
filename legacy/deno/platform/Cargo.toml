@@ -19,13 +19,13 @@ moon_process = { path = "../../../crates/process" }
 moon_project = { path = "../../../crates/project" }
 moon_task = { path = "../../../crates/task" }
 moon_tool = { path = "../../core/tool" }
-moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }
+typescript_tsconfig_json = { workspace = true }
 
 [lints]
 workspace = true

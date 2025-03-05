@@ -2,8 +2,8 @@ use moon_app::commands::docker::DockerManifest;
 use moon_common::Id;
 use moon_config::{PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
-    create_sandbox_with_config, get_cases_fixture_configs, get_node_depman_fixture_configs,
-    get_node_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
+    create_sandbox_with_config, get_node_depman_fixture_configs, get_node_fixture_configs,
+    get_projects_fixture_configs, predicates::prelude::*,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json;
@@ -321,38 +321,6 @@ mod scaffold_sources {
         // Check that some others DO NOT exist
         assert!(!docker.join("deps/foo").exists());
         assert!(!docker.join("deps/baz").exists());
-    }
-
-    #[test]
-    fn can_include_more_files() {
-        let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
-
-        let sandbox = create_sandbox_with_config(
-            "cases",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker")
-                .arg("scaffold")
-                .arg("base")
-                // Janky but works
-                .arg("--include")
-                .arg("outputs/generate.js")
-                .arg("--include")
-                .arg("passthrough-args/*.sh");
-        });
-
-        let docker = sandbox.path().join(".moon/docker/sources");
-
-        assert!(docker.join("base").exists());
-        assert!(docker.join("outputs/generate.js").exists());
-        assert!(docker.join("passthrough-args/passthroughArgs.sh").exists());
-
-        // Check that some others DO NOT exist
-        assert!(!docker.join("output-styles/style.js").exists());
     }
 
     #[test]

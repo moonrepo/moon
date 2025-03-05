@@ -1,16 +1,19 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
-    HashTaskContentsInput, HashTaskContentsOutput, RegisterToolchainInput, RegisterToolchainOutput,
+    DockerMetadataInput, DockerMetadataOutput, HashTaskContentsInput, HashTaskContentsOutput,
+    RegisterToolchainInput, RegisterToolchainOutput, ScaffoldDockerInput, ScaffoldDockerOutput,
     SyncOutput, SyncProjectInput, SyncWorkspaceInput, VirtualPath,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
 use starbase_utils::glob;
+use starbase_utils::json::JsonValue;
 use std::fmt;
+use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, instrument};
+use tracing::instrument;
 
 pub type ToolchainMetadata = RegisterToolchainOutput;
 
@@ -65,41 +68,70 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    pub fn handle_sync_output(&self, mut output: SyncOutput) -> SyncOutput {
-        // Ensure we are dealing with real paths from this point onwards
-        for file in &mut output.changed_files {
+    // Ensure we are dealing with real paths from this point onwards
+    fn handle_output_files(&self, files: &mut [VirtualPath]) {
+        for file in files {
             *file = VirtualPath::OnlyReal(
                 file.real_path()
                     .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
             );
         }
-
-        output
     }
 
-    pub fn has_files_in_dir(&self, dir: &Path) -> miette::Result<bool> {
-        let mut patterns = vec![];
-        patterns.extend(&self.metadata.config_file_globs);
-
+    pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
+        // Do simple checks first to avoid glob overhead
         if let Some(file) = &self.metadata.manifest_file_name {
-            patterns.push(file);
+            if dir.join(file).exists() {
+                return Ok(true);
+            }
         }
 
         if let Some(file) = &self.metadata.lock_file_name {
-            patterns.push(file);
+            if dir.join(file).exists() {
+                return Ok(true);
+            }
         }
 
-        if patterns.is_empty() {
+        if self.metadata.config_file_globs.is_empty() {
             return Ok(false);
         }
 
-        let results = glob::walk(dir, patterns)?;
+        // Oh no, heavy lookup...
+        let results = glob::walk(dir, &self.metadata.config_file_globs)?;
 
         Ok(!results.is_empty())
     }
 
-    pub async fn has_func(&self, func: &str) -> bool {
-        self.plugin.has_func(func).await
+    #[instrument(skip(self))]
+    pub async fn docker_metadata(
+        &self,
+        input: DockerMetadataInput,
+    ) -> miette::Result<DockerMetadataOutput> {
+        let mut output: DockerMetadataOutput = self
+            .plugin
+            .cache_func_with("docker_metadata", input)
+            .await?;
+
+        // Include toolchain metadata in docker
+        let mut add_glob = |glob: &str| {
+            if !output.scaffold_globs.iter().any(|g| g == glob) {
+                output.scaffold_globs.push(glob.to_owned());
+            }
+        };
+
+        if let Some(name) = &self.metadata.lock_file_name {
+            add_glob(name);
+        }
+
+        if let Some(name) = &self.metadata.manifest_file_name {
+            add_glob(name);
+        }
+
+        if let Some(name) = &self.metadata.vendor_dir_name {
+            add_glob(&format!("!{name}/**/*"));
+        }
+
+        Ok(output)
     }
 
     #[instrument(skip(self))]
@@ -107,44 +139,58 @@ impl ToolchainPlugin {
         &self,
         input: HashTaskContentsInput,
     ) -> miette::Result<HashTaskContentsOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Hashing task contents");
-
-        let output: HashTaskContentsOutput = self
+        let mut output: HashTaskContentsOutput = self
             .plugin
             .call_func_with("hash_task_contents", input)
             .await?;
 
-        debug!(toolchain_id = self.id.as_str(), "Hashed task contents");
+        // Include the ID for easier debugging
+        for content in &mut output.contents {
+            if let Some(obj) = content.as_object_mut() {
+                obj.insert("@toolchain".into(), JsonValue::String(self.id.to_string()));
+            }
+        }
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn scaffold_docker(
+        &self,
+        input: ScaffoldDockerInput,
+    ) -> miette::Result<ScaffoldDockerOutput> {
+        let mut output: ScaffoldDockerOutput =
+            self.plugin.call_func_with("scaffold_docker", input).await?;
+
+        self.handle_output_files(&mut output.copied_files);
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<SyncOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Syncing project");
+        let mut output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
 
-        let output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
-        let output = self.handle_sync_output(output);
-
-        debug!(
-            toolchain_id = self.id.as_str(),
-            changed_files = ?output.changed_files,
-            "Synced project",
-        );
+        self.handle_output_files(&mut output.changed_files);
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_workspace(&self, input: SyncWorkspaceInput) -> miette::Result<SyncOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Syncing workspace");
+        let mut output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
 
-        let output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
-        let output = self.handle_sync_output(output);
-
-        debug!(toolchain_id = self.id.as_str(), "Synced workspace");
+        self.handle_output_files(&mut output.changed_files);
 
         Ok(output)
+    }
+}
+
+impl Deref for ToolchainPlugin {
+    type Target = PluginContainer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.plugin
     }
 }
 

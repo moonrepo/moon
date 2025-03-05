@@ -701,14 +701,7 @@ mod hashing {
         let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
-        assert_eq!(
-            hash_vcs,
-            "e814a46914292a2ddd12dde348eff342b0569e023dc885a9fb456ee298459e47"
-        );
-        assert_eq!(
-            hash_glob,
-            "288124efd105251026e23fe58cb8a2e509f8da520f80ed081b5c8c16374ca16e"
-        );
+        assert_debug_snapshot!(vec![hash_vcs, hash_glob]);
     }
 }
 

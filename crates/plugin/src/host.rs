@@ -6,7 +6,7 @@ use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use std::fmt;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tracing::{instrument, trace};
 use warpgate::host::{HostData, create_host_functions as create_shared_host_functions};
 
@@ -14,7 +14,7 @@ use warpgate::host::{HostData, create_host_functions as create_shared_host_funct
 pub struct PluginHostData {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
-    pub workspace_graph: WorkspaceGraph,
+    pub workspace_graph: Arc<RwLock<WorkspaceGraph>>,
 }
 
 impl fmt::Debug for PluginHostData {
@@ -86,7 +86,12 @@ fn load_project(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let project = data.workspace_graph.get_project(&id).map_err(map_error)?;
+    let project = data
+        .workspace_graph
+        .read()
+        .unwrap()
+        .get_project(&id)
+        .map_err(map_error)?;
 
     trace!(
         plugin = &uuid,
@@ -124,11 +129,12 @@ fn load_projects(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
+    let workspace_graph = data.workspace_graph.read().unwrap();
     let mut projects = FxHashMap::default();
 
     for id in &ids {
         let id = Id::raw(id);
-        let project = data.workspace_graph.get_project(&id).map_err(map_error)?;
+        let project = workspace_graph.get_project(&id).map_err(map_error)?;
 
         projects.insert(id, project);
     }
@@ -175,7 +181,12 @@ fn load_task(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let task = data.workspace_graph.get_task(&target).map_err(map_error)?;
+    let task = data
+        .workspace_graph
+        .read()
+        .unwrap()
+        .get_task(&target)
+        .map_err(map_error)?;
 
     trace!(
         plugin = &uuid,
@@ -213,6 +224,7 @@ fn load_tasks(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
+    let workspace_graph = data.workspace_graph.read().unwrap();
     let mut tasks = FxHashMap::default();
 
     for target in &targets {
@@ -224,7 +236,7 @@ fn load_tasks(
             )));
         };
 
-        let task = data.workspace_graph.get_task(&target).map_err(map_error)?;
+        let task = workspace_graph.get_task(&target).map_err(map_error)?;
 
         tasks.insert(target, task);
     }

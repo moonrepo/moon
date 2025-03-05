@@ -1,7 +1,5 @@
 mod utils;
 
-use std::path::Path;
-
 use moon_common::Id;
 use moon_config::{
     ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths,
@@ -11,6 +9,9 @@ use moon_config::{
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use schematic::schema::IndexMap;
+use serde_json::Value;
+use std::collections::BTreeMap;
+use std::path::Path;
 use utils::*;
 
 fn load_config_from_root(root: &Path, source: &str) -> miette::Result<ProjectConfig> {
@@ -586,7 +587,6 @@ toolchain:
   node:
     version: '18.0.0'
   typescript:
-    disabled: false
     routeOutDirToCache: true
 ",
                 |path| load_config_from_root(path, "."),
@@ -600,10 +600,14 @@ toolchain:
                 Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
             );
 
-            let ts = config.toolchain.typescript.unwrap();
-
-            assert!(!ts.disabled);
-            assert_eq!(ts.route_out_dir_to_cache, Some(true));
+            if let ProjectToolchainEntry::Config(ts) =
+                config.toolchain.toolchains.get("typescript").unwrap()
+            {
+                assert_eq!(
+                    ts.config.get("routeOutDirToCache").unwrap(),
+                    &Value::Bool(true),
+                );
+            }
         }
 
         #[test]
@@ -675,10 +679,7 @@ toolchain:
                 &ProjectToolchainEntry::Config(ToolchainPluginConfig {
                     plugin: None,
                     version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
-                    config: FxHashMap::from_iter([(
-                        "custom".into(),
-                        serde_json::Value::Bool(true)
-                    )]),
+                    config: BTreeMap::from_iter([("custom".into(), serde_json::Value::Bool(true))]),
                 })
             );
         }
@@ -789,11 +790,17 @@ workspace:
                         deno: Some(ProjectToolchainCommonToolConfig {
                             version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                         }),
-                        typescript: Some(ProjectToolchainTypeScriptConfig {
-                            disabled: true,
-                            include_shared_types: Some(true),
-                            ..Default::default()
-                        }),
+                        toolchains: FxHashMap::from_iter([(
+                            Id::raw("typescript"),
+                            ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                plugin: None,
+                                version: None,
+                                config: BTreeMap::from_iter([(
+                                    "includeSharedTypes".into(),
+                                    serde_json::Value::Bool(true)
+                                )]),
+                            })
+                        )]),
                         ..Default::default()
                     },
                     type_of: ProjectType::Library,

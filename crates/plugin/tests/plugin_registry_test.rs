@@ -9,7 +9,7 @@ use proto_core::{ProtoEnvironment, warpgate::FileLocator};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::fs;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 struct TestPlugin;
@@ -31,7 +31,7 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
         PluginHostData {
             moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
             proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
-            workspace_graph: WorkspaceGraph::default(),
+            workspace_graph: Arc::new(RwLock::new(WorkspaceGraph::default())),
         },
     );
 

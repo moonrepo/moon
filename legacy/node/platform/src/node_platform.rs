@@ -10,7 +10,7 @@ use moon_common::path::is_root_level_source;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
     NodePackageManager, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
-    TaskConfig, TasksConfigsMap, TypeScriptConfig, UnresolvedVersionSpec,
+    TaskConfig, TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
@@ -26,7 +26,6 @@ use moon_task::Task;
 use moon_tool::get_proto_version_env;
 use moon_tool::prepend_path_env_var;
 use moon_tool::{Tool, ToolManager};
-use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
@@ -53,15 +52,12 @@ pub struct NodePlatform {
 
     toolchain: ToolManager<NodeTool>,
 
-    typescript_config: Option<TypeScriptConfig>,
-
     workspace_root: PathBuf,
 }
 
 impl NodePlatform {
     pub fn new(
         config: &NodeConfig,
-        typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
         console: Arc<Console>,
@@ -72,7 +68,6 @@ impl NodePlatform {
             package_names: FxHashMap::default(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(Id::raw("node"), RuntimeReq::Global)),
-            typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
             console,
         }
@@ -390,14 +385,7 @@ impl Platform for NodePlatform {
         project: &Project,
         dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
-        let modified = actions::sync_project(
-            project,
-            dependencies,
-            &self.workspace_root,
-            &self.config,
-            &self.typescript_config,
-        )
-        .await?;
+        let modified = actions::sync_project(project, dependencies, &self.config).await?;
 
         Ok(modified)
     }
@@ -452,16 +440,6 @@ impl Platform for NodePlatform {
         .await?;
 
         hasher.hash_content(node_hash)?;
-
-        if let Some(typescript_config) = &self.typescript_config {
-            let ts_hash = TypeScriptTargetHash::generate(
-                typescript_config,
-                &self.workspace_root,
-                &project.root,
-            )?;
-
-            hasher.hash_content(ts_hash)?;
-        }
 
         Ok(())
     }

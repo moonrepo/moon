@@ -7,7 +7,7 @@ expression: assert.output()
 Project: root
 Alias: test-cases
 Source: .
-Toolchain: node
+Toolchains: node, typescript
 Language: typescript
 Stack: unknown
 Type: unknown

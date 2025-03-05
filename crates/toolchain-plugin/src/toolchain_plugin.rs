@@ -77,23 +77,26 @@ impl ToolchainPlugin {
         }
     }
 
-    pub fn has_files_in_dir(&self, dir: &Path) -> miette::Result<bool> {
-        let mut patterns = vec![];
-        patterns.extend(&self.metadata.config_file_globs);
-
+    pub fn detect_usage(&self, dir: &Path) -> miette::Result<bool> {
+        // Do simple checks first to avoid glob overhead
         if let Some(file) = &self.metadata.manifest_file_name {
-            patterns.push(file);
+            if dir.join(file).exists() {
+                return Ok(true);
+            }
         }
 
         if let Some(file) = &self.metadata.lock_file_name {
-            patterns.push(file);
+            if dir.join(file).exists() {
+                return Ok(true);
+            }
         }
 
-        if patterns.is_empty() {
+        if self.metadata.config_file_globs.is_empty() {
             return Ok(false);
         }
 
-        let results = glob::walk(dir, patterns)?;
+        // Oh no, heavy lookup...
+        let results = glob::walk(dir, &self.metadata.config_file_globs)?;
 
         Ok(!results.is_empty())
     }

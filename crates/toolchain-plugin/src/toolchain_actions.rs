@@ -6,12 +6,27 @@ use moon_pdk_api::{
     ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
 };
 use starbase_utils::json::JsonValue;
+use std::path::Path;
 
 // These implementations aggregate the call results from all toolchains
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
 impl ToolchainRegistry {
+    pub async fn detect_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
+        let mut detected = vec![];
+
+        for id in self.get_plugin_ids() {
+            if let Ok(toolchain) = self.load(id).await {
+                if toolchain.detect_usage(dir)? {
+                    detected.push(Id::raw(id));
+                }
+            }
+        }
+
+        Ok(detected)
+    }
+
     pub async fn docker_metadata<InFn>(
         &self,
         input_factory: InFn,

@@ -13,7 +13,7 @@ use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
 };
 use moon_toolchain_plugin::ToolchainRegistry;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -130,7 +130,7 @@ impl<'app> ProjectBuilder<'app> {
         // Infer toolchains from the language as it handles the chain correctly:
         // For example: node -> javascript, and not just node
         if self.toolchains_tasks.is_empty() {
-            let mut toolchains = vec![];
+            let mut toolchains = FxHashSet::default();
 
             #[allow(deprecated)]
             if let Some(default_id) = &config.toolchain.default {
@@ -153,6 +153,13 @@ impl<'app> ProjectBuilder<'app> {
                     &self.root,
                     &self.language,
                 ));
+
+                toolchains.extend(
+                    self.context
+                        .toolchain_registry
+                        .detect_usage(&self.root)
+                        .await?,
+                );
             }
 
             self.toolchains_config.extend(toolchains.clone());

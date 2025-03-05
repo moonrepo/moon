@@ -248,6 +248,49 @@ impl ToolchainConfig {
             python_config.inherit_proto(proto_config)?;
         }
 
+        self.inherit_plugin_locators()?;
+
+        Ok(())
+    }
+
+    pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
+        use proto_core::warpgate::{FileLocator, PluginLocator};
+        use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
+
+        for (id, config) in self.toolchains.iter_mut() {
+            if config.plugin.is_some() {
+                continue;
+            }
+
+            match id.as_str() {
+                "typescript" => {
+                    config.plugin = Some(PluginLocator::File(Box::new(FileLocator {
+                        file: "file:///Users/miles/Projects/moonrepo/plugins/target/wasm32-wasip1/release/typescript_toolchain.wasm"
+                                .into(),
+                        path: None,
+                    })));
+                }
+                other => {
+                    return Err(ConfigError::Validator {
+                        location: ".moon/toolchain.yml".into(),
+                        error: Box::new(ValidatorError {
+                            errors: vec![ValidateError {
+                                message:
+                                    "a locator is required for plugins; accepts file paths and URLs"
+                                        .into(),
+                                path: Path::new(vec![
+                                    PathSegment::Key(other.to_string()),
+                                    PathSegment::Key("plugin".into()),
+                                ]),
+                            }],
+                        }),
+                        help: None,
+                    }
+                    .into());
+                }
+            };
+        }
+
         Ok(())
     }
 }

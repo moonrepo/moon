@@ -10,7 +10,6 @@ cacheable!(
     #[config(allow_unknown_fields)]
     pub struct ToolchainPluginConfig {
         /// Location of the WASM plugin to use.
-        // #[setting(required)]
         pub plugin: Option<PluginLocator>,
 
         /// The version of the toolchain to download and install.

@@ -1376,8 +1376,8 @@ typescript:
     mod pkl {
         use super::*;
         use moon_config::*;
-        use rustc_hash::FxHashMap;
         use starbase_sandbox::locate_fixture;
+        use std::collections::BTreeMap;
 
         #[test]
         fn loads_pkl() {
@@ -1415,7 +1415,7 @@ typescript:
             );
             assert_eq!(
                 config.toolchains.get("typescript").unwrap().config,
-                FxHashMap::from_iter([
+                BTreeMap::from_iter([
                     ("createMissingConfig".into(), Value::Bool(false)),
                     ("includeProjectReferenceSources".into(), Value::Bool(true)),
                     ("includeSharedTypes".into(), Value::Bool(true)),

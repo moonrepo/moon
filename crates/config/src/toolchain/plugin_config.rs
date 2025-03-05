@@ -1,6 +1,6 @@
 use moon_common::cacheable;
-use rustc_hash::FxHashMap;
 use schematic::Config;
+use std::collections::BTreeMap;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
@@ -17,6 +17,6 @@ cacheable!(
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
         #[setting(flatten)]
-        pub config: FxHashMap<String, serde_json::Value>,
+        pub config: BTreeMap<String, serde_json::Value>,
     }
 );

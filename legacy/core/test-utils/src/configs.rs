@@ -24,7 +24,7 @@ pub fn get_default_toolchain() -> PartialToolchainConfig {
         toolchains: Some(FxHashMap::from_iter([(
             Id::raw("typescript"),
             PartialToolchainPluginConfig {
-                config: Some(FxHashMap::from_iter([
+                config: Some(BTreeMap::from_iter([
                     ("createMissingConfig".into(), Value::Bool(false)),
                     ("routeOutDirToCache".into(), Value::Bool(false)),
                     ("syncProjectReferences".into(), Value::Bool(false)),

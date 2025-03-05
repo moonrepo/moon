@@ -321,8 +321,10 @@ impl AppSession for CliSession {
             )
             .await?;
 
+            self.get_toolchain_registry().await?.load_all().await?;
+
             if self.requires_toolchain_installed() {
-                analyze::load_toolchain(self.get_toolchain_registry().await?).await?;
+                analyze::load_toolchain().await?;
             }
         }
 

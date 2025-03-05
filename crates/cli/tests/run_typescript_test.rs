@@ -1,17 +1,20 @@
-use moon_config::PartialTypeScriptConfig;
 use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox_with_config, get_typescript_fixture_configs,
 };
+use starbase_utils::json::JsonValue;
+use std::collections::BTreeMap;
 use std::fs::{self, read_to_string};
 
 fn typescript_sandbox<C>(callback: C) -> Sandbox
 where
-    C: FnOnce(&mut PartialTypeScriptConfig),
+    C: FnOnce(&mut BTreeMap<String, JsonValue>),
 {
     let (workspace_config, mut toolchain_config, tasks_config) = get_typescript_fixture_configs();
 
-    if let Some(ts_config) = &mut toolchain_config.typescript {
-        callback(ts_config);
+    if let Some(tc) = &mut toolchain_config.toolchains {
+        if let Some(ts_config) = tc.get_mut("typescript") {
+            callback(ts_config.config.get_or_insert_default());
+        }
     }
 
     let sandbox = create_sandbox_with_config(
@@ -28,7 +31,7 @@ where
 #[test]
 fn creates_missing_tsconfig() {
     let sandbox = typescript_sandbox(|cfg| {
-        cfg.create_missing_config = Some(true);
+        cfg.insert("createMissingConfig".into(), JsonValue::Bool(true));
     });
 
     assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
@@ -49,7 +52,7 @@ fn creates_missing_tsconfig() {
 #[test]
 fn doesnt_create_missing_tsconfig_if_setting_off() {
     let sandbox = typescript_sandbox(|cfg| {
-        cfg.create_missing_config = Some(false);
+        cfg.insert("createMissingConfig".into(), JsonValue::Bool(false));
     });
 
     assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
@@ -64,8 +67,8 @@ fn doesnt_create_missing_tsconfig_if_setting_off() {
 #[test]
 fn doesnt_create_missing_tsconfig_if_syncing_off() {
     let sandbox = typescript_sandbox(|cfg| {
-        cfg.create_missing_config = Some(true);
-        cfg.sync_project_references = Some(false);
+        cfg.insert("createMissingConfig".into(), JsonValue::Bool(true));
+        cfg.insert("syncProjectReferences".into(), JsonValue::Bool(false));
     });
 
     assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
@@ -80,8 +83,8 @@ fn doesnt_create_missing_tsconfig_if_syncing_off() {
 #[test]
 fn doesnt_create_missing_tsconfig_if_project_disabled() {
     let sandbox = typescript_sandbox(|cfg| {
-        cfg.create_missing_config = Some(true);
-        cfg.sync_project_references = Some(true);
+        cfg.insert("createMissingConfig".into(), JsonValue::Bool(true));
+        cfg.insert("syncProjectReferences".into(), JsonValue::Bool(true));
     });
 
     assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
@@ -136,7 +139,10 @@ mod refs {
     #[test]
     fn syncs_root_project_if_root_config_custom_name() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.root_config_file_name = Some("tsconfig.root.json".into());
+            cfg.insert(
+                "rootConfigFileName".into(),
+                JsonValue::String("tsconfig.root.json".into()),
+            );
         });
 
         fs::write(sandbox.path().join("tsconfig.root.json"), "{}").unwrap();
@@ -162,7 +168,7 @@ mod refs {
     #[test]
     fn doesnt_sync_depends_on_as_refs_if_disabled() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.sync_project_references = Some(false);
+            cfg.insert("syncProjectReferences".into(), JsonValue::Bool(false));
         });
 
         assert!(
@@ -187,7 +193,7 @@ mod refs {
     #[test]
     fn doesnt_sync_depends_on_as_refs_if_disabled_in_project() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.sync_project_references = Some(true);
+            cfg.insert("syncProjectReferences".into(), JsonValue::Bool(true));
         });
 
         sandbox.run_moon(|cmd| {
@@ -212,7 +218,7 @@ mod out_dir {
     #[test]
     fn routes_to_cache() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.route_out_dir_to_cache = Some(true);
+            cfg.insert("routeOutDirToCache".into(), JsonValue::Bool(true));
         });
 
         sandbox.run_moon(|cmd| {
@@ -227,7 +233,7 @@ mod out_dir {
     #[test]
     fn routes_to_cache_when_no_compiler_options() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.route_out_dir_to_cache = Some(true);
+            cfg.insert("routeOutDirToCache".into(), JsonValue::Bool(true));
         });
 
         sandbox.run_moon(|cmd| {
@@ -247,7 +253,7 @@ mod out_dir {
     #[test]
     fn doesnt_route_to_cache_if_disabled() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.route_out_dir_to_cache = Some(false);
+            cfg.insert("routeOutDirToCache".into(), JsonValue::Bool(false));
         });
 
         sandbox.run_moon(|cmd| {
@@ -262,7 +268,7 @@ mod out_dir {
     #[test]
     fn doesnt_route_to_cache_if_disabled_in_project() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.route_out_dir_to_cache = Some(true);
+            cfg.insert("routeOutDirToCache".into(), JsonValue::Bool(true));
         });
 
         sandbox.run_moon(|cmd| {
@@ -286,7 +292,7 @@ mod paths {
     #[test]
     fn maps_paths() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.sync_project_references_to_paths = Some(true);
+            cfg.insert("syncProjectReferencesToPaths".into(), JsonValue::Bool(true));
         });
 
         sandbox.run_moon(|cmd| {
@@ -301,8 +307,8 @@ mod paths {
     #[test]
     fn doesnt_map_paths_if_no_refs() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.sync_project_references = Some(false);
-            cfg.sync_project_references_to_paths = Some(true);
+            cfg.insert("syncProjectReferences".into(), JsonValue::Bool(false));
+            cfg.insert("syncProjectReferencesToPaths".into(), JsonValue::Bool(true));
         });
 
         std::fs::remove_file(sandbox.path().join("syncs-paths-refs/moon.yml")).unwrap();
@@ -319,7 +325,10 @@ mod paths {
     #[test]
     fn doesnt_map_paths_if_disabled() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.sync_project_references_to_paths = Some(false);
+            cfg.insert(
+                "syncProjectReferencesToPaths".into(),
+                JsonValue::Bool(false),
+            );
         });
 
         sandbox.run_moon(|cmd| {
@@ -334,7 +343,7 @@ mod paths {
     #[test]
     fn doesnt_map_paths_if_disabled_in_project() {
         let sandbox = typescript_sandbox(|cfg| {
-            cfg.sync_project_references_to_paths = Some(true);
+            cfg.insert("syncProjectReferencesToPaths".into(), JsonValue::Bool(true));
         });
 
         sandbox.run_moon(|cmd| {

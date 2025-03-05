@@ -157,7 +157,7 @@ impl<'app> ProjectBuilder<'app> {
                 toolchains.extend(
                     self.context
                         .toolchain_registry
-                        .detect_usage(&self.root)
+                        .detect_project_usage(&self.root)
                         .await?,
                 );
             }

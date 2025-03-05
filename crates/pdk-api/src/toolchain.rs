@@ -1,4 +1,5 @@
 use crate::common::*;
+use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use schematic::Schema;
@@ -167,6 +168,9 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
+        /// Docker scaffold configuration.
+        pub docker_config: DockerScaffoldConfig,
+
         /// The directory in which to copy files from.
         pub input_dir: VirtualPath,
 
@@ -188,5 +192,16 @@ api_struct!(
         /// List of files that were copied into the scaffold.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub copied_files: Vec<VirtualPath>,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `prune_docker` function.
+    pub struct PruneDockerInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Docker prune configuration.
+        pub docker_config: DockerPruneConfig,
     }
 );

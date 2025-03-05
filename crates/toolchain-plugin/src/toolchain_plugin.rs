@@ -77,7 +77,7 @@ impl ToolchainPlugin {
         }
     }
 
-    pub fn detect_usage(&self, dir: &Path) -> miette::Result<bool> {
+    pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
         // Do simple checks first to avoid glob overhead
         if let Some(file) = &self.metadata.manifest_file_name {
             if dir.join(file).exists() {

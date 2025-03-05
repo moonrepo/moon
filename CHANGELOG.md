@@ -28,6 +28,7 @@
 - Added new toolchain WASM APIs.
   - `docker_metadata` - Defined metadata related to `docker` commands.
   - `hash_task_contents` - Inject content into the task hashing process.
+  - `prune_docker` - Custom operations to run after `docker prune`.
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.
   - `sync_project` - Run syncing operations per project.
   - `sync_workspace` - Run syncing operations at the workspace root.

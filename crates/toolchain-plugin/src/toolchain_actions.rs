@@ -13,12 +13,12 @@ use std::path::Path;
 // depending on the need of the call site.
 
 impl ToolchainRegistry {
-    pub async fn detect_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
+    pub async fn detect_project_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
         let mut detected = vec![];
 
         for id in self.get_plugin_ids() {
             if let Ok(toolchain) = self.load(id).await {
-                if toolchain.detect_usage(dir)? {
+                if toolchain.detect_project_usage(dir)? {
                     detected.push(Id::raw(id));
                 }
             }

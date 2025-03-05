@@ -183,6 +183,7 @@ async fn scaffold_workspace_project(
             .await?
             .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
                 context: registry.create_context(),
+                docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Configs,
@@ -328,6 +329,7 @@ async fn scaffold_sources_project(
             .await?
             .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
                 context: registry.create_context(),
+                docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Sources,

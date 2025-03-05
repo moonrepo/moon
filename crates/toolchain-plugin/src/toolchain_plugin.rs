@@ -7,12 +7,13 @@ use moon_pdk_api::{
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
 use starbase_utils::glob;
+use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, instrument};
+use tracing::instrument;
 
 pub type ToolchainMetadata = RegisterToolchainOutput;
 
@@ -106,11 +107,6 @@ impl ToolchainPlugin {
         &self,
         input: DockerMetadataInput,
     ) -> miette::Result<DockerMetadataOutput> {
-        debug!(
-            toolchain_id = self.id.as_str(),
-            "Extracting docker metadata"
-        );
-
         let mut output: DockerMetadataOutput = self
             .plugin
             .cache_func_with("docker_metadata", input)
@@ -135,8 +131,6 @@ impl ToolchainPlugin {
             add_glob(&format!("!{name}/**/*"));
         }
 
-        debug!(toolchain_id = self.id.as_str(), "Extracted docker metadata");
-
         Ok(output)
     }
 
@@ -145,14 +139,17 @@ impl ToolchainPlugin {
         &self,
         input: HashTaskContentsInput,
     ) -> miette::Result<HashTaskContentsOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Hashing task contents");
-
-        let output: HashTaskContentsOutput = self
+        let mut output: HashTaskContentsOutput = self
             .plugin
             .call_func_with("hash_task_contents", input)
             .await?;
 
-        debug!(toolchain_id = self.id.as_str(), "Hashed task contents");
+        // Include the ID for easier debugging
+        for content in &mut output.contents {
+            if let Some(obj) = content.as_object_mut() {
+                obj.insert("@toolchain".into(), JsonValue::String(self.id.to_string()));
+            }
+        }
 
         Ok(output)
     }
@@ -162,48 +159,28 @@ impl ToolchainPlugin {
         &self,
         input: ScaffoldDockerInput,
     ) -> miette::Result<ScaffoldDockerOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Scaffolding docker");
-
         let mut output: ScaffoldDockerOutput =
             self.plugin.call_func_with("scaffold_docker", input).await?;
 
         self.handle_output_files(&mut output.copied_files);
-
-        debug!(
-            toolchain_id = self.id.as_str(),
-            copied_files = ?output.copied_files,
-            "Scaffolded docker",
-        );
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<SyncOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Syncing project");
-
         let mut output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
 
         self.handle_output_files(&mut output.changed_files);
-
-        debug!(
-            toolchain_id = self.id.as_str(),
-            changed_files = ?output.changed_files,
-            "Synced project",
-        );
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_workspace(&self, input: SyncWorkspaceInput) -> miette::Result<SyncOutput> {
-        debug!(toolchain_id = self.id.as_str(), "Syncing workspace");
-
         let mut output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
 
         self.handle_output_files(&mut output.changed_files);
-
-        debug!(toolchain_id = self.id.as_str(), "Synced workspace");
 
         Ok(output)
     }

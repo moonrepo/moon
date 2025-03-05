@@ -9,7 +9,17 @@
 
 #### 🚀 Updates
 
-- Added new toolchain WASM plugin integrations for specific features.
+- The TypeScript toolchain is now powered by a
+  [WASM plugin](https://github.com/moonrepo/plugins/tree/master/toolchains/typescript). This is our
+  first step in supporting plugins in core. We chose TypeScript as our 1st plugin because it was the
+  simplest of all the toolchains, and primarily was used for project syncing.
+  - Plugins must be downloaded from the internet, so a connection is required on the first run. The
+    plugin is then cached locally.
+  - Most of the code had to be rewritten but we tried to keep as much parity as possible. Please
+    report an issues or differences you encounter.
+  - Because TypeScript is now a "true" toolchain, it will appear in the toolchains list for projects
+    and tasks. This is required since it runs operations in the context of the plugin.
+- Added new toolchain plugin integrations for specific features.
   - Integrated into the `SyncWorkspace` and `SyncProject` actions.
   - Integrated into all `moon docker` commands.
   - Integrated into the task hashing process.
@@ -32,6 +42,10 @@
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.
   - `sync_project` - Run syncing operations per project.
   - `sync_workspace` - Run syncing operations at the workspace root.
+- Updated `migrate_nx_extension` to v???.
+  - Will no longer remove Nx configs. Pass `--cleanup` to remove them.
+- Updated `migrate_turborepo_extension` to v???.
+  - Will no longer remove Turborepo configs. Pass `--cleanup` to remove them.
 
 #### ⚙️ Internal
 

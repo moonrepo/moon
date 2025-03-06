@@ -133,8 +133,10 @@ impl<'app> ProjectBuilder<'app> {
             let mut toolchains = FxHashSet::default();
 
             #[allow(deprecated)]
-            if let Some(default_id) = &config.toolchain.default {
-                toolchains.extend(get_project_toolchains(default_id, &self.language));
+            if let Some(default_ids) = &config.toolchain.default {
+                for default_id in default_ids.to_list() {
+                    toolchains.extend(get_project_toolchains(default_id, &self.language));
+                }
             } else if let Some(platform) = &config.platform {
                 let default_id = platform.get_toolchain_id();
 

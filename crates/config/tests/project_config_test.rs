@@ -601,7 +601,7 @@ toolchain:
             );
 
             if let ProjectToolchainEntry::Config(ts) =
-                config.toolchain.toolchains.get("typescript").unwrap()
+                config.toolchain.plugins.get("typescript").unwrap()
             {
                 assert_eq!(
                     ts.config.get("routeOutDirToCache").unwrap(),
@@ -622,7 +622,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.toolchains.get("example").unwrap(),
+                config.toolchain.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Disabled
             );
         }
@@ -639,7 +639,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.toolchains.get("example").unwrap(),
+                config.toolchain.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Enabled(false)
             );
         }
@@ -656,7 +656,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.toolchains.get("example").unwrap(),
+                config.toolchain.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Enabled(true)
             );
         }
@@ -675,7 +675,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.toolchains.get("example").unwrap(),
+                config.toolchain.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Config(ToolchainPluginConfig {
                     plugin: None,
                     version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
@@ -790,7 +790,7 @@ workspace:
                         deno: Some(ProjectToolchainCommonToolConfig {
                             version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                         }),
-                        toolchains: FxHashMap::from_iter([(
+                        plugins: FxHashMap::from_iter([(
                             Id::raw("typescript"),
                             ProjectToolchainEntry::Config(ToolchainPluginConfig {
                                 plugin: None,

@@ -14,7 +14,7 @@ fn create_jsonschema_renderer() -> JsonSchemaRenderer {
     })
 }
 
-fn generate_project(out_dir: &Path, toolchain: &FxHashMap<String, Schema>) -> miette::Result<()> {
+fn generate_project(out_dir: &Path, _toolchain: &FxHashMap<String, Schema>) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
     generator.add::<ProjectConfig>();
     generator.generate(out_dir.join("project.json"), create_jsonschema_renderer())
@@ -39,7 +39,10 @@ fn generate_template(out_dir: &Path) -> miette::Result<()> {
     )
 }
 
-fn generate_toolchain(out_dir: &Path, toolchain: &FxHashMap<String, Schema>) -> miette::Result<()> {
+fn generate_toolchain(
+    out_dir: &Path,
+    _toolchain: &FxHashMap<String, Schema>,
+) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
     generator.add::<ToolchainConfig>();
     generator.generate(out_dir.join("toolchain.json"), create_jsonschema_renderer())

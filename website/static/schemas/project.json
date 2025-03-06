@@ -598,10 +598,20 @@
         },
         "default": {
           "title": "default",
-          "description": "The default toolchain for all tasks within the project, if their toolchain is unknown.",
+          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
             },
             {
               "type": "null"
@@ -634,6 +644,17 @@
           ],
           "markdownDescription": "Overrides `node` settings."
         },
+        "plugins": {
+          "title": "plugins",
+          "description": "Overrides toolchains by their ID.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ProjectToolchainEntry"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "python": {
           "title": "python",
           "description": "Overrides python settings.",
@@ -659,17 +680,6 @@
             }
           ],
           "markdownDescription": "Overrides `rust` settings."
-        },
-        "toolchains": {
-          "title": "toolchains",
-          "description": "Overrides toolchains by their ID.",
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ProjectToolchainEntry"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
         }
       },
       "additionalProperties": false,

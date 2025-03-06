@@ -58,7 +58,7 @@ impl ToolchainRegistry {
         let mut data = self.create_config(id, toolchain_config);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
-            project_config.toolchain.toolchains.get(id)
+            project_config.toolchain.plugins.get(id)
         {
             let next = json::JsonValue::Object(leaf_config.config.clone().into_iter().collect());
 

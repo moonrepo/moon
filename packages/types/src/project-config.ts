@@ -154,20 +154,20 @@ export interface ProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun: ProjectToolchainCommonToolConfig | null;
 	/**
-	 * The default toolchain for all tasks within the project,
+	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	default: string | null;
+	default: string | string[] | null;
 	/** Overrides `deno` settings. */
 	deno: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node: ProjectToolchainCommonToolConfig | null;
+	/** Overrides toolchains by their ID. */
+	plugins: Record<string, ProjectToolchainEntry>;
 	/** Overrides `python` settings. */
 	python: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust: ProjectToolchainCommonToolConfig | null;
-	/** Overrides toolchains by their ID. */
-	toolchains: Record<string, ProjectToolchainEntry>;
 }
 
 /** The type of project, for categorizing. */
@@ -389,20 +389,20 @@ export interface PartialProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun?: PartialProjectToolchainCommonToolConfig | null;
 	/**
-	 * The default toolchain for all tasks within the project,
+	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	default?: string | null;
+	default?: string | string[] | null;
 	/** Overrides `deno` settings. */
 	deno?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides toolchains by their ID. */
+	plugins?: Record<string, PartialProjectToolchainEntry> | null;
 	/** Overrides `python` settings. */
 	python?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust?: PartialProjectToolchainCommonToolConfig | null;
-	/** Overrides toolchains by their ID. */
-	toolchains?: Record<string, PartialProjectToolchainEntry> | null;
 }
 
 /** Controls how tasks are inherited. */

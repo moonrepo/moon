@@ -4,6 +4,16 @@
 
 #### 💥 Breaking
 
+- Changed the way to disable the TypeScript toolchain in `moon.yml`.
+  ```yml
+  # Before
+  toolchain:
+    typescript:
+      disable: true
+  # After
+  toolchain:
+    typescript: false # or null
+  ```
 - Removed the `--include` option from `moon docker scaffold` (it's been long deprecated). Use the
   `docker` settings instead.
 
@@ -32,11 +42,12 @@
   (traversing upwards).
 - Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
   set, and will fallback to `$HOME/.moon`.
+- Updated `toolchain.default` in `moon.yml` to support a list of IDs.
 
 #### 🧩 Plugins
 
 - Added new toolchain WASM APIs.
-  - `docker_metadata` - Defined metadata related to `docker` commands.
+  - `docker_metadata` - Define metadata related to `docker` commands.
   - `hash_task_contents` - Inject content into the task hashing process.
   - `prune_docker` - Custom operations to run after `docker prune`.
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.

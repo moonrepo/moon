@@ -1,3 +1,4 @@
+use crate::shapes::OneOrMany;
 use crate::toolchain::ToolchainPluginConfig;
 use moon_common::Id;
 use moon_common::cacheable;
@@ -40,9 +41,9 @@ cacheable!(
     #[derive(Clone, Config, Debug, PartialEq)]
     #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {
-        /// The default toolchain for all tasks within the project,
+        /// The default toolchain(s) for all tasks within the project,
         /// if their toolchain is unknown.
-        pub default: Option<Id>,
+        pub default: Option<OneOrMany<Id>>,
 
         /// Overrides `bun` settings.
         #[setting(nested)]
@@ -66,7 +67,7 @@ cacheable!(
 
         /// Overrides toolchains by their ID.
         #[setting(flatten, nested)]
-        pub toolchains: FxHashMap<Id, ProjectToolchainEntry>,
+        pub plugins: FxHashMap<Id, ProjectToolchainEntry>,
     }
 );
 

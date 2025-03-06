@@ -20,6 +20,7 @@ use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
 use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
+use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::prelude::*;
@@ -39,6 +40,7 @@ pub struct WorkspaceBuilderContext<'app> {
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
+    pub toolchain_registry: Arc<ToolchainRegistry>,
     pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
     pub workspace_config: &'app WorkspaceConfig,
@@ -384,6 +386,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 monorepo: self.repo_type.is_monorepo(),
                 root_project_id: self.root_project_id.as_ref(),
                 toolchain_config: context.toolchain_config,
+                toolchain_registry: context.toolchain_registry.clone(),
                 workspace_root: context.workspace_root,
             },
         )?;

@@ -24,7 +24,6 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
             PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
-                &None,
                 root,
                 proto.clone(),
                 console.clone(),
@@ -37,7 +36,6 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
             PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
-                &None,
                 root,
                 proto.clone(),
                 console.clone(),
@@ -50,7 +48,6 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
             PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
-                &None,
                 root,
                 proto.clone(),
                 console.clone(),
@@ -70,7 +67,6 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
                     PlatformType::Bun.get_toolchain_id(),
                     Box::new(BunPlatform::new(
                         &bun_config,
-                        &None,
                         root,
                         proto.clone(),
                         console.clone(),

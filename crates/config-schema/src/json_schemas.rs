@@ -1,4 +1,6 @@
 use moon_config::*;
+use rustc_hash::FxHashMap;
+use schematic::Schema;
 use schematic::schema::SchemaGenerator;
 use schematic::schema::json_schema::{JsonSchemaOptions, JsonSchemaRenderer};
 use std::path::Path;
@@ -12,7 +14,7 @@ fn create_jsonschema_renderer() -> JsonSchemaRenderer {
     })
 }
 
-fn generate_project(out_dir: &Path) -> miette::Result<()> {
+fn generate_project(out_dir: &Path, _toolchain: &FxHashMap<String, Schema>) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
     generator.add::<ProjectConfig>();
     generator.generate(out_dir.join("project.json"), create_jsonschema_renderer())
@@ -37,7 +39,10 @@ fn generate_template(out_dir: &Path) -> miette::Result<()> {
     )
 }
 
-fn generate_toolchain(out_dir: &Path) -> miette::Result<()> {
+fn generate_toolchain(
+    out_dir: &Path,
+    _toolchain: &FxHashMap<String, Schema>,
+) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
     generator.add::<ToolchainConfig>();
     generator.generate(out_dir.join("toolchain.json"), create_jsonschema_renderer())
@@ -49,13 +54,16 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
     generator.generate(out_dir.join("workspace.json"), create_jsonschema_renderer())
 }
 
-pub fn generate_json_schemas(out_dir: impl AsRef<Path>) -> miette::Result<bool> {
+pub fn generate_json_schemas(
+    out_dir: impl AsRef<Path>,
+    toolchain_schemas: FxHashMap<String, Schema>,
+) -> miette::Result<bool> {
     let out_dir = out_dir.as_ref();
 
-    generate_project(out_dir)?;
+    generate_project(out_dir, &toolchain_schemas)?;
     generate_tasks(out_dir)?;
     generate_template(out_dir)?;
-    generate_toolchain(out_dir)?;
+    generate_toolchain(out_dir, &toolchain_schemas)?;
     generate_workspace(out_dir)?;
 
     Ok(true)

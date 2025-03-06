@@ -11,7 +11,6 @@ use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use moon_toolchain_plugin::ToolchainRegistry;
 use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
@@ -135,7 +134,6 @@ pub async fn register_platforms(
             PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -148,7 +146,6 @@ pub async fn register_platforms(
             PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -161,7 +158,6 @@ pub async fn register_platforms(
             PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -181,7 +177,6 @@ pub async fn register_platforms(
                     PlatformType::Bun.get_toolchain_id(),
                     Box::new(BunPlatform::new(
                         &bun_config,
-                        &toolchain_config.typescript,
                         workspace_root,
                         Arc::clone(proto_env),
                         Arc::clone(&console),
@@ -228,14 +223,12 @@ pub async fn register_platforms(
     Ok(None)
 }
 
-#[instrument(skip(registry))]
-pub async fn load_toolchain(registry: Arc<ToolchainRegistry>) -> AppResult {
+#[instrument]
+pub async fn load_toolchain() -> AppResult {
     // This isn't an action but we should also support skipping here!
     if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
         return Ok(None);
     }
-
-    registry.load_all().await?;
 
     for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;

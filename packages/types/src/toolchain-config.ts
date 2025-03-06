@@ -355,70 +355,6 @@ export interface ToolchainPluginConfig {
 }
 
 /**
- * Configures and enables the TypeScript platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#typescript
- */
-export interface TypeScriptConfig {
-	/**
-	 * When `syncProjectReferences` is enabled, will create a `tsconfig.json`
-	 * in referenced projects if it does not exist.
-	 *
-	 * @default true
-	 */
-	createMissingConfig?: boolean;
-	/**
-	 * Appends sources of project reference to `include` in `tsconfig.json`,
-	 * for each project.
-	 */
-	includeProjectReferenceSources: boolean;
-	/** Appends shared types to `include` in `tsconfig.json`, for each project. */
-	includeSharedTypes: boolean;
-	/**
-	 * Name of the `tsconfig.json` file within each project.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	projectConfigFileName?: string;
-	/**
-	 * The relative root to the TypeScript root. Primarily used for
-	 * resolving project references.
-	 *
-	 * @default '.'
-	 */
-	root?: string;
-	/**
-	 * Name of the `tsconfig.json` file at the workspace root.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	rootConfigFileName?: string;
-	/**
-	 * Name of the shared compiler options `tsconfig.json` file
-	 * at the workspace root.
-	 *
-	 * @default 'tsconfig.options.json'
-	 */
-	rootOptionsConfigFileName?: string;
-	/**
-	 * Updates and routes `outDir` in `tsconfig.json` to moon's cache,
-	 * for each project.
-	 */
-	routeOutDirToCache: boolean;
-	/**
-	 * Syncs all project dependencies as `references` in `tsconfig.json`,
-	 * for each project.
-	 *
-	 * @default true
-	 */
-	syncProjectReferences?: boolean;
-	/**
-	 * Syncs all project dependencies as `paths` in `tsconfig.json`,
-	 * for each project.
-	 */
-	syncProjectReferencesToPaths: boolean;
-}
-
-/**
  * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
@@ -444,8 +380,6 @@ export interface ToolchainConfig {
 	rust: RustConfig | null;
 	/** All configured toolchains by unique ID. */
 	toolchains: Record<string, ToolchainPluginConfig>;
-	/** Configures and enables the TypeScript platform. */
-	typescript: TypeScriptConfig | null;
 }
 
 /**
@@ -770,70 +704,6 @@ export interface PartialToolchainPluginConfig {
 }
 
 /**
- * Configures and enables the TypeScript platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#typescript
- */
-export interface PartialTypeScriptConfig {
-	/**
-	 * When `syncProjectReferences` is enabled, will create a `tsconfig.json`
-	 * in referenced projects if it does not exist.
-	 *
-	 * @default true
-	 */
-	createMissingConfig?: boolean | null;
-	/**
-	 * Appends sources of project reference to `include` in `tsconfig.json`,
-	 * for each project.
-	 */
-	includeProjectReferenceSources?: boolean | null;
-	/** Appends shared types to `include` in `tsconfig.json`, for each project. */
-	includeSharedTypes?: boolean | null;
-	/**
-	 * Name of the `tsconfig.json` file within each project.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	projectConfigFileName?: string | null;
-	/**
-	 * The relative root to the TypeScript root. Primarily used for
-	 * resolving project references.
-	 *
-	 * @default '.'
-	 */
-	root?: string | null;
-	/**
-	 * Name of the `tsconfig.json` file at the workspace root.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	rootConfigFileName?: string | null;
-	/**
-	 * Name of the shared compiler options `tsconfig.json` file
-	 * at the workspace root.
-	 *
-	 * @default 'tsconfig.options.json'
-	 */
-	rootOptionsConfigFileName?: string | null;
-	/**
-	 * Updates and routes `outDir` in `tsconfig.json` to moon's cache,
-	 * for each project.
-	 */
-	routeOutDirToCache?: boolean | null;
-	/**
-	 * Syncs all project dependencies as `references` in `tsconfig.json`,
-	 * for each project.
-	 *
-	 * @default true
-	 */
-	syncProjectReferences?: boolean | null;
-	/**
-	 * Syncs all project dependencies as `paths` in `tsconfig.json`,
-	 * for each project.
-	 */
-	syncProjectReferencesToPaths?: boolean | null;
-}
-
-/**
  * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
@@ -859,6 +729,4 @@ export interface PartialToolchainConfig {
 	rust?: PartialRustConfig | null;
 	/** All configured toolchains by unique ID. */
 	toolchains?: Record<string, PartialToolchainPluginConfig> | null;
-	/** Configures and enables the TypeScript platform. */
-	typescript?: PartialTypeScriptConfig | null;
 }

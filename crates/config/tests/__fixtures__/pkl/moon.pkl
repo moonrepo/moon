@@ -65,7 +65,6 @@ toolchain {
 		version = "1.2.3"
 	}
 	typescript {
-		disabled = true
 		includeSharedTypes = true
 	}
 }

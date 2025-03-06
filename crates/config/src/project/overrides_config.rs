@@ -1,3 +1,4 @@
+use crate::shapes::OneOrMany;
 use crate::toolchain::ToolchainPluginConfig;
 use moon_common::Id;
 use moon_common::cacheable;
@@ -36,37 +37,13 @@ cacheable!(
 );
 
 cacheable!(
-    /// Overrides top-level `typescript` settings.
-    #[derive(Clone, Config, Debug, PartialEq)]
-    pub struct ProjectToolchainTypeScriptConfig {
-        /// Disables all TypeScript functionality for this project.
-        pub disabled: bool,
-
-        /// Appends sources of project reference to `include` in `tsconfig.json`.
-        pub include_project_reference_sources: Option<bool>,
-
-        /// Appends shared types to `include` in `tsconfig.json`.
-        pub include_shared_types: Option<bool>,
-
-        /// Updates and routes `outDir` in `tsconfig.json` to moon's cache.
-        pub route_out_dir_to_cache: Option<bool>,
-
-        /// Syncs all project dependencies as `references` in `tsconfig.json`.
-        pub sync_project_references: Option<bool>,
-
-        /// Syncs all project dependencies as `paths` in `tsconfig.json`.
-        pub sync_project_references_to_paths: Option<bool>,
-    }
-);
-
-cacheable!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Clone, Config, Debug, PartialEq)]
     #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {
-        /// The default toolchain for all tasks within the project,
+        /// The default toolchain(s) for all tasks within the project,
         /// if their toolchain is unknown.
-        pub default: Option<Id>,
+        pub default: Option<OneOrMany<Id>>,
 
         /// Overrides `bun` settings.
         #[setting(nested)]
@@ -88,24 +65,11 @@ cacheable!(
         #[setting(nested)]
         pub rust: Option<ProjectToolchainCommonToolConfig>,
 
-        /// Overrides `typescript` settings.
-        #[setting(nested)]
-        pub typescript: Option<ProjectToolchainTypeScriptConfig>,
-
         /// Overrides toolchains by their ID.
         #[setting(flatten, nested)]
-        pub toolchains: FxHashMap<Id, ProjectToolchainEntry>,
+        pub plugins: FxHashMap<Id, ProjectToolchainEntry>,
     }
 );
-
-impl ProjectToolchainConfig {
-    pub fn is_typescript_enabled(&self) -> bool {
-        self.typescript
-            .as_ref()
-            .map(|ts| !ts.disabled)
-            .unwrap_or(true)
-    }
-}
 
 cacheable!(
     /// Controls how tasks are inherited.

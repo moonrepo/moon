@@ -112,8 +112,12 @@ impl SandboxAssert<'_> {
         let mut output =
             get_assert_stdout_output(&self.inner) + &get_assert_stderr_output(&self.inner);
 
+        println!("{}", &output);
+
         // Replace fixture path
         let root = self.sandbox.path().to_str().unwrap();
+
+        println!("root = {root}");
 
         output = output.replace(root, "<WORKSPACE>");
         output = output.replace(&root.replace('\\', "/"), "<WORKSPACE>");
@@ -121,6 +125,7 @@ impl SandboxAssert<'_> {
         // Replace home dir
         if let Some(home_dir) = home_dir() {
             let home = home_dir.to_str().unwrap();
+            println!("home = {home}");
             let root_without_home = root.replace(home, "~");
 
             output = output.replace(&root_without_home, "<WORKSPACE>");

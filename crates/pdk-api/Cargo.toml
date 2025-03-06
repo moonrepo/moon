@@ -1,6 +1,6 @@
 [package]
 name = "moon_pdk_api"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2024"
 license = "MIT"
 description = "Core APIs for creating moon WASM plugins."
@@ -10,7 +10,7 @@ publish = true
 
 [dependencies]
 moon_common = { version = "0.1.0", path = "../common" }
-moon_config = { version = "0.1.0", path = "../config" }
+moon_config = { version = "0.1.1", path = "../config" }
 moon_project = { version = "0.1.0", path = "../project" }
 moon_task = { version = "0.1.0", path = "../task" }
 rustc-hash = { workspace = true }

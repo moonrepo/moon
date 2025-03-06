@@ -5,6 +5,8 @@ use clap::Args;
 use moon_common::consts::*;
 use moon_common::{Id, path};
 use moon_config::LanguageType;
+use moon_pdk_api::{DockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
+use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use moon_toolchain::detect::detect_language_files;
@@ -13,49 +15,75 @@ use schematic::ConfigEnum;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tracing::{debug, instrument, warn};
 
 #[derive(Args, Clone, Debug)]
 pub struct DockerScaffoldArgs {
     #[arg(required = true, help = "List of project IDs to copy sources for")]
     ids: Vec<Id>,
-
-    #[arg(long, help = "Additional file globs to include in sources")]
-    include: Vec<String>,
 }
 
-fn copy_files_from_paths(paths: Vec<PathBuf>, source: &Path, dest: &Path) -> AppResult {
-    let mut files = vec![];
+async fn get_toolchain_globs(
+    session: &CliSession,
+    project: Option<&Project>,
+) -> miette::Result<FxHashSet<String>> {
+    let outputs = session
+        .get_toolchain_registry()
+        .await?
+        .docker_metadata(|registry, toolchain| DockerMetadataInput {
+            context: registry.create_context(),
+            toolchain_config: match project {
+                Some(proj) => registry.create_merged_config(
+                    &toolchain.id,
+                    &session.toolchain_config,
+                    &proj.config,
+                ),
+                None => registry.create_config(&toolchain.id, &session.toolchain_config),
+            },
+        })
+        .await?;
 
-    for file in paths {
-        files.push(path::to_string(file.strip_prefix(source).unwrap())?);
-    }
-
-    copy_files(&files, source, dest)
+    Ok(FxHashSet::from_iter(
+        outputs.into_iter().flat_map(|output| output.scaffold_globs),
+    ))
 }
 
-fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResult {
-    for file in list {
-        let file = file.as_ref();
-        let source_file = source.join(file);
+fn copy_files<F: IntoIterator<Item = String>, G: IntoIterator<Item = String>>(
+    files: F,
+    globs: G,
+    source: &Path,
+    dest: &Path,
+) -> miette::Result<()> {
+    let files = files.into_iter().collect::<Vec<_>>();
+    let globs = globs.into_iter().collect::<Vec<_>>();
 
-        if file != "." && source_file.exists() {
-            if source_file.is_dir() {
-                fs::copy_dir_all(&source_file, &source_file, dest.join(file))?;
-            } else {
-                fs::copy_file(source_file, dest.join(file))?;
+    if !files.is_empty() {
+        for file in files {
+            let abs_file = source.join(&file);
+
+            if file != "." && abs_file.exists() {
+                if abs_file.is_dir() {
+                    fs::copy_dir_all(&abs_file, &abs_file, dest.join(file))?;
+                } else {
+                    fs::copy_file(abs_file, dest.join(file))?;
+                }
             }
         }
     }
 
-    Ok(None)
+    if !globs.is_empty() {
+        for abs_file in glob::walk_files(source, &globs)? {
+            fs::copy_file(&abs_file, dest.join(abs_file.strip_prefix(source).unwrap()))?;
+        }
+    }
+
+    Ok(())
 }
 
-fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
+fn create_files<I: IntoIterator<Item = String>>(list: I, dest: &Path) -> miette::Result<()> {
     for file in list {
-        let file = file.as_ref();
-        let dest_file = dest.join(file);
+        let dest_file = dest.join(&file);
 
         if dest_file.exists() {
             continue;
@@ -70,6 +98,121 @@ fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
         fs::write_file(dest.join(file), data.as_bytes())?;
     }
 
+    Ok(())
+}
+
+fn scaffold_files(
+    session: &CliSession,
+    src_dir: &Path,
+    out_dir: &Path,
+    shared_globs: &FxHashSet<String>,
+    language: &LanguageType,
+) -> AppResult {
+    let mut files_to_create: FxHashSet<String> = FxHashSet::default();
+    let mut files_to_copy: FxHashSet<String> =
+        FxHashSet::from_iter([".gitignore".into(), ".prototools".into()]);
+    let mut files_to_glob: FxHashSet<String> = FxHashSet::default();
+    files_to_copy.extend(session.config_loader.get_project_file_names());
+    files_to_copy.extend(session.config_loader.get_template_file_names());
+
+    if session
+        .workspace_config
+        .docker
+        .scaffold
+        .copy_toolchain_files
+    {
+        files_to_glob.extend(shared_globs.to_owned());
+
+        // Copy manifest and config files for every type of language,
+        // not just the one the project is configured as!
+        for lang in LanguageType::variants() {
+            files_to_copy.extend(detect_language_files(&lang));
+
+            // These are special cases
+            match lang {
+                LanguageType::JavaScript => {
+                    files_to_glob.insert("postinstall.*".into());
+                }
+                LanguageType::Rust => {
+                    if let Some(cargo_toml) = CargoTomlCache::read(src_dir)? {
+                        let manifests = cargo_toml.get_member_manifest_paths(src_dir)?;
+
+                        // Non-workspace
+                        if manifests.is_empty() {
+                            if &lang == language {
+                                files_to_create.extend(["src/lib.rs".into(), "src/main.rs".into()]);
+                            }
+                        }
+                        // Workspace
+                        else {
+                            for manifest in manifests {
+                                if let Ok(rel_manifest) = manifest.strip_prefix(src_dir) {
+                                    files_to_copy.insert(path::to_string(rel_manifest)?);
+
+                                    let rel_manifest_dir = rel_manifest.parent().unwrap();
+
+                                    if &lang == language {
+                                        files_to_create.extend([
+                                            path::to_string(rel_manifest_dir.join("src/lib.rs"))?,
+                                            path::to_string(rel_manifest_dir.join("src/main.rs"))?,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                LanguageType::TypeScript => {
+                    files_to_copy.insert("tsconfig.json".into());
+                    files_to_copy.insert("tsconfig.options.json".into());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    copy_files(files_to_copy, files_to_glob, src_dir, out_dir)?;
+    create_files(files_to_create, out_dir)?;
+
+    Ok(None)
+}
+
+#[instrument(skip(session))]
+async fn scaffold_workspace_project(
+    session: &CliSession,
+    docker_workspace_root: &Path,
+    project: &Project,
+    shared_globs: &FxHashSet<String>,
+) -> AppResult {
+    let docker_project_root = project.source.to_logical_path(docker_workspace_root);
+
+    fs::create_dir_all(&docker_project_root)?;
+
+    scaffold_files(
+        session,
+        &project.root,
+        &docker_project_root,
+        shared_globs,
+        &project.language,
+    )?;
+
+    let toolchains = project.get_enabled_toolchains();
+
+    if !toolchains.is_empty() {
+        session
+            .get_toolchain_registry()
+            .await?
+            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+                context: registry.create_context(),
+                docker_config: session.workspace_config.docker.scaffold.clone(),
+                input_dir: toolchain.to_virtual_path(&project.root),
+                output_dir: toolchain.to_virtual_path(&docker_project_root),
+                phase: ScaffoldDockerPhase::Configs,
+                project: Some(project.to_fragment()),
+            })
+            .await?;
+    }
+
     Ok(None)
 }
 
@@ -81,6 +224,7 @@ async fn scaffold_workspace(
 ) -> AppResult {
     let docker_workspace_root = docker_root.join("workspace");
     let projects = project_graph.get_all()?;
+    let shared_globs = get_toolchain_globs(session, None).await?;
 
     debug!(
         scaffold_dir = ?docker_workspace_root,
@@ -88,86 +232,6 @@ async fn scaffold_workspace(
     );
 
     fs::create_dir_all(&docker_workspace_root)?;
-
-    // Copy manifest and config files for every type of language,
-    // not just the one the project is configured as!
-    let copy_from_dir = |source: &Path, dest: &Path, project_lang: LanguageType| -> AppResult {
-        let mut files_to_create: Vec<String> = vec![];
-        let mut files_to_copy: Vec<String> = vec![".gitignore".into(), ".prototools".into()];
-        files_to_copy.extend(session.config_loader.get_project_file_names());
-        files_to_copy.extend(session.config_loader.get_template_file_names());
-
-        if session
-            .workspace_config
-            .docker
-            .scaffold
-            .copy_toolchain_files
-        {
-            for lang in LanguageType::variants() {
-                files_to_copy.extend(detect_language_files(&lang));
-
-                // These are special cases
-                match lang {
-                    LanguageType::JavaScript => {
-                        files_to_copy.extend([
-                            "postinstall.js".into(),
-                            "postinstall.cjs".into(),
-                            "postinstall.mjs".into(),
-                        ]);
-                    }
-                    LanguageType::Rust => {
-                        if let Some(cargo_toml) = CargoTomlCache::read(source)? {
-                            let manifests = cargo_toml.get_member_manifest_paths(source)?;
-
-                            // Non-workspace
-                            if manifests.is_empty() {
-                                if lang == project_lang {
-                                    files_to_create
-                                        .extend(["src/lib.rs".into(), "src/main.rs".into()]);
-                                }
-                            }
-                            // Workspace
-                            else {
-                                for manifest in manifests {
-                                    if let Ok(rel_manifest) = manifest.strip_prefix(source) {
-                                        files_to_copy.push(path::to_string(rel_manifest)?);
-
-                                        let rel_manifest_dir = rel_manifest.parent().unwrap();
-
-                                        if lang == project_lang {
-                                            files_to_create.extend([
-                                                path::to_string(
-                                                    rel_manifest_dir.join("src/lib.rs"),
-                                                )?,
-                                                path::to_string(
-                                                    rel_manifest_dir.join("src/main.rs"),
-                                                )?,
-                                            ]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    LanguageType::TypeScript => {
-                        if let Some(typescript_config) = &session.toolchain_config.typescript {
-                            files_to_copy
-                                .push(typescript_config.project_config_file_name.to_owned());
-                            files_to_copy.push(typescript_config.root_config_file_name.to_owned());
-                            files_to_copy
-                                .push(typescript_config.root_options_config_file_name.to_owned());
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        copy_files(&files_to_copy, source, dest)?;
-        create_files(&files_to_create, dest)?;
-
-        Ok(None)
-    };
 
     // Copy each project and mimic the folder structure
     let mut has_root_project = false;
@@ -177,83 +241,46 @@ async fn scaffold_workspace(
             has_root_project = true;
         }
 
-        let docker_project_root = docker_workspace_root.join(project.source.as_str());
-
-        fs::create_dir_all(&docker_project_root)?;
-
-        copy_from_dir(
-            &project.root,
-            &docker_project_root,
-            project.language.clone(),
-        )?;
+        scaffold_workspace_project(session, &docker_workspace_root, &project, &shared_globs)
+            .await?;
     }
 
     // Copy root lockfiles and configurations
     if !has_root_project {
-        copy_from_dir(
+        scaffold_files(
+            session,
             &session.workspace_root,
             &docker_workspace_root,
-            LanguageType::Unknown,
+            &shared_globs,
+            &LanguageType::Unknown,
         )?;
     }
 
-    if session
-        .workspace_config
-        .docker
-        .scaffold
-        .copy_toolchain_files
-    {
-        if let Some(js_config) = &session.toolchain_config.bun {
-            if js_config.packages_root != "." {
-                copy_from_dir(
-                    &session.workspace_root.join(&js_config.packages_root),
-                    &docker_workspace_root.join(&js_config.packages_root),
-                    LanguageType::Unknown,
-                )?;
-            }
-        }
-
-        if let Some(js_config) = &session.toolchain_config.node {
-            if js_config.packages_root != "." {
-                copy_from_dir(
-                    &session.workspace_root.join(&js_config.packages_root),
-                    &docker_workspace_root.join(&js_config.packages_root),
-                    LanguageType::Unknown,
-                )?;
-            }
-        }
-
-        if let Some(typescript_config) = &session.toolchain_config.typescript {
-            if typescript_config.root != "." {
-                copy_from_dir(
-                    &session.workspace_root.join(&typescript_config.root),
-                    &docker_workspace_root.join(&typescript_config.root),
-                    LanguageType::Unknown,
-                )?;
-            }
-        }
-    }
-
     // Copy moon configuration
-    let moon_dir = session.workspace_root.join(CONFIG_DIRNAME);
-
     debug!(
         scaffold_dir = ?docker_workspace_root,
-        moon_dir = ?moon_dir,
         "Copying core moon configuration"
     );
 
-    copy_files_from_paths(
-        glob::walk_files(
-            moon_dir,
-            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
-        )?,
+    copy_files(
+        [],
+        [
+            ".moon/*.{pkl,yml}".to_owned(),
+            ".moon/tasks/**/*.{pkl,yml}".to_owned(),
+        ],
         &session.workspace_root,
         &docker_workspace_root,
     )?;
 
     // Include via globs
-    let include = &session.workspace_config.docker.scaffold.include;
+    let include = session
+        .workspace_config
+        .docker
+        .scaffold
+        .include
+        .iter()
+        .map(|glob| glob.to_string())
+        .collect::<Vec<_>>();
 
     if !include.is_empty() {
         debug!(
@@ -261,11 +288,7 @@ async fn scaffold_workspace(
             "Including additional files"
         );
 
-        copy_files_from_paths(
-            glob::walk_files(&session.workspace_root, include)?,
-            &session.workspace_root,
-            &docker_workspace_root,
-        )?;
+        copy_files([], include, &session.workspace_root, &docker_workspace_root)?;
     }
 
     Ok(None)
@@ -280,37 +303,62 @@ async fn scaffold_sources_project(
     project_id: &Id,
     manifest: &mut DockerManifest,
 ) -> AppResult {
-    let project = project_graph.get(project_id)?;
-    let mut include_globs = vec!["!node_modules/**", "!target/**/*", "!vendor/**"];
-
     manifest.focused_projects.insert(project_id.to_owned());
 
+    let project = project_graph.get(project_id)?;
+    let toolchains = project.get_enabled_toolchains();
+
+    // Gather globs
+    let mut globs = get_toolchain_globs(session, Some(&project)).await?;
+
+    globs.extend([
+        "!node_modules/**/*".into(),
+        "!target/**/*".into(),
+        "!vendor/**/*".into(),
+    ]);
+
     if project.config.docker.scaffold.include.is_empty() {
-        include_globs.push("**/*");
+        globs.insert("**/*".into());
     } else {
-        include_globs.extend(
+        globs.extend(
             project
                 .config
                 .docker
                 .scaffold
                 .include
                 .iter()
-                .map(|glob| glob.as_str()),
+                .map(|glob| glob.to_string())
+                .collect::<Vec<_>>(),
         );
     }
 
     debug!(
         project_id = project_id.as_str(),
-        globs = ?include_globs,
-        "Copying sources from project {}",
+        globs = ?globs,
+        toolchains = ?toolchains,
+        "Copying sources for project {}",
         color::id(project_id),
     );
 
-    copy_files_from_paths(
-        glob::walk_files(&project.root, include_globs)?,
-        &session.workspace_root,
-        docker_sources_root,
-    )?;
+    // Copy files
+    let docker_project_root = project.source.to_logical_path(docker_sources_root);
+
+    copy_files([], globs, &project.root, &docker_project_root)?;
+
+    if !toolchains.is_empty() {
+        session
+            .get_toolchain_registry()
+            .await?
+            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+                context: registry.create_context(),
+                docker_config: session.workspace_config.docker.scaffold.clone(),
+                input_dir: toolchain.to_virtual_path(&project.root),
+                output_dir: toolchain.to_virtual_path(&docker_project_root),
+                phase: ScaffoldDockerPhase::Sources,
+                project: Some(project.to_fragment()),
+            })
+            .await?;
+    }
 
     for dep_cfg in &project.dependencies {
         // Avoid root-level projects as it will pull in all sources,
@@ -343,7 +391,6 @@ async fn scaffold_sources(
     project_graph: &ProjectGraph,
     docker_root: &Path,
     project_ids: &[Id],
-    include: &[String],
 ) -> AppResult {
     let docker_sources_root = docker_root.join("sources");
 
@@ -377,25 +424,6 @@ async fn scaffold_sources(
         }
     }
 
-    // Include via globs
-    if !include.is_empty() {
-        warn!(
-            "The --include argument is deprecated, use the {} settings instead",
-            color::property("docker")
-        );
-
-        debug!(
-            include = ?include,
-            "Including additional sources"
-        );
-
-        copy_files_from_paths(
-            glob::walk_files(&session.workspace_root, include)?,
-            &session.workspace_root,
-            &docker_sources_root,
-        )?;
-    }
-
     json::write_file(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
 
     // Sync to the workspace scaffold for staged builds
@@ -408,7 +436,7 @@ async fn scaffold_sources(
     Ok(None)
 }
 
-pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
+fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
     let ignore_file = workspace_root.join(".dockerignore");
     let mut is_ignored = false;
 
@@ -467,19 +495,12 @@ pub async fn scaffold(session: CliSession, args: DockerScaffoldArgs) -> AppResul
     fs::remove_dir_all(&docker_root)?;
     fs::create_dir_all(&docker_root)?;
 
-    // Create the workspace skeleton
+    // Create the skeleton
     let project_graph = session.get_project_graph().await?;
 
     scaffold_workspace(&session, &project_graph, &docker_root).await?;
 
-    scaffold_sources(
-        &session,
-        &project_graph,
-        &docker_root,
-        &args.ids,
-        &args.include,
-    )
-    .await?;
+    scaffold_sources(&session, &project_graph, &docker_root, &args.ids).await?;
 
     Ok(None)
 }

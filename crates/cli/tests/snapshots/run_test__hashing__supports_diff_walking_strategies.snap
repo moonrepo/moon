@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: "vec![hash_vcs, hash_glob]"
+---
+[
+    "dc3b8d68b274fd82dbe9bf72324b4a2a826432539bbf53fb6188101100204b2f",
+    "2685681cbdd903e5c721441725e29845fb0bf4ebb572303c775eb9864ecc9348",
+]

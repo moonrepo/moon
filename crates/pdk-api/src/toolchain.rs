@@ -1,8 +1,9 @@
 use crate::common::*;
+use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use schematic::Schema;
-use warpgate_api::{VirtualPath, api_struct};
+use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 // METADATA
 
@@ -123,5 +124,84 @@ api_struct!(
     pub struct HashTaskContentsOutput {
         /// Contents that should be included during hash generation.
         pub contents: Vec<serde_json::Value>,
+    }
+);
+
+// DOCKER
+
+api_struct!(
+    /// Input passed to the `docker_metadata` function.
+    pub struct DockerMetadataInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `docker_metadata` function.
+    pub struct DockerMetadataOutput {
+        /// List of files as globs to copy over during
+        /// the scaffolding process. Applies to both project
+        /// and workspace level scaffolding.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub scaffold_globs: Vec<String>,
+    }
+);
+
+api_unit_enum!(
+    /// The different scaffolding phases.
+    pub enum ScaffoldDockerPhase {
+        /// Only config files (manifests, lockfiles, etc).
+        #[default]
+        Configs,
+        /// All sources within a project.
+        Sources,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `scaffold_docker` function.
+    pub struct ScaffoldDockerInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Docker scaffold configuration.
+        pub docker_config: DockerScaffoldConfig,
+
+        /// The directory in which to copy files from.
+        pub input_dir: VirtualPath,
+
+        /// The directory in which to copy files to.
+        pub output_dir: VirtualPath,
+
+        /// The current scaffolding phase.
+        pub phase: ScaffoldDockerPhase,
+
+        /// The project being scaffolding.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub project: Option<ProjectFragment>,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `scaffold_docker` function.
+    pub struct ScaffoldDockerOutput {
+        /// List of files that were copied into the scaffold.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub copied_files: Vec<VirtualPath>,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `prune_docker` function.
+    pub struct PruneDockerInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Docker prune configuration.
+        pub docker_config: DockerPruneConfig,
     }
 );

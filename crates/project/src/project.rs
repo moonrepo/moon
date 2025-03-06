@@ -88,7 +88,7 @@ impl Project {
     pub fn get_enabled_toolchains(&self) -> Vec<&Id> {
         self.toolchains
             .iter()
-            .filter(|id| match self.config.toolchain.toolchains.get(*id) {
+            .filter(|id| match self.config.toolchain.plugins.get(*id) {
                 None => true,
                 Some(cfg) => cfg.is_enabled(),
             })

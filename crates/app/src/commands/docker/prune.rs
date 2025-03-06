@@ -6,13 +6,70 @@ use moon_config::PlatformType;
 use moon_deno_tool::DenoTool;
 use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
+use moon_pdk_api::PruneDockerInput;
 use moon_platform::PlatformManager;
 use moon_rust_tool::RustTool;
 use moon_tool::DependencyManager;
+use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_utils::{fs, json};
 use tracing::{debug, instrument};
+
+#[instrument(skip_all)]
+pub async fn prune_toolchain(
+    session: &CliSession,
+    toolchain_registry: &ToolchainRegistry,
+    toolchain: &ToolchainPlugin,
+) -> AppResult {
+    let project_graph = session.get_project_graph().await?;
+
+    if session
+        .workspace_config
+        .docker
+        .prune
+        .delete_vendor_directories
+    {
+        if let (Some(vendor_name), Some(manifest_name)) = (
+            &toolchain.metadata.vendor_dir_name,
+            &toolchain.metadata.manifest_file_name,
+        ) {
+            debug!(
+                "Removing {} vendor directories ({})",
+                toolchain.metadata.name, vendor_name
+            );
+
+            fs::remove_dir_all(session.workspace_root.join(vendor_name))?;
+
+            for source in project_graph.sources().values() {
+                let project_root = source.to_logical_path(&session.workspace_root);
+
+                // Only remove if there's a sibling manifest
+                if project_root.join(manifest_name).exists() {
+                    fs::remove_dir_all(project_root.join(vendor_name))?;
+                }
+            }
+        }
+    }
+
+    if session.workspace_config.docker.prune.install_toolchain_deps {
+        // TODO
+    }
+
+    if toolchain.has_func("prune_docker").await {
+        toolchain
+            .call_func_without_output(
+                "prune_docker",
+                PruneDockerInput {
+                    context: toolchain_registry.create_context(),
+                    docker_config: session.workspace_config.docker.prune.clone(),
+                },
+            )
+            .await?;
+    }
+
+    Ok(None)
+}
 
 #[instrument(skip_all)]
 pub async fn prune_bun(
@@ -181,63 +238,69 @@ pub async fn prune(session: CliSession) -> AppResult {
     }
 
     // Do this later so we only run once for each platform instead of per project
+    let toolchain_registry = session.get_toolchain_registry().await?;
+
     for toolchain_id in toolchains {
         if toolchain_id == "unknown" {
             // Will crash with "Platform unknown has not been enabled"
             continue;
         }
 
-        let platform = PlatformManager::read().get_by_toolchain(&toolchain_id)?;
+        if let Ok(platform) = PlatformManager::read().get_by_toolchain(&toolchain_id) {
+            match platform.get_type() {
+                PlatformType::Bun => {
+                    prune_bun(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<BunTool>()
+                            .unwrap(),
+                        &session,
+                        &manifest,
+                    )
+                    .await?;
+                }
+                PlatformType::Deno => {
+                    prune_deno(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<DenoTool>()
+                            .unwrap(),
+                        &session,
+                        &manifest,
+                    )
+                    .await?;
+                }
+                PlatformType::Node => {
+                    prune_node(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<NodeTool>()
+                            .unwrap(),
+                        &session,
+                        &manifest,
+                    )
+                    .await?;
+                }
+                PlatformType::Rust => {
+                    prune_rust(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<RustTool>()
+                            .unwrap(),
+                        &session,
+                    )
+                    .await?;
+                }
+                _ => {}
+            };
+        }
 
-        match platform.get_type() {
-            PlatformType::Bun => {
-                prune_bun(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<BunTool>()
-                        .unwrap(),
-                    &session,
-                    &manifest,
-                )
-                .await?;
-            }
-            PlatformType::Deno => {
-                prune_deno(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<DenoTool>()
-                        .unwrap(),
-                    &session,
-                    &manifest,
-                )
-                .await?;
-            }
-            PlatformType::Node => {
-                prune_node(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<NodeTool>()
-                        .unwrap(),
-                    &session,
-                    &manifest,
-                )
-                .await?;
-            }
-            PlatformType::Rust => {
-                prune_rust(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<RustTool>()
-                        .unwrap(),
-                    &session,
-                )
-                .await?;
-            }
-            _ => {}
+        if let Ok(toolchain) = toolchain_registry.load(toolchain_id).await {
+            prune_toolchain(&session, &toolchain_registry, &toolchain).await?;
         }
     }
 

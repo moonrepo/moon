@@ -20,6 +20,7 @@ moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
 moon_task_graph = { path = "../task-graph" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 moon_workspace_graph = { path = "../workspace-graph" }
 miette = { workspace = true }

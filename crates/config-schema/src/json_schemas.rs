@@ -1,8 +1,8 @@
 use moon_config::*;
 use rustc_hash::FxHashMap;
-use schematic::Schema;
-use schematic::schema::SchemaGenerator;
 use schematic::schema::json_schema::{JsonSchemaOptions, JsonSchemaRenderer};
+use schematic::schema::{BooleanType, SchemaField, SchemaGenerator, UnionType};
+use schematic::{Schema, SchemaType};
 use std::path::Path;
 
 fn create_jsonschema_renderer() -> JsonSchemaRenderer {
@@ -14,9 +14,43 @@ fn create_jsonschema_renderer() -> JsonSchemaRenderer {
     })
 }
 
-fn generate_project(out_dir: &Path, _toolchain: &FxHashMap<String, Schema>) -> miette::Result<()> {
+fn generate_project(out_dir: &Path, toolchains: &FxHashMap<String, Schema>) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
+
+    // Must come before `ProjectConfig`
+    for schema in toolchains.values() {
+        if schema.name.is_some() {
+            generator.add_schema(schema);
+        }
+    }
+
     generator.add::<ProjectConfig>();
+
+    // Inject the currently enabled toolchains into `ProjectToolchainConfig`
+    if !toolchains.is_empty() {
+        if let Some(config) = generator.schemas.get_mut("ProjectToolchainConfig") {
+            if let SchemaType::Struct(inner) = &mut config.ty {
+                for (id, schema) in toolchains {
+                    inner.fields.insert(
+                        id.to_string(),
+                        Box::new(SchemaField {
+                            comment: Some(format!(
+                                "Overrides top-level `{id}` toolchain settings."
+                            )),
+                            schema: Schema::union(UnionType::new_any([
+                                schema.to_owned(),
+                                Schema::boolean(BooleanType::new(true)),
+                                Schema::null(),
+                            ])),
+                            nullable: true,
+                            ..Default::default()
+                        }),
+                    );
+                }
+            }
+        }
+    }
+
     generator.generate(out_dir.join("project.json"), create_jsonschema_renderer())
 }
 
@@ -41,10 +75,45 @@ fn generate_template(out_dir: &Path) -> miette::Result<()> {
 
 fn generate_toolchain(
     out_dir: &Path,
-    _toolchain: &FxHashMap<String, Schema>,
+    toolchains: &FxHashMap<String, Schema>,
 ) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
+
+    // Must come before `ToolchainConfig`
+    for schema in toolchains.values() {
+        if schema.name.is_some() {
+            generator.add_schema(schema);
+        }
+    }
+
     generator.add::<ToolchainConfig>();
+
+    // Inject the currently enabled toolchains into `ToolchainConfig`
+    if !toolchains.is_empty() {
+        if let Some(config) = generator.schemas.get_mut("ToolchainConfig") {
+            if let SchemaType::Struct(inner) = &mut config.ty {
+                for (id, schema) in toolchains {
+                    inner.fields.insert(
+                        id.to_string(),
+                        Box::new(SchemaField {
+                            comment: Some(schema.description.clone().unwrap_or_else(|| {
+                                format!("Configures and enables the `{id}` toolchain.")
+                            })),
+                            schema: {
+                                // Make it optional like built-in toolchains
+                                let mut schema = schema.to_owned();
+                                schema.nullify();
+                                schema
+                            },
+                            nullable: true,
+                            ..Default::default()
+                        }),
+                    );
+                }
+            }
+        }
+    }
+
     generator.generate(out_dir.join("toolchain.json"), create_jsonschema_renderer())
 }
 

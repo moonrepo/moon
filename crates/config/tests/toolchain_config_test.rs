@@ -92,7 +92,7 @@ node: {}";
                 Ok(load_config_from_file(path))
             });
 
-            let cfg = config.toolchains.get("typescript").unwrap();
+            let cfg = config.plugins.get("typescript").unwrap();
 
             assert_eq!(
                 cfg.config.get("rootConfigFileName").unwrap(),
@@ -1360,7 +1360,7 @@ typescript:
                 |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
-            let cfg = config.toolchains.get("typescript").unwrap();
+            let cfg = config.plugins.get("typescript").unwrap();
 
             assert_eq!(
                 cfg.config.get("projectConfigFileName").unwrap(),
@@ -1414,7 +1414,7 @@ typescript:
                 }
             );
             assert_eq!(
-                config.toolchains.get("typescript").unwrap().config,
+                config.plugins.get("typescript").unwrap().config,
                 BTreeMap::from_iter([
                     ("createMissingConfig".into(), Value::Bool(false)),
                     ("includeProjectReferenceSources".into(), Value::Bool(true)),

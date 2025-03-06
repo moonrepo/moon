@@ -1218,15 +1218,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "convert_case"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baaaa0ecca5b51987b9423ccdc971514dd8b0bb7b4060b983d3664dad3f1f89f"
-dependencies = [
- "unicode-segmentation",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3976,7 +3967,7 @@ version = "0.0.1"
 dependencies = [
  "clap",
  "content_inspector",
- "convert_case 0.8.0",
+ "convert_case",
  "miette 7.5.0",
  "moon_common",
  "moon_config",
@@ -4417,7 +4408,7 @@ name = "moon_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "convert_case 0.8.0",
+ "convert_case",
  "extism",
  "miette 7.5.0",
  "moon_common",
@@ -5901,7 +5892,7 @@ version = "0.47.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1ef5e6b7f90a498b9c8c7e2cb4342c6b414e19cb230660b5f5f72747bba035a"
 dependencies = [
- "convert_case 0.8.0",
+ "convert_case",
  "dotenvy",
  "indexmap 2.7.1",
  "iocraft",
@@ -6594,7 +6585,7 @@ version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35daf588bff8f6c38d38b75f3386d5fb18ae9d3d477dae944c03298e9e38ed77"
 dependencies = [
- "convert_case 0.7.1",
+ "convert_case",
  "darling",
  "proc-macro2",
  "quote",

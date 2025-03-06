@@ -42,9 +42,10 @@
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.
   - `sync_project` - Run syncing operations per project.
   - `sync_workspace` - Run syncing operations at the workspace root.
-- Updated `migrate_nx_extension` to v???.
+- Updated `download_extension` to v0.0.9.
+- Updated `migrate_nx_extension` to v0.0.9.
   - Will no longer remove Nx configs. Pass `--cleanup` to remove them.
-- Updated `migrate_turborepo_extension` to v???.
+- Updated `migrate_turborepo_extension` to v0.1.6.
   - Will no longer remove Turborepo configs. Pass `--cleanup` to remove them.
 
 #### ⚙️ Internal

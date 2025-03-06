@@ -254,7 +254,7 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
-        use proto_core::warpgate::{FileLocator, PluginLocator};
+        use proto_core::warpgate::{PluginLocator, UrlLocator};
         use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 
         for (id, config) in self.toolchains.iter_mut() {
@@ -264,10 +264,8 @@ impl ToolchainConfig {
 
             match id.as_str() {
                 "typescript" => {
-                    config.plugin = Some(PluginLocator::File(Box::new(FileLocator {
-                        file: "file:///Users/miles/Projects/moonrepo/plugins/target/wasm32-wasip1/release/typescript_toolchain.wasm"
-                                .into(),
-                        path: None,
+                    config.plugin = Some(PluginLocator::Url(Box::new(UrlLocator {
+                        url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.0/typescript_toolchain.wasm".into()
                     })));
                 }
                 other => {

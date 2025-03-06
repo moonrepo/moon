@@ -87,8 +87,6 @@ jobs:
       SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
     steps:
       - uses: actions/checkout@v4
-      # Fixes issues where proto can't find a version because nothing is pinned globally
-      - run: cp .prototools ~/.proto/.prototools
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just, cargo-nextest, cargo-llvm-cov
@@ -103,6 +101,8 @@ jobs:
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # - uses: lukka/get-cmake@latest
       #   if: ${{ runner.os == 'Windows' }}
+      # Fixes issues where proto can't find a version because nothing is pinned globally
+      - run: cp .prototools ~/.proto/.prototools
       - name: Checking coverage status
         id: coverage
         shell: bash

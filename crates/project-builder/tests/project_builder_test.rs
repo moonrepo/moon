@@ -52,6 +52,7 @@ impl Stub {
                 monorepo: true,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
+                toolchain_registry: Default::default(),
                 workspace_root: &self.workspace_root,
             },
         )

@@ -12,9 +12,11 @@ use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
 };
-use rustc_hash::FxHashMap;
+use moon_toolchain_plugin::ToolchainRegistry;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
@@ -23,6 +25,7 @@ pub struct ProjectBuilderContext<'app> {
     pub monorepo: bool,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
+    pub toolchain_registry: Arc<ToolchainRegistry>,
     pub workspace_root: &'app Path,
 }
 
@@ -127,11 +130,13 @@ impl<'app> ProjectBuilder<'app> {
         // Infer toolchains from the language as it handles the chain correctly:
         // For example: node -> javascript, and not just node
         if self.toolchains_tasks.is_empty() {
-            let mut toolchains = vec![];
+            let mut toolchains = FxHashSet::default();
 
             #[allow(deprecated)]
-            if let Some(default_id) = &config.toolchain.default {
-                toolchains.extend(get_project_toolchains(default_id, &self.language));
+            if let Some(default_ids) = &config.toolchain.default {
+                for default_id in default_ids.to_list() {
+                    toolchains.extend(get_project_toolchains(default_id, &self.language));
+                }
             } else if let Some(platform) = &config.platform {
                 let default_id = platform.get_toolchain_id();
 
@@ -144,11 +149,19 @@ impl<'app> ProjectBuilder<'app> {
                     color::property("toolchain.default"),
                 );
             } else {
+                // TODO deprecate in v2
                 toolchains.extend(detect_project_toolchains(
                     self.context.workspace_root,
                     &self.root,
                     &self.language,
                 ));
+
+                toolchains.extend(
+                    self.context
+                        .toolchain_registry
+                        .detect_project_usage(&self.root)
+                        .await?,
+                );
             }
 
             self.toolchains_config.extend(toolchains.clone());

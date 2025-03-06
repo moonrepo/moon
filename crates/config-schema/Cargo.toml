@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_config = { path = "../config" }
 miette = { workspace = true }
+rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["renderer_json_schema", "schema"] }
 
 [features]

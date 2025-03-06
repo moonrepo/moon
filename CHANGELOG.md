@@ -2,8 +2,37 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Changed the way to disable the TypeScript toolchain in `moon.yml`.
+  ```yml
+  # Before
+  toolchain:
+    typescript:
+      disable: true
+  # After
+  toolchain:
+    typescript: false # or null
+  ```
+- Removed the `--include` option from `moon docker scaffold` (it's been long deprecated). Use the
+  `docker` settings instead.
+
 #### 🚀 Updates
 
+- The TypeScript toolchain is now powered by a
+  [WASM plugin](https://github.com/moonrepo/plugins/tree/master/toolchains/typescript). This is our
+  first step in supporting plugins in core. We chose TypeScript as our 1st plugin because it was the
+  simplest of all the toolchains, and primarily was used for project syncing.
+  - Plugins must be downloaded from the internet, so a connection is required on the first run. The
+    plugin is then cached locally.
+  - Most of the code had to be rewritten but we tried to keep as much parity as possible. Please
+    report an issues or differences you encounter.
+  - Because TypeScript is now a "true" toolchain, it will appear in the toolchains list for projects
+    and tasks. This is required since it runs operations in the context of the plugin.
+- Added new toolchain plugin integrations for specific features.
+  - Integrated into the `SyncWorkspace` and `SyncProject` actions.
+  - Integrated into all `moon docker` commands.
+  - Integrated into the task hashing process.
 - Added a new `moonx` executable, which is a shorthand for `moon run`.
   - Right now the implementation uses Bash/PowerShell shims, but will be migrated to a true binary
     executable once we rework our release process.
@@ -13,6 +42,22 @@
   (traversing upwards).
 - Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
   set, and will fallback to `$HOME/.moon`.
+- Updated `toolchain.default` in `moon.yml` to support a list of IDs.
+
+#### 🧩 Plugins
+
+- Added new toolchain WASM APIs.
+  - `docker_metadata` - Define metadata related to `docker` commands.
+  - `hash_task_contents` - Inject content into the task hashing process.
+  - `prune_docker` - Custom operations to run after `docker prune`.
+  - `scaffold_docker` - Custom operations to run during `docker scaffold`.
+  - `sync_project` - Run syncing operations per project.
+  - `sync_workspace` - Run syncing operations at the workspace root.
+- Updated `download_extension` to v0.0.9.
+- Updated `migrate_nx_extension` to v0.0.9.
+  - Will no longer remove Nx configs. Pass `--cleanup` to remove them.
+- Updated `migrate_turborepo_extension` to v0.1.6.
+  - Will no longer remove Turborepo configs. Pass `--cleanup` to remove them.
 
 #### ⚙️ Internal
 

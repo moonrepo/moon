@@ -117,7 +117,7 @@ mod ext_migrate_nx {
         sandbox.create_file("nx.json", "{}");
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("ext").arg("migrate-nx");
+            cmd.arg("ext").arg("migrate-nx").arg("--").arg("--cleanup");
         });
 
         assert
@@ -137,7 +137,10 @@ mod ext_migrate_turborepo {
         sandbox.create_file("turbo.json", "{}");
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("ext").arg("migrate-turborepo");
+            cmd.arg("ext")
+                .arg("migrate-turborepo")
+                .arg("--")
+                .arg("--cleanup");
         });
 
         assert.success().stdout(predicates::str::contains(

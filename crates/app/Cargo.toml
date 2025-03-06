@@ -22,6 +22,7 @@ moon_console_reporter = { path = "../console-reporter" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
+moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
@@ -97,7 +98,6 @@ moon_rust_lang = { path = "../../legacy/rust/lang" }
 moon_rust_tool = { path = "../../legacy/rust/tool" }
 moon_rust_platform = { path = "../../legacy/rust/platform" }
 moon_system_platform = { path = "../../legacy/system/platform" }
-moon_typescript_lang = { path = "../../legacy/typescript/lang" }
 
 [dev-dependencies]
 serial_test = { workspace = true }

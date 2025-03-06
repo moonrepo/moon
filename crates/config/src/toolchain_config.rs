@@ -6,7 +6,7 @@ use schematic::{Config, validate};
 use version_spec::UnresolvedVersionSpec;
 
 #[cfg(feature = "proto")]
-use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
+use crate::{inherit_tool, is_using_tool_version};
 
 /// Configures all tools and platforms.
 /// Docs: https://moonrepo.dev/docs/config/toolchain
@@ -47,10 +47,6 @@ pub struct ToolchainConfig {
     /// Configures and enables the Rust platform.
     #[setting(nested)]
     pub rust: Option<RustConfig>,
-
-    /// Configures and enables the TypeScript platform.
-    #[setting(nested)]
-    pub typescript: Option<TypeScriptConfig>,
 
     /// All configured toolchains by unique ID.
     #[setting(flatten, nested)]
@@ -194,13 +190,6 @@ impl ToolchainConfig {
 
     inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
 
-    inherit_tool_without_version!(
-        TypeScriptConfig,
-        typescript,
-        "typescript",
-        inherit_proto_typescript
-    );
-
     pub fn should_install_proto(&self) -> bool {
         is_using_tool_version!(self, bun);
         is_using_tool_version!(self, deno);
@@ -230,7 +219,6 @@ impl ToolchainConfig {
         self.inherit_proto_node(proto_config)?;
         self.inherit_proto_python(proto_config)?;
         self.inherit_proto_rust(proto_config)?;
-        self.inherit_proto_typescript(proto_config)?;
 
         if let Some(node_config) = &mut self.node {
             node_config.inherit_proto(proto_config)?;
@@ -258,6 +246,47 @@ impl ToolchainConfig {
 
         if let Some(python_config) = &mut self.python {
             python_config.inherit_proto(proto_config)?;
+        }
+
+        self.inherit_plugin_locators()?;
+
+        Ok(())
+    }
+
+    pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
+        use proto_core::warpgate::{PluginLocator, UrlLocator};
+        use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
+
+        for (id, config) in self.toolchains.iter_mut() {
+            if config.plugin.is_some() {
+                continue;
+            }
+
+            match id.as_str() {
+                "typescript" => {
+                    config.plugin = Some(PluginLocator::Url(Box::new(UrlLocator {
+                        url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.0/typescript_toolchain.wasm".into()
+                    })));
+                }
+                other => {
+                    return Err(ConfigError::Validator {
+                        location: ".moon/toolchain.yml".into(),
+                        error: Box::new(ValidatorError {
+                            errors: vec![ValidateError {
+                                message:
+                                    "a locator is required for plugins; accepts file paths and URLs"
+                                        .into(),
+                                path: Path::new(vec![
+                                    PathSegment::Key(other.to_string()),
+                                    PathSegment::Key("plugin".into()),
+                                ]),
+                            }],
+                        }),
+                        help: None,
+                    }
+                    .into());
+                }
+            };
         }
 
         Ok(())

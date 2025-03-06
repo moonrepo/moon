@@ -598,10 +598,20 @@
         },
         "default": {
           "title": "default",
-          "description": "The default toolchain for all tasks within the project, if their toolchain is unknown.",
+          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
             },
             {
               "type": "null"
@@ -634,6 +644,17 @@
           ],
           "markdownDescription": "Overrides `node` settings."
         },
+        "plugins": {
+          "title": "plugins",
+          "description": "Overrides toolchains by their ID.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ProjectToolchainEntry"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "python": {
           "title": "python",
           "description": "Overrides python settings.",
@@ -659,30 +680,6 @@
             }
           ],
           "markdownDescription": "Overrides `rust` settings."
-        },
-        "toolchains": {
-          "title": "toolchains",
-          "description": "Overrides toolchains by their ID.",
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ProjectToolchainEntry"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        "typescript": {
-          "title": "typescript",
-          "description": "Overrides typescript settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `typescript` settings."
         }
       },
       "additionalProperties": false,
@@ -700,84 +697,6 @@
           "$ref": "#/definitions/ToolchainPluginConfig"
         }
       ]
-    },
-    "ProjectToolchainTypeScriptConfig": {
-      "description": "Overrides top-level typescript settings.",
-      "type": "object",
-      "properties": {
-        "disabled": {
-          "title": "disabled",
-          "description": "Disables all TypeScript functionality for this project.",
-          "type": "boolean"
-        },
-        "includeProjectReferenceSources": {
-          "title": "includeProjectReferenceSources",
-          "description": "Appends sources of project reference to include in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Appends sources of project reference to `include` in `tsconfig.json`."
-        },
-        "includeSharedTypes": {
-          "title": "includeSharedTypes",
-          "description": "Appends shared types to include in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Appends shared types to `include` in `tsconfig.json`."
-        },
-        "routeOutDirToCache": {
-          "title": "routeOutDirToCache",
-          "description": "Updates and routes outDir in tsconfig.json to moon's cache.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Updates and routes `outDir` in `tsconfig.json` to moon's cache."
-        },
-        "syncProjectReferences": {
-          "title": "syncProjectReferences",
-          "description": "Syncs all project dependencies as references in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Syncs all project dependencies as `references` in `tsconfig.json`."
-        },
-        "syncProjectReferencesToPaths": {
-          "title": "syncProjectReferencesToPaths",
-          "description": "Syncs all project dependencies as paths in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Syncs all project dependencies as `paths` in `tsconfig.json`."
-        }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Overrides top-level `typescript` settings."
     },
     "ProjectType": {
       "description": "The type of project, for categorizing.",

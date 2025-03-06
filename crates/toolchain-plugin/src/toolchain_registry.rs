@@ -39,20 +39,26 @@ impl ToolchainRegistry {
         }
     }
 
+    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> json::JsonValue {
+        let mut data = json::JsonValue::default();
+
+        if let Some(config) = toolchain_config.toolchains.get(id) {
+            data = json::JsonValue::Object(config.config.clone().into_iter().collect());
+        }
+
+        data
+    }
+
     pub fn create_merged_config(
         &self,
         id: &str,
         toolchain_config: &ToolchainConfig,
         project_config: &ProjectConfig,
     ) -> json::JsonValue {
-        let mut data = json::JsonValue::default();
-
-        if let Some(root_config) = toolchain_config.toolchains.get(id) {
-            data = json::JsonValue::Object(root_config.config.clone().into_iter().collect());
-        }
+        let mut data = self.create_config(id, toolchain_config);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
-            project_config.toolchain.toolchains.get(id)
+            project_config.toolchain.plugins.get(id)
         {
             let next = json::JsonValue::Object(leaf_config.config.clone().into_iter().collect());
 

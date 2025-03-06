@@ -1,3 +1,4 @@
+language: typescript
 dependsOn:
   - 'deps-no-config'
   - 'deps-no-config-disabled'

@@ -42,7 +42,7 @@ impl ToolchainRegistry {
     pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> json::JsonValue {
         let mut data = json::JsonValue::default();
 
-        if let Some(config) = toolchain_config.toolchains.get(id) {
+        if let Some(config) = toolchain_config.plugins.get(id) {
             data = json::JsonValue::Object(config.config.clone().into_iter().collect());
         }
 

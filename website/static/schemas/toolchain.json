@@ -65,6 +65,17 @@
         }
       ]
     },
+    "plugins": {
+      "title": "plugins",
+      "description": "All configured toolchains by unique ID.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ToolchainPluginConfig"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
     "python": {
       "title": "python",
       "description": "Configures and enables the Python platform.",
@@ -88,17 +99,6 @@
           "type": "null"
         }
       ]
-    },
-    "toolchains": {
-      "title": "toolchains",
-      "description": "All configured toolchains by unique ID.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/ToolchainPluginConfig"
-      },
-      "propertyNames": {
-        "type": "string"
-      }
     }
   },
   "additionalProperties": false,

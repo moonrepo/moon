@@ -163,7 +163,7 @@ impl CliSession {
             });
 
             // Convert moon IDs to plugin IDs
-            for (id, config) in self.toolchain_config.toolchains.clone() {
+            for (id, config) in self.toolchain_config.plugins.clone() {
                 registry.configs.insert(PluginId::raw(id), config);
             }
 

@@ -11,7 +11,7 @@ where
 {
     let (workspace_config, mut toolchain_config, tasks_config) = get_typescript_fixture_configs();
 
-    if let Some(tc) = &mut toolchain_config.toolchains {
+    if let Some(tc) = &mut toolchain_config.plugins {
         if let Some(ts_config) = tc.get_mut("typescript") {
             callback(ts_config.config.get_or_insert_default());
         }

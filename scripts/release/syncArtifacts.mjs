@@ -14,13 +14,6 @@ async function syncArtifacts() {
 				artifacts.map(async (artifact) => {
 					const artifactPath = getPath('artifacts', dir, artifact);
 
-					// JSON schemas
-					if (artifact.startsWith('schema-')) {
-						await fs.copyFile(artifactPath, getPath('artifacts/release', artifact));
-
-						return;
-					}
-
 					// Copy the artifact binary into the target core package
 					const target = dir.replace('binary-', '');
 					const binaryPath = getPath('packages', getPackageFromTarget(target), artifact);

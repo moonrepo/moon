@@ -50,12 +50,12 @@ pub struct ToolchainConfig {
 
     /// All configured toolchains by unique ID.
     #[setting(flatten, nested)]
-    pub toolchains: FxHashMap<Id, ToolchainPluginConfig>,
+    pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
 }
 
 impl ToolchainConfig {
     pub fn get_enabled(&self) -> Vec<Id> {
-        let mut tools = self.toolchains.keys().cloned().collect::<Vec<_>>();
+        let mut tools = self.plugins.keys().cloned().collect::<Vec<_>>();
 
         if self.bun.is_some() {
             tools.push(Id::raw("bun"));
@@ -257,7 +257,7 @@ impl ToolchainConfig {
         use proto_core::warpgate::{PluginLocator, UrlLocator};
         use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 
-        for (id, config) in self.toolchains.iter_mut() {
+        for (id, config) in self.plugins.iter_mut() {
             if config.plugin.is_some() {
                 continue;
             }

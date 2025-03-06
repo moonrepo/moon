@@ -21,7 +21,7 @@ pub fn get_default_toolchain() -> PartialToolchainConfig {
             }),
             ..PartialNodeConfig::default()
         }),
-        toolchains: Some(FxHashMap::from_iter([(
+        plugins: Some(FxHashMap::from_iter([(
             Id::raw("typescript"),
             PartialToolchainPluginConfig {
                 config: Some(BTreeMap::from_iter([
@@ -617,7 +617,7 @@ pub fn get_typescript_fixture_configs() -> (
     ));
 
     if let Some(ts) = &mut toolchain_config
-        .toolchains
+        .plugins
         .get_or_insert_default()
         .get_mut("typescript")
     {

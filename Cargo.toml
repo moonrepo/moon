@@ -54,7 +54,7 @@ reqwest = { version = "0.12.12", default-features = false, features = [
 ] }
 rustc-hash = "2.1.1"
 scc = "2.3.3"
-schematic = { version = "0.18.0", default-features = false, features = [
+schematic = { version = "0.18.1", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"

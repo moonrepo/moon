@@ -246,58 +246,58 @@ pub async fn prune(session: CliSession) -> AppResult {
             continue;
         }
 
-        let platform = PlatformManager::read().get_by_toolchain(&toolchain_id)?;
-
-        match platform.get_type() {
-            PlatformType::Bun => {
-                prune_bun(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<BunTool>()
-                        .unwrap(),
-                    &session,
-                    &manifest,
-                )
-                .await?;
-            }
-            PlatformType::Deno => {
-                prune_deno(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<DenoTool>()
-                        .unwrap(),
-                    &session,
-                    &manifest,
-                )
-                .await?;
-            }
-            PlatformType::Node => {
-                prune_node(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<NodeTool>()
-                        .unwrap(),
-                    &session,
-                    &manifest,
-                )
-                .await?;
-            }
-            PlatformType::Rust => {
-                prune_rust(
-                    platform
-                        .get_tool()?
-                        .as_any()
-                        .downcast_ref::<RustTool>()
-                        .unwrap(),
-                    &session,
-                )
-                .await?;
-            }
-            _ => {}
-        };
+        if let Ok(platform) = PlatformManager::read().get_by_toolchain(&toolchain_id) {
+            match platform.get_type() {
+                PlatformType::Bun => {
+                    prune_bun(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<BunTool>()
+                            .unwrap(),
+                        &session,
+                        &manifest,
+                    )
+                    .await?;
+                }
+                PlatformType::Deno => {
+                    prune_deno(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<DenoTool>()
+                            .unwrap(),
+                        &session,
+                        &manifest,
+                    )
+                    .await?;
+                }
+                PlatformType::Node => {
+                    prune_node(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<NodeTool>()
+                            .unwrap(),
+                        &session,
+                        &manifest,
+                    )
+                    .await?;
+                }
+                PlatformType::Rust => {
+                    prune_rust(
+                        platform
+                            .get_tool()?
+                            .as_any()
+                            .downcast_ref::<RustTool>()
+                            .unwrap(),
+                        &session,
+                    )
+                    .await?;
+                }
+                _ => {}
+            };
+        }
 
         if let Ok(toolchain) = toolchain_registry.load(toolchain_id).await {
             prune_toolchain(&session, &toolchain_registry, &toolchain).await?;

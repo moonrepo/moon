@@ -69,7 +69,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
+        # os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
+        os: [depot-ubuntu-22.04-4, macos-latest, depot-windows-2022-4]
       fail-fast: false
     env:
       # sccache
@@ -94,15 +95,14 @@ jobs:
       - uses: moonrepo/setup-toolchain@v0
         with:
           auto-install: true
-          cache: ${{ runner.os == 'Linux' }}
+          cache: true
           proto-version: '0.47.2' # Keep in sync
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
-        if: ${{ runner.os == 'Linux' }}
       - uses: mozilla-actions/sccache-action@v0.0.7
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
-      - uses: lukka/get-cmake@latest
-        if: ${{ runner.os == 'Windows' }}
+      # - uses: lukka/get-cmake@latest
+      #   if: ${{ runner.os == 'Windows' }}
       - name: Checking coverage status
         id: coverage
         shell: bash

@@ -263,6 +263,16 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+/** Configures an individual toolchain. */
+export interface ToolchainPluginConfig {
+	/** Arbitrary configuration that'll be passed to the WASM plugin. */
+	config: Record<string, unknown>;
+	/** Location of the WASM plugin to use. */
+	plugin: PluginLocator | null;
+	/** The version of the toolchain to download and install. */
+	version: UnresolvedVersionSpec | null;
+}
+
 /** The available package managers for Python. */
 export type PythonPackageManager = 'pip' | 'uv';
 
@@ -344,16 +354,6 @@ export interface RustConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
-/** Configures an individual toolchain. */
-export interface ToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config: Record<string, unknown>;
-	/** Location of the WASM plugin to use. */
-	plugin: PluginLocator | null;
-	/** The version of the toolchain to download and install. */
-	version: UnresolvedVersionSpec | null;
-}
-
 /**
  * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
@@ -374,12 +374,12 @@ export interface ToolchainConfig {
 	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
+	/** All configured toolchains by unique ID. */
+	plugins: Record<string, ToolchainPluginConfig>;
 	/** Configures and enables the Python platform. */
 	python: PythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust: RustConfig | null;
-	/** All configured toolchains by unique ID. */
-	toolchains: Record<string, ToolchainPluginConfig>;
 }
 
 /**
@@ -616,6 +616,16 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
+/** Configures an individual toolchain. */
+export interface PartialToolchainPluginConfig {
+	/** Arbitrary configuration that'll be passed to the WASM plugin. */
+	config?: Record<string, unknown> | null;
+	/** Location of the WASM plugin to use. */
+	plugin?: PluginLocator | null;
+	/** The version of the toolchain to download and install. */
+	version?: UnresolvedVersionSpec | null;
+}
+
 export interface PartialPipConfig {
 	/** List of arguments to append to `pip install` commands. */
 	installArgs?: string[] | null;
@@ -693,16 +703,6 @@ export interface PartialRustConfig {
 	version?: UnresolvedVersionSpec | null;
 }
 
-/** Configures an individual toolchain. */
-export interface PartialToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config?: Record<string, unknown> | null;
-	/** Location of the WASM plugin to use. */
-	plugin?: PluginLocator | null;
-	/** The version of the toolchain to download and install. */
-	version?: UnresolvedVersionSpec | null;
-}
-
 /**
  * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
@@ -723,10 +723,10 @@ export interface PartialToolchainConfig {
 	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
+	/** All configured toolchains by unique ID. */
+	plugins?: Record<string, PartialToolchainPluginConfig> | null;
 	/** Configures and enables the Python platform. */
 	python?: PartialPythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust?: PartialRustConfig | null;
-	/** All configured toolchains by unique ID. */
-	toolchains?: Record<string, PartialToolchainPluginConfig> | null;
 }

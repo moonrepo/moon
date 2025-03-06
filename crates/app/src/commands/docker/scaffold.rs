@@ -49,13 +49,33 @@ async fn get_toolchain_globs(
     ))
 }
 
-fn copy_files<I: IntoIterator<Item = String>>(
-    globs: I,
+fn copy_files<F: IntoIterator<Item = String>, G: IntoIterator<Item = String>>(
+    files: F,
+    globs: G,
     source: &Path,
     dest: &Path,
 ) -> miette::Result<()> {
-    for abs_file in glob::walk_files(source, &globs.into_iter().collect::<Vec<_>>())? {
-        fs::copy_file(&abs_file, dest.join(abs_file.strip_prefix(source).unwrap()))?;
+    let files = files.into_iter().collect::<Vec<_>>();
+    let globs = globs.into_iter().collect::<Vec<_>>();
+
+    if !files.is_empty() {
+        for file in files {
+            let abs_file = source.join(&file);
+
+            if file != "." && abs_file.exists() {
+                if abs_file.is_dir() {
+                    fs::copy_dir_all(&abs_file, &abs_file, dest.join(file))?;
+                } else {
+                    fs::copy_file(abs_file, dest.join(file))?;
+                }
+            }
+        }
+    }
+
+    if !globs.is_empty() {
+        for abs_file in glob::walk_files(source, &globs)? {
+            fs::copy_file(&abs_file, dest.join(abs_file.strip_prefix(source).unwrap()))?;
+        }
     }
 
     Ok(())
@@ -91,6 +111,7 @@ fn scaffold_files(
     let mut files_to_create: FxHashSet<String> = FxHashSet::default();
     let mut files_to_copy: FxHashSet<String> =
         FxHashSet::from_iter([".gitignore".into(), ".prototools".into()]);
+    let mut files_to_glob: FxHashSet<String> = FxHashSet::default();
     files_to_copy.extend(session.config_loader.get_project_file_names());
     files_to_copy.extend(session.config_loader.get_template_file_names());
 
@@ -100,7 +121,7 @@ fn scaffold_files(
         .scaffold
         .copy_toolchain_files
     {
-        files_to_copy.extend(shared_globs.to_owned());
+        files_to_glob.extend(shared_globs.to_owned());
 
         // Copy manifest and config files for every type of language,
         // not just the one the project is configured as!
@@ -110,7 +131,7 @@ fn scaffold_files(
             // These are special cases
             match lang {
                 LanguageType::JavaScript => {
-                    files_to_copy.insert("postinstall.*".into());
+                    files_to_glob.insert("postinstall.*".into());
                 }
                 LanguageType::Rust => {
                     if let Some(cargo_toml) = CargoTomlCache::read(src_dir)? {
@@ -150,7 +171,7 @@ fn scaffold_files(
         }
     }
 
-    copy_files(files_to_copy, src_dir, out_dir)?;
+    copy_files(files_to_copy, files_to_glob, src_dir, out_dir)?;
     create_files(files_to_create, out_dir)?;
 
     Ok(None)
@@ -242,6 +263,7 @@ async fn scaffold_workspace(
     );
 
     copy_files(
+        [],
         [
             ".moon/*.{pkl,yml}".to_owned(),
             ".moon/tasks/**/*.{pkl,yml}".to_owned(),
@@ -266,7 +288,7 @@ async fn scaffold_workspace(
             "Including additional files"
         );
 
-        copy_files(include, &session.workspace_root, &docker_workspace_root)?;
+        copy_files([], include, &session.workspace_root, &docker_workspace_root)?;
     }
 
     Ok(None)
@@ -321,7 +343,7 @@ async fn scaffold_sources_project(
     // Copy files
     let docker_project_root = project.source.to_logical_path(docker_sources_root);
 
-    copy_files(globs, &project.root, &docker_project_root)?;
+    copy_files([], globs, &project.root, &docker_project_root)?;
 
     if !toolchains.is_empty() {
         session

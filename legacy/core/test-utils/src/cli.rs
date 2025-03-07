@@ -113,26 +113,24 @@ impl SandboxAssert<'_> {
             get_assert_stdout_output(&self.inner) + &get_assert_stderr_output(&self.inner);
 
         // Replace fixture path
-        let root = self
-            .sandbox
-            .path()
-            .to_str()
-            .unwrap()
-            .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
-            .replace("C:/Users/ADMINI~1", "C:/Users/Administrator");
+        let root = self.sandbox.path().to_str().unwrap();
 
-        output = output.replace(&root, "<WORKSPACE>");
-        output = output.replace(&root.replace('\\', "/"), "<WORKSPACE>");
+        output = output
+            .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
+            .replace("C:/Users/ADMINI~1", "C:/Users/Administrator")
+            .replace(root, "<WORKSPACE>")
+            .replace(&root.replace('\\', "/"), "<WORKSPACE>");
 
         // Replace home dir
         if let Some(home_dir) = home_dir() {
             let home = home_dir.to_str().unwrap();
             let root_without_home = root.replace(home, "~");
 
-            output = output.replace(&root_without_home, "<WORKSPACE>");
-            output = output.replace(&root_without_home.replace('\\', "/"), "<WORKSPACE>");
-            output = output.replace(home, "~");
-            output = output.replace(&home.replace('\\', "/"), "~");
+            output = output
+                .replace(&root_without_home, "<WORKSPACE>")
+                .replace(&root_without_home.replace('\\', "/"), "<WORKSPACE>")
+                .replace(home, "~")
+                .replace(&home.replace('\\', "/"), "~");
         }
 
         output.replace("/private<", "<")

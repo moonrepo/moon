@@ -77,7 +77,6 @@ pub use unix::*;
 #[cfg(windows)]
 mod windows {
     use super::*;
-    use std::os::raw::{c_int, c_uint, c_void};
     use windows_sys::Win32::System::Console::{
         CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, GenerateConsoleCtrlEvent,
     };

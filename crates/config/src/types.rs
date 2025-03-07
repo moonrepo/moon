@@ -1,7 +1,7 @@
 use crate::project::TaskConfig;
 use crate::shapes::InputPath;
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 

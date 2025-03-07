@@ -3,7 +3,7 @@ use moon_config::{
     PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, PartialWorkspaceProjects,
 };
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, predicates::prelude::*,
 };
 use rustc_hash::FxHashMap;
 
@@ -225,11 +225,15 @@ mod rustup_toolchain {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("rustup component")
-            .not()
-            .eval(&output));
-        assert!(predicate::str::contains("rustup target")
-            .not()
-            .eval(&output));
+        assert!(
+            predicate::str::contains("rustup component")
+                .not()
+                .eval(&output)
+        );
+        assert!(
+            predicate::str::contains("rustup target")
+                .not()
+                .eval(&output)
+        );
     }
 }

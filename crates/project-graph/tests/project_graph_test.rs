@@ -1,4 +1,4 @@
-use moon_common::{path::WorkspaceRelativePathBuf, Id};
+use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, TaskDependencyConfig, WorkspaceProjects,
     WorkspaceProjectsConfig,
@@ -15,7 +15,7 @@ use moon_workspace::{
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::EventState;
-use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
+use starbase_sandbox::{Sandbox, assert_snapshot, create_sandbox};
 use starbase_utils::{fs, json, string_vec};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -361,11 +361,13 @@ mod project_graph {
                 ])
             );
 
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/hashes")
-                .join(format!("{}.json", state.last_hash))
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(".moon/cache/hashes")
+                    .join(format!("{}.json", state.last_hash))
+                    .exists()
+            );
         }
 
         mod invalidation {
@@ -712,11 +714,13 @@ mod project_graph {
                 }]
             );
 
-            assert!(graph
-                .get_task_from_project("project", "build")
-                .unwrap()
-                .deps
-                .is_empty());
+            assert!(
+                graph
+                    .get_task_from_project("project", "build")
+                    .unwrap()
+                    .deps
+                    .is_empty()
+            );
         }
 
         #[tokio::test]

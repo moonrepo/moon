@@ -1,7 +1,7 @@
 use cached::proc_macro::cached;
 use cargo_lock::Lockfile as CargoLock;
 use miette::IntoDiagnostic;
-use moon_lang::{config_cache_container, LockfileDependencyVersions};
+use moon_lang::{LockfileDependencyVersions, config_cache_container};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 

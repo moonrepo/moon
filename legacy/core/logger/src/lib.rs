@@ -1,6 +1,6 @@
 // Re-export so that consumers dont need to install these crates
-pub use console::{measure_text_width, pad_str, pad_str_with, strip_ansi_codes, Alignment};
-pub use log::{debug, error, info, max_level, trace, warn, LevelFilter};
+pub use console::{Alignment, measure_text_width, pad_str, pad_str_with, strip_ansi_codes};
+pub use log::{LevelFilter, debug, error, info, max_level, trace, warn};
 
 pub fn logging_enabled() -> bool {
     max_level() != LevelFilter::Off

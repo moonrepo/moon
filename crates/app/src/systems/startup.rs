@@ -12,7 +12,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::spawn;
-use tokio::task::{block_in_place, JoinError};
+use tokio::task::{JoinError, block_in_place};
 use tracing::{debug, instrument};
 
 // We need to load configuration in a blocking task, because config
@@ -179,7 +179,7 @@ pub async fn load_tasks_configs(
 pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moonbase>>> {
     if vcs.is_enabled() && env::var("MOONBASE_REPO_SLUG").is_err() {
         if let Ok(slug) = vcs.get_repository_slug().await {
-            env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
+            unsafe { env::set_var("MOONBASE_REPO_SLUG", slug.as_str()) };
         }
     }
 
@@ -194,4 +194,61 @@ pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moo
     };
 
     Ok(Moonbase::signin(secret_key, repo_slug).await)
+}
+
+#[instrument(skip_all)]
+pub fn create_moonx_shims() -> miette::Result<()> {
+    let Ok(exe_file) = env::current_exe() else {
+        return Ok(());
+    };
+
+    let shim_file =
+        exe_file
+            .parent()
+            .unwrap()
+            .join(if cfg!(windows) { "moonx.ps1" } else { "moonx" });
+
+    if shim_file.exists() {
+        return Ok(());
+    }
+
+    match fs::write_file(&shim_file, get_moonx_shim_content()) {
+        Ok(_) => {
+            if let Err(error) = fs::update_perms(&shim_file, None) {
+                debug!("Failed to make moonx shim executable: {error}");
+
+                let _ = fs::remove_file(shim_file);
+            }
+        }
+        Err(error) => {
+            debug!("Failed to create moonx shim: {error}");
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(unix)]
+fn get_moonx_shim_content() -> String {
+    r#"#!/usr/bin/env sh
+
+exec moon run "$@"
+exit $?
+"#
+    .into()
+}
+
+#[cfg(windows)]
+fn get_moonx_shim_content() -> String {
+    r#"#!/usr/bin/env pwsh
+
+if ($MyInvocation.ExpectingInput) {
+  $input | & moon run $args
+} else {
+  & moon run $args
+}
+
+exit $LASTEXITCODE
+"#
+    .into()
 }

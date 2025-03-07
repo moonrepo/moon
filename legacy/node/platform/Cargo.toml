@@ -1,7 +1,7 @@
 [package]
 name = "moon_node_platform"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 publish = false
 
 [dependencies]
@@ -21,7 +21,6 @@ moon_process = { path = "../../../crates/process" }
 moon_project = { path = "../../../crates/project" }
 moon_task = { path = "../../../crates/task" }
 moon_tool = { path = "../../core/tool" }
-moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }

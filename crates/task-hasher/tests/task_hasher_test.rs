@@ -2,7 +2,7 @@ use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::{TaskHash, TaskHasher};
-use moon_test_utils2::{create_workspace_graph_mocker, WorkspaceGraph};
+use moon_test_utils2::{WorkspaceGraph, create_workspace_graph_mocker};
 use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
 use std::fs;

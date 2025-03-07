@@ -53,7 +53,7 @@ mod cache_engine {
         let sandbox = create_empty_sandbox();
         let engine = CacheEngine::new(sandbox.path()).unwrap();
 
-        env::set_var("MOON_CACHE", "off");
+        unsafe { env::set_var("MOON_CACHE", "off") };
 
         engine
             .write(
@@ -66,7 +66,7 @@ mod cache_engine {
 
         assert!(sandbox.path().join(".moon/cache/test.json").exists());
 
-        env::remove_var("MOON_CACHE");
+        unsafe { env::remove_var("MOON_CACHE") };
     }
 
     #[test]
@@ -74,7 +74,7 @@ mod cache_engine {
         let sandbox = create_empty_sandbox();
         let engine = CacheEngine::new(sandbox.path()).unwrap();
 
-        env::set_var("MOON_CACHE", "read");
+        unsafe { env::set_var("MOON_CACHE", "read") };
 
         engine
             .write(
@@ -87,6 +87,6 @@ mod cache_engine {
 
         assert!(sandbox.path().join(".moon/cache/states/test.json").exists());
 
-        env::remove_var("MOON_CACHE");
+        unsafe { env::remove_var("MOON_CACHE") };
     }
 }

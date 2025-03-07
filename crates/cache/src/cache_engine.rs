@@ -1,10 +1,10 @@
-use crate::{merge_clean_results, resolve_path, HashEngine, StateEngine};
+use crate::{HashEngine, StateEngine, merge_clean_results, resolve_path};
 use moon_cache_item::*;
 use moon_common::consts;
 use moon_common::path::encode_component;
 use moon_time::parse_duration;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
 use std::env;
@@ -68,7 +68,7 @@ impl CacheEngine {
     pub fn force_mode(&self, mode: CacheMode) {
         let _ = self.forced_mode.write().unwrap().insert(mode);
 
-        env::set_var("MOON_CACHE", mode.to_string());
+        unsafe { env::set_var("MOON_CACHE", mode.to_string()) };
     }
 
     pub fn cache<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>

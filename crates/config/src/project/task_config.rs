@@ -1,10 +1,10 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OneOrMany, OutputPath};
-use moon_common::{cacheable, Id};
+use moon_common::{Id, cacheable};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, merge, Config, ConfigEnum, ValidateError};
+use schematic::{Config, ConfigEnum, ValidateError, derive_enum, merge};
 
 fn validate_command<C>(
     command: &PartialTaskArgs,

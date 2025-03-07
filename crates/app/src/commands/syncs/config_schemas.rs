@@ -15,7 +15,7 @@ pub struct SyncConfigSchemasArgs {
 pub async fn sync(session: CliSession, args: SyncConfigSchemasArgs) -> AppResult {
     let done = create_progress_bar("Generating configuration schemas...");
 
-    let context = session.get_app_context()?;
+    let context = session.get_app_context().await?;
 
     sync_config_schemas(&context, args.force).await?;
 

@@ -467,7 +467,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::default();
 
-        env::set_var("ENV", "affected");
+        unsafe { env::set_var("ENV", "affected") };
 
         let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
         tracker
@@ -483,7 +483,7 @@ mod affected_tasks {
             )])
         );
 
-        env::remove_var("ENV");
+        unsafe { env::remove_var("ENV") };
     }
 
     #[tokio::test]

@@ -4,9 +4,9 @@ use crate::patterns;
 use crate::portable_path::is_glob_like;
 use crate::validate::validate_child_relative_path;
 use moon_common::path::{
-    expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
+    RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
-use schematic::{derive_enum, ParseError, Schema, SchemaBuilder, Schematic};
+use schematic::{ParseError, Schema, SchemaBuilder, Schematic, derive_enum};
 use std::str::FromStr;
 
 derive_enum!(

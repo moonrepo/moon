@@ -1,14 +1,21 @@
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::process::ExitStatus;
 use std::sync::Arc;
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaHash {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hash: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct OperationMetaLabel {
+#[serde(default, rename_all = "camelCase")]
+pub struct OperationMetaSync {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub changed_files: Vec<PathBuf>,
+
     pub label: String,
 }
 
@@ -57,7 +64,7 @@ pub enum OperationMeta {
     NoOperation,
     OutputHydration(Box<OperationMetaOutput>),
     ProcessExecution(Box<OperationMetaOutput>),
-    SyncOperation(Box<OperationMetaLabel>),
+    SyncOperation(Box<OperationMetaSync>),
     TaskExecution(Box<OperationMetaOutput>),
 
     // Metrics

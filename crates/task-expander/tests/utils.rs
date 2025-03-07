@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::InputPath;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};

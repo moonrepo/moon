@@ -1,7 +1,7 @@
 use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{clean_git_version, Git, GitWorktree, TouchedFiles, Vcs};
+use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs, clean_git_version};
 use rustc_hash::FxHashSet;
-use starbase_sandbox::{create_sandbox, Sandbox};
+use starbase_sandbox::{Sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
 

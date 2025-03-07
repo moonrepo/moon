@@ -1,7 +1,7 @@
 use crate::build_data::ProjectBuildData;
 use moon_cache::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{is_docker, Id};
+use moon_common::{Id, is_docker};
 use moon_hash::hash_content;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;

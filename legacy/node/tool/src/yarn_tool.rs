@@ -3,11 +3,11 @@ use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
-use moon_node_lang::{yarn, LockfileDependencyVersions};
+use moon_node_lang::{LockfileDependencyVersions, yarn};
 use moon_process::Command;
 use moon_tool::{
-    async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
-    use_global_tool_on_path, DependencyManager, Tool, ToolError,
+    DependencyManager, Tool, ToolError, async_trait, get_proto_env_vars, get_proto_version_env,
+    load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
 };
 use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;

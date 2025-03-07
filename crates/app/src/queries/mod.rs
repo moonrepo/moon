@@ -18,8 +18,7 @@ pub(super) fn convert_to_regex(
 
             trace!(
                 "Filtering \"{}\" by matching against pattern \"{}\"",
-                field,
-                pattern
+                field, pattern
             );
 
             Ok(Some(pattern))

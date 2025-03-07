@@ -2,7 +2,7 @@ use moon_common::Id;
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, predicates::prelude::*,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
@@ -291,10 +291,12 @@ mod unix {
                 cmd.arg("run").arg("unix:outputs");
             });
 
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/unix/snapshot.json")
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(".moon/cache/states/unix/snapshot.json")
+                    .exists()
+            );
         }
 
         #[test]
@@ -313,11 +315,13 @@ mod unix {
 
             let state: TaskRunCacheState = json::read_file(cache_path).unwrap();
 
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{}.tar.gz", state.hash))
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(".moon/cache/outputs")
+                    .join(format!("{}.tar.gz", state.hash))
+                    .exists()
+            );
         }
     }
 
@@ -595,10 +599,12 @@ mod windows {
                 cmd.arg("run").arg("windows:outputs");
             });
 
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/windows/snapshot.json")
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(".moon/cache/states/windows/snapshot.json")
+                    .exists()
+            );
         }
 
         #[test]
@@ -617,11 +623,13 @@ mod windows {
 
             let state: TaskRunCacheState = json::read_file(cache_path).unwrap();
 
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/outputs")
-                .join(format!("{}.tar.gz", state.hash))
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join(".moon/cache/outputs")
+                    .join(format!("{}.tar.gz", state.hash))
+                    .exists()
+            );
         }
     }
 }

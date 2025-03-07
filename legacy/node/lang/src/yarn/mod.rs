@@ -111,15 +111,34 @@ __metadata:
             FxHashMap::from_iter([
                 (
                     "is-buffer".to_owned(),
-                    string_vec!["4a186d995d8bbf9153b4bd9ff9fd04ae75068fe695d29025d25e592d9488911eeece84eefbd8fa41b8ddcc0711058a71d4c466dcf6f1f6e1d83830052d8ca707"]
+                    string_vec![
+                        "4a186d995d8bbf9153b4bd9ff9fd04ae75068fe695d29025d25e592d9488911eeece84eefbd8fa41b8ddcc0711058a71d4c466dcf6f1f6e1d83830052d8ca707"
+                    ]
                 ),
                 (
                     "is-odd".to_owned(),
-                    string_vec!["146069d7622c991c75c17ca63bccf5470cd730c24082874e53e797a10ff38a896197d6ce34ad137a2f422dcc614b10ff24d31fe93dcdb29f0cb758f2d924f477"]
+                    string_vec![
+                        "146069d7622c991c75c17ca63bccf5470cd730c24082874e53e797a10ff38a896197d6ce34ad137a2f422dcc614b10ff24d31fe93dcdb29f0cb758f2d924f477"
+                    ]
                 ),
-                ("kind-of".to_owned(), string_vec!["e898df8ca2f31038f27d24f0b8080da7be274f986bc6ed176f37c77c454d76627619e1681f6f9d2e8d2fd7557a18ecc419a6bb54e422abcbb8da8f1a75e4b386"]),
-                ("is-even".to_owned(), string_vec!["0267545d7cb6724aee249e88942cf22f6263aa006cd9bf83c2ddbb2a1d47280e8c4d72b2d50e38bd3575df717c993904b44153cc1772a55dabca250ca40cc4f7"]),
-                ("is-number".to_owned(), string_vec!["0c62bf8e9d72c4dd203a74d8cfc751c746e75513380fef420cda8237e619a988ee43e678ddb23c87ac24d91ac0fe9f22e4ffb1301a50310c697e9d73ca3994e9"]),
+                (
+                    "kind-of".to_owned(),
+                    string_vec![
+                        "e898df8ca2f31038f27d24f0b8080da7be274f986bc6ed176f37c77c454d76627619e1681f6f9d2e8d2fd7557a18ecc419a6bb54e422abcbb8da8f1a75e4b386"
+                    ]
+                ),
+                (
+                    "is-even".to_owned(),
+                    string_vec![
+                        "0267545d7cb6724aee249e88942cf22f6263aa006cd9bf83c2ddbb2a1d47280e8c4d72b2d50e38bd3575df717c993904b44153cc1772a55dabca250ca40cc4f7"
+                    ]
+                ),
+                (
+                    "is-number".to_owned(),
+                    string_vec![
+                        "0c62bf8e9d72c4dd203a74d8cfc751c746e75513380fef420cda8237e619a988ee43e678ddb23c87ac24d91ac0fe9f22e4ffb1301a50310c697e9d73ca3994e9"
+                    ]
+                ),
             ])
         );
 

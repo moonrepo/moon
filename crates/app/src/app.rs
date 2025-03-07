@@ -320,27 +320,29 @@ impl Cli {
     pub fn setup_env_vars(&self) {
         bootstrap::setup_colors(self.color);
 
-        env::set_var("MOON_APP_LOG", self.log.to_string());
+        unsafe {
+            env::set_var("MOON_APP_LOG", self.log.to_string());
 
-        if env::var("MOON_LOG").is_err() {
-            env::set_var("MOON_LOG", self.log.to_string());
-        }
+            if env::var("MOON_LOG").is_err() {
+                env::set_var("MOON_LOG", self.log.to_string());
+            }
 
-        if env::var("MOON_CACHE").is_err() {
-            env::set_var("MOON_CACHE", self.cache.to_string());
-        }
+            if env::var("MOON_CACHE").is_err() {
+                env::set_var("MOON_CACHE", self.cache.to_string());
+            }
 
-        if matches!(self.cache, CacheMode::Off | CacheMode::Write) {
-            env::set_var("PROTO_CACHE", "off");
-        }
+            if matches!(self.cache, CacheMode::Off | CacheMode::Write) {
+                env::set_var("PROTO_CACHE", "off");
+            }
 
-        if env::var("MOON_DEBUG_WASM").is_ok() {
-            env::set_var("PROTO_WASM_LOG", "trace");
-            env::set_var("PROTO_DEBUG_WASM", "true");
-            env::set_var("EXTISM_DEBUG", "1");
-            env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
-            env::set_var("EXTISM_MEMDUMP", "wasm-plugin.mem");
-            env::set_var("EXTISM_COREDUMP", "wasm-plugin.core");
-        }
+            if env::var("MOON_DEBUG_WASM").is_ok() {
+                env::set_var("PROTO_WASM_LOG", "trace");
+                env::set_var("PROTO_DEBUG_WASM", "true");
+                env::set_var("EXTISM_DEBUG", "1");
+                env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
+                env::set_var("EXTISM_MEMDUMP", "wasm-plugin.mem");
+                env::set_var("EXTISM_COREDUMP", "wasm-plugin.core");
+            }
+        };
     }
 }

@@ -8,7 +8,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_proto_paths, prepend_path_env_var, Tool};
+use moon_tool::{Tool, get_proto_paths, prepend_path_env_var};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use std::path::{Path, PathBuf};

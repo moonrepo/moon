@@ -93,13 +93,14 @@ impl CliSession {
         ActionGraphBuilder::new(workspace_graph)
     }
 
-    pub fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
+    pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
             console: Arc::new(self.console.clone()),
             vcs: self.get_vcs_adapter()?,
             toolchain_config: Arc::clone(&self.toolchain_config),
+            toolchain_registry: self.get_toolchain_registry().await?,
             workspace_config: Arc::clone(&self.workspace_config),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
@@ -119,13 +120,11 @@ impl CliSession {
     }
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
-        let workspace_graph = self.get_workspace_graph().await?;
-
         let item = self.extension_registry.get_or_init(|| {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph,
+                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
             // Convert moon IDs to plugin IDs
@@ -156,17 +155,15 @@ impl CliSession {
     }
 
     pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
-        let workspace_graph = self.get_workspace_graph().await?;
-
         let item = self.toolchain_registry.get_or_init(|| {
             let mut registry = ToolchainRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph,
+                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
             // Convert moon IDs to plugin IDs
-            for (id, config) in self.toolchain_config.toolchains.clone() {
+            for (id, config) in self.toolchain_config.plugins.clone() {
                 registry.configs.insert(PluginId::raw(id), config);
             }
 
@@ -227,8 +224,16 @@ impl CliSession {
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
         let result = builder.build().await?;
 
-        let _ = self.project_graph.set(result.projects);
-        let _ = self.task_graph.set(result.tasks);
+        // Set the internal graphs
+        let _ = self.project_graph.set(result.projects.clone());
+        let _ = self.task_graph.set(result.tasks.clone());
+
+        // Update the plugin registries with the graph
+        let extensions = self.get_extension_registry().await?;
+        *extensions.host_data.workspace_graph.write().unwrap() = result.clone();
+
+        let toolchains = self.get_toolchain_registry().await?;
+        *toolchains.host_data.workspace_graph.write().unwrap() = result;
 
         Ok(())
     }
@@ -239,6 +244,8 @@ impl AppSession for CliSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
         self.console.set_reporter(DefaultReporter::default());
+
+        startup::create_moonx_shims()?;
 
         // Determine paths
 
@@ -314,8 +321,10 @@ impl AppSession for CliSession {
             )
             .await?;
 
+            self.get_toolchain_registry().await?.load_all().await?;
+
             if self.requires_toolchain_installed() {
-                analyze::load_toolchain(self.get_toolchain_registry().await?).await?;
+                analyze::load_toolchain().await?;
             }
         }
 

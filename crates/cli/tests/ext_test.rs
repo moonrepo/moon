@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::PartialExtensionConfig;
 use moon_test_utils::{create_sandbox_with_config, create_sandbox_with_factory, predicates};
-use proto_core::{warpgate::FileLocator, PluginLocator};
+use proto_core::{PluginLocator, warpgate::FileLocator};
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 
@@ -117,7 +117,7 @@ mod ext_migrate_nx {
         sandbox.create_file("nx.json", "{}");
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("ext").arg("migrate-nx");
+            cmd.arg("ext").arg("migrate-nx").arg("--").arg("--cleanup");
         });
 
         assert
@@ -137,7 +137,10 @@ mod ext_migrate_turborepo {
         sandbox.create_file("turbo.json", "{}");
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("ext").arg("migrate-turborepo");
+            cmd.arg("ext")
+                .arg("migrate-turborepo")
+                .arg("--")
+                .arg("--cleanup");
         });
 
         assert.success().stdout(predicates::str::contains(

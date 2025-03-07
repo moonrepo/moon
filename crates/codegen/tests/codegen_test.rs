@@ -41,10 +41,12 @@ mod codegen {
             .unwrap();
 
             assert!(sandbox.path().join("templates/new-template").exists());
-            assert!(sandbox
-                .path()
-                .join("templates/new-template/template.yml")
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join("templates/new-template/template.yml")
+                    .exists()
+            );
 
             assert_eq!(template.id, "new-template");
             assert_eq!(template.root, sandbox.path().join("templates/new-template"));
@@ -67,10 +69,12 @@ mod codegen {
             .unwrap();
 
             assert!(sandbox.path().join("scaffolding/new-template").exists());
-            assert!(sandbox
-                .path()
-                .join("scaffolding/new-template/template.yml")
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join("scaffolding/new-template/template.yml")
+                    .exists()
+            );
 
             assert_eq!(template.id, "new-template");
             assert_eq!(
@@ -91,14 +95,18 @@ mod codegen {
             .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
             .unwrap();
 
-            assert!(sandbox
-                .path()
-                .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_")
-                .exists());
-            assert!(sandbox
-                .path()
-                .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_/template.yml")
-                .exists());
+            assert!(
+                sandbox
+                    .path()
+                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_")
+                    .exists()
+            );
+            assert!(
+                sandbox
+                    .path()
+                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_/template.yml")
+                    .exists()
+            );
 
             assert_eq!(template.id, "so-me-temPlatE--with-Ran-dom-Valu-es-123_");
             assert_eq!(
@@ -128,12 +136,13 @@ mod codegen {
             codegen.load_templates().await.unwrap();
 
             assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
-            assert!(env
-                .templates_dir
-                .join("github.com")
-                .join("moonrepo")
-                .join("moon-configs.git")
-                .exists());
+            assert!(
+                env.templates_dir
+                    .join("github.com")
+                    .join("moonrepo")
+                    .join("moon-configs.git")
+                    .exists()
+            );
         }
 
         #[tokio::test]
@@ -151,12 +160,13 @@ mod codegen {
             codegen.load_templates().await.unwrap();
 
             assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
-            assert!(env
-                .templates_dir
-                .join("npm")
-                .join("moonrepo_cli")
-                .join("1.0.0")
-                .exists());
+            assert!(
+                env.templates_dir
+                    .join("npm")
+                    .join("moonrepo_cli")
+                    .join("1.0.0")
+                    .exists()
+            );
         }
 
         #[tokio::test]

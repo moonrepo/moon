@@ -263,6 +263,16 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+/** Configures an individual toolchain. */
+export interface ToolchainPluginConfig {
+	/** Arbitrary configuration that'll be passed to the WASM plugin. */
+	config: Record<string, unknown>;
+	/** Location of the WASM plugin to use. */
+	plugin: PluginLocator | null;
+	/** The version of the toolchain to download and install. */
+	version: UnresolvedVersionSpec | null;
+}
+
 /** The available package managers for Python. */
 export type PythonPackageManager = 'pip' | 'uv';
 
@@ -344,82 +354,8 @@ export interface RustConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
-/** Configures an individual toolchain. */
-export interface ToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config: Record<string, unknown>;
-	/** Location of the WASM plugin to use. */
-	plugin: PluginLocator | null;
-	/** The version of the toolchain to download and install. */
-	version: UnresolvedVersionSpec | null;
-}
-
 /**
- * Configures and enables the TypeScript platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#typescript
- */
-export interface TypeScriptConfig {
-	/**
-	 * When `syncProjectReferences` is enabled, will create a `tsconfig.json`
-	 * in referenced projects if it does not exist.
-	 *
-	 * @default true
-	 */
-	createMissingConfig?: boolean;
-	/**
-	 * Appends sources of project reference to `include` in `tsconfig.json`,
-	 * for each project.
-	 */
-	includeProjectReferenceSources: boolean;
-	/** Appends shared types to `include` in `tsconfig.json`, for each project. */
-	includeSharedTypes: boolean;
-	/**
-	 * Name of the `tsconfig.json` file within each project.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	projectConfigFileName?: string;
-	/**
-	 * The relative root to the TypeScript root. Primarily used for
-	 * resolving project references.
-	 *
-	 * @default '.'
-	 */
-	root?: string;
-	/**
-	 * Name of the `tsconfig.json` file at the workspace root.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	rootConfigFileName?: string;
-	/**
-	 * Name of the shared compiler options `tsconfig.json` file
-	 * at the workspace root.
-	 *
-	 * @default 'tsconfig.options.json'
-	 */
-	rootOptionsConfigFileName?: string;
-	/**
-	 * Updates and routes `outDir` in `tsconfig.json` to moon's cache,
-	 * for each project.
-	 */
-	routeOutDirToCache: boolean;
-	/**
-	 * Syncs all project dependencies as `references` in `tsconfig.json`,
-	 * for each project.
-	 *
-	 * @default true
-	 */
-	syncProjectReferences?: boolean;
-	/**
-	 * Syncs all project dependencies as `paths` in `tsconfig.json`,
-	 * for each project.
-	 */
-	syncProjectReferencesToPaths: boolean;
-}
-
-/**
- * Configures all tools and platforms required for tasks.
+ * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
 export interface ToolchainConfig {
@@ -430,22 +366,20 @@ export interface ToolchainConfig {
 	/** Configures and enables the Deno platform. */
 	deno: DenoConfig | null;
 	/**
-	 * Extends one or many toolchain configuration files. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many toolchain configuration files.
+	 * Supports a relative file path or a secure URL.
 	 */
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
+	/** All configured toolchains by unique ID. */
+	plugins: Record<string, ToolchainPluginConfig>;
 	/** Configures and enables the Python platform. */
 	python: PythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust: RustConfig | null;
-	/** All configured toolchains by unique ID. */
-	toolchains: Record<string, ToolchainPluginConfig>;
-	/** Configures and enables the TypeScript platform. */
-	typescript: TypeScriptConfig | null;
 }
 
 /**
@@ -682,6 +616,16 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
+/** Configures an individual toolchain. */
+export interface PartialToolchainPluginConfig {
+	/** Arbitrary configuration that'll be passed to the WASM plugin. */
+	config?: Record<string, unknown> | null;
+	/** Location of the WASM plugin to use. */
+	plugin?: PluginLocator | null;
+	/** The version of the toolchain to download and install. */
+	version?: UnresolvedVersionSpec | null;
+}
+
 export interface PartialPipConfig {
 	/** List of arguments to append to `pip install` commands. */
 	installArgs?: string[] | null;
@@ -759,82 +703,8 @@ export interface PartialRustConfig {
 	version?: UnresolvedVersionSpec | null;
 }
 
-/** Configures an individual toolchain. */
-export interface PartialToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config?: Record<string, unknown> | null;
-	/** Location of the WASM plugin to use. */
-	plugin?: PluginLocator | null;
-	/** The version of the toolchain to download and install. */
-	version?: UnresolvedVersionSpec | null;
-}
-
 /**
- * Configures and enables the TypeScript platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#typescript
- */
-export interface PartialTypeScriptConfig {
-	/**
-	 * When `syncProjectReferences` is enabled, will create a `tsconfig.json`
-	 * in referenced projects if it does not exist.
-	 *
-	 * @default true
-	 */
-	createMissingConfig?: boolean | null;
-	/**
-	 * Appends sources of project reference to `include` in `tsconfig.json`,
-	 * for each project.
-	 */
-	includeProjectReferenceSources?: boolean | null;
-	/** Appends shared types to `include` in `tsconfig.json`, for each project. */
-	includeSharedTypes?: boolean | null;
-	/**
-	 * Name of the `tsconfig.json` file within each project.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	projectConfigFileName?: string | null;
-	/**
-	 * The relative root to the TypeScript root. Primarily used for
-	 * resolving project references.
-	 *
-	 * @default '.'
-	 */
-	root?: string | null;
-	/**
-	 * Name of the `tsconfig.json` file at the workspace root.
-	 *
-	 * @default 'tsconfig.json'
-	 */
-	rootConfigFileName?: string | null;
-	/**
-	 * Name of the shared compiler options `tsconfig.json` file
-	 * at the workspace root.
-	 *
-	 * @default 'tsconfig.options.json'
-	 */
-	rootOptionsConfigFileName?: string | null;
-	/**
-	 * Updates and routes `outDir` in `tsconfig.json` to moon's cache,
-	 * for each project.
-	 */
-	routeOutDirToCache?: boolean | null;
-	/**
-	 * Syncs all project dependencies as `references` in `tsconfig.json`,
-	 * for each project.
-	 *
-	 * @default true
-	 */
-	syncProjectReferences?: boolean | null;
-	/**
-	 * Syncs all project dependencies as `paths` in `tsconfig.json`,
-	 * for each project.
-	 */
-	syncProjectReferencesToPaths?: boolean | null;
-}
-
-/**
- * Configures all tools and platforms required for tasks.
+ * Configures all tools and platforms.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
 export interface PartialToolchainConfig {
@@ -845,20 +715,18 @@ export interface PartialToolchainConfig {
 	/** Configures and enables the Deno platform. */
 	deno?: PartialDenoConfig | null;
 	/**
-	 * Extends one or many toolchain configuration files. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many toolchain configuration files.
+	 * Supports a relative file path or a secure URL.
 	 */
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
+	/** All configured toolchains by unique ID. */
+	plugins?: Record<string, PartialToolchainPluginConfig> | null;
 	/** Configures and enables the Python platform. */
 	python?: PartialPythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust?: PartialRustConfig | null;
-	/** All configured toolchains by unique ID. */
-	toolchains?: Record<string, PartialToolchainPluginConfig> | null;
-	/** Configures and enables the TypeScript platform. */
-	typescript?: PartialTypeScriptConfig | null;
 }

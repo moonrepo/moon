@@ -1,7 +1,7 @@
 [package]
 name = "moon_app"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 publish = false
 
 [dependencies]
@@ -22,6 +22,7 @@ moon_console_reporter = { path = "../console-reporter" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
+moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
@@ -37,7 +38,7 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.9.0"
+bytes = "1.10.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
@@ -71,7 +72,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 # Visualizer
-open = "5.3.1"
+open = "5.3.2"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"
@@ -79,7 +80,7 @@ tiny_http = "0.12.0"
 # TODO remove
 console = { workspace = true }
 dialoguer = { version = "0.11.0", default-features = false }
-indicatif = "0.17.9"
+indicatif = "0.17.11"
 moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }
@@ -97,7 +98,6 @@ moon_rust_lang = { path = "../../legacy/rust/lang" }
 moon_rust_tool = { path = "../../legacy/rust/tool" }
 moon_rust_platform = { path = "../../legacy/rust/platform" }
 moon_system_platform = { path = "../../legacy/system/platform" }
-moon_typescript_lang = { path = "../../legacy/typescript/lang" }
 
 [dev-dependencies]
 serial_test = { workspace = true }

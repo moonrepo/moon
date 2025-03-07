@@ -1,5 +1,5 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     BunConfig, ConfigLoader, DenoConfig, DependencyConfig, DependencyScope, DependencySource,
     LanguageType, NodeConfig, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
@@ -52,6 +52,7 @@ impl Stub {
                 monorepo: true,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
+                toolchain_registry: Default::default(),
                 workspace_root: &self.workspace_root,
             },
         )

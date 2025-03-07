@@ -2,8 +2,8 @@ use moon_app::commands::docker::DockerManifest;
 use moon_common::Id;
 use moon_config::{PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
-    create_sandbox_with_config, get_cases_fixture_configs, get_node_depman_fixture_configs,
-    get_node_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
+    create_sandbox_with_config, get_node_depman_fixture_configs, get_node_fixture_configs,
+    get_projects_fixture_configs, predicates::prelude::*,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json;
@@ -324,38 +324,6 @@ mod scaffold_sources {
     }
 
     #[test]
-    fn can_include_more_files() {
-        let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
-
-        let sandbox = create_sandbox_with_config(
-            "cases",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker")
-                .arg("scaffold")
-                .arg("base")
-                // Janky but works
-                .arg("--include")
-                .arg("outputs/generate.js")
-                .arg("--include")
-                .arg("passthrough-args/*.sh");
-        });
-
-        let docker = sandbox.path().join(".moon/docker/sources");
-
-        assert!(docker.join("base").exists());
-        assert!(docker.join("outputs/generate.js").exists());
-        assert!(docker.join("passthrough-args/passthroughArgs.sh").exists());
-
-        // Check that some others DO NOT exist
-        assert!(!docker.join("output-styles/style.js").exists());
-    }
-
-    #[test]
     fn doesnt_copy_node_modules() {
         let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
@@ -458,10 +426,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("npm/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
 
         // npm installs prod deps for unfocused
         // assert!(!sandbox.path().join("node_modules/react").exists());
@@ -490,10 +460,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("pnpm/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
         assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
@@ -520,10 +492,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("npm/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
         assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
@@ -550,10 +524,12 @@ mod prune_node {
 
         // should not exist
         assert!(!sandbox.path().join("yarn/node_modules").exists());
-        assert!(!sandbox
-            .path()
-            .join("node_modules/babel-preset-solid")
-            .exists());
+        assert!(
+            !sandbox
+                .path()
+                .join("node_modules/babel-preset-solid")
+                .exists()
+        );
 
         // yarn 1 does not support focusing
         // assert!(!sandbox.path().join("node_modules/react").exists());

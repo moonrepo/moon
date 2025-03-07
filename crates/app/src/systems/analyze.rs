@@ -11,8 +11,7 @@ use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use moon_toolchain_plugin::ToolchainRegistry;
-use proto_core::{is_offline, ProtoEnvironment, ProtoError};
+use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
@@ -53,10 +52,12 @@ pub async fn install_proto(
     debug!(proto = ?install_dir.join(&bin_name), "Checking if proto is installed");
 
     // Set the version so that proto lookup paths take it into account
-    env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
-    env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
-    env::set_var("PROTO_VERSION_CHECK", "false");
-    env::set_var("PROTO_LOOKUP_DIR", &install_dir);
+    unsafe {
+        env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
+        env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
+        env::set_var("PROTO_VERSION_CHECK", "false");
+        env::set_var("PROTO_LOOKUP_DIR", &install_dir);
+    };
 
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!
@@ -85,7 +86,7 @@ pub async fn install_proto(
 
             return Ok(None);
         } else {
-            return Err(ProtoError::InternetConnectionRequired.into());
+            return Err(ProtoEnvError::RequiredInternetConnection.into());
         }
     }
 
@@ -133,7 +134,6 @@ pub async fn register_platforms(
             PlatformType::Bun.get_toolchain_id(),
             Box::new(BunPlatform::new(
                 bun_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -146,7 +146,6 @@ pub async fn register_platforms(
             PlatformType::Deno.get_toolchain_id(),
             Box::new(DenoPlatform::new(
                 deno_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -159,7 +158,6 @@ pub async fn register_platforms(
             PlatformType::Node.get_toolchain_id(),
             Box::new(NodePlatform::new(
                 node_config,
-                &toolchain_config.typescript,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),
@@ -179,7 +177,6 @@ pub async fn register_platforms(
                     PlatformType::Bun.get_toolchain_id(),
                     Box::new(BunPlatform::new(
                         &bun_config,
-                        &toolchain_config.typescript,
                         workspace_root,
                         Arc::clone(proto_env),
                         Arc::clone(&console),
@@ -226,14 +223,12 @@ pub async fn register_platforms(
     Ok(None)
 }
 
-#[instrument(skip(registry))]
-pub async fn load_toolchain(registry: Arc<ToolchainRegistry>) -> AppResult {
+#[instrument]
+pub async fn load_toolchain() -> AppResult {
     // This isn't an action but we should also support skipping here!
     if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
         return Ok(None);
     }
-
-    registry.load_all().await?;
 
     for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;

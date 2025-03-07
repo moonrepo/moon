@@ -1,9 +1,9 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
-use moon_common::{cacheable, Id};
+use moon_common::{Id, cacheable};
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError};
+use schematic::{Config, ConfigEnum, ValidateError, derive_enum, validate};
 use std::collections::BTreeMap;
 
 fn validate_channel<D, C>(

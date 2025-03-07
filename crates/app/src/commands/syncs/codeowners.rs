@@ -18,7 +18,7 @@ pub struct SyncCodeownersArgs {
 #[instrument(skip_all)]
 pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
     let done = create_progress_bar("Syncing code owners...");
-    let context = session.get_app_context()?;
+    let context = session.get_app_context().await?;
 
     if args.clean {
         let codeowners_path = unsync_codeowners(&context).await?;

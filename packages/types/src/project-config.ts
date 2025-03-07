@@ -3,7 +3,11 @@
 /* eslint-disable */
 
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
-import type { UnresolvedVersionSpec } from './toolchain-config';
+import type {
+	PartialToolchainPluginConfig,
+	ToolchainPluginConfig,
+	UnresolvedVersionSpec,
+} from './toolchain-config';
 
 /** The task-to-task relationship of the dependency. */
 export type DependencyType = 'cleanup' | 'required' | 'optional';
@@ -143,41 +147,27 @@ export interface ProjectToolchainCommonToolConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
-/** Overrides top-level `typescript` settings. */
-export interface ProjectToolchainTypeScriptConfig {
-	/** Disables all TypeScript functionality for this project. */
-	disabled: boolean;
-	/** Appends sources of project reference to `include` in `tsconfig.json`. */
-	includeProjectReferenceSources: boolean | null;
-	/** Appends shared types to `include` in `tsconfig.json`. */
-	includeSharedTypes: boolean | null;
-	/** Updates and routes `outDir` in `tsconfig.json` to moon's cache. */
-	routeOutDirToCache: boolean | null;
-	/** Syncs all project dependencies as `references` in `tsconfig.json`. */
-	syncProjectReferences: boolean | null;
-	/** Syncs all project dependencies as `paths` in `tsconfig.json`. */
-	syncProjectReferencesToPaths: boolean | null;
-}
+export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
 export interface ProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun: ProjectToolchainCommonToolConfig | null;
 	/**
-	 * The default toolchain for all tasks within the project,
+	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	default: string | null;
+	default: string | string[] | null;
 	/** Overrides `deno` settings. */
 	deno: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node: ProjectToolchainCommonToolConfig | null;
+	/** Overrides toolchains by their ID. */
+	plugins: Record<string, ProjectToolchainEntry>;
 	/** Overrides `python` settings. */
 	python: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust: ProjectToolchainCommonToolConfig | null;
-	/** Overrides `typescript` settings. */
-	typescript: ProjectToolchainTypeScriptConfig | null;
 }
 
 /** The type of project, for categorizing. */
@@ -392,41 +382,27 @@ export interface PartialProjectToolchainCommonToolConfig {
 	version?: UnresolvedVersionSpec | null;
 }
 
-/** Overrides top-level `typescript` settings. */
-export interface PartialProjectToolchainTypeScriptConfig {
-	/** Disables all TypeScript functionality for this project. */
-	disabled?: boolean | null;
-	/** Appends sources of project reference to `include` in `tsconfig.json`. */
-	includeProjectReferenceSources?: boolean | null;
-	/** Appends shared types to `include` in `tsconfig.json`. */
-	includeSharedTypes?: boolean | null;
-	/** Updates and routes `outDir` in `tsconfig.json` to moon's cache. */
-	routeOutDirToCache?: boolean | null;
-	/** Syncs all project dependencies as `references` in `tsconfig.json`. */
-	syncProjectReferences?: boolean | null;
-	/** Syncs all project dependencies as `paths` in `tsconfig.json`. */
-	syncProjectReferencesToPaths?: boolean | null;
-}
+export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun?: PartialProjectToolchainCommonToolConfig | null;
 	/**
-	 * The default toolchain for all tasks within the project,
+	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	default?: string | null;
+	default?: string | string[] | null;
 	/** Overrides `deno` settings. */
 	deno?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides toolchains by their ID. */
+	plugins?: Record<string, PartialProjectToolchainEntry> | null;
 	/** Overrides `python` settings. */
 	python?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
 	rust?: PartialProjectToolchainCommonToolConfig | null;
-	/** Overrides `typescript` settings. */
-	typescript?: PartialProjectToolchainTypeScriptConfig | null;
 }
 
 /** Controls how tasks are inherited. */

@@ -1,13 +1,12 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_common::path::{is_root_level_source, WorkspaceRelativePath};
-use moon_common::{color, Id};
+use moon_common::path::{WorkspaceRelativePath, is_root_level_source};
+use moon_common::{Id, color};
 use moon_config::{
-    is_glob_like, InheritedTasksConfig, InputPath, ProjectConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,
-    TaskPreset, TaskType, ToolchainConfig,
+    InheritedTasksConfig, InputPath, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
+    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
+    TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};

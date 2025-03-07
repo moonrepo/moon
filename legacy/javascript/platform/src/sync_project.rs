@@ -1,4 +1,4 @@
-use moon_common::{color, Id};
+use moon_common::{Id, color};
 use moon_config::{BunConfig, DependencyScope, NodeConfig, NodeVersionFormat};
 use moon_node_lang::PackageJsonCache;
 use moon_project::Project;

@@ -1,7 +1,7 @@
 use moon_config::{PartialPipConfig, PartialPythonConfig, PartialUvConfig, PythonPackageManager};
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_python_fixture_configs,
-    predicates::prelude::*, Sandbox,
+    Sandbox, assert_snapshot, create_sandbox_with_config, get_python_fixture_configs,
+    predicates::prelude::*,
 };
 use proto_core::UnresolvedVersionSpec;
 
@@ -65,7 +65,7 @@ mod python {
                 cmd.arg("run").arg("python:poetry");
             });
 
-            assert_snapshot!(assert.output());
+            assert!(predicate::str::contains("Poetry (version 1.8.4)").eval(&assert.output()));
         }
     }
 

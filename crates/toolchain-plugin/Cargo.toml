@@ -1,7 +1,7 @@
 [package]
 name = "moon_toolchain_plugin"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "A toolchain plugin, enabling new language + ecosystem support."
 homepage = "https://moonrepo.dev/moon"
@@ -14,9 +14,11 @@ moon_config = { path = "../config" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 async-trait = { workspace = true }
+futures = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob", "json"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 

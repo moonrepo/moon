@@ -1,5 +1,5 @@
 use moon_test_utils::{
-    create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*, Sandbox,
+    Sandbox, create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
 };
 
 fn cases_sandbox() -> Sandbox {

@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 use moon_common::cacheable;
-use schematic::{derive_enum, Config, ConfigEnum};
+use schematic::{Config, ConfigEnum, derive_enum};
 
 derive_enum!(
     /// How to order ownership rules within the generated file.

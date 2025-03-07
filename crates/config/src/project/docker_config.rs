@@ -1,5 +1,5 @@
 use crate::portable_path::GlobPath;
-use moon_common::{cacheable, Id};
+use moon_common::{Id, cacheable};
 use schematic::Config;
 
 cacheable!(

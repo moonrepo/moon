@@ -1,4 +1,4 @@
-use schematic::{validate, Config};
+use schematic::{Config, validate};
 
 /// Configures how and where updates will be received.
 #[derive(Clone, Config, Debug)]

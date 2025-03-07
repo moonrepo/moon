@@ -3,29 +3,28 @@ use crate::infer_tasks_from_scripts;
 use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_bun_tool::{get_bun_env_paths, BunTool};
-use moon_common::path::is_root_level_source;
+use moon_bun_tool::{BunTool, get_bun_env_paths};
+use moon_common::Id;
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::Id;
+use moon_common::path::is_root_level_source;
 use moon_config::{
     BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
-    TypeScriptConfig, UnresolvedVersionSpec,
+    UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
-use moon_node_lang::node::{find_package_manager_workspaces_root, get_package_manager_workspaces};
 use moon_node_lang::PackageJsonCache;
+use moon_node_lang::node::{find_package_manager_workspaces_root, get_package_manager_workspaces};
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{
-    get_proto_version_env, prepend_path_env_var, DependencyManager, Tool, ToolManager,
+    DependencyManager, Tool, ToolManager, get_proto_version_env, prepend_path_env_var,
 };
-use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
@@ -54,8 +53,6 @@ pub struct BunPlatform {
 
     toolchain: ToolManager<BunTool>,
 
-    typescript_config: Option<TypeScriptConfig>,
-
     #[allow(dead_code)]
     pub workspace_root: PathBuf,
 }
@@ -63,7 +60,6 @@ pub struct BunPlatform {
 impl BunPlatform {
     pub fn new(
         config: &BunConfig,
-        typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
         console: Arc<Console>,
@@ -74,7 +70,6 @@ impl BunPlatform {
             package_names: FxHashMap::default(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(Id::raw("bun"), RuntimeReq::Global)),
-            typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
             console,
         }
@@ -384,14 +379,7 @@ impl Platform for BunPlatform {
         project: &Project,
         dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
-        actions::sync_project(
-            project,
-            dependencies,
-            &self.workspace_root,
-            &self.config,
-            &self.typescript_config,
-        )
-        .await?;
+        actions::sync_project(project, dependencies, &self.config).await?;
 
         Ok(false)
     }
@@ -447,15 +435,6 @@ impl Platform for BunPlatform {
 
         hasher.hash_content(node_hash)?;
 
-        if let Some(typescript_config) = &self.typescript_config {
-            let ts_hash = TypeScriptTargetHash::generate(
-                typescript_config,
-                &self.workspace_root,
-                &project.root,
-            )?;
-
-            hasher.hash_content(ts_hash)?;
-        }
         Ok(())
     }
 

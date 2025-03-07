@@ -21,7 +21,7 @@ pub async fn run_action_pipeline(
     let workspace_graph = session.get_workspace_graph().await?;
     let toolchain_registry = session.get_toolchain_registry().await?;
     let mut pipeline = ActionPipeline::new(
-        session.get_app_context()?,
+        session.get_app_context().await?,
         toolchain_registry,
         workspace_graph,
     );
@@ -63,6 +63,7 @@ pub async fn create_workspace_graph_context(
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,
         toolchain_config: &session.toolchain_config,
+        toolchain_registry: session.get_toolchain_registry().await?,
         vcs: Some(session.get_vcs_adapter()?),
         working_dir: &session.working_dir,
         workspace_config: &session.workspace_config,

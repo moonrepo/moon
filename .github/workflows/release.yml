@@ -141,28 +141,6 @@ jobs:
           path: artifacts/${{ matrix.binary }}
           if-no-files-found: error
 
-  schemas:
-    name: Generate JSON schemas
-    runs-on: ubuntu-20.04
-    needs:
-      - plan
-    steps:
-      - uses: actions/checkout@v4
-      - uses: moonrepo/setup-rust@v1
-        with:
-          bins: just
-          cache: false
-      - name: Generate schemas
-        run: just schemas
-      - name: Rename schemas
-        run: bash ./scripts/release/renameJsonSchemas.sh
-      - uses: actions/upload-artifact@v4
-        name: Upload schemas
-        with:
-          name: json-schemas
-          path: artifacts
-          if-no-files-found: error
-
   test:
     strategy:
       fail-fast: false
@@ -222,7 +200,6 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - plan
-      - schemas
       - test
     steps:
       - uses: actions/checkout@v4

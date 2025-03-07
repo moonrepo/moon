@@ -1,7 +1,7 @@
 [package]
 name = "moon_project_graph"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Project graph for moon represented as a DAG."
 homepage = "https://moonrepo.dev/moon"

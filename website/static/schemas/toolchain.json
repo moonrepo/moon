@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Configures all tools and platforms required for tasks. Docs: https://moonrepo.dev/docs/config/toolchain",
+  "description": "Configures all tools and platforms. Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
     "$schema": {
@@ -65,6 +65,17 @@
         }
       ]
     },
+    "plugins": {
+      "title": "plugins",
+      "description": "All configured toolchains by unique ID.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ToolchainPluginConfig"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
     "python": {
       "title": "python",
       "description": "Configures and enables the Python platform.",
@@ -83,29 +94,6 @@
       "anyOf": [
         {
           "$ref": "#/definitions/RustConfig"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "toolchains": {
-      "title": "toolchains",
-      "description": "All configured toolchains by unique ID.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/ToolchainPluginConfig"
-      },
-      "propertyNames": {
-        "type": "string"
-      }
-    },
-    "typescript": {
-      "title": "typescript",
-      "description": "Configures and enables the TypeScript platform.",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/TypeScriptConfig"
         },
         {
           "type": "null"
@@ -864,78 +852,6 @@
               "type": "null"
             }
           ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "TypeScriptConfig": {
-      "description": "Configures and enables the TypeScript platform. Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
-      "type": "object",
-      "properties": {
-        "createMissingConfig": {
-          "title": "createMissingConfig",
-          "description": "When syncProjectReferences is enabled, will create a tsconfig.json in referenced projects if it does not exist.",
-          "default": true,
-          "type": "boolean",
-          "markdownDescription": "When `syncProjectReferences` is enabled, will create a `tsconfig.json` in referenced projects if it does not exist."
-        },
-        "includeProjectReferenceSources": {
-          "title": "includeProjectReferenceSources",
-          "description": "Appends sources of project reference to include in tsconfig.json, for each project.",
-          "type": "boolean",
-          "markdownDescription": "Appends sources of project reference to `include` in `tsconfig.json`, for each project."
-        },
-        "includeSharedTypes": {
-          "title": "includeSharedTypes",
-          "description": "Appends shared types to include in tsconfig.json, for each project.",
-          "type": "boolean",
-          "markdownDescription": "Appends shared types to `include` in `tsconfig.json`, for each project."
-        },
-        "projectConfigFileName": {
-          "title": "projectConfigFileName",
-          "description": "Name of the tsconfig.json file within each project.",
-          "default": "tsconfig.json",
-          "type": "string",
-          "markdownDescription": "Name of the `tsconfig.json` file within each project."
-        },
-        "root": {
-          "title": "root",
-          "description": "The relative root to the TypeScript root. Primarily used for resolving project references.",
-          "default": ".",
-          "type": "string"
-        },
-        "rootConfigFileName": {
-          "title": "rootConfigFileName",
-          "description": "Name of the tsconfig.json file at the workspace root.",
-          "default": "tsconfig.json",
-          "type": "string",
-          "markdownDescription": "Name of the `tsconfig.json` file at the workspace root."
-        },
-        "rootOptionsConfigFileName": {
-          "title": "rootOptionsConfigFileName",
-          "description": "Name of the shared compiler options tsconfig.json file at the workspace root.",
-          "default": "tsconfig.options.json",
-          "type": "string",
-          "markdownDescription": "Name of the shared compiler options `tsconfig.json` file at the workspace root."
-        },
-        "routeOutDirToCache": {
-          "title": "routeOutDirToCache",
-          "description": "Updates and routes outDir in tsconfig.json to moon's cache, for each project.",
-          "type": "boolean",
-          "markdownDescription": "Updates and routes `outDir` in `tsconfig.json` to moon's cache, for each project."
-        },
-        "syncProjectReferences": {
-          "title": "syncProjectReferences",
-          "description": "Syncs all project dependencies as references in tsconfig.json, for each project.",
-          "default": true,
-          "type": "boolean",
-          "markdownDescription": "Syncs all project dependencies as `references` in `tsconfig.json`, for each project."
-        },
-        "syncProjectReferencesToPaths": {
-          "title": "syncProjectReferencesToPaths",
-          "description": "Syncs all project dependencies as paths in tsconfig.json, for each project.",
-          "type": "boolean",
-          "markdownDescription": "Syncs all project dependencies as `paths` in `tsconfig.json`, for each project."
         }
       },
       "additionalProperties": false

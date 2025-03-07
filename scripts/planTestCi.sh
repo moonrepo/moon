@@ -5,6 +5,7 @@ coverage="$COVERAGE"
 echo "coverage=$coverage"
 echo "coverage=$coverage" >> "$GITHUB_OUTPUT"
 
+# GH Windows is twice as slow as Linux/macOS
 osCoverage='["depot-ubuntu-22.04-4","macos-latest","depot-windows-2022-4"]'
 os='["ubuntu-latest","macos-latest","depot-windows-2022-4"]'
 

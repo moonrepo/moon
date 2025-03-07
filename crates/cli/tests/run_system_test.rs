@@ -169,7 +169,6 @@ mod unix {
         });
 
         assert_snapshot!(assert.output());
-        assert!(false);
     }
 
     #[test]

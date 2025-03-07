@@ -9,24 +9,12 @@ use tokio::sync::Mutex;
 pub struct SharedChild {
     inner: Arc<Mutex<Child>>,
     pid: u32,
-    #[cfg(windows)]
-    handle: RawHandle,
 }
 
 impl SharedChild {
-    #[cfg(unix)]
     pub fn new(child: Child) -> Self {
         Self {
             pid: child.id().unwrap(),
-            inner: Arc::new(Mutex::new(child)),
-        }
-    }
-
-    #[cfg(windows)]
-    pub fn new(child: Child) -> Self {
-        Self {
-            pid: child.id().unwrap(),
-            handle: RawHandle(child.raw_handle().unwrap()),
             inner: Arc::new(Mutex::new(child)),
         }
     }
@@ -55,22 +43,8 @@ impl SharedChild {
         Ok(())
     }
 
-    pub async fn kill_with_signal(
-        &self,
-        #[cfg(unix)] signal: SignalType,
-        #[cfg(windows)] _signal: SignalType,
-    ) -> io::Result<()> {
-        // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L940
-        #[cfg(unix)]
-        {
-            kill(self.pid, signal)?;
-        }
-
-        // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
-        #[cfg(windows)]
-        {
-            terminate(self.handle.clone())?;
-        }
+    pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
+        kill(self.pid, signal)?;
 
         // Acquire the child _after_ the kill command, otherwise it waits for
         // the command to finish running before killing, because the lock is

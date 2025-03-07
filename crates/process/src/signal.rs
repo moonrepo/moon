@@ -78,6 +78,9 @@ pub use unix::*;
 mod windows {
     use super::*;
     use std::os::raw::{c_int, c_uint, c_void};
+    use windows_sys::Win32::System::Console::{
+        CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, GenerateConsoleCtrlEvent,
+    };
 
     pub async fn wait_for_signal(sender: Sender<SignalType>) {
         use tokio::signal::windows;
@@ -109,20 +112,19 @@ mod windows {
         };
     }
 
-    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
-    // https://docs.rs/windows-sys/latest/windows_sys/Win32/System/Threading/fn.TerminateProcess.html
-    unsafe extern "system" {
-        fn TerminateProcess(hProcess: *mut c_void, uExitCode: c_uint) -> c_int;
-    }
-
-    #[derive(Clone)]
-    pub struct RawHandle(pub *mut c_void);
-
-    unsafe impl Send for RawHandle {}
-    unsafe impl Sync for RawHandle {}
-
-    pub fn terminate(handle: RawHandle) -> io::Result<()> {
-        if unsafe { TerminateProcess(handle.0, 1) } == 0 {
+    // https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent
+    pub fn kill(pid: u32, signal: SignalType) -> io::Result<()> {
+        if unsafe {
+            GenerateConsoleCtrlEvent(
+                match signal {
+                    SignalType::Interrupt => CTRL_BREAK_EVENT,
+                    SignalType::Quit => CTRL_CLOSE_EVENT,
+                    _ => CTRL_SHUTDOWN_EVENT,
+                },
+                pid,
+            )
+        } == 0
+        {
             Err(io::Error::last_os_error())
         } else {
             Ok(())

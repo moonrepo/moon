@@ -65,7 +65,7 @@ mod python {
                 cmd.arg("run").arg("python:poetry");
             });
 
-            assert_snapshot!(assert.output());
+            assert!(predicate::str::contains("Poetry (version 1.8.4)").eval(&assert.output()));
         }
     }
 

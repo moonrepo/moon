@@ -113,12 +113,16 @@ impl SandboxAssert<'_> {
             get_assert_stdout_output(&self.inner) + &get_assert_stderr_output(&self.inner);
 
         // Replace fixture path
-        let root = self.sandbox.path().to_str().unwrap();
+        let root = self
+            .sandbox
+            .path()
+            .to_str()
+            .unwrap()
+            .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
+            .replace("C:/Users/ADMINI~1", "C:/Users/Administrator");
 
         output = output
-            .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
-            .replace("C:/Users/ADMINI~1", "C:/Users/Administrator")
-            .replace(root, "<WORKSPACE>")
+            .replace(&root, "<WORKSPACE>")
             .replace(&root.replace('\\', "/"), "<WORKSPACE>");
 
         // Replace home dir

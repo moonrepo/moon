@@ -29,6 +29,8 @@
     report an issues or differences you encounter.
   - Because TypeScript is now a "true" toolchain, it will appear in the toolchains list for projects
     and tasks. This is required since it runs operations in the context of the plugin.
+  - All `typescript` settings in `.moon/toolchain.yml` can now be defined as overrides in
+    `moon.yml`.
 - Added new toolchain plugin integrations for specific features.
   - Integrated into the `SyncWorkspace` and `SyncProject` actions.
   - Integrated into all `moon docker` commands.

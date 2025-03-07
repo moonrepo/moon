@@ -118,7 +118,8 @@ impl SandboxAssert<'_> {
             .path()
             .to_str()
             .unwrap()
-            .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator");
+            .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
+            .replace("C:/Users/ADMINI~1", "C:/Users/Administrator");
 
         output = output.replace(&root, "<WORKSPACE>");
         output = output.replace(&root.replace('\\', "/"), "<WORKSPACE>");

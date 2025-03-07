@@ -70,7 +70,7 @@ jobs:
     strategy:
       matrix:
         # os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
-        os: [depot-ubuntu-22.04-4, macos-latest, depot-windows-2022-4]
+        os: [depot-ubuntu-22.04-4, macos-latest, depot-windows-2022-8]
       fail-fast: false
     env:
       # sccache

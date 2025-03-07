@@ -5,8 +5,8 @@ coverage="$COVERAGE"
 echo "coverage=$coverage"
 echo "coverage=$coverage" >> "$GITHUB_OUTPUT"
 
-osCoverage='["depot-ubuntu-22.04-4","macos-latest","windows-latest"]'
-os='["ubuntu-latest","macos-latest","windows-latest"]'
+osCoverage='["depot-ubuntu-22.04-4","macos-latest","depot-windows-2022-4"]'
+os='["ubuntu-latest","macos-latest","depot-windows-2022-4"]'
 
 if [[ "$coverage" == "true" ]]; then
 	echo "os=${osCoverage}"

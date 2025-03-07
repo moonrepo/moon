@@ -112,6 +112,10 @@ impl SandboxAssert<'_> {
         let mut output =
             get_assert_stdout_output(&self.inner) + &get_assert_stderr_output(&self.inner);
 
+        println!("{output}");
+
+        dbg!(&self.sandbox.path());
+
         // Replace fixture path
         let root = self
             .sandbox
@@ -120,6 +124,8 @@ impl SandboxAssert<'_> {
             .unwrap()
             .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
             .replace("C:/Users/ADMINI~1", "C:/Users/Administrator");
+
+        dbg!(&root);
 
         output = output
             .replace("C:\\Users\\ADMINI~1", "C:\\Users\\Administrator")
@@ -130,6 +136,7 @@ impl SandboxAssert<'_> {
         // Replace home dir
         if let Some(home_dir) = home_dir() {
             let home = home_dir.to_str().unwrap();
+            dbg!(&home);
             let root_without_home = root.replace(home, "~");
 
             output = output

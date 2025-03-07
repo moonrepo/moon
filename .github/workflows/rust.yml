@@ -68,7 +68,6 @@ jobs:
           COVERAGE:
             "${{ (github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
             github.event_name == 'push' && github.ref_name == 'master') }}"
-          OS: '${{ runner.os }}'
   test:
     name: Test
     needs:
@@ -79,6 +78,8 @@ jobs:
         os: ${{ fromJSON(needs.test-plan.outputs.os) }}
       fail-fast: false
     env:
+      # Windows runs out of disk space
+      COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
       # sccache
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -108,17 +109,17 @@ jobs:
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
       - name: Run tests
-        if: ${{ needs.test-plan.outputs.coverage == 'false' }}
+        if: ${{ env.COVERAGE == 'false' }}
         run: just test-ci
       - name: Run tests with coverage
-        if: ${{ needs.test-plan.outputs.coverage == 'true' }}
+        if: ${{ env.COVERAGE == 'true' }}
         run: just cov
       - name: Generate code coverage
-        if: ${{ needs.test-plan.outputs.coverage == 'true' }}
+        if: ${{ env.COVERAGE == 'true' }}
         run: just gen-report
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
-        if: ${{ needs.test-plan.outputs.coverage == 'true' }}
+        if: ${{ env.COVERAGE == 'true' }}
         with:
           name: coverage-${{ runner.os }}
           path: ./report.txt

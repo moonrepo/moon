@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
-    DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput,
-    HashTaskContentsOutput, RegisterToolchainInput, RegisterToolchainOutput, ScaffoldDockerInput,
-    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, VirtualPath,
+    DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineToolchainConfigOutput,
+    HashTaskContentsInput, HashTaskContentsOutput, RegisterToolchainInput, RegisterToolchainOutput,
+    ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
+    VirtualPath,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
@@ -76,6 +77,14 @@ impl ToolchainPlugin {
                     .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
             );
         }
+    }
+
+    #[instrument(skip(self))]
+    pub async fn define_toolchain_config(&self) -> miette::Result<DefineToolchainConfigOutput> {
+        let output: DefineToolchainConfigOutput =
+            self.plugin.cache_func("define_toolchain_config").await?;
+
+        Ok(output)
     }
 
     #[instrument(skip(self))]

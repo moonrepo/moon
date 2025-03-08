@@ -2,9 +2,10 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_pdk_api::{
-    DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput, ScaffoldDockerInput,
-    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
+    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput,
+    ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
 };
+use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
 use std::path::Path;
 
@@ -25,6 +26,24 @@ impl ToolchainRegistry {
         }
 
         Ok(detected)
+    }
+
+    pub async fn define_toolchain_config(&self) -> miette::Result<FxHashMap<String, ConfigSchema>> {
+        let ids = self.get_plugin_ids();
+
+        let results = self
+            .call_func_all(
+                "define_toolchain_config",
+                ids,
+                |_, _| (),
+                |toolchain, _| async move { toolchain.define_toolchain_config().await },
+            )
+            .await?;
+
+        Ok(results
+            .into_iter()
+            .map(|result| (result.id.to_string(), result.output.schema))
+            .collect())
     }
 
     pub async fn define_docker_metadata<InFn>(

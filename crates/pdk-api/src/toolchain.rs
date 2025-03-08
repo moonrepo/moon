@@ -20,25 +20,27 @@ api_struct!(
     #[serde(default)]
     pub struct RegisterToolchainOutput {
         /// A list of config file names/globs, excluding lockfiles and
-        /// manifest, used by this toolchain. Will be used for detection.
+        /// manifest, used by this toolchain. Will be used for project
+        /// usage detection.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub config_file_globs: Vec<String>,
-
-        /// Schema shape of the tool's configuration.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub config_schema: Option<Schema>,
 
         /// Optional description about what the toolchain does.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
+        /// The name of executables provided by the toolchain.
+        /// Will be used for task usage detection.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub exe_names: Vec<String>,
+
         /// The name of the lock file used for dependency installs.
-        /// Will be used for detection.
+        /// Will be used for project usage detection.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub lock_file_name: Option<String>,
 
         /// The name of the manifest file that contains project and
-        /// dependency information. Will be used for detection.
+        /// dependency information. Will be used for project usage detection.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub manifest_file_name: Option<String>,
 
@@ -52,6 +54,16 @@ api_struct!(
         /// Will be used for detection.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub vendor_dir_name: Option<String>,
+    }
+);
+
+pub type ConfigSchema = Schema;
+
+api_struct!(
+    /// Output returned from the `define_toolchain_config` function.
+    pub struct DefineToolchainConfigOutput {
+        /// Schema shape of the tool's configuration.
+        pub schema: ConfigSchema,
     }
 );
 

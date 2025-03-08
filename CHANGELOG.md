@@ -51,6 +51,7 @@
 #### 🧩 Plugins
 
 - Added new toolchain WASM APIs.
+  - `define_toolchain_config` - Define a config schema for use within JSONschemas.
   - `define_docker_metadata` - Define metadata related to `docker` commands.
   - `hash_task_contents` - Inject content into the task hashing process.
   - `prune_docker` - Custom operations to run after `docker prune`.

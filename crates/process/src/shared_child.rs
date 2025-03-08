@@ -9,12 +9,24 @@ use tokio::sync::Mutex;
 pub struct SharedChild {
     inner: Arc<Mutex<Child>>,
     pid: u32,
+    #[cfg(windows)]
+    handle: RawHandle,
 }
 
 impl SharedChild {
+    #[cfg(unix)]
     pub fn new(child: Child) -> Self {
         Self {
             pid: child.id().unwrap(),
+            inner: Arc::new(Mutex::new(child)),
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn new(child: Child) -> Self {
+        Self {
+            pid: child.id().unwrap(),
+            handle: RawHandle(child.raw_handle().unwrap()),
             inner: Arc::new(Mutex::new(child)),
         }
     }
@@ -44,7 +56,15 @@ impl SharedChild {
     }
 
     pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
-        kill(self.pid, signal)?;
+        #[cfg(unix)]
+        {
+            kill(self.pid, signal)?;
+        }
+
+        #[cfg(windows)]
+        {
+            kill(self.pid, self.handle.clone(), signal)?;
+        }
 
         // Acquire the child _after_ the kill command, otherwise it waits for
         // the command to finish running before killing, because the lock is

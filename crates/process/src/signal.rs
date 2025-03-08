@@ -77,9 +77,9 @@ pub use unix::*;
 #[cfg(windows)]
 mod windows {
     use super::*;
-    use windows_sys::Win32::System::Console::{
-        CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_SHUTDOWN_EVENT, GenerateConsoleCtrlEvent,
-    };
+    use std::os::raw::c_void;
+    use windows_sys::Win32::System::Console::{CTRL_BREAK_EVENT, GenerateConsoleCtrlEvent};
+    use windows_sys::Win32::System::Threading::TerminateProcess;
 
     pub async fn wait_for_signal(sender: Sender<SignalType>) {
         use tokio::signal::windows;
@@ -111,23 +111,37 @@ mod windows {
         };
     }
 
-    // https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent
-    pub fn kill(pid: u32, signal: SignalType) -> io::Result<()> {
-        if unsafe {
-            GenerateConsoleCtrlEvent(
-                match signal {
-                    SignalType::Interrupt => CTRL_BREAK_EVENT,
-                    SignalType::Quit => CTRL_CLOSE_EVENT,
-                    _ => CTRL_SHUTDOWN_EVENT,
-                },
-                pid,
-            )
-        } == 0
-        {
-            Err(io::Error::last_os_error())
-        } else {
-            Ok(())
-        }
+    #[derive(Clone)]
+    pub struct RawHandle(pub *mut c_void);
+
+    unsafe impl Send for RawHandle {}
+    unsafe impl Sync for RawHandle {}
+
+    pub fn kill(pid: u32, handle: RawHandle, signal: SignalType) -> io::Result<()> {
+        let result = match signal {
+            // https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent
+            SignalType::Interrupt => {
+                unsafe {
+                    GenerateConsoleCtrlEvent(
+                        // We can't use CTRL_C_EVENT here, as it doesn't propagate
+                        CTRL_BREAK_EVENT,
+                        pid,
+                    )
+                }
+            },
+            // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
+            _ => {
+                unsafe {
+                    TerminateProcess(handle.0, 1)
+                }
+            }
+        };
+
+        if result == 0 {
+            return Err(io::Error::last_os_error());
+        } 
+        
+        Ok(())
     }
 }
 

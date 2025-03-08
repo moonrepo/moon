@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 use std::sync::{Arc, OnceLock};
 use tokio::process::Child;
 use tokio::sync::RwLock;
-use tokio::sync::broadcast::{self, Receiver, Sender, error::RecvError};
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use tracing::{debug, trace, warn};
@@ -133,13 +133,7 @@ async fn shutdown_processes_with_signal(
     processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     threshold: u32,
 ) {
-    loop {
-        match receiver.recv().await {
-            Ok(_) | Err(RecvError::Closed) => break,
-            _ => continue,
-        };
-    }
-
+    let signal = receiver.recv().await.unwrap_or(SignalType::Kill);
     let mut children = processes.write().await;
 
     if children.is_empty() {
@@ -149,6 +143,7 @@ async fn shutdown_processes_with_signal(
     sleep(Duration::from_millis(threshold as u64)).await;
 
     debug!(
+        signal = ?signal,
         pids = ?children.keys().collect::<Vec<_>>(),
         "Shutting down {} running child processes",
         children.len()
@@ -165,10 +160,10 @@ async fn shutdown_processes_with_signal(
                     warn!(pid, "Failed to wait on child process: {error}");
                 }
             } else {
-                trace!(pid, "Killing child process");
+                trace!(pid, "Shutting down child process");
 
-                if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
-                    warn!(pid, "Failed to kill child process: {error}");
+                if let Err(error) = child.kill_with_signal(signal).await {
+                    warn!(pid, "Failed to shutdown child process: {error}");
                 }
             }
         }));

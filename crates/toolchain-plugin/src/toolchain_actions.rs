@@ -2,7 +2,7 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_pdk_api::{
-    DockerMetadataInput, DockerMetadataOutput, HashTaskContentsInput, ScaffoldDockerInput,
+    DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput, ScaffoldDockerInput,
     ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
 };
 use starbase_utils::json::JsonValue;
@@ -27,21 +27,21 @@ impl ToolchainRegistry {
         Ok(detected)
     }
 
-    pub async fn docker_metadata<InFn>(
+    pub async fn define_docker_metadata<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<DockerMetadataOutput>>
+    ) -> miette::Result<Vec<DefineDockerMetadataOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DockerMetadataInput,
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineDockerMetadataInput,
     {
         let ids = self.get_plugin_ids();
 
         let results = self
             .call_func_all(
-                "docker_metadata",
+                "define_docker_metadata",
                 ids,
                 input_factory,
-                |toolchain, input| async move { toolchain.docker_metadata(input).await },
+                |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
             )
             .await?;
 

@@ -130,8 +130,8 @@ api_struct!(
 // DOCKER
 
 api_struct!(
-    /// Input passed to the `docker_metadata` function.
-    pub struct DockerMetadataInput {
+    /// Input passed to the `define_docker_metadata` function.
+    pub struct DefineDockerMetadataInput {
         /// Current moon context.
         pub context: MoonContext,
 
@@ -141,8 +141,8 @@ api_struct!(
 );
 
 api_struct!(
-    /// Output returned from the `docker_metadata` function.
-    pub struct DockerMetadataOutput {
+    /// Output returned from the `define_docker_metadata` function.
+    pub struct DefineDockerMetadataOutput {
         /// List of files as globs to copy over during
         /// the scaffolding process. Applies to both project
         /// and workspace level scaffolding.

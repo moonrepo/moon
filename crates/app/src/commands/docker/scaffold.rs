@@ -5,7 +5,7 @@ use clap::Args;
 use moon_common::consts::*;
 use moon_common::{Id, path};
 use moon_config::LanguageType;
-use moon_pdk_api::{DockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
+use moon_pdk_api::{DefineDockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
 use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
@@ -31,7 +31,7 @@ async fn get_toolchain_globs(
     let outputs = session
         .get_toolchain_registry()
         .await?
-        .docker_metadata(|registry, toolchain| DockerMetadataInput {
+        .define_docker_metadata(|registry, toolchain| DefineDockerMetadataInput {
             context: registry.create_context(),
             toolchain_config: match project {
                 Some(proj) => registry.create_merged_config(

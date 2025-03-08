@@ -51,7 +51,7 @@
 #### 🧩 Plugins
 
 - Added new toolchain WASM APIs.
-  - `docker_metadata` - Define metadata related to `docker` commands.
+  - `define_docker_metadata` - Define metadata related to `docker` commands.
   - `hash_task_contents` - Inject content into the task hashing process.
   - `prune_docker` - Custom operations to run after `docker prune`.
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.

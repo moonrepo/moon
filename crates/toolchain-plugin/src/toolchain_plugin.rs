@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
-    DockerMetadataInput, DockerMetadataOutput, HashTaskContentsInput, HashTaskContentsOutput,
-    RegisterToolchainInput, RegisterToolchainOutput, ScaffoldDockerInput, ScaffoldDockerOutput,
-    SyncOutput, SyncProjectInput, SyncWorkspaceInput, VirtualPath,
+    DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput,
+    HashTaskContentsOutput, RegisterToolchainInput, RegisterToolchainOutput, ScaffoldDockerInput,
+    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, VirtualPath,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
@@ -78,38 +78,14 @@ impl ToolchainPlugin {
         }
     }
 
-    pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
-        // Do simple checks first to avoid glob overhead
-        if let Some(file) = &self.metadata.manifest_file_name {
-            if dir.join(file).exists() {
-                return Ok(true);
-            }
-        }
-
-        if let Some(file) = &self.metadata.lock_file_name {
-            if dir.join(file).exists() {
-                return Ok(true);
-            }
-        }
-
-        if self.metadata.config_file_globs.is_empty() {
-            return Ok(false);
-        }
-
-        // Oh no, heavy lookup...
-        let results = glob::walk(dir, &self.metadata.config_file_globs)?;
-
-        Ok(!results.is_empty())
-    }
-
     #[instrument(skip(self))]
-    pub async fn docker_metadata(
+    pub async fn define_docker_metadata(
         &self,
-        input: DockerMetadataInput,
-    ) -> miette::Result<DockerMetadataOutput> {
-        let mut output: DockerMetadataOutput = self
+        input: DefineDockerMetadataInput,
+    ) -> miette::Result<DefineDockerMetadataOutput> {
+        let mut output: DefineDockerMetadataOutput = self
             .plugin
-            .cache_func_with("docker_metadata", input)
+            .cache_func_with("define_docker_metadata", input)
             .await?;
 
         // Include toolchain metadata in docker
@@ -132,6 +108,31 @@ impl ToolchainPlugin {
         }
 
         Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
+        // Do simple checks first to avoid glob overhead
+        if let Some(file) = &self.metadata.manifest_file_name {
+            if dir.join(file).exists() {
+                return Ok(true);
+            }
+        }
+
+        if let Some(file) = &self.metadata.lock_file_name {
+            if dir.join(file).exists() {
+                return Ok(true);
+            }
+        }
+
+        if self.metadata.config_file_globs.is_empty() {
+            return Ok(false);
+        }
+
+        // Oh no, heavy lookup...
+        let results = glob::walk(dir, &self.metadata.config_file_globs)?;
+
+        Ok(!results.is_empty())
     }
 
     #[instrument(skip(self))]

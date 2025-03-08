@@ -128,19 +128,15 @@ mod windows {
                         pid,
                     )
                 }
-            },
-            // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
-            _ => {
-                unsafe {
-                    TerminateProcess(handle.0, 1)
-                }
             }
+            // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
+            _ => unsafe { TerminateProcess(handle.0, 1) },
         };
 
         if result == 0 {
             return Err(io::Error::last_os_error());
-        } 
-        
+        }
+
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 mod bun;
+mod init_toolchain;
 mod node;
 mod prompts;
 mod rust;
@@ -86,6 +87,7 @@ fn detect_vcs_provider(repo_root: PathBuf) -> String {
 }
 
 pub struct InitOptions {
+    pub dir: PathBuf,
     pub force: bool,
     pub minimal: bool,
     pub yes: bool,
@@ -171,12 +173,6 @@ pub async fn init_tool(
 
 #[instrument(skip_all)]
 pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
-    let options = InitOptions {
-        force: args.force,
-        minimal: args.minimal,
-        yes: args.yes,
-    };
-
     let theme = create_theme();
     let dest_path = PathBuf::from(&args.dest);
     let dest_dir = if args.dest == "." {
@@ -185,6 +181,13 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
         dest_path
     } else {
         session.working_dir.join(&args.dest)
+    };
+
+    let options = InitOptions {
+        dir: dest_dir.clone(),
+        force: args.force,
+        minimal: args.minimal,
+        yes: args.yes,
     };
 
     // Initialize a specific tool and exit early

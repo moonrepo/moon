@@ -1,12 +1,13 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
     DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineToolchainConfigOutput,
-    HashTaskContentsInput, HashTaskContentsOutput, RegisterToolchainInput, RegisterToolchainOutput,
+    HashTaskContentsInput, HashTaskContentsOutput, InitializeToolchainInput,
+    InitializeToolchainOutput, RegisterToolchainInput, RegisterToolchainOutput,
     ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
     VirtualPath,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
-use proto_core::Tool;
+use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
 use starbase_utils::glob;
 use starbase_utils::json::JsonValue;
 use std::fmt;
@@ -20,6 +21,7 @@ pub type ToolchainMetadata = RegisterToolchainOutput;
 
 pub struct ToolchainPlugin {
     pub id: PluginId,
+    pub locator: PluginLocator,
     pub metadata: ToolchainMetadata,
 
     plugin: Arc<PluginContainer>,
@@ -58,6 +60,7 @@ impl Plugin for ToolchainPlugin {
                 None
             },
             id: registration.id,
+            locator: registration.locator,
             metadata,
             plugin,
         })
@@ -145,6 +148,24 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn detect_version(
+        &self,
+        dir: &Path,
+    ) -> miette::Result<Option<UnresolvedVersionSpec>> {
+        let Some(tool) = &self.tool else {
+            return Ok(None);
+        };
+
+        let tool = tool.read().await;
+
+        if let Some((version, _)) = tool.detect_version_from(dir).await? {
+            return Ok(Some(version));
+        }
+
+        Ok(None)
+    }
+
+    #[instrument(skip(self))]
     pub async fn hash_task_contents(
         &self,
         input: HashTaskContentsInput,
@@ -160,6 +181,19 @@ impl ToolchainPlugin {
                 obj.insert("@toolchain".into(), JsonValue::String(self.id.to_string()));
             }
         }
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn initialize_toolchain(
+        &self,
+        input: InitializeToolchainInput,
+    ) -> miette::Result<InitializeToolchainOutput> {
+        let output: InitializeToolchainOutput = self
+            .plugin
+            .cache_func_with("initialize_toolchain", input)
+            .await?;
 
         Ok(output)
     }

@@ -1,8 +1,11 @@
 use crate::common::*;
+use crate::prompts::*;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
+use rustc_hash::FxHashMap;
 use schematic::Schema;
+use serde_json::Value;
 use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 // METADATA
@@ -64,6 +67,40 @@ api_struct!(
     pub struct DefineToolchainConfigOutput {
         /// Schema shape of the tool's configuration.
         pub schema: ConfigSchema,
+    }
+);
+
+// INIT
+
+api_struct!(
+    /// Input passed to the `initialize_toolchain` function.
+    pub struct InitializeToolchainInput {
+        /// Current moon context.
+        pub context: MoonContext,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `initialize_toolchain` function.
+    #[serde(default)]
+    pub struct InitializeToolchainOutput {
+        /// A URL to documentation about available configuration settings.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub config_url: Option<String>,
+
+        /// Settings to include in the injected toolchain config file.
+        /// Supports dot notation for the keys.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub default_settings: FxHashMap<String, Value>,
+
+        /// A URL to documentation about the toolchain.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub docs_url: Option<String>,
+
+        /// A list of questions to prompt the users about configuration
+        /// settings and the values to inject.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub prompts: Vec<SettingPrompt>,
     }
 );
 

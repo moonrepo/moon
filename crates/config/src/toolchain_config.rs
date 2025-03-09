@@ -1,7 +1,6 @@
 use crate::language_platform::*;
 use crate::toolchain::*;
 use moon_common::Id;
-use proto_core::warpgate::{PluginLocator, UrlLocator};
 use rustc_hash::FxHashMap;
 use schematic::{Config, validate};
 use version_spec::UnresolvedVersionSpec;
@@ -113,12 +112,19 @@ impl ToolchainConfig {
         tools
     }
 
-    pub fn get_plugin_locator(id: &Id) -> Option<PluginLocator> {
+    #[cfg(feature = "proto")]
+    pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
+        use proto_core::warpgate::{PluginLocator, UrlLocator};
+
         match id.as_str() {
             "typescript" => Some(PluginLocator::Url(Box::new(UrlLocator {
                 url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.0/typescript_toolchain.wasm".into()
             }))),
-            _ => None
+            // "typescript" => Some(PluginLocator::File(Box::new(FileLocator {
+            //     file: "".into(),
+            //     path: Some("...".into()),
+            // }))),
+            _ => None,
         }
     }
 

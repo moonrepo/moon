@@ -115,12 +115,17 @@ fn evaluate_prompts(
         }
 
         if let Some(value) = render_prompt(prompt, options, theme)? {
-            if prompt.skip_if_falsy && is_json_falsy(&value) {
+            let falsy = is_json_falsy(&value);
+
+            if prompt.skip_if_falsy && falsy {
                 continue;
             }
 
             inject_setting(prompt.setting.clone(), value, settings);
-            evaluate_prompts(&prompt.prompts, settings, options, theme)?;
+
+            if !falsy {
+                evaluate_prompts(&prompt.prompts, settings, options, theme)?;
+            }
         }
     }
 
@@ -268,8 +273,8 @@ fn convert_json_to_yaml(value: JsonValue) -> YamlValue {
 fn is_json_falsy(value: &JsonValue) -> bool {
     match value {
         JsonValue::Null => true,
-        JsonValue::Bool(boolean) => *boolean,
-        JsonValue::Number(number) => number.to_string() == "0",
+        JsonValue::Bool(boolean) => !(*boolean),
+        JsonValue::Number(number) => number.as_f64().is_some_and(|no| no == 0.0),
         JsonValue::String(string) => string.is_empty(),
         JsonValue::Array(list) => list.is_empty(),
         JsonValue::Object(map) => map.is_empty(),

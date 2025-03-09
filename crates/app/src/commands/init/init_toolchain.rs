@@ -23,10 +23,10 @@ pub async fn init_toolchain(
     theme: &ColorfulTheme,
     console: &Console,
     include_locator: bool,
-    include_version: bool,
-) -> miette::Result<Option<String>> {
+) -> miette::Result<String> {
+    // No instructions, so render an empty block
     if !toolchain.has_func("initialize_toolchain").await {
-        return Ok(None);
+        return Ok(format!("{}: {{}}", toolchain.id));
     }
 
     // Extract information from the plugin
@@ -70,7 +70,7 @@ pub async fn init_toolchain(
         );
     }
 
-    if include_version {
+    if toolchain.has_func("detect_version_files").await {
         if let Some(version) = toolchain.detect_version(&options.dir).await? {
             settings.insert(
                 YamlValue::String("version".into()),
@@ -98,7 +98,7 @@ pub async fn init_toolchain(
         YamlValue::Mapping(settings),
     )]));
 
-    Ok(Some(yaml::format(&config)?))
+    Ok(yaml::format(&config)?)
 }
 
 fn evaluate_prompts(
@@ -200,7 +200,7 @@ fn render_prompt(
             } else {
                 let select = Select::with_theme(theme)
                     .with_prompt(apply_style_tags(&prompt.question))
-                    .items(&items)
+                    .items(items)
                     .default(*default_index);
 
                 if prompt.required {

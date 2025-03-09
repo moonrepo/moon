@@ -3,20 +3,22 @@ mod init_toolchain;
 mod node;
 mod prompts;
 mod rust;
-mod typescript;
 
 use crate::helpers::create_theme;
 use crate::session::CliSession;
 use bun::init_bun;
-use clap::{Args, ValueEnum};
+use clap::Args;
 use dialoguer::Confirm;
 use dialoguer::theme::ColorfulTheme;
+use init_toolchain::init_toolchain;
 use miette::IntoDiagnostic;
-use moon_common::consts::CONFIG_DIRNAME;
-use moon_common::is_test_env;
-use moon_config::{load_toolchain_config_template, load_workspace_config_template};
+use moon_common::{Id, consts::CONFIG_DIRNAME, is_test_env};
+use moon_config::{
+    ToolchainConfig, load_toolchain_config_template, load_workspace_config_template,
+};
 use moon_vcs::{Git, Vcs};
 use node::init_node;
+use proto_core::{Id as PluginId, PluginLocator};
 use rust::init_rust;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -25,21 +27,14 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use tracing::instrument;
-use typescript::init_typescript;
-
-#[derive(ValueEnum, Clone, Debug)]
-#[value(rename_all = "lowercase")]
-pub enum InitTool {
-    Bun,
-    Node,
-    Rust,
-    TypeScript,
-}
 
 #[derive(Args, Clone, Debug)]
 pub struct InitArgs {
-    #[arg(value_enum, help = "Specific tool to initialize")]
-    tool: Option<InitTool>,
+    #[arg(help = "Specific toolchain to initialize")]
+    toolchain: Option<Id>,
+
+    #[arg(help = "Plugin locator for the toolchain")]
+    plugin: Option<PluginLocator>,
 
     #[arg(
         long = "to",
@@ -126,16 +121,16 @@ fn verify_dest_dir(
     Ok(None)
 }
 
-pub async fn init_tool(
-    dest_dir: &Path,
-    tool: &InitTool,
+pub async fn init_for_toolchain(
+    session: &CliSession,
+    args: &InitArgs,
     options: &InitOptions,
     theme: &ColorfulTheme,
-    session: &CliSession,
 ) -> AppResult {
     let console = &session.console;
+    let id = args.toolchain.as_ref().unwrap();
 
-    if !is_test_env() && !dest_dir.join(CONFIG_DIRNAME).exists() {
+    if !is_test_env() && !options.dir.join(CONFIG_DIRNAME).exists() {
         console.err.write_line(format!(
             "moon has not been initialized! Try running {} first?",
             color::shell("moon init")
@@ -144,14 +139,51 @@ pub async fn init_tool(
         return Ok(Some(1));
     }
 
-    let tool_config = match tool {
-        InitTool::Bun => init_bun(dest_dir, options, theme, console).await?,
-        InitTool::Node => init_node(dest_dir, options, theme, console).await?,
-        InitTool::Rust => init_rust(dest_dir, options, theme, console).await?,
-        InitTool::TypeScript => init_typescript(dest_dir, options, theme, console).await?,
+    let tool_config = match id.as_str() {
+        "bun" => init_bun(options, theme, console).await?,
+        "node" => init_node(options, theme, console).await?,
+        "rust" => init_rust(options, theme, console).await?,
+        _ => {
+            let mut include_locator = true;
+            let plugin_id = PluginId::raw(id.as_str());
+            let plugin_locator = match args.plugin.as_ref() {
+                Some(locator) => locator.to_owned(),
+                None => match ToolchainConfig::get_plugin_locator(id) {
+                    Some(locator) => {
+                        include_locator = false;
+                        locator
+                    }
+                    None => {
+                        console.err.write_line(
+                            "A plugin locator is required as the 2nd argument when initializing a toolchain!"
+                        )?;
+
+                        return Ok(Some(1));
+                    }
+                },
+            };
+
+            let toolchain_registry = session.get_toolchain_registry().await?;
+
+            toolchain_registry
+                .load_with_config(&plugin_id, plugin_locator, |_| Ok(()))
+                .await?;
+
+            let toolchain = toolchain_registry.get_instance(&plugin_id).await?;
+
+            init_toolchain(
+                &toolchain,
+                &toolchain_registry,
+                options,
+                theme,
+                console,
+                include_locator,
+            )
+            .await?
+        }
     };
 
-    let toolchain_config_path = &session.config_loader.get_toolchain_files(dest_dir)[0];
+    let toolchain_config_path = &session.config_loader.get_toolchain_files(&options.dir)[0];
 
     if !toolchain_config_path.exists() {
         fs::write_file(
@@ -191,8 +223,8 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
     };
 
     // Initialize a specific tool and exit early
-    if let Some(tool) = &args.tool {
-        init_tool(&dest_dir, tool, &options, &theme, &session).await?;
+    if args.toolchain.is_some() {
+        init_for_toolchain(&session, &args, &options, &theme).await?;
 
         return Ok(None);
     }

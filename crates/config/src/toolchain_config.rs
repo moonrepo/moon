@@ -1,6 +1,7 @@
 use crate::language_platform::*;
 use crate::toolchain::*;
 use moon_common::Id;
+use proto_core::warpgate::{PluginLocator, UrlLocator};
 use rustc_hash::FxHashMap;
 use schematic::{Config, validate};
 use version_spec::UnresolvedVersionSpec;
@@ -110,6 +111,15 @@ impl ToolchainConfig {
         }
 
         tools
+    }
+
+    pub fn get_plugin_locator(id: &Id) -> Option<PluginLocator> {
+        match id.as_str() {
+            "typescript" => Some(PluginLocator::Url(Box::new(UrlLocator {
+                url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.0/typescript_toolchain.wasm".into()
+            }))),
+            _ => None
+        }
     }
 
     pub fn get_version_env_vars(&self) -> FxHashMap<String, String> {
@@ -254,7 +264,6 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
-        use proto_core::warpgate::{PluginLocator, UrlLocator};
         use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 
         for (id, config) in self.plugins.iter_mut() {
@@ -264,9 +273,7 @@ impl ToolchainConfig {
 
             match id.as_str() {
                 "typescript" => {
-                    config.plugin = Some(PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.0/typescript_toolchain.wasm".into()
-                    })));
+                    config.plugin = Self::get_plugin_locator(id);
                 }
                 other => {
                     return Err(ConfigError::Validator {

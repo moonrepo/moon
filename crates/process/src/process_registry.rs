@@ -39,7 +39,7 @@ impl ProcessRegistry {
         });
 
         let signal_shutdown_handle = tokio::spawn(async move {
-            shutdown_processes_with_signal(receiver, processes_bg, threshold).await;
+            shutdown_processes_from_signal(receiver, processes_bg, threshold).await;
         });
 
         Self {
@@ -99,7 +99,7 @@ impl ProcessRegistry {
                 // After a few seconds of waiting, terminate all running,
                 // as some of them may have "press ctrl+c again" logic
                 if !terminated && count >= (self.threshold as f64 / 1.5) as u32 {
-                    self.terminate_running();
+                    kill_processes(self.running.clone()).await;
                     terminated = true;
                 }
 
@@ -128,13 +128,16 @@ impl Drop for ProcessRegistry {
     }
 }
 
-async fn shutdown_processes_with_signal(
+async fn shutdown_processes_from_signal(
     mut receiver: Receiver<SignalType>,
     processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     threshold: u32,
 ) {
     let signal = receiver.recv().await.unwrap_or(SignalType::Kill);
-    let mut children = processes.write().await;
+
+    // Clone the children, otherwise we encounter a deadlock when the 
+    // tasks try to acquire a write lock while it is being read
+    let children = { processes.read().await.clone() };
 
     if children.is_empty() {
         return;
@@ -151,7 +154,9 @@ async fn shutdown_processes_with_signal(
 
     let mut futures = vec![];
 
-    for (pid, child) in children.drain() {
+    for (pid, child) in children {
+        let running = processes.clone();
+
         futures.push(tokio::spawn(async move {
             if threshold == 0 {
                 trace!(pid, "Waiting on child process");
@@ -166,8 +171,44 @@ async fn shutdown_processes_with_signal(
                     warn!(pid, "Failed to shutdown child process: {error}");
                 }
             }
+
+            running.write().await.remove(&pid);
         }));
     }
+
+    for future in futures {
+        let _ = future.await;
+    }
+}
+
+async fn kill_processes(
+    processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
+) {
+    let children = { processes.read().await.clone() };
+
+    if children.is_empty() {
+        return;
+    }
+
+    debug!(
+        pids = ?children.keys().collect::<Vec<_>>(),
+        "Wait threshold exhausted, killing {} running child processes",
+        children.len()
+    );
+
+    let mut futures = vec![];
+
+    for (pid, child) in children {
+        futures.push(tokio::spawn(async move {
+            trace!(pid, "Killing child process");
+
+            if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
+                warn!(pid, "Failed to kill child process: {error}");
+            }
+        }));
+    }
+
+    processes.write().await.clear();
 
     for future in futures {
         let _ = future.await;

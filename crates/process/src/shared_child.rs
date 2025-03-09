@@ -55,21 +55,15 @@ impl SharedChild {
         Ok(())
     }
 
-    pub async fn kill_with_signal(
-        &self,
-        #[cfg(unix)] signal: SignalType,
-        #[cfg(windows)] _signal: SignalType,
-    ) -> io::Result<()> {
-        // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/unix/process/process_unix.rs#L940
+    pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
         #[cfg(unix)]
         {
             kill(self.pid, signal)?;
         }
 
-        // https://github.com/rust-lang/rust/blob/master/library/std/src/sys/pal/windows/process.rs#L658
         #[cfg(windows)]
         {
-            terminate(self.handle.clone())?;
+            kill(self.pid, self.handle.clone(), signal)?;
         }
 
         // Acquire the child _after_ the kill command, otherwise it waits for

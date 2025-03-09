@@ -170,6 +170,7 @@ impl ActionPipeline {
         let process_registry = ProcessRegistry::instance();
         let mut actions = vec![];
         let mut error = None;
+        let mut handled = false;
 
         while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
@@ -180,17 +181,26 @@ impl ActionPipeline {
 
             actions.push(action);
 
-            if abort_token.is_cancelled() {
+            // Don't break so that we can gather all failed actions
+            if !handled && abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
+                
                 self.status = ActionPipelineStatus::Aborted;
-                break;
-            } else if cancel_token.is_cancelled() {
+                handled = true;
+
+            } else if !handled && cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (via signal)");
+
                 self.status = ActionPipelineStatus::Interrupted;
-                break;
+                handled = true;
+
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
-                self.status = ActionPipelineStatus::Completed;
+
+                if !handled {
+                    self.status = ActionPipelineStatus::Completed;
+                }
+
                 break;
             }
         }
@@ -199,7 +209,11 @@ impl ActionPipeline {
 
         // Capture and handle any signals
         if cancel_token.is_cancelled() {
-            self.status = signal_handle.await.into_diagnostic()?;
+            self.status = match signal_handle.await.into_diagnostic()? {
+                SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+                SignalType::Terminate => ActionPipelineStatus::Terminated,
+                _ => ActionPipelineStatus::Aborted,
+            };
         } else {
             signal_handle.abort();
         }
@@ -361,7 +375,7 @@ impl ActionPipeline {
         }))
     }
 
-    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<ActionPipelineStatus> {
+    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<SignalType> {
         tokio::spawn(async move {
             let mut receiver = ProcessRegistry::instance().receive_signal();
 
@@ -370,14 +384,10 @@ impl ActionPipeline {
 
                 debug!("Received signal, shutting down pipeline");
 
-                return match signal {
-                    SignalType::Interrupt => ActionPipelineStatus::Interrupted,
-                    SignalType::Terminate => ActionPipelineStatus::Terminated,
-                    _ => ActionPipelineStatus::Aborted,
-                };
+                return signal;
             }
 
-            ActionPipelineStatus::Interrupted
+            SignalType::Interrupt
         })
     }
 

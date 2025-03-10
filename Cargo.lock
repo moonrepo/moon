@@ -4018,7 +4018,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "httpmock",
  "indexmap 2.7.1",

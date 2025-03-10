@@ -44,6 +44,7 @@
   (traversing upwards).
 - Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
   set, and will fallback to `$HOME/.moon`.
+- Updated `moon init` with toolchain plugin support.
 - Updated `toolchain.default` in `moon.yml` to support a list of IDs.
 - Updated generated JSON schemas at `.moon/cache/schemas` to dynamically include toolchain plugin
   configuration.
@@ -51,7 +52,9 @@
 #### 🧩 Plugins
 
 - Added new toolchain WASM APIs.
-  - `docker_metadata` - Define metadata related to `docker` commands.
+  - `initialize_toolchain` - Provide prompts to use during `moon init`.
+  - `define_toolchain_config` - Define a config schema for use within JSONschemas.
+  - `define_docker_metadata` - Define metadata related to `docker` commands.
   - `hash_task_contents` - Inject content into the task hashing process.
   - `prune_docker` - Custom operations to run after `docker prune`.
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.

@@ -4018,7 +4018,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "httpmock",
  "indexmap 2.7.1",
@@ -4359,7 +4359,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "moon_common",
  "moon_config",
@@ -4450,7 +4450,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "miette 7.5.0",
  "moon_common",

@@ -108,7 +108,6 @@ fn detect_package_manager(
 
 #[instrument(skip_all)]
 pub async fn init_node(
-    dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
@@ -143,9 +142,10 @@ pub async fn init_node(
         console.out.flush()?;
     }
 
-    let node_version = prompt_version("Node", options, theme, || detect_node_version(dest_dir))?;
-    let node_version_manager = detect_node_version_manager(dest_dir)?;
-    let package_manager = detect_package_manager(dest_dir, options, theme)?;
+    let node_version =
+        prompt_version("Node", options, theme, || detect_node_version(&options.dir))?;
+    let node_version_manager = detect_node_version_manager(&options.dir)?;
+    let package_manager = detect_package_manager(&options.dir, options, theme)?;
 
     let infer_tasks = if options.yes || options.minimal {
         false

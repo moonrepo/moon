@@ -95,17 +95,11 @@ pub async fn init_toolchain(
     }
 
     // Gather user settings via prompts
-    let prompts = output
-        .prompts
-        .into_iter()
-        .filter(|p| if options.minimal { p.minimal } else { true })
-        .collect::<Vec<_>>();
-
     for (key, value) in output.default_settings {
         inject_setting(key, value, &mut settings);
     }
 
-    evaluate_prompts(&prompts, &mut settings, options, theme)?;
+    evaluate_prompts(&output.prompts, &mut settings, options, theme)?;
 
     // Render into a YAML string
     let config = YamlValue::Mapping(YamlMapping::from_iter([(
@@ -122,7 +116,10 @@ fn evaluate_prompts(
     options: &InitOptions,
     theme: &ColorfulTheme,
 ) -> miette::Result<()> {
-    for prompt in prompts {
+    for prompt in prompts
+        .iter()
+        .filter(|p| if options.minimal { p.minimal } else { true })
+    {
         if let Some(condition) = &prompt.condition {
             if !evaluate_condition(condition, settings) {
                 continue;

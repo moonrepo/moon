@@ -44,6 +44,7 @@
   (traversing upwards).
 - Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
   set, and will fallback to `$HOME/.moon`.
+- Updated `moon init` with toolchain plugin support.
 - Updated `toolchain.default` in `moon.yml` to support a list of IDs.
 - Updated generated JSON schemas at `.moon/cache/schemas` to dynamically include toolchain plugin
   configuration.

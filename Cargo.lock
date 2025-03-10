@@ -4450,7 +4450,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "miette 7.5.0",
  "moon_common",

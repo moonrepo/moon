@@ -85,7 +85,7 @@ api_struct!(
     #[serde(default)]
     pub struct InitializeToolchainOutput {
         /// A URL to documentation about available configuration settings.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub config_url: Option<String>,
 
         /// Settings to include in the injected toolchain config file.
@@ -94,10 +94,10 @@ api_struct!(
         pub default_settings: FxHashMap<String, Value>,
 
         /// A URL to documentation about the toolchain.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub docs_url: Option<String>,
 
-        /// A list of questions to prompt the users about configuration
+        /// A list of questions to prompt the user about configuration
         /// settings and the values to inject.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub prompts: Vec<SettingPrompt>,

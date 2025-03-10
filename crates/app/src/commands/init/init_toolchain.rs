@@ -1,4 +1,5 @@
 use super::InitOptions;
+use super::prompts::prompt_version;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input, Select};
 use miette::IntoDiagnostic;
@@ -17,8 +18,8 @@ use tracing::instrument;
 
 #[instrument(skip_all)]
 pub async fn init_toolchain(
-    toolchain: &ToolchainPlugin,
     toolchain_registry: &ToolchainRegistry,
+    toolchain: &ToolchainPlugin,
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
@@ -79,6 +80,20 @@ pub async fn init_toolchain(
         }
     }
 
+    if !settings.contains_key("version") && toolchain.supports_tier_3().await {
+        // TODO rewrite
+        let version = prompt_version(&toolchain.metadata.name, options, theme, || {
+            Ok(String::new())
+        })?;
+
+        if !version.is_empty() {
+            settings.insert(
+                YamlValue::String("version".into()),
+                YamlValue::String(version),
+            );
+        }
+    }
+
     // Gather user settings via prompts
     let prompts = output
         .prompts
@@ -134,7 +149,7 @@ fn evaluate_prompts(
 
 fn evaluate_condition(condition: &SettingCondition, settings: &YamlMapping) -> bool {
     let Some(value) = settings.get(&condition.setting) else {
-        return false;
+        return condition.op == ConditionType::NotExists;
     };
 
     match (&condition.op, value) {
@@ -189,7 +204,7 @@ fn render_prompt(
                     .with_prompt(apply_style_tags(&prompt.question))
                     .default(default.to_owned())
                     .show_default(true)
-                    .allow_empty(prompt.required)
+                    .allow_empty(!prompt.required)
                     .interact_text()
                     .into_diagnostic()?
             };
@@ -203,9 +218,10 @@ fn render_prompt(
             let index = if options.yes {
                 *default_index
             } else {
+                let labels = items.iter().map(display_json_value).collect::<Vec<_>>();
                 let select = Select::with_theme(theme)
                     .with_prompt(apply_style_tags(&prompt.question))
-                    .items(items)
+                    .items(&labels)
                     .default(*default_index);
 
                 if prompt.required {
@@ -278,5 +294,13 @@ fn is_json_falsy(value: &JsonValue) -> bool {
         JsonValue::String(string) => string.is_empty(),
         JsonValue::Array(list) => list.is_empty(),
         JsonValue::Object(map) => map.is_empty(),
+    }
+}
+
+fn display_json_value(value: &JsonValue) -> String {
+    match value {
+        // Remove quotes
+        JsonValue::String(string) => string.to_owned(),
+        other => other.to_string(),
     }
 }

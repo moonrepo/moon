@@ -2,7 +2,7 @@ use serde_json::Value as JsonValue;
 use warpgate_api::{api_enum, api_struct};
 
 api_enum!(
-    /// The type of prompt to render to acquire an answer.
+    /// The type of prompt to render to receive an answer.
     #[derive(Default)]
     #[serde(tag = "type", rename_all = "kebab-case")]
     pub enum PromptType {
@@ -54,7 +54,7 @@ api_struct!(
         /// Name of the setting to inject. Supports dot notation.
         pub setting: String,
 
-        /// Skip rendering this setting if the answer is falsy.
+        /// Skip injecting this setting if the answer is falsy.
         pub skip_if_falsy: bool,
 
         /// Type of prompt to render.
@@ -93,6 +93,7 @@ api_enum!(
         Exists,
         FloatEquals(f64),
         IntEquals(i64),
+        NotExists,
         StringContains(String),
         StringEquals(String),
     }

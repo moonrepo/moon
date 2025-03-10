@@ -172,8 +172,8 @@ pub async fn init_for_toolchain(
             let toolchain = toolchain_registry.get_instance(&plugin_id).await?;
 
             init_toolchain(
-                &toolchain,
                 &toolchain_registry,
+                &toolchain,
                 options,
                 theme,
                 console,

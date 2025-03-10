@@ -82,6 +82,21 @@ impl ToolchainPlugin {
         }
     }
 
+    pub async fn supports_tier_1(&self) -> bool {
+        self.has_func("parse_lockfile").await || self.has_func("parse_manifest").await
+    }
+
+    pub async fn supports_tier_2(&self) -> bool {
+        // TODO
+        false
+    }
+
+    pub async fn supports_tier_3(&self) -> bool {
+        self.tool.is_some() && self.has_func("download_prebuilt").await
+    }
+}
+
+impl ToolchainPlugin {
     #[instrument(skip(self))]
     pub async fn define_toolchain_config(&self) -> miette::Result<DefineToolchainConfigOutput> {
         let output: DefineToolchainConfigOutput =

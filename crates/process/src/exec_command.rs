@@ -420,11 +420,27 @@ impl Command {
             })
             .collect();
 
+        let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+        let input_size: Option<usize> = if self.input.is_empty() {
+            None
+        } else {
+            Some(self.input.iter().map(|i| i.len()).sum())
+        };
+
+        let mut line = line.to_string();
+        let line_size = line.len();
+
+        if line_size > 1000 && !debug_input {
+            line.truncate(1000);
+            line.push_str(&format!(" ... (and {} more bytes)", line_size - 1000));
+        }
+
         debug!(
             pid = child.id(),
             shell = self.shell.as_ref().map(|sh| &sh.bin_name),
             env = ?env_vars,
             cwd = ?working_dir,
+            input_size,
             "Running command {}",
             color::shell(line.to_string())
         );

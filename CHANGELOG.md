@@ -46,6 +46,7 @@
   set, and will fallback to `$HOME/.moon`.
 - Updated `moon init` with toolchain plugin support.
 - Updated `toolchain.default` in `moon.yml` to support a list of IDs.
+- Updated `hasher.batchSize` in `.moon/workspace.yml` to default to 1024 (instead of 2000).
 - Updated generated JSON schemas at `.moon/cache/schemas` to dynamically include toolchain plugin
   configuration.
 
@@ -65,6 +66,11 @@
   - Will no longer remove Nx configs. Pass `--cleanup` to remove them.
 - Updated `migrate_turborepo_extension` to v0.1.6.
   - Will no longer remove Turborepo configs. Pass `--cleanup` to remove them.
+
+#### 🐞 Fixes
+
+- Fixed an issue where file hashing (`git hash-object`) would hang when there are too many files
+  being hashed.
 
 #### ⚙️ Internal
 

@@ -13,9 +13,9 @@ use regex::Regex;
 use rustc_hash::FxHashSet;
 use semver::Version;
 use std::collections::BTreeMap;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::{cmp, env};
 use thiserror::Error;
 use tracing::{debug, instrument};
 
@@ -613,7 +613,7 @@ impl Vcs for Git {
         &self,
         files: &[String], // Workspace relative
         allow_ignored: bool,
-        batch_size: u16,
+        batch_size: u32,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
@@ -644,18 +644,15 @@ impl Vcs for Git {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        // Chunk into slices to avoid passing too many files
-        let mut index = 0;
-        let end_index = objects.len();
+        // Batch based on the size of the input
+        let mut current_size: u32 = 0;
+        let mut input: Vec<String> = vec![];
 
-        while index < end_index {
-            let next_index = cmp::min(index + (batch_size as usize), end_index);
-            let slice = objects[index..next_index].to_vec();
-
+        let mut run_hash = async |data: &[String]| -> miette::Result<()> {
             let mut command = self
                 .process
                 .create_command(["hash-object", "--stdin-paths"]);
-            command.input([slice.join("\n")]);
+            command.input([data.join("\n")]);
 
             let output = if is_test_env() {
                 self.process
@@ -667,11 +664,33 @@ impl Vcs for Git {
 
             for (i, hash) in output.split('\n').enumerate() {
                 if !hash.is_empty() {
-                    map.insert(self.to_workspace_relative_path(&slice[i]), hash.to_owned());
+                    map.insert(self.to_workspace_relative_path(&data[i]), hash.to_owned());
                 }
             }
 
-            index = next_index;
+            Ok(())
+        };
+
+        for object in objects {
+            // Include newline that gets joined
+            let object_size = object.len() as u32 + 1;
+
+            // Below batch size, continue collecting input
+            if (current_size + object_size) <= batch_size {
+                current_size += object_size;
+                input.push(object);
+            }
+            // Above batch size, execute process
+            else {
+                run_hash(&input).await?;
+                current_size = 0;
+                input.clear();
+            }
+        }
+
+        // Batch limit never reached
+        if !input.is_empty() {
+            run_hash(&input).await?;
         }
 
         Ok(map)

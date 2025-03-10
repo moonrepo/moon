@@ -113,8 +113,8 @@ impl<'task> CommandExecutor<'task> {
                 interactive: bool,
             ) -> miette::Result<Output> {
                 match (stream, interactive) {
-                    (true, false) | (true, true) => command.exec_stream_and_capture_output().await,
-                    (false, true) => command.exec_stream_output().await,
+                    (true, true) | (false, true) => command.exec_stream_output().await,
+                    (true, false) => command.exec_stream_and_capture_output().await,
                     _ => command.exec_capture_output().await,
                 }
             }
@@ -293,10 +293,11 @@ impl<'task> CommandExecutor<'task> {
 
     fn prepare_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
         let is_primary = context.is_primary_target(&self.task.target);
+        let is_ci = is_ci_env();
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        if !self.task.options.cache && context.primary_targets.len() == 1 {
+        if !self.task.options.cache && context.primary_targets.len() == 1 && !is_ci {
             self.interactive = true;
         }
 
@@ -305,7 +306,7 @@ impl<'task> CommandExecutor<'task> {
         self.stream = if let Some(output_style) = &self.task.options.output_style {
             matches!(output_style, TaskOutputStyle::Stream)
         } else {
-            is_primary || is_ci_env()
+            is_primary || is_ci
         };
 
         // If only a single persistent task is being ran, we should not prefix the output.

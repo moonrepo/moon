@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Reverted "Fixed an issue where task output wasn't captured for the "review" section in a run
+  summary." as it caused a regression.
+
 ## 1.32.8
 
 #### 🐞 Fixes

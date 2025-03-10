@@ -10,7 +10,7 @@ publish = true
 
 [dependencies]
 moon_common = { version = "0.1.0", path = "../common" }
-moon_pdk_api = { version = "0.1.2", path = "../pdk-api" }
+moon_pdk_api = { version = "0.1.3", path = "../pdk-api" }
 moon_project = { version = "0.1.0", path = "../project" }
 moon_task = { version = "0.1.0", path = "../task" }
 clap = { workspace = true, features = ["derive"] }

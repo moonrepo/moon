@@ -1,8 +1,11 @@
 use crate::common::*;
+use crate::prompts::*;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
+use rustc_hash::FxHashMap;
 use schematic::Schema;
+use serde_json::Value;
 use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 // METADATA
@@ -20,25 +23,27 @@ api_struct!(
     #[serde(default)]
     pub struct RegisterToolchainOutput {
         /// A list of config file names/globs, excluding lockfiles and
-        /// manifest, used by this toolchain. Will be used for detection.
+        /// manifest, used by this toolchain. Will be used for project
+        /// usage detection.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub config_file_globs: Vec<String>,
-
-        /// Schema shape of the tool's configuration.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub config_schema: Option<Schema>,
 
         /// Optional description about what the toolchain does.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
+        /// The name of executables provided by the toolchain.
+        /// Will be used for task usage detection.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub exe_names: Vec<String>,
+
         /// The name of the lock file used for dependency installs.
-        /// Will be used for detection.
+        /// Will be used for project usage detection.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub lock_file_name: Option<String>,
 
         /// The name of the manifest file that contains project and
-        /// dependency information. Will be used for detection.
+        /// dependency information. Will be used for project usage detection.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub manifest_file_name: Option<String>,
 
@@ -52,6 +57,50 @@ api_struct!(
         /// Will be used for detection.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub vendor_dir_name: Option<String>,
+    }
+);
+
+pub type ConfigSchema = Schema;
+
+api_struct!(
+    /// Output returned from the `define_toolchain_config` function.
+    pub struct DefineToolchainConfigOutput {
+        /// Schema shape of the tool's configuration.
+        pub schema: ConfigSchema,
+    }
+);
+
+// INIT
+
+api_struct!(
+    /// Input passed to the `initialize_toolchain` function.
+    pub struct InitializeToolchainInput {
+        /// Current moon context.
+        pub context: MoonContext,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `initialize_toolchain` function.
+    #[serde(default)]
+    pub struct InitializeToolchainOutput {
+        /// A URL to documentation about available configuration settings.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub config_url: Option<String>,
+
+        /// Settings to include in the injected toolchain config file.
+        /// Supports dot notation for the keys.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub default_settings: FxHashMap<String, Value>,
+
+        /// A URL to documentation about the toolchain.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub docs_url: Option<String>,
+
+        /// A list of questions to prompt the user about configuration
+        /// settings and the values to inject.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub prompts: Vec<SettingPrompt>,
     }
 );
 
@@ -130,8 +179,8 @@ api_struct!(
 // DOCKER
 
 api_struct!(
-    /// Input passed to the `docker_metadata` function.
-    pub struct DockerMetadataInput {
+    /// Input passed to the `define_docker_metadata` function.
+    pub struct DefineDockerMetadataInput {
         /// Current moon context.
         pub context: MoonContext,
 
@@ -141,8 +190,8 @@ api_struct!(
 );
 
 api_struct!(
-    /// Output returned from the `docker_metadata` function.
-    pub struct DockerMetadataOutput {
+    /// Output returned from the `define_docker_metadata` function.
+    pub struct DefineDockerMetadataOutput {
         /// List of files as globs to copy over during
         /// the scaffolding process. Applies to both project
         /// and workspace level scaffolding.

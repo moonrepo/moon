@@ -153,6 +153,7 @@ impl<T: Plugin> PluginRegistry<T> {
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
         let id = Id::raw(id.as_ref());
+        let locator = locator.as_ref();
 
         if self.plugins.contains(&id) {
             return Err(PluginError::ExistingId {
@@ -198,6 +199,7 @@ impl<T: Plugin> PluginRegistry<T> {
             id.to_owned(),
             T::new(PluginRegistration {
                 container: PluginContainer::new(id.to_owned(), manifest, functions)?,
+                locator: locator.to_owned(),
                 id: id.to_owned(),
                 moon_env: Arc::clone(&self.host_data.moon_env),
                 proto_env: Arc::clone(&self.host_data.proto_env),

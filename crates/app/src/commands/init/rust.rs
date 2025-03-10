@@ -36,7 +36,6 @@ fn detect_rust_version(dest_dir: &Path) -> miette::Result<String> {
 
 #[instrument(skip_all)]
 pub async fn init_rust(
-    dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
@@ -71,7 +70,8 @@ pub async fn init_rust(
         console.out.flush()?;
     }
 
-    let rust_version = prompt_version("Rust", options, theme, || detect_rust_version(dest_dir))?;
+    let rust_version =
+        prompt_version("Rust", options, theme, || detect_rust_version(&options.dir))?;
 
     let mut context = Context::new();
     context.insert("rust_version", &rust_version);

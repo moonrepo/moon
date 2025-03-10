@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/init_test.rs
+expression: "fs::read_to_string(config).unwrap()"
+---
+# https://moonrepo.dev/docs/config/toolchain
+$schema: 'https://moonrepo.dev/schemas/toolchain.json'
+
+# Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
+# extends: './shared/toolchain.yml'
+
+typescript:
+  syncProjectReferences: true
+  includeSharedTypes: false

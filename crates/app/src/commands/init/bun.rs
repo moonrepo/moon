@@ -6,7 +6,6 @@ use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
 use moon_console::Console;
 use starbase_styles::color;
-use std::path::Path;
 use tera::{Context, Tera};
 use tracing::instrument;
 
@@ -16,7 +15,6 @@ pub fn render_template(context: Context) -> miette::Result<String> {
 
 #[instrument(skip_all)]
 pub async fn init_bun(
-    _dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,

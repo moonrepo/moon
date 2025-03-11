@@ -1,5 +1,5 @@
 # https://moonrepo.dev/docs/config/template
-$schema: 'https://moonrepo.dev/schemas/template.json'
+$schema: '{{ schema_path }}'
 
 # REQUIRED: Name of the template in a human readable format.
 title: 'Title'

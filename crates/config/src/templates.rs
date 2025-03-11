@@ -22,10 +22,6 @@ pub fn load_toolchain_rust_config_template() -> &'static str {
     include_str!("../templates/toolchain_rust.yml")
 }
 
-pub fn load_tasks_config_template() -> &'static str {
-    include_str!("../templates/tasks.yml")
-}
-
 pub fn load_template_config_template() -> &'static str {
     include_str!("../templates/template.yml")
 }

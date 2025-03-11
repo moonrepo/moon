@@ -28,7 +28,7 @@ zstd = "0.13.2"
 
 # gRPC
 async-stream = "0.3.6"
-http = "1.2.0"
+http = "1.3.0"
 tonic = { version = "0.12.3", default-features = false, features = [
     "channel",
     "gzip",
@@ -38,10 +38,10 @@ tonic = { version = "0.12.3", default-features = false, features = [
 tower = { version = "0.4.13", features = ["retry", "timeout"] }
 
 # Temporary until tonic v0.13
-aws-lc-rs = { version = "1.12.2", default-features = false, features = [
+aws-lc-rs = { version = "1.12.5", default-features = false, features = [
     "prebuilt-nasm",
 ] }
-tokio-rustls = "0.26.1"
+tokio-rustls = "0.26.2"
 
 [lints]
 workspace = true

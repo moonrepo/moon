@@ -5,6 +5,7 @@ use crate::output_to_error;
 use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
+use miette::IntoDiagnostic;
 use moon_common::color;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -12,15 +13,20 @@ use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
+use std::time::Instant;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
-use tokio::task;
-use tracing::{debug, enabled};
+use tokio::task::{self, JoinHandle};
+use tracing::{debug, enabled, trace};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
+        if self.continuous_pipe {
+            return self.exec_capture_continuous_output().await;
+        }
+
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         let child = if self.should_pass_stdin() {
             command
@@ -57,6 +63,8 @@ impl Command {
                 error: Box::new(error),
             });
 
+        self.post_log_command(instant, &shared_child);
+
         registry.remove_running(shared_child).await;
 
         let output = result?;
@@ -66,9 +74,109 @@ impl Command {
         Ok(output)
     }
 
+    pub async fn exec_capture_continuous_output(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
+        let (mut command, line, instant) = self.create_async_command();
+
+        command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        let child = command.spawn().map_err(|error| ProcessError::Capture {
+            bin: self.get_bin_name(),
+            error: Box::new(error),
+        })?;
+
+        let shared_child = registry.add_running(child).await;
+        let stdin = shared_child.take_stdin().await;
+        let stdout = shared_child.take_stdout().await;
+        let stderr = shared_child.take_stderr().await;
+
+        self.log_command(&line, &shared_child);
+
+        let items = self.input.drain(..).collect::<Vec<_>>();
+        let bin_name = self.get_bin_name();
+
+        let stdin_handle: JoinHandle<miette::Result<()>> = task::spawn(async move {
+            if let Some(mut stdin) = stdin {
+                for item in items {
+                    stdin
+                        .write_all(item.as_encoded_bytes())
+                        .await
+                        .map_err(|error| ProcessError::WriteInput {
+                            bin: bin_name.clone(),
+                            error: Box::new(error),
+                        })?;
+                }
+
+                drop(stdin);
+            }
+
+            Ok(())
+        });
+
+        let stdout_handle: JoinHandle<miette::Result<Vec<String>>> = task::spawn(async move {
+            let mut logs = vec![];
+            let mut lines = BufReader::new(stdout.unwrap()).lines();
+
+            while let Ok(Some(line)) = lines.next_line().await {
+                logs.push(line);
+            }
+
+            Ok(logs)
+        });
+
+        let stderr_handle: JoinHandle<miette::Result<Vec<String>>> = task::spawn(async move {
+            let mut logs = vec![];
+            let mut lines = BufReader::new(stderr.unwrap()).lines();
+
+            while let Ok(Some(line)) = lines.next_line().await {
+                logs.push(line);
+            }
+
+            Ok(logs)
+        });
+
+        // Attempt to create the child output
+        let result = shared_child
+            .wait()
+            .await
+            .map_err(|error| ProcessError::Capture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            });
+
+        self.post_log_command(instant, &shared_child);
+
+        registry.remove_running(shared_child).await;
+
+        let status = result?;
+
+        stdin_handle.await.into_diagnostic()??;
+
+        let output = Output {
+            status,
+            stdout: stdout_handle
+                .await
+                .into_diagnostic()??
+                .join("\n")
+                .into_bytes(),
+            stderr: stderr_handle
+                .await
+                .into_diagnostic()??
+                .join("\n")
+                .into_bytes(),
+        };
+
+        self.handle_nonzero_status(&output, true)?;
+
+        Ok(output)
+    }
+
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         let child = if self.should_pass_stdin() {
             command.stdin(Stdio::piped());
@@ -100,6 +208,8 @@ impl Command {
                 error: Box::new(error),
             });
 
+        self.post_log_command(instant, &shared_child);
+
         registry.remove_running(shared_child).await;
 
         let status = result?;
@@ -116,7 +226,7 @@ impl Command {
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         command
             .stdin(if self.should_pass_stdin() {
@@ -220,6 +330,8 @@ impl Command {
                 bin: self.get_bin_name(),
                 error: Box::new(error),
             });
+
+        self.post_log_command(instant, &shared_child);
 
         registry.remove_running(shared_child).await;
 
@@ -340,7 +452,7 @@ impl Command {
     //     Ok(output)
     // }
 
-    fn create_async_command(&self) -> (TokioCommand, CommandLine) {
+    fn create_async_command(&self) -> (TokioCommand, CommandLine, Instant) {
         let command_line = self.create_command_line();
 
         let mut command = TokioCommand::new(&command_line.command[0]);
@@ -358,7 +470,7 @@ impl Command {
             command.current_dir(cwd);
         }
 
-        (command, command_line)
+        (command, command_line, Instant::now())
     }
 
     fn create_command_line(&self) -> CommandLine {
@@ -420,14 +532,34 @@ impl Command {
             })
             .collect();
 
+        let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+        let input_size: Option<usize> = if self.input.is_empty() {
+            None
+        } else {
+            Some(self.input.iter().map(|i| i.len()).sum())
+        };
+
+        let mut line = line.to_string();
+        let line_size = line.len();
+
+        if line_size > 1000 && !debug_input {
+            line.truncate(1000);
+            line.push_str(&format!(" ... (and {} more bytes)", line_size - 1000));
+        }
+
         debug!(
             pid = child.id(),
             shell = self.shell.as_ref().map(|sh| &sh.bin_name),
             env = ?env_vars,
             cwd = ?working_dir,
+            input_size,
             "Running command {}",
-            color::shell(line.to_string())
+            color::shell(line)
         );
+    }
+
+    fn post_log_command(&self, instant: Instant, child: &SharedChild) {
+        trace!(pid = child.id(), "Ran command in {:?}", instant.elapsed());
     }
 
     async fn write_input_to_child(
@@ -435,14 +567,10 @@ impl Command {
         child: &mut Child,
         line: &CommandLine,
     ) -> miette::Result<()> {
-        let input = line.input.join(OsStr::new(" "));
-
-        let mut stdin = child.stdin.take().unwrap_or_else(|| {
-            panic!("Unable to write stdin: {}", input.to_string_lossy());
-        });
+        let mut stdin = child.stdin.take().expect("Unable to write stdin!");
 
         stdin
-            .write_all(input.as_encoded_bytes())
+            .write_all(line.input.join(OsStr::new(" ")).as_encoded_bytes())
             .await
             .map_err(|error| ProcessError::WriteInput {
                 bin: self.get_bin_name(),

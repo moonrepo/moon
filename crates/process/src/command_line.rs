@@ -90,7 +90,7 @@ impl CommandLine {
             }
 
             if input.len() > 200 && !debug_input {
-                command.push("(truncated)");
+                command.push("(truncated input)");
             } else {
                 command.push(&input);
             }

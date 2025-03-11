@@ -13,9 +13,9 @@ use regex::Regex;
 use rustc_hash::FxHashSet;
 use semver::Version;
 use std::collections::BTreeMap;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::{cmp, env};
 use thiserror::Error;
 use tracing::{debug, instrument};
 
@@ -613,7 +613,6 @@ impl Vcs for Git {
         &self,
         files: &[String], // Workspace relative
         allow_ignored: bool,
-        batch_size: u16,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
@@ -644,34 +643,30 @@ impl Vcs for Git {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        // Chunk into slices to avoid passing too many files
-        let mut index = 0;
-        let end_index = objects.len();
+        let mut command = self
+            .process
+            .create_command(["hash-object", "--stdin-paths"]);
 
-        while index < end_index {
-            let next_index = cmp::min(index + (batch_size as usize), end_index);
-            let slice = objects[index..next_index].to_vec();
+        command.set_continuous_pipe(true);
 
-            let mut command = self
-                .process
-                .create_command(["hash-object", "--stdin-paths"]);
-            command.input([slice.join("\n")]);
+        // hash-object requires new lines
+        command.input(objects.iter().map(|obj| format!("{obj}\n")));
 
-            let output = if is_test_env() {
-                self.process
-                    .run_command_without_cache(command, true)
-                    .await?
-            } else {
-                self.process.run_command(command, true).await?
-            };
+        let output = if is_test_env() {
+            self.process
+                .run_command_without_cache(command, true)
+                .await?
+        } else {
+            self.process.run_command(command, true).await?
+        };
 
-            for (i, hash) in output.split('\n').enumerate() {
-                if !hash.is_empty() {
-                    map.insert(self.to_workspace_relative_path(&slice[i]), hash.to_owned());
-                }
+        for (i, hash) in output.split('\n').enumerate() {
+            if !hash.is_empty() {
+                map.insert(
+                    self.to_workspace_relative_path(&objects[i]),
+                    hash.to_owned(),
+                );
             }
-
-            index = next_index;
         }
 
         Ok(map)

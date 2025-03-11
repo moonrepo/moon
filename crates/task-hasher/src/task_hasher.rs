@@ -77,11 +77,7 @@ impl<'task> TaskHasher<'task> {
                 .map(|file| file.to_string())
                 .collect::<Vec<_>>();
 
-            hashed_inputs.extend(
-                self.vcs
-                    .get_file_hashes(&files, true, self.hasher_config.batch_size)
-                    .await?,
-            );
+            hashed_inputs.extend(self.vcs.get_file_hashes(&files, true).await?);
 
             self.content.inputs = hashed_inputs;
         }

@@ -29,6 +29,7 @@ derive_enum!(
 #[derive(Clone, Config, Debug, PartialEq)]
 pub struct HasherConfig {
     /// The number of files to include in each hash operation.
+    #[deprecated]
     #[setting(default = 2500)]
     pub batch_size: u16,
 

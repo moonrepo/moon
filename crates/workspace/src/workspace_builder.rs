@@ -658,7 +658,7 @@ impl<'app> WorkspaceBuilder<'app> {
             .vcs
             .as_ref()
             .expect("VCS required!")
-            .get_file_hashes(&configs, true, 500)
+            .get_file_hashes(&configs, true)
             .await
     }
 

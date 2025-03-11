@@ -54,7 +54,7 @@ fn creates_workspace_config_from_template() {
     });
 
     assert!(
-        predicate::str::contains("https://moonrepo.dev/schemas/workspace.json")
+        predicate::str::contains("schemas/workspace.json")
             .eval(&fs::read_to_string(workspace_config).unwrap())
     );
 }

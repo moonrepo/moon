@@ -13,10 +13,11 @@ use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
+use std::time::Instant;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
 use tokio::task::{self, JoinHandle};
-use tracing::{debug, enabled};
+use tracing::{debug, enabled, trace};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
@@ -25,7 +26,7 @@ impl Command {
         }
 
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         let child = if self.should_pass_stdin() {
             command
@@ -62,6 +63,8 @@ impl Command {
                 error: Box::new(error),
             });
 
+        self.post_log_command(instant, &shared_child);
+
         registry.remove_running(shared_child).await;
 
         let output = result?;
@@ -73,7 +76,7 @@ impl Command {
 
     pub async fn exec_capture_continuous_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         command
             .stdin(Stdio::piped())
@@ -144,6 +147,8 @@ impl Command {
                 error: Box::new(error),
             });
 
+        self.post_log_command(instant, &shared_child);
+
         registry.remove_running(shared_child).await;
 
         let status = result?;
@@ -171,7 +176,7 @@ impl Command {
 
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         let child = if self.should_pass_stdin() {
             command.stdin(Stdio::piped());
@@ -203,6 +208,8 @@ impl Command {
                 error: Box::new(error),
             });
 
+        self.post_log_command(instant, &shared_child);
+
         registry.remove_running(shared_child).await;
 
         let status = result?;
@@ -219,7 +226,7 @@ impl Command {
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command();
 
         command
             .stdin(if self.should_pass_stdin() {
@@ -323,6 +330,8 @@ impl Command {
                 bin: self.get_bin_name(),
                 error: Box::new(error),
             });
+
+        self.post_log_command(instant, &shared_child);
 
         registry.remove_running(shared_child).await;
 
@@ -443,7 +452,7 @@ impl Command {
     //     Ok(output)
     // }
 
-    fn create_async_command(&self) -> (TokioCommand, CommandLine) {
+    fn create_async_command(&self) -> (TokioCommand, CommandLine, Instant) {
         let command_line = self.create_command_line();
 
         let mut command = TokioCommand::new(&command_line.command[0]);
@@ -461,7 +470,7 @@ impl Command {
             command.current_dir(cwd);
         }
 
-        (command, command_line)
+        (command, command_line, Instant::now())
     }
 
     fn create_command_line(&self) -> CommandLine {
@@ -547,6 +556,10 @@ impl Command {
             "Running command {}",
             color::shell(line)
         );
+    }
+
+    fn post_log_command(&self, instant: Instant, child: &SharedChild) {
+        trace!(pid = child.id(), "Ran command in {:?}", instant.elapsed());
     }
 
     async fn write_input_to_child(

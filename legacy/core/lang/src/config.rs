@@ -23,7 +23,7 @@ macro_rules! config_cache {
         }
 
         // This merely exists to create the global cache!
-        #[cached(sync_writes = true, result = true)]
+        #[cached(sync_writes = "default", result = true)]
         fn load_config(path: PathBuf) -> miette::Result<$struct> {
             load_config_internal(&path)
         }
@@ -178,7 +178,7 @@ macro_rules! config_cache_container {
             }
 
             // This merely exists to create the global cache!
-            #[cached(sync_writes = true, result = true)]
+            #[cached(sync_writes = "default", result = true)]
             pub fn load_config(path: PathBuf) -> miette::Result<$struct> {
                 load_config_internal(&path)
             }
@@ -332,7 +332,7 @@ macro_rules! config_cache_model {
             }
 
             // This merely exists to create the global cache!
-            #[cached(sync_writes = true, result = true)]
+            #[cached(sync_writes = "default", result = true)]
             pub fn load_config(path: PathBuf) -> miette::Result<$struct> {
                 load_config_internal(&path)
             }

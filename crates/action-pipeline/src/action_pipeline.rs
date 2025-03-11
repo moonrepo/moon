@@ -180,14 +180,13 @@ impl ActionPipeline {
 
             actions.push(action);
 
-            // Don't break so that we can gather all failed actions
             if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
                 self.status = ActionPipelineStatus::Aborted;
 
                 break;
             } else if cancel_token.is_cancelled() {
-                debug!("Cancelling pipeline (via signal)");
+                debug!("Cancelling pipeline (because a signal)");
                 self.status = ActionPipelineStatus::Interrupted;
 
                 break;

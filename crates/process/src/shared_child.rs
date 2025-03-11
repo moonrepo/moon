@@ -71,7 +71,7 @@ impl SharedChild {
             kill(
                 self.pid,
                 self.handle.clone(),
-                // PowerShell hangs with tthe "Terminate batch job (Y/N)?" prompt
+                // PowerShell hangs with the "Terminate batch job (Y/N)?" prompt
                 // when we use interrupt/break, so we need to kill it
                 if self.shell.is_some_and(|shell| shell == ShellType::Pwsh) {
                     SignalType::Kill

@@ -3,7 +3,7 @@ source: crates/app/src/commands/init/mod.rs
 expression: render_workspace_template(&context).unwrap()
 ---
 # https://moonrepo.dev/docs/config/workspace
-$schema: 'https://moonrepo.dev/schemas/workspace.json'
+$schema: './cache/schemas/workspace.json'
 
 # Require a specific version of moon while running commands, otherwise fail.
 # versionConstraint: '>=1.0.0'

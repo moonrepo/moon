@@ -217,13 +217,9 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(
-                &["foo/file2.txt".into(), "baz/file5.txt".into()],
-                false,
-                100
-            )
-            .await
-            .unwrap(),
+            git.get_file_hashes(&["foo/file2.txt".into(), "baz/file5.txt".into()], false)
+                .await
+                .unwrap(),
             BTreeMap::from([
                 (
                     WorkspaceRelativePathBuf::from("baz/file5.txt"),
@@ -249,7 +245,6 @@ mod file_hashing {
                     "baz/file5.txt".into()
                 ],
                 false,
-                100
             )
             .await
             .unwrap(),
@@ -272,7 +267,6 @@ mod file_hashing {
                     "baz/file5.txt".into()
                 ],
                 true,
-                100
             )
             .await
             .unwrap(),
@@ -305,7 +299,7 @@ mod file_hashing {
             .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
-        let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
 
         assert_eq!(
             hashes,
@@ -354,7 +348,7 @@ mod file_hashing {
             .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
-        let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
 
         assert_eq!(
             hashes,
@@ -395,7 +389,7 @@ mod file_hashing {
             .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
-        let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
 
         assert!(hashes.len() >= 10000);
     }
@@ -405,9 +399,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(&["foo".into()], false, 100)
-                .await
-                .unwrap(),
+            git.get_file_hashes(&["foo".into()], false).await.unwrap(),
             BTreeMap::new()
         );
     }
@@ -425,7 +417,6 @@ mod file_hashing {
                     "frontend/file.js".into()
                 ],
                 false,
-                100
             )
             .await
             .unwrap(),

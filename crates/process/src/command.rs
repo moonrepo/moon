@@ -16,6 +16,9 @@ pub struct Command {
 
     pub bin: OsString,
 
+    /// Continuously write to stdin and read from stdout.
+    pub continuous_pipe: bool,
+
     pub cwd: Option<OsString>,
 
     pub env: FxHashMap<OsString, Option<OsString>>,
@@ -47,6 +50,7 @@ impl Command {
         Command {
             bin: bin.as_ref().to_os_string(),
             args: vec![],
+            continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
             error_on_nonzero: true,
@@ -212,6 +216,11 @@ impl Command {
 
     pub fn get_prefix(&self) -> Option<&str> {
         self.prefix.as_deref()
+    }
+
+    pub fn set_continuous_pipe(&mut self, state: bool) -> &mut Self {
+        self.continuous_pipe = state;
+        self
     }
 
     pub fn set_print_command(&mut self, state: bool) -> &mut Self {

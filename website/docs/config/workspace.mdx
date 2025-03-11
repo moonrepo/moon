@@ -383,16 +383,18 @@ Configures aspects of the smart hashing layer.
 
 <HeadingApiLink to="/api/types/interface/HasherConfig#batchSize" />
 
+> This setting is deprecated!
+
 When hashing a list of files, we split the list into batches to help reduce memory footprint and
-avoid overloading the configured VCS. This setting controls how many bytes (based on file paths) are
-in each batch and defaults to `1024`.
+avoid overloading the configured VCS. This setting controls how many files are in each batch and
+defaults to `2500`.
 
 If you're running into memory issues, or moon hanging during the file hashing process, lowering this
 number may help resolve the issue.
 
 ```yaml title=".moon/workspace.yml" {2}
 hasher:
-  batchSize: 500
+  batchSize: 1000
 ```
 
 ### `ignoreMissingPatterns`<VersionLabel version="1.10.0" />

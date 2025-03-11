@@ -46,9 +46,10 @@
   set, and will fallback to `$HOME/.moon`.
 - Updated `moon init` with toolchain plugin support.
 - Updated `toolchain.default` in `moon.yml` to support a list of IDs.
-- Updated `hasher.batchSize` in `.moon/workspace.yml` to default to 1024 (instead of 2000).
 - Updated generated JSON schemas at `.moon/cache/schemas` to dynamically include toolchain plugin
   configuration.
+- Updated file hashing (via `git hash-object`) to continously pipe stdin to avoid hanging processes.
+- Deprecated `hasher.batchSize` in `.moon/workspace.yml`.
 
 #### 🧩 Plugins
 

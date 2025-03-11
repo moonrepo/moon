@@ -28,7 +28,6 @@ pub trait Vcs: Debug {
         &self,
         files: &[String],
         allow_ignored: bool,
-        batch_size: u32,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>>;
 
     /// Get a list of all files in the provided directory, recursing through all sub-directories.

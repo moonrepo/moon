@@ -613,7 +613,6 @@ impl Vcs for Git {
         &self,
         files: &[String], // Workspace relative
         allow_ignored: bool,
-        batch_size: u32,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
@@ -644,53 +643,30 @@ impl Vcs for Git {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        // Batch based on the size of the input
-        let mut current_size: u32 = 0;
-        let mut input: Vec<String> = vec![];
+        let mut command = self
+            .process
+            .create_command(["hash-object", "--stdin-paths"]);
 
-        let mut run_hash = async |data: &[String]| -> miette::Result<()> {
-            let mut command = self
-                .process
-                .create_command(["hash-object", "--stdin-paths"]);
-            command.input([data.join("\n")]);
+        command.set_continuous_pipe(true);
 
-            let output = if is_test_env() {
-                self.process
-                    .run_command_without_cache(command, true)
-                    .await?
-            } else {
-                self.process.run_command(command, true).await?
-            };
+        // hash-object requires new lines
+        command.input(objects.iter().map(|obj| format!("{obj}\n")));
 
-            for (i, hash) in output.split('\n').enumerate() {
-                if !hash.is_empty() {
-                    map.insert(self.to_workspace_relative_path(&data[i]), hash.to_owned());
-                }
-            }
-
-            Ok(())
+        let output = if is_test_env() {
+            self.process
+                .run_command_without_cache(command, true)
+                .await?
+        } else {
+            self.process.run_command(command, true).await?
         };
 
-        for object in objects {
-            // Include newline that gets joined
-            let object_size = object.len() as u32 + 1;
-
-            // Below batch size, continue collecting input
-            if (current_size + object_size) <= batch_size {
-                current_size += object_size;
-                input.push(object);
+        for (i, hash) in output.split('\n').enumerate() {
+            if !hash.is_empty() {
+                map.insert(
+                    self.to_workspace_relative_path(&objects[i]),
+                    hash.to_owned(),
+                );
             }
-            // Above batch size, execute process
-            else {
-                run_hash(&input).await?;
-                current_size = 0;
-                input.clear();
-            }
-        }
-
-        // Batch limit never reached
-        if !input.is_empty() {
-            run_hash(&input).await?;
         }
 
         Ok(map)

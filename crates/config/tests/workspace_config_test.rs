@@ -542,7 +542,6 @@ generator:
         fn loads_defaults() {
             let config = test_load_config(FILENAME, "hasher: {}", load_config_from_root);
 
-            assert_eq!(config.hasher.batch_size, 2500);
             assert!(config.hasher.warn_on_missing_inputs);
         }
 
@@ -558,7 +557,6 @@ hasher:
                 load_config_from_root,
             );
 
-            assert_eq!(config.hasher.batch_size, 1000);
             assert!(!config.hasher.warn_on_missing_inputs);
         }
 
@@ -852,6 +850,7 @@ extensions:
         use starbase_sandbox::locate_fixture;
         use std::str::FromStr;
 
+        #[allow(deprecated)]
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {

@@ -28,9 +28,10 @@ derive_enum!(
 /// Configures aspects of the content hashing engine.
 #[derive(Clone, Config, Debug, PartialEq)]
 pub struct HasherConfig {
-    /// The number of bytes (based on file paths) to include in each hash operation.
-    #[setting(default = 10000)]
-    pub batch_size: u32,
+    /// The number of files to include in each hash operation.
+    #[deprecated]
+    #[setting(default = 2500)]
+    pub batch_size: u16,
 
     /// Filters file paths that match a configured glob pattern
     /// when a hash is being generated. Patterns are workspace relative,

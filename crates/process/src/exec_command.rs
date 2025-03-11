@@ -5,6 +5,7 @@ use crate::output_to_error;
 use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
+use miette::IntoDiagnostic;
 use moon_common::color;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -14,11 +15,15 @@ use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
-use tokio::task;
+use tokio::task::{self, JoinHandle};
 use tracing::{debug, enabled};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
+        if self.continuous_pipe {
+            return self.exec_capture_continuous_output().await;
+        }
+
         let registry = ProcessRegistry::instance();
         let (mut command, line) = self.create_async_command();
 
@@ -60,6 +65,104 @@ impl Command {
         registry.remove_running(shared_child).await;
 
         let output = result?;
+
+        self.handle_nonzero_status(&output, true)?;
+
+        Ok(output)
+    }
+
+    pub async fn exec_capture_continuous_output(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
+        let (mut command, line) = self.create_async_command();
+
+        command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        let child = command.spawn().map_err(|error| ProcessError::Capture {
+            bin: self.get_bin_name(),
+            error: Box::new(error),
+        })?;
+
+        let shared_child = registry.add_running(child).await;
+        let stdin = shared_child.take_stdin().await;
+        let stdout = shared_child.take_stdout().await;
+        let stderr = shared_child.take_stderr().await;
+
+        self.log_command(&line, &shared_child);
+
+        let items = self.input.drain(..).collect::<Vec<_>>();
+        let bin_name = self.get_bin_name();
+
+        let stdin_handle: JoinHandle<miette::Result<()>> = task::spawn(async move {
+            if let Some(mut stdin) = stdin {
+                for item in items {
+                    stdin
+                        .write_all(item.as_encoded_bytes())
+                        .await
+                        .map_err(|error| ProcessError::WriteInput {
+                            bin: bin_name.clone(),
+                            error: Box::new(error),
+                        })?;
+                }
+
+                drop(stdin);
+            }
+
+            Ok(())
+        });
+
+        let stdout_handle: JoinHandle<miette::Result<Vec<String>>> = task::spawn(async move {
+            let mut logs = vec![];
+            let mut lines = BufReader::new(stdout.unwrap()).lines();
+
+            while let Ok(Some(line)) = lines.next_line().await {
+                logs.push(line);
+            }
+
+            Ok(logs)
+        });
+
+        let stderr_handle: JoinHandle<miette::Result<Vec<String>>> = task::spawn(async move {
+            let mut logs = vec![];
+            let mut lines = BufReader::new(stderr.unwrap()).lines();
+
+            while let Ok(Some(line)) = lines.next_line().await {
+                logs.push(line);
+            }
+
+            Ok(logs)
+        });
+
+        // Attempt to create the child output
+        let result = shared_child
+            .wait()
+            .await
+            .map_err(|error| ProcessError::Capture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            });
+
+        registry.remove_running(shared_child).await;
+
+        let status = result?;
+
+        stdin_handle.await.into_diagnostic()??;
+
+        let output = Output {
+            status,
+            stdout: stdout_handle
+                .await
+                .into_diagnostic()??
+                .join("\n")
+                .into_bytes(),
+            stderr: stderr_handle
+                .await
+                .into_diagnostic()??
+                .join("\n")
+                .into_bytes(),
+        };
 
         self.handle_nonzero_status(&output, true)?;
 
@@ -442,7 +545,7 @@ impl Command {
             cwd = ?working_dir,
             input_size,
             "Running command {}",
-            color::shell(line.to_string())
+            color::shell(line)
         );
     }
 
@@ -451,14 +554,10 @@ impl Command {
         child: &mut Child,
         line: &CommandLine,
     ) -> miette::Result<()> {
-        let input = line.input.join(OsStr::new(" "));
-
-        let mut stdin = child.stdin.take().unwrap_or_else(|| {
-            panic!("Unable to write stdin: {}", input.to_string_lossy());
-        });
+        let mut stdin = child.stdin.take().expect("Unable to write stdin!");
 
         stdin
-            .write_all(input.as_encoded_bytes())
+            .write_all(line.input.join(OsStr::new(" ")).as_encoded_bytes())
             .await
             .map_err(|error| ProcessError::WriteInput {
                 bin: self.get_bin_name(),

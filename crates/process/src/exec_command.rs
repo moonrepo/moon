@@ -51,7 +51,9 @@ impl Command {
             })?
         };
 
-        let shared_child = registry.add_running(child).await;
+        let shared_child = registry
+            .add_running(child, self.shell.as_ref().map(|sh| sh.ty))
+            .await;
 
         self.log_command(&line, &shared_child);
 
@@ -88,7 +90,9 @@ impl Command {
             error: Box::new(error),
         })?;
 
-        let shared_child = registry.add_running(child).await;
+        let shared_child = registry
+            .add_running(child, self.shell.as_ref().map(|sh| sh.ty))
+            .await;
         let stdin = shared_child.take_stdin().await;
         let stdout = shared_child.take_stdout().await;
         let stderr = shared_child.take_stderr().await;
@@ -196,7 +200,9 @@ impl Command {
             })?
         };
 
-        let shared_child = registry.add_running(child).await;
+        let shared_child = registry
+            .add_running(child, self.shell.as_ref().map(|sh| sh.ty))
+            .await;
 
         self.log_command(&line, &shared_child);
 
@@ -248,7 +254,9 @@ impl Command {
             self.write_input_to_child(&mut child, &line).await?;
         }
 
-        let shared_child = registry.add_running(child).await;
+        let shared_child = registry
+            .add_running(child, self.shell.as_ref().map(|sh| sh.ty))
+            .await;
 
         // We need to log the child process output to the parent terminal
         // AND capture stdout/stderr so that we can cache it for future runs.

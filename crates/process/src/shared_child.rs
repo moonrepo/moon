@@ -1,4 +1,5 @@
 use crate::signal::*;
+use starbase_shell::ShellType;
 use std::io;
 use std::process::{ExitStatus, Output};
 use std::sync::Arc;
@@ -11,6 +12,8 @@ pub struct SharedChild {
     pid: u32,
     #[cfg(windows)]
     handle: RawHandle,
+
+    pub shell: Option<ShellType>,
 }
 
 impl SharedChild {
@@ -19,6 +22,7 @@ impl SharedChild {
         Self {
             pid: child.id().unwrap(),
             inner: Arc::new(Mutex::new(child)),
+            shell: None,
         }
     }
 
@@ -28,6 +32,7 @@ impl SharedChild {
             pid: child.id().unwrap(),
             handle: RawHandle(child.raw_handle().unwrap()),
             inner: Arc::new(Mutex::new(child)),
+            shell: None,
         }
     }
 
@@ -63,7 +68,17 @@ impl SharedChild {
 
         #[cfg(windows)]
         {
-            kill(self.pid, self.handle.clone(), signal)?;
+            kill(
+                self.pid,
+                self.handle.clone(),
+                // PowerShell hangs with tthe "Terminate batch job (Y/N)?" prompt
+                // when we use interrupt/break, so we need to kill it
+                if self.shell.is_some_and(|shell| shell == ShellType::Pwsh) {
+                    SignalType::Kill
+                } else {
+                    signal
+                },
+            )?;
         }
 
         // Acquire the child _after_ the kill command, otherwise it waits for

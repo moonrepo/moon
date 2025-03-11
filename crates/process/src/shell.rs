@@ -31,6 +31,7 @@ pub struct Shell {
     pub bin: PathBuf,
     pub bin_name: String,
     pub command: ShellCommand,
+    pub ty: ShellType,
 }
 
 impl Shell {
@@ -42,6 +43,7 @@ impl Shell {
             bin: find_command_on_path(bin_name.clone()).unwrap_or_else(|| bin_name.clone().into()),
             bin_name,
             command,
+            ty: type_of,
         }
     }
 }

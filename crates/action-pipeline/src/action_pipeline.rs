@@ -170,7 +170,6 @@ impl ActionPipeline {
         let process_registry = ProcessRegistry::instance();
         let mut actions = vec![];
         let mut error = None;
-        let mut handled = false;
 
         while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
@@ -182,24 +181,19 @@ impl ActionPipeline {
             actions.push(action);
 
             // Don't break so that we can gather all failed actions
-            if !handled && abort_token.is_cancelled() {
+            if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
-                
                 self.status = ActionPipelineStatus::Aborted;
-                handled = true;
 
-            } else if !handled && cancel_token.is_cancelled() {
+                break;
+            } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (via signal)");
-
                 self.status = ActionPipelineStatus::Interrupted;
-                handled = true;
 
+                break;
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
-
-                if !handled {
-                    self.status = ActionPipelineStatus::Completed;
-                }
+                self.status = ActionPipelineStatus::Completed;
 
                 break;
             }

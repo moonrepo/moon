@@ -2,6 +2,7 @@ use crate::shared_child::*;
 use crate::signal::*;
 use core::time::Duration;
 use rustc_hash::FxHashMap;
+use starbase_shell::ShellType;
 use std::sync::{Arc, OnceLock};
 use tokio::process::Child;
 use tokio::sync::RwLock;
@@ -59,8 +60,9 @@ impl ProcessRegistry {
         Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::default())))
     }
 
-    pub async fn add_running(&self, child: Child) -> SharedChild {
-        let shared = SharedChild::new(child);
+    pub async fn add_running(&self, child: Child, shell: Option<ShellType>) -> SharedChild {
+        let mut shared = SharedChild::new(child);
+        shared.shell = shell;
 
         self.running
             .write()
@@ -135,7 +137,7 @@ async fn shutdown_processes_from_signal(
 ) {
     let signal = receiver.recv().await.unwrap_or(SignalType::Kill);
 
-    // Clone the children, otherwise we encounter a deadlock when the 
+    // Clone the children, otherwise we encounter a deadlock when the
     // tasks try to acquire a write lock while it is being read
     let children = { processes.read().await.clone() };
 
@@ -181,9 +183,7 @@ async fn shutdown_processes_from_signal(
     }
 }
 
-async fn kill_processes(
-    processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
-) {
+async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {
     let children = { processes.read().await.clone() };
 
     if children.is_empty() {

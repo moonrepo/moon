@@ -24,6 +24,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::task::{JoinHandle, JoinSet};
+use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -168,6 +169,11 @@ impl ActionPipeline {
         debug!("Waiting for jobs to return results");
 
         let process_registry = ProcessRegistry::instance();
+        let wait_threshold = if process_registry.threshold == 0 {
+            100
+        } else {
+            process_registry.threshold / 2
+        };
         let mut actions = vec![];
         let mut error = None;
 
@@ -182,14 +188,23 @@ impl ActionPipeline {
 
             if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
+
+                // Wait for aborted actions to be received before closing
+                sleep(Duration::from_millis(wait_threshold as u64)).await;
+                receiver.close();
+
                 self.status = ActionPipelineStatus::Aborted;
-                break;
             } else if cancel_token.is_cancelled() {
-                debug!("Cancelling pipeline (via signal)");
+                debug!("Cancelling pipeline (because a signal)");
+
+                // Wait for cancelled actions to be received before closing
+                sleep(Duration::from_millis(wait_threshold as u64)).await;
+                receiver.close();
+
                 self.status = ActionPipelineStatus::Interrupted;
-                break;
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
+
                 self.status = ActionPipelineStatus::Completed;
                 break;
             }
@@ -198,21 +213,21 @@ impl ActionPipeline {
         drop(receiver);
 
         // Capture and handle any signals
-        if cancel_token.is_cancelled() {
-            self.status = signal_handle.await.into_diagnostic()?;
+        if cancel_token.is_cancelled() && self.status == ActionPipelineStatus::Pending {
+            self.status = match signal_handle.await.into_diagnostic()? {
+                SignalType::Interrupt => ActionPipelineStatus::Interrupted,
+                SignalType::Terminate => ActionPipelineStatus::Terminated,
+                _ => ActionPipelineStatus::Aborted,
+            };
         } else {
             signal_handle.abort();
         }
 
-        let completed = matches!(self.status, ActionPipelineStatus::Completed);
-
         // Wait for running child processes to exit
-        process_registry
-            .wait_for_running_to_shutdown(!completed)
-            .await;
+        process_registry.wait_for_running_to_shutdown().await;
 
-        if !completed {
-            // Abort any running actions in progress
+        // Abort any running actions in progress
+        if !matches!(self.status, ActionPipelineStatus::Completed) {
             let mut job_handles = queue_handle.await.into_diagnostic()?;
 
             if !job_handles.is_empty() {
@@ -361,7 +376,7 @@ impl ActionPipeline {
         }))
     }
 
-    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<ActionPipelineStatus> {
+    fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<SignalType> {
         tokio::spawn(async move {
             let mut receiver = ProcessRegistry::instance().receive_signal();
 
@@ -370,14 +385,10 @@ impl ActionPipeline {
 
                 debug!("Received signal, shutting down pipeline");
 
-                return match signal {
-                    SignalType::Interrupt => ActionPipelineStatus::Interrupted,
-                    SignalType::Terminate => ActionPipelineStatus::Terminated,
-                    _ => ActionPipelineStatus::Aborted,
-                };
+                return signal;
             }
 
-            ActionPipelineStatus::Interrupted
+            SignalType::Interrupt
         })
     }
 

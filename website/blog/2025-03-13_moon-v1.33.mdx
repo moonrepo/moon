@@ -1,18 +1,73 @@
 ---
 slug: moon-v1.33
-title: moon v1.33 - ???
+title: moon v1.33 - Alpha support for toolchain WASM plugins
 authors: [milesj]
-tags: [platform, toolchain, remote, cache, pkl, config]
+tags: [toolchain, wasm, plugin, moonx]
 # image: ./img/moon/v1.33.png
 ---
 
-In this release we focused primarily on remote caching and toolchain improvements.
+With this release, we're stoked to provide an initial release for plugin support.
 
 <!--truncate-->
 
 ## Alpha release of toolchain WASM plugins
 
+For over a [year now](./2024-roadmap#plugin-based-architecture), we've talked about supporting
+WASM-based toolchain plugins... but what's taking so long? Migrating from a "hard-coded in core"
+approach to a dynamic plugin approach was actually quite difficult, especially in Rust. It took us
+way longer than we expected.
+
+With that said, we're excited to announce alpha support for WASM-based toolchain plugins. In this
+release, we have a working solution, but with partial support for the toolchain's
+[tiered features](/docs/how-it-works/languages#tier-structure-and-responsibilities). At this point
+in time, we provide full support for tier 0, major support for tier 1 excluding lockfile/manifest
+parsing, minor support for tier 2, no support for tier 3 (but will use
+[proto's APIs](/docs/proto/wasm-plugin)), and support for non-tiered features, like
+[`moon init`](/docs/commands/init) and [`moon docker`](/docs/commands/docker).
+
+If you're curious, the following WASM function APIs are now available:
+
+- `register_toolchain` - Registers the toolchain and provide metadata for detection and other
+  purposes.
+- `initialize_toolchain` - Provides prompts to use during `moon init` to gather settings values.
+- `define_toolchain_config` - Defines a configuration schema for use within JSON schemas.
+- `define_docker_metadata` - Defines metadata related to `docker` commands.
+- `hash_task_contents` - Injects content into the task hashing process.
+- `prune_docker` - Custom operations to run during `docker prune`.
+- `scaffold_docker` - Custom operations to run during `docker scaffold`.
+- `sync_project` - Runs syncing operations per project (during the `SyncProject` action).
+- `sync_workspace` - Runs syncing operations at the workspace root (during the `SyncWorkspace`
+  action).
+
+We know everyone is very excited about these plugins, so feel free to start using them today!
+However, since we don't have full tiered support, most of the advanced functionality related to
+running tasks is currently not supported (except for task hashing which is supported).
+
+Additionally, we do _not_ have documentation yet for these new APIs, but we do have the following
+resources to help you get started:
+
+- [Getting started with WASM plugins](/docs/guides/wasm-plugins)
+- [Example toolchain WASM plugins](https://github.com/moonrepo/plugins/tree/master/toolchains)
+- [`moon_pdk` documentation](https://docs.rs/moon_pdk) (functions, macros, etc)
+- [`moon_pdk_api` documentation](https://docs.rs/moon_pdk_api) (structs, enums, etc)
+
 ### TypeScript toolchain
+
+To verify that our WASM plugin implementation works correctly, we've
+[migrated the TypeScript toolchain entirely to a WASM plugin](https://github.com/moonrepo/plugins/tree/master/toolchains/typescript),
+and it's no longer hard-coded in our Rust core! If you've configured
+[`typescript`](/docs/config/toolchain#typescript) in
+[`.moon/toolchain.yml`](/docs/config/toolchain), then you'll automatically use the new plugin under
+the hood.
+
+This is our first step in supporting plugins in core. We chose TypeScript as our 1st plugin because
+it was the simplest of all the toolchains, was primarily used for project syncing, and did not
+require all tiered APIs.
+
+With that said, most of the code had to be rewritten when porting, but we tried to keep as much
+parity as possible. Please report an issues or differences you encounter. Additionally, because
+TypeScript is now a "true" toolchain, it will appear in the toolchains list for projects and tasks.
+This is required since it runs operations in the context of the plugin.
 
 ## Experimental `moonx` executable
 
@@ -20,10 +75,14 @@ Based on a [request from the community](https://github.com/moonrepo/moon/issues/
 introducing a new executable `moonx`, which is simply a shorthand for `moon run ...`. In the future
 we will expand this with more "shorthand" functionality.
 
+```shell
+$ moonx app:build
+```
+
 Because of our current release process, the `moonx` executable is _not_ packaged in the release (on
 GitHub), and is instead created the first time `moon` runs. Furthermore, `moonx` is not a binary
-executable, and is instead a shim, which is a Bash script on Unix, and a PowerShell (`.ps1`) script
-on Windows. In the future, this will become a true binary.
+executable, and is instead a shim (a Bash script on Unix, and a PowerShell (`.ps1`) script on
+Windows). In the future, this will become a true binary.
 
 ## Dynamic JSON schemas
 

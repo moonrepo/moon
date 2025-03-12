@@ -56,14 +56,17 @@
 #### 🧩 Plugins
 
 - Added new toolchain WASM APIs.
-  - `initialize_toolchain` - Provide prompts to use during `moon init`.
-  - `define_toolchain_config` - Define a config schema for use within JSONschemas.
-  - `define_docker_metadata` - Define metadata related to `docker` commands.
-  - `hash_task_contents` - Inject content into the task hashing process.
-  - `prune_docker` - Custom operations to run after `docker prune`.
+  - `register_toolchain` - Registers the toolchain and provide metadata for detection and other
+    purposes.
+  - `initialize_toolchain` - Provides prompts to use during `moon init` to gather settings values.
+  - `define_toolchain_config` - Defines a configuration schema for use within JSON schemas.
+  - `define_docker_metadata` - Defines metadata related to `docker` commands.
+  - `hash_task_contents` - Injects content into the task hashing process.
+  - `prune_docker` - Custom operations to run during `docker prune`.
   - `scaffold_docker` - Custom operations to run during `docker scaffold`.
-  - `sync_project` - Run syncing operations per project.
-  - `sync_workspace` - Run syncing operations at the workspace root.
+  - `sync_project` - Runs syncing operations per project (during the `SyncProject` action).
+  - `sync_workspace` - Runs syncing operations at the workspace root (during the `SyncWorkspace`
+    action).
 - Updated `download_extension` to v0.0.9.
 - Updated `migrate_nx_extension` to v0.0.9.
   - Will no longer remove Nx configs. Pass `--cleanup` to remove them.

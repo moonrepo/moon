@@ -77,7 +77,7 @@ impl CommandLine {
 
         if with_input && !self.input.is_empty() {
             let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-            let input = join_args_os(&self.input);
+            let input = join_args_os(self.input.iter().flat_map(|i| i.to_str().map(|s| s.trim())));
 
             if command
                 .as_os_str()

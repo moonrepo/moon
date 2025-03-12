@@ -53,7 +53,7 @@ impl Command {
 
         let shared_child = registry.add_running(child).await;
 
-        self.log_command(&line, &shared_child);
+        self.pre_log_command(&line, &shared_child);
 
         let result = shared_child
             .wait_with_output()
@@ -93,7 +93,7 @@ impl Command {
         let stdout = shared_child.take_stdout().await;
         let stderr = shared_child.take_stderr().await;
 
-        self.log_command(&line, &shared_child);
+        self.pre_log_command(&line, &shared_child);
 
         let items = self.input.drain(..).collect::<Vec<_>>();
         let bin_name = self.get_bin_name();
@@ -198,7 +198,7 @@ impl Command {
 
         let shared_child = registry.add_running(child).await;
 
-        self.log_command(&line, &shared_child);
+        self.pre_log_command(&line, &shared_child);
 
         let result = shared_child
             .wait()
@@ -320,7 +320,7 @@ impl Command {
             let _ = handle.await;
         }
 
-        self.log_command(&line, &shared_child);
+        self.pre_log_command(&line, &shared_child);
 
         // Attempt to create the child output
         let result = shared_child
@@ -490,7 +490,7 @@ impl Command {
         Ok(())
     }
 
-    fn log_command(&self, line: &CommandLine, child: &SharedChild) {
+    fn pre_log_command(&self, line: &CommandLine, child: &SharedChild) {
         let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
         let workspace_root = if let Some(Some(value)) = self.env.get(&workspace_env_key) {
             PathBuf::from(value)

@@ -44,6 +44,7 @@
   (traversing upwards).
 - Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
   set, and will fallback to `$HOME/.moon`.
+- Added elapsed/timing information to child processes and WASM calls within logs.
 - Improved the handling of CTRL-C, CTRL-BREAK, and other signals on Windows.
 - Updated `moon init` with toolchain plugin support.
 - Updated `toolchain.default` in `moon.yml` to support a list of IDs.
@@ -76,7 +77,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.47.3](https://github.com/moonrepo/proto/releases/tag/v0.47.0) (from 0.45.2).
+- Updated proto to [v0.47.4](https://github.com/moonrepo/proto/releases/tag/v0.47.0) (from 0.45.2).
 - Updated Rust to v1.85.
 - Updated dependencies.
 - Removed JSON schemas from the GitHub release.

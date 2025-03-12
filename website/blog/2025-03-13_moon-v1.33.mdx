@@ -16,6 +16,15 @@ In this release we focused primarily on remote caching and toolchain improvement
 
 ## Experimental `moonx` executable
 
+Based on a [request from the community](https://github.com/moonrepo/moon/issues/1828), we're
+introducing a new executable `moonx`, which is simply a shorthand for `moon run ...`. In the future
+we will expand this with more "shorthand" functionality.
+
+Because of our current release process, the `moonx` executable is _not_ packaged in the release (on
+GitHub), and is instead created the first time `moon` runs. Furthermore, `moonx` is not a binary
+executable, and is instead a shim, which is a Bash script on Unix, and a PowerShell (`.ps1`) script
+on Windows. In the future, this will become a true binary.
+
 ## Dynamic JSON schemas
 
 With the initial support for toolchain plugins, the available configuration in

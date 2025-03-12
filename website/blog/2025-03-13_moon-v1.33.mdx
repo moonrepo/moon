@@ -1,0 +1,65 @@
+---
+slug: moon-v1.33
+title: moon v1.33 - ???
+authors: [milesj]
+tags: [platform, toolchain, remote, cache, pkl, config]
+# image: ./img/moon/v1.33.png
+---
+
+In this release we focused primarily on remote caching and toolchain improvements.
+
+<!--truncate-->
+
+## Alpha release of toolchain WASM plugins
+
+### TypeScript toolchain
+
+## Experimental `moonx` executable
+
+## Dynamic JSON schemas
+
+With the initial support for toolchain plugins, the available configuration in
+[`.moon/toolchain.yml`](/docs/config/toolchain) and [`moon.yml`](/docs/config/project) is no longer
+static, and is instead dynamic based on the enabled/configured toolchains. Because of this, the JSON
+schemas provided at `moonrepo.dev` and in the GitHub release are not accurate for some toolchain
+related settings, but accurate for everything else.
+
+This may lead to a poor developer experience where your editor shows errors for unknown settings. To
+remedy this, we now generate dynamic schemas at `.moon/cache/schemas` with accurate settings. If
+you're editor supports the `$schema` property, you can update them like so:
+
+```yaml title=".moon/toolchain.yml"
+$schema: './cache/schemas/toolchain.json'
+```
+
+```yaml title="app/moon.yml"
+$schema: '../.moon/cache/schemas/toolchain.json'
+```
+
+These schemas are automatically generated through [`moon run`](/docs/commands/run) but can be
+manually generated with [`moon sync config-schemas`](/docs/commands/sync/config-schemas).
+
+:::info
+
+Our official VS Code extension and the VS Code YAML server does not support the
+[`$schema` property](https://github.com/redhat-developer/yaml-language-server/pull/970), but there
+is a
+[work around](https://github.com/redhat-developer/yaml-language-server?tab=readme-ov-file#using-inlined-schema).
+We're looking into ways of solving this on our end.
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.33.0) for a full list
+of changes.
+
+- Added support for `moon run ~:build`, which will run the `build` task in the closest project
+  (traversing upwards).
+- Added `$XDG_DATA_HOME` support when detecting the moon store. Will be used if `$MOON_HOME` is not
+  set, and will fallback to `$HOME/.moon`.
+- Added elapsed/timing information to child processes and WASM calls within logs.
+- Improved the handling of CTRL-C, CTRL-BREAK, and other signals on Windows.
+- Updated `moon init` with toolchain plugin support.
+- Updated `toolchain.default` in `moon.yml` to support a list of IDs.
+- Updated file hashing (via `git hash-object`) to continously pipe stdin to avoid hanging processes.

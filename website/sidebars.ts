@@ -167,7 +167,12 @@ const sidebars: SidebarsConfig = {
 				{
 					type: 'category',
 					label: 'sync',
-					items: ['commands/sync/codeowners', 'commands/sync/hooks', 'commands/sync/projects'],
+					items: [
+						'commands/sync/codeowners',
+						'commands/sync/config-schemas',
+						'commands/sync/hooks',
+						'commands/sync/projects',
+					],
 					link: {
 						type: 'generated-index',
 						title: 'sync',

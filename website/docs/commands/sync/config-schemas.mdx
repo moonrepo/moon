@@ -1,0 +1,19 @@
+---
+title: sync config-schemas
+sidebar_label: config-schemas
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="1.27.0" header />
+
+The `moon sync config-schemas` command will manually generate JSON schemas to `.moon/cache/schemas`
+for all our different configuration files.
+
+```shell
+$ moon sync config-schemas
+```
+
+### Options
+
+- `--force` - Bypass cache and force create files.

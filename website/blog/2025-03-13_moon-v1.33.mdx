@@ -69,6 +69,21 @@ parity as possible. Please report an issues or differences you encounter. Additi
 TypeScript is now a "true" toolchain, it will appear in the toolchains list for projects and tasks.
 This is required since it runs operations in the context of the plugin.
 
+Because toolchain plugins are configured differently internally, and since TypeScript is now a
+plugin, the configuration syntax for disabling the TypeScript toolchain at the project-level has
+changed. While not a breaking change in this release, the old format will be removed in the future.
+
+```yml title="moon.yml"
+# Before
+toolchain:
+  typescript:
+    disable: true
+
+# After
+toolchain:
+  typescript: false # or null
+```
+
 ## Experimental `moonx` executable
 
 Based on a [request from the community](https://github.com/moonrepo/moon/issues/1828), we're

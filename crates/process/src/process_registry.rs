@@ -2,7 +2,6 @@ use crate::shared_child::*;
 use crate::signal::*;
 use core::time::Duration;
 use rustc_hash::FxHashMap;
-use starbase_shell::ShellType;
 use std::sync::{Arc, OnceLock};
 use tokio::process::Child;
 use tokio::sync::RwLock;
@@ -60,9 +59,8 @@ impl ProcessRegistry {
         Arc::clone(INSTANCE.get_or_init(|| Arc::new(ProcessRegistry::default())))
     }
 
-    pub async fn add_running(&self, child: Child, shell: Option<ShellType>) -> SharedChild {
-        let mut shared = SharedChild::new(child);
-        shared.shell = shell;
+    pub async fn add_running(&self, child: Child) -> SharedChild {
+        let shared = SharedChild::new(child);
 
         self.running
             .write()

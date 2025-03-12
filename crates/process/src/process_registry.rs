@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 use std::sync::{Arc, OnceLock};
 use tokio::process::Child;
 use tokio::sync::RwLock;
-use tokio::sync::broadcast::{self, Receiver, Sender, error::RecvError};
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use tracing::{debug, trace, warn};
@@ -13,11 +13,12 @@ use tracing::{debug, trace, warn};
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
 pub struct ProcessRegistry {
+    pub threshold: u32,
+
     running: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     signal_sender: Sender<SignalType>,
     signal_wait_handle: JoinHandle<()>,
     signal_shutdown_handle: JoinHandle<()>,
-    threshold: u32,
 }
 
 impl Default for ProcessRegistry {
@@ -39,7 +40,7 @@ impl ProcessRegistry {
         });
 
         let signal_shutdown_handle = tokio::spawn(async move {
-            shutdown_processes_with_signal(receiver, processes_bg, threshold).await;
+            shutdown_processes_from_signal(receiver, processes_bg, threshold).await;
         });
 
         Self {
@@ -90,23 +91,13 @@ impl ProcessRegistry {
         let _ = self.signal_sender.send(SignalType::Terminate);
     }
 
-    pub async fn wait_for_running_to_shutdown(&self, terminate: bool) {
+    pub async fn wait_for_running_to_shutdown(&self) {
         let mut count = 0;
-        let mut terminated = false;
 
         loop {
-            if terminate && self.threshold > 0 {
-                // After a few seconds of waiting, terminate all running,
-                // as some of them may have "press ctrl+c again" logic
-                if !terminated && count >= (self.threshold as f64 / 1.5) as u32 {
-                    self.terminate_running();
-                    terminated = true;
-                }
-
-                // After many seconds of waiting, just exit immediately
-                if count >= self.threshold {
-                    break;
-                }
+            // After many seconds of waiting, just exit immediately
+            if self.threshold > 0 && count >= self.threshold {
+                break;
             }
 
             // Wait for all running processes to have stopped
@@ -128,27 +119,24 @@ impl Drop for ProcessRegistry {
     }
 }
 
-async fn shutdown_processes_with_signal(
+async fn shutdown_processes_from_signal(
     mut receiver: Receiver<SignalType>,
     processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     threshold: u32,
 ) {
-    loop {
-        match receiver.recv().await {
-            Ok(_) | Err(RecvError::Closed) => break,
-            _ => continue,
-        };
-    }
+    let signal = receiver.recv().await.unwrap_or(SignalType::Kill);
 
-    let mut children = processes.write().await;
+    // Clone the children, otherwise we encounter a deadlock when the
+    // tasks try to acquire a write lock while it is being read
+    let children = { processes.read().await.clone() };
 
     if children.is_empty() {
         return;
     }
 
-    sleep(Duration::from_millis(threshold as u64)).await;
-
+    // Attempt to gracefully shutdown running processes
     debug!(
+        signal = ?signal,
         pids = ?children.keys().collect::<Vec<_>>(),
         "Shutting down {} running child processes",
         children.len()
@@ -156,7 +144,9 @@ async fn shutdown_processes_with_signal(
 
     let mut futures = vec![];
 
-    for (pid, child) in children.drain() {
+    for (pid, child) in children {
+        let running = processes.clone();
+
         futures.push(tokio::spawn(async move {
             if threshold == 0 {
                 trace!(pid, "Waiting on child process");
@@ -165,14 +155,60 @@ async fn shutdown_processes_with_signal(
                     warn!(pid, "Failed to wait on child process: {error}");
                 }
             } else {
-                trace!(pid, "Killing child process");
+                trace!(pid, "Shutting down child process");
 
-                if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
-                    warn!(pid, "Failed to kill child process: {error}");
+                if let Err(error) = child.kill_with_signal(signal).await {
+                    warn!(pid, "Failed to shutdown child process: {error}");
                 }
+            }
+
+            running.write().await.remove(&pid);
+        }));
+    }
+
+    // Otherwise force kill running processes after the threshold
+    let running = processes.clone();
+
+    futures.push(tokio::spawn(async move {
+        if threshold > 0 {
+            sleep(Duration::from_millis(threshold as u64)).await;
+
+            kill_processes(running).await
+        }
+    }));
+
+    // Wait for things to finish
+    for future in futures {
+        let _ = future.await;
+    }
+}
+
+async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {
+    let children = { processes.read().await.clone() };
+
+    if children.is_empty() {
+        return;
+    }
+
+    debug!(
+        pids = ?children.keys().collect::<Vec<_>>(),
+        "Wait threshold exhausted, killing {} running child processes",
+        children.len()
+    );
+
+    let mut futures = vec![];
+
+    for (pid, child) in children {
+        futures.push(tokio::spawn(async move {
+            trace!(pid, "Killing child process");
+
+            if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
+                warn!(pid, "Failed to kill child process: {error}");
             }
         }));
     }
+
+    processes.write().await.clear();
 
     for future in futures {
         let _ = future.await;

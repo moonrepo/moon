@@ -355,7 +355,7 @@ impl AppSession for CliSession {
     async fn shutdown(&mut self) -> AppResult {
         // Ensure all child processes have finished running
         ProcessRegistry::instance()
-            .wait_for_running_to_shutdown(true)
+            .wait_for_running_to_shutdown()
             .await;
 
         self.console.close()?;

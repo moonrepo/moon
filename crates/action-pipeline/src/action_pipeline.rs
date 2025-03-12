@@ -24,6 +24,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::task::{JoinHandle, JoinSet};
+use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -182,18 +183,24 @@ impl ActionPipeline {
 
             if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
-                self.status = ActionPipelineStatus::Aborted;
 
-                break;
+                // Wait for aborted actions to be received before closing
+                sleep(Duration::from_millis(50)).await;
+                receiver.close();
+
+                self.status = ActionPipelineStatus::Aborted;
             } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (because a signal)");
-                self.status = ActionPipelineStatus::Interrupted;
 
-                break;
+                // Wait for cancelled actions to be received before closing
+                sleep(Duration::from_millis(50)).await;
+                receiver.close();
+
+                self.status = ActionPipelineStatus::Interrupted;
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
-                self.status = ActionPipelineStatus::Completed;
 
+                self.status = ActionPipelineStatus::Completed;
                 break;
             }
         }

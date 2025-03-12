@@ -90,23 +90,13 @@ impl ProcessRegistry {
         let _ = self.signal_sender.send(SignalType::Terminate);
     }
 
-    pub async fn wait_for_running_to_shutdown(&self, terminate: bool) {
+    pub async fn wait_for_running_to_shutdown(&self) {
         let mut count = 0;
-        let mut terminated = false;
 
         loop {
-            if terminate && self.threshold > 0 {
-                // After a few seconds of waiting, terminate all running,
-                // as some of them may have "press ctrl+c again" logic
-                if !terminated && count >= (self.threshold as f64 / 1.5) as u32 {
-                    kill_processes(self.running.clone()).await;
-                    terminated = true;
-                }
-
-                // After many seconds of waiting, just exit immediately
-                if count >= self.threshold {
-                    break;
-                }
+            // After many seconds of waiting, just exit immediately
+            if self.threshold > 0 && count >= self.threshold {
+                break;
             }
 
             // Wait for all running processes to have stopped
@@ -143,8 +133,7 @@ async fn shutdown_processes_from_signal(
         return;
     }
 
-    sleep(Duration::from_millis(threshold as u64)).await;
-
+    // Attempt to gracefully shutdown running processes
     debug!(
         signal = ?signal,
         pids = ?children.keys().collect::<Vec<_>>(),
@@ -176,6 +165,18 @@ async fn shutdown_processes_from_signal(
         }));
     }
 
+    // Otherwise force kill running processes after the threshold
+    let running = processes.clone();
+
+    futures.push(tokio::spawn(async move {
+        if threshold > 0 {
+            sleep(Duration::from_millis(threshold as u64)).await;
+
+            kill_processes(running).await
+        }
+    }));
+
+    // Wait for things to finish
     for future in futures {
         let _ = future.await;
     }

@@ -211,15 +211,11 @@ impl ActionPipeline {
             signal_handle.abort();
         }
 
-        let completed = matches!(self.status, ActionPipelineStatus::Completed);
-
         // Wait for running child processes to exit
-        process_registry
-            .wait_for_running_to_shutdown(!completed)
-            .await;
+        process_registry.wait_for_running_to_shutdown().await;
 
-        if !completed {
-            // Abort any running actions in progress
+        // Abort any running actions in progress
+        if !matches!(self.status, ActionPipelineStatus::Completed) {
             let mut job_handles = queue_handle.await.into_diagnostic()?;
 
             if !job_handles.is_empty() {

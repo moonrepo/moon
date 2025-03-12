@@ -10,7 +10,7 @@ for (let event of ['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGTERM', 'SIGBREAK']) {
 		if (target !== 'signals:dev-2') {
 			setTimeout(() => {
 				process.exit(128 + code);
-			}, 2500);
+			}, 5000);
 		}
 	});
 }

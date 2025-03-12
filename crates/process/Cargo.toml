@@ -27,7 +27,7 @@ libc = "0.2.170"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59.0", default-features = false, features = [
-	"Win32_System_Console",
+	# "Win32_System_Console",
 	"Win32_System_Threading",
 ] }
 

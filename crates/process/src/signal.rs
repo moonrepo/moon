@@ -78,7 +78,7 @@ pub use unix::*;
 mod windows {
     use super::*;
     use std::os::raw::c_void;
-    use windows_sys::Win32::System::Console::{CTRL_BREAK_EVENT, GenerateConsoleCtrlEvent};
+    // use windows_sys::Win32::System::Console::{CTRL_BREAK_EVENT, GenerateConsoleCtrlEvent};
     use windows_sys::Win32::System::Threading::TerminateProcess;
 
     pub async fn wait_for_signal(sender: Sender<SignalType>) {
@@ -117,17 +117,19 @@ mod windows {
     unsafe impl Send for RawHandle {}
     unsafe impl Sync for RawHandle {}
 
-    pub fn kill(pid: u32, handle: RawHandle, signal: SignalType) -> io::Result<()> {
+    pub fn kill(_pid: u32, handle: RawHandle, signal: SignalType) -> io::Result<()> {
         let result = match signal {
             // https://learn.microsoft.com/en-us/windows/console/generateconsolectrlevent
             SignalType::Interrupt => {
-                unsafe {
-                    GenerateConsoleCtrlEvent(
-                        // We can't use CTRL_C_EVENT here, as it doesn't propagate
-                        CTRL_BREAK_EVENT,
-                        pid,
-                    )
-                }
+                // Do nothing and let signals pass through natively!
+                // unsafe {
+                //     GenerateConsoleCtrlEvent(
+                //         // We can't use CTRL_C_EVENT here, as it doesn't propagate
+                //         CTRL_BREAK_EVENT,
+                //         pid,
+                //     )
+                // }
+                1
             }
             // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess
             _ => unsafe { TerminateProcess(handle.0, 1) },

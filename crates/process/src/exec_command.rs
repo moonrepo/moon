@@ -470,10 +470,10 @@ impl Command {
             command.current_dir(cwd);
         }
 
-        #[cfg(windows)]
-        {
-            command.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
-        }
+        // #[cfg(windows)]
+        // {
+        //     command.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
+        // }
 
         (command, command_line, Instant::now())
     }

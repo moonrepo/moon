@@ -12,6 +12,8 @@ tasks:
     preset: 'server'
   dev:
     deps: ['dev-1', 'dev-2', 'dev-3']
+  exit:
+    command: 'node exitCode.mjs'
 
 toolchain:
   typescript:

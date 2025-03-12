@@ -6,8 +6,10 @@ for (let event of ['SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGTERM', 'SIGBREAK']) {
 	process.on(event, (signal, code) => {
 		console.log(`[${target}] Received ${signal} (${code})!`);
 
-		// Give moon some time to kill it
-		if (target !== 'signals:dev-2') {
+		if (target === 'signals:dev-2') {
+			process.exit(128 + code);
+		} else {
+			// Give moon some time to kill it
 			setTimeout(() => {
 				process.exit(128 + code);
 			}, 5000);

@@ -169,6 +169,11 @@ impl ActionPipeline {
         debug!("Waiting for jobs to return results");
 
         let process_registry = ProcessRegistry::instance();
+        let wait_threshold = if process_registry.threshold == 0 {
+            100
+        } else {
+            process_registry.threshold / 2
+        };
         let mut actions = vec![];
         let mut error = None;
 
@@ -185,7 +190,7 @@ impl ActionPipeline {
                 debug!("Aborting pipeline (because something failed)");
 
                 // Wait for aborted actions to be received before closing
-                sleep(Duration::from_millis(50)).await;
+                sleep(Duration::from_millis(wait_threshold as u64)).await;
                 receiver.close();
 
                 self.status = ActionPipelineStatus::Aborted;
@@ -193,7 +198,7 @@ impl ActionPipeline {
                 debug!("Cancelling pipeline (because a signal)");
 
                 // Wait for cancelled actions to be received before closing
-                sleep(Duration::from_millis(50)).await;
+                sleep(Duration::from_millis(wait_threshold as u64)).await;
                 receiver.close();
 
                 self.status = ActionPipelineStatus::Interrupted;
@@ -208,7 +213,7 @@ impl ActionPipeline {
         drop(receiver);
 
         // Capture and handle any signals
-        if cancel_token.is_cancelled() {
+        if cancel_token.is_cancelled() && self.status == ActionPipelineStatus::Pending {
             self.status = match signal_handle.await.into_diagnostic()? {
                 SignalType::Interrupt => ActionPipelineStatus::Interrupted,
                 SignalType::Terminate => ActionPipelineStatus::Terminated,

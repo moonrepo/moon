@@ -13,11 +13,12 @@ use tracing::{debug, trace, warn};
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
 pub struct ProcessRegistry {
+    pub threshold: u32,
+
     running: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
     signal_sender: Sender<SignalType>,
     signal_wait_handle: JoinHandle<()>,
     signal_shutdown_handle: JoinHandle<()>,
-    threshold: u32,
 }
 
 impl Default for ProcessRegistry {

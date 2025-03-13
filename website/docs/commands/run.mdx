@@ -4,28 +4,32 @@ title: run
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `moon run` (or `moon r`) command will run one or many [targets](../concepts/target) and all of
-its dependencies in topological order. Each run will incrementally cache each task, improving speed
-and development times... over time. View the official [Run a task](../run-task) and
+The `moon run` (or `moon r`, or `moonx`) command will run one or many [targets](../concepts/target)
+and all of its dependencies in topological order. Each run will incrementally cache each task,
+improving speed and development times... over time. View the official [Run a task](../run-task) and
 [Cheat sheet](../cheat-sheet#tasks) articles for more information!
 
 ```shell
 # Run `lint` in project `app`
 $ moon run app:lint
-$ moon app:lint
+$ moonx app:lint
 
 # Run `dev` in project `client` and `server`
 $ moon run client:dev server:dev
+$ moonx client:dev server:dev
 
 # Run `test` in all projects
 $ moon run :test
+$ moonx :test
 
 # Run `test` in all projects with tag `frontend`
 $ moon run '#frontend:test'
+$ moonx '#frontend:test'
 
 # Run `format` in closest project (`client`)
 $ cd apps/client
 $ moon run format
+$ moonx format
 
 # Run `build` in projects matching the query
 $ moon run :build --query "language=javascript && projectType=library"

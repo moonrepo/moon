@@ -9,6 +9,10 @@ cacheable!(
     #[derive(Clone, Config, Debug, PartialEq)]
     #[config(allow_unknown_fields)]
     pub struct ToolchainPluginConfig {
+        // TODO deprecate in v2
+        #[doc(hidden)]
+        pub disabled: bool,
+
         /// Location of the WASM plugin to use.
         pub plugin: Option<PluginLocator>,
 

@@ -24,7 +24,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::task::{JoinHandle, JoinSet};
-use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -169,11 +168,6 @@ impl ActionPipeline {
         debug!("Waiting for jobs to return results");
 
         let process_registry = ProcessRegistry::instance();
-        let wait_threshold = if process_registry.threshold == 0 {
-            100
-        } else {
-            process_registry.threshold / 2
-        };
         let mut actions = vec![];
         let mut error = None;
 
@@ -189,19 +183,13 @@ impl ActionPipeline {
             if abort_token.is_cancelled() {
                 debug!("Aborting pipeline (because something failed)");
 
-                // Wait for aborted actions to be received before closing
-                sleep(Duration::from_millis(wait_threshold as u64)).await;
-                receiver.close();
-
                 self.status = ActionPipelineStatus::Aborted;
+                receiver.close();
             } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (because a signal)");
 
-                // Wait for cancelled actions to be received before closing
-                sleep(Duration::from_millis(wait_threshold as u64)).await;
-                receiver.close();
-
                 self.status = ActionPipelineStatus::Interrupted;
+                receiver.close();
             } else if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
 

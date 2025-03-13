@@ -5889,9 +5889,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.47.8"
+version = "0.47.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1ef5e6b7f90a498b9c8c7e2cb4342c6b414e19cb230660b5f5f72747bba035a"
+checksum = "ac0d865c3ab8b7025e6a3b71bae7093253d7cdf8629d31565e84f00508608935"
 dependencies = [
  "convert_case",
  "dotenvy",
@@ -7984,9 +7984,9 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "ureq"
-version = "3.0.7"
+version = "3.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f85f9ee53e53fd3f65b73dc51c5a782785d1a6cc381a06652a1141649537ad8"
+checksum = "06f78313c985f2fba11100dd06d60dd402d0cabb458af4d94791b8e09c025323"
 dependencies = [
  "base64 0.22.1",
  "flate2",
@@ -8148,9 +8148,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.23.5"
+version = "0.23.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35e7bdd7e1f893c1f562d08cae5b8c0f89504b57c2177e752576ce35fe24ba15"
+checksum = "42c5913845deeba41b430cf8dcdfaaaa0e6f1b5a1be826dd8c063702745fbac7"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",

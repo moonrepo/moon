@@ -22,7 +22,7 @@ impl ProjectToolchainEntry {
         match self {
             Self::Disabled => false,
             Self::Enabled(state) => *state,
-            Self::Config(_) => true,
+            Self::Config(config) => !config.disabled,
         }
     }
 }

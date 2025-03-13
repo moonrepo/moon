@@ -63,7 +63,7 @@ pub fn substitute_env_var(
                 // Substitute with empty string when missing
                 Some("?") =>{
                     debug!(
-                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Replacing with an empty value.",
+                        "Value `{}` contains the environment variable ${}, but this variable is not set. Replacing with an empty value.",
                         value,
                         name
                     );
@@ -73,7 +73,7 @@ pub fn substitute_env_var(
                 // Substitute with self when missing
                 _ => {
                     debug!(
-                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is. Append with ? or ! to change outcome.",
+                        "Value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is. Append with ? or ! to change outcome.",
                         value,
                         name
                     );
@@ -84,6 +84,10 @@ pub fn substitute_env_var(
             }
         })
     .to_string()
+}
+
+pub fn interpolate_env_vars(value: &str) -> String {
+    substitute_env_var("", value, &FxHashMap::default(), &mut FxHashSet::default())
 }
 
 #[cfg(test)]

@@ -551,9 +551,9 @@ dependencies = [
 
 [[package]]
 name = "bazel-remote-apis"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf0f21d255e36400fea9c2f9fc29f02a76200f349255ccbcdc8270c8da89374"
+checksum = "d3bd64148cb80d166260068765585be33647d37ee26c1cc9a659d14fe11f7cc5"
 dependencies = [
  "pbjson",
  "pbjson-types",
@@ -4638,6 +4638,7 @@ dependencies = [
  "moon_action",
  "moon_common",
  "moon_config",
+ "moon_env_var",
  "moon_task",
  "reqwest",
  "rustc-hash 2.1.1",

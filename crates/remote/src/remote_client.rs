@@ -5,6 +5,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use miette::IntoDiagnostic;
 use moon_config::RemoteConfig;
+use moon_env_var::interpolate_env_vars;
 use std::path::Path;
 use tracing::warn;
 
@@ -15,9 +16,11 @@ pub trait RemoteClient: Send + Sync {
 
         if let Some(auth) = &config.auth {
             for (key, value) in &auth.headers {
+                let value = interpolate_env_vars(value);
+
                 headers.insert(
                     HeaderName::from_bytes(key.as_bytes()).into_diagnostic()?,
-                    HeaderValue::from_str(value).into_diagnostic()?,
+                    HeaderValue::from_str(&value).into_diagnostic()?,
                 );
             }
 

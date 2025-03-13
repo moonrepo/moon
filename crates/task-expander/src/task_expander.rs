@@ -1,8 +1,8 @@
-use crate::expander_utils::*;
 use crate::task_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
 use moon_config::TaskArgs;
+use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
 use moon_task::Task;

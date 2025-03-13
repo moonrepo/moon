@@ -1,7 +1,13 @@
-use moon_config::patterns;
+use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
+use std::sync::LazyLock;
 use tracing::debug;
+
+// $ENV_VAR, ${ENV_VAR}
+pub static ENV_VAR_SUBSTITUTE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new("(?:\\$\\{(?P<name1>[A-Z0-9_]+)(?P<flag1>[!?]{1})?\\})|(?:\\$(?P<name2>[A-Z0-9_]+)(?P<flag2>[!?]{1})?)").unwrap()
+});
 
 pub fn substitute_env_vars(mut env: FxHashMap<String, String>) -> FxHashMap<String, String> {
     let cloned_env = env.clone();
@@ -24,9 +30,9 @@ pub fn substitute_env_var(
         return value.to_owned();
     }
 
-    patterns::ENV_VAR_SUBSTITUTE.replace_all(
+    ENV_VAR_SUBSTITUTE.replace_all(
         value,
-        |caps: &patterns::Captures| {
+        |caps: &regex::Captures| {
             let Some(name) = caps.name("name1")
                 .or_else(|| caps.name("name2"))
                 .map(|cap| cap.as_str())
@@ -57,7 +63,7 @@ pub fn substitute_env_var(
                 // Substitute with empty string when missing
                 Some("?") =>{
                     debug!(
-                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Replacing with an empty value.",
+                        "Value `{}` contains the environment variable ${}, but this variable is not set. Replacing with an empty value.",
                         value,
                         name
                     );
@@ -67,7 +73,7 @@ pub fn substitute_env_var(
                 // Substitute with self when missing
                 _ => {
                     debug!(
-                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is. Append with ? or ! to change outcome.",
+                        "Value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is. Append with ? or ! to change outcome.",
                         value,
                         name
                     );
@@ -78,6 +84,10 @@ pub fn substitute_env_var(
             }
         })
     .to_string()
+}
+
+pub fn interpolate_env_vars(value: &str) -> String {
+    substitute_env_var("", value, &FxHashMap::default(), &mut FxHashSet::default())
 }
 
 #[cfg(test)]

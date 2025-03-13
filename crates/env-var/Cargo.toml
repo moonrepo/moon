@@ -1,0 +1,17 @@
+[package]
+name = "moon_env_var"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Manages environment variables."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+regex = { workspace = true }
+rustc-hash = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

@@ -119,16 +119,18 @@ $schema: './cache/schemas/toolchain.json'
 $schema: '../.moon/cache/schemas/toolchain.json'
 ```
 
-These schemas are automatically generated through [`moon run`](/docs/commands/run) but can be
-manually generated with [`moon sync config-schemas`](/docs/commands/sync/config-schemas).
-
-:::info
-
-Our official VS Code extension and the VS Code YAML server does not support the
+The VS Code YAML server does not support the
 [`$schema` property](https://github.com/redhat-developer/yaml-language-server/pull/970), but there
 is a
 [work around](https://github.com/redhat-developer/yaml-language-server?tab=readme-ov-file#using-inlined-schema).
-We're looking into ways of solving this on our end.
+However, that syntax is a bit unfortunate, so our official moon VS Code extension supports updating
+`.vscode/settings`. Simply open the command palette and select "moon: Append YAML schemas
+configuration to settings".
+
+:::info
+
+These schemas are automatically generated through [`moon run`](/docs/commands/run) but can be
+manually generated with [`moon sync config-schemas`](/docs/commands/sync/config-schemas).
 
 :::
 

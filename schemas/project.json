@@ -383,6 +383,10 @@
         "unknown"
       ]
     },
+    "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
+      "type": "string"
+    },
     "ProjectDependsOn": {
       "description": "Expanded information about a project dependency.",
       "anyOf": [
@@ -594,10 +598,20 @@
         },
         "default": {
           "title": "default",
-          "description": "The default toolchain for all tasks within the project, if their toolchain is unknown.",
+          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
             },
             {
               "type": "null"
@@ -630,6 +644,17 @@
           ],
           "markdownDescription": "Overrides `node` settings."
         },
+        "plugins": {
+          "title": "plugins",
+          "description": "Overrides toolchains by their ID.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ProjectToolchainEntry"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "python": {
           "title": "python",
           "description": "Overrides python settings.",
@@ -655,101 +680,23 @@
             }
           ],
           "markdownDescription": "Overrides `rust` settings."
-        },
-        "typescript": {
-          "title": "typescript",
-          "description": "Overrides typescript settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `typescript` settings."
         }
       },
       "additionalProperties": false,
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
-    "ProjectToolchainTypeScriptConfig": {
-      "description": "Overrides top-level typescript settings.",
-      "type": "object",
-      "properties": {
-        "disabled": {
-          "title": "disabled",
-          "description": "Disables all TypeScript functionality for this project.",
+    "ProjectToolchainEntry": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
           "type": "boolean"
         },
-        "includeProjectReferenceSources": {
-          "title": "includeProjectReferenceSources",
-          "description": "Appends sources of project reference to include in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Appends sources of project reference to `include` in `tsconfig.json`."
-        },
-        "includeSharedTypes": {
-          "title": "includeSharedTypes",
-          "description": "Appends shared types to include in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Appends shared types to `include` in `tsconfig.json`."
-        },
-        "routeOutDirToCache": {
-          "title": "routeOutDirToCache",
-          "description": "Updates and routes outDir in tsconfig.json to moon's cache.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Updates and routes `outDir` in `tsconfig.json` to moon's cache."
-        },
-        "syncProjectReferences": {
-          "title": "syncProjectReferences",
-          "description": "Syncs all project dependencies as references in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Syncs all project dependencies as `references` in `tsconfig.json`."
-        },
-        "syncProjectReferencesToPaths": {
-          "title": "syncProjectReferencesToPaths",
-          "description": "Syncs all project dependencies as paths in tsconfig.json.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Syncs all project dependencies as `paths` in `tsconfig.json`."
+        {
+          "$ref": "#/definitions/ToolchainPluginConfig"
         }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Overrides top-level `typescript` settings."
+      ]
     },
     "ProjectType": {
       "description": "The type of project, for categorizing.",
@@ -1579,6 +1526,55 @@
         "pwsh",
         "xonsh"
       ]
+    },
+    "ToolchainPluginConfig": {
+      "description": "Configures an individual toolchain.",
+      "type": "object",
+      "properties": {
+        "config": {
+          "title": "config",
+          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of the toolchain to download and install.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

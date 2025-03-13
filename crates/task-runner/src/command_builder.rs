@@ -163,6 +163,7 @@ impl<'task> CommandBuilder<'task> {
         );
 
         // proto
+        self.command.env("PROTO_AUTO_INSTALL", "false");
         self.command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
         self.command.env("PROTO_NO_PROGRESS", "true");
         self.command.env("PROTO_VERSION", PROTO_CLI_VERSION);

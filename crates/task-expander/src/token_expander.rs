@@ -1,4 +1,3 @@
-use crate::expander_utils::substitute_env_var;
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
 use moon_common::{
@@ -6,6 +5,7 @@ use moon_common::{
     path::{self, WorkspaceRelativePathBuf},
 };
 use moon_config::{InputPath, OutputPath, ProjectMetadataConfig, patterns};
+use moon_env_var::substitute_env_var;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::Task;

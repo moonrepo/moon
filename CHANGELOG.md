@@ -48,6 +48,7 @@
 - Improved the handling of CTRL-C, CTRL-BREAK, and other signals on Windows.
 - Updated `moon init` with toolchain plugin support.
 - Updated `toolchain.default` in `moon.yml` to support a list of IDs.
+- Updated `unstable_remote.auth.headers` to support environment variable interpolation.
 - Updated generated JSON schemas at `.moon/cache/schemas` to dynamically include toolchain plugin
   configuration.
 - Updated file hashing (via `git hash-object`) to continously pipe stdin to avoid hanging processes.

@@ -8,9 +8,10 @@ publish = false
 moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_env_var = { path = "../env-var" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
-bazel-remote-apis = { version = "0.15.0", features = ["serde"] }
+bazel-remote-apis = { version = "0.16.0", features = ["serde"] }
 chrono = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true, features = ["json", "rustls-tls"] }

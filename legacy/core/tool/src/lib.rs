@@ -84,6 +84,7 @@ pub fn get_proto_version_env(tool: &ProtoTool) -> Option<String> {
 
 pub fn get_proto_env_vars() -> FxHashMap<String, String> {
     FxHashMap::from_iter([
+        ("PROTO_AUTO_INSTALL".into(), "false".into()),
         ("PROTO_IGNORE_MIGRATE_WARNING".into(), "true".into()),
         ("PROTO_NO_PROGRESS".into(), "true".into()),
         // ("PROTO_LOG".into(), "trace".into()),

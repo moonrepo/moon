@@ -887,6 +887,16 @@ mod tasks_builder {
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+
+            // Extends a task with no preset, so inherits further
+            let task = tasks.get("server-extends").unwrap();
+
+            assert_eq!(task.preset, Some(TaskPreset::Server));
+            assert!(task.options.cache);
+            assert!(!task.options.interactive);
+            assert!(task.options.persistent);
+            assert!(!task.options.run_in_ci.is_enabled());
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
 
         #[tokio::test]

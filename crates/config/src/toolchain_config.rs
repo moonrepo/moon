@@ -118,7 +118,7 @@ impl ToolchainConfig {
 
         match id.as_str() {
             "typescript" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.2/typescript_toolchain.wasm".into()
+                url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.1.3/typescript_toolchain.wasm".into()
             }))),
             // "typescript" => Some(PluginLocator::File(Box::new(FileLocator {
             //     file: "".into(),

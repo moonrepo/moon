@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🧩 Plugins
+
+- Updated `typescript_toolchain` to v0.1.3.
+  - Will no longer error if a file in `extends` is missing during task hashing.
+
 ## 1.33.0
 
 #### 💥 Breaking

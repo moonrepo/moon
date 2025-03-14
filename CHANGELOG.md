@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where internal tasks could be ran when using the "run in closest project"
+  shorthand.
+
 #### 🧩 Plugins
 
 - Updated `typescript_toolchain` to v0.1.3.

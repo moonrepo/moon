@@ -1640,6 +1640,26 @@ mod action_graph {
         }
 
         #[tokio::test]
+        #[should_panic(expected = "Unknown task internal for project common.")]
+        async fn errors_for_internal_task_when_explicit_via_dir() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let locator = TargetLocator::TaskFromWorkingDir(Id::raw("internal"));
+
+            builder
+                .run_task_by_target(
+                    Target::parse("common:internal").unwrap(),
+                    &RunRequirements {
+                        target_locators: FxHashSet::from_iter([locator]),
+                        ..RunRequirements::default()
+                    },
+                )
+                .unwrap();
+        }
+
+        #[tokio::test]
         async fn doesnt_error_for_internal_task_when_implicit() {
             let sandbox = create_sandbox("tasks");
             let container = ActionGraphContainer::new(sandbox.path()).await;

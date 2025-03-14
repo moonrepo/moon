@@ -4,7 +4,7 @@ use dialoguer::Confirm;
 use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
-use moon_console::Console;
+use moon_console::MoonConsole;
 use starbase_styles::color;
 use tera::{Context, Tera};
 use tracing::instrument;
@@ -17,10 +17,10 @@ pub fn render_template(context: Context) -> miette::Result<String> {
 pub async fn init_bun(
     options: &InitOptions,
     theme: &ColorfulTheme,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<String> {
     if !options.yes {
-        console.out.print_header("Bun")?;
+        console.print_header("Bun")?;
 
         console.out.write_raw(|buffer| {
             buffer.extend_from_slice(
@@ -44,6 +44,8 @@ pub async fn init_bun(
                 )
                 .as_bytes(),
             );
+
+            Ok(())
         })?;
 
         console.out.flush()?;

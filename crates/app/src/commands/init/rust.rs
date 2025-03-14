@@ -3,7 +3,7 @@ use super::prompts::{fully_qualify_version, prompt_version};
 use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
-use moon_console::Console;
+use moon_console::MoonConsole;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
 use starbase_styles::color;
 use std::path::Path;
@@ -38,10 +38,10 @@ fn detect_rust_version(dest_dir: &Path) -> miette::Result<String> {
 pub async fn init_rust(
     options: &InitOptions,
     theme: &ColorfulTheme,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<String> {
     if !options.yes {
-        console.out.print_header("Rust")?;
+        console.print_header("Rust")?;
 
         console.out.write_raw(|buffer| {
             buffer.extend_from_slice(
@@ -65,6 +65,8 @@ pub async fn init_rust(
                 )
                 .as_bytes(),
             );
+
+            Ok(())
         })?;
 
         console.out.flush()?;

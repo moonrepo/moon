@@ -4,7 +4,7 @@ use moon_bun_platform::BunPlatform;
 use moon_cache::CacheEngine;
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_config::{BunConfig, PlatformType, ToolchainConfig};
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
@@ -35,7 +35,7 @@ pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -
 
 #[instrument(skip_all)]
 pub async fn install_proto(
-    console: &Console,
+    console: &MoonConsole,
     proto_env: &Arc<ProtoEnvironment>,
     cache_engine: &CacheEngine,
     toolchain_config: &ToolchainConfig,
@@ -67,7 +67,7 @@ pub async fn install_proto(
 
     debug!("Installing proto");
 
-    console.out.print_checkpoint(
+    console.print_checkpoint(
         Checkpoint::Setup,
         format!("installing proto {}", PROTO_CLI_VERSION),
     )?;
@@ -113,7 +113,7 @@ pub async fn install_proto(
 
 #[instrument(skip_all)]
 pub async fn register_platforms(
-    console: &Console,
+    console: &MoonConsole,
     proto_env: &Arc<ProtoEnvironment>,
     toolchain_config: &ToolchainConfig,
     workspace_root: &Path,

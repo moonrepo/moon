@@ -58,7 +58,7 @@ pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
     console.flush()?;
 
     // Gather variables
-    let mut context = gather_variables(&args, &template, &session.console)?;
+    let mut context = gather_variables(&args, &template, &session.console).await?;
     context.insert("working_dir", &session.working_dir);
     context.insert("workspace_root", &session.workspace_root);
 

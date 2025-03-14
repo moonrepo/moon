@@ -4,7 +4,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
-use moon_console::Console;
+use moon_console::MoonConsole;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::PackageJsonCache;
 use starbase_styles::color;
@@ -110,10 +110,10 @@ fn detect_package_manager(
 pub async fn init_node(
     options: &InitOptions,
     theme: &ColorfulTheme,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<String> {
     if !options.yes {
-        console.out.print_header("Node")?;
+        console.print_header("Node")?;
 
         console.out.write_raw(|buffer| {
             buffer.extend_from_slice(
@@ -137,6 +137,8 @@ pub async fn init_node(
                 )
                 .as_bytes(),
             );
+
+            Ok(())
         })?;
 
         console.out.flush()?;

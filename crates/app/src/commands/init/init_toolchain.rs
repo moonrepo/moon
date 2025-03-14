@@ -3,7 +3,7 @@ use super::prompts::prompt_version;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input, Select};
 use miette::IntoDiagnostic;
-use moon_console::Console;
+use moon_console::MoonConsole;
 use moon_pdk_api::{
     ConditionType, InitializeToolchainInput, PromptType, SettingCondition, SettingPrompt,
 };
@@ -22,7 +22,7 @@ pub async fn init_toolchain(
     toolchain: &ToolchainPlugin,
     options: &InitOptions,
     theme: &ColorfulTheme,
-    console: &Console,
+    console: &MoonConsole,
     include_locator: bool,
 ) -> miette::Result<String> {
     // No instructions, so render an empty block
@@ -38,7 +38,7 @@ pub async fn init_toolchain(
         .await?;
 
     if !options.yes {
-        console.out.print_header(&toolchain.metadata.name)?;
+        console.print_header(&toolchain.metadata.name)?;
 
         console.out.write_raw(|buffer| {
             buffer.extend_from_slice(
@@ -56,6 +56,8 @@ pub async fn init_toolchain(
             if let Some(url) = &output.config_url {
                 buffer.extend_from_slice(format!("Config: {}\n\n", color::url(url)).as_bytes());
             }
+
+            Ok(())
         })?;
 
         console.out.flush()?;

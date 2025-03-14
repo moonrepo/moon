@@ -1,14 +1,14 @@
 use moon_api::Launchpad;
 use moon_cache::CacheEngine;
 use moon_common::{color, is_formatted_output, is_test_env};
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_env::MoonEnvironment;
 use starbase::AppResult;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn check_for_new_version(
-    console: &Console,
+    console: &MoonConsole,
     moon_env: &MoonEnvironment,
     cache_engine: &CacheEngine,
     manifest_url: &str,
@@ -23,7 +23,7 @@ pub async fn check_for_new_version(
                 return Ok(None);
             }
 
-            console.out.print_checkpoint(
+            console.print_checkpoint(
                 Checkpoint::Announcement,
                 format!(
                     "There's a new version of moon available, {} (currently on {})!",
@@ -33,12 +33,10 @@ pub async fn check_for_new_version(
             )?;
 
             if let Some(newer_message) = result.message {
-                console
-                    .out
-                    .print_checkpoint(Checkpoint::Announcement, newer_message)?;
+                console.print_checkpoint(Checkpoint::Announcement, newer_message)?;
             }
 
-            console.out.print_checkpoint(
+            console.print_checkpoint(
                 Checkpoint::Announcement,
                 format!(
                     "Run {} or install from {}",

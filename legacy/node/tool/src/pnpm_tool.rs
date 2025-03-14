@@ -1,7 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::PnpmConfig;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::debug;
 use moon_node_lang::{LockfileDependencyVersions, pnpm};
 use moon_process::Command;
@@ -28,7 +28,7 @@ pub struct PnpmTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     proto_env: Arc<ProtoEnvironment>,
 }
@@ -36,7 +36,7 @@ pub struct PnpmTool {
 impl PnpmTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &Option<PnpmConfig>,
     ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -106,7 +106,6 @@ impl Tool for PnpmTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing pnpm {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

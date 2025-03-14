@@ -6,7 +6,7 @@ use clap::builder::{
 use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Args, Command};
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
-use moon_console::Console;
+use moon_console::MoonConsole;
 use moon_console::prompts::list_option::ListOption;
 use moon_console::prompts::validator::Validation;
 use moon_console::prompts::{Confirm, CustomType, MultiSelect, Select, Text};
@@ -219,7 +219,7 @@ pub fn parse_args_into_variables(
 pub fn gather_variables(
     args: &GenerateArgs,
     template: &Template,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<TemplateContext> {
     let mut context = parse_args_into_variables(&args.vars, &template.config.variables)?;
 

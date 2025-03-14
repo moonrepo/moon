@@ -13,6 +13,7 @@ moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
+moon_time = { path = "../time" }
 inquire = "0.7.5"
 miette = { workspace = true }
 parking_lot = "0.12.3"

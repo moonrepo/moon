@@ -1,7 +1,7 @@
 use crate::pip_tool::PipTool;
 use crate::uv_tool::UvTool;
 use moon_config::{PythonConfig, PythonPackageManager};
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
@@ -43,7 +43,7 @@ pub struct PythonTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     proto_env: Arc<ProtoEnvironment>,
 
@@ -55,7 +55,7 @@ pub struct PythonTool {
 impl PythonTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &PythonConfig,
         req: &RuntimeReq,
     ) -> miette::Result<PythonTool> {
@@ -255,7 +255,6 @@ impl Tool for PythonTool {
 
             if setup || !self.tool.get_product_dir().exists() {
                 self.console
-                    .out
                     .print_checkpoint(Checkpoint::Setup, format!("installing python {version}"))?;
 
                 if self.tool.setup(version, InstallOptions::default()).await? {

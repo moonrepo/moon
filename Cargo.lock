@@ -4063,6 +4063,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_target",
+ "moon_time",
  "parking_lot",
  "starbase_console",
  "starbase_styles",

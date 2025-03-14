@@ -10,7 +10,7 @@ use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig,
 };
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_deno_lang::{DenoJson, find_package_manager_workspaces_root, load_lockfile_dependencies};
 use moon_deno_tool::{DenoTool, get_deno_env_paths};
 use moon_hash::ContentHasher;
@@ -37,7 +37,7 @@ const LOG_TARGET: &str = "moon:deno-platform";
 pub struct DenoPlatform {
     config: DenoConfig,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     proto_env: Arc<ProtoEnvironment>,
 
@@ -51,7 +51,7 @@ impl DenoPlatform {
         config: &DenoConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
     ) -> Self {
         DenoPlatform {
             config: config.to_owned(),
@@ -292,7 +292,6 @@ impl Platform for DenoPlatform {
                     Operation::task_execution(format!("deno {}", args.join(" ")))
                         .track_async(|| async {
                             self.console
-                                .out
                                 .print_checkpoint(Checkpoint::Setup, "deno install --global")?;
 
                             deno.create_command(&())?
@@ -314,7 +313,6 @@ impl Platform for DenoPlatform {
                     Operation::task_execution("deno install")
                         .track_async(|| async {
                             self.console
-                                .out
                                 .print_checkpoint(Checkpoint::Setup, "deno install")?;
 
                             deno.install_dependencies(&(), working_dir, !is_test_env())
@@ -327,7 +325,6 @@ impl Platform for DenoPlatform {
                     Operation::task_execution("deno cache --lock-write")
                         .track_async(|| async {
                             self.console
-                                .out
                                 .print_checkpoint(Checkpoint::Setup, "deno cache")?;
 
                             deno.install_dependencies(&(), working_dir, !is_test_env())

@@ -10,7 +10,7 @@ use moon_config::{
     PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, PythonConfig,
     PythonPackageManager, UnresolvedVersionSpec,
 };
-use moon_console::Console;
+use moon_console::MoonConsole;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
@@ -32,7 +32,7 @@ use tracing::{debug, instrument};
 pub struct PythonPlatform {
     pub config: PythonConfig,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     package_names: FxHashMap<String, Id>,
 
@@ -48,7 +48,7 @@ impl PythonPlatform {
         config: &PythonConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
     ) -> Self {
         PythonPlatform {
             config: config.to_owned(),

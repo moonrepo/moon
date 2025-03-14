@@ -1,7 +1,7 @@
 use moon_action::Operation;
 use moon_common::is_test_env;
 use moon_config::PythonPackageManager;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::error;
 use moon_python_tool::PythonTool;
 use proto_core::VersionSpec;
@@ -25,7 +25,7 @@ pub async fn install_deps(
     python: &PythonTool,
     workspace_root: &Path,
     working_dir: &Path,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
     let venv_parent = python.find_venv_root(working_dir, workspace_root);
@@ -55,7 +55,7 @@ pub async fn install_deps(
         operations.push(
             Operation::task_execution(command)
                 .track_async(|| async {
-                    console.out.print_checkpoint(Checkpoint::Setup, command)?;
+                    console.print_checkpoint(Checkpoint::Setup, command)?;
 
                     python
                         .exec_venv(&venv_root, working_dir, workspace_root)
@@ -76,9 +76,9 @@ pub async fn install_deps(
 
         for attempt in 1..=3 {
             if attempt == 1 {
-                console.out.print_checkpoint(Checkpoint::Setup, command)?;
+                console.print_checkpoint(Checkpoint::Setup, command)?;
             } else {
-                console.out.print_checkpoint_with_comments(
+                console.print_checkpoint_with_comments(
                     Checkpoint::Setup,
                     command,
                     [format!("attempt {attempt} of 3")],

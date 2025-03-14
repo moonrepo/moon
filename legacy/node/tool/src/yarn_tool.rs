@@ -1,7 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::debug;
 use moon_node_lang::{LockfileDependencyVersions, yarn};
 use moon_process::Command;
@@ -26,7 +26,7 @@ pub struct YarnTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     proto_env: Arc<ProtoEnvironment>,
 }
@@ -34,7 +34,7 @@ pub struct YarnTool {
 impl YarnTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &Option<YarnConfig>,
     ) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -143,7 +143,6 @@ impl Tool for YarnTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing yarn {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

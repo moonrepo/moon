@@ -3,7 +3,7 @@
 
 use crate::shell::Shell;
 use moon_common::{color, is_test_env};
-use moon_console::Console;
+use moon_console::MoonConsole;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::hash::Hasher;
 use std::{
@@ -42,7 +42,7 @@ pub struct Command {
     pub shell: Option<Shell>,
 
     /// Console to write output to
-    pub console: Option<Arc<Console>>,
+    pub console: Option<Arc<MoonConsole>>,
 }
 
 impl Command {
@@ -253,7 +253,7 @@ impl Command {
             .unwrap_or(false)
     }
 
-    pub fn with_console(&mut self, console: Arc<Console>) -> &mut Self {
+    pub fn with_console(&mut self, console: Arc<MoonConsole>) -> &mut Self {
         self.console = Some(console);
         self
     }

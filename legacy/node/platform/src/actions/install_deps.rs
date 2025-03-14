@@ -1,6 +1,6 @@
 use moon_action::Operation;
 use moon_config::NodePackageManager;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{debug, error, info};
 use moon_node_tool::NodeTool;
@@ -12,7 +12,7 @@ const LOG_TARGET: &str = "moon:node-platform:install-deps";
 pub async fn install_deps(
     node: &NodeTool,
     working_dir: &Path,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
 
@@ -42,9 +42,9 @@ pub async fn install_deps(
 
         for attempt in 1..=3 {
             if attempt == 1 {
-                console.out.print_checkpoint(Checkpoint::Setup, command)?;
+                console.print_checkpoint(Checkpoint::Setup, command)?;
             } else {
-                console.out.print_checkpoint_with_comments(
+                console.print_checkpoint_with_comments(
                     Checkpoint::Setup,
                     command,
                     [format!("attempt {attempt} of 3")],
@@ -88,7 +88,7 @@ pub async fn install_deps(
             NodePackageManager::Yarn => "yarn dedupe",
         };
 
-        console.out.print_checkpoint(Checkpoint::Setup, command)?;
+        console.print_checkpoint(Checkpoint::Setup, command)?;
 
         operations.push(
             Operation::task_execution(command)

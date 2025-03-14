@@ -1,6 +1,6 @@
 use crate::python_tool::{PythonTool, get_python_tool_paths};
 use moon_config::UvConfig;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_python_lang::{LockfileDependencyVersions, uv};
@@ -25,7 +25,7 @@ pub struct UvTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     #[allow(dead_code)]
     proto_env: Arc<ProtoEnvironment>,
@@ -34,7 +34,7 @@ pub struct UvTool {
 impl UvTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &Option<UvConfig>,
     ) -> miette::Result<UvTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -123,7 +123,6 @@ impl Tool for UvTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing uv {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

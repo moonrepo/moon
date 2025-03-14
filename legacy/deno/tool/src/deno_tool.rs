@@ -1,5 +1,5 @@
 use moon_config::DenoConfig;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_deno_lang::{LockfileDependencyVersions, load_lockfile_dependencies};
 use moon_process::Command;
 use moon_tool::{
@@ -42,7 +42,7 @@ pub struct DenoTool {
     pub tool: ProtoTool,
 
     #[allow(dead_code)]
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     proto_env: Arc<ProtoEnvironment>,
 }
@@ -50,7 +50,7 @@ pub struct DenoTool {
 impl DenoTool {
     pub async fn new(
         proto: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &DenoConfig,
         req: &RuntimeReq,
     ) -> miette::Result<DenoTool> {
@@ -132,7 +132,6 @@ impl Tool for DenoTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing deno {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

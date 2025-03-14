@@ -3,7 +3,7 @@ use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
@@ -38,7 +38,7 @@ pub struct NodeTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     bun: Option<BunTool>,
 
@@ -54,7 +54,7 @@ pub struct NodeTool {
 impl NodeTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &NodeConfig,
         req: &RuntimeReq,
     ) -> miette::Result<NodeTool> {
@@ -252,7 +252,7 @@ impl Tool for NodeTool {
                 };
 
                 if setup || !self.tool.get_product_dir().exists() {
-                    self.console.out.print_checkpoint(
+                    self.console.print_checkpoint(
                         Checkpoint::Setup,
                         format!("installing node {version}"),
                     )?;

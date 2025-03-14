@@ -12,7 +12,7 @@ use moon_config::{
     NodePackageManager, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     TaskConfig, TasksConfigsMap, UnresolvedVersionSpec,
 };
-use moon_console::Console;
+use moon_console::MoonConsole;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
 use moon_node_lang::PackageJsonCache;
@@ -42,7 +42,7 @@ const LOG_TARGET: &str = "moon:node-platform";
 pub struct NodePlatform {
     config: NodeConfig,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     package_names: FxHashMap<String, Id>,
 
@@ -60,7 +60,7 @@ impl NodePlatform {
         config: &NodeConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
     ) -> Self {
         NodePlatform {
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),

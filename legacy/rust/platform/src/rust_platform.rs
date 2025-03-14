@@ -12,7 +12,7 @@ use moon_config::{
     BinEntry, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, RustConfig, UnresolvedVersionSpec,
 };
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -43,7 +43,7 @@ const LOG_TARGET: &str = "moon:rust-platform";
 pub struct RustPlatform {
     pub config: RustConfig,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     package_names: FxHashMap<String, Id>,
 
@@ -60,7 +60,7 @@ impl RustPlatform {
         config: &RustConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
     ) -> Self {
         RustPlatform {
             config: config.to_owned(),
@@ -354,7 +354,6 @@ impl Platform for RustPlatform {
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
                     .track_async(|| async {
                         self.console
-                            .out
                             .print_checkpoint(Checkpoint::Setup, "rustup component")?;
 
                         tool.exec_rustup(args, working_dir).await
@@ -377,7 +376,6 @@ impl Platform for RustPlatform {
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
                     .track_async(|| async {
                         self.console
-                            .out
                             .print_checkpoint(Checkpoint::Setup, "rustup target")?;
 
                         tool.exec_rustup(args, working_dir).await
@@ -391,7 +389,6 @@ impl Platform for RustPlatform {
                 Operation::task_execution("cargo generate-lockfile")
                     .track_async(|| async {
                         self.console
-                            .out
                             .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
 
                         tool.exec_cargo(["generate-lockfile"], working_dir).await
@@ -458,7 +455,7 @@ impl Platform for RustPlatform {
                 operations.push(
                     Operation::task_execution(format!("cargo {}", args.join(" ")))
                         .track_async(|| async {
-                            self.console.out.print_checkpoint(
+                            self.console.print_checkpoint(
                                 Checkpoint::Setup,
                                 format!("cargo binstall {name}"),
                             )?;

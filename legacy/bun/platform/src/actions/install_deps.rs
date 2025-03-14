@@ -1,6 +1,6 @@
 use moon_action::Operation;
 use moon_bun_tool::BunTool;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{debug, error, info};
 use moon_tool::DependencyManager;
@@ -12,7 +12,7 @@ const LOG_TARGET: &str = "moon:bun-platform:install-deps";
 pub async fn install_deps(
     bun: &BunTool,
     working_dir: &Path,
-    console: &Console,
+    console: &MoonConsole,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
 
@@ -31,11 +31,9 @@ pub async fn install_deps(
 
     for attempt in 1..=3 {
         if attempt == 1 {
-            console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "bun install")?;
+            console.print_checkpoint(Checkpoint::Setup, "bun install")?;
         } else {
-            console.out.print_checkpoint_with_comments(
+            console.print_checkpoint_with_comments(
                 Checkpoint::Setup,
                 "bun install",
                 [format!("attempt {attempt} of 3")],

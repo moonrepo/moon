@@ -1,7 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::BunpmConfig;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, MoonConsole};
 use moon_logger::debug;
 use moon_node_lang::{LockfileDependencyVersions, bun};
 use moon_process::{Command, output_to_string};
@@ -27,7 +27,7 @@ pub struct BunTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<Console>,
+    console: Arc<MoonConsole>,
 
     lockfile_cache: scc::HashCache<PathBuf, Arc<String>>,
 
@@ -37,7 +37,7 @@ pub struct BunTool {
 impl BunTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<Console>,
+        console: Arc<MoonConsole>,
         config: &Option<BunpmConfig>,
     ) -> miette::Result<BunTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -158,7 +158,6 @@ impl Tool for BunTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

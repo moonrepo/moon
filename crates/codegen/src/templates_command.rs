@@ -2,7 +2,7 @@ use crate::codegen::CodeGenerator;
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon_common::color;
-use moon_console::Console;
+use moon_console::MoonConsole;
 use std::collections::BTreeMap;
 
 #[derive(Args, Clone, Debug)]
@@ -13,7 +13,7 @@ pub struct TemplatesArgs {
 
 pub async fn templates_command(
     mut generator: CodeGenerator<'_>,
-    console: &Console,
+    console: &MoonConsole,
     args: &TemplatesArgs,
 ) -> miette::Result<Option<u8>> {
     generator.load_templates().await?;
@@ -43,26 +43,25 @@ pub async fn templates_command(
         }
     }
 
-    let out = console.stdout();
-
     for (_, template) in templates {
-        out.print_entry_header(&template.id)?;
+        // TODO
+        // console.print_entry_header(&template.id)?;
 
-        out.write_line(format!(
+        console.out.write_line(format!(
             "{} {} {}",
             color::label(&template.config.title),
             color::muted("-"),
             template.config.description
         ))?;
 
-        out.print_entry("Source location", color::path(&template.root))?;
+        console.print_entry("Source location", color::path(&template.root))?;
 
         if let Some(destination) = &template.config.destination {
-            out.print_entry("Default destination", color::file(destination))?;
+            console.print_entry("Default destination", color::file(destination))?;
         }
 
         if !template.config.extends.is_empty() {
-            out.print_entry(
+            console.print_entry(
                 "Extends from",
                 template
                     .config
@@ -76,7 +75,7 @@ pub async fn templates_command(
         }
 
         if !template.config.variables.is_empty() {
-            out.print_entry(
+            console.print_entry(
                 "Supported variables",
                 template
                     .config
@@ -89,8 +88,8 @@ pub async fn templates_command(
         }
     }
 
-    out.write_newline()?;
-    out.flush()?;
+    console.out.write_newline()?;
+    console.out.flush()?;
 
     Ok(None)
 }

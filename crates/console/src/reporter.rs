@@ -1,10 +1,7 @@
 // use crate::buffer::ConsoleBuffer;
 // use crate::console::ConsoleTheme;
-use miette::Error as Report;
-use moon_action::{Action, ActionNode, ActionPipelineStatus, Operation, OperationList};
+use moon_action::ActionPipelineStatus;
 use moon_config::TaskOutputStyle;
-use moon_target::Target;
-use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Debug, Default)]

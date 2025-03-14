@@ -36,6 +36,7 @@ tracing = { workspace = true }
 # Commands
 moon_console = { path = "../console" }
 clap = { workspace = true, features = ["string"] }
+iocraft = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

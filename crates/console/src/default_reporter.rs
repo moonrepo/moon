@@ -457,6 +457,22 @@ impl DefaultReporter {
 // EVENTS
 
 impl DefaultReporter {
+    pub fn on_action_started(&self, _action: &Action) -> miette::Result<()> {
+        Ok(())
+    }
+
+    pub fn on_action_completed(
+        &self,
+        _action: &Action,
+        _error: Option<&miette::Report>,
+    ) -> miette::Result<()> {
+        Ok(())
+    }
+
+    pub fn on_pipeline_started(&self, _nodes: &[&ActionNode]) -> miette::Result<()> {
+        Ok(())
+    }
+
     pub fn on_pipeline_completed(
         &self,
         actions: &[Action],

@@ -5,11 +5,12 @@ use clap::builder::{
 };
 use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Args, Command};
+use iocraft::prelude::element;
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
-use moon_console::MoonConsole;
-use moon_console::prompts::list_option::ListOption;
-use moon_console::prompts::validator::Validation;
-use moon_console::prompts::{Confirm, CustomType, MultiSelect, Select, Text};
+use moon_console::{
+    MoonConsole,
+    ui::{Confirm, Input, Select, SelectOption},
+};
 use rustc_hash::FxHashMap;
 use std::io::{IsTerminal, stdout};
 use tera::Context as TemplateContext;
@@ -216,7 +217,7 @@ pub fn parse_args_into_variables(
 }
 
 #[instrument(skip_all)]
-pub fn gather_variables(
+pub async fn gather_variables(
     args: &GenerateArgs,
     template: &Template,
     console: &MoonConsole,
@@ -243,9 +244,15 @@ pub fn gather_variables(
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     cfg.default
                 } else {
-                    console.confirm(
-                        Confirm::new(cfg.prompt.as_ref().unwrap()).with_default(cfg.default),
-                    )?
+                    let mut value = cfg.default;
+
+                    console
+                        .render_interactive(element! {
+                            Confirm(label: cfg.prompt.as_ref().unwrap(), on_confirm: &mut value)
+                        })
+                        .await?;
+
+                    value
                 };
 
                 debug!(name, value, "Setting boolean variable");
@@ -256,17 +263,30 @@ pub fn gather_variables(
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     cfg.default
                 } else {
-                    console.prompt_custom(
-                        CustomType::<isize>::new(cfg.prompt.as_ref().unwrap())
-                            .with_default(cfg.default)
-                            .with_validator(move |input: &isize| {
-                                if required && *input == 0 {
-                                    Ok(Validation::Invalid("A non-zero value is required".into()))
-                                } else {
-                                    Ok(Validation::Valid)
+                    let mut value = String::new();
+
+                    console
+                        .render_interactive(element! {
+                            Input(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                default_value: cfg.default.to_string(),
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    let Ok(number) = input.parse::<isize>() else {
+                                        return Some("A number is required".into());
+                                    };
+
+                                    if required && number == 0 {
+                                        Some("A non-zero value is required".into())
+                                    } else {
+                                        None
+                                    }
                                 }
-                            }),
-                    )?
+                            )
+                        })
+                        .await?;
+
+                    value.parse::<isize>().unwrap()
                 };
 
                 debug!(name, value, "Setting number variable");
@@ -277,17 +297,26 @@ pub fn gather_variables(
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     cfg.default.clone()
                 } else {
-                    console.prompt_text(
-                        Text::new(cfg.prompt.as_ref().unwrap())
-                            .with_default(&cfg.default)
-                            .with_validator(move |input: &str| {
-                                if required && input.is_empty() {
-                                    Ok(Validation::Invalid("A value is required".into()))
-                                } else {
-                                    Ok(Validation::Valid)
+                    let mut value = String::new();
+
+                    console
+                        .render_interactive(element! {
+                            Input(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                default_value: &cfg.default,
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    if required && input.is_empty() {
+                                        Some("A value is required".into())
+                                    } else {
+                                        None
+                                    }
                                 }
-                            }),
-                    )?
+                            )
+                        })
+                        .await?;
+
+                    value
                 };
 
                 debug!(name, value, "Setting string variable");
@@ -317,21 +346,26 @@ pub fn gather_variables(
                         })
                         .collect::<Vec<_>>();
 
-                    let selected = console.prompt_multiselect(
-                        MultiSelect::new(
-                            cfg.prompt.as_ref().unwrap(),
-                            labels
-                                .iter()
-                                .enumerate()
-                                .map(|(index, label)| ListOption::new(index, label))
-                                .collect::<Vec<_>>(),
-                        )
-                        .with_default(&default_indexes),
-                    )?;
+                    let mut indexes = vec![];
 
-                    selected
+                    console
+                        .render_interactive(element! {
+                            Select(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                multiple: true,
+                                options: labels
+                                    .iter()
+                                    .map(|label| SelectOption::new(label))
+                                    .collect::<Vec<_>>(),
+                                default_indexes,
+                                on_indexes: &mut indexes,
+                            )
+                        })
+                        .await?;
+
+                    indexes
                         .into_iter()
-                        .map(|option| values[option.index].clone())
+                        .map(|index| values[index].clone())
                         .collect()
                 };
 
@@ -360,16 +394,22 @@ pub fn gather_variables(
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     default_value
                 } else {
-                    let selected = console.prompt_select(Select::new(
-                        cfg.prompt.as_ref().unwrap(),
-                        labels
-                            .iter()
-                            .enumerate()
-                            .map(|(index, label)| ListOption::new(index, label))
-                            .collect::<Vec<_>>(),
-                    ))?;
+                    let mut index = 0;
 
-                    values[selected.index].to_owned()
+                    console
+                        .render_interactive(element! {
+                            Select(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                options: labels
+                                    .iter()
+                                    .map(|label| SelectOption::new(label))
+                                    .collect::<Vec<_>>(),
+                                on_index: &mut index,
+                            )
+                        })
+                        .await?;
+
+                    values[index].to_owned()
                 };
 
                 debug!(name, value, "Setting single-value enum variable");

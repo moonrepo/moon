@@ -3968,6 +3968,7 @@ dependencies = [
  "clap",
  "content_inspector",
  "convert_case",
+ "iocraft",
  "miette 7.5.0",
  "moon_common",
  "moon_config",

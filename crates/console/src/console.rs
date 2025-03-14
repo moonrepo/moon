@@ -27,6 +27,7 @@ impl Console {
     pub fn new(quiet: bool) -> Self {
         trace!("Creating buffered console");
 
+        // TODO
         let quiet = Arc::new(AtomicBool::new(quiet || is_formatted_output()));
 
         let mut err = ConsoleBuffer::new(ConsoleStream::Stderr);
@@ -43,72 +44,6 @@ impl Console {
             quiet,
             reporter: Arc::new(Box::new(EmptyReporter)),
             theme: Arc::new(create_theme()),
-        }
-    }
-
-    pub fn new_testing() -> Self {
-        Self {
-            err: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stderr)),
-            err_handle: None,
-            out: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stdout)),
-            out_handle: None,
-            quiet: Arc::new(AtomicBool::new(false)),
-            reporter: Arc::new(Box::new(EmptyReporter)),
-            theme: Arc::new(ConsoleTheme::empty()),
-        }
-    }
-
-    pub fn close(&mut self) -> miette::Result<()> {
-        trace!("Closing console and flushing buffered output");
-
-        self.err.close()?;
-        self.out.close()?;
-
-        if let Some(handle) = self.err_handle.take() {
-            let _ = handle.join();
-        }
-
-        if let Some(handle) = self.out_handle.take() {
-            let _ = handle.join();
-        }
-
-        Ok(())
-    }
-
-    pub fn quiet(&self) {
-        self.quiet.store(true, Ordering::Release);
-    }
-
-    pub fn stderr(&self) -> Arc<ConsoleBuffer> {
-        Arc::clone(&self.err)
-    }
-
-    pub fn stdout(&self) -> Arc<ConsoleBuffer> {
-        Arc::clone(&self.out)
-    }
-
-    pub fn theme(&self) -> Arc<ConsoleTheme> {
-        Arc::clone(&self.theme)
-    }
-
-    pub fn set_reporter(&mut self, mut reporter: impl Reporter + 'static) {
-        reporter.inherit_streams(self.stderr(), self.stdout());
-        reporter.inherit_theme(self.theme());
-
-        self.reporter = Arc::new(Box::new(reporter));
-    }
-}
-
-impl Clone for Console {
-    fn clone(&self) -> Self {
-        Self {
-            err: self.err.clone(),
-            err_handle: None,
-            out: self.out.clone(),
-            out_handle: None,
-            quiet: self.quiet.clone(),
-            reporter: self.reporter.clone(),
-            theme: self.theme.clone(),
         }
     }
 }

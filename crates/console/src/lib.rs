@@ -10,6 +10,7 @@ mod reporter;
 // pub use printer::*;
 pub use default_reporter::*;
 pub use reporter::*;
+pub use starbase_console::{theme, ui};
 
 use starbase_console::Console;
 

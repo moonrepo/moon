@@ -4064,6 +4064,7 @@ dependencies = [
  "moon_config",
  "moon_target",
  "parking_lot",
+ "starbase_console",
  "starbase_styles",
  "tracing",
 ]
@@ -4079,6 +4080,8 @@ dependencies = [
  "moon_console",
  "moon_target",
  "moon_time",
+ "starbase_console",
+ "starbase_styles",
 ]
 
 [[package]]

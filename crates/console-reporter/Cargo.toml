@@ -16,6 +16,8 @@ moon_console = { path = "../console" }
 moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
+starbase_console = { workspace = true }
+starbase_styles = { workspace = true }
 
 [lints]
 workspace = true

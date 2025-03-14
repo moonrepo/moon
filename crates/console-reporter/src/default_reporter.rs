@@ -7,19 +7,54 @@ use moon_config::TaskOutputStyle;
 use moon_console::*;
 use moon_target::Target;
 use moon_time as time;
-use std::sync::Arc;
+use starbase_styles::color::owo::{OwoColorize, XtermColors};
+use starbase_styles::color::{Color, OwoStyle, no_color};
 
+const STEP_CHAR: &str = "▪";
+const CACHED_COLORS: [u8; 4] = [57, 63, 69, 75]; // blue
+const PASSED_COLORS: [u8; 4] = [35, 42, 49, 86]; // green
+const FAILED_COLORS: [u8; 4] = [124, 125, 126, 127]; // red
+const MUTED_COLORS: [u8; 4] = [240, 242, 244, 246]; // gray
+const SETUP_COLORS: [u8; 4] = [198, 205, 212, 219]; // pink
+const ANNOUNCEMENT_COLORS: [u8; 4] = [208, 214, 220, 226]; // yellow
+
+#[derive(Clone, Copy)]
+pub enum Checkpoint {
+    Announcement,
+    RunCached,
+    RunFailed,
+    RunPassed,
+    RunStarted,
+    Setup,
+}
+
+fn bold(message: &str) -> String {
+    if no_color() {
+        message.to_owned()
+    } else {
+        OwoStyle::new().style(message).bold().to_string()
+    }
+}
+
+#[derive(Debug)]
 pub struct DefaultReporter {
-    err: Arc<ConsoleBuffer>,
-    out: Arc<ConsoleBuffer>,
+    err: ConsoleStream,
+    out: ConsoleStream,
 }
 
 impl Default for DefaultReporter {
     fn default() -> Self {
         Self {
-            err: Arc::new(ConsoleBuffer::empty(ConsoleStream::Stderr)),
-            out: Arc::new(ConsoleBuffer::empty(ConsoleStream::Stdout)),
+            err: ConsoleStream::empty(ConsoleStreamType::Stderr),
+            out: ConsoleStream::empty(ConsoleStreamType::Stdout),
         }
+    }
+}
+
+impl Reporter for DefaultReporter {
+    fn inherit_streams(&mut self, err: ConsoleStream, out: ConsoleStream) {
+        self.err = err;
+        self.out = out;
     }
 }
 
@@ -41,7 +76,105 @@ impl DefaultReporter {
         hash[0..8].to_owned()
     }
 
-    fn print_task_checkpoint(
+    pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
+        &self,
+        checkpoint: Checkpoint,
+        message: M,
+        comments: C,
+    ) -> String {
+        let colors = match checkpoint {
+            Checkpoint::Announcement => ANNOUNCEMENT_COLORS,
+            Checkpoint::RunCached => CACHED_COLORS,
+            Checkpoint::RunFailed => FAILED_COLORS,
+            Checkpoint::RunPassed => PASSED_COLORS,
+            Checkpoint::RunStarted => MUTED_COLORS,
+            Checkpoint::Setup => SETUP_COLORS,
+        };
+
+        let mut out = format!(
+            "{}{}{}{} {}",
+            color::paint(colors[0], STEP_CHAR),
+            color::paint(colors[1], STEP_CHAR),
+            color::paint(colors[2], STEP_CHAR),
+            color::paint(colors[3], STEP_CHAR),
+            bold(message.as_ref()),
+        );
+
+        let suffix = self.format_comments(comments);
+
+        if !suffix.is_empty() {
+            out.push(' ');
+            out.push_str(&suffix);
+        }
+
+        out
+    }
+
+    pub fn format_comments<C: AsRef<[String]>>(&self, comments: C) -> String {
+        let comments = comments.as_ref();
+
+        if comments.is_empty() {
+            return String::new();
+        }
+
+        color::muted(format!("({})", comments.join(", ")))
+    }
+
+    pub fn format_entry_key<K: AsRef<str>>(&self, key: K) -> String {
+        color::muted_light(format!("{}:", key.as_ref()))
+    }
+
+    pub fn print_checkpoint<M: AsRef<str>>(
+        &self,
+        checkpoint: Checkpoint,
+        message: M,
+    ) -> miette::Result<()> {
+        self.print_checkpoint_with_comments(checkpoint, message, &[])
+    }
+
+    pub fn print_checkpoint_with_comments<M: AsRef<str>, C: AsRef<[String]>>(
+        &self,
+        checkpoint: Checkpoint,
+        message: M,
+        comments: C,
+    ) -> miette::Result<()> {
+        if !self.out.is_quiet() {
+            self.out
+                .write_line(self.format_checkpoint(checkpoint, message, comments))?;
+        }
+
+        Ok(())
+    }
+
+    pub fn print_entry<K: AsRef<str>, V: AsRef<str>>(
+        &self,
+        key: K,
+        value: V,
+    ) -> miette::Result<()> {
+        self.out
+            .write_line(format!("{} {}", self.format_entry_key(key), value.as_ref()))
+    }
+
+    pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
+        let header = format!(" {} ", message.as_ref().to_uppercase());
+
+        self.out.write_newline()?;
+        self.out.write_line(if no_color() {
+            header
+        } else {
+            OwoStyle::new()
+                .style(header)
+                .bold()
+                .color(XtermColors::from(Color::Black as u8))
+                .on_color(XtermColors::from(Color::Purple as u8))
+                .to_string()
+        })?;
+        self.out.write_newline()?;
+
+        Ok(())
+    }
+
+    pub fn print_task_checkpoint(
         &self,
         target: &Target,
         operation: &Operation,
@@ -82,7 +215,7 @@ impl DefaultReporter {
             }
         }
 
-        self.out.print_checkpoint_with_comments(
+        self.print_checkpoint_with_comments(
             if operation.has_failed() {
                 Checkpoint::RunFailed
             } else if operation.is_cached() {
@@ -161,7 +294,7 @@ impl DefaultReporter {
                 continue;
             }
 
-            self.out.print_checkpoint(
+            self.print_checkpoint(
                 Checkpoint::RunFailed,
                 match &*action.node {
                     ActionNode::RunTask(inner) => inner.target.as_str(),
@@ -269,11 +402,11 @@ impl DefaultReporter {
         }
 
         if item.summarize {
-            self.out.print_entry("Actions", counts_message)?;
-            self.out.print_entry("   Time", elapsed_time)?;
+            self.print_entry("Actions", counts_message)?;
+            self.print_entry("   Time", elapsed_time)?;
         } else {
-            self.out.print_entry("Tasks", counts_message)?;
-            self.out.print_entry(" Time", elapsed_time)?;
+            self.print_entry("Tasks", counts_message)?;
+            self.print_entry(" Time", elapsed_time)?;
         }
 
         Ok(())
@@ -312,7 +445,7 @@ impl DefaultReporter {
                 "{} {} {}",
                 status,
                 action.label,
-                self.out.format_comments(comments),
+                self.format_comments(comments),
             ))?;
         }
 
@@ -320,12 +453,9 @@ impl DefaultReporter {
     }
 }
 
-impl Reporter for DefaultReporter {
-    fn inherit_streams(&mut self, err: Arc<ConsoleBuffer>, out: Arc<ConsoleBuffer>) {
-        self.err = err;
-        self.out = out;
-    }
+// EVENTS
 
+impl DefaultReporter {
     fn on_pipeline_completed(
         &self,
         actions: &[Action],
@@ -353,14 +483,14 @@ impl Reporter for DefaultReporter {
 
         // Otherwise, show all the information we can.
         if actions.iter().any(|action| action.has_failed()) {
-            self.out.print_header("Review")?;
+            self.print_header("Review")?;
             self.print_pipeline_failures(actions)?;
         }
 
-        self.out.print_header("Summary")?;
+        self.print_header("Summary")?;
         self.print_pipeline_summary(actions)?;
 
-        self.out.print_header("Stats")?;
+        self.print_header("Stats")?;
         self.print_pipeline_stats(actions, item)?;
 
         self.out.write_newline()?;
@@ -382,7 +512,7 @@ impl Reporter for DefaultReporter {
 
     // If the task has been running for a long time, print a checkpoint
     fn on_task_running(&self, target: &Target, secs: u32) -> miette::Result<()> {
-        self.out.print_checkpoint_with_comments(
+        self.print_checkpoint_with_comments(
             Checkpoint::RunStarted,
             target,
             [format!("running for {}s", secs)],

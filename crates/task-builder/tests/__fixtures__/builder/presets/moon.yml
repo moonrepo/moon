@@ -6,6 +6,13 @@ tasks:
     options:
       cache: true
 
+  server-extends-middle:
+    extends: 'server'
+    options:
+      cache: true
+  server-extends:
+    extends: 'server-extends-middle'
+
   watcher:
     preset: 'watcher'
   watcher-custom:

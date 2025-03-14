@@ -269,7 +269,9 @@ impl<'proj> TasksBuilder<'proj> {
         let chain = self.get_config_inherit_chain(id)?;
 
         for link in &chain {
-            preset = link.config.preset;
+            if let Some(pre) = link.config.preset {
+                preset = Some(pre);
+            }
 
             #[allow(deprecated)]
             if let Some(local) = link.config.local {

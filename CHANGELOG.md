@@ -6,6 +6,7 @@
 
 - Fixed an issue where internal tasks could be ran when using the "run in closest project"
   shorthand.
+- Fixed an issue where the task `preset` would sometimes not be inherited when using `extends`.
 
 #### 🧩 Plugins
 

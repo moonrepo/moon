@@ -31,7 +31,11 @@ pub struct RunRequirements {
 
 impl RunRequirements {
     pub fn has_target(&self, target: &Target) -> bool {
-        self.target_locators.iter().any(|loc| loc == target)
+        self.target_locators.iter().any(|loc| match loc {
+            TargetLocator::GlobMatch { .. } => false,
+            TargetLocator::Qualified(other) => other == target,
+            TargetLocator::TaskFromWorkingDir(task_id) => task_id == &target.task_id,
+        })
     }
 }
 

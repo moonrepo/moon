@@ -1,8 +1,10 @@
 use crate::session::CliSession;
 use clap::Args;
-use moon_common::{Id, color};
-use moon_console::prompts::{Select, Text};
+use iocraft::prelude::element;
+use moon_common::Id;
+use moon_console::ui::{Input, Notice, Select, SelectOption, StyledText, Variant};
 use moon_docker::*;
+use moon_pdk_api::DefineDockerMetadataInput;
 use moon_project::Project;
 use starbase::AppResult;
 use starbase_utils::fs;
@@ -54,6 +56,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         prune: !args.no_prune,
         ..GenerateDockerfileOptions::default()
     };
+    let base_image = get_base_image(&session, &project).await?;
 
     debug!("Gathering Dockerfile options");
 
@@ -66,19 +69,23 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             .file
             .image
             .clone()
-            .unwrap_or_else(|| get_base_image(&project).into());
+            .unwrap_or_else(|| base_image);
     } else {
-        options.image = console.prompt_text(
-            Text::new("Docker image?").with_default(
-                project
-                    .config
-                    .docker
-                    .file
-                    .image
-                    .as_deref()
-                    .unwrap_or_else(|| get_base_image(&project)),
-            ),
-        )?;
+        console
+            .render_interactive(element! {
+                Input(
+                    label: "Docker image?",
+                    default_value: project
+                        .config
+                        .docker
+                        .file
+                        .image
+                        .as_deref()
+                        .unwrap_or_else(|| &base_image),
+                    on_value: &mut options.image,
+                )
+            })
+            .await?;
     }
 
     debug!(image = &options.image, "Using Docker image");
@@ -91,7 +98,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
         ids.sort();
 
-        let starting_cursor = project
+        let default_index = project
             .config
             .docker
             .file
@@ -99,11 +106,20 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             .as_ref()
             .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
 
-        console.prompt_select_skippable(
-            Select::new("Build task?", ids)
-                .with_help_message("Skip build with ESC")
-                .with_starting_cursor(starting_cursor.unwrap_or(0)),
-        )?
+        let mut index = None;
+
+        console
+            .render_interactive(element! {
+                Select(
+                    label: "Build task?",
+                    options: ids.iter().map(SelectOption::new).collect::<Vec<_>>(),
+                    default_index,
+                    on_index: &mut index,
+                )
+            })
+            .await?;
+
+        index.map(|i| ids[i])
     };
 
     if let Some(task_id) = build_task_id {
@@ -127,7 +143,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
         ids.sort();
 
-        let starting_cursor = project
+        let default_index = project
             .config
             .docker
             .file
@@ -135,11 +151,20 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             .as_ref()
             .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
 
-        console.prompt_select_skippable(
-            Select::new("Start task?", ids)
-                .with_help_message("Skip start with ESC")
-                .with_starting_cursor(starting_cursor.unwrap_or(0)),
-        )?
+        let mut index = None;
+
+        console
+            .render_interactive(element! {
+                Select(
+                    label: "Start task?",
+                    options: ids.iter().map(SelectOption::new).collect::<Vec<_>>(),
+                    default_index,
+                    on_index: &mut index,
+                )
+            })
+            .await?;
+
+        index.map(|i| ids[i])
     };
 
     if let Some(task_id) = start_task_id {
@@ -165,27 +190,53 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         "Generating Dockerfile in project",
     );
 
-    fs::write_file(out_file, generate_dockerfile(options)?)?;
+    fs::write_file(&out_file, generate_dockerfile(options)?)?;
 
-    console.out.write_line(format!(
-        "Generated {}",
-        color::rel_path(project.source.join(out))
-    ))?;
+    console.render(element! {
+        Notice(variant: Variant::Success) {
+            StyledText(
+                content: format!("Generated <path>{}</path>", out_file.display())
+            )
+        }
+    })?;
 
     Ok(None)
 }
 
-fn get_base_image(project: &Project) -> &str {
-    if let Some(tc) = project.toolchains.first() {
-        return match tc.as_str() {
-            "bun" => "oven/bun:latest",
-            "deno" => "denoland/deno:latest",
-            "node" => "node:latest",
-            "python" => "python:latest",
-            "rust" => "rust:latest",
-            _ => "scratch",
-        };
+async fn get_base_image(session: &CliSession, project: &Project) -> miette::Result<String> {
+    let Some(toolchain_id) = project.toolchains.first() else {
+        return Ok("scratch".into());
+    };
+
+    let toolchain_registry = session.get_toolchain_registry().await?;
+
+    if let Ok(toolchain) = toolchain_registry.load(&toolchain_id).await {
+        if toolchain.has_func("define_docker_metadata").await {
+            let metadata = toolchain
+                .define_docker_metadata(DefineDockerMetadataInput {
+                    context: toolchain_registry.create_context(),
+                    toolchain_config: toolchain_registry.create_merged_config(
+                        toolchain_id,
+                        &session.toolchain_config,
+                        &project.config,
+                    ),
+                })
+                .await?;
+
+            if let Some(image) = metadata.default_image {
+                return Ok(image);
+            }
+        }
     }
 
-    "scratch"
+    let image = match toolchain_id.as_str() {
+        "bun" => "oven/bun:latest",
+        "deno" => "denoland/deno:latest",
+        "node" => "node:latest",
+        "python" => "python:latest",
+        "rust" => "rust:latest",
+        _ => "scratch",
+    };
+
+    Ok(image.into())
 }

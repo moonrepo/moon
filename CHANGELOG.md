@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
+  plugins.
+- WASM API
+  - Added `DefineDockerMetadataOutput.default_image` field.
+
 ## 1.33.0
 
 #### 💥 Breaking

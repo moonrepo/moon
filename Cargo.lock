@@ -3740,6 +3740,7 @@ dependencies = [
  "dialoguer",
  "diff",
  "indicatif",
+ "iocraft",
  "miette 7.5.0",
  "moon_action",
  "moon_action_context",

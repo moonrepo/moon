@@ -52,6 +52,7 @@ clap = { workspace = true, features = [
 clap_complete = { workspace = true }
 clap_complete_nushell = "4.5.5"
 diff = "0.1.13"
+iocraft = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }

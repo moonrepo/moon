@@ -8,6 +8,7 @@
   plugins.
 - WASM API
   - Added `DefineDockerMetadataOutput.default_image` field.
+  - Added `SettingPrompt.description` field.
 
 ## 1.33.0
 

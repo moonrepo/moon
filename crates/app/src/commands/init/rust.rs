@@ -1,11 +1,14 @@
 use super::InitOptions;
-use super::prompts::{fully_qualify_version, prompt_version};
-use dialoguer::theme::ColorfulTheme;
+use super::prompts::*;
+use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
-use moon_console::MoonConsole;
+use moon_console::{
+    MoonConsole,
+    ui::{Container, Entry, Section, Style, StyledText},
+};
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
-use starbase_styles::color;
+use proto_core::UnresolvedVersionSpec;
 use std::path::Path;
 use tera::{Context, Tera};
 use tracing::instrument;
@@ -14,7 +17,7 @@ fn render_template(context: Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_rust_config_template(), &context, false).into_diagnostic()
 }
 
-fn detect_rust_version(dest_dir: &Path) -> miette::Result<String> {
+fn detect_rust_version(dest_dir: &Path) -> miette::Result<Option<UnresolvedVersionSpec>> {
     if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
         if let Some(version) = toolchain_toml.toolchain.channel {
             let rust_version = if version == "stable"
@@ -22,58 +25,60 @@ fn detect_rust_version(dest_dir: &Path) -> miette::Result<String> {
                 || version == "nightly"
                 || version.starts_with("nightly")
             {
-                version
+                Some(version)
             } else {
-                fully_qualify_version(&version)
+                fully_qualify_version(version)
             };
 
-            return Ok(rust_version);
+            return Ok(rust_version.and_then(|v| UnresolvedVersionSpec::parse(v).ok()));
         }
     }
 
-    Ok(String::new())
+    Ok(None)
 }
 
 #[instrument(skip_all)]
-pub async fn init_rust(
-    options: &InitOptions,
-    theme: &ColorfulTheme,
-    console: &MoonConsole,
-) -> miette::Result<String> {
+pub async fn init_rust(console: &MoonConsole, options: &InitOptions) -> miette::Result<String> {
     if !options.yes {
-        console.print_header("Rust")?;
-
-        console.out.write_raw(|buffer| {
-            buffer.extend_from_slice(
-                format!(
-                    "Toolchain: {}\n",
-                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
-                )
-                .as_bytes(),
-            );
-            buffer.extend_from_slice(
-                format!(
-                    "Handbook: {}\n",
-                    color::url("https://moonrepo.dev/docs/guides/rust/handbook")
-                )
-                .as_bytes(),
-            );
-            buffer.extend_from_slice(
-                format!(
-                    "Config: {}\n\n",
-                    color::url("https://moonrepo.dev/docs/config/toolchain#rust")
-                )
-                .as_bytes(),
-            );
-
-            Ok(())
+        console.render(element! {
+            Container {
+                Section(title: "Rust") {
+                    Entry(
+                        name: "Toolchain",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/concepts/toolchain",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    Entry(
+                        name: "Handbook",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/guides/rust/handbook",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    Entry(
+                        name: "Config",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/config/toolchain#rust",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                }
+            }
         })?;
-
-        console.out.flush()?;
     }
 
-    let rust_version =
-        prompt_version("Rust", options, theme, || detect_rust_version(&options.dir))?;
+    let rust_version = render_version_prompt(console, options, "Rust", || {
+        detect_rust_version(&options.dir)
+    })
+    .await?;
 
     let mut context = Context::new();
     context.insert("rust_version", &rust_version);

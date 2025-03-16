@@ -1,20 +1,21 @@
 mod bun;
-mod init_toolchain;
 mod node;
 mod prompts;
 mod rust;
+mod toolchain;
 
-use crate::helpers::create_theme;
 use crate::session::CliSession;
 use bun::init_bun;
 use clap::Args;
-use dialoguer::Confirm;
-use dialoguer::theme::ColorfulTheme;
-use init_toolchain::init_toolchain;
+use iocraft::prelude::{FlexDirection, View, element};
 use miette::IntoDiagnostic;
 use moon_common::{Id, consts::CONFIG_DIRNAME, is_test_env};
 use moon_config::{
     ToolchainConfig, load_toolchain_config_template, load_workspace_config_template,
+};
+use moon_console::{
+    MoonConsole,
+    ui::{Confirm, Container, Notice, StyledText, Variant},
 };
 use moon_vcs::{Git, Vcs};
 use node::init_node;
@@ -24,8 +25,9 @@ use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tera::{Context, Tera};
+use toolchain::init_toolchain;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -90,27 +92,45 @@ pub struct InitOptions {
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-fn verify_dest_dir(
-    dest_dir: &Path,
+async fn verify_dest_dir(
+    console: &MoonConsole,
     options: &InitOptions,
-    theme: &ColorfulTheme,
 ) -> miette::Result<Option<PathBuf>> {
-    if options.yes
-        || Confirm::with_theme(theme)
-            .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
-            .interact()
-            .into_diagnostic()?
-    {
-        let moon_dir = dest_dir.join(CONFIG_DIRNAME);
+    let init = if options.yes {
+        true
+    } else {
+        let mut value = false;
 
-        if !options.force
-            && moon_dir.exists()
-            && !Confirm::with_theme(theme)
-                .with_prompt("moon has already been initialized, overwrite it?")
-                .interact()
-                .into_diagnostic()?
-        {
-            return Ok(None);
+        console
+            .render_interactive(element! {
+                Confirm(
+                    label: format!("Initialize moon into <path>{}</path>?", options.dir.display()),
+                    on_confirm: &mut value
+                )
+            })
+            .await?;
+
+        value
+    };
+
+    if init {
+        let moon_dir = options.dir.join(CONFIG_DIRNAME);
+
+        if !options.force && moon_dir.exists() {
+            let mut force = false;
+
+            console
+                .render_interactive(element! {
+                    Confirm(
+                        label: "moon has already been initialized, overwrite it?",
+                        on_confirm: &mut force
+                    )
+                })
+                .await?;
+
+            if !force {
+                return Ok(None);
+            }
         }
 
         fs::create_dir_all(&moon_dir)?;
@@ -125,7 +145,6 @@ pub async fn init_for_toolchain(
     session: &CliSession,
     args: &InitArgs,
     options: &InitOptions,
-    theme: &ColorfulTheme,
 ) -> AppResult {
     let console = &session.console;
     let id = args.toolchain.as_ref().unwrap();
@@ -140,9 +159,9 @@ pub async fn init_for_toolchain(
     }
 
     let tool_config = match id.as_str() {
-        "bun" => init_bun(options, theme, console).await?,
-        "node" => init_node(options, theme, console).await?,
-        "rust" => init_rust(options, theme, console).await?,
+        "bun" => init_bun(console, options).await?,
+        "node" => init_node(console, options).await?,
+        "rust" => init_rust(console, options).await?,
         _ => {
             let mut include_locator = true;
             let plugin_id = PluginId::raw(id.as_str());
@@ -172,11 +191,10 @@ pub async fn init_for_toolchain(
             let toolchain = toolchain_registry.get_instance(&plugin_id).await?;
 
             init_toolchain(
+                &session.console,
+                options,
                 &toolchain_registry,
                 &toolchain,
-                options,
-                theme,
-                console,
                 include_locator,
             )
             .await?
@@ -194,18 +212,21 @@ pub async fn init_for_toolchain(
 
     fs::append_file(toolchain_config_path, format!("\n\n{}", tool_config.trim()))?;
 
-    console.out.write_newline()?;
-
-    console
-        .out
-        .write_line("Toolchain config has successfully been updated")?;
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(
+                    content: "Configuration <file>.moon/toolchain.yml</file> has successfully been updated!"
+                )
+            }
+        }
+    })?;
 
     Ok(None)
 }
 
 #[instrument(skip_all)]
 pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
-    let theme = create_theme();
     let dest_path = PathBuf::from(&args.dest);
     let dest_dir = if args.dest == "." {
         session.working_dir.clone()
@@ -224,13 +245,13 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Initialize a specific tool and exit early
     if args.toolchain.is_some() {
-        init_for_toolchain(&session, &args, &options, &theme).await?;
+        init_for_toolchain(&session, &args, &options).await?;
 
         return Ok(None);
     }
 
     // Extract template variables
-    if verify_dest_dir(&dest_dir, &options, &theme)?.is_none() {
+    if verify_dest_dir(&session.console, &options).await?.is_none() {
         return Ok(None);
     }
 
@@ -268,30 +289,23 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 "#,
     )?;
 
-    let stdout = session.console.stdout();
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(
+                    content: format!(
+                        "Successfully initialized moon in <path>{}</path>!", dest_dir.display(),
+                    )
+                )
+                StyledText(content: "Get started with these next steps.")
 
-    stdout.write_newline()?;
-
-    stdout.write_line(format!(
-        "Successfully initialized moon in {}!",
-        color::path(&dest_dir),
-    ))?;
-
-    stdout.write_line("Get started with these next steps.")?;
-
-    stdout.write_newline()?;
-
-    stdout.write_line(format!(
-        "  Learn more: {}",
-        color::url("https://moonrepo.dev/docs")
-    ))?;
-
-    stdout.write_line(format!(
-        "  Need help? {}",
-        color::url("https://discord.gg/qCh9MEynv2")
-    ))?;
-
-    stdout.write_newline()?;
+                View(padding_top: 1, padding_left: 2, flex_direction: FlexDirection::Column) {
+                    StyledText(content: "Learn more: <url>https://moonrepo.dev/docs</url>")
+                    StyledText(content: "Need help? <url>https://discord.gg/qCh9MEynv2</url>")
+                }
+            }
+        }
+    })?;
 
     Ok(None)
 }

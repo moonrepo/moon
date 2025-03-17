@@ -124,7 +124,7 @@ pub async fn render_version_prompt(
 
     let default_version = op()?;
     let mut confirmed = false;
-    let mut value = None;
+    let mut value = String::new();
 
     console
         .render_interactive(element! {
@@ -138,7 +138,7 @@ pub async fn render_version_prompt(
                         "Manage {tool} through <shell>moon</shell>? <muted>(recommended)</muted>"
                     )
                 },
-                description: "Will automatically download and install.".to_string(),
+                description: "Will download and install on-demand.".to_string(),
                 on_confirm: &mut confirmed,
             )
         })
@@ -152,7 +152,7 @@ pub async fn render_version_prompt(
                     default_value: default_version.map(|v| v.to_string()).unwrap_or_default(),
                     on_value: &mut value,
                     validate: move |input: String| {
-                        if input.is_empty() {
+                        if input.trim().is_empty() {
                             Some("Please provide a version".into())
                         } else if let Err(error) = UnresolvedVersionSpec::parse(&input) {
                             Some(error.to_string())
@@ -165,7 +165,11 @@ pub async fn render_version_prompt(
             .await?;
     }
 
-    Ok(value.and_then(|v| UnresolvedVersionSpec::parse(v).ok()))
+    Ok(if value.is_empty() {
+        None
+    } else {
+        UnresolvedVersionSpec::parse(value).ok()
+    })
 }
 
 pub fn display_json_value(value: &JsonValue) -> String {

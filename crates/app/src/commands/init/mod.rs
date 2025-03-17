@@ -7,6 +7,7 @@ mod toolchain;
 use crate::session::CliSession;
 use bun::init_bun;
 use clap::Args;
+use clean_path::Clean;
 use iocraft::prelude::{FlexDirection, View, element};
 use miette::IntoDiagnostic;
 use moon_common::{Id, consts::CONFIG_DIRNAME, is_test_env};
@@ -237,7 +238,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
     };
 
     let options = InitOptions {
-        dir: dest_dir.clone(),
+        dir: dest_dir.clean(),
         force: args.force,
         minimal: args.minimal,
         yes: args.yes,
@@ -255,7 +256,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
         return Ok(None);
     }
 
-    let git = Git::load(&dest_dir, "master", &[])?;
+    let git = Git::load(&options.dir, "master", &[])?;
 
     let mut context = create_default_context();
     context.insert("vcs_manager", "git");
@@ -275,13 +276,13 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Create workspace file
     fs::write_file(
-        &session.config_loader.get_workspace_files(&dest_dir)[0],
+        &session.config_loader.get_workspace_files(&options.dir)[0],
         render_workspace_template(&context)?,
     )?;
 
     // Append to ignore file
     fs::append_file(
-        dest_dir.join(".gitignore"),
+        options.dir.join(".gitignore"),
         r#"
 # moon
 .moon/cache
@@ -294,14 +295,13 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
             Notice(variant: Variant::Success) {
                 StyledText(
                     content: format!(
-                        "Successfully initialized moon in <path>{}</path>!", dest_dir.display(),
+                        "Successfully initialized moon in <path>{}</path>!", options.dir.display(),
                     )
                 )
-                StyledText(content: "Get started with these next steps.")
 
-                View(padding_top: 1, padding_left: 2, flex_direction: FlexDirection::Column) {
+                View(padding_top: 1, flex_direction: FlexDirection::Column) {
                     StyledText(content: "Learn more: <url>https://moonrepo.dev/docs</url>")
-                    StyledText(content: "Need help? <url>https://discord.gg/qCh9MEynv2</url>")
+                    StyledText(content: "Need help?  <url>https://discord.gg/qCh9MEynv2</url>")
                 }
             }
         }

@@ -3736,6 +3736,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "clap_complete_nushell",
+ "clean-path",
  "console",
  "dialoguer",
  "diff",

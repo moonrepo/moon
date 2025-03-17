@@ -34,13 +34,13 @@ pub async fn task_graph(session: CliSession, args: TaskGraphArgs) -> AppResult {
     task_graph.get_all()?;
 
     if args.dot {
-        session.console.out.write_line(task_graph.to_dot());
+        session.console.out.write_line(task_graph.to_dot())?;
 
         return Ok(None);
     }
 
     if args.json {
-        session.console.out.write_line(task_graph.to_json()?);
+        session.console.out.write_line(task_graph.to_json()?)?;
 
         return Ok(None);
     }

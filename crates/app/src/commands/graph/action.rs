@@ -50,7 +50,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     let action_graph = action_graph_builder.build();
 
     if args.dot {
-        session.console.out.write_line(action_graph.to_dot());
+        session.console.out.write_line(action_graph.to_dot())?;
 
         return Ok(None);
     }
@@ -61,7 +61,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
         session
             .console
             .out
-            .write_line(json::format(&graph_info, true)?);
+            .write_line(json::format(&graph_info, true)?)?;
 
         return Ok(None);
     }

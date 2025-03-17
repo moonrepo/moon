@@ -56,32 +56,28 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         prune: !args.no_prune,
         ..GenerateDockerfileOptions::default()
     };
-    let base_image = get_base_image(&session, &project).await?;
 
     debug!("Gathering Dockerfile options");
+
+    let base_image = get_base_image(&session, &project).await?;
+    let default_image = project
+        .config
+        .docker
+        .file
+        .image
+        .clone()
+        .unwrap_or_else(|| base_image);
 
     if let Some(image) = args.image {
         options.image = image;
     } else if args.defaults {
-        options.image = project
-            .config
-            .docker
-            .file
-            .image
-            .clone()
-            .unwrap_or_else(|| base_image);
+        options.image = default_image;
     } else {
         console
             .render_interactive(element! {
                 Input(
                     label: "Docker image?",
-                    default_value: project
-                        .config
-                        .docker
-                        .file
-                        .image
-                        .as_deref()
-                        .unwrap_or_else(|| &base_image),
+                    default_value: default_image,
                     on_value: &mut options.image,
                 )
             })
@@ -105,21 +101,28 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             .build_task
             .as_ref()
             .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
-
-        let mut index = None;
+        let mut index = default_index.unwrap_or(0);
 
         console
             .render_interactive(element! {
                 Select(
                     label: "Build task?",
-                    options: ids.iter().map(SelectOption::new).collect::<Vec<_>>(),
+                    options: {
+                        let mut options = ids.iter().map(SelectOption::new).collect::<Vec<_>>();
+                        options.push(SelectOption::new("(none)"));
+                        options
+                    },
                     default_index,
                     on_index: &mut index,
                 )
             })
             .await?;
 
-        index.map(|i| ids[i])
+        if index == ids.len() {
+            None
+        } else {
+            Some(ids[index])
+        }
     };
 
     if let Some(task_id) = build_task_id {
@@ -150,21 +153,28 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             .start_task
             .as_ref()
             .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
-
-        let mut index = None;
+        let mut index = default_index.unwrap_or(0);
 
         console
             .render_interactive(element! {
                 Select(
                     label: "Start task?",
-                    options: ids.iter().map(SelectOption::new).collect::<Vec<_>>(),
+                    options: {
+                        let mut options = ids.iter().map(SelectOption::new).collect::<Vec<_>>();
+                        options.push(SelectOption::new("(none)"));
+                        options
+                    },
                     default_index,
                     on_index: &mut index,
                 )
             })
             .await?;
 
-        index.map(|i| ids[i])
+        if index == ids.len() {
+            None
+        } else {
+            Some(ids[index])
+        }
     };
 
     if let Some(task_id) = start_task_id {
@@ -181,8 +191,9 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     }
 
     // Generate the file
-    let out = args.dest.unwrap_or("Dockerfile".into());
-    let out_file = project.root.join(&out);
+    let out_file = project
+        .root
+        .join(args.dest.as_deref().unwrap_or("Dockerfile"));
 
     debug!(
         dockerfile = ?out_file,

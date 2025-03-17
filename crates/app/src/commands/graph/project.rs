@@ -34,13 +34,13 @@ pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppRe
     project_graph.get_all()?;
 
     if args.dot {
-        session.console.out.write_line(project_graph.to_dot());
+        session.console.out.write_line(project_graph.to_dot())?;
 
         return Ok(None);
     }
 
     if args.json {
-        session.console.out.write_line(project_graph.to_json()?);
+        session.console.out.write_line(project_graph.to_json()?)?;
 
         return Ok(None);
     }

@@ -1,9 +1,13 @@
 use crate::app::Commands;
 use crate::session::CliSession;
+use iocraft::prelude::element;
+use miette::IntoDiagnostic;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
+use moon_console::MoonConsole;
+use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_platform::PlatformManager;
 use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
@@ -42,6 +46,9 @@ pub async fn run_action_pipeline(
         Commands::Run(cmd) => {
             pipeline.bail = !cmd.no_bail;
             pipeline.summarize = cmd.summary;
+        }
+        Commands::Sync { .. } => {
+            pipeline.summarize = true;
         }
         _ => {}
     };
@@ -109,4 +116,41 @@ pub async fn create_workspace_graph_context(
         .await;
 
     Ok(context)
+}
+
+pub fn create_progress_loader(
+    console: Arc<MoonConsole>,
+    message: impl AsRef<str>,
+) -> ProgressInstance {
+    let reporter = Arc::new(ProgressReporter::default());
+    let reporter_clone = OwnedOrShared::Shared(reporter.clone());
+    let message = message.as_ref().to_owned();
+
+    let handle = tokio::task::spawn(async move {
+        console
+            .render_interactive(element! {
+                Progress(
+                    default_message: message,
+                    display: ProgressDisplay::Loader,
+                    reporter: reporter_clone,
+                )
+            })
+            .await
+    });
+
+    ProgressInstance { handle, reporter }
+}
+
+pub struct ProgressInstance {
+    pub handle: tokio::task::JoinHandle<miette::Result<()>>,
+    pub reporter: Arc<ProgressReporter>,
+}
+
+impl ProgressInstance {
+    pub async fn stop(self) -> miette::Result<()> {
+        self.reporter.exit();
+        self.handle.await.into_diagnostic()??;
+
+        Ok(())
+    }
 }

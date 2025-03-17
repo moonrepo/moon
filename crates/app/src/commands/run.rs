@@ -189,7 +189,7 @@ pub async fn run_target(
             };
 
             format!(
-                "Target(s) {targets_list} not affected by touched files (using status {status_list})"
+                "Target(s) {targets_list} not affected by touched files using status {status_list}"
             )
         } else {
             format!("No tasks found for target(s) {targets_list}")

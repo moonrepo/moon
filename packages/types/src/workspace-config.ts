@@ -156,6 +156,7 @@ export interface HasherConfig {
 	 * The number of files to include in each hash operation.
 	 *
 	 * @default 2500
+	 * @deprecated
 	 */
 	batchSize?: number;
 	/**
@@ -255,7 +256,11 @@ export type RemoteApi = 'grpc' | 'http';
 export interface RemoteAuthConfig {
 	/** HTTP headers to inject into every request. */
 	headers: Record<string, string>;
-	/** The name of an environment variable to use as a bearer token. */
+	/**
+	 * The name of an environment variable to use as a bearer token.
+	 *
+	 * @envvar MOON_REMOTE_AUTH_TOKEN
+	 */
 	token: string | null;
 }
 
@@ -268,6 +273,7 @@ export interface RemoteCacheConfig {
 	 * The compression format to use when uploading/downloading blobs.
 	 *
 	 * @default 'none'
+	 * @envvar MOON_REMOTE_CACHE_COMPRESSION
 	 * @type {'none' | 'zstd'}
 	 */
 	compression: RemoteCompression;
@@ -275,6 +281,7 @@ export interface RemoteCacheConfig {
 	 * Unique instance name for blobs. Will be used as a folder name.
 	 *
 	 * @default 'moon-outputs'
+	 * @envvar MOON_REMOTE_CACHE_INSTANCE_NAME
 	 */
 	instanceName?: string;
 }
@@ -284,24 +291,36 @@ export interface RemoteMtlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
 	 * even if it doesn't provide protocol negotiation via ALPN.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_HTTP
 	 */
 	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_CA_CERT
 	 */
 	caCert: string;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * client's PEM encoded X509 certificate.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_CLIENT_CERT
 	 */
 	clientCert: string;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * client's PEM encoded X509 private key.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_CLIENT_KEY
 	 */
 	clientKey: string;
-	/** The domain name in which to verify the TLS certificate. */
+	/**
+	 * The domain name in which to verify the TLS certificate.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_DOMAIN
+	 */
 	domain: string | null;
 }
 
@@ -310,14 +329,22 @@ export interface RemoteTlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
 	 * even if it doesn't provide protocol negotiation via ALPN.
+	 *
+	 * @envvar MOON_REMOTE_TLS_HTTP2
 	 */
 	assumeHttp2: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
+	 *
+	 * @envvar MOON_REMOTE_TLS_CERT
 	 */
 	cert: string;
-	/** The domain name in which to verify the TLS certificate. */
+	/**
+	 * The domain name in which to verify the TLS certificate.
+	 *
+	 * @envvar MOON_REMOTE_TLS_DOMAIN
+	 */
 	domain: string | null;
 }
 
@@ -327,6 +354,7 @@ export interface RemoteConfig {
 	 * The API format of the remote service.
 	 *
 	 * @default 'grpc'
+	 * @envvar MOON_REMOTE_API
 	 * @type {'grpc' | 'http'}
 	 */
 	api: RemoteApi;
@@ -337,6 +365,8 @@ export interface RemoteConfig {
 	/**
 	 * The remote host to connect and send requests to.
 	 * Supports gRPC protocols.
+	 *
+	 * @envvar MOON_REMOTE_HOST
 	 */
 	host: string;
 	/**
@@ -589,6 +619,7 @@ export interface PartialHasherConfig {
 	 * The number of files to include in each hash operation.
 	 *
 	 * @default 2500
+	 * @deprecated
 	 */
 	batchSize?: number | null;
 	/**
@@ -686,7 +717,11 @@ export interface PartialRunnerConfig {
 export interface PartialRemoteAuthConfig {
 	/** HTTP headers to inject into every request. */
 	headers?: Record<string, string> | null;
-	/** The name of an environment variable to use as a bearer token. */
+	/**
+	 * The name of an environment variable to use as a bearer token.
+	 *
+	 * @envvar MOON_REMOTE_AUTH_TOKEN
+	 */
 	token?: string | null;
 }
 
@@ -696,12 +731,14 @@ export interface PartialRemoteCacheConfig {
 	 * The compression format to use when uploading/downloading blobs.
 	 *
 	 * @default 'none'
+	 * @envvar MOON_REMOTE_CACHE_COMPRESSION
 	 */
 	compression?: RemoteCompression | null;
 	/**
 	 * Unique instance name for blobs. Will be used as a folder name.
 	 *
 	 * @default 'moon-outputs'
+	 * @envvar MOON_REMOTE_CACHE_INSTANCE_NAME
 	 */
 	instanceName?: string | null;
 }
@@ -711,24 +748,36 @@ export interface PartialRemoteMtlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
 	 * even if it doesn't provide protocol negotiation via ALPN.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_HTTP
 	 */
 	assumeHttp2?: boolean | null;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_CA_CERT
 	 */
 	caCert?: string | null;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * client's PEM encoded X509 certificate.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_CLIENT_CERT
 	 */
 	clientCert?: string | null;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * client's PEM encoded X509 private key.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_CLIENT_KEY
 	 */
 	clientKey?: string | null;
-	/** The domain name in which to verify the TLS certificate. */
+	/**
+	 * The domain name in which to verify the TLS certificate.
+	 *
+	 * @envvar MOON_REMOTE_MTLS_DOMAIN
+	 */
 	domain?: string | null;
 }
 
@@ -737,14 +786,22 @@ export interface PartialRemoteTlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
 	 * even if it doesn't provide protocol negotiation via ALPN.
+	 *
+	 * @envvar MOON_REMOTE_TLS_HTTP2
 	 */
 	assumeHttp2?: boolean | null;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
+	 *
+	 * @envvar MOON_REMOTE_TLS_CERT
 	 */
 	cert?: string | null;
-	/** The domain name in which to verify the TLS certificate. */
+	/**
+	 * The domain name in which to verify the TLS certificate.
+	 *
+	 * @envvar MOON_REMOTE_TLS_DOMAIN
+	 */
 	domain?: string | null;
 }
 
@@ -754,6 +811,7 @@ export interface PartialRemoteConfig {
 	 * The API format of the remote service.
 	 *
 	 * @default 'grpc'
+	 * @envvar MOON_REMOTE_API
 	 */
 	api?: RemoteApi | null;
 	/** Connect to the host using basic HTTP authentication. */
@@ -763,6 +821,8 @@ export interface PartialRemoteConfig {
 	/**
 	 * The remote host to connect and send requests to.
 	 * Supports gRPC protocols.
+	 *
+	 * @envvar MOON_REMOTE_HOST
 	 */
 	host?: string | null;
 	/**

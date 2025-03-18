@@ -613,7 +613,7 @@ mod project_graph {
                         .task_targets
                         .clone()
                 ),
-                ["bun", "global", "global-typescript"]
+                ["bun", "global", "global-javascript"]
             );
         }
 

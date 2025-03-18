@@ -267,6 +267,7 @@ export interface NodeConfig {
 export interface ToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config: Record<string, unknown>;
+	disabled: boolean;
 	/** Location of the WASM plugin to use. */
 	plugin: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
@@ -620,6 +621,7 @@ export interface PartialNodeConfig {
 export interface PartialToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config?: Record<string, unknown> | null;
+	disabled?: boolean | null;
 	/** Location of the WASM plugin to use. */
 	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */

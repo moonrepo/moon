@@ -22,7 +22,7 @@ pub async fn teardown(session: CliSession) -> AppResult {
     session.console.render(element! {
         Container {
             Notice(variant: Variant::Success) {
-                StyledText(content: "Toolchain has been torndown!")
+                StyledText(content: "Toolchain has been torn down!")
             }
         }
     })?;

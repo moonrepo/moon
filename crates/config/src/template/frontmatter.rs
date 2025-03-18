@@ -1,5 +1,6 @@
 use moon_common::cacheable;
 use schematic::Config;
+
 cacheable!(
     /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
     #[derive(Clone, Config, Debug, Eq, PartialEq)]

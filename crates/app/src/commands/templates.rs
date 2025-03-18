@@ -94,6 +94,7 @@ pub async fn templates(session: CliSession, args: TemplatesArgs) -> AppResult {
                             value: element! {
                                 StyledText(
                                     content: &template.config.description,
+                                    style: Style::MutedLight,
                                 )
                             }.into_any()
                         )

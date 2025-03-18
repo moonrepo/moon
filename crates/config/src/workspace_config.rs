@@ -17,7 +17,7 @@ fn validate_projects<D, C>(
         PartialWorkspaceProjects::Both(cfg) => {
             if let Some(globs) = &cfg.globs {
                 for (i, g) in globs.iter().enumerate() {
-                    ProjectGlobPath::from_str(g).map_err(|error| {
+                    ProjectGlobPath::parse(g).map_err(|error| {
                         ValidateError::with_segments(
                             error.to_string(),
                             [PathSegment::Key("globs".to_owned()), PathSegment::Index(i)],
@@ -28,7 +28,7 @@ fn validate_projects<D, C>(
 
             if let Some(sources) = &cfg.sources {
                 for (k, v) in sources {
-                    ProjectFilePath::from_str(v).map_err(|error| {
+                    ProjectFilePath::parse(v).map_err(|error| {
                         ValidateError::with_segments(
                             error.to_string(),
                             [
@@ -42,14 +42,14 @@ fn validate_projects<D, C>(
         }
         PartialWorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
-                ProjectGlobPath::from_str(g).map_err(|error| {
+                ProjectGlobPath::parse(g).map_err(|error| {
                     ValidateError::with_segments(error.to_string(), [PathSegment::Index(i)])
                 })?;
             }
         }
         PartialWorkspaceProjects::Sources(sources) => {
             for (k, v) in sources {
-                ProjectFilePath::from_str(v).map_err(|error| {
+                ProjectFilePath::parse(v).map_err(|error| {
                     ValidateError::with_segments(
                         error.to_string(),
                         [PathSegment::Key(k.to_string())],

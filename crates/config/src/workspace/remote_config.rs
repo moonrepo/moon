@@ -1,6 +1,6 @@
 use crate::portable_path::FilePath;
 use rustc_hash::FxHashMap;
-use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, derive_enum, validate};
+use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, derive_enum, env, validate};
 
 fn path_is_required<D, C>(
     value: &FilePath,
@@ -34,6 +34,7 @@ pub struct RemoteAuthConfig {
     pub headers: FxHashMap<String, String>,
 
     /// The name of an environment variable to use as a bearer token.
+    #[setting(env = "MOON_REMOTE_AUTH_TOKEN")]
     pub token: Option<String>,
 }
 
@@ -59,10 +60,11 @@ impl RemoteCompression {
 #[derive(Clone, Config, Debug)]
 pub struct RemoteCacheConfig {
     /// The compression format to use when uploading/downloading blobs.
+    #[setting(env = "MOON_REMOTE_CACHE_COMPRESSION")]
     pub compression: RemoteCompression,
 
     /// Unique instance name for blobs. Will be used as a folder name.
-    #[setting(default = "moon-outputs")]
+    #[setting(default = "moon-outputs", env = "MOON_REMOTE_CACHE_INSTANCE_NAME")]
     pub instance_name: String,
 }
 
@@ -71,14 +73,16 @@ pub struct RemoteCacheConfig {
 pub struct RemoteTlsConfig {
     /// If true, assume that the server supports HTTP/2,
     /// even if it doesn't provide protocol negotiation via ALPN.
+    #[setting(env = "MOON_REMOTE_TLS_HTTP2", parse_env = env::parse_bool)]
     pub assume_http2: bool,
 
     /// A file path, relative from the workspace root, to the
     /// certificate authority PEM encoded X509 certificate.
-    #[setting(validate = path_is_required)]
+    #[setting(env = "MOON_REMOTE_TLS_CERT", validate = path_is_required)]
     pub cert: FilePath,
 
     /// The domain name in which to verify the TLS certificate.
+    #[setting(env = "MOON_REMOTE_TLS_DOMAIN")]
     pub domain: Option<String>,
 }
 
@@ -87,24 +91,26 @@ pub struct RemoteTlsConfig {
 pub struct RemoteMtlsConfig {
     /// If true, assume that the server supports HTTP/2,
     /// even if it doesn't provide protocol negotiation via ALPN.
+    #[setting(env = "MOON_REMOTE_MTLS_HTTP", parse_env = env::parse_bool)]
     pub assume_http2: bool,
 
     /// A file path, relative from the workspace root, to the
     /// certificate authority PEM encoded X509 certificate.
-    #[setting(validate = path_is_required)]
+    #[setting(env = "MOON_REMOTE_MTLS_CA_CERT", validate = path_is_required)]
     pub ca_cert: FilePath,
 
     /// A file path, relative from the workspace root, to the
     /// client's PEM encoded X509 certificate.
-    #[setting(validate = path_is_required)]
+    #[setting(env = "MOON_REMOTE_MTLS_CLIENT_CERT", validate = path_is_required)]
     pub client_cert: FilePath,
 
     /// A file path, relative from the workspace root, to the
     /// client's PEM encoded X509 private key.
-    #[setting(validate = path_is_required)]
+    #[setting(env = "MOON_REMOTE_MTLS_CLIENT_KEY", validate = path_is_required)]
     pub client_key: FilePath,
 
     /// The domain name in which to verify the TLS certificate.
+    #[setting(env = "MOON_REMOTE_MTLS_DOMAIN")]
     pub domain: Option<String>,
 }
 
@@ -112,6 +118,7 @@ pub struct RemoteMtlsConfig {
 #[derive(Clone, Config, Debug)]
 pub struct RemoteConfig {
     /// The API format of the remote service.
+    #[setting(env = "MOON_REMOTE_API")]
     pub api: RemoteApi,
 
     /// Connect to the host using basic HTTP authentication.
@@ -124,7 +131,7 @@ pub struct RemoteConfig {
 
     /// The remote host to connect and send requests to.
     /// Supports gRPC protocols.
-    #[setting(validate = validate::not_empty)]
+    #[setting(env = "MOON_REMOTE_HOST", validate = validate::not_empty)]
     pub host: String,
 
     /// Connect to the host using server and client authentication with mTLS.

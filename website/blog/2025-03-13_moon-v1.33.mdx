@@ -84,6 +84,14 @@ toolchain:
   typescript: false # or null
 ```
 
+:::warning
+
+If you use the TypeScript toolchain, you'll need to update your configuration files or editor to
+point to the newer [JSON schemas](#dynamic-json-schemas), otherwise your editor may error with
+"Property typescript is not allowed".
+
+:::
+
 ## Experimental `moonx` executable
 
 Based on a [request from the community](https://github.com/moonrepo/moon/issues/1828), we're

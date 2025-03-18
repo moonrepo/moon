@@ -5,6 +5,7 @@ use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
+use std::str::FromStr;
 
 /// Return true of the provided file looks like a glob pattern.
 pub fn is_glob_like(value: &str) -> bool {
@@ -27,8 +28,10 @@ pub fn is_glob_like(value: &str) -> bool {
     value.contains('?')
 }
 
-pub trait PortablePath: Sized {
-    fn from_str(path: &str) -> Result<Self, ParseError>;
+pub trait PortablePath: FromStr {
+    fn parse(path: &str) -> Result<Self, Self::Err> {
+        Self::from_str(path)
+    }
 }
 
 macro_rules! path_type {
@@ -108,7 +111,11 @@ macro_rules! path_type {
 // Represents any file glob pattern.
 path_type!(GlobPath);
 
-impl PortablePath for GlobPath {
+impl PortablePath for GlobPath {}
+
+impl FromStr for GlobPath {
+    type Err = ParseError;
+
     fn from_str(value: &str) -> Result<Self, ParseError> {
         Ok(GlobPath(value.into()))
     }
@@ -117,7 +124,11 @@ impl PortablePath for GlobPath {
 // Represents any file system path.
 path_type!(FilePath);
 
-impl PortablePath for FilePath {
+impl PortablePath for FilePath {}
+
+impl FromStr for FilePath {
+    type Err = ParseError;
+
     fn from_str(value: &str) -> Result<Self, ParseError> {
         if is_glob_like(value) {
             return Err(ParseError::new(
@@ -132,7 +143,11 @@ impl PortablePath for FilePath {
 // Represents a project-relative file glob pattern.
 path_type!(ProjectGlobPath);
 
-impl PortablePath for ProjectGlobPath {
+impl PortablePath for ProjectGlobPath {}
+
+impl FromStr for ProjectGlobPath {
+    type Err = ParseError;
+
     fn from_str(value: &str) -> Result<Self, ParseError> {
         validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
@@ -143,7 +158,11 @@ impl PortablePath for ProjectGlobPath {
 // Represents a project-relative file system path.
 path_type!(ProjectFilePath);
 
-impl PortablePath for ProjectFilePath {
+impl PortablePath for ProjectFilePath {}
+
+impl FromStr for ProjectFilePath {
+    type Err = ParseError;
+
     fn from_str(value: &str) -> Result<Self, ParseError> {
         if is_glob_like(value) {
             return Err(ParseError::new(

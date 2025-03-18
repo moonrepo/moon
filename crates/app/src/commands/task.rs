@@ -1,9 +1,12 @@
 use crate::app_error::AppError;
 use crate::session::CliSession;
 use clap::Args;
+use iocraft::prelude::{View, element};
+use moon_console::ui::{
+    Container, Entry, List, ListItem, Map, MapItem, Section, Style, StyledText,
+};
 use moon_task::{Target, TargetScope};
 use starbase::AppResult;
-use starbase_styles::color;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -22,160 +25,286 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
         return Err(AppError::ProjectIdRequired.into());
     };
 
-    // let workspace_graph = session.get_workspace_graph().await?;
-    // let project = workspace_graph.get_project(project_locator)?;
-    // let task = workspace_graph.get_task(&args.target)?;
+    let workspace_graph = session.get_workspace_graph().await?;
+    let project = workspace_graph.get_project(project_locator)?;
+    let task = workspace_graph.get_task(&args.target)?;
+    let console = &session.console;
 
-    // let console = session.console.stdout();
+    if args.json {
+        console.out.write_line(json::format(&task, true)?)?;
 
-    // if args.json {
-    //     console.write_line(json::format(&task, true)?)?;
+        return Ok(None);
+    }
 
-    //     return Ok(None);
-    // }
+    let mut modes = vec![];
 
-    // console.print_header(&args.target.id)?;
+    if task.is_local() {
+        modes.push("local");
+    }
+    if task.is_internal() {
+        modes.push("internal");
+    }
+    if task.is_interactive() {
+        modes.push("interactive");
+    }
+    if task.is_persistent() {
+        modes.push("persistent");
+    }
 
-    // if let Some(desc) = &task.description {
-    //     console.write_line(desc)?;
-    //     console.write_newline()?;
-    // }
+    let mut inputs = vec![];
+    inputs.extend(task.input_globs.iter().map(|i| i.to_string()));
+    inputs.extend(task.input_files.iter().map(|i| i.to_string()));
+    inputs.extend(task.input_env.iter().map(|i| format!("${i}")));
+    inputs.sort();
 
-    // console.print_entry("Task", color::id(&args.target.task_id))?;
-    // console.print_entry("Project", color::id(&project.id))?;
-    // console.print_entry(
-    //     if task.toolchains.len() == 1 {
-    //         "Toolchain"
-    //     } else {
-    //         "Toolchains"
-    //     },
-    //     task.toolchains.join(", "),
-    // )?;
-    // console.print_entry("Type", task.type_of.to_string())?;
+    let mut outputs = vec![];
+    outputs.extend(&task.output_globs);
+    outputs.extend(&task.output_files);
+    outputs.sort();
 
-    // let mut modes = vec![];
+    session.console.render(element! {
+        Container {
+            Section(title: "Metadata") {
+                #(task.description.as_ref().map(|desc| {
+                    element! {
+                        View(margin_bottom: 1) {
+                            StyledText(
+                                content: desc,
+                            )
+                        }
+                    }
+                }))
 
-    // if task.is_local() {
-    //     modes.push("local");
-    // }
-    // if task.is_internal() {
-    //     modes.push("internal");
-    // }
-    // if task.is_interactive() {
-    //     modes.push("interactive");
-    // }
-    // if task.is_persistent() {
-    //     modes.push("persistent");
-    // }
+                Entry(
+                    name: "Target",
+                    value: element! {
+                        StyledText(
+                            content: task.target.to_string(),
+                            style: Style::Id
+                        )
+                    }.into_any()
+                )
+                Entry(
+                    name: "Project",
+                    value: element! {
+                        StyledText(
+                            content: project.id.to_string(),
+                            style: Style::Id
+                        )
+                    }.into_any()
+                )
+                Entry(
+                    name: "Task",
+                    value: element! {
+                        StyledText(
+                            content: task.id.to_string(),
+                            style: Style::Id
+                        )
+                    }.into_any()
+                )
+                Entry(
+                    name: if task.toolchains.len() == 1 {
+                        "Toolchain"
+                    } else {
+                        "Toolchains"
+                    },
+                    content: task.toolchains.join(", "),
+                )
+                Entry(
+                    name: "Type",
+                    content: task.type_of.to_string(),
+                )
+                #(task.preset.as_ref().map(|preset| {
+                    element! {
+                        Entry(
+                            name: "Preset",
+                            content: preset.to_string(),
+                        )
+                    }
+                }))
+                #(if modes.is_empty() {
+                    None
+                } else {
+                    Some(element! {
+                        Entry(
+                            name: if task.toolchains.len() == 1 {
+                                "Mode"
+                            } else {
+                                "Modes"
+                            },
+                            content: modes.join(", "),
+                        )
+                    })
+                })
+            }
 
-    // if !modes.is_empty() {
-    //     console.print_entry("Modes", modes.join(", "))?;
-    // }
+            Section(title: "Process") {
+                Entry(
+                    name: if task.script.is_some() {
+                        "Script"
+                    } else {
+                        "Command"
+                    },
+                    value: element! {
+                        StyledText(
+                            content: task.get_command_line(),
+                            style: Style::Shell
+                        )
+                    }.into_any()
+                )
+                #(task.options.shell.clone().unwrap_or_default().then(|| {
+                    element! {
+                        Entry(
+                            name: "Shell",
+                            content: if cfg!(unix) {
+                                task.options.unix_shell.clone().unwrap_or_default().to_string()
+                            } else if cfg!(windows) {
+                                task.options.windows_shell.clone().unwrap_or_default().to_string()
+                            } else {
+                                "unknown".to_string()
+                            }
+                        )
+                    }
+                }))
+                Entry(
+                    name: "Environment variables",
+                    no_children: task.env.is_empty()
+                ) {
+                    Map {
+                        #(task.env.iter().map(|(key, value)| {
+                            element! {
+                                MapItem(
+                                    name: element! {
+                                        StyledText(
+                                            content: key,
+                                            style: Style::Property
+                                        )
+                                    }.into_any(),
+                                    value: element! {
+                                        StyledText(
+                                            content: value,
+                                            style: Style::MutedLight
+                                        )
+                                    }.into_any(),
+                                )
+                            }
+                        }))
+                    }
+                }
+                Entry(
+                    name: "Depends on",
+                    no_children: task.deps.is_empty()
+                ) {
+                    List {
+                        #(task.deps.iter().map(|dep| {
+                            element! {
+                                ListItem {
+                                    StyledText(
+                                        content: dep.target.to_string(),
+                                        style: Style::Id
+                                    )
+                                }
+                            }
+                        }))
+                    }
+                }
+                Entry(
+                    name: "Working directory",
+                    value: element! {
+                        StyledText(
+                            content: if task.options.run_from_workspace_root {
+                                &session.workspace_root
+                            } else {
+                                &project.root
+                            }.to_string_lossy(),
+                            style: Style::Path
+                        )
+                    }.into_any()
+                )
+                Entry(
+                    name: "Runs dependencies",
+                    content: if task.options.run_deps_in_parallel {
+                        "Concurrently"
+                    } else {
+                        "Serially"
+                    }.to_string(),
+                )
+                Entry(
+                    name: "Runs in CI",
+                    content: if task.should_run_in_ci() {
+                        "Yes"
+                    } else {
+                        "No"
+                    }.to_string(),
+                )
+            }
 
-    // console.print_entry_header("Process")?;
-    // console.print_entry(
-    //     if task.script.is_some() {
-    //         "Script"
-    //     } else {
-    //         "Command"
-    //     },
-    //     color::shell(task.get_command_line()),
-    // )?;
-
-    // if !task.env.is_empty() {
-    //     console.print_entry_list(
-    //         "Environment variables",
-    //         task.env
-    //             .iter()
-    //             .map(|(k, v)| format!("{} {} {}", k, color::muted_light("="), v))
-    //             .collect::<Vec<_>>(),
-    //     )?;
-    // }
-
-    // console.print_entry(
-    //     "Working directory",
-    //     color::path(if task.options.run_from_workspace_root {
-    //         &session.workspace_root
-    //     } else {
-    //         &project.root
-    //     }),
-    // )?;
-    // console.print_entry(
-    //     "Runs dependencies",
-    //     if task.options.run_deps_in_parallel {
-    //         "Concurrently"
-    //     } else {
-    //         "Serially"
-    //     },
-    // )?;
-    // console.print_entry_bool("Runs in CI", task.should_run_in_ci())?;
-
-    // if !task.deps.is_empty() {
-    //     console.print_entry_header("Depends on")?;
-    //     console.print_list(
-    //         task.deps
-    //             .iter()
-    //             .map(|d| color::label(&d.target))
-    //             .collect::<Vec<_>>(),
-    //     )?;
-    // }
-
-    // if let Some(inherited) = &project.inherited {
-    //     if let Some(task_layers) = inherited.task_layers.get(task.id.as_str()) {
-    //         if !task_layers.is_empty()
-    //             && !project
-    //                 .config
-    //                 .workspace
-    //                 .inherited_tasks
-    //                 .exclude
-    //                 .contains(&task.id)
-    //         {
-    //             console.print_entry_header("Inherits from")?;
-    //             console.print_list(task_layers.iter().map(color::file).collect::<Vec<_>>())?;
-    //         }
-    //     }
-    // }
-
-    // if !task.input_files.is_empty() || !task.input_globs.is_empty() {
-    //     let mut files = vec![];
-    //     files.extend(
-    //         task.input_globs
-    //             .iter()
-    //             .map(color::rel_path)
-    //             .collect::<Vec<_>>(),
-    //     );
-    //     files.extend(
-    //         task.input_files
-    //             .iter()
-    //             .map(color::rel_path)
-    //             .collect::<Vec<_>>(),
-    //     );
-
-    //     console.print_entry_header("Inputs")?;
-    //     console.print_list(files)?;
-    // }
-
-    // if !task.output_files.is_empty() || !task.output_globs.is_empty() {
-    //     let mut files = vec![];
-    //     files.extend(
-    //         task.output_globs
-    //             .iter()
-    //             .map(color::rel_path)
-    //             .collect::<Vec<_>>(),
-    //     );
-    //     files.extend(
-    //         task.output_files
-    //             .iter()
-    //             .map(color::rel_path)
-    //             .collect::<Vec<_>>(),
-    //     );
-
-    //     console.print_entry_header("Outputs")?;
-    //     console.print_list(files)?;
-    // }
-
-    // console.write_newline()?;
-    // console.flush()?;
+            Section(title: "Configuration") {
+                #(project.inherited
+                    .as_ref()
+                    .and_then(|inherited| inherited.task_layers.get(task.id.as_str()))
+                    .map(|layers| {
+                    element! {
+                        Entry(
+                            name: "Inherits from",
+                            no_children: layers.is_empty()
+                        ) {
+                            List {
+                                #(layers.iter().map(|layer| {
+                                    element! {
+                                        ListItem {
+                                            StyledText(
+                                                content: layer,
+                                                style: Style::File
+                                            )
+                                        }
+                                    }
+                                }))
+                            }
+                        }
+                    }
+                }))
+                Entry(
+                    name: "Inputs",
+                    no_children: inputs.is_empty()
+                ) {
+                    List {
+                        #(inputs.iter().map(|input| {
+                            element! {
+                                ListItem {
+                                    StyledText(
+                                        content: input,
+                                        style: if input.starts_with('$') {
+                                            Style::Symbol
+                                        } else {
+                                            Style::File
+                                        }
+                                    )
+                                }
+                            }
+                        }))
+                    }
+                }
+                Entry(
+                    name: "Outputs",
+                    no_children: outputs.is_empty()
+                ) {
+                    List {
+                        #(outputs.iter().map(|output| {
+                            element! {
+                                ListItem {
+                                    StyledText(
+                                        content: output.as_str(),
+                                        style: Style::File
+                                    )
+                                }
+                            }
+                        }))
+                    }
+                }
+            }
+        }
+    })?;
 
     Ok(None)
 }

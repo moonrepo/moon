@@ -82,7 +82,6 @@ tiny_http = "0.12.0"
 # TODO remove
 console = { workspace = true }
 dialoguer = { version = "0.11.0", default-features = false }
-indicatif = "0.17.11"
 moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }

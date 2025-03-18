@@ -72,7 +72,7 @@ impl<'app> ProjectBuilder<'app> {
 
         Ok(ProjectBuilder {
             root: source.to_logical_path(context.workspace_root),
-            enabled_toolchains: context.enabled_toolchains.iter().cloned().collect(),
+            enabled_toolchains: context.enabled_toolchains.to_vec(),
             context,
             id,
             source,

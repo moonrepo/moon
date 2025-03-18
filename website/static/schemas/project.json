@@ -1549,6 +1549,10 @@
             "type": "string"
           }
         },
+        "disabled": {
+          "title": "disabled",
+          "type": "boolean"
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",

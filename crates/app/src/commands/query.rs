@@ -5,8 +5,10 @@ pub use crate::queries::tasks::*;
 pub use crate::queries::touched_files::*;
 use crate::session::CliSession;
 use clap::{Args, Subcommand};
+use iocraft::prelude::{Size, element};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::is_ci;
+use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
 use moon_vcs::TouchedStatus;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -111,10 +113,10 @@ pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResul
     } else {
         console
             .out
-            .write_line(format!("Left:  {}", color::hash(&result.left_hash)))?;
+            .write_line(format!("Left:  {}", color::success(&result.left_hash)))?;
         console
             .out
-            .write_line(format!("Right: {}", color::hash(&result.right_hash)))?;
+            .write_line(format!("Right: {}", color::failure(&result.right_hash)))?;
         console.out.write_newline()?;
 
         let is_tty = console.out.is_terminal();
@@ -262,35 +264,85 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
     let mut projects = query_projects(&workspace_graph, &options).await?;
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
-    // Write to stdout directly to avoid broken pipe panics
     if args.json {
         let result = QueryProjectsResult { projects, options };
 
         console.out.write_line(json::format(&result, true)?)?;
-    } else if !projects.is_empty() {
-        console.out.write_line(
-            projects
-                .iter()
-                .map(|project| {
-                    format!(
-                        "{} | {} | {} | {} | {} | {}",
-                        project.id,
-                        project.source,
-                        project.stack,
-                        project.type_of,
-                        project.language,
-                        project
-                            .config
-                            .project
-                            .as_ref()
-                            .map(|cfg| cfg.description.as_str())
-                            .unwrap_or("...")
-                    )
-                })
-                .collect::<Vec<_>>()
-                .join("\n"),
-        )?;
+
+        return Ok(None);
     }
+
+    let id_width = projects
+        .iter()
+        .fold(0, |acc, project| acc.max(project.id.as_str().len()));
+    let source_width = projects
+        .iter()
+        .fold(0, |acc, project| acc.max(project.source.as_str().len()));
+
+    session.console.render(element! {
+        Container {
+            Table(
+                headers: vec![
+                    TableHeader::new("Project", Size::Length((id_width + 5).max(10) as u32)),
+                    TableHeader::new("Source", Size::Length((source_width + 5) as u32)),
+                    TableHeader::new("Stack", Size::Length(16)),
+                    TableHeader::new("Type", Size::Length(16)),
+                    TableHeader::new("Language", Size::Length(13)),
+                    TableHeader::new("Toolchains", Size::Length(25)),
+                    TableHeader::new("Description", Size::Auto),
+                ]
+            ) {
+                #(projects.into_iter().enumerate().map(|(i, project)| {
+                    element! {
+                        TableRow(row: i as i32) {
+                            TableCol(col: 0) {
+                                StyledText(
+                                    content: project.id.to_string(),
+                                    style: Style::Id
+                                )
+                            }
+                            TableCol(col: 1) {
+                                StyledText(
+                                    content: project.source.to_string(),
+                                    style: Style::File
+                                )
+                            }
+                            TableCol(col: 2) {
+                                StyledText(
+                                    content: project.stack.to_string(),
+                                )
+                            }
+                            TableCol(col: 3) {
+                                StyledText(
+                                    content: project.type_of.to_string(),
+                                )
+                            }
+                            TableCol(col: 4) {
+                                StyledText(
+                                    content: project.language.to_string(),
+                                )
+                            }
+                            TableCol(col: 5) {
+                                StyledText(
+                                    content: project.toolchains.join(", "),
+                                )
+                            }
+                            TableCol(col: 6) {
+                                StyledText(
+                                    content: project
+                                        .config
+                                        .project
+                                        .as_ref()
+                                        .map(|cfg| cfg.description.as_str())
+                                        .unwrap_or(""),
+                                )
+                            }
+                        }
+                    }
+                }))
+            }
+        }
+    })?;
 
     Ok(None)
 }
@@ -411,6 +463,8 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
             },
             true,
         )?)?;
+
+        return Ok(None);
     } else if !grouped_tasks.is_empty() {
         for (project_id, tasks) in grouped_tasks {
             if tasks.is_empty() {

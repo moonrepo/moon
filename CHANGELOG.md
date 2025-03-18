@@ -6,6 +6,7 @@
 
 - Integrated a new console rendering system with new terminal styles and output.
   - Updated `moon templates` to render a list of data.
+  - Updated `moon query projects` and `moon query tasks` to render a table of data.
 - Added a `--json` flag to `moon templates`.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.

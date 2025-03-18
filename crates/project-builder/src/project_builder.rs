@@ -51,6 +51,10 @@ pub struct ProjectBuilder<'app> {
     // Toolchains that will be used for task/config inheritance.
     // These are *not* filtered based on enabled.
     pub toolchains_config: Vec<Id>,
+
+    // Inherited from the workspace-level enabled list,
+    // but then also filtered further based on the project config
+    enabled_toolchains: Vec<Id>,
 }
 
 impl<'app> ProjectBuilder<'app> {
@@ -68,6 +72,7 @@ impl<'app> ProjectBuilder<'app> {
 
         Ok(ProjectBuilder {
             root: source.to_logical_path(context.workspace_root),
+            enabled_toolchains: context.enabled_toolchains.iter().cloned().collect(),
             context,
             id,
             source,
@@ -127,6 +132,16 @@ impl<'app> ProjectBuilder<'app> {
             config.language.clone()
         };
 
+        // Filter down the enabled toolchains list based on the project config
+        let mut disabled_toolchains = FxHashSet::default();
+
+        for (plugin_id, override_config) in &config.toolchain.plugins {
+            if !override_config.is_enabled() {
+                self.enabled_toolchains.retain(|id| id != plugin_id);
+                disabled_toolchains.insert(plugin_id);
+            }
+        }
+
         // Infer toolchains from the language as it handles the chain correctly:
         // For example: node -> javascript, and not just node
         if self.toolchains_tasks.is_empty() {
@@ -135,12 +150,12 @@ impl<'app> ProjectBuilder<'app> {
             #[allow(deprecated)]
             if let Some(default_ids) = &config.toolchain.default {
                 for default_id in default_ids.to_list() {
-                    toolchains.extend(get_project_toolchains(default_id, &self.language));
+                    toolchains.extend(get_project_toolchains(default_id));
                 }
             } else if let Some(platform) = &config.platform {
                 let default_id = platform.get_toolchain_id();
 
-                toolchains.extend(get_project_toolchains(&default_id, &self.language));
+                toolchains.extend(get_project_toolchains(&default_id));
 
                 debug!(
                     project_id = self.id.as_str(),
@@ -164,11 +179,15 @@ impl<'app> ProjectBuilder<'app> {
                 );
             }
 
-            self.toolchains_config.extend(toolchains.clone());
+            self.toolchains_config = toolchains
+                .clone()
+                .into_iter()
+                .filter(|id| !disabled_toolchains.contains(id))
+                .collect();
 
             self.toolchains_tasks = toolchains
                 .into_iter()
-                .filter(|id| self.context.enabled_toolchains.contains(id))
+                .filter(|id| self.enabled_toolchains.contains(id))
                 .collect();
 
             trace!(
@@ -396,7 +415,7 @@ impl<'app> ProjectBuilder<'app> {
             self.source,
             &self.toolchains_tasks,
             TasksBuilderContext {
-                enabled_toolchains: self.context.enabled_toolchains,
+                enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,
                 toolchain_config: self.context.toolchain_config,
                 workspace_root: self.context.workspace_root,

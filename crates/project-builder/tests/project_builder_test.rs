@@ -3,13 +3,18 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     BunConfig, ConfigLoader, DenoConfig, DependencyConfig, DependencyScope, DependencySource,
     LanguageType, NodeConfig, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
+    ToolchainPluginConfig,
 };
 use moon_file_group::FileGroup;
+use moon_plugin::PluginId;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
+use moon_toolchain_plugin::ToolchainRegistry;
+use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 // We need some top-level struct to hold the data used for lifetime refs.
 struct Stub {
@@ -24,13 +29,19 @@ struct Stub {
 impl Stub {
     pub fn new(id: &str, root: &Path) -> Self {
         // Enable platforms so that detection works
-        let toolchain_config = ToolchainConfig {
+        let mut toolchain_config = ToolchainConfig {
             bun: Some(BunConfig::default()),
             deno: Some(DenoConfig::default()),
             node: Some(NodeConfig::default()),
             rust: Some(RustConfig::default()),
+            plugins: FxHashMap::from_iter([(
+                Id::raw("typescript"),
+                ToolchainPluginConfig::default(),
+            )]),
             ..ToolchainConfig::default()
         };
+
+        toolchain_config.inherit_plugin_locators().unwrap();
 
         Self {
             config_loader: ConfigLoader::default(),
@@ -43,6 +54,14 @@ impl Stub {
     }
 
     pub async fn create_builder(&self) -> ProjectBuilder {
+        let mut toolchain_registry = ToolchainRegistry::default();
+
+        for (id, config) in &self.toolchain_config.plugins {
+            toolchain_registry
+                .configs
+                .insert(PluginId::raw(id.as_str()), config.to_owned());
+        }
+
         ProjectBuilder::new(
             &self.id,
             &self.source,
@@ -52,7 +71,7 @@ impl Stub {
                 monorepo: true,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
-                toolchain_registry: Default::default(),
+                toolchain_registry: Arc::new(toolchain_registry),
                 workspace_root: &self.workspace_root,
             },
         )
@@ -274,7 +293,10 @@ mod project_builder {
             let project = build_lang_project("deno-config").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
-            assert_eq!(project.toolchains, vec![Id::raw("deno")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("deno"), Id::raw("typescript")]
+            );
         }
 
         #[tokio::test]
@@ -371,9 +393,14 @@ mod project_builder {
             let project = build_lang_project("ts").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+            assert_eq!(project.toolchains, vec![Id::raw("typescript")]);
 
             let project = build_lang_project("ts-config").await;
+
+            assert_eq!(project.language, LanguageType::TypeScript);
+            assert_eq!(project.toolchains, vec![Id::raw("typescript")]);
+
+            let project = build_lang_project("ts-disabled").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);
             assert_eq!(project.toolchains, vec![Id::raw("system")]);

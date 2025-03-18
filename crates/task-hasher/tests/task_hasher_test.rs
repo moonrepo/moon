@@ -69,7 +69,7 @@ mod task_hasher {
         let task = wg.get_task_from_project("root", "testPatterns").unwrap();
 
         let hasher_config = HasherConfig {
-            ignore_patterns: vec![GlobPath::from_str("**/out/**").unwrap()],
+            ignore_patterns: vec![GlobPath::parse("**/out/**").unwrap()],
             ..HasherConfig::default()
         };
 

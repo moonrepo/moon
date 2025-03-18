@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added `MOON_REMOTE_*` environment variables for many `unstable_remote` settings.
+
 #### ⚙️ Internal
 
 - Updated dependencies.

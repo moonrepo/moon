@@ -6,16 +6,12 @@ use std::convert::TryFrom;
 use std::path::Path;
 
 /// Return a list of toolchains based on the provided ID.
-pub fn get_project_toolchains(id: &Id, language: &LanguageType) -> Vec<Id> {
+pub fn get_project_toolchains(id: &Id) -> Vec<Id> {
     let mut toolchains = vec![id.to_owned()];
 
-    // Since JS has multiple runtimes, we should inherit JS/TS also
+    // Since JS has multiple runtimes, we should inherit JS also
     if id == "bun" || id == "deno" || id == "node" {
-        toolchains.push(if matches!(language, LanguageType::TypeScript) {
-            Id::raw("typescript")
-        } else {
-            Id::raw("javascript")
-        });
+        toolchains.push(Id::raw("javascript"));
     }
     // Otherwise check if we're a supported platform, if not, inherit system
     else if PlatformType::try_from(id.as_str()).is_err() {

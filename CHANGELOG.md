@@ -6,6 +6,11 @@
 
 - Added `MOON_REMOTE_*` environment variables for many `unstable_remote` settings.
 
+#### 🐞 Fixes
+
+- Fixed an issue where project toolchain detection would not take the `toolchain` disabled state in
+  `moon.yml` into account.
+
 #### ⚙️ Internal
 
 - Updated dependencies.

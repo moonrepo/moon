@@ -1,0 +1,5 @@
+language: typescript
+type: application
+
+toolchain:
+  typescript: null

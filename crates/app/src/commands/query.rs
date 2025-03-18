@@ -438,24 +438,23 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     }
 
     // Query for tasks that match the filters
-    let tasks = query_tasks(&workspace_graph, &options).await?;
+    let mut tasks = query_tasks(&workspace_graph, &options).await?;
+    tasks.sort_by(|a, d| a.target.cmp(&d.target));
 
-    // Group tasks by project
-    let mut grouped_tasks = BTreeMap::default();
-
-    for task in tasks {
-        let Some(project_id) = task.target.get_project_id() else {
-            continue;
-        };
-
-        grouped_tasks
-            .entry(project_id.to_owned())
-            .or_insert(BTreeMap::default())
-            .insert(task.id.clone(), task);
-    }
-
-    // Write to stdout directly to avoid broken pipe panics
     if options.json {
+        let mut grouped_tasks = BTreeMap::default();
+
+        for task in tasks {
+            let Some(project_id) = task.target.get_project_id() else {
+                continue;
+            };
+
+            grouped_tasks
+                .entry(project_id.to_owned())
+                .or_insert(BTreeMap::default())
+                .insert(task.id.clone(), task);
+        }
+
         console.out.write_line(json::format(
             &QueryTasksResult {
                 tasks: grouped_tasks,
@@ -465,26 +464,72 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         )?)?;
 
         return Ok(None);
-    } else if !grouped_tasks.is_empty() {
-        for (project_id, tasks) in grouped_tasks {
-            if tasks.is_empty() {
-                continue;
-            }
+    }
 
-            console.out.write_line(project_id.as_str())?;
+    let id_width = tasks
+        .iter()
+        .fold(0, |acc, task| acc.max(task.target.as_str().len()));
+    let command_width = tasks
+        .iter()
+        .fold(0, |acc, task| acc.max(task.command.len()));
 
-            for (task_id, task) in tasks {
-                console.out.write_line(format!(
-                    "\t{} | {} | {} | {} | {}",
-                    task_id,
-                    task.command,
-                    task.type_of,
-                    task.toolchains.join(", "),
-                    task.description.as_deref().unwrap_or("...")
-                ))?;
+    session.console.render(element! {
+        Container {
+            Table(
+                headers: vec![
+                    TableHeader::new("Task", Size::Length((id_width + 5).max(10) as u32)),
+                    TableHeader::new("Command", Size::Length((command_width + 5) as u32)),
+                    TableHeader::new("Type", Size::Length(10)),
+                    TableHeader::new("Preset", Size::Length(10)),
+                    TableHeader::new("Toolchains", Size::Length(25)),
+                    TableHeader::new("Description", Size::Auto),
+                ]
+            ) {
+                #(tasks.into_iter().enumerate().map(|(i, task)| {
+                    element! {
+                        TableRow(row: i as i32) {
+                            TableCol(col: 0) {
+                                StyledText(
+                                    content: task.target.to_string(),
+                                    style: Style::Id
+                                )
+                            }
+                            TableCol(col: 1) {
+                                StyledText(
+                                    content: &task.command,
+                                    style: Style::Shell
+                                )
+                            }
+                            TableCol(col: 2) {
+                                StyledText(
+                                    content: task.type_of.to_string(),
+                                )
+                            }
+                            TableCol(col: 3) {
+                                #(task.preset.as_ref().map(|preset| {
+                                    element! {
+                                        StyledText(
+                                            content: preset.to_string(),
+                                        )
+                                    }
+                                }))
+                            }
+                            TableCol(col: 4) {
+                                StyledText(
+                                    content: task.toolchains.join(", "),
+                                )
+                            }
+                            TableCol(col: 5) {
+                                StyledText(
+                                    content: task.description.as_deref().unwrap_or(""),
+                                )
+                            }
+                        }
+                    }
+                }))
             }
         }
-    }
+    })?;
 
     Ok(None)
 }

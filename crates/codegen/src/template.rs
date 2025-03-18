@@ -7,6 +7,7 @@ use moon_common::path::{RelativePathBuf, to_virtual_string};
 use moon_config::{ConfigLoader, TemplateConfig};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Serialize;
 use starbase_utils::{fs, json, yaml};
 use std::collections::BTreeMap;
 use std::mem;
@@ -17,10 +18,11 @@ use tracing::{debug, instrument};
 static PATH_VAR: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)(?:\s*\|\s*([^\]]+))?\]").unwrap());
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Template {
     pub assets: BTreeMap<RelativePathBuf, AssetFile>,
     pub config: TemplateConfig,
+    #[serde(skip)]
     pub engine: Tera,
     pub files: BTreeMap<RelativePathBuf, TemplateFile>,
     pub id: Id,

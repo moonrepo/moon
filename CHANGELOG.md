@@ -4,6 +4,9 @@
 
 #### 🚀 Updates
 
+- Integrated a new console rendering system with new terminal styles and output.
+  - Updated `moon templates` to render a list of data.
+- Added a `--json` flag to `moon templates`.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.
 - WASM API

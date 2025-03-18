@@ -80,7 +80,7 @@ pub async fn upgrade(session: CliSession) -> AppResult {
     if !upgradeable {
         session.console.render(element! {
             Container {
-                Notice(variant: Variant::Failure) {
+                Notice(variant: Variant::Caution) {
                     StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")
                     StyledText(content: format!("moon is currently installed at <path>{}</path>", current_bin_path.display()))
                 }

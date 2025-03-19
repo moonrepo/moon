@@ -52,6 +52,7 @@ clap = { workspace = true, features = [
 clap_complete = { workspace = true }
 clap_complete_nushell = "4.5.5"
 clean-path = { workspace = true }
+convert_case = { workspace = true }
 diff = "0.1.13"
 iocraft = { workspace = true }
 miette = { workspace = true }

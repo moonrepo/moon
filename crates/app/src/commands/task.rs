@@ -64,7 +64,7 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
 
     session.console.render(element! {
         Container {
-            Section(title: "Metadata") {
+            Section(title: "About") {
                 #(task.description.as_ref().map(|desc| {
                     element! {
                         View(margin_bottom: 1) {

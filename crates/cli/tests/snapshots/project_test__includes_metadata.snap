@@ -2,41 +2,43 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- METADATA 
+Metadata ──────────────────────────────────────────────────────────────────
 
-Advanced example.
+  Advanced example.
 
-Name: Advanced
-Owner: @infra
-Maintainers:
-  - @user1
-  - @user2
-Channel: #infra
+  Name: Advanced
+  Channel: #infra
+  Owner: @infra
+  Maintainers: @user1, @user2
 
-Project: metadata
-Source: metadata
-Toolchain: system
-Language: unknown
-Stack: infrastructure
-Type: configuration
+About ─────────────────────────────────────────────────────────────────────
 
- INHERITS FROM 
+  Project: metadata
+  Source: metadata
+  Toolchain: system
+  Language: unknown
+  Stack: infrastructure
+  Type: configuration
+  Depends on: —
 
-  - .moon/tasks.yml
+Configuation ──────────────────────────────────────────────────────────────
 
- TASKS 
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
 
-build: 
-  › noop 
-    Builds the project!
-test: 
-  › noop 
-    Runs the test runner!
+File groups ───────────────────────────────────────────────────────────────
 
- FILE GROUPS 
+  sources:
+    - metadata/src/**/*
+    - metadata/types/**/*
+  tests:
+    - metadata/tests/**/*
 
-sources:
-  - metadata/src/**/*
-  - metadata/types/**/*
-tests:
-  - metadata/tests/**/*
+Tasks ─────────────────────────────────────────────────────────────────────
+
+  build:
+    › noop
+  test:
+    › noop

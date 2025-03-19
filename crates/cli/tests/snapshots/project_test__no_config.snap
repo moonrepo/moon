@@ -2,23 +2,27 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- NOCONFIG 
+About ─────────────────────────────────────────────────────────────────────
 
-Project: noConfig
-Source: no-config
-Toolchain: system
-Language: unknown
-Stack: unknown
-Type: unknown
+  Project: noConfig
+  Source: no-config
+  Toolchain: system
+  Language: unknown
+  Stack: unknown
+  Type: unknown
+  Depends on: —
 
- INHERITS FROM 
+Configuation ──────────────────────────────────────────────────────────────
 
-  - .moon/tasks.yml
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
 
- FILE GROUPS 
+File groups ───────────────────────────────────────────────────────────────
 
-sources:
-  - no-config/src/**/*
-  - no-config/types/**/*
-tests:
-  - no-config/tests/**/*
+  sources:
+    - no-config/src/**/*
+    - no-config/types/**/*
+  tests:
+    - no-config/tests/**/*

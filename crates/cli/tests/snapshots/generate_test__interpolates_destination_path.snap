@@ -2,15 +2,13 @@
 source: crates/cli/tests/generate_test.rs
 expression: assert.output_standardized()
 ---
+vars ──────────────────────────────────────────────────────────────────────
 
-Variable testing 
-A template for testing all variable config combinations.
-
-
-created --> test/control.txt
-created --> test/expressions.txt
-created --> test/file-default-0.txt
-created --> test/filters.txt
+  Variable testing
+  A template for testing all variable config combinations.
 
 
-
+- created --➤ test/control.txt
+- created --➤ test/expressions.txt
+- created --➤ test/file-default-0.txt
+- created --➤ test/filters.txt

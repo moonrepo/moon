@@ -1502,7 +1502,7 @@ mod affected {
 
         assert!(
             predicate::str::contains(
-                "Target(s) files:noop not affected by touched files (using status all)"
+                "Target(s) files:noop not affected by touched files using status all"
             )
             .eval(&output)
         );
@@ -1525,10 +1525,12 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains(
-            "Target(s) files:noop not affected by touched files (using status untracked, deleted)"
-        )
-        .eval(&output));
+        assert!(
+            predicate::str::contains(
+                "Target(s) files:noop not affected by touched files using status untracked, deleted"
+            )
+            .eval(&output)
+        );
     }
 
     #[test]
@@ -1668,7 +1670,7 @@ mod affected {
 
         assert!(
             predicate::str::contains(
-                "Target(s) files:noop not affected by touched files (using status deleted)"
+                "Target(s) files:noop not affected by touched files using status deleted"
             )
             .eval(&output)
         );
@@ -1813,7 +1815,7 @@ mod affected {
 
             assert!(
                 predicate::str::contains(
-                    "Target(s) root:noop not affected by touched files (using status deleted)"
+                    "Target(s) root:noop not affected by touched files using status deleted"
                 )
                 .eval(&output)
             );

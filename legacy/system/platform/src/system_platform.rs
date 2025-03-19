@@ -2,7 +2,7 @@ use crate::target_hash::SystemTargetHash;
 use crate::tool::SystemToolStub;
 use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig};
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_hash::ContentHasher;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
@@ -16,7 +16,7 @@ use std::sync::Arc;
 use tracing::instrument;
 
 pub struct SystemPlatform {
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
 
     tool: SystemToolStub,
 
@@ -29,7 +29,7 @@ impl SystemPlatform {
     pub fn new(
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<MoonConsole>,
+        console: Arc<Console>,
     ) -> Self {
         SystemPlatform {
             tool: SystemToolStub,

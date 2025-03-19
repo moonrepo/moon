@@ -1,6 +1,6 @@
 use crate::python_tool::{PythonTool, get_python_tool_paths};
 use moon_config::PipConfig;
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_process::Command;
 use moon_python_lang::{LockfileDependencyVersions, pip};
 use moon_tool::{
@@ -23,7 +23,7 @@ pub fn find_requirements_txt(starting_dir: &Path, workspace_root: &Path) -> Opti
 pub struct PipTool {
     pub config: PipConfig,
 
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
 
     global: bool,
 
@@ -34,7 +34,7 @@ pub struct PipTool {
 impl PipTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<MoonConsole>,
+        console: Arc<Console>,
         config: &PipConfig,
         global: bool,
     ) -> miette::Result<PipTool> {

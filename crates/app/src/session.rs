@@ -9,7 +9,7 @@ use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_formatted_output, is_test_env};
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_console::{MoonConsole, MoonReporter, create_console_theme};
+use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
@@ -38,7 +38,7 @@ pub struct CliSession {
 
     // Components
     pub config_loader: ConfigLoader,
-    pub console: MoonConsole,
+    pub console: Console,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
 
@@ -68,7 +68,7 @@ impl CliSession {
             cache_engine: OnceCell::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
             config_loader: ConfigLoader::default(),
-            console: MoonConsole::new(cli.quiet || is_formatted_output()),
+            console: Console::new(cli.quiet || is_formatted_output()),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceCell::new(),
@@ -114,7 +114,7 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
-    pub fn get_console(&self) -> miette::Result<Arc<MoonConsole>> {
+    pub fn get_console(&self) -> miette::Result<Arc<Console>> {
         Ok(Arc::new(self.console.clone()))
     }
 

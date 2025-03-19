@@ -15,7 +15,7 @@ use moon_config::{
     ToolchainConfig, load_toolchain_config_template, load_workspace_config_template,
 };
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{Confirm, Container, Notice, StyledText, Variant},
 };
 use moon_vcs::{Git, Vcs};
@@ -94,7 +94,7 @@ pub struct InitOptions {
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
 async fn verify_dest_dir(
-    console: &MoonConsole,
+    console: &Console,
     options: &InitOptions,
 ) -> miette::Result<Option<PathBuf>> {
     let init = if options.yes {

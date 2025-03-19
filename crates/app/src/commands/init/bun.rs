@@ -4,7 +4,7 @@ use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{Container, Entry, Section, Style, StyledText},
 };
 use moon_pdk_api::{PromptType, SettingPrompt};
@@ -16,7 +16,7 @@ pub fn render_template(context: Context) -> miette::Result<String> {
 }
 
 #[instrument(skip_all)]
-pub async fn init_bun(console: &MoonConsole, options: &InitOptions) -> miette::Result<String> {
+pub async fn init_bun(console: &Console, options: &InitOptions) -> miette::Result<String> {
     if !options.yes {
         console.render(element! {
             Container {

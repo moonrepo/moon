@@ -1,7 +1,7 @@
 use moon_action::Operation;
 use moon_common::is_test_env;
 use moon_config::PythonPackageManager;
-use moon_console::{Checkpoint, MoonConsole};
+use moon_console::{Checkpoint, Console};
 use moon_logger::error;
 use moon_python_tool::PythonTool;
 use proto_core::VersionSpec;
@@ -25,7 +25,7 @@ pub async fn install_deps(
     python: &PythonTool,
     workspace_root: &Path,
     working_dir: &Path,
-    console: &MoonConsole,
+    console: &Console,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
     let venv_parent = python.find_venv_root(working_dir, workspace_root);

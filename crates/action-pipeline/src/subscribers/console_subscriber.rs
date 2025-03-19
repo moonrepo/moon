@@ -1,16 +1,16 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_console::PipelineReportItem;
 use std::sync::Arc;
 
 pub struct ConsoleSubscriber {
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
     summarize: bool,
 }
 
 impl ConsoleSubscriber {
-    pub fn new(console: Arc<MoonConsole>, summarize: bool) -> Self {
+    pub fn new(console: Arc<Console>, summarize: bool) -> Self {
         Self { console, summarize }
     }
 }

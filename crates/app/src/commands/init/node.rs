@@ -4,7 +4,7 @@ use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{Container, Entry, Section, Style, StyledText},
 };
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
@@ -41,7 +41,7 @@ fn detect_node_version_manager(options: &InitOptions) -> miette::Result<String> 
 }
 
 async fn detect_package_manager(
-    console: &MoonConsole,
+    console: &Console,
     options: &InitOptions,
 ) -> miette::Result<(String, Option<UnresolvedVersionSpec>)> {
     let mut pm_type = String::new();
@@ -113,7 +113,7 @@ async fn detect_package_manager(
 }
 
 #[instrument(skip_all)]
-pub async fn init_node(console: &MoonConsole, options: &InitOptions) -> miette::Result<String> {
+pub async fn init_node(console: &Console, options: &InitOptions) -> miette::Result<String> {
     if !options.yes {
         console.render(element! {
             Container {

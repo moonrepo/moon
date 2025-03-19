@@ -13,7 +13,7 @@ use moon_config::{
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
     UnresolvedVersionSpec,
 };
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
 use moon_node_lang::PackageJsonCache;
@@ -43,7 +43,7 @@ const LOG_TARGET: &str = "moon:bun-platform";
 pub struct BunPlatform {
     pub config: BunConfig,
 
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
 
     package_names: FxHashMap<String, Id>,
 
@@ -62,7 +62,7 @@ impl BunPlatform {
         config: &BunConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<MoonConsole>,
+        console: Arc<Console>,
     ) -> Self {
         BunPlatform {
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),

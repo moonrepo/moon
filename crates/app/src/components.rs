@@ -6,7 +6,7 @@ use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_platform::PlatformManager;
 use moon_workspace::{
@@ -118,10 +118,7 @@ pub async fn create_workspace_graph_context(
     Ok(context)
 }
 
-pub fn create_progress_loader(
-    console: Arc<MoonConsole>,
-    message: impl AsRef<str>,
-) -> ProgressInstance {
+pub fn create_progress_loader(console: Arc<Console>, message: impl AsRef<str>) -> ProgressInstance {
     let reporter = Arc::new(ProgressReporter::default());
     let reporter_clone = OwnedOrShared::Shared(reporter.clone());
     let message = message.as_ref().to_owned();

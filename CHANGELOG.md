@@ -4,7 +4,7 @@
 
 #### 🚀 Updates
 
-- Integrated a new console rendering system with new terminal styles and output.
+- Integrated a new console rendering system with new terminal styles, prompts, and output.
   - Updated all applicable commands.
   - Updated `moon templates` to render a list of data.
   - Updated `moon query projects` and `moon query tasks` to render a table of data.

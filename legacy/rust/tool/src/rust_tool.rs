@@ -1,5 +1,5 @@
 use moon_config::RustConfig;
-use moon_console::{Checkpoint, MoonConsole};
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::Command;
 use moon_tool::{
@@ -39,7 +39,7 @@ pub struct RustTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
 
     proto_env: Arc<ProtoEnvironment>,
 }
@@ -47,7 +47,7 @@ pub struct RustTool {
 impl RustTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<MoonConsole>,
+        console: Arc<Console>,
         config: &RustConfig,
         req: &RuntimeReq,
     ) -> miette::Result<RustTool> {

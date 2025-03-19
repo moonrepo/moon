@@ -4,7 +4,7 @@ use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{Container, Entry, Section, Style, StyledText},
 };
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
@@ -38,7 +38,7 @@ fn detect_rust_version(dest_dir: &Path) -> miette::Result<Option<UnresolvedVersi
 }
 
 #[instrument(skip_all)]
-pub async fn init_rust(console: &MoonConsole, options: &InitOptions) -> miette::Result<String> {
+pub async fn init_rust(console: &Console, options: &InitOptions) -> miette::Result<String> {
     if !options.yes {
         console.render(element! {
             Container {

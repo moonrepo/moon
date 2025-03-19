@@ -1,7 +1,7 @@
 use super::InitOptions;
 use iocraft::prelude::element;
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{Confirm, Input, Select, SelectOption},
 };
 use moon_pdk_api::{PromptType, SettingPrompt};
@@ -26,7 +26,7 @@ pub fn fully_qualify_version(version: String) -> Option<String> {
 }
 
 pub async fn render_prompt(
-    console: &MoonConsole,
+    console: &Console,
     options: &InitOptions,
     prompt: &SettingPrompt,
 ) -> miette::Result<Option<JsonValue>> {
@@ -113,7 +113,7 @@ pub async fn render_prompt(
 }
 
 pub async fn render_version_prompt(
-    console: &MoonConsole,
+    console: &Console,
     options: &InitOptions,
     tool: &str,
     op: impl FnOnce() -> miette::Result<Option<UnresolvedVersionSpec>>,

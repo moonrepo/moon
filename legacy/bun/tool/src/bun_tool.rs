@@ -1,6 +1,6 @@
 use moon_bun_lang::{LockfileDependencyVersions, load_lockfile_dependencies};
 use moon_config::BunConfig;
-use moon_console::{Checkpoint, MoonConsole};
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_process::{Command, output_to_string};
 use moon_tool::{
@@ -40,7 +40,7 @@ pub struct BunTool {
 
     pub tool: ProtoTool,
 
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
 
     lockfile_cache: scc::HashCache<PathBuf, Arc<String>>,
 
@@ -50,7 +50,7 @@ pub struct BunTool {
 impl BunTool {
     pub async fn new(
         proto: Arc<ProtoEnvironment>,
-        console: Arc<MoonConsole>,
+        console: Arc<Console>,
         config: &BunConfig,
         req: &RuntimeReq,
     ) -> miette::Result<BunTool> {

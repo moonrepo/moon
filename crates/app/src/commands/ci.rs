@@ -8,7 +8,7 @@ use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_task::TargetLocator;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
@@ -40,7 +40,7 @@ pub struct CiArgs {
 }
 
 struct CiConsole {
-    inner: Arc<MoonConsole>,
+    inner: Arc<Console>,
     output: CiOutput,
     last_title: String,
 }

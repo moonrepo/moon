@@ -1,6 +1,6 @@
 use moon_cache::CacheEngine;
 use moon_config::{ToolchainConfig, Version, WorkspaceConfig};
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use std::path::PathBuf;
@@ -12,7 +12,7 @@ pub struct AppContext {
 
     // Components
     pub cache_engine: Arc<CacheEngine>,
-    pub console: Arc<MoonConsole>,
+    pub console: Arc<Console>,
     pub vcs: Arc<BoxedVcs>,
 
     // Configs

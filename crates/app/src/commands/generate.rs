@@ -9,7 +9,7 @@ use iocraft::prelude::{View, Weight, element};
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template};
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{
         Confirm, Container, Input, List, ListItem, Notice, Section, Select, SelectOption,
         StyledText, Variant,
@@ -226,7 +226,7 @@ pub fn parse_args_into_variables(
 pub async fn gather_variables(
     args: &GenerateArgs,
     template: &Template,
-    console: &MoonConsole,
+    console: &Console,
 ) -> miette::Result<TemplateContext> {
     let mut context = parse_args_into_variables(&args.vars, &template.config.variables)?;
 

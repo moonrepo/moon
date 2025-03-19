@@ -1,6 +1,6 @@
 use moon_bun_platform::BunPlatform;
 use moon_config::{BunConfig, ConfigLoader, PlatformType};
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformManager {
     let proto = Arc::new(ProtoEnvironment::new_testing(root).unwrap());
-    let console = Arc::new(MoonConsole::new_testing());
+    let console = Arc::new(Console::new_testing());
     let config = ConfigLoader::default()
         .load_toolchain_config(root, &ProtoConfig::default())
         .unwrap();

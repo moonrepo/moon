@@ -5,6 +5,4 @@ pub use reporter::*;
 pub use starbase_console::ui;
 pub use theme::*;
 
-use starbase_console::Console;
-
-pub type MoonConsole = Console<MoonReporter>;
+pub type Console = starbase_console::Console<MoonReporter>;

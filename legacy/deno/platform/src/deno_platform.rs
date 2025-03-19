@@ -10,7 +10,7 @@ use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig,
 };
-use moon_console::{Checkpoint, MoonConsole};
+use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{DenoJson, find_package_manager_workspaces_root, load_lockfile_dependencies};
 use moon_deno_tool::{DenoTool, get_deno_env_paths};
 use moon_hash::ContentHasher;
@@ -37,7 +37,7 @@ const LOG_TARGET: &str = "moon:deno-platform";
 pub struct DenoPlatform {
     config: DenoConfig,
 
-    console: Arc<MoonConsole>,
+    console: Arc<Console>,
 
     proto_env: Arc<ProtoEnvironment>,
 
@@ -51,7 +51,7 @@ impl DenoPlatform {
         config: &DenoConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        console: Arc<MoonConsole>,
+        console: Arc<Console>,
     ) -> Self {
         DenoPlatform {
             config: config.to_owned(),

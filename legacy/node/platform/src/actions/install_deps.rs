@@ -1,6 +1,6 @@
 use moon_action::Operation;
 use moon_config::NodePackageManager;
-use moon_console::{Checkpoint, MoonConsole};
+use moon_console::{Checkpoint, Console};
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{debug, error, info};
 use moon_node_tool::NodeTool;
@@ -12,7 +12,7 @@ const LOG_TARGET: &str = "moon:node-platform:install-deps";
 pub async fn install_deps(
     node: &NodeTool,
     working_dir: &Path,
-    console: &MoonConsole,
+    console: &Console,
 ) -> miette::Result<Vec<Operation>> {
     let mut operations = vec![];
 

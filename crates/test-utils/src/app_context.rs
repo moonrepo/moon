@@ -1,7 +1,7 @@
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_config::{ConfigLoader, Version};
-use moon_console::MoonConsole;
+use moon_console::Console;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::Git;
 use proto_core::ProtoConfig;
@@ -30,7 +30,7 @@ pub fn generate_app_context_from_sandbox(root: &Path) -> AppContext {
     AppContext {
         cli_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
         cache_engine: Arc::new(CacheEngine::new(root).unwrap()),
-        console: Arc::new(MoonConsole::new_testing()),
+        console: Arc::new(Console::new_testing()),
         toolchain_config: Arc::new(toolchain_config),
         toolchain_registry: Arc::new(toolchain_registry),
         vcs: Arc::new(Box::new(vcs)),

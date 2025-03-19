@@ -2,7 +2,7 @@ use super::InitOptions;
 use super::prompts::*;
 use iocraft::prelude::element;
 use moon_console::{
-    MoonConsole,
+    Console,
     ui::{Container, Entry, Section, Style, StyledText},
 };
 use moon_pdk_api::{ConditionType, InitializeToolchainInput, SettingCondition, SettingPrompt};
@@ -15,7 +15,7 @@ use tracing::instrument;
 
 #[instrument(skip_all)]
 pub async fn init_toolchain(
-    console: &MoonConsole,
+    console: &Console,
     options: &InitOptions,
     toolchain_registry: &ToolchainRegistry,
     toolchain: &ToolchainPlugin,
@@ -127,7 +127,7 @@ pub async fn init_toolchain(
 }
 
 async fn evaluate_prompts(
-    console: &MoonConsole,
+    console: &Console,
     options: &InitOptions,
     prompts: &[SettingPrompt],
     settings: &mut YamlMapping,

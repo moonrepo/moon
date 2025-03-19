@@ -1,14 +1,14 @@
 use moon_api::Launchpad;
 use moon_cache::CacheEngine;
 use moon_common::{color, is_formatted_output, is_test_env};
-use moon_console::{Checkpoint, MoonConsole};
+use moon_console::{Checkpoint, Console};
 use moon_env::MoonEnvironment;
 use starbase::AppResult;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn check_for_new_version(
-    console: &MoonConsole,
+    console: &Console,
     moon_env: &MoonEnvironment,
     cache_engine: &CacheEngine,
     manifest_url: &str,

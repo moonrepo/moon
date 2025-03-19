@@ -6,8 +6,8 @@ use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
-use moon_console::Console;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
+use moon_console::{Console, ConsoleError};
 use moon_platform::PlatformManager;
 use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
@@ -139,7 +139,7 @@ pub fn create_progress_loader(console: Arc<Console>, message: impl AsRef<str>) -
 }
 
 pub struct ProgressInstance {
-    pub handle: tokio::task::JoinHandle<miette::Result<()>>,
+    pub handle: tokio::task::JoinHandle<Result<(), ConsoleError>>,
     pub reporter: Arc<ProgressReporter>,
 }
 

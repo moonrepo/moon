@@ -169,7 +169,9 @@ impl MoonReporter {
         value: V,
     ) -> miette::Result<()> {
         self.out
-            .write_line(format!("{} {}", self.format_entry_key(key), value.as_ref()))
+            .write_line(format!("{} {}", self.format_entry_key(key), value.as_ref()))?;
+
+        Ok(())
     }
 
     pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {

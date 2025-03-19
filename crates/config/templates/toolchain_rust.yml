@@ -1,16 +1,16 @@
 {%- if minimal -%}
 
 rust:
-{%- if rust_version != "" %}
+{%- if rust_version is defined %}
   version: '{{ rust_version }}'
 {%- else %}
-  version: 'stable'
+  # version: 'stable'
 {%- endif %}
 
 {%- else -%}
 
 rust:
-{%- if rust_version != "" %}
+{%- if rust_version is defined %}
   version: '{{ rust_version }}'
 {%- else %}
   # version: 'stable'

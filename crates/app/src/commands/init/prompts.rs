@@ -118,11 +118,12 @@ pub async fn render_version_prompt(
     tool: &str,
     op: impl FnOnce() -> miette::Result<Option<UnresolvedVersionSpec>>,
 ) -> miette::Result<Option<UnresolvedVersionSpec>> {
+    let default_version = op()?;
+
     if options.yes || options.minimal {
-        return Ok(None);
+        return Ok(default_version);
     }
 
-    let default_version = op()?;
     let mut confirmed = false;
     let mut value = String::new();
 

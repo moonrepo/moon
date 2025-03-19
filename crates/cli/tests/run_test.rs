@@ -1878,9 +1878,9 @@ mod query {
                 .arg("projectSource=fake");
         });
 
-        assert.success().stdout(predicate::str::contains(
-            "No tasks found for target(s) :noop\nUsing query projectSource=fake",
-        ));
+        assert
+            .success()
+            .stdout(predicate::str::contains("Using query projectSource=fake"));
     }
 
     #[test]

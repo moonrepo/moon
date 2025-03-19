@@ -189,10 +189,14 @@ pub async fn init_node(console: &Console, options: &InitOptions) -> miette::Resu
     .await?;
 
     let mut context = Context::new();
-    context.insert("node_version", &node_version);
+    if let Some(node_version) = node_version {
+        context.insert("node_version", &node_version);
+    }
     context.insert("node_version_manager", &node_version_manager);
     context.insert("package_manager", &package_manager.0);
-    context.insert("package_manager_version", &package_manager.1);
+    if let Some(package_manager_version) = package_manager.1 {
+        context.insert("package_manager_version", &package_manager_version);
+    }
     context.insert("infer_tasks", &infer_tasks);
     context.insert("sync_dependencies", &sync_dependencies);
     context.insert("dedupe_lockfile", &dedupe_lockfile);

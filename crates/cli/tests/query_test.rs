@@ -347,10 +347,7 @@ mod projects {
                 .write_stdin(get_assert_stdout_output(&query.inner));
         });
 
-        assert_eq!(
-            assert.output(),
-            "advanced | advanced | frontend | application | typescript | ...\nmetadata | metadata | infrastructure | configuration | unknown | Advanced example.\nnoConfig | no-config | unknown | unknown | unknown | ...\n\n"
-        );
+        assert_snapshot!(assert.output());
     }
 
     #[test]

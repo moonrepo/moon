@@ -1,13 +1,13 @@
 {%- if minimal -%}
 
 node:
-{%- if node_version != "" %}
+{%- if node_version is defined %}
   version: '{{ node_version }}'
 {%- else %}
   version: '20.0.0'
 {%- endif %}
   packageManager: '{{ package_manager }}'
-{%- if package_manager_version != "" %}
+{%- if package_manager_version is defined %}
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
 {%- endif %}
@@ -15,13 +15,13 @@ node:
 {%- else -%}
 
 node:
-{%- if node_version != "" %}
+{%- if node_version is defined %}
   version: '{{ node_version }}'
 {%- else %}
   # version: '20.0.0'
 {%- endif %}
   packageManager: '{{ package_manager }}'
-{%- if package_manager_version != "" %}
+{%- if package_manager_version is defined %}
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
 {%- else %}

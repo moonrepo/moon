@@ -67,7 +67,9 @@ pub async fn init_bun(console: &Console, options: &InitOptions) -> miette::Resul
     .await?;
 
     let mut context = Context::new();
-    context.insert("bun_version", &bun_version);
+    if let Some(bun_version) = bun_version {
+        context.insert("bun_version", &bun_version);
+    }
     context.insert("sync_dependencies", &sync_dependencies);
     context.insert("minimal", &options.minimal);
 

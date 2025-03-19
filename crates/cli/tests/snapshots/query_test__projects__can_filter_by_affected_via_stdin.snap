@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/query_test.rs
+expression: assert.output()
+---
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│Project        Source          Stack             Type              Language       Toolchains                 Description                                                                 │
+│─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│advanced       advanced        frontend          application       typescript     node, typescript                                                                                       │
+│metadata       metadata        infrastructure    configuration     unknown        system                     Advanced example.                                                           │
+│noConfig       no-config       unknown           unknown           unknown        system                                                                                                 │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

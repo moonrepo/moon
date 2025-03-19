@@ -81,7 +81,9 @@ pub async fn init_rust(console: &Console, options: &InitOptions) -> miette::Resu
     .await?;
 
     let mut context = Context::new();
-    context.insert("rust_version", &rust_version);
+    if let Some(rust_version) = rust_version {
+        context.insert("rust_version", &rust_version);
+    }
     context.insert("minimal", &options.minimal);
 
     render_template(context)

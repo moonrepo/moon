@@ -1,7 +1,7 @@
 {%- if minimal -%}
 
 bun:
-{%- if bun_version != "" %}
+{%- if bun_version is defined %}
   version: '{{ bun_version }}'
 {%- else %}
   version: '1.0.0'
@@ -10,7 +10,7 @@ bun:
 {%- else -%}
 
 bun:
-{%- if bun_version != "" %}
+{%- if bun_version is defined %}
   version: '{{ bun_version }}'
 {%- else %}
   # version: '1.0.0'

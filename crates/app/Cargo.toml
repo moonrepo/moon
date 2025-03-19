@@ -45,6 +45,7 @@ clap = { workspace = true, features = [
     "derive",
     "env",
     "help",
+    "string",
     "suggestions",
     "usage",
     "wrap_help",

@@ -3927,6 +3927,7 @@ dependencies = [
  "mimalloc",
  "moon_app",
  "moon_cache",
+ "moon_codegen",
  "moon_common",
  "moon_config",
  "moon_task",
@@ -3954,18 +3955,14 @@ dependencies = [
 name = "moon_codegen"
 version = "0.0.1"
 dependencies = [
- "clap",
  "content_inspector",
  "convert_case",
- "iocraft",
  "miette 7.5.0",
  "moon_common",
  "moon_config",
- "moon_console",
  "moon_env",
  "moon_process",
  "moon_time",
- "once_cell",
  "regex",
  "rustc-hash 2.1.1",
  "serde",

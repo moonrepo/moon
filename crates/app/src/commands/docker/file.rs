@@ -66,7 +66,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
         .file
         .image
         .clone()
-        .unwrap_or_else(|| base_image);
+        .unwrap_or(base_image);
 
     if let Some(image) = args.image {
         options.image = image;

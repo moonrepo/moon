@@ -152,14 +152,14 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
                         )
                     }.into_any()
                 )
-                #(task.options.shell.clone().unwrap_or_default().then(|| {
+                #(task.options.shell.unwrap_or_default().then(|| {
                     element! {
                         Entry(
                             name: "Shell",
                             content: if cfg!(unix) {
-                                task.options.unix_shell.clone().unwrap_or_default().to_string()
+                                task.options.unix_shell.unwrap_or_default().to_string()
                             } else if cfg!(windows) {
-                                task.options.windows_shell.clone().unwrap_or_default().to_string()
+                                task.options.windows_shell.unwrap_or_default().to_string()
                             } else {
                                 "unknown".to_string()
                             }

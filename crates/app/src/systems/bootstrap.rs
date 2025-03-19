@@ -1,4 +1,3 @@
-use console::{set_colors_enabled, set_colors_enabled_stderr};
 use starbase_styles::color::{no_color, supports_color};
 use std::env;
 use std::ffi::OsString;
@@ -50,9 +49,6 @@ pub fn setup_no_colors() {
         env::set_var("CLICOLOR", "0");
         env::remove_var("FORCE_COLOR");
     };
-
-    set_colors_enabled(false);
-    set_colors_enabled_stderr(false);
 }
 
 pub fn setup_colors(force: bool) {
@@ -76,9 +72,6 @@ pub fn setup_colors(force: bool) {
         if color_level == "0" {
             setup_no_colors();
         } else {
-            set_colors_enabled(true);
-            set_colors_enabled_stderr(true);
-
             // https://bixense.com/clicolors/
             unsafe {
                 env::set_var("CLICOLOR_FORCE", &color_level);

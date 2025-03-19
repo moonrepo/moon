@@ -9,8 +9,7 @@ use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_formatted_output, is_test_env};
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_console::{DefaultReporter, MoonConsole};
-// use moon_console_reporter::DefaultReporter;
+use moon_console::{MoonConsole, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
@@ -243,7 +242,8 @@ impl CliSession {
 impl AppSession for CliSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
-        self.console.set_reporter(DefaultReporter::default());
+        self.console.set_reporter(MoonReporter::default());
+        self.console.set_theme(create_console_theme());
 
         startup::create_moonx_shims()?;
 

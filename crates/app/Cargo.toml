@@ -18,7 +18,6 @@ moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_console = { path = "../console" }
-moon_console_reporter = { path = "../console-reporter" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
@@ -82,8 +81,6 @@ tera = { workspace = true }
 tiny_http = "0.12.0"
 
 # TODO remove
-console = { workspace = true }
-dialoguer = { version = "0.11.0", default-features = false }
 moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }

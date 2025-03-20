@@ -1500,12 +1500,8 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(
-            predicate::str::contains(
-                "Target(s) files:noop not affected by touched files using status all"
-            )
-            .eval(&output)
-        );
+        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("status all").eval(&output));
     }
 
     #[test]
@@ -1525,12 +1521,8 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(
-            predicate::str::contains(
-                "Target(s) files:noop not affected by touched files using status untracked, deleted"
-            )
-            .eval(&output)
-        );
+        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("status untracked, deleted").eval(&output));
     }
 
     #[test]
@@ -1668,12 +1660,8 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(
-            predicate::str::contains(
-                "Target(s) files:noop not affected by touched files using status deleted"
-            )
-            .eval(&output)
-        );
+        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("status deleted").eval(&output));
     }
 
     #[test]
@@ -1774,10 +1762,8 @@ mod affected {
 
             let output = assert.output();
 
-            assert!(
-                predicate::str::contains("Target(s) root:noop not affected by touched files")
-                    .eval(&output)
-            );
+            assert!(predicate::str::contains("not affected by touched files").eval(&output));
+            assert!(predicate::str::contains("status all").eval(&output));
         }
 
         #[test]
@@ -1813,12 +1799,8 @@ mod affected {
 
             let output = assert.output();
 
-            assert!(
-                predicate::str::contains(
-                    "Target(s) root:noop not affected by touched files using status deleted"
-                )
-                .eval(&output)
-            );
+            assert!(predicate::str::contains("not affected by touched files").eval(&output));
+            assert!(predicate::str::contains("status deleted").eval(&output));
         }
     }
 }

@@ -2,7 +2,7 @@
 source: crates/cli/tests/generate_test.rs
 expression: assert.output_standardized()
 ---
-standard ──────────────────────────────────────────────────────────────────
+standard ───────────────
 
   Template title (dry run)
   Some description of the template and its files.

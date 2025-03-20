@@ -2,10 +2,17 @@
 source: crates/cli/tests/query_test.rs
 expression: assert.output()
 ---
-╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│Project        Source          Stack             Type              Language       Toolchains                 Description                                                                 │
-│─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│advanced       advanced        frontend          application       typescript     node, typescript                                                                                       │
-│metadata       metadata        infrastructure    configuration     unknown        system                     Advanced example.                                                           │
-│noConfig       no-config       unknown           unknown           unknown        system                                                                                                 │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────╮
+│Projec  Source  Stack   Type     Langua  Toolchains  Descr│
+│t                                ge                  iptio│
+│                                                     n    │
+│──────────────────────────────────────────────────────────│
+│advanc  advance  fronten  applicat  typesc  node,         │
+│ed      d        d        ion       ript    typescript    │
+│metad  metada  infras  configu  unkno  system      Advance│
+│ata    ta      tructu  ration   wn                 d      │
+│               re                                  example│
+│                                                   .      │
+│noConf  no-      unknown  unknown   unknow  system        │
+│ig      config                      n                     │
+╰──────────────────────────────────────────────────────────╯

@@ -2,17 +2,31 @@
 source: crates/cli/tests/query_test.rs
 expression: assert.output_standardized()
 ---
-╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│Project           Source             Stack             Type              Language       Toolchains                 Description                                                           │
-│─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│advanced          advanced           frontend          application       typescript     node, typescript                                                                                 │
-│bar               deps/bar           unknown           unknown           unknown        system                                                                                           │
-│basic             basic              unknown           unknown           javascript     node                                                                                             │
-│baz               deps/baz           unknown           unknown           unknown        system                                                                                           │
-│emptyConfig       empty-config       unknown           unknown           unknown        system                                                                                           │
-│foo               deps/foo           unknown           application       javascript     node                                                                                             │
-│metadata          metadata           infrastructure    configuration     unknown        system                     Advanced example.                                                     │
-│noConfig          no-config          unknown           unknown           unknown        system                                                                                           │
-│platforms         platforms          unknown           unknown           unknown        system                                                                                           │
-│tasks             tasks              unknown           unknown           typescript     node, typescript                                                                                 │
-╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────╮
+│Projec  Source   Stack    Type    Langu  Toolchains   Desc│
+│t                                 age                 ript│
+│                                                      ion │
+│──────────────────────────────────────────────────────────│
+│advance  advanced  fronten  applica  typesc  node,        │
+│d                  d        tion     ript    typescript   │
+│bar      deps/bar  unknown  unknown  unknow  system       │
+│                                     n                    │
+│basic    basic     unknown  unknown  javasc  node         │
+│                                     ript                 │
+│baz      deps/baz  unknown  unknown  unknow  system       │
+│                                     n                    │
+│emptyCo  empty-    unknown  unknown  unknow  system       │
+│nfig     config                      n                    │
+│foo      deps/foo  unknown  applica  javasc  node         │
+│                            tion     ript                 │
+│metada  metadat  infras  config  unkno  system     Advance│
+│ta      a        tructu  uratio  wn                d      │
+│                 re      n                         example│
+│                                                   .      │
+│noConfi  no-       unknown  unknown  unknow  system       │
+│g        config                      n                    │
+│platfor  platform  unknown  unknown  unknow  system       │
+│ms       s                           n                    │
+│tasks    tasks     unknown  unknown  typesc  node,        │
+│                                     ript    typescript   │
+╰──────────────────────────────────────────────────────────╯

@@ -2,6 +2,7 @@ use crate::app_error::AppError;
 use crate::session::CliSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
+use moon_common::is_test_env;
 use moon_console::ui::{
     Container, Entry, List, ListItem, Map, MapItem, Section, Style, StyledText,
 };
@@ -61,6 +62,8 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
     outputs.extend(&task.output_globs);
     outputs.extend(&task.output_files);
     outputs.sort();
+
+    let hide_in_snapshot = !is_test_env();
 
     session.console.render(element! {
         Container {
@@ -208,19 +211,23 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
                         }))
                     }
                 }
-                Entry(
-                    name: "Working directory",
-                    value: element! {
-                        StyledText(
-                            content: if task.options.run_from_workspace_root {
-                                &session.workspace_root
-                            } else {
-                                &project.root
-                            }.to_string_lossy(),
-                            style: Style::Path
+                #(hide_in_snapshot.then(|| {
+                    element! {
+                        Entry(
+                            name: "Working directory",
+                            value: element! {
+                                StyledText(
+                                    content: if task.options.run_from_workspace_root {
+                                        &session.workspace_root
+                                    } else {
+                                        &project.root
+                                    }.to_string_lossy(),
+                                    style: Style::Path
+                                )
+                            }.into_any()
                         )
-                    }.into_any()
-                )
+                    }
+                }))
                 Entry(
                     name: "Runs dependencies",
                     content: if task.options.run_deps_in_parallel {

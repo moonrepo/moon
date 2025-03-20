@@ -69,7 +69,7 @@ starbase_archive = { version = "0.10.1", default-features = false, features = [
     "miette",
     "tar-gz",
 ] }
-starbase_console = { version = "0.6.0", features = ["miette"] }
+starbase_console = { version = "0.6.4", features = ["miette"] }
 starbase_events = "0.7.1"
 starbase_sandbox = "0.9.1"
 starbase_shell = "0.7.1"

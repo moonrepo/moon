@@ -6,7 +6,6 @@ use crate::run_state::*;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
-use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
@@ -326,21 +325,6 @@ impl<'task> TaskRunner<'task> {
                 state.set_action_result(result);
 
                 return Ok(Some(HydrateFrom::RemoteCache));
-            }
-        }
-
-        // Check if archive exists in moonbase (remote storage) by querying the artifacts
-        // endpoint. This only checks that the database record exists!
-        if let Some(moonbase) = Moonbase::session() {
-            if let Some((artifact, _)) = moonbase.read_artifact(hash).await? {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash,
-                    artifact_id = artifact.id,
-                    "Cache hit in remote cache, will attempt to download the archive"
-                );
-
-                return Ok(Some(HydrateFrom::Moonbase));
             }
         }
 
@@ -764,7 +748,7 @@ impl<'task> TaskRunner<'task> {
 
         // Then finalize the operation and target state
         operation.finish(match from {
-            HydrateFrom::Moonbase | HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
             _ => ActionStatus::Cached,
         });
 

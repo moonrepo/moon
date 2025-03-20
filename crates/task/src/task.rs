@@ -7,11 +7,11 @@ use moon_config::{
     InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType,
 };
 use moon_target::Target;
-use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -87,10 +87,10 @@ cacheable!(
         pub type_of: TaskType,
 
         #[serde(skip)]
-        pub inputs_cache: OnceCell<Vec<PathBuf>>,
+        pub inputs_cache: OnceLock<Vec<PathBuf>>,
 
         #[serde(skip)]
-        pub outputs_cache: OnceCell<Vec<PathBuf>>,
+        pub outputs_cache: OnceLock<Vec<PathBuf>>,
     }
 );
 
@@ -150,12 +150,15 @@ impl Task {
 
         if !self.input_globs.is_empty() {
             let globs = &self.input_globs;
-            let walk_paths = self
-                .inputs_cache
-                .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
+
+            if self.inputs_cache.get().is_none() {
+                let _ = self
+                    .inputs_cache
+                    .set(glob::walk_files(workspace_root, globs)?);
+            }
 
             // Glob results are absolute paths!
-            for file in walk_paths {
+            for file in self.inputs_cache.get().unwrap() {
                 list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
@@ -177,12 +180,15 @@ impl Task {
 
         if !self.output_globs.is_empty() {
             let globs = &self.output_globs;
-            let walk_paths = self
-                .outputs_cache
-                .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
+
+            if self.outputs_cache.get().is_none() {
+                let _ = self
+                    .outputs_cache
+                    .set(glob::walk_files(workspace_root, globs)?);
+            }
 
             // Glob results are absolute paths!
-            for file in walk_paths {
+            for file in self.outputs_cache.get().unwrap() {
                 list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
@@ -284,8 +290,8 @@ impl Default for Task {
             target: Target::default(),
             toolchains: vec![Id::raw("system")],
             type_of: TaskType::default(),
-            inputs_cache: OnceCell::new(),
-            outputs_cache: OnceCell::new(),
+            inputs_cache: OnceLock::new(),
+            outputs_cache: OnceLock::new(),
         }
     }
 }

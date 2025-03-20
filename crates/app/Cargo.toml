@@ -56,7 +56,6 @@ convert_case = { workspace = true }
 diff = "0.1.13"
 iocraft = { workspace = true }
 miette = { workspace = true }
-once_cell = { workspace = true }
 proto_core = { workspace = true }
 proto_installer = { workspace = true }
 regex = { workspace = true }

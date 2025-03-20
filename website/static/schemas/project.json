@@ -1446,6 +1446,7 @@
         "unixShell": {
           "title": "unixShell",
           "description": "The shell to run the task in when on a Unix-based machine.",
+          "default": "bash",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskUnixShell"
@@ -1459,6 +1460,7 @@
         "windowsShell": {
           "title": "windowsShell",
           "description": "The shell to run the task in when on a Windows machine.",
+          "default": "pwsh",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskWindowsShell"

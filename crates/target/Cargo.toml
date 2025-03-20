@@ -12,7 +12,6 @@ publish = true
 moon_common = { version = "0.1.0", path = "../common" }
 compact_str = { workspace = true }
 miette = { workspace = true }
-once_cell = { workspace = true }
 regex = { workspace = true }
 schematic = { workspace = true }
 serde = { workspace = true }

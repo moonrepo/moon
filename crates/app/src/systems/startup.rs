@@ -1,6 +1,5 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
-use moon_api::Moonbase;
 use moon_common::consts::*;
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
@@ -176,24 +175,14 @@ pub async fn load_tasks_configs(
 }
 
 #[instrument(skip_all)]
-pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moonbase>>> {
-    if vcs.is_enabled() && env::var("MOONBASE_REPO_SLUG").is_err() {
+pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
+    if vcs.is_enabled() && env::var("MOON_VCS_REPO_SLUG").is_err() {
         if let Ok(slug) = vcs.get_repository_slug().await {
-            unsafe { env::set_var("MOONBASE_REPO_SLUG", slug.as_str()) };
+            unsafe { env::set_var("MOON_VCS_REPO_SLUG", slug.as_str()) };
         }
     }
 
-    let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
-        return Ok(None);
-    };
-
-    let Ok(repo_slug) = env::var("MOONBASE_REPO_SLUG") else {
-        Moonbase::no_vcs_root();
-
-        return Ok(None);
-    };
-
-    Ok(Moonbase::signin(secret_key, repo_slug).await)
+    Ok(())
 }
 
 #[instrument(skip_all)]

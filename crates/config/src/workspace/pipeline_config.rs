@@ -3,14 +3,14 @@ use moon_target::Target;
 use schematic::Config;
 
 #[derive(Clone, Config, Debug, PartialEq)]
-pub enum RunnerActionSwitch {
+pub enum PipelineActionSwitch {
     Enabled(bool),
     Only(Vec<Id>),
 }
 
 /// Configures aspects of the task runner (also known as the action pipeline).
 #[derive(Clone, Config, Debug, PartialEq)]
-pub struct RunnerConfig {
+pub struct PipelineConfig {
     /// List of target's for tasks without outputs, that should be
     /// cached and persisted.
     pub archivable_targets: Vec<Target>,
@@ -29,7 +29,7 @@ pub struct RunnerConfig {
 
     /// Run the `InstallDependencies` action for each running task.
     #[setting(nested)]
-    pub install_dependencies: RunnerActionSwitch,
+    pub install_dependencies: PipelineActionSwitch,
 
     /// Threshold in milliseconds in which to force kill running child
     /// processes after the pipeline receives an external signal. A value
@@ -43,7 +43,7 @@ pub struct RunnerConfig {
     /// Run the `SyncProject` actions in the pipeline for each owning project
     /// of a running task.
     #[setting(nested)]
-    pub sync_projects: RunnerActionSwitch,
+    pub sync_projects: PipelineActionSwitch,
 
     /// Run the `SyncWorkspace` action before all actions in the pipeline.
     #[setting(default = true)]

@@ -1,6 +1,6 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialRunnerConfig,
+    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialPipelineConfig,
     PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
 };
 use moon_task::Target;
@@ -231,9 +231,9 @@ mod general {
     #[test]
     fn logs_command_for_project_root() {
         let sandbox = cases_sandbox_with_config(|cfg| {
-            cfg.runner = Some(PartialRunnerConfig {
+            cfg.pipeline = Some(PartialPipelineConfig {
                 log_running_command: Some(true),
-                ..PartialRunnerConfig::default()
+                ..PartialPipelineConfig::default()
             });
         });
         sandbox.enable_git();
@@ -248,9 +248,9 @@ mod general {
     #[test]
     fn logs_command_for_workspace_root() {
         let sandbox = cases_sandbox_with_config(|cfg| {
-            cfg.runner = Some(PartialRunnerConfig {
+            cfg.pipeline = Some(PartialPipelineConfig {
                 log_running_command: Some(true),
-                ..PartialRunnerConfig::default()
+                ..PartialPipelineConfig::default()
             });
         });
         sandbox.enable_git();
@@ -1193,9 +1193,9 @@ mod outputs {
         #[test]
         fn archives_non_build_tasks_with_full_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse("outputs:noOutput").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 
@@ -1218,9 +1218,9 @@ mod outputs {
         #[test]
         fn archives_non_build_tasks_with_all_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 
@@ -1243,9 +1243,9 @@ mod outputs {
         #[test]
         fn doesnt_archive_non_build_tasks_for_nonmatch_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse(":otherTarget").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 
@@ -1268,9 +1268,9 @@ mod outputs {
         #[test]
         fn archives_std_output() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 
@@ -1294,9 +1294,9 @@ mod outputs {
         #[test]
         fn can_hydrate_archives() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 
@@ -1320,9 +1320,9 @@ mod outputs {
         #[test]
         fn errors_for_deps_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse("^:otherTarget").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 
@@ -1343,9 +1343,9 @@ mod outputs {
         #[test]
         fn errors_for_self_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner = Some(PartialRunnerConfig {
+                cfg.pipeline = Some(PartialPipelineConfig {
                     archivable_targets: Some(vec![Target::parse("~:otherTarget").unwrap()]),
-                    ..PartialRunnerConfig::default()
+                    ..PartialPipelineConfig::default()
                 });
             });
 

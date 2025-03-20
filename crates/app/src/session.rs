@@ -290,7 +290,7 @@ impl AppSession for CliSession {
 
         startup::extract_repo_info(&vcs).await?;
 
-        ProcessRegistry::register(self.workspace_config.runner.kill_process_threshold);
+        ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 
         Ok(None)
     }

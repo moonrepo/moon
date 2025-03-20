@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use moon_action_graph::ActionGraphBuilder;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
-use moon_common::{is_ci, is_formatted_output, is_test_env};
+use moon_common::is_formatted_output;
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
@@ -285,11 +285,9 @@ impl AppSession for CliSession {
 
         // Load components
 
-        if !is_test_env() && is_ci() {
-            let vcs = self.get_vcs_adapter()?;
+        let vcs = self.get_vcs_adapter()?;
 
-            startup::signin_to_moonbase(&vcs).await?;
-        }
+        startup::extract_repo_info(&vcs).await?;
 
         ProcessRegistry::register(self.workspace_config.runner.kill_process_threshold);
 

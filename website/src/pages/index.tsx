@@ -164,7 +164,7 @@ export default function Home() {
 				</ProductSection> */}
 			</main>
 
-			<UsedBy />
+			{/* <UsedBy /> */}
 		</Layout>
 	);
 }

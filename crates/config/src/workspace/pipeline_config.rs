@@ -4,8 +4,17 @@ use schematic::Config;
 
 #[derive(Clone, Config, Debug, PartialEq)]
 pub enum PipelineActionSwitch {
-    Enabled(bool),
+    Disabled(bool),
     Only(Vec<Id>),
+}
+
+impl PipelineActionSwitch {
+    pub fn is_enabled(&self, id: &Id) -> bool {
+        match self {
+            Self::Disabled(value) => !value,
+            Self::Only(list) => list.contains(id),
+        }
+    }
 }
 
 /// Configures aspects of the task runner (also known as the action pipeline).

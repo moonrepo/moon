@@ -88,7 +88,7 @@ impl CliSession {
         &self,
         workspace_graph: &'graph WorkspaceGraph,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(workspace_graph)
+        ActionGraphBuilder::new(workspace_graph, self.workspace_config.clone())
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {

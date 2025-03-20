@@ -7,7 +7,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
-use moon_config::TaskDependencyConfig;
+use moon_config::{TaskDependencyConfig, WorkspaceConfig};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
@@ -17,6 +17,7 @@ use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphErr
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
+use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 #[derive(Default)]
@@ -40,6 +41,7 @@ pub struct ActionGraphBuilder<'app> {
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
+    workspace_config: Arc<WorkspaceConfig>,
     workspace_graph: &'app WorkspaceGraph,
 
     // Affected states
@@ -53,13 +55,21 @@ pub struct ActionGraphBuilder<'app> {
 }
 
 impl<'app> ActionGraphBuilder<'app> {
-    pub fn new(workspace_graph: &'app WorkspaceGraph) -> miette::Result<Self> {
-        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph)
+    pub fn new(
+        workspace_graph: &'app WorkspaceGraph,
+        workspace_config: Arc<WorkspaceConfig>,
+    ) -> miette::Result<Self> {
+        ActionGraphBuilder::with_platforms(
+            PlatformManager::read(),
+            workspace_graph,
+            workspace_config,
+        )
     }
 
     pub fn with_platforms(
         platform_manager: &'app PlatformManager,
         workspace_graph: &'app WorkspaceGraph,
+        workspace_config: Arc<WorkspaceConfig>,
     ) -> miette::Result<Self> {
         debug!("Building action graph");
 
@@ -73,6 +83,7 @@ impl<'app> ActionGraphBuilder<'app> {
             platform_manager,
             primary_targets: FxHashSet::default(),
             workspace_graph,
+            workspace_config,
             touched_files: None,
         })
     }
@@ -189,6 +200,15 @@ impl<'app> ActionGraphBuilder<'app> {
             .unwrap_or_else(|| &project.toolchains);
         let mut primary_toolchain = toolchains[0].to_owned();
         let mut packages_root = WorkspaceRelativePathBuf::default();
+
+        if !self
+            .workspace_config
+            .pipeline
+            .install_dependencies
+            .is_enabled(&primary_toolchain)
+        {
+            return Ok(None);
+        }
 
         // If Bun and Node.js are enabled, they will both attempt to install
         // dependencies in the target root. We need to avoid this problem,
@@ -669,7 +689,9 @@ impl<'app> ActionGraphBuilder<'app> {
         let sync_workspace_index = self.sync_workspace();
         let index = self.insert_node(node);
 
-        self.link_requirements(index, vec![sync_workspace_index]);
+        if let Some(edge) = sync_workspace_index {
+            self.link_requirements(index, vec![edge]);
+        }
 
         index
     }
@@ -726,14 +748,18 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok(index)
     }
 
-    pub fn sync_workspace(&mut self) -> NodeIndex {
+    pub fn sync_workspace(&mut self) -> Option<NodeIndex> {
+        if !self.workspace_config.pipeline.sync_workspace {
+            return None;
+        }
+
         let node = ActionNode::sync_workspace();
 
         if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
+            return Some(*index);
         }
 
-        self.insert_node(node)
+        Some(self.insert_node(node))
     }
 
     // PRIVATE

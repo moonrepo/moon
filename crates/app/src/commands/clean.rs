@@ -1,6 +1,7 @@
-use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
 use clap::Args;
+use iocraft::prelude::element;
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -12,16 +13,20 @@ pub struct CleanArgs {
 
 #[instrument(skip_all)]
 pub async fn clean(session: CliSession, args: CleanArgs) -> AppResult {
-    let done = create_progress_bar(format!("Cleaning stale cache older than {}", args.lifetime));
-
     let (files_deleted, bytes_saved) = session
         .get_cache_engine()?
         .clean_stale_cache(&args.lifetime, true)?;
 
-    done(
-        format!("Deleted {files_deleted} files and saved {bytes_saved} bytes"),
-        true,
-    );
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(content: format!(
+                    "Deleted {files_deleted} files older than {} and saved {bytes_saved} bytes",
+                    args.lifetime,
+                ))
+            }
+        }
+    })?;
 
     Ok(None)
 }

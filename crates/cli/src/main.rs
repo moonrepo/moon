@@ -203,7 +203,7 @@ async fn main() -> MainResult {
                 },
                 Commands::Task(args) => commands::task::task(session, args).await,
                 Commands::TaskGraph(args) => commands::graph::task::task_graph(session, args).await,
-                Commands::Teardown => commands::teardown::teardown().await,
+                Commands::Teardown => commands::teardown::teardown(session).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
                 Commands::Upgrade => commands::upgrade::upgrade(session).await,
             }

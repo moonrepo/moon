@@ -192,6 +192,10 @@ api_struct!(
 api_struct!(
     /// Output returned from the `define_docker_metadata` function.
     pub struct DefineDockerMetadataOutput {
+        /// Default image to use when generating a `Dockerfile`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub default_image: Option<String>,
+
         /// List of files as globs to copy over during
         /// the scaffolding process. Applies to both project
         /// and workspace level scaffolding.

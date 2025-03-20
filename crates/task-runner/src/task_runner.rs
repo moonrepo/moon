@@ -157,7 +157,7 @@ impl<'task> TaskRunner<'task> {
 
                 self.report_item.hash = maybe_hash.clone();
 
-                self.app.console.reporter.on_task_completed(
+                self.app.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &self.report_item,
@@ -178,7 +178,7 @@ impl<'task> TaskRunner<'task> {
 
                 self.inject_failed_task_execution(Some(&error))?;
 
-                self.app.console.reporter.on_task_completed(
+                self.app.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &self.report_item,
@@ -801,7 +801,7 @@ impl<'task> TaskRunner<'task> {
 
         operation.finish(ActionStatus::Aborted);
 
-        self.app.console.reporter.on_task_finished(
+        self.app.console.on_task_finished(
             &self.task.target,
             &operation,
             &self.report_item,

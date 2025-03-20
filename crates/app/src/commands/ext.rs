@@ -23,14 +23,14 @@ pub async fn ext(session: CliSession, args: ExtArgs) -> AppResult {
     }
 
     let id = PluginId::raw(&args.id);
-    let extensions = session.get_extension_registry().await?;
+    let extension_registry = session.get_extension_registry().await?;
 
     // Load the plugin
-    let plugin = extensions.load(&id).await?;
+    let extension = extension_registry.load(&id).await?;
 
     // Execute the plugin
-    plugin
-        .execute(args.passthrough, extensions.create_context())
+    extension
+        .execute(args.passthrough, extension_registry.create_context())
         .await?;
 
     Ok(None)

@@ -1,9 +1,9 @@
-use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
 use clap::Args;
+use iocraft::prelude::element;
 use moon_actions::operations::{sync_codeowners, unsync_codeowners};
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
-use starbase_styles::color;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -17,39 +17,30 @@ pub struct SyncCodeownersArgs {
 
 #[instrument(skip_all)]
 pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
-    let done = create_progress_bar("Syncing code owners...");
     let context = session.get_app_context().await?;
 
-    if args.clean {
+    let message = if args.clean {
         let codeowners_path = unsync_codeowners(&context).await?;
 
-        done(
-            format!(
-                "Successfully removed {}",
-                color::path(
-                    codeowners_path
-                        .strip_prefix(&session.workspace_root)
-                        .unwrap()
-                )
-            ),
-            true,
-        );
+        format!("Removed <path>{}</path>", codeowners_path.display())
     } else {
         let workspace_graph = session.get_workspace_graph().await?;
         let codeowners_path = sync_codeowners(&context, &workspace_graph, args.force).await?;
 
-        done(
-            format!(
-                "Successfully created {}",
-                if let Some(path) = codeowners_path {
-                    color::path(path.strip_prefix(&session.workspace_root).unwrap())
-                } else {
-                    "code owners".into()
-                }
-            ),
-            true,
-        );
-    }
+        if let Some(path) = codeowners_path {
+            format!("Synced codeowners to <path>{}</path>", path.display())
+        } else {
+            "Synced codeowners".into()
+        }
+    };
+
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(content: message)
+            }
+        }
+    })?;
 
     Ok(None)
 }

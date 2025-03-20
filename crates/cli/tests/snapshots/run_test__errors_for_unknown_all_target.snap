@@ -1,8 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 54
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
-No tasks found for target(s) :unknown
-
-
+│ CAUTION
+│ No tasks found for target(s) :unknown

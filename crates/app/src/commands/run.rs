@@ -2,17 +2,17 @@ use crate::components::run_action_pipeline;
 use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files};
 use crate::session::CliSession;
 use clap::Args;
+use iocraft::prelude::element;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env};
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_task::TargetLocator;
 use moon_vcs::TouchedStatus;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
-use starbase_styles::color;
-use std::string::ToString;
 use tracing::instrument;
 
 const HEADING_AFFECTED: &str = "Affected by";
@@ -115,7 +115,6 @@ pub async fn run_target(
     args: &RunArgs,
     target_locators: &[TargetLocator],
 ) -> AppResult {
-    let console = &session.console;
     let cache_engine = session.get_cache_engine()?;
     let workspace_graph = session.get_workspace_graph().await?;
     let vcs = session.get_vcs_adapter()?;
@@ -174,35 +173,41 @@ pub async fn run_target(
     if inserted_nodes.is_empty() {
         let targets_list = target_locators
             .iter()
-            .map(color::label)
+            .map(|target| format!("<id>{}</id>", target.as_str()))
             .collect::<Vec<_>>()
             .join(", ");
 
-        if should_run_affected {
+        let message = if should_run_affected {
             let status_list = if args.status.is_empty() {
-                color::symbol(TouchedStatus::All.to_string())
+                "<symbol>all</symbol>".into()
             } else {
                 args.status
                     .iter()
-                    .map(|s| color::symbol(s.to_string()))
+                    .map(|status| format!("<symbol>{status}</symbol>"))
                     .collect::<Vec<_>>()
                     .join(", ")
             };
 
-            console.out.write_line(
-                format!("Target(s) {targets_list} not affected by touched files (using status {status_list})")
-            )?;
+            format!(
+                "Target(s) {targets_list} not affected by touched files using status {status_list}"
+            )
         } else {
-            console
-                .out
-                .write_line(format!("No tasks found for target(s) {targets_list}"))?;
-        }
+            format!("No tasks found for target(s) {targets_list}")
+        };
 
-        if let Some(query_input) = &args.query {
-            console
-                .out
-                .write_line(format!("Using query {}", color::shell(query_input)))?;
-        }
+        session.console.render(element! {
+            Container {
+                Notice(variant: Variant::Caution) {
+                    StyledText(content: message)
+
+                    #(args.query.as_ref().map(|query| {
+                        element! {
+                            StyledText(content: format!("Using query <shell>{query}</shell>"))
+                        }
+                    }))
+                }
+            }
+        })?;
 
         return Ok(None);
     }

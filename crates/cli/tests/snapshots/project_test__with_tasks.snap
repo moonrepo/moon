@@ -2,30 +2,34 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- TASKS 
+About ──────────────────
 
-Project: tasks
-Source: tasks
-Toolchains: node, typescript
-Language: typescript
-Stack: unknown
-Type: unknown
+  Project: tasks
+  Source: tasks
+  Toolchains: node, typescript
+  Language: typescript
+  Stack: unknown
+  Type: unknown
+  Depends on: —
 
- INHERITS FROM 
+Configuation ───────────
 
-  - .moon/tasks.yml
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
 
- TASKS 
+File groups ────────────
 
-lint: 
-  › eslint --cache --report-unused-disable-directives
-test: 
-  › jest --cache --color
+  sources:
+    - tasks/src/**/*
+    - tasks/types/**/*
+  tests:
+    - tasks/tests/**/*
 
- FILE GROUPS 
+Tasks ──────────────────
 
-sources:
-  - tasks/src/**/*
-  - tasks/types/**/*
-tests:
-  - tasks/tests/**/*
+  lint:
+    › eslint --cache --report-unused-disable-directives
+  test:
+    › jest --cache --color

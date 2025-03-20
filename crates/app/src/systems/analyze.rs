@@ -67,7 +67,7 @@ pub async fn install_proto(
 
     debug!("Installing proto");
 
-    console.out.print_checkpoint(
+    console.print_checkpoint(
         Checkpoint::Setup,
         format!("installing proto {}", PROTO_CLI_VERSION),
     )?;

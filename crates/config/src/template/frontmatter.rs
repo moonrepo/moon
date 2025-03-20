@@ -1,18 +1,21 @@
+use moon_common::cacheable;
 use schematic::Config;
 
-/// Docs: https://moonrepo.dev/docs/config/template#frontmatter
-#[derive(Clone, Config, Debug, Eq, PartialEq)]
-pub struct TemplateFrontmatterConfig {
-    #[setting(
-        default = "https://moonrepo.dev/schemas/template-frontmatter.json",
-        rename = "$schema"
-    )]
-    pub schema: String,
+cacheable!(
+    /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TemplateFrontmatterConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/template-frontmatter.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
 
-    pub force: bool,
-    pub to: Option<String>,
-    pub skip: bool,
-}
+        pub force: bool,
+        pub to: Option<String>,
+        pub skip: bool,
+    }
+);
 
 #[cfg(feature = "loader")]
 impl TemplateFrontmatterConfig {

@@ -252,7 +252,7 @@ impl Tool for NodeTool {
                 };
 
                 if setup || !self.tool.get_product_dir().exists() {
-                    self.console.out.print_checkpoint(
+                    self.console.print_checkpoint(
                         Checkpoint::Setup,
                         format!("installing node {version}"),
                     )?;

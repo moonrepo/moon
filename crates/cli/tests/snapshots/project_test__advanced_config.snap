@@ -2,24 +2,28 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- ADVANCED 
+About ──────────────────
 
-Project: advanced
-Source: advanced
-Toolchains: node, typescript
-Language: typescript
-Stack: frontend
-Type: application
-Tags: react
+  Project: advanced
+  Source: advanced
+  Toolchains: node, typescript
+  Language: typescript
+  Stack: frontend
+  Type: application
+  Depends on: —
 
- INHERITS FROM 
+Configuation ───────────
 
-  - .moon/tasks.yml
+  Inherits from:
+    - .moon/tasks.yml
+  Tags:
+    - react
+  Environment variables: —
 
- FILE GROUPS 
+File groups ────────────
 
-sources:
-  - advanced/src/**/*
-  - advanced/types/**/*
-tests:
-  - advanced/tests/**/*
+  sources:
+    - advanced/src/**/*
+    - advanced/types/**/*
+  tests:
+    - advanced/tests/**/*

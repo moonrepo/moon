@@ -1,10 +1,9 @@
-mod buffer;
-mod console;
-mod printer;
-pub mod prompts;
 mod reporter;
+mod theme;
 
-pub use buffer::*;
-pub use console::*;
-pub use printer::*;
 pub use reporter::*;
+pub use starbase_console::ConsoleError;
+pub use starbase_console::ui;
+pub use theme::*;
+
+pub type Console = starbase_console::Console<MoonReporter>;

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Integrated a new console rendering system with new terminal styles, prompts, and output.
+  - Updated all applicable commands.
+  - Updated `moon templates` to render a list of data.
+  - Updated `moon query projects` and `moon query tasks` to render a table of data.
+- Added a `--json` flag to `moon templates`.
+- Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
+  plugins.
+- WASM API
+  - Added `DefineDockerMetadataOutput.default_image` field.
+  - Added `SettingPrompt.description` field.
+
 ## 1.33.0
 
 #### 💥 Breaking

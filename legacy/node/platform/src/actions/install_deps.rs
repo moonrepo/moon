@@ -42,9 +42,9 @@ pub async fn install_deps(
 
         for attempt in 1..=3 {
             if attempt == 1 {
-                console.out.print_checkpoint(Checkpoint::Setup, command)?;
+                console.print_checkpoint(Checkpoint::Setup, command)?;
             } else {
-                console.out.print_checkpoint_with_comments(
+                console.print_checkpoint_with_comments(
                     Checkpoint::Setup,
                     command,
                     [format!("attempt {attempt} of 3")],
@@ -88,7 +88,7 @@ pub async fn install_deps(
             NodePackageManager::Yarn => "yarn dedupe",
         };
 
-        console.out.print_checkpoint(Checkpoint::Setup, command)?;
+        console.print_checkpoint(Checkpoint::Setup, command)?;
 
         operations.push(
             Operation::task_execution(command)

@@ -1,15 +1,18 @@
 use super::InitOptions;
-use super::prompts::{fully_qualify_version, prompt_version};
-use dialoguer::theme::ColorfulTheme;
-use dialoguer::{Confirm, Select};
+use super::prompts::*;
+use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
-use moon_console::Console;
+use moon_console::{
+    Console,
+    ui::{Container, Entry, Section, Style, StyledText},
+};
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::PackageJsonCache;
-use starbase_styles::color;
+use moon_pdk_api::{PromptType, SettingPrompt};
+use proto_core::UnresolvedVersionSpec;
 use starbase_utils::fs;
-use std::path::Path;
+use starbase_utils::json::JsonValue;
 use tera::{Context, Tera};
 use tracing::instrument;
 
@@ -17,40 +20,35 @@ pub fn render_template(context: Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_node_config_template(), &context, false).into_diagnostic()
 }
 
-/// Detect the Node.js version from local configuration files,
-/// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> miette::Result<String> {
-    Ok(if is_using_version_manager(dest_dir, ".nvmrc") {
-        fully_qualify_version(fs::read_file(dest_dir.join(".nvmrc"))?.trim())
-    } else if is_using_version_manager(dest_dir, ".node-version") {
-        fully_qualify_version(fs::read_file(dest_dir.join(".node-version"))?.trim())
+fn detect_node_version(options: &InitOptions) -> miette::Result<Option<UnresolvedVersionSpec>> {
+    Ok(if is_using_version_manager(&options.dir, ".nvmrc") {
+        UnresolvedVersionSpec::parse(fs::read_file(options.dir.join(".nvmrc"))?).ok()
+    } else if is_using_version_manager(&options.dir, ".node-version") {
+        UnresolvedVersionSpec::parse(fs::read_file(options.dir.join(".node-version"))?).ok()
     } else {
-        String::new()
+        None
     })
 }
 
-fn detect_node_version_manager(dest_dir: &Path) -> miette::Result<String> {
-    Ok(if is_using_version_manager(dest_dir, ".nvmrc") {
+fn detect_node_version_manager(options: &InitOptions) -> miette::Result<String> {
+    Ok(if is_using_version_manager(&options.dir, ".nvmrc") {
         "nvm".to_owned()
-    } else if is_using_version_manager(dest_dir, ".node-version") {
+    } else if is_using_version_manager(&options.dir, ".node-version") {
         "nodenv".to_owned()
     } else {
         String::new()
     })
 }
 
-/// Verify the package manager to use. If a `package.json` exists,
-/// and the `packageManager` field is defined, use that.
-fn detect_package_manager(
-    dest_dir: &Path,
+async fn detect_package_manager(
+    console: &Console,
     options: &InitOptions,
-    theme: &ColorfulTheme,
-) -> miette::Result<(String, String)> {
+) -> miette::Result<(String, Option<UnresolvedVersionSpec>)> {
     let mut pm_type = String::new();
     let mut pm_version = String::new();
 
     // Extract value from `packageManager` field
-    if let Ok(Some(pkg)) = PackageJsonCache::read(dest_dir) {
+    if let Ok(Some(pkg)) = PackageJsonCache::read(&options.dir) {
         if let Some(pm) = pkg.data.package_manager {
             if pm.contains('@') {
                 let mut parts = pm.split('@');
@@ -70,119 +68,135 @@ fn detect_package_manager(
 
     // If no value, detect based on files
     if pm_type.is_empty() {
-        if is_using_dependency_manager(dest_dir, "yarn.lock") {
+        if is_using_dependency_manager(&options.dir, "yarn.lock") {
             pm_type = "yarn".to_owned();
-        } else if is_using_dependency_manager(dest_dir, "pnpm-lock.yaml") {
+        } else if is_using_dependency_manager(&options.dir, "pnpm-lock.yaml") {
             pm_type = "pnpm".to_owned();
-        } else if is_using_dependency_manager(dest_dir, "bun.lockb") {
+        } else if is_using_dependency_manager(&options.dir, "bun.lockb") {
             pm_type = "bun".to_owned();
-        } else if is_using_dependency_manager(dest_dir, "package-lock.json") {
+        } else if is_using_dependency_manager(&options.dir, "package-lock.json") {
             pm_type = "npm".to_owned();
         }
     }
 
     // If no value again, ask for explicit input
     if pm_type.is_empty() {
-        let items = vec!["npm", "pnpm", "yarn", "bun"];
-        let default_index = 0;
+        let pm = render_prompt(
+            console,
+            options,
+            &SettingPrompt::new(
+                "packageManager",
+                "Package manager?",
+                PromptType::Select {
+                    default_index: 0,
+                    options: vec!["npm".into(), "pnpm".into(), "yarn".into(), "bun".into()],
+                },
+            ),
+        )
+        .await?;
 
-        let index = if options.yes || options.minimal {
-            default_index
-        } else {
-            Select::with_theme(theme)
-                .with_prompt("Package manager?")
-                .items(&items)
-                .default(default_index)
-                .interact_opt()
-                .into_diagnostic()?
-                .unwrap_or(default_index)
-        };
-
-        pm_type = items[index].to_owned();
+        if let Some(JsonValue::String(inner)) = pm {
+            pm_type = inner;
+        }
     }
 
-    pm_version = prompt_version(&pm_type, options, theme, || Ok(pm_version))?;
+    let pm_version = render_version_prompt(console, options, &pm_type, || {
+        if pm_version.is_empty() {
+            Ok(None)
+        } else {
+            Ok(UnresolvedVersionSpec::parse(&pm_version).ok())
+        }
+    })
+    .await?;
 
-    Ok((pm_type, fully_qualify_version(&pm_version)))
+    Ok((pm_type, pm_version))
 }
 
 #[instrument(skip_all)]
-pub async fn init_node(
-    options: &InitOptions,
-    theme: &ColorfulTheme,
-    console: &Console,
-) -> miette::Result<String> {
+pub async fn init_node(console: &Console, options: &InitOptions) -> miette::Result<String> {
     if !options.yes {
-        console.out.print_header("Node")?;
-
-        console.out.write_raw(|buffer| {
-            buffer.extend_from_slice(
-                format!(
-                    "Toolchain: {}\n",
-                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
-                )
-                .as_bytes(),
-            );
-            buffer.extend_from_slice(
-                format!(
-                    "Handbook: {}\n",
-                    color::url("https://moonrepo.dev/docs/guides/javascript/node-handbook")
-                )
-                .as_bytes(),
-            );
-            buffer.extend_from_slice(
-                format!(
-                    "Config: {}\n\n",
-                    color::url("https://moonrepo.dev/docs/config/toolchain#node")
-                )
-                .as_bytes(),
-            );
+        console.render(element! {
+            Container {
+                Section(title: "Node") {
+                    Entry(
+                        name: "Toolchain",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/concepts/toolchain",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    Entry(
+                        name: "Handbook",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/guides/javascript/node-handbook",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    Entry(
+                        name: "Config",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/config/toolchain#node",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                }
+            }
         })?;
-
-        console.out.flush()?;
     }
 
     let node_version =
-        prompt_version("Node", options, theme, || detect_node_version(&options.dir))?;
-    let node_version_manager = detect_node_version_manager(&options.dir)?;
-    let package_manager = detect_package_manager(&options.dir, options, theme)?;
+        render_version_prompt(console, options, "Node", || detect_node_version(options)).await?;
+    let node_version_manager = detect_node_version_manager(options)?;
+    let package_manager = detect_package_manager(console, options).await?;
 
-    let infer_tasks = if options.yes || options.minimal {
-        false
-    } else {
-        Confirm::with_theme(theme)
-            .with_prompt(format!(
-                "Infer {} scripts as moon tasks? {}",
-                color::file("package.json"),
-                color::muted("(not recommended)")
-            ))
-            .interact()
-            .into_diagnostic()?
-    };
+    let infer_tasks = render_prompt(
+        console,
+        options,
+        &SettingPrompt::new(
+            "inferTasks",
+            "Infer <file>package.json</file> scripts as moon tasks? <muted>(not recommended)</muted>",
+            PromptType::Confirm { default: false },
+        ),
+    )
+    .await?;
 
-    let sync_dependencies = options.yes
-        || options.minimal
-        || Confirm::with_theme(theme)
-            .with_prompt(format!(
-                "Sync project relationships as {} {}?",
-                color::file("package.json"),
-                color::property("dependencies")
-            ))
-            .interact()
-            .into_diagnostic()?;
+    let sync_dependencies = render_prompt(
+        console,
+        options,
+        &SettingPrompt::new(
+            "syncDependencies",
+            "Sync project relationships as <file>package.json</file> <property>dependencies</property>?",
+            PromptType::Confirm { default: true },
+        ),
+    )
+    .await?;
 
-    let dedupe_lockfile = options.yes
-        || options.minimal
-        || Confirm::with_theme(theme)
-            .with_prompt("Automatically dedupe lockfile when changed?")
-            .interact()
-            .into_diagnostic()?;
+    let dedupe_lockfile = render_prompt(
+        console,
+        options,
+        &SettingPrompt::new(
+            "dedupeLockfile",
+            "Automatically dedupe lockfile when changed?",
+            PromptType::Confirm { default: true },
+        ),
+    )
+    .await?;
 
     let mut context = Context::new();
-    context.insert("node_version", &node_version);
+    if let Some(node_version) = node_version {
+        context.insert("node_version", &node_version);
+    }
     context.insert("node_version_manager", &node_version_manager);
     context.insert("package_manager", &package_manager.0);
-    context.insert("package_manager_version", &package_manager.1);
+    if let Some(package_manager_version) = package_manager.1 {
+        context.insert("package_manager_version", &package_manager_version);
+    }
     context.insert("infer_tasks", &infer_tasks);
     context.insert("sync_dependencies", &sync_dependencies);
     context.insert("dedupe_lockfile", &dedupe_lockfile);

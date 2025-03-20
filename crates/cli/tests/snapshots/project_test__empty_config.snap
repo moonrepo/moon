@@ -2,23 +2,27 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- EMPTYCONFIG 
+About ──────────────────
 
-Project: emptyConfig
-Source: empty-config
-Toolchain: system
-Language: unknown
-Stack: unknown
-Type: unknown
+  Project: emptyConfig
+  Source: empty-config
+  Toolchain: system
+  Language: unknown
+  Stack: unknown
+  Type: unknown
+  Depends on: —
 
- INHERITS FROM 
+Configuation ───────────
 
-  - .moon/tasks.yml
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
 
- FILE GROUPS 
+File groups ────────────
 
-sources:
-  - empty-config/src/**/*
-  - empty-config/types/**/*
-tests:
-  - empty-config/tests/**/*
+  sources:
+    - empty-config/src/**/*
+    - empty-config/types/**/*
+  tests:
+    - empty-config/tests/**/*

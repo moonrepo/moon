@@ -98,7 +98,6 @@ impl Tool for NpmTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing npm {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

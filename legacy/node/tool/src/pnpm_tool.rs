@@ -106,7 +106,6 @@ impl Tool for PnpmTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing pnpm {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

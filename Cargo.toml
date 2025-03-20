@@ -27,14 +27,15 @@ clap = { version = "4.5.32", default-features = false, features = [
     "error-context",
 ] }
 clap_complete = "4.5.46"
+clean-path = "0.2.1"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
-console = "0.15.11"
 convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.8.0"
+iocraft = "0.7.1"
 md5 = "0.7.0"
 miette = "7.5.0"
 once_cell = "1.21.0"
@@ -63,16 +64,17 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.139"
 serde_yml = "0.0.12"
 sha2 = "0.10.8"
-starbase = { version = "0.10.0" }
-starbase_archive = { version = "0.10.0", default-features = false, features = [
+starbase = { version = "0.10.1" }
+starbase_archive = { version = "0.10.1", default-features = false, features = [
     "miette",
     "tar-gz",
 ] }
-starbase_events = "0.7.0"
-starbase_sandbox = "0.9.0"
-starbase_shell = "0.7.0"
+starbase_console = { version = "0.6.4", features = ["miette"] }
+starbase_events = "0.7.1"
+starbase_sandbox = "0.9.1"
+starbase_shell = "0.7.1"
 starbase_styles = { version = "0.5.0", features = ["relative-path"] }
-starbase_utils = { version = "0.11.1", default-features = false, features = [
+starbase_utils = { version = "0.11.2", default-features = false, features = [
     "editor-config",
     "miette",
 ] }
@@ -95,11 +97,11 @@ uuid = { version = "1.15.1", features = ["v4"] }
 # proto/plugin related
 extism = "=1.10.0"
 extism-pdk = "1.3.0"
-proto_core = "0.47.9"
-proto_installer = "0.12.2"
+proto_core = "0.47.11"
+proto_installer = "0.12.3"
 system_env = "0.8.0"
 version_spec = "0.9.1"
-warpgate = "0.23.7"
+warpgate = "0.23.8"
 warpgate_api = "0.13.4"
 warpgate_pdk = "0.12.2"
 

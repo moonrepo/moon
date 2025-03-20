@@ -292,7 +292,6 @@ impl Platform for DenoPlatform {
                     Operation::task_execution(format!("deno {}", args.join(" ")))
                         .track_async(|| async {
                             self.console
-                                .out
                                 .print_checkpoint(Checkpoint::Setup, "deno install --global")?;
 
                             deno.create_command(&())?
@@ -314,7 +313,6 @@ impl Platform for DenoPlatform {
                     Operation::task_execution("deno install")
                         .track_async(|| async {
                             self.console
-                                .out
                                 .print_checkpoint(Checkpoint::Setup, "deno install")?;
 
                             deno.install_dependencies(&(), working_dir, !is_test_env())
@@ -327,7 +325,6 @@ impl Platform for DenoPlatform {
                     Operation::task_execution("deno cache --lock-write")
                         .track_async(|| async {
                             self.console
-                                .out
                                 .print_checkpoint(Checkpoint::Setup, "deno cache")?;
 
                             deno.install_dependencies(&(), working_dir, !is_test_env())

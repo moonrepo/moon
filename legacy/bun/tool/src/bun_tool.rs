@@ -163,7 +163,6 @@ impl Tool for BunTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

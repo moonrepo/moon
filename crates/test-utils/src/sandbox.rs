@@ -32,6 +32,7 @@ fn apply_settings(sandbox: &mut Sandbox) {
     env.insert("RUST_BACKTRACE", "1");
     env.insert("WASMTIME_BACKTRACE_DETAILS", "1");
     env.insert("NO_COLOR", "1");
+    env.insert("COLUMNS", "150");
     // Store plugins in the sandbox
     env.insert("MOON_HOME", moon_dir.to_str().unwrap());
     // env.insert("PROTO_HOME", path.join(".proto"));

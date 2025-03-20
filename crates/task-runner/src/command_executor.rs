@@ -101,7 +101,6 @@ impl<'task> CommandExecutor<'task> {
 
             self.app
                 .console
-                .reporter
                 .on_task_started(&self.task.target, &attempt, report_item)?;
 
             self.print_command_line(&command_line)?;
@@ -172,7 +171,7 @@ impl<'task> CommandExecutor<'task> {
                         attempt.finish(ActionStatus::TimedOut);
                     }
 
-                    self.app.console.reporter.on_task_finished(
+                    self.app.console.on_task_finished(
                         &self.task.target,
                         &attempt,
                         report_item,
@@ -222,7 +221,7 @@ impl<'task> CommandExecutor<'task> {
 
                     attempt.finish(ActionStatus::Failed);
 
-                    self.app.console.reporter.on_task_finished(
+                    self.app.console.on_task_finished(
                         &self.task.target,
                         &attempt,
                         report_item,
@@ -260,7 +259,7 @@ impl<'task> CommandExecutor<'task> {
                 sleep(Duration::from_secs(30)).await;
                 secs += 30;
 
-                let _ = console.reporter.on_task_running(&target, secs);
+                let _ = console.on_task_running(&target, secs);
             }
         }));
     }

@@ -354,7 +354,6 @@ impl Platform for RustPlatform {
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
                     .track_async(|| async {
                         self.console
-                            .out
                             .print_checkpoint(Checkpoint::Setup, "rustup component")?;
 
                         tool.exec_rustup(args, working_dir).await
@@ -377,7 +376,6 @@ impl Platform for RustPlatform {
                 Operation::task_execution(format!("rustup {}", args.join(" ")))
                     .track_async(|| async {
                         self.console
-                            .out
                             .print_checkpoint(Checkpoint::Setup, "rustup target")?;
 
                         tool.exec_rustup(args, working_dir).await
@@ -391,7 +389,6 @@ impl Platform for RustPlatform {
                 Operation::task_execution("cargo generate-lockfile")
                     .track_async(|| async {
                         self.console
-                            .out
                             .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
 
                         tool.exec_cargo(["generate-lockfile"], working_dir).await
@@ -458,7 +455,7 @@ impl Platform for RustPlatform {
                 operations.push(
                     Operation::task_execution(format!("cargo {}", args.join(" ")))
                         .track_async(|| async {
-                            self.console.out.print_checkpoint(
+                            self.console.print_checkpoint(
                                 Checkpoint::Setup,
                                 format!("cargo binstall {name}"),
                             )?;

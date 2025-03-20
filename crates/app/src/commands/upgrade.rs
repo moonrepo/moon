@@ -1,19 +1,21 @@
 use crate::app_error::AppError;
-use crate::helpers::create_progress_bar;
+use crate::components::create_progress_loader;
 use crate::session::CliSession;
 use bytes::Buf;
-use miette::{IntoDiagnostic, miette};
+use iocraft::prelude::element;
+use miette::IntoDiagnostic;
 use moon_api::Launchpad;
 use moon_common::consts::BIN_NAME;
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
-use starbase_utils::{dirs, fs};
+use starbase_utils::fs;
 use std::{
     env::{self, consts},
     fs::File,
     io::copy,
     path::{Component, PathBuf},
 };
-use tracing::{debug, error, instrument};
+use tracing::{debug, instrument};
 
 pub fn is_musl() -> bool {
     let Ok(output) = std::process::Command::new("ldd").arg("--version").output() else {
@@ -37,12 +39,18 @@ pub async fn upgrade(session: CliSession) -> AppResult {
     {
         Ok(Some(result)) if result.update_available => result.remote_version,
         Ok(_) => {
-            println!("You're already on the latest version of moon!");
+            session.console.render(element! {
+                Container {
+                    Notice(variant: Variant::Info) {
+                        StyledText(content: "You're already on the latest version of moon!")
+                    }
+                }
+            })?;
+
             return Ok(None);
         }
-        Err(err) => {
-            error!("Failed to get current version of moon from remote: {err}");
-            return Err(err);
+        Err(error) => {
+            return Err(error);
         }
     };
 
@@ -61,10 +69,7 @@ pub async fn upgrade(session: CliSession) -> AppResult {
     let current_bin_path = env::current_exe().into_diagnostic()?;
     let bin_dir = match env::var("MOON_INSTALL_DIR") {
         Ok(dir) => PathBuf::from(dir),
-        Err(_) => dirs::home_dir()
-            .expect("Invalid home directory.")
-            .join(".moon")
-            .join("bin"),
+        Err(_) => session.moon_env.store_root.join("bin"),
     };
 
     // We can only upgrade moon if it's installed under .moon
@@ -73,15 +78,22 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         .any(|comp| comp == Component::Normal(".moon".as_ref()));
 
     if !upgradeable {
-        return Err(miette!(
-            code = "moon::upgrade",
-            "moon can only upgrade itself when installed in the ~/.moon directory.\n\
-            moon is currently installed at: {}",
-            current_bin_path.to_string_lossy()
-        ));
+        session.console.render(element! {
+            Container {
+                Notice(variant: Variant::Caution) {
+                    StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")
+                    StyledText(content: format!("moon is currently installed at <path>{}</path>", current_bin_path.display()))
+                }
+            }
+        })?;
+
+        return Ok(Some(1));
     }
 
-    let done = create_progress_bar(format!("Upgrading moon to version {remote_version}..."));
+    let progress = create_progress_loader(
+        session.get_console()?,
+        format!("Upgrading moon to version {remote_version}..."),
+    );
 
     // Move the old binary to a versioned path
     let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(BIN_NAME);
@@ -121,10 +133,15 @@ pub async fn upgrade(session: CliSession) -> AppResult {
 
     copy(&mut new_bin.reader(), &mut file).into_diagnostic()?;
 
-    done(
-        format!("Successfully upgraded moon to version {remote_version}"),
-        true,
-    );
+    progress.stop().await?;
+
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Info) {
+                StyledText(content: format!("Upgraded moon to version {remote_version}!"))
+            }
+        }
+    })?;
 
     Ok(None)
 }

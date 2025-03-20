@@ -2,21 +2,25 @@
 source: crates/cli/tests/task_test.rs
 expression: assert.output_standardized()
 ---
- TASKS:TEST 
+About ──────────────────
 
-Task: test
-Project: tasks
-Toolchains: node, typescript
-Type: test
+  Target: tasks:test
+  Project: tasks
+  Task: test
+  Toolchains: node, typescript
+  Type: test
 
- PROCESS 
+Process ────────────────
 
-Command: jest --cache --color
-Working directory: <WORKSPACE>/tasks
-Runs dependencies: Concurrently
-Runs in CI: Yes
+  Command: jest --cache --color
+  Environment variables: —
+  Depends on: —
+  Runs dependencies: Concurrently
+  Runs in CI: Yes
 
- INPUTS 
+Configuration ──────────
 
-  - .moon/*.{pkl,yml}
-  - tasks/tests/**/*
+  Inputs:
+    - .moon/*.{pkl,yml}
+    - tasks/tests/**/*
+  Outputs: —

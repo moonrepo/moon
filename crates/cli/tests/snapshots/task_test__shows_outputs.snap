@@ -2,25 +2,26 @@
 source: crates/cli/tests/task_test.rs
 expression: assert.output_standardized()
 ---
- TASKS:LINT 
+About ──────────────────
 
-Task: lint
-Project: tasks
-Toolchains: node, typescript
-Type: build
+  Target: tasks:lint
+  Project: tasks
+  Task: lint
+  Toolchains: node, typescript
+  Type: build
 
- PROCESS 
+Process ────────────────
 
-Command: eslint --cache --report-unused-disable-directives
-Working directory: <WORKSPACE>/tasks
-Runs dependencies: Concurrently
-Runs in CI: Yes
+  Command: eslint --cache --report-unused-disable-directives
+  Environment variables: —
+  Depends on: —
+  Runs dependencies: Concurrently
+  Runs in CI: Yes
 
- INPUTS 
+Configuration ──────────
 
-  - .moon/*.{pkl,yml}
-  - tasks/**/*
-
- OUTPUTS 
-
-  - tasks/cache
+  Inputs:
+    - .moon/*.{pkl,yml}
+    - tasks/**/*
+  Outputs:
+    - tasks/cache

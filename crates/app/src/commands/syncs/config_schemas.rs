@@ -1,7 +1,8 @@
-use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
 use clap::Args;
+use iocraft::prelude::element;
 use moon_actions::operations::sync_config_schemas;
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -13,13 +14,22 @@ pub struct SyncConfigSchemasArgs {
 
 #[instrument(skip_all)]
 pub async fn sync(session: CliSession, args: SyncConfigSchemasArgs) -> AppResult {
-    let done = create_progress_bar("Generating configuration schemas...");
-
     let context = session.get_app_context().await?;
 
     sync_config_schemas(&context, args.force).await?;
 
-    done("Successfully generated schemas", true);
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(
+                    content: format!(
+                        "Generated configuration schemas to <path>{}</path>",
+                        context.cache_engine.cache_dir.join("schemas").display()
+                    )
+                )
+            }
+        }
+    })?;
 
     Ok(None)
 }

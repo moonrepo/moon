@@ -28,6 +28,7 @@ wiggle = "29.0.1"
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
+moon_codegen = { path = "../codegen" }
 moon_config = { path = "../config" }
 moon_task = { path = "../task" }
 moon_task_runner = { path = "../task-runner" }

@@ -20,7 +20,7 @@ impl Subscriber for ConsoleSubscriber {
     async fn on_emit<'data>(&mut self, event: &Event<'data>) -> miette::Result<()> {
         match event {
             Event::PipelineStarted { action_nodes, .. } => {
-                self.console.reporter.on_pipeline_started(action_nodes)?;
+                self.console.on_pipeline_started(action_nodes)?;
             }
             Event::PipelineCompleted {
                 actions,
@@ -36,20 +36,17 @@ impl Subscriber for ConsoleSubscriber {
                 };
 
                 self.console
-                    .reporter
                     .on_pipeline_completed(actions, &item, *error_report)?;
             }
             Event::ActionStarted { action, .. } => {
-                self.console.reporter.on_action_started(action)?;
+                self.console.on_action_started(action)?;
             }
             Event::ActionCompleted {
                 action,
                 error_report,
                 ..
             } => {
-                self.console
-                    .reporter
-                    .on_action_completed(action, *error_report)?;
+                self.console.on_action_completed(action, *error_report)?;
             }
             _ => {}
         };

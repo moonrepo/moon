@@ -2,23 +2,27 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- ROOT 
+About ──────────────────
 
-Project: root
-Alias: test-cases
-Source: .
-Toolchains: node, typescript
-Language: typescript
-Stack: unknown
-Type: unknown
+  Project: root
+  Alias: test-cases
+  Source: .
+  Toolchains: node, typescript
+  Language: typescript
+  Stack: unknown
+  Type: unknown
+  Depends on: —
 
- INHERITS FROM 
+Configuation ───────────
 
-  - .moon/tasks.yml
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
 
- TASKS 
+Tasks ──────────────────
 
-noop: 
-  › noop 
-oneOff: 
-  › echo root-one-off
+  noop:
+    › noop
+  oneOff:
+    › echo root-one-off

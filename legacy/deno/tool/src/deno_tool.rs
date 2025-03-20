@@ -132,7 +132,6 @@ impl Tool for DenoTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing deno {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

@@ -1,11 +1,13 @@
 use super::InitOptions;
-use super::prompts::prompt_version;
-use dialoguer::Confirm;
-use dialoguer::theme::ColorfulTheme;
+use super::prompts::*;
+use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
-use moon_console::Console;
-use starbase_styles::color;
+use moon_console::{
+    Console,
+    ui::{Container, Entry, Section, Style, StyledText},
+};
+use moon_pdk_api::{PromptType, SettingPrompt};
 use tera::{Context, Tera};
 use tracing::instrument;
 
@@ -14,56 +16,60 @@ pub fn render_template(context: Context) -> miette::Result<String> {
 }
 
 #[instrument(skip_all)]
-pub async fn init_bun(
-    options: &InitOptions,
-    theme: &ColorfulTheme,
-    console: &Console,
-) -> miette::Result<String> {
+pub async fn init_bun(console: &Console, options: &InitOptions) -> miette::Result<String> {
     if !options.yes {
-        console.out.print_header("Bun")?;
-
-        console.out.write_raw(|buffer| {
-            buffer.extend_from_slice(
-                format!(
-                    "Toolchain: {}\n",
-                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
-                )
-                .as_bytes(),
-            );
-            buffer.extend_from_slice(
-                format!(
-                    "Handbook: {}\n",
-                    color::url("https://moonrepo.dev/docs/guides/javascript/bun-handbook")
-                )
-                .as_bytes(),
-            );
-            buffer.extend_from_slice(
-                format!(
-                    "Config: {}\n\n",
-                    color::url("https://moonrepo.dev/docs/config/toolchain#bun")
-                )
-                .as_bytes(),
-            );
+        console.render(element! {
+            Container {
+                Section(title: "Bun") {
+                    Entry(
+                        name: "Toolchain",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/concepts/toolchain",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    Entry(
+                        name: "Handbook",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/guides/javascript/bun-handbook",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    Entry(
+                        name: "Config",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/config/toolchain#bun",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                }
+            }
         })?;
-
-        console.out.flush()?;
     }
 
-    let bun_version = prompt_version("Bun", options, theme, || Ok(String::new()))?;
+    let bun_version = render_version_prompt(console, options, "Bun", || Ok(None)).await?;
 
-    let sync_dependencies = options.yes
-        || options.minimal
-        || Confirm::with_theme(theme)
-            .with_prompt(format!(
-                "Sync project relationships as {} {}?",
-                color::file("package.json"),
-                color::property("dependencies")
-            ))
-            .interact()
-            .into_diagnostic()?;
+    let sync_dependencies = render_prompt(
+        console,
+        options,
+        &SettingPrompt::new(
+            "syncDependencies",
+            "Sync project relationships as <file>package.json</file> <property>dependencies</property>?",
+            PromptType::Confirm { default: true },
+        ),
+    )
+    .await?;
 
     let mut context = Context::new();
-    context.insert("bun_version", &bun_version);
+    if let Some(bun_version) = bun_version {
+        context.insert("bun_version", &bun_version);
+    }
     context.insert("sync_dependencies", &sync_dependencies);
     context.insert("minimal", &options.minimal);
 

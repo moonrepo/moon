@@ -1,5 +1,12 @@
+use moon_common::Id;
 use moon_target::Target;
 use schematic::Config;
+
+#[derive(Clone, Config, Debug, PartialEq)]
+pub enum RunnerActionSwitch {
+    Enabled(bool),
+    Only(Vec<Id>),
+}
 
 /// Configures aspects of the task runner (also known as the action pipeline).
 #[derive(Clone, Config, Debug, PartialEq)]
@@ -20,6 +27,10 @@ pub struct RunnerConfig {
     #[setting(default = true)]
     pub inherit_colors_for_piped_tasks: bool,
 
+    /// Run the `InstallDependencies` action for each running task.
+    #[setting(nested)]
+    pub install_dependencies: RunnerActionSwitch,
+
     /// Threshold in milliseconds in which to force kill running child
     /// processes after the pipeline receives an external signal. A value
     /// of 0 will not kill the process and let them run to completion.
@@ -28,4 +39,13 @@ pub struct RunnerConfig {
 
     /// Logs the task's command and arguments when running the task.
     pub log_running_command: bool,
+
+    /// Run the `SyncProject` actions in the pipeline for each owning project
+    /// of a running task.
+    #[setting(nested)]
+    pub sync_projects: RunnerActionSwitch,
+
+    /// Run the `SyncWorkspace` action before all actions in the pipeline.
+    #[setting(default = true)]
+    pub sync_workspace: bool,
 }

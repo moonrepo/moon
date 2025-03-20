@@ -1,18 +1,18 @@
 use crate::is_glob_like;
 use crate::portable_path::{FilePath, GlobPath, PortablePath};
-use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+use std::sync::LazyLock;
 
-static GIT: Lazy<Regex> = Lazy::new(|| {
+static GIT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new("^(?<url>[a-zA-Z@0-9.-]+/[a-zA-Z0-9-_./]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap()
 });
 
-static NPM: Lazy<Regex> = Lazy::new(|| {
+static NPM: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new("^(?<package>(@[a-z][a-z0-9-_.]*/)?[a-z][a-z0-9-_.]*)#(?<version>[a-z0-9-.+]+)$")
         .unwrap()
 });

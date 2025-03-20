@@ -16,7 +16,6 @@ futures = { workspace = true }
 git-url-parse = "0.4.5"
 ignore = "0.4.23"
 miette = { workspace = true }
-once_cell = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }

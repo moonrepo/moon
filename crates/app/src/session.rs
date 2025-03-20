@@ -20,14 +20,13 @@ use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
-use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use semver::Version;
 use starbase::{AppResult, AppSession};
 use std::env;
 use std::fmt;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tokio::try_join;
 use tracing::debug;
 
@@ -43,12 +42,12 @@ pub struct CliSession {
     pub proto_env: Arc<ProtoEnvironment>,
 
     // Lazy components
-    cache_engine: OnceCell<Arc<CacheEngine>>,
-    extension_registry: OnceCell<Arc<ExtensionRegistry>>,
-    project_graph: OnceCell<Arc<ProjectGraph>>,
-    task_graph: OnceCell<Arc<TaskGraph>>,
-    toolchain_registry: OnceCell<Arc<ToolchainRegistry>>,
-    vcs_adapter: OnceCell<Arc<BoxedVcs>>,
+    cache_engine: OnceLock<Arc<CacheEngine>>,
+    extension_registry: OnceLock<Arc<ExtensionRegistry>>,
+    project_graph: OnceLock<Arc<ProjectGraph>>,
+    task_graph: OnceLock<Arc<TaskGraph>>,
+    toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
+    vcs_adapter: OnceLock<Arc<BoxedVcs>>,
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -65,22 +64,22 @@ impl CliSession {
         debug!("Creating new application session");
 
         Self {
-            cache_engine: OnceCell::new(),
+            cache_engine: OnceLock::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
-            extension_registry: OnceCell::new(),
+            extension_registry: OnceLock::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
-            project_graph: OnceCell::new(),
+            project_graph: OnceLock::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
-            task_graph: OnceCell::new(),
+            task_graph: OnceLock::new(),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
-            toolchain_registry: OnceCell::new(),
+            toolchain_registry: OnceLock::new(),
             working_dir: PathBuf::new(),
             workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
-            vcs_adapter: OnceCell::new(),
+            vcs_adapter: OnceLock::new(),
             cli,
         }
     }
@@ -107,11 +106,13 @@ impl CliSession {
     }
 
     pub fn get_cache_engine(&self) -> miette::Result<Arc<CacheEngine>> {
-        let item = self
-            .cache_engine
-            .get_or_try_init(|| CacheEngine::new(&self.workspace_root).map(Arc::new))?;
+        if self.cache_engine.get().is_none() {
+            let _ = self
+                .cache_engine
+                .set(Arc::new(CacheEngine::new(&self.workspace_root)?));
+        }
 
-        Ok(Arc::clone(item))
+        Ok(self.cache_engine.get().map(Arc::clone).unwrap())
     }
 
     pub fn get_console(&self) -> miette::Result<Arc<Console>> {
@@ -173,7 +174,7 @@ impl CliSession {
     }
 
     pub fn get_vcs_adapter(&self) -> miette::Result<Arc<BoxedVcs>> {
-        let item = self.vcs_adapter.get_or_try_init(|| {
+        if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
             let git = Git::load(
                 &self.workspace_root,
@@ -181,10 +182,10 @@ impl CliSession {
                 &config.remote_candidates,
             )?;
 
-            Ok::<_, miette::Report>(Arc::new(Box::new(git)))
-        })?;
+            let _ = self.vcs_adapter.set(Arc::new(Box::new(git)));
+        }
 
-        Ok(Arc::clone(item))
+        Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())
     }
 
     pub async fn get_workspace_graph(&self) -> miette::Result<WorkspaceGraph> {

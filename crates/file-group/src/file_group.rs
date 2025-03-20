@@ -3,10 +3,10 @@ use common_path::common_path_all;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::InputPath;
-use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -20,7 +20,7 @@ pub struct FileGroup {
     pub id: Id,
 
     #[serde(skip)]
-    walk_cache: OnceCell<Vec<PathBuf>>,
+    walk_cache: OnceLock<Vec<PathBuf>>,
 }
 
 impl FileGroup {
@@ -33,7 +33,7 @@ impl FileGroup {
             files: vec![],
             globs: vec![],
             id: Id::new(id)?,
-            walk_cache: OnceCell::new(),
+            walk_cache: OnceLock::new(),
         })
     }
 
@@ -178,12 +178,15 @@ impl FileGroup {
 
         if !self.globs.is_empty() {
             let globs = &self.globs;
-            let walk_paths = self
-                .walk_cache
-                .get_or_try_init(|| glob::walk(workspace_root, globs))?;
+
+            if self.walk_cache.get().is_none() {
+                let _ = self
+                    .walk_cache
+                    .set(glob::walk_files(workspace_root, globs)?);
+            }
 
             // Glob results are absolute paths!
-            for path in walk_paths {
+            for path in self.walk_cache.get().unwrap() {
                 let allowed = if is_dir {
                     path.is_dir()
                 } else {

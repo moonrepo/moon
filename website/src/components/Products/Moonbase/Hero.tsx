@@ -17,7 +17,8 @@ export default function Hero() {
 					<HeroIcon icon={<LogoIcon height={77} />} text={<TextVector height={70} />} />
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A service for monitoring codebases, tracking ownership, and scaling CI pipelines. <span className="text-red-500">This product has been discontinued!</span>
+						A service for monitoring codebases, tracking ownership, and scaling CI pipelines.{' '}
+						<span className="text-red-500">This product has been discontinued!</span>
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">

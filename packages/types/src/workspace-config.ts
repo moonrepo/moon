@@ -156,6 +156,7 @@ export interface HasherConfig {
 	 * The number of files to include in each hash operation.
 	 *
 	 * @default 2500
+	 * @deprecated
 	 */
 	batchSize?: number;
 	/**
@@ -589,6 +590,7 @@ export interface PartialHasherConfig {
 	 * The number of files to include in each hash operation.
 	 *
 	 * @default 2500
+	 * @deprecated
 	 */
 	batchSize?: number | null;
 	/**

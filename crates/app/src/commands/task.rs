@@ -63,7 +63,7 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
     outputs.extend(&task.output_files);
     outputs.sort();
 
-    let hide_in_snapshot = !is_test_env();
+    let show_in_prod = !is_test_env();
 
     session.console.render(element! {
         Container {
@@ -155,18 +155,23 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
                         )
                     }.into_any()
                 )
-                #(task.options.shell.unwrap_or_default().then(|| {
-                    element! {
-                        Entry(
-                            name: "Shell",
-                            content: if cfg!(unix) {
-                                task.options.unix_shell.unwrap_or_default().to_string()
-                            } else if cfg!(windows) {
-                                task.options.windows_shell.unwrap_or_default().to_string()
-                            } else {
-                                "unknown".to_string()
-                            }
-                        )
+
+                #(show_in_prod.then(|| {
+                    if task.options.shell.unwrap_or_default() {
+                        element! {
+                            Entry(
+                                name: "Shell",
+                                content: if cfg!(unix) {
+                                    task.options.unix_shell.unwrap_or_default().to_string()
+                                } else if cfg!(windows) {
+                                    task.options.windows_shell.unwrap_or_default().to_string()
+                                } else {
+                                    "unknown".to_string()
+                                }
+                            )
+                        }.into_any()
+                    } else {
+                        element!(View).into_any()
                     }
                 }))
                 Entry(
@@ -211,7 +216,7 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
                         }))
                     }
                 }
-                #(hide_in_snapshot.then(|| {
+                #(show_in_prod.then(|| {
                     element! {
                         Entry(
                             name: "Working directory",

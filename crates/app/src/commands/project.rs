@@ -35,7 +35,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
         return Ok(None);
     }
 
-    let hide_in_snapshot = !is_test_env();
+    let show_in_prod = !is_test_env();
 
     session.console.render(element! {
         Container {
@@ -125,7 +125,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
                         )
                     }.into_any()
                 )
-                #(hide_in_snapshot.then(|| {
+                #(show_in_prod.then(|| {
                     element! {
                         Entry(
                             name: "Root",

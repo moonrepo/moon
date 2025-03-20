@@ -3,6 +3,7 @@ use moon_target::Target;
 use schematic::Config;
 
 #[derive(Clone, Config, Debug, PartialEq)]
+#[config(serde(untagged))]
 pub enum PipelineActionSwitch {
     Default,
     Enabled(bool),
@@ -44,7 +45,8 @@ pub struct PipelineConfig {
     #[setting(default = true)]
     pub inherit_colors_for_piped_tasks: bool,
 
-    /// Run the `InstallDependencies` action for each running task.
+    /// Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
+    /// each running task when changes to lockfiles and manifests are detected.
     #[setting(nested)]
     pub install_dependencies: PipelineActionSwitch,
 

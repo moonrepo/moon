@@ -490,6 +490,153 @@ notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
 ```
 
+## `pipeline`
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#pipeline" />
+
+Configures aspects of task running and the action pipeline.
+
+### `archivableTargets`
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#archivableTargets" />
+
+Defines a list of [targets](../concepts/target), with or without scope, that will be cached and
+archived within the pipeline. Tasks that produce [outputs](./project#outputs) are automatically
+archived, and do not need to be defined here. Defaults to an empty list.
+
+```yaml title=".moon/workspace.yml" {2-4}
+pipeline:
+  archivableTargets:
+    - ':test'
+    - 'app:typecheck'
+```
+
+> This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
+> persist tar archives located in `.moon/cache/outputs`.
+
+### `autoCleanCache`<VersionLabel version="1.24.0" />
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#autoCleanCache" />
+
+Automatically cleans cached artifacts older than [`cacheLifetime`](#cachelifetime) from the cache
+directory (`.moon/cache`) after every run. This is useful for keeping the cache directory lean.
+Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  autoCleanCache: false
+```
+
+### `cacheLifetime`
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#cacheLifetime" />
+
+The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
+the action pipeline. Defaults to "7 days". This field requires an integer and a timeframe unit that
+can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  cacheLifetime: '24 hours'
+```
+
+### `inheritColorsForPipedTasks`
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#inheritColorsForPipedTasks" />
+
+Force colors to be inherited from the current terminal for all tasks that are ran as a child process
+and their output is piped to the action pipeline. Defaults to `true`.
+[View more about color handling in moon](../commands/overview#colors).
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  inheritColorsForPipedTasks: true
+```
+
+### `installDependencies`<VersionLabel version="1.34.0" />
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#installDependencies" />
+
+When enabled, runs the
+[`InstallWorkspaceDeps` and `InstallProjectDeps` actions](../how-it-works/action-graph#install-dependencies)
+within the pipeline before running an applicable task. Installation is determined based on changed
+manifests and lockfiles. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  installDependencies: false
+```
+
+Instead of a boolean, a list of toolchain IDs can be provided to only allow those toolchains to
+install dependencies.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  installDependencies: ['node']
+```
+
+### `killProcessThreshold`<VersionLabel version="1.32.1" />
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#killProcessThreshold" />
+
+Threshold in milliseconds in which to force kill running child processes after the pipeline receives
+an external signal (like `SIGINT` or `SIGTERM`). A value of 0 will not kill the process and let them
+run to completion. Defaults to `2000` (2 seconds).
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  killProcessThreshold: 5000
+```
+
+### `logRunningCommand`
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#logRunningCommand" />
+
+When enabled, will log the task's command, resolved arguments, and working directory when a target
+is ran. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  logRunningCommand: true
+```
+
+### `syncProjects`<VersionLabel version="1.34.0" />
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#syncProjects" />
+
+When enabled, runs the [`SyncProject` action](../how-it-works/action-graph#sync-project) within the
+pipeline before running an applicable task. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  syncProjects: false
+```
+
+Instead of a boolean, a list of project IDs can be provided to only sync those projects.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  syncProjects: ['app']
+```
+
+> The [`moon sync projects`](../commands/sync/projects) command can be executed to manually sync
+> projects.
+
+### `syncWorkspace`<VersionLabel version="1.34.0" />
+
+<HeadingApiLink to="/api/types/interface/PipelineConfig#syncWorkspace" />
+
+When enabled, runs the [`SyncWorkspace` action](../how-it-works/action-graph#sync-workspace) within
+the pipeline before all other actions. This syncing includes operations such as codeowners, VCS
+hooks, and more. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+pipeline:
+  syncWorkspace: false
+```
+
+> The [`moon sync ...`](../commands/sync) sub-commands can be executed to manually sync features.
+
 ## `unstable_remote`<VersionLabel version="1.30.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#unstable_remote" />
@@ -690,91 +837,9 @@ The domain name in which to verify the TLS certificate.
 
 ## `runner`
 
-<HeadingApiLink to="/api/types/interface/WorkspaceConfig#runner" />
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#pipeline" />
 
-Configures aspects of task running and the action pipeline.
-
-### `archivableTargets`
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#archivableTargets" />
-
-Defines a list of [targets](../concepts/target), with or without scope, that will be cached and
-archived within the runner. Tasks that produce [outputs](./project#outputs) are automatically
-archived, and do not need to be defined here. Defaults to an empty list.
-
-```yaml title=".moon/workspace.yml" {2-4}
-runner:
-  archivableTargets:
-    - ':test'
-    - 'app:typecheck'
-```
-
-> This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
-> persist tar archives located in `.moon/cache/outputs`.
-
-### `autoCleanCache`<VersionLabel version="1.24.0" />
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#autoCleanCache" />
-
-Automatically cleans cached artifacts older than [`cacheLifetime`](#cachelifetime) from the cache
-directory (`.moon/cache`) after every run. This is useful for keeping the cache directory lean.
-Defaults to `true`.
-
-```yaml title=".moon/workspace.yml" {2}
-runner:
-  autoCleanCache: false
-```
-
-### `cacheLifetime`
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#cacheLifetime" />
-
-The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
-the action pipeline. Defaults to "7 days". This field requires an integer and a timeframe unit that
-can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
-
-```yaml title=".moon/workspace.yml" {2}
-runner:
-  cacheLifetime: '24 hours'
-```
-
-### `inheritColorsForPipedTasks`
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#inheritColorsForPipedTasks" />
-
-Force colors to be inherited from the current terminal for all tasks that are ran as a child process
-and their output is piped to the action pipeline. Defaults to `true`.
-[View more about color handling in moon](../commands/overview#colors).
-
-```yaml title=".moon/workspace.yml" {2}
-runner:
-  inheritColorsForPipedTasks: true
-```
-
-### `killProcessThreshold`<VersionLabel version="1.32.1" />
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#killProcessThreshold" />
-
-Threshold in milliseconds in which to force kill running child processes after the pipeline receives
-an external signal (like `SIGINT` or `SIGTERM`). A value of 0 will not kill the process and let them
-run to completion. Defaults to `2000` (2 seconds).
-
-```yaml title=".moon/workspace.yml" {2}
-runner:
-  killProcessThreshold: 5000
-```
-
-### `logRunningCommand`
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#logRunningCommand" />
-
-When enabled, will log the task's command, resolved arguments, and working directory when a target
-is ran. Defaults to `false`.
-
-```yaml title=".moon/workspace.yml" {2}
-runner:
-  logRunningCommand: true
-```
+This setting was renamed to [`pipeline`](#pipeline) but still works for backwards compatibility.
 
 ## `telemetry`
 

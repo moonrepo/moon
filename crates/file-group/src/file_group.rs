@@ -6,7 +6,7 @@ use moon_config::InputPath;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Arc, Mutex, OnceLock};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -21,6 +21,7 @@ pub struct FileGroup {
 
     #[serde(skip)]
     walk_cache: OnceLock<Vec<PathBuf>>,
+    walk_mutex: Arc<Mutex<()>>,
 }
 
 impl FileGroup {
@@ -34,6 +35,7 @@ impl FileGroup {
             globs: vec![],
             id: Id::new(id)?,
             walk_cache: OnceLock::new(),
+            walk_mutex: Arc::new(Mutex::new(())),
         })
     }
 
@@ -177,12 +179,13 @@ impl FileGroup {
         }
 
         if !self.globs.is_empty() {
-            let globs = &self.globs;
+            let Ok(_lock) = self.walk_mutex.lock() else {
+                return Ok(list);
+            };
 
             if self.walk_cache.get().is_none() {
-                let _ = self
-                    .walk_cache
-                    .set(glob::walk_files(workspace_root, globs)?);
+                let globs = &self.globs;
+                let _ = self.walk_cache.set(glob::walk(workspace_root, globs)?);
             }
 
             // Glob results are absolute paths!

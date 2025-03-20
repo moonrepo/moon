@@ -6,7 +6,6 @@ use moon_test_utils2::{
 };
 use moon_workspace_graph::WorkspaceGraph;
 use std::path::Path;
-use std::sync::Arc;
 
 pub struct ActionGraphContainer {
     pub platform_manager: PlatformManager,
@@ -27,7 +26,7 @@ impl ActionGraphContainer {
         ActionGraphBuilder::with_platforms(
             &self.platform_manager,
             &self.workspace_graph,
-            Arc::new(self.workspace_config.clone()),
+            self.workspace_config.pipeline.clone(),
         )
         .unwrap()
     }

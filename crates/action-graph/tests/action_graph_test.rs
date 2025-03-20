@@ -9,7 +9,6 @@ use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     PipelineActionSwitch, PipelineConfig, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
-    WorkspaceConfig,
 };
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
@@ -18,7 +17,6 @@ use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use std::env;
-use std::sync::Arc;
 use utils::ActionGraphContainer;
 
 fn create_task(id: &str, project: &str) -> Task {
@@ -264,7 +262,7 @@ mod action_graph {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path()).await;
             container.workspace_config.pipeline.install_dependencies =
-                PipelineActionSwitch::Disabled(true);
+                PipelineActionSwitch::Enabled(false);
 
             let mut builder = container.create_builder();
 
@@ -2265,6 +2263,81 @@ mod action_graph {
                 ]
             );
         }
+
+        #[tokio::test]
+        async fn doesnt_add_if_disabled() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                PipelineConfig {
+                    sync_projects: false.into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let bar = wg.get_project("bar").unwrap();
+            builder.sync_project(&bar).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test]
+        async fn doesnt_add_if_not_listed() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                PipelineConfig {
+                    sync_projects: PipelineActionSwitch::Only(vec![Id::raw("foo")]),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let bar = wg.get_project("bar").unwrap();
+            builder.sync_project(&bar).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test]
+        async fn adds_if_listed() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                PipelineConfig {
+                    sync_projects: PipelineActionSwitch::Only(vec![Id::raw("bar")]),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let bar = wg.get_project("bar").unwrap();
+            builder.sync_project(&bar).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        runtime: Runtime::system()
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                        runtime: Runtime::system()
+                    })
+                ]
+            );
+        }
     }
 
     mod sync_workspace {
@@ -2303,13 +2376,10 @@ mod action_graph {
 
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                Arc::new(WorkspaceConfig {
-                    pipeline: PipelineConfig {
-                        sync_workspace: false,
-                        ..Default::default()
-                    },
+                PipelineConfig {
+                    sync_workspace: false,
                     ..Default::default()
-                }),
+                },
             )
             .unwrap();
             builder.sync_workspace();

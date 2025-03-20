@@ -4,16 +4,24 @@ use schematic::Config;
 
 #[derive(Clone, Config, Debug, PartialEq)]
 pub enum PipelineActionSwitch {
-    Disabled(bool),
+    Default,
+    Enabled(bool),
     Only(Vec<Id>),
 }
 
 impl PipelineActionSwitch {
     pub fn is_enabled(&self, id: &Id) -> bool {
         match self {
-            Self::Disabled(value) => !value,
+            Self::Default => true,
+            Self::Enabled(value) => *value,
             Self::Only(list) => list.contains(id),
         }
+    }
+}
+
+impl From<bool> for PipelineActionSwitch {
+    fn from(value: bool) -> Self {
+        Self::Enabled(value)
     }
 }
 

@@ -1,4 +1,3 @@
-use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_remote::{ActionState, RemoteService};
@@ -12,7 +11,6 @@ use tracing::{debug, instrument, warn};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HydrateFrom {
     LocalCache,
-    Moonbase,
     PreviousOutput,
     RemoteCache,
 }
@@ -44,8 +42,8 @@ impl OutputHydrater<'_> {
                 }
             }
 
-            // Otherwise write to local cache, then download archive from moonbase
-            HydrateFrom::LocalCache | HydrateFrom::Moonbase => {
+            // Otherwise write to local cache
+            _ => {
                 let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
                 let mut hydrated = false;
 
@@ -54,12 +52,6 @@ impl OutputHydrater<'_> {
                         task_target = self.task.target.as_str(),
                         hash, "Hydrating cached outputs into project"
                     );
-
-                    // Attempt to download from remote cache to `.moon/outputs/<hash>`
-                    if !archive_file.exists() && matches!(from, HydrateFrom::Moonbase) {
-                        self.download_from_remote_storage(hash, &archive_file)
-                            .await?;
-                    }
 
                     // Otherwise hydrate the cached archive into the task's outputs
                     if archive_file.exists() {
@@ -115,21 +107,6 @@ impl OutputHydrater<'_> {
         }
 
         Ok(true)
-    }
-
-    #[instrument(skip(self))]
-    async fn download_from_remote_storage(
-        &self,
-        hash: &str,
-        archive_file: &Path,
-    ) -> miette::Result<()> {
-        if let Some(moonbase) = Moonbase::session() {
-            moonbase
-                .download_artifact_from_remote_storage(hash, archive_file)
-                .await?;
-        }
-
-        Ok(())
     }
 
     #[instrument(skip(self, state))]

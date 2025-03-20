@@ -1,9 +1,9 @@
-use once_cell::sync::Lazy;
 pub use regex::{Captures, Regex};
+use std::sync::LazyLock;
 
 macro_rules! pattern {
     ($name:ident, $regex:literal) => {
-        pub static $name: Lazy<regex::Regex> = Lazy::new(|| Regex::new($regex).unwrap());
+        pub static $name: LazyLock<regex::Regex> = LazyLock::new(|| Regex::new($regex).unwrap());
     };
 }
 

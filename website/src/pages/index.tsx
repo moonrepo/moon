@@ -8,7 +8,7 @@ import {
 	faToolbox,
 } from '@fortawesome/pro-duotone-svg-icons';
 import ProductSection from '@site/src/components/Home/ProductSection';
-import UsedBy from '@site/src/components/Home/UsedBy';
+// import UsedBy from '@site/src/components/Home/UsedBy';
 // import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
@@ -164,7 +164,7 @@ export default function Home() {
 				</ProductSection> */}
 			</main>
 
-			<UsedBy />
+			{/* <UsedBy /> */}
 		</Layout>
 	);
 }

@@ -38,7 +38,6 @@ indexmap = "2.8.0"
 iocraft = "0.7.1"
 md5 = "0.7.0"
 miette = "7.5.0"
-once_cell = "1.21.0"
 pathdiff = "0.2.3"
 petgraph = { version = "0.7.1", default-features = false, features = [
     "serde-1",

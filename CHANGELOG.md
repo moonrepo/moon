@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- We have sunset our [moonbase](https://moonrepo.app/) service and removed its integration from
+  moon. If you were using moonbase's remote caching, we suggest using
+  [Depot or self-hosting](https://moonrepo.dev/docs/guides/remote-cache) instead.
+
 #### 🚀 Updates
 
 - Integrated a new console rendering system with new terminal styles, prompts, and output.

@@ -8,26 +8,27 @@ use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::Diagnostic;
 use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{Style, Stylize, is_test_env};
-use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use semver::Version;
 use std::collections::BTreeMap;
 use std::env;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use thiserror::Error;
 use tracing::{debug, instrument};
 
-pub static STATUS_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^(M|T|A|D|R|C|U|\?|!| )(M|T|A|D|R|C|U|\?|!| ) ").unwrap());
+pub static STATUS_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(M|T|A|D|R|C|U|\?|!| )(M|T|A|D|R|C|U|\?|!| ) ").unwrap());
 
-pub static DIFF_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(A|D|M|T|U|X)$").unwrap());
+pub static DIFF_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(A|D|M|T|U|X)$").unwrap());
 
-pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
+pub static DIFF_SCORE_PATTERN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
 
-pub static VERSION_CLEAN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
+pub static VERSION_CLEAN: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
 
 pub fn clean_git_version(version: String) -> String {
     let version = if let Some(index) = version.find('(') {

@@ -425,6 +425,7 @@
           "title": "batchSize",
           "description": "The number of files to include in each hash operation.",
           "default": 2500,
+          "deprecated": true,
           "type": "number"
         },
         "ignoreMissingPatterns": {

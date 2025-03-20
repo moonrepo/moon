@@ -1,5 +1,4 @@
 use crate::task_runner_error::TaskRunnerError;
-use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project::Project;
@@ -49,10 +48,6 @@ impl OutputArchiver<'_> {
                 );
 
                 self.create_local_archive(hash, &archive_file)?;
-
-                if archive_file.exists() {
-                    self.upload_to_remote_storage(hash, &archive_file).await?;
-                }
             } else {
                 debug!(
                     task_target = self.task.target.as_str(),
@@ -184,21 +179,6 @@ impl OutputArchiver<'_> {
                 "Failed to package outputs into archive: {}",
                 color::muted_light(error.to_string()),
             );
-        }
-
-        Ok(())
-    }
-
-    #[instrument(skip(self))]
-    async fn upload_to_remote_storage(
-        &self,
-        hash: &str,
-        archive_file: &Path,
-    ) -> miette::Result<()> {
-        if let Some(moonbase) = Moonbase::session() {
-            moonbase
-                .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)
-                .await?;
         }
 
         Ok(())

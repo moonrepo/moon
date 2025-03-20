@@ -163,9 +163,17 @@ export interface TaskOptionsConfig {
 	shell: boolean | null;
 	/** The maximum time in seconds that a task can run before being cancelled. */
 	timeout: number | null;
-	/** The shell to run the task in when on a Unix-based machine. */
+	/**
+	 * The shell to run the task in when on a Unix-based machine.
+	 *
+	 * @default 'bash'
+	 */
 	unixShell: TaskUnixShell | null;
-	/** The shell to run the task in when on a Windows machine. */
+	/**
+	 * The shell to run the task in when on a Windows machine.
+	 *
+	 * @default 'pwsh'
+	 */
 	windowsShell: TaskWindowsShell | null;
 }
 
@@ -426,9 +434,17 @@ export interface PartialTaskOptionsConfig {
 	shell?: boolean | null;
 	/** The maximum time in seconds that a task can run before being cancelled. */
 	timeout?: number | null;
-	/** The shell to run the task in when on a Unix-based machine. */
+	/**
+	 * The shell to run the task in when on a Unix-based machine.
+	 *
+	 * @default 'bash'
+	 */
 	unixShell?: TaskUnixShell | null;
-	/** The shell to run the task in when on a Windows machine. */
+	/**
+	 * The shell to run the task in when on a Windows machine.
+	 *
+	 * @default 'pwsh'
+	 */
 	windowsShell?: TaskWindowsShell | null;
 }
 

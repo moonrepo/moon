@@ -9,7 +9,7 @@ const icons = {
 	project: "material-symbols:inbox",
 	'project-config': "material-symbols:inbox-customize",
 	'project-config-global': "material-symbols:inbox-customize",
-	'project-graph': "material-symbols:graph-2",
+	'project-graph': "material-symbols:flowchart",
 	'run-task': "material-symbols:play-circle",
 	task: "material-symbols:circle",
 	'task-config': "material-symbols:build-circle",

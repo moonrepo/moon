@@ -1,4 +1,3 @@
-// import { faSpaceStationMoon } from '@fortawesome/pro-duotone-svg-icons';
 import LogoIcon from '../../../../static/brand/moonbase/icon.svg';
 import TextVector from '../../../../static/brand/moonbase/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';
@@ -34,7 +33,7 @@ export default function Hero() {
 							<CTA href="https://moonrepo.app" color="bg-teal-600">
 								Try it today
 								<Icon
-									icon={faSpaceStationMoon}
+									icon="material-symbols:moon-stars"
 									className="ml-1 md:ml-2 inline-block"
 									style={{ maxWidth: 18 }}
 								/>

@@ -1,4 +1,3 @@
-import { faPuzzle } from '@fortawesome/pro-regular-svg-icons';
 import Label from '../../ui/typography/Label';
 
 export interface TomlLinkProps {
@@ -14,7 +13,7 @@ export default function TomlLink({ to, noMargin }: TomlLinkProps) {
 			className="float-right block"
 			style={{ marginTop: noMargin ? 0 : '-3.75em' }}
 		>
-			<Label text="TOML" icon={faPuzzle} variant="info" />
+			<Label text="TOML" icon="material-symbols:power-plug" variant="info" />
 		</a>
 	);
 }

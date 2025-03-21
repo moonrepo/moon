@@ -75,7 +75,7 @@ impl OutputArchiver<'_> {
             return Ok(true);
         }
 
-        for target in &self.app.workspace_config.runner.archivable_targets {
+        for target in &self.app.workspace_config.pipeline.archivable_targets {
             let is_matching_task = task.target.task_id == target.task_id;
 
             match &target.scope {

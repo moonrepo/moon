@@ -343,7 +343,7 @@ impl<'task> CommandExecutor<'task> {
     // We don't use `Command::print_command` because we need to explicitly
     // control the workspace root and working directory!
     fn print_command_line(&self, command_line: &str) -> miette::Result<()> {
-        if !self.app.workspace_config.runner.log_running_command {
+        if !self.app.workspace_config.pipeline.log_running_command {
             return Ok(());
         }
 

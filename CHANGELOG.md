@@ -14,9 +14,16 @@
   - Updated all applicable commands.
   - Updated `moon templates` to render a list of data.
   - Updated `moon query projects` and `moon query tasks` to render a table of data.
+- Added new settings to `pipeline` (formerly `runner`) in `.moon/workspace.yml` to control which
+  kinds of action nodes exist in the action graph when running tasks.
+  - `syncWorkspace` toggles the root `SyncWorkspace` action.
+  - `syncProjects` toggles the `SyncProject` actions, and can be scoped to project IDs.
+  - `installDependencies` toggles the `InstallWorkspaceDeps` and `InstallProjectDeps` actions, and
+    can be scoped to toolchain IDs.
 - Added a `--json` flag to `moon templates`.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.
+- Updated `moon sync` to sync the workspace and all projects.
 - WASM API
   - Added `DefineDockerMetadataOutput.default_image` field.
   - Added `SettingPrompt.description` field.

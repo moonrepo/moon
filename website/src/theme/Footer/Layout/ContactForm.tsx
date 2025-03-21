@@ -1,7 +1,6 @@
 /* eslint-disable promise/prefer-await-to-then */
 
 import React, { ChangeEvent, useCallback, useState } from 'react';
-import { faXmark } from '@fortawesome/pro-regular-svg-icons';
 import YC from '../../../../static/img/logo-yc.svg';
 import Button, { ButtonProps } from '../../../ui/Button';
 import Icon from '../../../ui/iconography/Icon';
@@ -75,7 +74,7 @@ export default function ContactForm() {
 			{subject ? (
 				<Text>
 					<Link className="float-right text-lg px-1" onClick={handleReset}>
-						<Icon icon={faXmark} />
+						<Icon icon="material-symbols:cancel-outline-rounded" />
 					</Link>
 					Contacting about <b>{subject}</b>
 				</Text>

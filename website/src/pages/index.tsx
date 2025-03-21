@@ -1,12 +1,4 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import {
-	faBolt,
-	faDiagramProject,
-	faDiagramSankey,
-	faLeaf,
-	faSolarSystem,
-	faToolbox,
-} from '@fortawesome/pro-duotone-svg-icons';
 import ProductSection from '@site/src/components/Home/ProductSection';
 import UsedBy from '@site/src/components/Home/UsedBy';
 // import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
@@ -65,13 +57,13 @@ export default function Home() {
 						{
 							description:
 								'Never run the same task twice. With our smart hashing, robust caching, and efficient task execution, moon will avoid unnecessary work.',
-							icon: faDiagramSankey,
+							icon: 'material-symbols:stacked-line-chart',
 							title: 'Efficient task orchestation',
 						},
 						{
 							description:
 								'Neatly organize your codebase, declare ownership information, and simplify project discovery.',
-							icon: faDiagramProject,
+							icon: 'material-symbols:graph-2',
 							title: 'Better project organization',
 						},
 						{
@@ -82,7 +74,7 @@ export default function Home() {
 									developers and machines.
 								</>
 							),
-							icon: faToolbox,
+							icon: 'material-symbols:service-toolbox',
 							title: 'Integrated development environment',
 						},
 					]}
@@ -116,20 +108,20 @@ export default function Home() {
 						{
 							description:
 								'Manage versions of multiple languages and dependency managers through a single interface. A single source of truth.',
-							icon: faSolarSystem,
+							icon: 'material-symbols:borg',
 							title: 'Multi-language support',
 						},
 
 						{
 							description:
 								"Detects and infers versions and semantics from a language's ecosystem for maximum compatibility and interoperability.",
-							icon: faLeaf,
+							icon: 'material-symbols:find-replace',
 							title: 'Contextual version detection',
 						},
 						{
 							description:
 								'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
-							icon: faBolt,
+							icon: 'material-symbols:electric-bolt',
 							title: 'Lightspeed interface',
 						},
 					]}

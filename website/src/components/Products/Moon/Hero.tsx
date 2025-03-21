@@ -1,5 +1,4 @@
 import Link from '@docusaurus/Link';
-import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
 import Text from '@site/src/ui/typography/Text';
 import LogoIcon from '../../../../static/brand/moon/icon.svg';
 import TextVector from '../../../../static/brand/moon/text-vector.svg';
@@ -41,7 +40,7 @@ export default function Hero() {
 							<CTA href="/docs/install">
 								Get started
 								<Icon
-									icon={faRocketLaunch}
+									icon="material-symbols:rocket-launch"
 									className="ml-1 md:ml-2 inline-block"
 									style={{ maxWidth: 18 }}
 								/>

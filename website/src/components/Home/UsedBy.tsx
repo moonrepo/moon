@@ -1,4 +1,3 @@
-import { faCirclePlus } from '@fortawesome/pro-duotone-svg-icons';
 import DepotSvg from '../../../static/brands/depot.svg';
 import GallerySvg from '../../../static/brands/gallery.svg';
 import Icon from '../../ui/iconography/Icon';
@@ -47,7 +46,7 @@ export default function UsedBy() {
 
 						<div className="col-span-1 flex justify-start items-center">
 							<Link href="#" onClick={onClick} variant="muted" title="List your company here">
-								<Icon icon={faCirclePlus} className="text-3xl" />
+								<Icon icon="material-symbols:add-circle" className="text-3xl" />
 							</Link>
 						</div>
 					</div>

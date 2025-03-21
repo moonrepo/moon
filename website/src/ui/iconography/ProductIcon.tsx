@@ -1,48 +1,29 @@
-import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
-import {
-	faCircle,
-	faCircleBolt,
-	faCirclePlay,
-	faCirclePlus,
-	faDiagramProject,
-	faGrid2,
-	faScrewdriverWrench,
-	faSliders,
-	faSpaceStationMoonConstruction,
-	faSquare,
-	faSquarePlus,
-	faSquareSliders,
-	faSquareSlidersVertical,
-	faToolbox,
-	faTriangle,
-} from '@fortawesome/pro-regular-svg-icons';
-import { FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
-import Icon from './Icon';
+import Icon, { IconProps } from './Icon';
 
 const icons = {
-	discord: faDiscord,
-	github: faGithub,
-	moon: faSpaceStationMoonConstruction,
-	'new-project': faSquarePlus,
-	'new-task': faCirclePlus,
-	project: faSquare,
-	'project-config': faSquareSlidersVertical,
-	'project-config-global': faSquareSliders,
-	'project-graph': faDiagramProject,
-	'run-task': faCirclePlay,
-	task: faCircle,
-	'task-config': faCircleBolt,
-	token: faTriangle,
-	toolchain: faToolbox,
-	'toolchain-config': faScrewdriverWrench,
-	twitter: faTwitter,
-	workspace: faGrid2,
-	'workspace-config': faSliders,
+	discord: 'carbon:logo-discord',
+	github: 'carbon:logo-github',
+	moon: 'material-symbols:moon-stars',
+	'new-project': 'material-symbols:add-box',
+	'new-task': 'material-symbols:add-circle',
+	project: 'material-symbols:inbox',
+	'project-config': 'material-symbols:inbox-customize',
+	'project-config-global': 'material-symbols:inbox-customize',
+	'project-graph': 'material-symbols:flowchart',
+	'run-task': 'material-symbols:play-circle',
+	task: 'material-symbols:circle',
+	'task-config': 'material-symbols:build-circle',
+	token: 'material-symbols:code',
+	toolchain: 'material-symbols:service-toolbox',
+	'toolchain-config': 'material-symbols:settings-alert',
+	twitter: 'carbon:logo-twitter',
+	workspace: 'material-symbols:graph-5',
+	'workspace-config': 'material-symbols:settings',
 };
 
 export type ProductIconName = keyof typeof icons;
 
-export interface ProductIconProps extends Omit<FontAwesomeIconProps, 'icon'> {
+export interface ProductIconProps extends Omit<IconProps, 'icon'> {
 	name: ProductIconName;
 }
 

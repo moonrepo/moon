@@ -21,8 +21,8 @@ export default function AdditionalFeatures({ header, features }: AdditionalFeatu
 								<dt>
 									<Icon
 										icon={feature.icon}
-										className="absolute h-3 w-3 text-purple-500"
-										style={{ maxWidth: 16 }}
+										className="absolute h-3 w-3 top-0.5 text-purple-500"
+										width="1.25em"
 									/>
 
 									<Heading className="ml-4 text-gray-900" level={5}>

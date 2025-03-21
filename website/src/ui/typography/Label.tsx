@@ -1,12 +1,12 @@
 import cx from 'clsx';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import type { IconifyIcon } from '@iconify/react';
 import Icon from '../iconography/Icon';
 
 export type LabelVariant = 'failure' | 'info' | 'success' | 'warning';
 
 export interface LabelProps {
 	className?: string;
-	icon?: IconDefinition;
+	icon?: IconifyIcon | string;
 	text: string;
 	variant?: LabelVariant;
 }

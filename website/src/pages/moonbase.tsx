@@ -1,13 +1,5 @@
 /* eslint-disable sort-keys */
 
-import {
-	faCloudArrowUp,
-	// faDiagramSankey,
-	// faMessageCode,
-	// faNotesMedical,
-	// faSquareKanban,
-	// faTimeline,
-} from '@fortawesome/pro-duotone-svg-icons';
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Moonbase/Hero';
 import Pricing from '@site/src/components/Products/Moonbase/Pricing';
@@ -16,7 +8,7 @@ import Layout from '@theme/Layout';
 const ciFeatures: Feature[] = [
 	{
 		title: 'Artifact caching',
-		icon: faCloudArrowUp,
+		icon: 'material-symbols:cloud-upload',
 		description: 'Cache build artifacts between CI runs to reduce job times and overall costs.',
 	},
 	// {

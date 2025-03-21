@@ -57,13 +57,13 @@ export default function Home() {
 						{
 							description:
 								'Never run the same task twice. With our smart hashing, robust caching, and efficient task execution, moon will avoid unnecessary work.',
-							icon: "material-symbols:stacked-line-chart",
+							icon: 'material-symbols:stacked-line-chart',
 							title: 'Efficient task orchestation',
 						},
 						{
 							description:
 								'Neatly organize your codebase, declare ownership information, and simplify project discovery.',
-							icon: "material-symbols:graph-2",
+							icon: 'material-symbols:graph-2',
 							title: 'Better project organization',
 						},
 						{
@@ -74,7 +74,7 @@ export default function Home() {
 									developers and machines.
 								</>
 							),
-							icon: "material-symbols:service-toolbox",
+							icon: 'material-symbols:service-toolbox',
 							title: 'Integrated development environment',
 						},
 					]}
@@ -108,7 +108,7 @@ export default function Home() {
 						{
 							description:
 								'Manage versions of multiple languages and dependency managers through a single interface. A single source of truth.',
-							icon: "material-symbols:borg",
+							icon: 'material-symbols:borg',
 							title: 'Multi-language support',
 						},
 

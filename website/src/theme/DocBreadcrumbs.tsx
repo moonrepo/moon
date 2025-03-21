@@ -49,7 +49,11 @@ function BreadcrumbsItem({ children, index }: BreadcrumbsItemProps) {
 	return (
 		<li itemScope itemProp="itemListElement" itemType="https://schema.org/ListItem">
 			<div className="flex items-center">
-				<Icon icon="material-symbols:arrow-forward-ios-rounded" className="flex-shrink-0 text-gray-600 mr-2" aria-hidden="true" />
+				<Icon
+					icon="material-symbols:arrow-forward-ios-rounded"
+					className="flex-shrink-0 text-gray-600 mr-2"
+					aria-hidden="true"
+				/>
 
 				{children}
 
@@ -65,7 +69,13 @@ function HomeBreadcrumbItem() {
 	return (
 		<li>
 			<Link href={homeHref} variant="muted">
-				<Icon icon="material-symbols:home-rounded" className="flex-shrink-0" aria-hidden="true" width="1.1em" style={{paddingTop: 5}} />
+				<Icon
+					icon="material-symbols:home-rounded"
+					className="flex-shrink-0"
+					aria-hidden="true"
+					width="1.1em"
+					style={{ paddingTop: 5 }}
+				/>
 
 				<span className="sr-only">Home</span>
 			</Link>

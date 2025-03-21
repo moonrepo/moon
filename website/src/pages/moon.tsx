@@ -15,7 +15,7 @@ const managementFeatures: Feature[] = [
 	},
 	{
 		title: 'Remote caching',
-		icon: "material-symbols:cloud-upload",
+		icon: 'material-symbols:cloud-upload',
 		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
 	},
 	{

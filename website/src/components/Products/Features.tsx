@@ -1,5 +1,5 @@
 import cx from 'clsx';
-import type { IconifyIcon } from "@iconify/react";
+import type { IconifyIcon } from '@iconify/react';
 import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';

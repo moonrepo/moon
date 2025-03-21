@@ -65,7 +65,8 @@ function HomeBreadcrumbItem() {
 	return (
 		<li>
 			<Link href={homeHref} variant="muted">
-				<Icon icon="material-symbols:home-rounded" className="flex-shrink-0" aria-hidden="true" />
+				<Icon icon="material-symbols:home-rounded" className="flex-shrink-0" aria-hidden="true" width="1.1em" style={{paddingTop: 5}} />
+
 				<span className="sr-only">Home</span>
 			</Link>
 		</li>

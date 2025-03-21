@@ -121,7 +121,7 @@ export default function Home() {
 						{
 							description:
 								'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
-							icon: 'material-symbols:bolt-outline-rounded',
+							icon: 'material-symbols:electric-bolt',
 							title: 'Lightspeed interface',
 						},
 					]}

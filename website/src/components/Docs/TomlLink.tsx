@@ -13,7 +13,7 @@ export default function TomlLink({ to, noMargin }: TomlLinkProps) {
 			className="float-right block"
 			style={{ marginTop: noMargin ? 0 : '-3.75em' }}
 		>
-			<Label text="TOML" icon="material-symbols:power-plug" variant="info" />
+			<Label text="TOML" icon="material-symbols:extension" variant="info" />
 		</a>
 	);
 }

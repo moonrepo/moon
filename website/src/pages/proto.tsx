@@ -12,7 +12,7 @@ import Text from '../ui/typography/Text';
 const toolchainFeatures: Feature[] = [
 	{
 		title: 'Lightspeed interface',
-		icon: 'material-symbols:bolt-outline-rounded',
+		icon: 'material-symbols:electric-bolt',
 		description:
 			'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
 	},
@@ -35,11 +35,11 @@ const toolchainFeatures: Feature[] = [
 	},
 	{
 		title: 'Pluggable architecture',
-		icon: 'material-symbols:plug-connect',
+		icon: 'material-symbols:extension',
 		description: 'Extend the toolchain with custom plugins, enabling new and non-standard tools.',
 	},
 	{
-		title: 'Environment',
+		title: 'Environment aware',
 		icon: 'material-symbols:temp-preferences-eco',
 		description: 'Support environment specific tools, their versions, and environment variables.',
 	},

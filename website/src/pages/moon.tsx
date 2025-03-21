@@ -1,30 +1,6 @@
 /* eslint-disable sort-keys */
 
 import Link from '@docusaurus/Link';
-import {
-	faAperture,
-	faArrowUpRightDots,
-	faBellOn,
-	faBoxAlt,
-	faChartTreeMap,
-	faCircleBolt,
-	faCloudArrowUp,
-	faDiagramProject,
-	faDiagramSankey,
-	faFingerprint,
-	faGridDividers,
-	faLayerGroup,
-	faMerge,
-	faMicrochip,
-	faRectangleBarcode,
-	faScroll,
-	faShieldHalved,
-	faSitemap,
-	faSlidersUp,
-	faToolbox,
-	faUserSecret,
-	faWebhook,
-} from '@fortawesome/pro-duotone-svg-icons';
 import AdditionalFeatures from '@site/src/components/Products/AdditionalFeatures';
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Moon/Hero';
@@ -33,24 +9,24 @@ import Layout from '@theme/Layout';
 const managementFeatures: Feature[] = [
 	{
 		title: 'Smart hashing',
-		icon: faFingerprint,
+		icon: 'material-symbols:fingerprint',
 		description:
 			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
 	},
 	{
 		title: 'Remote caching',
-		icon: faCloudArrowUp,
+		icon: "material-symbols:cloud-upload",
 		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
 	},
 	{
 		title: 'Integrated toolchain',
-		icon: faToolbox,
+		icon: 'material-symbols:service-toolbox',
 		description:
 			'Automatically downloads and installs explicit versions of languages and tools for consistency across the entire workspace or per project.',
 	},
 	{
 		title: 'Multi-platform',
-		icon: faMicrochip,
+		icon: 'material-symbols:hive',
 		description: 'Runs on common development platforms: Linux, macOS, and Windows.',
 	},
 ];
@@ -58,23 +34,23 @@ const managementFeatures: Feature[] = [
 const organizationFeatures: Feature[] = [
 	{
 		title: 'Project graph',
-		icon: faDiagramProject,
+		icon: 'material-symbols:flowchart',
 		description: 'Generates a project graph for dependency and dependent relationships.',
 	},
 	{
 		title: 'Code generation',
-		icon: faLayerGroup,
+		icon: 'material-symbols:stacks',
 		description: 'Easily scaffold new applications, libraries, tooling, and more!',
 	},
 	{
 		title: 'Task inheritance',
-		icon: faGridDividers,
+		icon: 'material-symbols:graph-4',
 		description:
 			'Define a task once to be inherited by all or scoped projects. Avoid defining the same task in every project.',
 	},
 	{
 		title: 'Code ownership',
-		icon: faRectangleBarcode,
+		icon: 'material-symbols:barcode-scanner',
 		description: 'Declare owners, maintainers, support channels, and more. Generate CODEOWNERS.',
 	},
 ];
@@ -82,24 +58,24 @@ const organizationFeatures: Feature[] = [
 const orchestrationFeatures: Feature[] = [
 	{
 		title: 'Dependency graph',
-		icon: faSitemap,
+		icon: 'material-symbols:graph-3',
 		description: 'Generates a dependency graph to increase performance and reduce workloads.',
 	},
 	{
 		title: 'Action pipeline',
-		icon: faMerge,
+		icon: 'material-symbols:stacked-line-chart',
 		description:
 			'Executes actions in parallel and in order using a thread pool and our dependency graph.',
 	},
 	{
 		title: 'Action distribution',
-		icon: faDiagramSankey,
+		icon: 'material-symbols:arrow-upload-progress',
 		description: 'Distributes actions across multiple machines to increase throughput.',
 		status: 'coming-soon',
 	},
 	{
 		title: 'Incremental builds',
-		icon: faArrowUpRightDots,
+		icon: 'material-symbols:stacked-bar-chart',
 		description:
 			'With our smart hashing, only rebuild projects that have been touched since the last build.',
 	},
@@ -108,26 +84,26 @@ const orchestrationFeatures: Feature[] = [
 const notificationFeatures: Feature[] = [
 	{
 		title: 'Flakiness detection',
-		icon: faShieldHalved,
+		icon: 'material-symbols:shield-question',
 		description: 'Reduce flaky builds with automatic retries and passthrough settings.',
 	},
 	{
 		title: 'Webhook events',
-		icon: faWebhook,
+		icon: 'material-symbols:webhook',
 		description:
 			'Receive a webhook for every event in the pipeline. Useful for metrics gathering and insights.',
 		status: 'experimental',
 	},
 	{
 		title: 'Terminal notifications',
-		icon: faBellOn,
+		icon: 'material-symbols:deployed-code-alert',
 		description:
 			'Receives notifications in your chosen terminal when builds are successful... or are not.',
 		status: 'coming-soon',
 	},
 	{
 		title: 'Git hooks',
-		icon: faScroll,
+		icon: 'material-symbols:text-compare',
 		description: 'Manage Git hooks to enforce workflows and requirements for contributors.',
 	},
 ];
@@ -135,17 +111,17 @@ const notificationFeatures: Feature[] = [
 const additionalFeatures: Feature[] = [
 	{
 		title: 'Configuration & convention',
-		icon: faSlidersUp,
+		icon: 'material-symbols:full-stacked-bar-chart',
 		description: 'Use moon the way you want, but with some guard rails.',
 	},
 	{
 		title: 'Scalability aware',
-		icon: faCircleBolt,
+		icon: 'material-symbols:multiline-chart',
 		description: 'Engineered to scale and grow for codebases of any size.',
 	},
 	{
 		title: 'Integrated packages',
-		icon: faBoxAlt,
+		icon: 'material-symbols:package-2',
 		description: (
 			<>
 				Enhance your pipeline with our{' '}
@@ -156,13 +132,13 @@ const additionalFeatures: Feature[] = [
 	},
 	{
 		title: 'Process inspection',
-		icon: faUserSecret,
+		icon: 'material-symbols:frame-inspect',
 		description: 'Inspect and debug failing task processes.',
 		status: 'coming-soon',
 	},
 	{
 		title: 'Build profiles',
-		icon: faAperture,
+		icon: 'material-symbols:settings-account-box',
 		description: (
 			<>
 				Record <Link href="/docs/guides/profile">CPU and heap profiles</Link> that can be analyzed
@@ -172,7 +148,7 @@ const additionalFeatures: Feature[] = [
 	},
 	{
 		title: 'Editor extensions',
-		icon: faChartTreeMap,
+		icon: 'material-symbols:power-plug',
 		description: (
 			<>
 				Utilize moon extensions in your favorite editor, like{' '}

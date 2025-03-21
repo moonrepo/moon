@@ -3,6 +3,7 @@ use miette::IntoDiagnostic;
 use moon_common::consts::*;
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
+use moon_feature_flags::{FeatureFlags, Flag};
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
@@ -181,6 +182,15 @@ pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
             unsafe { env::set_var("MOON_VCS_REPO_SLUG", slug.as_str()) };
         }
     }
+
+    Ok(())
+}
+
+#[instrument(skip_all)]
+pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
+    FeatureFlags::default()
+        .set(Flag::FastGlobWalk, config.experiments.fast_glob_walk)
+        .register();
 
     Ok(())
 }

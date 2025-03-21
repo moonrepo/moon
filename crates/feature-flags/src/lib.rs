@@ -4,12 +4,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 static INSTANCE: OnceLock<FeatureFlags> = OnceLock::new();
 
 pub enum Flag {
-    FastGlobs,
+    FastGlobWalk,
 }
 
 #[derive(Default)]
 pub struct FeatureFlags {
-    pub fast_globs: AtomicBool,
+    fast_glob_walk: AtomicBool,
 }
 
 impl FeatureFlags {
@@ -17,15 +17,23 @@ impl FeatureFlags {
         INSTANCE.get_or_init(|| FeatureFlags::default())
     }
 
-    pub fn register(self) {
-        let _ = INSTANCE.set(self);
-    }
-
     pub fn is_enabled(&self, flag: Flag) -> bool {
         let atomic = match flag {
-            Flag::FastGlobs => &self.fast_globs,
+            Flag::FastGlobWalk => &self.fast_glob_walk,
         };
 
         atomic.load(Ordering::Acquire)
+    }
+
+    pub fn set(mut self, flag: Flag, value: bool) -> Self {
+        match flag {
+            Flag::FastGlobWalk => self.fast_glob_walk = value.into(),
+        };
+
+        self
+    }
+
+    pub fn register(self) {
+        let _ = INSTANCE.set(self);
     }
 }

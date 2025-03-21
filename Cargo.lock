@@ -3718,6 +3718,7 @@ dependencies = [
  "moon_docker",
  "moon_env",
  "moon_extension_plugin",
+ "moon_feature_flags",
  "moon_lang",
  "moon_node_lang",
  "moon_node_platform",

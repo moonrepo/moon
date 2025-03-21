@@ -272,7 +272,15 @@ mod action_graph {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        runtime: create_node_runtime()
+                    }),
+                ]
+            );
         }
 
         #[tokio::test]
@@ -290,7 +298,15 @@ mod action_graph {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        runtime: create_node_runtime()
+                    }),
+                ]
+            );
         }
 
         #[tokio::test]

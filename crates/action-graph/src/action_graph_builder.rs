@@ -196,14 +196,6 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut primary_toolchain = toolchains[0].to_owned();
         let mut packages_root = WorkspaceRelativePathBuf::default();
 
-        if !self
-            .config
-            .install_dependencies
-            .is_enabled(&primary_toolchain)
-        {
-            return Ok(None);
-        }
-
         // If Bun and Node.js are enabled, they will both attempt to install
         // dependencies in the target root. We need to avoid this problem,
         // so always prefer Node.js instead. Revisit in the future.
@@ -259,6 +251,17 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // Before we install deps, we must ensure the language has been installed
         let setup_tool_index = self.setup_toolchain(node.get_runtime());
+
+        // If installing dependencies is disabled, we still need to ensure the toolchain
+        // has been setup, and indirectly, the sync workspace action
+        if !self
+            .config
+            .install_dependencies
+            .is_enabled(&primary_toolchain)
+        {
+            return Ok(Some(setup_tool_index));
+        }
+
         let index = self.insert_node(node);
 
         self.link_requirements(index, vec![setup_tool_index]);

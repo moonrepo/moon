@@ -737,6 +737,8 @@ mod npm {
                 .arg("npm:noop");
         });
 
+        println!("{}", assert.output());
+
         assert!(
             predicate::str::contains("npm install")
                 .count(2)

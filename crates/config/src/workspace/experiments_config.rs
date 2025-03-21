@@ -9,6 +9,13 @@ cacheable!(
         #[setting(default = true)]
         pub action_pipeline_v2: bool,
 
+        /// Disallow task relationships with different `runInCI` options.
+        #[setting(default = true)]
+        pub disallow_run_in_ci_mismatch: bool,
+
+        /// Enable faster glob file system walking.
+        pub fast_glob_walk: bool,
+
         #[deprecated]
         #[setting(default = true)]
         pub interweaved_task_inheritance: bool,
@@ -21,10 +28,6 @@ cacheable!(
         /// building the project graph.
         // #[setting(default = true)]
         pub strict_project_ids: bool,
-
-        /// Disallow task relationships with different `runInCI` options.
-        #[setting(default = true)]
-        pub disallow_run_in_ci_mismatch: bool,
 
         #[deprecated]
         #[setting(default = true)]

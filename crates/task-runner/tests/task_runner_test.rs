@@ -988,7 +988,7 @@ mod task_runner {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::new("project", "base").unwrap());
             }

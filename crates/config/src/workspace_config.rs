@@ -139,6 +139,10 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
+    /// Configures aspects of the action pipeline.
+    #[setting(nested, alias = "runner")]
+    pub pipeline: PipelineConfig,
+
     /// Configures all projects within the workspace to create a project graph.
     /// Accepts a list of globs, a mapping of projects to relative file paths,
     /// or both values.
@@ -148,10 +152,6 @@ pub struct WorkspaceConfig {
     /// Configures aspects of the remote service.
     #[setting(nested, rename = "unstable_remote")]
     pub remote: Option<RemoteConfig>,
-
-    /// Configures aspects of the task runner (also known as the action pipeline).
-    #[setting(nested, alias = "pipeline")]
-    pub runner: RunnerConfig,
 
     /// Collects anonymous usage information, and checks for new moon versions.
     #[setting(default = true)]

@@ -1,11 +1,13 @@
 use super::syncs::codeowners::SyncCodeownersArgs;
 use super::syncs::config_schemas::SyncConfigSchemasArgs;
 use super::syncs::hooks::SyncHooksArgs;
+use crate::components::run_action_pipeline;
 use crate::session::CliSession;
 use clap::Subcommand;
+use iocraft::prelude::element;
+use moon_config::{PartialPipelineActionSwitch, PartialPipelineConfig};
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
-use starbase_styles::color;
-use tracing::warn;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum SyncCommands {
@@ -35,10 +37,39 @@ pub enum SyncCommands {
 }
 
 pub async fn sync(session: CliSession) -> AppResult {
-    warn!(
-        "This command is deprecated. Use {} instead.",
-        color::shell("moon sync projects")
-    );
+    let workspace_graph = session.get_workspace_graph().await?;
+    let mut action_graph_builder = session
+        .build_action_graph_with(
+            &workspace_graph,
+            PartialPipelineConfig {
+                install_dependencies: Some(PartialPipelineActionSwitch::Enabled(false)),
+                sync_projects: Some(PartialPipelineActionSwitch::Enabled(true)),
+                sync_workspace: Some(true),
+                ..Default::default()
+            },
+        )
+        .await?;
 
-    crate::commands::syncs::projects::sync(session).await
+    action_graph_builder.sync_workspace();
+
+    for project in workspace_graph.projects.get_all_unexpanded() {
+        action_graph_builder.sync_project(project)?;
+    }
+
+    run_action_pipeline(
+        &session,
+        action_graph_builder.build_context(),
+        action_graph_builder.build(),
+    )
+    .await?;
+
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(content: format!("Synced the workspace and all projects"))
+            }
+        }
+    })?;
+
+    Ok(None)
 }

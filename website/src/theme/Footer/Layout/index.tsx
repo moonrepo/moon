@@ -1,4 +1,3 @@
-import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import Icon from '../../../ui/iconography/Icon';
 import Heading from '../../../ui/typography/Heading';
 import Link from '../../../ui/typography/Link';
@@ -38,17 +37,17 @@ export default function FooterLayout({ links, copyright }: FooterLayoutProps) {
 					<div className="flex space-x-2">
 						<Link href="https://github.com/moonrepo">
 							<span className="sr-only">GitHub</span>
-							<Icon icon={faGithub} />
+							<Icon icon="carbon:logo-github" />
 						</Link>
 
 						<Link href="https://discord.gg/qCh9MEynv2">
 							<span className="sr-only">Discord</span>
-							<Icon icon={faDiscord} />
+							<Icon icon="carbon:logo-discord" />
 						</Link>
 
 						<Link href="https://twitter.com/tothemoonrepo">
 							<span className="sr-only">Twitter</span>
-							<Icon icon={faTwitter} />
+							<Icon icon="carbon:logo-twitter" />
 						</Link>
 					</div>
 				</div>

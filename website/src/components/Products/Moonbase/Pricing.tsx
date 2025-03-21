@@ -1,4 +1,3 @@
-import { faCheck } from '@fortawesome/pro-regular-svg-icons';
 import Button, { ButtonProps } from '@site/src/ui/Button';
 import Icon from '@site/src/ui/iconography/Icon';
 import Heading from '@site/src/ui/typography/Heading';
@@ -32,7 +31,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 							{item.monthly && <span className="text-gray-700 inline-block ml-0.5">/ month</span>}
 
 							<div className="absolute top-0 left-0 text-blurple-400">
-								<Icon icon={faCheck} />
+								<Icon icon="material-symbols:check" />
 							</div>
 						</li>
 					))}

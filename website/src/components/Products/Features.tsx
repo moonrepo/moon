@@ -1,5 +1,5 @@
 import cx from 'clsx';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import type { IconifyIcon } from '@iconify/react';
 import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
@@ -9,7 +9,7 @@ export type FeatureTier = 1 | 2 | 3 | 4;
 
 export interface Feature {
 	title: string;
-	icon: IconDefinition;
+	icon: IconifyIcon | string;
 	description: React.ReactNode;
 	status?: StatusType;
 }

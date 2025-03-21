@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from '@docusaurus/Link';
-import { faStarShooting } from '@fortawesome/pro-duotone-svg-icons';
 import LogoIcon from '../../../../static/brand/proto/icon.svg';
 import TextVector from '../../../../static/brand/proto/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';
@@ -47,7 +46,7 @@ export default function Hero() {
 							<CTA href="/docs/proto/install" color="bg-pink-600">
 								Get started
 								<Icon
-									icon={faStarShooting}
+									icon="material-symbols:wand-stars"
 									className="ml-1 md:ml-2 inline-block rotate-180"
 									style={{ maxWidth: 18 }}
 								/>

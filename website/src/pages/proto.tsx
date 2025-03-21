@@ -1,13 +1,5 @@
 /* eslint-disable sort-keys */
 
-import {
-	faGlobe,
-	faPuzzle,
-	faRadar,
-	faScrewdriverWrench,
-	faSolarSystem,
-} from '@fortawesome/pro-duotone-svg-icons';
-import { faBolt } from '@fortawesome/pro-regular-svg-icons';
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Proto/Hero';
 import ToolsGrid from '@site/src/components/Products/Proto/ToolsGrid';
@@ -20,35 +12,35 @@ import Text from '../ui/typography/Text';
 const toolchainFeatures: Feature[] = [
 	{
 		title: 'Lightspeed interface',
-		icon: faBolt,
+		icon: 'material-symbols:bolt-outline-rounded',
 		description:
 			'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
 	},
 	{
 		title: 'Universal toolchain',
-		icon: faSolarSystem,
+		icon: 'material-symbols:star-shine-rounded',
 		description:
 			'Manage multiple languages, dependency managers, or CLIs through a single interface.',
 	},
 	{
 		title: 'Version detection',
-		icon: faRadar,
+		icon: 'material-symbols:find-replace',
 		description:
 			"Detects a version at runtime from a language's ecosystem for maximum compatibility.",
 	},
 	{
 		title: 'Granular configuration',
-		icon: faScrewdriverWrench,
+		icon: 'material-symbols:construction-rounded',
 		description: 'Configure tools and their versions per directory, per project, or per user.',
 	},
 	{
 		title: 'Pluggable architecture',
-		icon: faPuzzle,
+		icon: 'material-symbols:plug-connect',
 		description: 'Extend the toolchain with custom plugins, enabling new and non-standard tools.',
 	},
 	{
 		title: 'Environment',
-		icon: faGlobe,
+		icon: 'material-symbols:temp-preferences-eco',
 		description: 'Support environment specific tools, their versions, and environment variables.',
 	},
 ];

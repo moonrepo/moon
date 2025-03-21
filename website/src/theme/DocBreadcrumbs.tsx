@@ -2,7 +2,6 @@
 
 import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common/internal';
 import useBaseUrl from '@docusaurus/useBaseUrl';
-import { faAngleRight, faHouseBlank } from '@fortawesome/pro-regular-svg-icons';
 import LangSelector from '../components/LangSelector';
 import Icon from '../ui/iconography/Icon';
 import Link from '../ui/typography/Link';
@@ -50,7 +49,7 @@ function BreadcrumbsItem({ children, index }: BreadcrumbsItemProps) {
 	return (
 		<li itemScope itemProp="itemListElement" itemType="https://schema.org/ListItem">
 			<div className="flex items-center">
-				<Icon icon={faAngleRight} className="flex-shrink-0 text-gray-600 mr-2" aria-hidden="true" />
+				<Icon icon="material-symbols:arrow-forward-ios-rounded" className="flex-shrink-0 text-gray-600 mr-2" aria-hidden="true" />
 
 				{children}
 
@@ -66,7 +65,7 @@ function HomeBreadcrumbItem() {
 	return (
 		<li>
 			<Link href={homeHref} variant="muted">
-				<Icon icon={faHouseBlank} className="flex-shrink-0" aria-hidden="true" />
+				<Icon icon="material-symbols:home-rounded" className="flex-shrink-0" aria-hidden="true" />
 				<span className="sr-only">Home</span>
 			</Link>
 		</li>

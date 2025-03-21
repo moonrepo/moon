@@ -23,6 +23,7 @@
     "@fortawesome/pro-duotone-svg-icons": "^6.5.2",
     "@fortawesome/pro-regular-svg-icons": "^6.5.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@iconify/react": "^5.2.0",
     "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.1",
     "cytoscape": "^3.29.2",

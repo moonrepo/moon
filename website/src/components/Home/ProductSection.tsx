@@ -1,5 +1,5 @@
 import cx from 'clsx';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import type { IconifyIcon } from "@iconify/react";
 import Icon from '@site/src/ui/iconography/Icon';
 import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';
@@ -8,7 +8,7 @@ import CTA, { CTAProps } from './CTA';
 export interface ProductItem {
 	title: string;
 	description: React.ReactNode;
-	icon: IconDefinition;
+	icon: IconifyIcon | string;
 }
 
 export interface ProductSectionProps {

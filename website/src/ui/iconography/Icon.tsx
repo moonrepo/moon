@@ -1,8 +1,8 @@
 import React, { CSSProperties } from 'react';
 import cx from 'clsx';
-import { FontAwesomeIcon, FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
+import { Icon as BaseIcon, IconProps as BaseIconProps } from "@iconify/react";
 
-export interface IconProps extends FontAwesomeIconProps {
+export interface IconProps extends BaseIconProps {
 	className?: string;
 	style?: CSSProperties;
 }
@@ -10,7 +10,7 @@ export interface IconProps extends FontAwesomeIconProps {
 export default function Icon({ className, style, ...props }: IconProps) {
 	return (
 		<span className={cx('inline-block', className)} aria-hidden="true" style={style}>
-			<FontAwesomeIcon {...props} />
+			<BaseIcon {...props} />
 		</span>
 	);
 }

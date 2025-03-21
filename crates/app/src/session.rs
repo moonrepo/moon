@@ -8,7 +8,10 @@ use moon_action_graph::ActionGraphBuilder;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
-use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{
+    ConfigLoader, InheritedTasksManager, PartialPipelineConfig, PipelineActionSwitch,
+    ToolchainConfig, WorkspaceConfig,
+};
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
@@ -21,6 +24,7 @@ use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
+use schematic::Config;
 use semver::Version;
 use starbase::{AppResult, AppSession};
 use std::env;
@@ -89,6 +93,28 @@ impl CliSession {
         workspace_graph: &'graph WorkspaceGraph,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
         ActionGraphBuilder::new(workspace_graph, self.workspace_config.pipeline.clone())
+    }
+
+    pub async fn build_action_graph_with<'graph>(
+        &self,
+        workspace_graph: &'graph WorkspaceGraph,
+        base_config: PartialPipelineConfig,
+    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+        let mut config = self.workspace_config.pipeline.clone();
+
+        if let Some(value) = base_config.sync_workspace {
+            config.sync_workspace = value;
+        }
+
+        if let Some(value) = base_config.sync_projects {
+            config.sync_projects = PipelineActionSwitch::from_partial(value);
+        }
+
+        if let Some(value) = base_config.install_dependencies {
+            config.install_dependencies = PipelineActionSwitch::from_partial(value);
+        }
+
+        ActionGraphBuilder::new(workspace_graph, config)
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {

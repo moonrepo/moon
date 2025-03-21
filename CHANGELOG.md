@@ -23,6 +23,7 @@
 - Added a `--json` flag to `moon templates`.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.
+- Updated `moon sync` to sync the workspace and all projects.
 - WASM API
   - Added `DefineDockerMetadataOutput.default_image` field.
   - Added `SettingPrompt.description` field.

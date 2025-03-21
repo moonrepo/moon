@@ -1,8 +1,8 @@
 import Icon, { IconProps } from './Icon';
 
 const icons = {
-	discord: 'codicon:comment-discussion',
-	github: 'codicon:github-inverted',
+	discord: 'carbon:logo-discord',
+	github: 'carbon:logo-github',
 	moon: 'material-symbols:moon-stars',
 	'new-project': 'material-symbols:add-box',
 	'new-task': 'material-symbols:add-circle',
@@ -16,7 +16,7 @@ const icons = {
 	token: 'material-symbols:code',
 	toolchain: 'material-symbols:service-toolbox',
 	'toolchain-config': 'material-symbols:settings-alert',
-	twitter: 'codicon:twitter',
+	twitter: 'carbon:logo-twitter',
 	workspace: 'material-symbols:graph-5',
 	'workspace-config': 'material-symbols:settings',
 };

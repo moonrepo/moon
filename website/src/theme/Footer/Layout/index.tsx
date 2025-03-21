@@ -37,17 +37,17 @@ export default function FooterLayout({ links, copyright }: FooterLayoutProps) {
 					<div className="flex space-x-2">
 						<Link href="https://github.com/moonrepo">
 							<span className="sr-only">GitHub</span>
-							<Icon icon="codicon:github-inverted" />
+							<Icon icon="carbon:logo-github" />
 						</Link>
 
 						<Link href="https://discord.gg/qCh9MEynv2">
 							<span className="sr-only">Discord</span>
-							<Icon icon="codicon:comment-discussion" />
+							<Icon icon="carbon:logo-discord" />
 						</Link>
 
 						<Link href="https://twitter.com/tothemoonrepo">
 							<span className="sr-only">Twitter</span>
-							<Icon icon="codicon:twitter" />
+							<Icon icon="carbon:logo-twitter" />
 						</Link>
 					</div>
 				</div>

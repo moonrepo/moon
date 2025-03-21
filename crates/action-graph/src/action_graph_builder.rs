@@ -7,7 +7,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
-use moon_config::TaskDependencyConfig;
+use moon_config::{PipelineConfig, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
@@ -41,6 +41,7 @@ impl RunRequirements {
 
 pub struct ActionGraphBuilder<'app> {
     all_query: Option<Criteria<'app>>,
+    config: PipelineConfig,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
@@ -57,13 +58,17 @@ pub struct ActionGraphBuilder<'app> {
 }
 
 impl<'app> ActionGraphBuilder<'app> {
-    pub fn new(workspace_graph: &'app WorkspaceGraph) -> miette::Result<Self> {
-        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph)
+    pub fn new(
+        workspace_graph: &'app WorkspaceGraph,
+        config: PipelineConfig,
+    ) -> miette::Result<Self> {
+        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph, config)
     }
 
     pub fn with_platforms(
         platform_manager: &'app PlatformManager,
         workspace_graph: &'app WorkspaceGraph,
+        config: PipelineConfig,
     ) -> miette::Result<Self> {
         debug!("Building action graph");
 
@@ -73,6 +78,7 @@ impl<'app> ActionGraphBuilder<'app> {
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
             initial_targets: FxHashSet::default(),
+            config,
             passthrough_targets: FxHashSet::default(),
             platform_manager,
             primary_targets: FxHashSet::default(),
@@ -249,6 +255,17 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // Before we install deps, we must ensure the language has been installed
         let setup_tool_index = self.setup_toolchain(node.get_runtime());
+
+        // If installing dependencies is disabled, we still need to ensure the toolchain
+        // has been setup, and indirectly, the sync workspace action
+        if !self
+            .config
+            .install_dependencies
+            .is_enabled(&primary_toolchain)
+        {
+            return Ok(Some(setup_tool_index));
+        }
+
         let index = self.insert_node(node);
 
         self.link_requirements(index, vec![setup_tool_index]);
@@ -362,7 +379,9 @@ impl<'app> ActionGraphBuilder<'app> {
             edges.push(install_deps_index);
         }
 
-        edges.push(self.sync_project(project)?);
+        if let Some(sync_project_index) = self.sync_project(project)? {
+            edges.push(sync_project_index);
+        }
 
         // Insert the node and create edges
         let index = self.insert_node(node);
@@ -673,13 +692,15 @@ impl<'app> ActionGraphBuilder<'app> {
         let sync_workspace_index = self.sync_workspace();
         let index = self.insert_node(node);
 
-        self.link_requirements(index, vec![sync_workspace_index]);
+        if let Some(edge) = sync_workspace_index {
+            self.link_requirements(index, vec![edge]);
+        }
 
         index
     }
 
     #[instrument(skip_all)]
-    pub fn sync_project(&mut self, project: &Project) -> miette::Result<NodeIndex> {
+    pub fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
         self.internal_sync_project(project, &mut FxHashSet::default())
     }
 
@@ -687,14 +708,18 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         project: &Project,
         cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<NodeIndex> {
+    ) -> miette::Result<Option<NodeIndex>> {
+        if !self.config.sync_projects.is_enabled(&project.id) {
+            return Ok(None);
+        }
+
         let node = ActionNode::sync_project(SyncProjectNode {
             project_id: project.id.clone(),
             runtime: self.get_runtime(project, &project.toolchains[0], true),
         });
 
         if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(*index);
+            return Ok(Some(*index));
         }
 
         cycle.insert(project.id.clone());
@@ -718,26 +743,31 @@ impl<'app> ActionGraphBuilder<'app> {
             }
 
             let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
-            let dep_project_index = self.internal_sync_project(&dep_project, cycle)?;
 
-            if index != dep_project_index {
-                edges.push(dep_project_index);
+            if let Some(dep_project_index) = self.internal_sync_project(&dep_project, cycle)? {
+                if index != dep_project_index {
+                    edges.push(dep_project_index);
+                }
             }
         }
 
         self.link_requirements(index, edges);
 
-        Ok(index)
+        Ok(Some(index))
     }
 
-    pub fn sync_workspace(&mut self) -> NodeIndex {
+    pub fn sync_workspace(&mut self) -> Option<NodeIndex> {
+        if !self.config.sync_workspace {
+            return None;
+        }
+
         let node = ActionNode::sync_workspace();
 
         if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
+            return Some(*index);
         }
 
-        self.insert_node(node)
+        Some(self.insert_node(node))
     }
 
     // PRIVATE

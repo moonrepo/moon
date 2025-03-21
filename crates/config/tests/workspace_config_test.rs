@@ -61,8 +61,8 @@ projects:
                 Ok(load_config_from_file(path))
             });
 
-            assert_eq!(config.runner.cache_lifetime, "3 hours");
-            assert!(!config.runner.log_running_command);
+            assert_eq!(config.pipeline.cache_lifetime, "3 hours");
+            assert!(!config.pipeline.log_running_command);
             assert_eq!(config.vcs.provider, VcsProvider::Bitbucket);
         }
 
@@ -636,8 +636,8 @@ notifier:
         fn loads_defaults() {
             let config = test_load_config(FILENAME, "runner: {}", load_config_from_root);
 
-            assert_eq!(config.runner.cache_lifetime, "7 days");
-            assert!(config.runner.inherit_colors_for_piped_tasks);
+            assert_eq!(config.pipeline.cache_lifetime, "7 days");
+            assert!(config.pipeline.inherit_colors_for_piped_tasks);
         }
 
         #[test]
@@ -652,8 +652,8 @@ runner:
                 load_config_from_root,
             );
 
-            assert_eq!(config.runner.cache_lifetime, "10 hours");
-            assert!(!config.runner.inherit_colors_for_piped_tasks);
+            assert_eq!(config.pipeline.cache_lifetime, "10 hours");
+            assert!(!config.pipeline.inherit_colors_for_piped_tasks);
         }
 
         #[test]
@@ -668,7 +668,7 @@ runner:
             );
 
             assert_eq!(
-                config.runner.archivable_targets,
+                config.pipeline.archivable_targets,
                 vec![Target::new("scope", "task").unwrap()]
             );
         }
@@ -926,8 +926,8 @@ extensions:
                 })
             );
             assert_eq!(
-                config.runner,
-                RunnerConfig {
+                config.pipeline,
+                PipelineConfig {
                     archivable_targets: vec![
                         Target::parse(":build").unwrap(),
                         Target::parse("app:lint").unwrap()
@@ -936,7 +936,8 @@ extensions:
                     cache_lifetime: "1 day".into(),
                     inherit_colors_for_piped_tasks: false,
                     kill_process_threshold: 2000,
-                    log_running_command: true
+                    log_running_command: true,
+                    ..Default::default()
                 }
             );
             assert!(!config.telemetry);

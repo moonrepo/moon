@@ -347,7 +347,7 @@ mod output_archiver {
             // Project scope
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::new("project", "run-type").unwrap());
             }
@@ -364,7 +364,7 @@ mod output_archiver {
             // All scope
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse(":test-type").unwrap());
             }
@@ -380,7 +380,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse(":no-outputs").unwrap());
             }
@@ -396,7 +396,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse(":unknown-task").unwrap());
             }
@@ -412,7 +412,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::new("project", "no-outputs").unwrap());
             }
@@ -428,7 +428,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::new("other-project", "no-outputs").unwrap());
             }
@@ -444,7 +444,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse("#cache:no-outputs").unwrap());
             }
@@ -460,7 +460,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse("#other-tag:no-outputs").unwrap());
             }
@@ -477,7 +477,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse("^:no-outputs").unwrap());
             }
@@ -494,7 +494,7 @@ mod output_archiver {
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
-                    .runner
+                    .pipeline
                     .archivable_targets
                     .push(Target::parse("~:no-outputs").unwrap());
             }

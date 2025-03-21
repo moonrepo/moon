@@ -415,8 +415,8 @@ impl ActionPipeline {
             }
         }
 
-        if self.app_context.workspace_config.runner.auto_clean_cache {
-            let lifetime = &self.app_context.workspace_config.runner.cache_lifetime;
+        if self.app_context.workspace_config.pipeline.auto_clean_cache {
+            let lifetime = &self.app_context.workspace_config.pipeline.cache_lifetime;
 
             debug!(
                 lifetime = lifetime,

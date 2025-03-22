@@ -6,6 +6,7 @@ use moon_common::{
 use moon_config::{
     InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType,
 };
+use moon_feature_flags::glob_walk;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
@@ -154,7 +155,7 @@ impl Task {
             if self.inputs_cache.get().is_none() {
                 let _ = self
                     .inputs_cache
-                    .set(glob::walk_files(workspace_root, globs)?);
+                    .set(glob_walk(workspace_root, globs, true)?);
             }
 
             // Glob results are absolute paths!
@@ -184,7 +185,7 @@ impl Task {
             if self.outputs_cache.get().is_none() {
                 let _ = self
                     .outputs_cache
-                    .set(glob::walk_files(workspace_root, globs)?);
+                    .set(glob_walk(workspace_root, globs, true)?);
             }
 
             // Glob results are absolute paths!

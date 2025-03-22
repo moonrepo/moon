@@ -326,6 +326,11 @@
           "type": "boolean",
           "markdownDescription": "Disallow task relationships with different `runInCI` options."
         },
+        "fasterGlobWalk": {
+          "title": "fasterGlobWalk",
+          "description": "Enable faster glob file system walking.",
+          "type": "boolean"
+        },
         "interweavedTaskInheritance": {
           "title": "interweavedTaskInheritance",
           "default": true,

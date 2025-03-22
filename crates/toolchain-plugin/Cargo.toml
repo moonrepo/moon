@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_feature_flags = { path = "../feature-flags" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 async-trait = { workspace = true }

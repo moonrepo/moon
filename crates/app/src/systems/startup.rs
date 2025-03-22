@@ -189,7 +189,7 @@ pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
 #[instrument(skip_all)]
 pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
     FeatureFlags::default()
-        .set(Flag::FastGlobWalk, config.experiments.fast_glob_walk)
+        .set(Flag::FastGlobWalk, config.experiments.faster_glob_walk)
         .register();
 
     Ok(())

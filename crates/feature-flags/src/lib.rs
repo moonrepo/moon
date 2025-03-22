@@ -1,5 +1,8 @@
+mod wrappers;
+
+pub use wrappers::*;
+
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 static INSTANCE: OnceLock<FeatureFlags> = OnceLock::new();
 
@@ -9,7 +12,7 @@ pub enum Flag {
 
 #[derive(Default)]
 pub struct FeatureFlags {
-    fast_glob_walk: AtomicBool,
+    fast_glob_walk: bool,
 }
 
 impl FeatureFlags {
@@ -18,16 +21,14 @@ impl FeatureFlags {
     }
 
     pub fn is_enabled(&self, flag: Flag) -> bool {
-        let atomic = match flag {
-            Flag::FastGlobWalk => &self.fast_glob_walk,
-        };
-
-        atomic.load(Ordering::Acquire)
+        match flag {
+            Flag::FastGlobWalk => self.fast_glob_walk,
+        }
     }
 
     pub fn set(mut self, flag: Flag, value: bool) -> Self {
         match flag {
-            Flag::FastGlobWalk => self.fast_glob_walk = value.into(),
+            Flag::FastGlobWalk => self.fast_glob_walk = value,
         };
 
         self

@@ -8,5 +8,8 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[dependencies]
+starbase_utils = { workspace = true, features = ["glob"] }
+
 [lints]
 workspace = true

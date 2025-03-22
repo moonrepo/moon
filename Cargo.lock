@@ -4131,6 +4131,9 @@ dependencies = [
 [[package]]
 name = "moon_feature_flags"
 version = "0.0.1"
+dependencies = [
+ "starbase_utils",
+]
 
 [[package]]
 name = "moon_file_group"
@@ -4140,6 +4143,7 @@ dependencies = [
  "miette 7.5.0",
  "moon_common",
  "moon_config",
+ "moon_feature_flags",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -4580,6 +4584,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env_var",
+ "moon_feature_flags",
  "moon_task",
  "reqwest",
  "rustc-hash 2.1.1",
@@ -4704,6 +4709,7 @@ dependencies = [
  "miette 7.5.0",
  "moon_common",
  "moon_config",
+ "moon_feature_flags",
  "moon_target",
  "rustc-hash 2.1.1",
  "serde",
@@ -4789,6 +4795,7 @@ dependencies = [
  "miette 7.5.0",
  "moon_common",
  "moon_config",
+ "moon_feature_flags",
  "moon_hash",
  "moon_project",
  "moon_task",
@@ -4925,6 +4932,7 @@ dependencies = [
  "miette 7.5.0",
  "moon_common",
  "moon_config",
+ "moon_feature_flags",
  "moon_pdk_api",
  "moon_plugin",
  "proto_core",
@@ -5003,6 +5011,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_feature_flags",
  "moon_hash",
  "moon_project",
  "moon_project_builder",

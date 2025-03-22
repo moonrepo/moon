@@ -2,7 +2,8 @@ use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
 use moon_common::{Id, color, consts};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
-use starbase_utils::{fs, glob};
+use moon_feature_flags::glob_walk;
+use starbase_utils::fs;
 use tracing::{debug, instrument, warn};
 
 /// Infer a project name from a source path, by using the name of
@@ -55,7 +56,7 @@ where
 
     // Glob for all other projects
     let config_names = context.config_loader.get_project_file_names();
-    let mut potential_projects = glob::walk(context.workspace_root, locate_globs)?;
+    let mut potential_projects = glob_walk(context.workspace_root, locate_globs, false)?;
     potential_projects.sort();
 
     for mut project_root in potential_projects {

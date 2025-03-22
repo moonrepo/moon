@@ -14,7 +14,7 @@ cacheable!(
         pub disallow_run_in_ci_mismatch: bool,
 
         /// Enable faster glob file system walking.
-        pub fast_glob_walk: bool,
+        pub faster_glob_walk: bool,
 
         #[deprecated]
         #[setting(default = true)]

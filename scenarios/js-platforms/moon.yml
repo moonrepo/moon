@@ -1,0 +1,6 @@
+language: typescript
+stack: frontend
+
+toolchain:
+  default: node
+  typescript: true

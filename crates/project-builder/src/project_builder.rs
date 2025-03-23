@@ -132,71 +132,68 @@ impl<'app> ProjectBuilder<'app> {
             config.language.clone()
         };
 
-        // Filter down the enabled toolchains list based on the project config
-        let mut disabled_toolchains = FxHashSet::default();
+        // Determine toolchains that this project belongs to
+        let mut toolchains = FxHashSet::default();
 
-        for (plugin_id, override_config) in &config.toolchain.plugins {
-            if !override_config.is_enabled() {
-                self.enabled_toolchains.retain(|id| id != plugin_id);
-                disabled_toolchains.insert(plugin_id);
+        // 1 - Explicitly configured by the user
+        #[allow(deprecated)]
+        if let Some(default_ids) = &config.toolchain.default {
+            for default_id in default_ids.to_list() {
+                toolchains.extend(get_project_toolchains(default_id));
             }
+        } else if let Some(platform) = &config.platform {
+            let default_id = platform.get_toolchain_id();
+
+            toolchains.extend(get_project_toolchains(&default_id));
+
+            debug!(
+                project_id = self.id.as_str(),
+                "The {} project setting has been deprecated, use {} instead, or rely on configuration/environment detection instead",
+                color::property("platform"),
+                color::property("toolchain.default"),
+            );
         }
 
-        // Infer toolchains from the language as it handles the chain correctly:
-        // For example: node -> javascript, and not just node
-        if self.toolchains_tasks.is_empty() {
-            let mut toolchains = FxHashSet::default();
-
-            #[allow(deprecated)]
-            if let Some(default_ids) = &config.toolchain.default {
-                for default_id in default_ids.to_list() {
-                    toolchains.extend(get_project_toolchains(default_id));
-                }
-            } else if let Some(platform) = &config.platform {
-                let default_id = platform.get_toolchain_id();
-
-                toolchains.extend(get_project_toolchains(&default_id));
-
-                debug!(
-                    project_id = self.id.as_str(),
-                    "The {} project setting has been deprecated, use {} instead, or rely on configuration/environment detection instead",
-                    color::property("platform"),
-                    color::property("toolchain.default"),
-                );
-            } else {
-                // TODO deprecate in v2
-                toolchains.extend(detect_project_toolchains(
-                    self.context.workspace_root,
-                    &self.root,
-                    &self.language,
-                ));
-
-                toolchains.extend(
-                    self.context
-                        .toolchain_registry
-                        .detect_project_usage(&self.root)
-                        .await?,
-                );
-            }
-
-            self.toolchains_config = toolchains
-                .clone()
-                .into_iter()
-                .filter(|id| !disabled_toolchains.contains(id))
-                .collect();
-
-            self.toolchains_tasks = toolchains
-                .into_iter()
-                .filter(|id| self.enabled_toolchains.contains(id))
-                .collect();
+        // 2 - Infer from language if nothing configured
+        if toolchains.is_empty() {
+            // TODO deprecate in v2
+            toolchains.extend(detect_project_toolchains(
+                self.context.workspace_root,
+                &self.root,
+                &self.language,
+            ));
 
             trace!(
                 project_id = self.id.as_str(),
                 language = ?self.language,
-                toolchains = ?self.toolchains_tasks.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
-                "Unknown tasks toolchain, inferring from project language",
+                toolchains = ?toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
+                "Unknown toolchain, inferring from project language",
             );
         }
+
+        // 3 - Detect from plugins
+        toolchains.extend(
+            self.context
+                .toolchain_registry
+                .detect_project_usage(&self.root)
+                .await?,
+        );
+
+        // Filter down the toolchains list based on the project config
+        for (plugin_id, override_config) in &config.toolchain.plugins {
+            if override_config.is_enabled() {
+                toolchains.insert(plugin_id.to_owned());
+            } else {
+                toolchains.remove(plugin_id);
+            }
+        }
+
+        self.toolchains_config = toolchains.clone().into_iter().collect();
+
+        self.toolchains_tasks = toolchains
+            .into_iter()
+            .filter(|id| self.enabled_toolchains.contains(id))
+            .collect();
 
         self.local_config = Some(config.to_owned());
 

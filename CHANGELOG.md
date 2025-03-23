@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where `npx @moonrepo/cli` would no longer work.
+- Fixed an issue where `toolchain.typescript = true` in `moon.yml` would not inherit it as a
+  toolchain.
 
 #### ⚙️ Internal
 

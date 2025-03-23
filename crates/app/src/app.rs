@@ -23,6 +23,7 @@ use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
 use moon_common::consts::BIN_NAME;
+use moon_env_var::GlobalEnvBag;
 use starbase::tracing::LogLevel;
 use starbase_styles::color::Color as ColorType;
 use std::env;
@@ -320,29 +321,28 @@ impl Cli {
     pub fn setup_env_vars(&self) {
         bootstrap::setup_colors(self.color);
 
-        unsafe {
-            env::set_var("MOON_APP_LOG", self.log.to_string());
+        let bag = GlobalEnvBag::instance();
+        bag.set("MOON_APP_LOG", self.log.to_string());
 
-            if env::var("MOON_LOG").is_err() {
-                env::set_var("MOON_LOG", self.log.to_string());
-            }
+        if !bag.has("MOON_LOG") {
+            bag.set("MOON_LOG", self.log.to_string());
+        }
 
-            if env::var("MOON_CACHE").is_err() {
-                env::set_var("MOON_CACHE", self.cache.to_string());
-            }
+        if !bag.has("MOON_CACHE") {
+            bag.set("MOON_CACHE", self.cache.to_string());
+        }
 
-            if matches!(self.cache, CacheMode::Off | CacheMode::Write) {
-                env::set_var("PROTO_CACHE", "off");
-            }
+        if matches!(self.cache, CacheMode::Off | CacheMode::Write) {
+            bag.set("PROTO_CACHE", "off");
+        }
 
-            if env::var("MOON_DEBUG_WASM").is_ok() {
-                env::set_var("PROTO_WASM_LOG", "trace");
-                env::set_var("PROTO_DEBUG_WASM", "true");
-                env::set_var("EXTISM_DEBUG", "1");
-                env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
-                env::set_var("EXTISM_MEMDUMP", "wasm-plugin.mem");
-                env::set_var("EXTISM_COREDUMP", "wasm-plugin.core");
-            }
-        };
+        if bag.has("MOON_DEBUG_WASM") {
+            bag.set("PROTO_WASM_LOG", "trace");
+            bag.set("PROTO_DEBUG_WASM", "true");
+            bag.set("EXTISM_DEBUG", "1");
+            bag.set("EXTISM_ENABLE_WASI_OUTPUT", "1");
+            bag.set("EXTISM_MEMDUMP", "wasm-plugin.mem");
+            bag.set("EXTISM_COREDUMP", "wasm-plugin.core");
+        }
     }
 }

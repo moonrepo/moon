@@ -20,6 +20,7 @@ moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_console = { path = "../console" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
+moon_env_var = { path = "../env-var" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_pdk_api = { path = "../pdk-api" }

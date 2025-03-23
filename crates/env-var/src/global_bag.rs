@@ -1,47 +1,51 @@
 use std::env;
+use std::ffi::{OsStr, OsString};
 use std::sync::OnceLock;
 
 static INSTANCE: OnceLock<GlobalEnvBag> = OnceLock::new();
 
 #[derive(Default)]
 pub struct GlobalEnvBag {
-    vars: scc::HashMap<String, String>,
+    inherited: scc::HashMap<OsString, OsString>,
+    configured: scc::HashMap<OsString, OsString>,
 }
 
 impl GlobalEnvBag {
     pub fn instance() -> &'static GlobalEnvBag {
-        INSTANCE.get_or_init(|| GlobalEnvBag::new(env::vars()))
-    }
-
-    pub fn new<I>(vars: I) -> Self
-    where
-        I: IntoIterator<Item = (String, String)>,
-    {
-        Self {
-            vars: scc::HashMap::from_iter(vars),
-        }
+        INSTANCE.get_or_init(|| GlobalEnvBag {
+            inherited: scc::HashMap::from_iter(env::vars_os()),
+            configured: scc::HashMap::new(),
+        })
     }
 
     pub fn has<K>(&self, key: K) -> bool
     where
         K: AsRef<str>,
     {
-        self.vars.contains(key.as_ref().into())
+        let key = OsStr::new(key.as_ref());
+
+        self.inherited.contains(key) || self.configured.contains(key)
     }
 
     pub fn get<K>(&self, key: K) -> Option<String>
     where
         K: AsRef<str>,
     {
-        self.vars
-            .read(key.as_ref().into(), |_, value| value.clone())
+        let key = OsStr::new(key.as_ref());
+
+        self.configured
+            .read(key, |_, value| value.to_owned())
+            .or_else(|| self.inherited.read(key, |_, value| value.to_owned()))
+            .map(|value| value.to_string_lossy().to_string())
     }
 
     pub fn set<K, V>(&self, key: K, value: V)
     where
-        K: AsRef<str>,
-        V: AsRef<str>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
     {
-        let _ = self.vars.insert(key.as_ref().into(), value.as_ref().into());
+        let _ = self
+            .configured
+            .insert(key.as_ref().into(), value.as_ref().into());
     }
 }

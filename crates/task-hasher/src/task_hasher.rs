@@ -3,12 +3,12 @@ use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy};
-use moon_feature_flags::glob_walk;
+use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
-use starbase_utils::glob::GlobSet;
+use starbase_utils::glob::{GlobSet, GlobWalkOptions};
 use std::collections::BTreeMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -109,10 +109,10 @@ impl<'task> TaskHasher<'task> {
 
             // Collect inputs by walking and globbing the file system
             if use_globs {
-                files.extend(glob_walk(
+                files.extend(glob_walk_with_options(
                     self.workspace_root,
                     &self.task.input_globs,
-                    true,
+                    GlobWalkOptions::default().cache().files(),
                 )?);
 
                 // Collect inputs by querying VCS
@@ -132,7 +132,11 @@ impl<'task> TaskHasher<'task> {
                     .collect::<Vec<_>>();
 
                 if !workspace_globs.is_empty() {
-                    files.extend(glob_walk(self.workspace_root, workspace_globs, true)?);
+                    files.extend(glob_walk_with_options(
+                        self.workspace_root,
+                        workspace_globs,
+                        GlobWalkOptions::default().cache().files(),
+                    )?);
                 }
             }
         }

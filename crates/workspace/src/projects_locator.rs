@@ -56,7 +56,7 @@ where
 
     // Glob for all other projects
     let config_names = context.config_loader.get_project_file_names();
-    let mut potential_projects = glob_walk(context.workspace_root, locate_globs, false)?;
+    let mut potential_projects = glob_walk(context.workspace_root, locate_globs)?;
     potential_projects.sort();
 
     for mut project_root in potential_projects {

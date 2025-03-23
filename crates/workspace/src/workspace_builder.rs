@@ -13,7 +13,7 @@ use moon_config::{
     ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectsSourcesList,
     ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
-use moon_feature_flags::glob_walk;
+use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -29,6 +29,7 @@ use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_events::Emitter;
+use starbase_utils::glob::GlobWalkOptions;
 use starbase_utils::json;
 use std::sync::Arc;
 use std::{collections::BTreeMap, path::Path};
@@ -646,10 +647,10 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         // Hash all workspace-level config files
-        for file in glob_walk(
+        for file in glob_walk_with_options(
             context.workspace_root.join(consts::CONFIG_DIRNAME),
-            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
-            true,
+            ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
+            GlobWalkOptions::default().cache(),
         )? {
             configs.push(to_virtual_string(
                 file.strip_prefix(context.workspace_root).unwrap(),

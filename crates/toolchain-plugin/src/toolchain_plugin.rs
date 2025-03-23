@@ -157,7 +157,7 @@ impl ToolchainPlugin {
         }
 
         // Oh no, heavy lookup...
-        let results = glob_walk(dir, &self.metadata.config_file_globs, false)?;
+        let results = glob_walk(dir, &self.metadata.config_file_globs)?;
 
         Ok(!results.is_empty())
     }

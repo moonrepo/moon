@@ -3,11 +3,11 @@ use common_path::common_path_all;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::InputPath;
-use moon_feature_flags::glob_walk;
+use moon_feature_flags::glob_walk_with_options;
 use serde::{Deserialize, Serialize};
-use starbase_utils::glob;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use starbase_utils::glob::{self, GlobWalkOptions};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -21,7 +21,6 @@ pub struct FileGroup {
     pub id: Id,
 
     #[serde(skip)]
-    walk_cache: OnceLock<Vec<PathBuf>>,
     walk_mutex: Arc<Mutex<()>>,
 }
 
@@ -35,7 +34,6 @@ impl FileGroup {
             files: vec![],
             globs: vec![],
             id: Id::new(id)?,
-            walk_cache: OnceLock::new(),
             walk_mutex: Arc::new(Mutex::new(())),
         })
     }
@@ -184,15 +182,12 @@ impl FileGroup {
                 return Ok(list);
             };
 
-            if self.walk_cache.get().is_none() {
-                let globs = &self.globs;
-                let _ = self
-                    .walk_cache
-                    .set(glob_walk(workspace_root, globs, false)?);
-            }
-
             // Glob results are absolute paths!
-            for path in self.walk_cache.get().unwrap() {
+            for path in glob_walk_with_options(
+                workspace_root,
+                &self.globs,
+                GlobWalkOptions::default().cache(),
+            )? {
                 let allowed = if is_dir {
                     path.is_dir()
                 } else {

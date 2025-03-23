@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-starbase_utils = { workspace = true, features = ["glob"] }
+starbase_utils = { workspace = true, features = ["glob", "glob-cache"] }
 
 [lints]
 workspace = true

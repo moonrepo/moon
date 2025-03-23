@@ -307,6 +307,19 @@ docker:
 
 Enable or disable experiments that alter core functionality.
 
+### `fasterGlobWalk`<VersionLabel version="1.34.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#fasterGlobWalk" />
+
+Utilizes a new concurrent glob walking implementation that is on average, 1.5-2x faster than the
+current implementation. Additionally, common globs are now cached for the duration of the process.
+Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  fasterGlobWalk: true
+```
+
 ## `extensions`<VersionLabel version="1.20.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />

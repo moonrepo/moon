@@ -105,6 +105,8 @@ export interface ExperimentsConfig {
 	 * @default true
 	 */
 	disallowRunInCiMismatch?: boolean;
+	/** Enable faster glob file system walking. */
+	fasterGlobWalk: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -592,6 +594,8 @@ export interface PartialExperimentsConfig {
 	 * @default true
 	 */
 	disallowRunInCiMismatch?: boolean | null;
+	/** Enable faster glob file system walking. */
+	fasterGlobWalk?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

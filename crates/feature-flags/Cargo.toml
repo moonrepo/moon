@@ -1,0 +1,15 @@
+[package]
+name = "moon_feature_flags"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Manages feature flags."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+starbase_utils = { workspace = true, features = ["glob", "glob-cache"] }
+
+[lints]
+workspace = true

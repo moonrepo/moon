@@ -315,6 +315,7 @@ impl AppSession for CliSession {
         let vcs = self.get_vcs_adapter()?;
 
         startup::extract_repo_info(&vcs).await?;
+        startup::register_feature_flags(&self.workspace_config)?;
 
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 

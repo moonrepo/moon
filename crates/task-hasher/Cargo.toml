@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_feature_flags = { path = "../feature-flags" }
 moon_hash = { path = "../hash" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }

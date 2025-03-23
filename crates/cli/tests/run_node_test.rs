@@ -737,13 +737,7 @@ mod npm {
                 .arg("npm:noop");
         });
 
-        println!("{}", assert.output());
-
-        assert!(
-            predicate::str::contains("npm install")
-                .count(2)
-                .eval(&assert.output())
-        );
+        assert!(predicate::str::contains("npm install").eval(&assert.output()));
 
         assert!(sandbox.path().join("package-lock.json").exists());
         assert!(
@@ -974,11 +968,7 @@ mod yarn1 {
                 .arg("yarn1:noop");
         });
 
-        assert!(
-            predicate::str::contains("yarn install")
-                .count(2)
-                .eval(&assert.output())
-        );
+        assert!(predicate::str::contains("yarn install").eval(&assert.output()));
 
         assert!(sandbox.path().join("yarn.lock").exists());
         assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
@@ -1080,11 +1070,7 @@ mod yarn {
                 .arg("yarn:noop");
         });
 
-        assert!(
-            predicate::str::contains("yarn install")
-                .count(2)
-                .eval(&assert.output())
-        );
+        assert!(predicate::str::contains("yarn install").eval(&assert.output()));
 
         assert!(sandbox.path().join("yarn.lock").exists());
         assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());

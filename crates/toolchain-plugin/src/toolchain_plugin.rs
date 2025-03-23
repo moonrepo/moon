@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moon_feature_flags::glob_walk;
 use moon_pdk_api::{
     DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineToolchainConfigOutput,
     HashTaskContentsInput, HashTaskContentsOutput, InitializeToolchainInput,
@@ -8,7 +9,6 @@ use moon_pdk_api::{
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
-use starbase_utils::glob;
 use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::ops::Deref;
@@ -157,7 +157,7 @@ impl ToolchainPlugin {
         }
 
         // Oh no, heavy lookup...
-        let results = glob::walk(dir, &self.metadata.config_file_globs)?;
+        let results = glob_walk(dir, &self.metadata.config_file_globs)?;
 
         Ok(!results.is_empty())
     }

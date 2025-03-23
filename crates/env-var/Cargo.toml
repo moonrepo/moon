@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 regex = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

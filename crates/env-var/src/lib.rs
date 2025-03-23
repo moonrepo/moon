@@ -1,3 +1,7 @@
+mod global_bag;
+
+pub use global_bag::*;
+
 use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;

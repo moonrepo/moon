@@ -1,8 +1,8 @@
 mod wrappers;
 
-pub use wrappers::*;
-
 use std::sync::OnceLock;
+
+pub use wrappers::*;
 
 static INSTANCE: OnceLock<FeatureFlags> = OnceLock::new();
 
@@ -16,8 +16,8 @@ pub struct FeatureFlags {
 }
 
 impl FeatureFlags {
-    pub fn session() -> &'static FeatureFlags {
-        INSTANCE.get_or_init(|| FeatureFlags::default())
+    pub fn instance() -> &'static FeatureFlags {
+        INSTANCE.get_or_init(FeatureFlags::default)
     }
 
     pub fn is_enabled(&self, flag: Flag) -> bool {

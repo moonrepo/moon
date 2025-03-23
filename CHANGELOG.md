@@ -24,7 +24,7 @@
   glob walker implementation. Do note that this is experimental and may be buggy!
   - In our benchmarks, it's on average 1.5-2x faster.
   - We also attempt to cache the results, which occurs quite often when running tasks.
-  - Globbing is now logged to better debug performance issues.
+  - These globs are now logged to better debug performance issues.
 - Added a `--json` flag to `moon templates`.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.

@@ -22,13 +22,11 @@ where
     I: IntoIterator<Item = &'glob V> + Debug,
     V: AsRef<str> + 'glob + ?Sized + Debug,
 {
-    if FeatureFlags::session().is_enabled(Flag::FastGlobWalk) {
+    if FeatureFlags::instance().is_enabled(Flag::FastGlobWalk) {
         glob::walk_fast_with_options(base_dir, patterns, options)
+    } else if options.only_files {
+        glob::walk_files(base_dir, patterns)
     } else {
-        if options.only_files {
-            glob::walk_files(base_dir, patterns)
-        } else {
-            glob::walk(base_dir, patterns)
-        }
+        glob::walk(base_dir, patterns)
     }
 }

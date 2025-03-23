@@ -7,7 +7,6 @@ use moon_feature_flags::glob_walk_with_options;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -19,9 +18,6 @@ pub struct FileGroup {
     pub globs: Vec<WorkspaceRelativePathBuf>,
 
     pub id: Id,
-
-    #[serde(skip)]
-    walk_mutex: Arc<Mutex<()>>,
 }
 
 impl FileGroup {
@@ -34,7 +30,6 @@ impl FileGroup {
             files: vec![],
             globs: vec![],
             id: Id::new(id)?,
-            walk_mutex: Arc::new(Mutex::new(())),
         })
     }
 
@@ -178,10 +173,6 @@ impl FileGroup {
         }
 
         if !self.globs.is_empty() {
-            let Ok(_lock) = self.walk_mutex.lock() else {
-                return Ok(list);
-            };
-
             // Glob results are absolute paths!
             for path in glob_walk_with_options(
                 workspace_root,

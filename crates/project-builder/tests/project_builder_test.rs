@@ -400,6 +400,14 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::TypeScript);
             assert_eq!(project.toolchains, vec![Id::raw("typescript")]);
 
+            let project = build_lang_project("ts-enabled").await;
+
+            assert_eq!(project.language, LanguageType::Unknown);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("typescript"), Id::raw("system")]
+            );
+
             let project = build_lang_project("ts-disabled").await;
 
             assert_eq!(project.language, LanguageType::TypeScript);

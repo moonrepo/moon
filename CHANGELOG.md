@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `npx @moonrepo/cli` would no longer work.
+- Fixed an issue where `toolchain.typescript = true` in `moon.yml` would not inherit it as a
+  toolchain.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.47.7](https://github.com/moonrepo/proto/releases/tag/v0.47.7) (from 0.47.4).
+- Updated dependencies.
+
 ## 1.33.2
 
 #### 🚀 Updates

@@ -75,13 +75,19 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
         console.print_entry("Root", color::path(&project.root))?;
     }
 
+    let toolchains = project.get_enabled_toolchains();
+
     console.print_entry(
-        if project.toolchains.len() == 1 {
+        if toolchains.len() == 1 {
             "Toolchain"
         } else {
             "Toolchains"
         },
-        project.toolchains.join(", "),
+        toolchains
+            .into_iter()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(", "),
     )?;
     console.print_entry("Language", format!("{}", &project.language))?;
     console.print_entry("Stack", format!("{}", &project.stack))?;

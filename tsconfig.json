@@ -18,9 +18,6 @@
       "path": "packages/visualizer"
     },
     {
-      "path": "scenarios/signals"
-    },
-    {
       "path": "website"
     }
   ]

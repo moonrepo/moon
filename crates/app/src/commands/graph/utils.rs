@@ -2,6 +2,7 @@ use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
 use moon_action_graph::ActionGraph;
 use moon_common::color;
+use moon_env_var::GlobalEnvBag;
 use moon_process::ProcessRegistry;
 use moon_project_graph::{GraphConversions, ProjectGraph};
 use moon_task_graph::TaskGraph;
@@ -9,7 +10,6 @@ use petgraph::{Graph, graph::NodeIndex};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use starbase_utils::json;
-use std::env;
 use std::fmt::Display;
 use std::sync::Arc;
 use tera::{Context, Tera};
@@ -26,13 +26,15 @@ pub struct RenderContext {
 }
 
 pub async fn setup_server() -> miette::Result<(Arc<Server>, Tera)> {
-    let port = match env::var("MOON_PORT") {
-        Ok(p) => p.parse::<u16>().unwrap(),
-        Err(..) => 0, // Uses an available port
+    let bag = GlobalEnvBag::instance();
+
+    let port = match bag.get("MOON_PORT") {
+        Some(p) => p.parse::<u16>().unwrap(),
+        None => 0, // Uses an available port
     };
-    let host = match env::var("MOON_HOST") {
-        Ok(h) => h,
-        Err(..) => "127.0.0.1".to_string(),
+    let host = match bag.get("MOON_HOST") {
+        Some(h) => h,
+        None => "127.0.0.1".to_string(),
     };
     let address = format!("{host}:{port}");
     let server = Server::http(address).unwrap();
@@ -140,9 +142,9 @@ pub fn respond_to_request(
 
 // Use the local version of the JS file when in development mode otherwise the CDN URL.
 pub fn get_js_url() -> String {
-    match env::var("MOON_JS_URL") {
-        Ok(url) => url,
-        Err(..) => match cfg!(debug_assertions) {
+    match GlobalEnvBag::instance().get("MOON_JS_URL") {
+        Some(url) => url,
+        None => match cfg!(debug_assertions) {
             true => "http://localhost:5000/assets/index.js".to_string(),
             false => "https://unpkg.com/@moonrepo/visualizer@latest".to_string(),
         },

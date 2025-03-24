@@ -12,6 +12,7 @@ publish = false
 moon_args = { path = "../args" }
 moon_common = { path = "../common" }
 moon_console = { path = "../console" }
+moon_env_var = { path = "../env-var" }
 cached = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }

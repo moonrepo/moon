@@ -2,6 +2,7 @@ use crate::session::CliSession;
 use clap::Args;
 use miette::miette;
 use moon_common::Id;
+use moon_env_var::GlobalEnvBag;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use starbase::AppResult;
@@ -41,7 +42,7 @@ pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
     command.arg("run").arg(&args.name);
 
     // Use the env var provided by our task runner
-    if let Ok(project_root) = env::var("MOON_PROJECT_ROOT") {
+    if let Some(project_root) = GlobalEnvBag::instance().get("MOON_PROJECT_ROOT") {
         command.cwd(project_root);
 
         // Otherwise try and find the project in the graph

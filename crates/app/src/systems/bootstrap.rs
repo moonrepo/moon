@@ -1,3 +1,4 @@
+use moon_env_var::GlobalEnvBag;
 use starbase_styles::color::{no_color, supports_color};
 use std::env;
 use std::ffi::OsString;
@@ -43,23 +44,21 @@ pub fn gather_args() -> (Vec<OsString>, bool) {
 }
 
 pub fn setup_no_colors() {
-    unsafe {
-        env::set_var("NO_COLOR", "1");
-        // https://github.com/mitsuhiko/clicolors-control/issues/19
-        env::set_var("CLICOLOR", "0");
-        env::remove_var("FORCE_COLOR");
-    };
+    let bag = GlobalEnvBag::instance();
+    bag.set("NO_COLOR", "1");
+    // https://github.com/mitsuhiko/clicolors-control/issues/19
+    bag.set("CLICOLOR", "0");
+    bag.remove("FORCE_COLOR");
 }
 
 pub fn setup_colors(force: bool) {
+    let bag = GlobalEnvBag::instance();
+
     // If being forced by --color or other env vars
-    if force
-        || env::var("MOON_COLOR").is_ok()
-        || env::var("FORCE_COLOR").is_ok()
-        || env::var("CLICOLOR_FORCE").is_ok()
-    {
-        let mut color_level = env::var("MOON_COLOR")
-            .or_else(|_| env::var("FORCE_COLOR"))
+    if force || bag.has("MOON_COLOR") || bag.has("FORCE_COLOR") || bag.has("CLICOLOR_FORCE") {
+        let mut color_level = bag
+            .get("MOON_COLOR")
+            .or_else(|| bag.get("FORCE_COLOR"))
             .unwrap_or("3".to_owned());
 
         // https://nodejs.org/api/cli.html#force_color1-2-3
@@ -73,11 +72,9 @@ pub fn setup_colors(force: bool) {
             setup_no_colors();
         } else {
             // https://bixense.com/clicolors/
-            unsafe {
-                env::set_var("CLICOLOR_FORCE", &color_level);
-                env::set_var("FORCE_COLOR", &color_level);
-                env::remove_var("NO_COLOR");
-            };
+            bag.set("CLICOLOR_FORCE", &color_level);
+            bag.set("FORCE_COLOR", &color_level);
+            bag.remove("NO_COLOR");
         }
 
         return;
@@ -86,7 +83,7 @@ pub fn setup_colors(force: bool) {
     if no_color() {
         setup_no_colors();
     } else {
-        unsafe { env::set_var("CLICOLOR", supports_color().to_string()) };
+        bag.set("CLICOLOR", supports_color().to_string());
     }
 }
 

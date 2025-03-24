@@ -9,6 +9,7 @@ use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::{Cli, CliSession, Commands, commands, systems::bootstrap};
+use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
@@ -25,7 +26,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
 
-    unsafe { env::set_var("MOON_VERSION", version) };
+    GlobalEnvBag::instance().set("MOON_VERSION", version);
 
     version.to_owned()
 }

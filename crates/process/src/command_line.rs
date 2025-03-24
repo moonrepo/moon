@@ -1,6 +1,7 @@
 use crate::command::Command;
 use moon_args::join_args_os;
 use moon_common::color;
+use moon_env_var::GlobalEnvBag;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
@@ -76,7 +77,7 @@ impl CommandLine {
         };
 
         if with_input && !self.input.is_empty() {
-            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+            let debug_input = GlobalEnvBag::instance().has("MOON_DEBUG_PROCESS_INPUT");
             let input = join_args_os(self.input.iter().flat_map(|i| i.to_str().map(|s| s.trim())));
 
             if command

@@ -2,6 +2,7 @@ use crate::{HashEngine, StateEngine, merge_clean_results, resolve_path};
 use moon_cache_item::*;
 use moon_common::consts;
 use moon_common::path::encode_component;
+use moon_env_var::GlobalEnvBag;
 use moon_time::parse_duration;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -68,7 +69,7 @@ impl CacheEngine {
     pub fn force_mode(&self, mode: CacheMode) {
         let _ = self.forced_mode.write().unwrap().insert(mode);
 
-        unsafe { env::set_var("MOON_CACHE", mode.to_string()) };
+        GlobalEnvBag::instance().set("MOON_CACHE", mode.to_string());
     }
 
     pub fn cache<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>

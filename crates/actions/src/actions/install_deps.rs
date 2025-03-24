@@ -13,8 +13,8 @@ use moon_workspace_graph::WorkspaceGraph;
 use proto_core::UnresolvedVersionSpec;
 use starbase_utils::fs;
 use std::path::PathBuf;
+use std::process;
 use std::sync::Arc;
-use std::{env, process};
 use tracing::{debug, instrument};
 
 cache_item!(
@@ -39,6 +39,7 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
+    let bag = GlobalEnvBag::instance();
     let pid = process::id().to_string();
     let log_label = runtime.label();
     let action_key = get_skip_key(runtime, project);
@@ -64,7 +65,10 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    if env::var("INTERNAL_MOON_INSTALLING_DEPS").is_ok_and(|other_pid| other_pid != pid) {
+    if bag
+        .get("INTERNAL_MOON_INSTALLING_DEPS")
+        .is_some_and(|other_pid| other_pid != pid)
+    {
         debug!("Detected another dependency install running, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
@@ -142,7 +146,7 @@ pub async fn install_deps(
         // variable with the current process ID and compare against it. If the IDs are
         // the same then multiple installs are happening in parallel in the same
         // process (via the pipeline), otherwise it's a child process.
-        GlobalEnvBag::instance().set("INTERNAL_MOON_INSTALLING_DEPS", pid);
+        bag.set("INTERNAL_MOON_INSTALLING_DEPS", pid);
 
         debug!(
             "Installing {} dependencies in {}",

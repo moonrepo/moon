@@ -3,6 +3,7 @@ use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy};
+use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
 use moon_task::{Target, Task};
@@ -10,7 +11,6 @@ use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_utils::glob::{GlobSet, GlobWalkOptions};
 use std::collections::BTreeMap;
-use std::env;
 use std::path::{Path, PathBuf};
 use tracing::{trace, warn};
 
@@ -84,10 +84,12 @@ impl<'task> TaskHasher<'task> {
         }
 
         if !self.task.input_env.is_empty() {
+            let bag = GlobalEnvBag::instance();
+
             for input in &self.task.input_env {
                 self.content
                     .input_env
-                    .insert(input, env::var(input).unwrap_or_default());
+                    .insert(input, bag.get(input).unwrap_or_default());
             }
         }
 

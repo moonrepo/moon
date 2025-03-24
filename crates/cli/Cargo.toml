@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 moon_app = { path = "../app" }
 moon_common = { path = "../common" }
+moon_env_var = { path = "../env-var" }
 clap = { workspace = true }
 mimalloc = { version = "0.1.43", default-features = false }
 sigpipe = "0.1.3"

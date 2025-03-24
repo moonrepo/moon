@@ -14,7 +14,6 @@ use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_styles::color;
-use starbase_utils::env::bool_var;
 use starbase_utils::{dirs, string_vec};
 use std::env;
 use std::process::{Command, ExitCode};
@@ -32,6 +31,7 @@ fn get_version() -> String {
 }
 
 fn get_tracing_modules() -> Vec<String> {
+    let bag = GlobalEnvBag::instance();
     let mut modules = string_vec![
         "moon", "proto", // "schematic",
         "starbase",
@@ -43,13 +43,13 @@ fn get_tracing_modules() -> Vec<String> {
         // "rustls",
     ];
 
-    if bool_var("MOON_DEBUG_WASM") {
+    if bag.should_debug_wasm() {
         modules.push("extism".into());
     } else {
         modules.push("extism::pdk".into());
     }
 
-    if bool_var("MOON_DEBUG_REMOTE") {
+    if bag.should_debug_remote() {
         modules.push("tonic".into());
     }
 

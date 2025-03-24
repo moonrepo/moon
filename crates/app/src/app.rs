@@ -336,7 +336,7 @@ impl Cli {
             bag.set("PROTO_CACHE", "off");
         }
 
-        if bag.has("MOON_DEBUG_WASM") {
+        if bag.should_debug_wasm() {
             bag.set("PROTO_WASM_LOG", "trace");
             bag.set("PROTO_DEBUG_WASM", "true");
             bag.set("EXTISM_DEBUG", "1");

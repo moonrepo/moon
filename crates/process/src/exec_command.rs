@@ -459,6 +459,18 @@ impl Command {
         let mut command = TokioCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
 
+        // Inherit global env first
+        let bag = GlobalEnvBag::instance();
+
+        bag.list_added(|key, value| {
+            command.env(key, value);
+        });
+
+        bag.list_removed(|key| {
+            command.env_remove(key);
+        });
+
+        // Then inherit local so we can override global
         for (key, value) in &self.env {
             if let Some(value) = value {
                 command.env(key, value);
@@ -520,7 +532,7 @@ impl Command {
             return;
         }
 
-        let debug_env = bag.has("MOON_DEBUG_PROCESS_ENV");
+        let debug_env = bag.should_debug_process_env();
         let env_vars: FxHashMap<&OsString, &OsString> = self
             .env
             .iter()
@@ -540,7 +552,7 @@ impl Command {
             })
             .collect();
 
-        let debug_input = bag.has("MOON_DEBUG_PROCESS_INPUT");
+        let debug_input = bag.should_debug_process_input();
         let input_size: Option<usize> = if self.input.is_empty() {
             None
         } else {

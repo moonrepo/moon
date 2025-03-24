@@ -59,9 +59,9 @@ pub async fn query_touched_files(
     let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
-    let base_value = bag.get("MOON_BASE").ok().or(options.base.clone());
+    let base_value = bag.get("MOON_BASE").or(options.base.clone());
     let base = base_value.as_deref().unwrap_or(&default_branch);
-    let head_value = bag.get("MOON_HEAD").ok().or(options.head.clone());
+    let head_value = bag.get("MOON_HEAD").or(options.head.clone());
     let head = head_value.as_deref().unwrap_or("HEAD");
 
     // Determine whether we should check against the previous

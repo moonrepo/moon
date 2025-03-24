@@ -43,7 +43,6 @@ bytes = "1.10.1"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
-    "derive",
     "env",
     "help",
     "string",

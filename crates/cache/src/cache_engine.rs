@@ -8,7 +8,6 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
-use std::env;
 use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};

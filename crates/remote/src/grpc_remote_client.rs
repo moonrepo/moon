@@ -17,7 +17,6 @@ use http::header::HeaderMap;
 use moon_common::color;
 use moon_config::RemoteConfig;
 use moon_env_var::GlobalEnvBag;
-use starbase_utils::env::bool_var;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;

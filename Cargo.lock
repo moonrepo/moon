@@ -4428,6 +4428,7 @@ dependencies = [
  "proto_core",
  "rustc-hash 2.1.1",
  "scc",
+ "serde",
  "serde_json",
  "starbase_sandbox",
  "starbase_styles",
@@ -7104,9 +7105,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.11.4"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b765c1293ef5e426007726130c43d4fb46270e57bceb0ee187515a4a6dedfec"
+checksum = "35767b510e6a15d9ae64e1f295f1eba1ddd585e85db6d7f0b1fddb834c3c03ba"
 dependencies = [
  "async-trait",
  "dirs 6.0.0",

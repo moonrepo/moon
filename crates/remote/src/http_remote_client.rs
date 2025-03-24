@@ -11,7 +11,6 @@ use moon_config::{RemoteCompression, RemoteConfig};
 use moon_env_var::GlobalEnvBag;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
-use starbase_utils::env::bool_var;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{path::Path, sync::OnceLock};

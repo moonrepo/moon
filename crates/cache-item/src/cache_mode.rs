@@ -1,5 +1,4 @@
 use moon_env_var::GlobalEnvBag;
-use std::env;
 use std::fmt;
 use tracing::warn;
 

@@ -8,11 +8,11 @@ use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::Diagnostic;
 use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{Style, Stylize, is_test_env};
+use moon_env_var::GlobalEnvBag;
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use semver::Version;
 use std::collections::BTreeMap;
-use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use thiserror::Error;
@@ -718,7 +718,7 @@ impl Vcs for Git {
             }
         }
 
-        if let Ok(dir) = env::var("GIT_DIR") {
+        if let Some(dir) = GlobalEnvBag::instance().get("GIT_DIR") {
             let dir = PathBuf::from(dir).join("hooks");
 
             if is_in_repo(&dir) {

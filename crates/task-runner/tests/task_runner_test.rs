@@ -3,11 +3,11 @@ mod utils;
 use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::CacheMode;
+use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_time::now_millis;
-use std::env;
 use utils::*;
 
 mod task_runner {
@@ -487,7 +487,7 @@ mod task_runner {
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
-                unsafe { env::remove_var("MOON_CACHE") };
+                GlobalEnvBag::instance().remove("MOON_CACHE");
             }
 
             #[tokio::test]
@@ -506,7 +506,7 @@ mod task_runner {
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
-                unsafe { env::remove_var("MOON_CACHE") };
+                GlobalEnvBag::instance().remove("MOON_CACHE");
             }
         }
 

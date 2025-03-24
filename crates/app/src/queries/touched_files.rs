@@ -7,7 +7,6 @@ use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::json;
-use std::env;
 use std::io::{IsTerminal, Read, stdin};
 use tracing::{debug, trace, warn};
 

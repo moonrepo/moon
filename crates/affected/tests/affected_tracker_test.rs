@@ -1,5 +1,6 @@
 use moon_affected::*;
 use moon_common::Id;
+use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_test_utils2::generate_workspace_graph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -466,8 +467,9 @@ mod affected_tasks {
     async fn affected_by_env_var() {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::default();
+        let bag = GlobalEnvBag::instance();
 
-        unsafe { env::set_var("ENV", "affected") };
+        bag.set("ENV", "affected");
 
         let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
         tracker
@@ -483,7 +485,7 @@ mod affected_tasks {
             )])
         );
 
-        unsafe { env::remove_var("ENV") };
+        bag.remove("ENV");
     }
 
     #[tokio::test]

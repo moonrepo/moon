@@ -1,9 +1,9 @@
 mod utils;
 
 use moon_cache::CacheMode;
+use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use starbase_archive::Archiver;
-use std::env;
 use std::fs;
 use std::sync::Arc;
 use utils::*;
@@ -77,7 +77,7 @@ mod output_archiver {
 
             assert!(archiver.archive("hash123", None).await.unwrap().is_none());
 
-            unsafe { env::remove_var("MOON_CACHE") };
+            GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
         #[tokio::test]
@@ -94,7 +94,7 @@ mod output_archiver {
 
             assert!(archiver.archive("hash123", None).await.unwrap().is_none());
 
-            unsafe { env::remove_var("MOON_CACHE") };
+            GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
         #[tokio::test]

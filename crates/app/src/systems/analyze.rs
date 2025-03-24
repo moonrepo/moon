@@ -16,7 +16,6 @@ use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
-use std::env;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};

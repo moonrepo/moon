@@ -7,7 +7,6 @@ use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use starbase::AppResult;
 use starbase_styles::color;
-use std::env;
 use tracing::{instrument, warn};
 
 #[derive(Args, Clone, Debug)]

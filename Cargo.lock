@@ -4166,7 +4166,6 @@ dependencies = [
  "regex",
  "rustc-hash 2.1.1",
  "scc",
- "tracing",
 ]
 
 [[package]]
@@ -5071,6 +5070,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
  "moon_project",

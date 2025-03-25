@@ -115,8 +115,8 @@ mod test {
 
                 setup_colors(false);
 
-                assert_eq!(env::var("CLICOLOR").unwrap(), "0");
-                assert_eq!(env::var("NO_COLOR").unwrap(), "1");
+                assert_eq!(bag.get("CLICOLOR").unwrap(), "0");
+                assert_eq!(bag.get("NO_COLOR").unwrap(), "1");
 
                 reset_vars();
             }
@@ -135,8 +135,8 @@ mod test {
 
                     setup_colors(false);
 
-                    assert_eq!(env::var("CLICOLOR").unwrap(), "0");
-                    assert_eq!(env::var("NO_COLOR").unwrap(), "1");
+                    assert_eq!(bag.get("CLICOLOR").unwrap(), "0");
+                    assert_eq!(bag.get("NO_COLOR").unwrap(), "1");
 
                     reset_vars();
                 }
@@ -152,8 +152,8 @@ mod test {
 
                     setup_colors(false);
 
-                    assert_eq!(env::var("CLICOLOR").unwrap(), "0");
-                    assert_eq!(env::var("NO_COLOR").unwrap(), "1");
+                    assert_eq!(bag.get("CLICOLOR").unwrap(), "0");
+                    assert_eq!(bag.get("NO_COLOR").unwrap(), "1");
 
                     reset_vars();
                 }
@@ -169,8 +169,8 @@ mod test {
 
                     setup_colors(false);
 
-                    assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "1");
-                    assert_eq!(env::var("FORCE_COLOR").unwrap(), "1");
+                    assert_eq!(bag.get("CLICOLOR_FORCE").unwrap(), "1");
+                    assert_eq!(bag.get("FORCE_COLOR").unwrap(), "1");
 
                     reset_vars();
                 }
@@ -186,8 +186,8 @@ mod test {
 
                     setup_colors(false);
 
-                    assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "1");
-                    assert_eq!(env::var("FORCE_COLOR").unwrap(), "1");
+                    assert_eq!(bag.get("CLICOLOR_FORCE").unwrap(), "1");
+                    assert_eq!(bag.get("FORCE_COLOR").unwrap(), "1");
 
                     reset_vars();
                 }

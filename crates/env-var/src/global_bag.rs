@@ -4,7 +4,6 @@ use std::sync::OnceLock;
 
 static INSTANCE: OnceLock<GlobalEnvBag> = OnceLock::new();
 
-#[derive(Default)]
 pub struct GlobalEnvBag {
     inherited: scc::HashMap<OsString, OsString>,
     added: scc::HashMap<OsString, OsString>,
@@ -82,6 +81,15 @@ impl GlobalEnvBag {
         let _ = self.removed.insert(key.into());
     }
 
+    pub fn list(&self, mut op: impl FnMut(&OsString, &OsString)) {
+        self.inherited.scan(|k, v| {
+            op(k, v);
+        });
+        self.added.scan(|k, v| {
+            op(k, v);
+        });
+    }
+
     pub fn list_added(&self, op: impl FnMut(&OsString, &OsString)) {
         self.added.scan(op);
     }
@@ -113,8 +121,8 @@ impl GlobalEnvBag {
 pub fn as_bool(value: &OsString) -> bool {
     value
         .to_str()
-        .and_then(|value| Some(value.to_lowercase()))
-        .map_or(false, |value| {
+        .map(|value| value.to_lowercase())
+        .is_some_and(|value| {
             value == "1" || value == "true" || value == "yes" || value == "on" || value == "enable"
         })
 }

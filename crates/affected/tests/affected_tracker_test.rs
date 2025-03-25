@@ -4,7 +4,6 @@ use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_test_utils2::generate_workspace_graph;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::env;
 
 mod affected_projects {
     use super::*;

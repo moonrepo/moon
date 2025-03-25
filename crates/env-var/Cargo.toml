@@ -12,7 +12,6 @@ publish = false
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
-tracing = { workspace = true }
 
 [lints]
 workspace = true

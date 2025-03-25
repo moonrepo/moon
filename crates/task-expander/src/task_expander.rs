@@ -127,7 +127,10 @@ impl<'graph> TaskExpander<'graph> {
             } else {
                 TaskArgs::List(dep_args)
             };
-            dep.env = substitute_env_vars(dep_env);
+
+            dep.env = EnvSubstitutor::new()
+                .with_local_vars(&dep_env)
+                .substitute_all(&dep_env);
         }
 
         task.deps = deps;
@@ -198,7 +201,9 @@ impl<'graph> TaskExpander<'graph> {
             }
         }
 
-        task.env = substitute_env_vars(env);
+        task.env = EnvSubstitutor::new()
+            .with_local_vars(&env)
+            .substitute_all(&env);
 
         Ok(())
     }

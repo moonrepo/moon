@@ -7,6 +7,7 @@ use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
 use miette::IntoDiagnostic;
 use moon_common::color;
+use moon_env_var::GlobalEnvBag;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -458,6 +459,18 @@ impl Command {
         let mut command = TokioCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
 
+        // Inherit global env first
+        let bag = GlobalEnvBag::instance();
+
+        bag.list_added(|key, value| {
+            command.env(key, value);
+        });
+
+        bag.list_removed(|key| {
+            command.env_remove(key);
+        });
+
+        // Then inherit local so we can override global
         for (key, value) in &self.env {
             if let Some(value) = value {
                 command.env(key, value);
@@ -491,11 +504,13 @@ impl Command {
     }
 
     fn pre_log_command(&self, line: &CommandLine, child: &SharedChild) {
+        let bag = GlobalEnvBag::instance();
+
         let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
         let workspace_root = if let Some(Some(value)) = self.env.get(&workspace_env_key) {
             PathBuf::from(value)
         } else {
-            env::var_os(&workspace_env_key).map_or_else(
+            bag.get(&workspace_env_key).map_or_else(
                 || env::current_dir().unwrap_or(PathBuf::from(".")),
                 PathBuf::from,
             )
@@ -517,7 +532,7 @@ impl Command {
             return;
         }
 
-        let debug_env = env::var("MOON_DEBUG_PROCESS_ENV").is_ok();
+        let debug_env = bag.should_debug_process_env();
         let env_vars: FxHashMap<&OsString, &OsString> = self
             .env
             .iter()
@@ -537,7 +552,7 @@ impl Command {
             })
             .collect();
 
-        let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+        let debug_input = bag.should_debug_process_input();
         let input_size: Option<usize> = if self.input.is_empty() {
             None
         } else {

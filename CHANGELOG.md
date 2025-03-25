@@ -26,6 +26,7 @@
   - We also attempt to cache the results, which occurs quite often when running tasks.
   - These globs are now logged to better debug performance issues.
 - Added a `--json` flag to `moon templates`.
+- Improved the performance of environment variable substitution.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.
 - Updated `moon sync` to sync the workspace and all projects.

@@ -1,11 +1,11 @@
 use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
+use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::env;
 use std::fmt;
 use tracing::{debug, trace};
 
@@ -345,10 +345,14 @@ impl<'app> AffectedTracker<'app> {
             return Ok(None);
         }
 
-        for var_name in &task.input_env {
-            if let Ok(var) = env::var(var_name) {
-                if !var.is_empty() {
-                    return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
+        if !task.input_env.is_empty() {
+            let bag = GlobalEnvBag::instance();
+
+            for var_name in &task.input_env {
+                if let Some(var) = bag.get(var_name) {
+                    if !var.is_empty() {
+                        return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
+                    }
                 }
             }
         }

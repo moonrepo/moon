@@ -8,9 +8,9 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 };
 use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
+use moon_env_var::GlobalEnvBag;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
-use starbase_utils::env::bool_var;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{path::Path, sync::OnceLock};
@@ -106,8 +106,8 @@ impl RemoteClient for HttpRemoteClient {
             }
         );
 
+        self.debug = GlobalEnvBag::instance().should_debug_remote();
         self.config = config.to_owned();
-        self.debug = bool_var("MOON_DEBUG_REMOTE");
 
         // Extract headers and abort early if not enabled
         let Some(headers) = self.extract_headers(config)? else {

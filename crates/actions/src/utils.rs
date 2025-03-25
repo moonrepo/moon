@@ -1,11 +1,11 @@
-use std::env;
+use moon_env_var::GlobalEnvBag;
 
 pub fn should_skip_action(key: &str) -> Option<String> {
     should_skip_action_matching(key, "true")
 }
 
 pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> Option<String> {
-    if let Ok(value) = env::var(key) {
+    if let Some(value) = GlobalEnvBag::instance().get(key) {
         if matches_pattern(&value, pattern.as_ref()) {
             return Some(value);
         }

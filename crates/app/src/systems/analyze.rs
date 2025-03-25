@@ -6,6 +6,7 @@ use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_config::{BunConfig, PlatformType, ToolchainConfig};
 use moon_console::{Checkpoint, Console};
 use moon_deno_platform::DenoPlatform;
+use moon_env_var::GlobalEnvBag;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
@@ -15,7 +16,6 @@ use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
-use std::env;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -52,12 +52,11 @@ pub async fn install_proto(
     debug!(proto = ?install_dir.join(&bin_name), "Checking if proto is installed");
 
     // Set the version so that proto lookup paths take it into account
-    unsafe {
-        env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
-        env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
-        env::set_var("PROTO_VERSION_CHECK", "false");
-        env::set_var("PROTO_LOOKUP_DIR", &install_dir);
-    };
+    let bag = GlobalEnvBag::instance();
+    bag.set("PROTO_VERSION", PROTO_CLI_VERSION);
+    bag.set("PROTO_IGNORE_MIGRATE_WARNING", "true");
+    bag.set("PROTO_VERSION_CHECK", "false");
+    bag.set("PROTO_LOOKUP_DIR", &install_dir);
 
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!

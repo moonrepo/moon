@@ -21,6 +21,7 @@ miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
+serde = { workspace = true, features = ["rc"] }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

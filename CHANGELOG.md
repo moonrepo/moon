@@ -16,20 +16,24 @@
   - Updated `moon query projects` and `moon query tasks` to render a table of data.
 - Added new settings to `pipeline` (formerly `runner`) in `.moon/workspace.yml` to control which
   kinds of action nodes exist in the action graph when running tasks.
-  - `syncWorkspace` toggles the root `SyncWorkspace` action.
-  - `syncProjects` toggles the `SyncProject` actions, and can be scoped to project IDs.
-  - `installDependencies` toggles the `InstallWorkspaceDeps` and `InstallProjectDeps` actions, and
-    can be scoped to toolchain IDs.
+  - `syncWorkspace` setting toggles the root `SyncWorkspace` action.
+  - `syncProjects` setting toggles the `SyncProject` actions, and can be scoped to project IDs.
+  - `syncProjectDependencies` setting toggles whether to recursively link `SyncProject` actions
+    based on project dependencies.
+  - `installDependencies` setting toggles the `InstallWorkspaceDeps` and `InstallProjectDeps`
+    actions, and can be scoped to toolchain IDs.
 - Added an `experiments.fasterGlobWalk` setting to `.moon/workspace.yml`, that will use a better
   glob walker implementation. Do note that this is experimental and may be buggy!
   - In our benchmarks, it's on average 1.5-2x faster.
   - We also attempt to cache the results, which occurs quite often when running tasks.
-  - These globs are now logged to better debug performance issues.
+  - Globs are now logged to better debug performance issues.
+- Added a `--no-actions` flag to `moon run`, that will run the task without including the other
+  actions, like `SyncProject`, `SetupToolchain`, etc.
 - Added a `--json` flag to `moon templates`.
 - Improved the performance of environment variable substitution.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.
-- Updated `moon sync` to sync the workspace and all projects.
+- Updated `moon sync` to no longer be deprecated, and instead sync the workspace and all projects.
 - WASM API
   - Added `DefineDockerMetadataOutput.default_image` field.
   - Added `SettingPrompt.description` field.

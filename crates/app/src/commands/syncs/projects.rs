@@ -1,7 +1,7 @@
 use crate::components::run_action_pipeline;
 use crate::session::CliSession;
 use iocraft::prelude::element;
-use moon_config::{PartialPipelineActionSwitch, PartialPipelineConfig};
+use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
@@ -11,13 +11,14 @@ pub async fn sync(session: CliSession) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut project_count = 0;
     let mut action_graph_builder = session
-        .build_action_graph_with(
+        .build_action_graph_with_options(
             &workspace_graph,
-            PartialPipelineConfig {
-                install_dependencies: Some(PartialPipelineActionSwitch::Enabled(false)),
-                sync_projects: Some(PartialPipelineActionSwitch::Enabled(true)),
-                sync_workspace: Some(false),
-                ..Default::default()
+            ActionGraphBuilderOptions {
+                install_dependencies: false.into(),
+                setup_toolchains: false.into(),
+                sync_projects: true.into(),
+                sync_project_dependencies: true,
+                sync_workspace: false,
             },
         )
         .await?;

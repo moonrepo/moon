@@ -5,7 +5,5 @@ expression: graph.to_dot()
 digraph {
     0 [ label="SyncWorkspace" ]
     1 [ label="SetupToolchain(system)" ]
-    2 [ label="SyncProject(system, foo)" ]
     1 -> 0 [ ]
-    2 -> 1 [ ]
 }

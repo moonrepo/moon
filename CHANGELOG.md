@@ -30,6 +30,8 @@
 - Added a `--no-actions` flag to `moon run`, that will run the task without including the other
   actions, like `SyncProject`, `SetupToolchain`, etc.
 - Added a `--json` flag to `moon templates`.
+- Deprecated the `pipeline.archivableTargets` setting. All tasks are now automatically cached if
+  using Bazel Remote Caching.
 - Improved the performance of environment variable substitution.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.

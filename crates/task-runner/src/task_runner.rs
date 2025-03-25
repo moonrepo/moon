@@ -624,33 +624,25 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let archived = match self
+        if self
             .archiver
             .archive(hash, self.remote_state.as_mut())
             .await?
         {
-            Some(archive_file) => {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    archive_file = ?archive_file,
-                    "Ran cache archiving operation"
-                );
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Ran cache archiving operation"
+            );
 
-                operation.finish(ActionStatus::Passed);
+            operation.finish(ActionStatus::Passed);
+        } else {
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Nothing to archive"
+            );
 
-                true
-            }
-            None => {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    "Nothing to archive"
-                );
-
-                operation.finish(ActionStatus::Skipped);
-
-                false
-            }
-        };
+            operation.finish(ActionStatus::Skipped);
+        }
 
         self.operations.push(operation);
 

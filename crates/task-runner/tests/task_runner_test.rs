@@ -986,13 +986,6 @@ mod task_runner {
             let mut container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::new("project", "base").unwrap());
-            }
-
             let mut runner = container.create_runner();
 
             assert!(runner.archive("hash123").await.unwrap());

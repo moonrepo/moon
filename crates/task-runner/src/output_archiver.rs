@@ -24,84 +24,46 @@ impl OutputArchiver<'_> {
         &self,
         hash: &str,
         remote_state: Option<&mut ActionState<'_>>,
-    ) -> miette::Result<Option<PathBuf>> {
-        if !self.is_archivable()? {
-            return Ok(None);
-        }
+    ) -> miette::Result<bool> {
+        let mut archived = false;
 
-        // Check that outputs actually exist
-        if !self.has_outputs_been_created(false)? {
-            return Err(TaskRunnerError::MissingOutputs {
-                target: self.task.target.clone(),
+        if self.task.is_build_type() {
+            // Check that outputs actually exist
+            if !self.has_outputs_been_created(false)? {
+                return Err(TaskRunnerError::MissingOutputs {
+                    target: self.task.target.clone(),
+                }
+                .into());
             }
-            .into());
-        }
 
-        // If so, create and pack the archive!
-        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
+            // If so, create and pack the archive!
+            let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
 
-        if !archive_file.exists() {
-            if self.app.cache_engine.is_writable() {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash, "Archiving task outputs from project"
-                );
+            if !archive_file.exists() {
+                if self.app.cache_engine.is_writable() {
+                    debug!(
+                        task_target = self.task.target.as_str(),
+                        hash, "Archiving task outputs from project"
+                    );
 
-                self.create_local_archive(hash, &archive_file)?;
-            } else {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash, "Cache is not writable, skipping output archiving"
-                );
+                    self.create_local_archive(hash, &archive_file)?;
+                    archived = true;
+                } else {
+                    debug!(
+                        task_target = self.task.target.as_str(),
+                        hash, "Cache is not writable, skipping output archiving"
+                    );
+                }
             }
         }
 
         // Then cache the result in the remote service
         if let Some(state) = remote_state {
             self.upload_to_remote_service(state).await?;
+            archived = true;
         }
 
-        Ok(if archive_file.exists() {
-            Some(archive_file)
-        } else {
-            None
-        })
-    }
-
-    pub fn is_archivable(&self) -> miette::Result<bool> {
-        let task = self.task;
-
-        if task.is_build_type() {
-            return Ok(true);
-        }
-
-        for target in &self.app.workspace_config.pipeline.archivable_targets {
-            let is_matching_task = task.target.task_id == target.task_id;
-
-            match &target.scope {
-                TargetScope::All => {
-                    if is_matching_task {
-                        return Ok(true);
-                    }
-                }
-                TargetScope::Project(project_locator) => {
-                    if let Some(owner_id) = task.target.get_project_id() {
-                        if owner_id == project_locator && is_matching_task {
-                            return Ok(true);
-                        }
-                    }
-                }
-                TargetScope::Tag(tag_id) => {
-                    if self.project.config.tags.contains(tag_id) && is_matching_task {
-                        return Ok(true);
-                    }
-                }
-                TargetScope::Deps => return Err(TargetError::NoDepsInRunContext.into()),
-                TargetScope::OwnSelf => return Err(TargetError::NoSelfInRunContext.into()),
-            };
-        }
-
-        Ok(false)
+        Ok(archived)
     }
 
     #[instrument(skip(self))]

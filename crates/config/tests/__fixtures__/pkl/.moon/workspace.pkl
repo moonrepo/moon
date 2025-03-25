@@ -50,8 +50,7 @@ projects {
 	}
 }
 
-runner {
-	archivableTargets = List(":build", "app:lint")
+pipeline {
 	autoCleanCache = false
 	cacheLifetime = "1 day"
 	inheritColorsForPipedTasks = false

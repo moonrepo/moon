@@ -8,6 +8,7 @@ publish = false
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_env = { path = "../env" }
+moon_env_var = { path = "../env-var" }
 moon_time = { path = "../time" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }

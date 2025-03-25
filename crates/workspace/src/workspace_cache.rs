@@ -2,10 +2,10 @@ use crate::build_data::ProjectBuildData;
 use moon_cache::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_docker};
+use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
-use std::env;
 
 cache_item!(
     pub struct WorkspaceProjectsCacheState {
@@ -45,7 +45,9 @@ impl Default for WorkspaceGraphHash<'_> {
             configs: BTreeMap::default(),
             env: BTreeMap::default(),
             in_docker: is_docker(),
-            version: env::var("MOON_VERSION").unwrap_or_default(),
+            version: GlobalEnvBag::instance()
+                .get("MOON_VERSION")
+                .unwrap_or_default(),
         }
     }
 }
@@ -60,13 +62,15 @@ impl<'graph> WorkspaceGraphHash<'graph> {
     }
 
     pub fn gather_env(&mut self) {
+        let bag = GlobalEnvBag::instance();
+
         for key in [
             // Task options
             "MOON_OUTPUT_STYLE",
             "MOON_RETRY_COUNT",
         ] {
             self.env
-                .insert(key.to_owned(), env::var(key).unwrap_or_default());
+                .insert(key.to_owned(), bag.get(key).unwrap_or_default());
         }
     }
 }

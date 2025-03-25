@@ -3,6 +3,7 @@ use miette::IntoDiagnostic;
 use moon_common::consts::*;
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
+use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::{FeatureFlags, Flag};
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
@@ -35,7 +36,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
         "Attempting to find workspace root from current working directory",
     );
 
-    let workspace_root = if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
+    let workspace_root = if let Some(root) = GlobalEnvBag::instance().get("MOON_WORKSPACE_ROOT") {
         debug!(
             env_var = root,
             "Inheriting from {} environment variable",
@@ -177,9 +178,11 @@ pub async fn load_tasks_configs(
 
 #[instrument(skip_all)]
 pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
-    if vcs.is_enabled() && env::var("MOON_VCS_REPO_SLUG").is_err() {
+    let bag = GlobalEnvBag::instance();
+
+    if vcs.is_enabled() && !bag.has("MOON_VCS_REPO_SLUG") {
         if let Ok(slug) = vcs.get_repository_slug().await {
-            unsafe { env::set_var("MOON_VCS_REPO_SLUG", slug.as_str()) };
+            bag.set("MOON_VCS_REPO_SLUG", slug.as_str());
         }
     }
 

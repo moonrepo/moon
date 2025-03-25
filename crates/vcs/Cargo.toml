@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_env_var = { path = "../env-var" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }
 futures = { workspace = true }

@@ -9,7 +9,7 @@ miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 
 [lints]
 workspace = true

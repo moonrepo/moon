@@ -9,11 +9,11 @@ use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::{Cli, CliSession, Commands, commands, systems::bootstrap};
+use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_styles::color;
-use starbase_utils::env::bool_var;
 use starbase_utils::{dirs, string_vec};
 use std::env;
 use std::process::{Command, ExitCode};
@@ -25,12 +25,13 @@ static GLOBAL: MiMalloc = MiMalloc;
 fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
 
-    unsafe { env::set_var("MOON_VERSION", version) };
+    GlobalEnvBag::instance().set("MOON_VERSION", version);
 
     version.to_owned()
 }
 
 fn get_tracing_modules() -> Vec<String> {
+    let bag = GlobalEnvBag::instance();
     let mut modules = string_vec![
         "moon", "proto", // "schematic",
         "starbase",
@@ -42,13 +43,13 @@ fn get_tracing_modules() -> Vec<String> {
         // "rustls",
     ];
 
-    if bool_var("MOON_DEBUG_WASM") {
+    if bag.should_debug_wasm() {
         modules.push("extism".into());
     } else {
         modules.push("extism::pdk".into());
     }
 
-    if bool_var("MOON_DEBUG_REMOTE") {
+    if bag.should_debug_remote() {
         modules.push("tonic".into());
     }
 
@@ -93,7 +94,7 @@ async fn main() -> MainResult {
         dump_trace: cli.dump,
         filter_modules: get_tracing_modules(),
         intercept_log: true,
-        log_env: "MOON_APP_LOG".into(), // Don't conflict with proto
+        log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
         ..TracingOptions::default()
     });

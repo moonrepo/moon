@@ -7,6 +7,7 @@ use miette::IntoDiagnostic;
 use moon_api::Launchpad;
 use moon_common::consts::BIN_NAME;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
+use moon_env_var::GlobalEnvBag;
 use starbase::AppResult;
 use starbase_utils::fs;
 use std::{
@@ -67,9 +68,9 @@ pub async fn upgrade(session: CliSession) -> AppResult {
     };
 
     let current_bin_path = env::current_exe().into_diagnostic()?;
-    let bin_dir = match env::var("MOON_INSTALL_DIR") {
-        Ok(dir) => PathBuf::from(dir),
-        Err(_) => session.moon_env.store_root.join("bin"),
+    let bin_dir = match GlobalEnvBag::instance().get("MOON_INSTALL_DIR") {
+        Some(dir) => PathBuf::from(dir),
+        None => session.moon_env.store_root.join("bin"),
     };
 
     // We can only upgrade moon if it's installed under .moon

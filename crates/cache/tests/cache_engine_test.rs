@@ -1,6 +1,6 @@
 use moon_cache::*;
+use moon_env_var::GlobalEnvBag;
 use starbase_sandbox::create_empty_sandbox;
-use std::env;
 
 mod cache_engine {
     use super::*;
@@ -52,8 +52,9 @@ mod cache_engine {
     fn can_write_cache_if_mode_off() {
         let sandbox = create_empty_sandbox();
         let engine = CacheEngine::new(sandbox.path()).unwrap();
+        let bag = GlobalEnvBag::instance();
 
-        unsafe { env::set_var("MOON_CACHE", "off") };
+        bag.set("MOON_CACHE", "off");
 
         engine
             .write(
@@ -66,15 +67,16 @@ mod cache_engine {
 
         assert!(sandbox.path().join(".moon/cache/test.json").exists());
 
-        unsafe { env::remove_var("MOON_CACHE") };
+        bag.remove("MOON_CACHE");
     }
 
     #[test]
     fn can_write_cache_if_mode_readonly() {
         let sandbox = create_empty_sandbox();
         let engine = CacheEngine::new(sandbox.path()).unwrap();
+        let bag = GlobalEnvBag::instance();
 
-        unsafe { env::set_var("MOON_CACHE", "read") };
+        bag.set("MOON_CACHE", "read");
 
         engine
             .write(
@@ -87,6 +89,6 @@ mod cache_engine {
 
         assert!(sandbox.path().join(".moon/cache/states/test.json").exists());
 
-        unsafe { env::remove_var("MOON_CACHE") };
+        bag.remove("MOON_CACHE");
     }
 }

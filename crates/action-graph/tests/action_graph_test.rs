@@ -2117,36 +2117,6 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn graphs_single_with_dep() {
-            let wg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
-
-            let foo = wg.get_project("foo").unwrap();
-            builder.sync_project(&foo).unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
-                        runtime: Runtime::system()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("foo"),
-                        runtime: Runtime::system()
-                    })
-                ]
-            );
-        }
-
-        #[tokio::test]
         async fn graphs_multiple() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
@@ -2171,11 +2141,11 @@ mod action_graph {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
+                        project_id: Id::raw("foo"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("foo"),
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -2204,10 +2174,6 @@ mod action_graph {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {

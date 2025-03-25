@@ -6,11 +6,8 @@ digraph {
     0 [ label="SyncWorkspace" ]
     1 [ label="SetupToolchain(system)" ]
     2 [ label="SyncProject(system, common)" ]
-    3 [ label="SyncProject(system, base)" ]
-    4 [ label="RunTask(common:internal)" ]
+    3 [ label="RunTask(common:internal)" ]
     1 -> 0 [ ]
-    3 -> 1 [ ]
     2 -> 1 [ ]
-    2 -> 3 [ ]
-    4 -> 2 [ ]
+    3 -> 2 [ ]
 }

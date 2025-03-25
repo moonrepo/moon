@@ -80,7 +80,7 @@ impl<'app> ActionGraphBuilder<'app> {
         workspace_graph: &'app WorkspaceGraph,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<Self> {
-        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph, config)
+        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph, options)
     }
 
     pub fn with_platforms(

@@ -27,6 +27,8 @@
   - In our benchmarks, it's on average 1.5-2x faster.
   - We also attempt to cache the results, which occurs quite often when running tasks.
   - Globs are now logged to better debug performance issues.
+- Added a `--no-actions` flag to `moon run`, that will run the task without including the other
+  actions, like `SyncProject`, `SetupToolchain`, etc.
 - Added a `--json` flag to `moon templates`.
 - Improved the performance of environment variable substitution.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain

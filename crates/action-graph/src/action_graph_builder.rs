@@ -49,12 +49,18 @@ pub struct ActionGraphBuilderOptions {
 
 impl Default for ActionGraphBuilderOptions {
     fn default() -> Self {
+        Self::new(true)
+    }
+}
+
+impl ActionGraphBuilderOptions {
+    pub fn new(state: bool) -> Self {
         Self {
-            install_dependencies: true.into(),
-            setup_toolchains: true.into(),
-            sync_projects: true.into(),
-            sync_project_dependencies: true,
-            sync_workspace: true,
+            install_dependencies: state.into(),
+            setup_toolchains: state.into(),
+            sync_projects: state.into(),
+            sync_project_dependencies: state,
+            sync_workspace: state,
         }
     }
 }

@@ -2142,7 +2142,6 @@ mod action_graph {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
-                    // ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
                 ]
             );
         }
@@ -2240,6 +2239,46 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
+                        runtime: Runtime::system()
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("foo"),
+                        runtime: Runtime::system()
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("qux"),
+                        runtime: Runtime::system()
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn graphs_without_deps() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    sync_project_dependencies: false,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let foo = wg.get_project("foo").unwrap();
+            builder.sync_project(&foo).unwrap();
+
+            let qux = wg.get_project("qux").unwrap();
+            builder.sync_project(&qux).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {

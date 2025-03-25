@@ -9,6 +9,3 @@ expression: assert.output()
 
 Tasks: 1 completed
  Time: 100ms
-
-
-

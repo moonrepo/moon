@@ -64,6 +64,11 @@ pub struct PipelineConfig {
     #[setting(nested)]
     pub sync_projects: PipelineActionSwitch,
 
+    /// When creating `SyncProject` actions, recursively create a `SyncProject`
+    /// action for each project dependency, and link them as a relationship.
+    #[setting(default = true)]
+    pub sync_project_dependencies: bool,
+
     /// Run the `SyncWorkspace` action before all actions in the pipeline.
     #[setting(default = true)]
     pub sync_workspace: bool,

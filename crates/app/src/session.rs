@@ -4,14 +4,11 @@ use crate::commands::docker::DockerCommands;
 use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
-use moon_action_graph::ActionGraphBuilder;
+use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
-use moon_config::{
-    ConfigLoader, InheritedTasksManager, PartialPipelineConfig, PipelineActionSwitch,
-    ToolchainConfig, WorkspaceConfig,
-};
+use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
@@ -24,7 +21,6 @@ use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
-use schematic::Config;
 use semver::Version;
 use starbase::{AppResult, AppSession};
 use std::env;
@@ -92,29 +88,26 @@ impl CliSession {
         &self,
         workspace_graph: &'graph WorkspaceGraph,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(workspace_graph, self.workspace_config.pipeline.clone())
+        let config = &self.workspace_config.pipeline;
+
+        ActionGraphBuilder::new(
+            workspace_graph,
+            ActionGraphBuilderOptions {
+                install_dependencies: config.install_dependencies.clone(),
+                setup_toolchains: true.into(),
+                sync_projects: config.sync_projects.clone(),
+                sync_project_dependencies: config.sync_project_dependencies,
+                sync_workspace: config.sync_workspace,
+            },
+        )
     }
 
-    pub async fn build_action_graph_with<'graph>(
+    pub async fn build_action_graph_with_options<'graph>(
         &self,
         workspace_graph: &'graph WorkspaceGraph,
-        base_config: PartialPipelineConfig,
+        options: ActionGraphBuilderOptions,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
-        let mut config = self.workspace_config.pipeline.clone();
-
-        if let Some(value) = base_config.sync_workspace {
-            config.sync_workspace = value;
-        }
-
-        if let Some(value) = base_config.sync_projects {
-            config.sync_projects = PipelineActionSwitch::from_partial(value);
-        }
-
-        if let Some(value) = base_config.install_dependencies {
-            config.install_dependencies = PipelineActionSwitch::from_partial(value);
-        }
-
-        ActionGraphBuilder::new(workspace_graph, config)
+        ActionGraphBuilder::new(workspace_graph, options)
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {

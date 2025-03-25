@@ -7,9 +7,7 @@ use moon_action_context::TargetState;
 use moon_action_graph::*;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{
-    PipelineActionSwitch, PipelineConfig, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
-};
+use moon_config::{PipelineActionSwitch, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_workspace_graph;
@@ -2087,6 +2085,103 @@ mod action_graph {
                 ]
             );
         }
+
+        #[tokio::test]
+        async fn doesnt_add_if_disabled() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    setup_toolchains: false.into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let system = Runtime::system();
+            let node = Runtime::new(
+                Id::raw("node"),
+                create_runtime_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test]
+        async fn doesnt_add_if_not_listed() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    setup_toolchains: PipelineActionSwitch::Only(vec![Id::raw("system")]),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let system = Runtime::system();
+            let node = Runtime::new(
+                Id::raw("node"),
+                create_runtime_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn adds_if_not_listed() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    setup_toolchains: PipelineActionSwitch::Only(vec![
+                        Id::raw("system"),
+                        Id::raw("node"),
+                    ]),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let system = Runtime::system();
+            let node = Runtime::new(
+                Id::raw("node"),
+                create_runtime_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                ]
+            );
+        }
     }
 
     mod sync_project {
@@ -2119,36 +2214,6 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn graphs_single_with_dep() {
-            let wg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
-
-            let foo = wg.get_project("foo").unwrap();
-            builder.sync_project(&foo).unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
-                        runtime: Runtime::system()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("foo"),
-                        runtime: Runtime::system()
-                    })
-                ]
-            );
-        }
-
-        #[tokio::test]
         async fn graphs_multiple() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
@@ -2174,6 +2239,46 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
+                        runtime: Runtime::system()
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("foo"),
+                        runtime: Runtime::system()
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("qux"),
+                        runtime: Runtime::system()
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn graphs_without_deps() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    sync_project_dependencies: false,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let foo = wg.get_project("foo").unwrap();
+            builder.sync_project(&foo).unwrap();
+
+            let qux = wg.get_project("qux").unwrap();
+            builder.sync_project(&qux).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -2305,7 +2410,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_projects: false.into(),
                     ..Default::default()
                 },
@@ -2326,7 +2431,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("foo")]),
                     ..Default::default()
                 },
@@ -2347,7 +2452,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("bar")]),
                     ..Default::default()
                 },
@@ -2412,7 +2517,7 @@ mod action_graph {
 
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_workspace: false,
                     ..Default::default()
                 },

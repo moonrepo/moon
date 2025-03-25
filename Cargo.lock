@@ -557,7 +557,7 @@ dependencies = [
  "pbjson-types",
  "prost",
  "serde",
- "tonic",
+ "tonic 0.12.3",
 ]
 
 [[package]]
@@ -4631,7 +4631,6 @@ version = "0.0.1"
 dependencies = [
  "async-stream",
  "async-trait",
- "aws-lc-rs",
  "bazel-remote-apis",
  "chrono",
  "http 1.3.1",
@@ -4650,10 +4649,9 @@ dependencies = [
  "starbase_utils",
  "thiserror 2.0.12",
  "tokio",
- "tokio-rustls",
  "tokio-util",
- "tonic",
- "tower 0.4.13",
+ "tonic 0.13.0",
+ "tower 0.5.2",
  "tracing",
  "uuid",
  "zstd",
@@ -7658,7 +7656,6 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "bytes",
- "flate2",
  "h2",
  "http 1.3.1",
  "http-body 1.0.1",
@@ -7669,13 +7666,37 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
- "rustls-native-certs",
- "rustls-pemfile",
  "socket2",
+ "tokio",
+ "tokio-stream",
+ "tower 0.4.13",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
+name = "tonic"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85839f0b32fd242bb3209262371d07feda6d780d16ee9d2bc88581b89da1549b"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "bytes",
+ "flate2",
+ "http 1.3.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "hyper 1.6.0",
+ "hyper-timeout",
+ "hyper-util",
+ "percent-encoding",
+ "pin-project",
  "tokio",
  "tokio-rustls",
  "tokio-stream",
- "tower 0.4.13",
+ "tower 0.5.2",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -7709,11 +7730,15 @@ checksum = "d039ad9159c98b70ecfd540b2573b97f7f52c3e8d9f8ad57a24b916a536975f9"
 dependencies = [
  "futures-core",
  "futures-util",
+ "indexmap 2.8.0",
  "pin-project-lite",
+ "slab",
  "sync_wrapper",
  "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]

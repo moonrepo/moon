@@ -322,7 +322,7 @@ impl Cli {
         bootstrap::setup_colors(self.color);
 
         let bag = GlobalEnvBag::instance();
-        bag.set("MOON_APP_LOG", self.log.to_string());
+        bag.set("STARBASE_LOG", self.log.to_string());
 
         if !bag.has("MOON_LOG") {
             bag.set("MOON_LOG", self.log.to_string());

@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 
 static INSTANCE: OnceLock<GlobalEnvBag> = OnceLock::new();
 
+#[derive(Default)]
 pub struct GlobalEnvBag {
     inherited: scc::HashMap<OsString, OsString>,
     added: scc::HashMap<OsString, OsString>,
@@ -41,9 +42,25 @@ impl GlobalEnvBag {
     {
         let key = key.as_ref();
 
-        self.added
+        if let Some(value) = self
+            .added
             .read(key, |_, value| op(value))
             .or_else(|| self.inherited.read(key, |_, value| op(value)))
+        {
+            return Some(value);
+        }
+
+        // If it doesn't exist in our current bag, let's check the process,
+        // as it may have been inserted after the fact
+        if let Some(value) = env::var_os(key) {
+            let as_value = op(&value);
+
+            let _ = self.inherited.insert(key.into(), value);
+
+            return Some(as_value);
+        }
+
+        None
     }
 
     pub fn set<K, V>(&self, key: K, value: V)
@@ -54,7 +71,7 @@ impl GlobalEnvBag {
         let key = key.as_ref();
         let value = value.as_ref();
 
-        let _ = self.added.insert(key.into(), value.into());
+        self.added.upsert(key.into(), value.into());
 
         // These need to always be propagated to the parent process
         if key.to_str().is_some_and(|k| {

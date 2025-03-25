@@ -94,7 +94,7 @@ async fn main() -> MainResult {
         dump_trace: cli.dump,
         filter_modules: get_tracing_modules(),
         intercept_log: true,
-        log_env: "MOON_APP_LOG".into(), // Don't conflict with proto
+        log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
         ..TracingOptions::default()
     });

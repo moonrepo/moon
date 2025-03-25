@@ -7,7 +7,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
-use moon_config::{PipelineConfig, TaskDependencyConfig};
+use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
@@ -39,11 +39,29 @@ impl RunRequirements {
     }
 }
 
+pub struct ActionGraphBuilderOptions {
+    pub install_dependencies: PipelineActionSwitch,
+    pub setup_toolchains: PipelineActionSwitch,
+    pub sync_projects: PipelineActionSwitch,
+    pub sync_workspace: bool,
+}
+
+impl Default for ActionGraphBuilderOptions {
+    fn default() -> Self {
+        Self {
+            install_dependencies: true.into(),
+            setup_toolchains: true.into(),
+            sync_projects: true.into(),
+            sync_workspace: true,
+        }
+    }
+}
+
 pub struct ActionGraphBuilder<'app> {
     all_query: Option<Criteria<'app>>,
-    config: PipelineConfig,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
+    options: ActionGraphBuilderOptions,
     platform_manager: &'app PlatformManager,
     workspace_graph: &'app WorkspaceGraph,
 
@@ -60,7 +78,7 @@ pub struct ActionGraphBuilder<'app> {
 impl<'app> ActionGraphBuilder<'app> {
     pub fn new(
         workspace_graph: &'app WorkspaceGraph,
-        config: PipelineConfig,
+        options: ActionGraphBuilderOptions,
     ) -> miette::Result<Self> {
         ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph, config)
     }
@@ -68,7 +86,7 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn with_platforms(
         platform_manager: &'app PlatformManager,
         workspace_graph: &'app WorkspaceGraph,
-        config: PipelineConfig,
+        options: ActionGraphBuilderOptions,
     ) -> miette::Result<Self> {
         debug!("Building action graph");
 
@@ -78,7 +96,7 @@ impl<'app> ActionGraphBuilder<'app> {
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
             initial_targets: FxHashSet::default(),
-            config,
+            options,
             passthrough_targets: FxHashSet::default(),
             platform_manager,
             primary_targets: FxHashSet::default(),
@@ -259,16 +277,18 @@ impl<'app> ActionGraphBuilder<'app> {
         // If installing dependencies is disabled, we still need to ensure the toolchain
         // has been setup, and indirectly, the sync workspace action
         if !self
-            .config
+            .options
             .install_dependencies
             .is_enabled(&primary_toolchain)
         {
-            return Ok(Some(setup_tool_index));
+            return Ok(setup_tool_index);
         }
 
         let index = self.insert_node(node);
 
-        self.link_requirements(index, vec![setup_tool_index]);
+        if let Some(setup_tool_index) = setup_tool_index {
+            self.link_requirements(index, vec![setup_tool_index]);
+        }
 
         Ok(Some(index))
     }
@@ -680,13 +700,17 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    pub fn setup_toolchain(&mut self, runtime: &Runtime) -> NodeIndex {
+    pub fn setup_toolchain(&mut self, runtime: &Runtime) -> Option<NodeIndex> {
+        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) {
+            return None;
+        }
+
         let node = ActionNode::setup_toolchain(SetupToolchainNode {
             runtime: runtime.to_owned(),
         });
 
         if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
+            return Some(*index);
         }
 
         let sync_workspace_index = self.sync_workspace();
@@ -696,20 +720,12 @@ impl<'app> ActionGraphBuilder<'app> {
             self.link_requirements(index, vec![edge]);
         }
 
-        index
+        Some(index)
     }
 
     #[instrument(skip_all)]
     pub fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
-        self.internal_sync_project(project, &mut FxHashSet::default())
-    }
-
-    fn internal_sync_project(
-        &mut self,
-        project: &Project,
-        cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<Option<NodeIndex>> {
-        if !self.config.sync_projects.is_enabled(&project.id) {
+        if !self.options.sync_projects.is_enabled(&project.id) {
             return Ok(None);
         }
 
@@ -722,8 +738,6 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(Some(*index));
         }
 
-        cycle.insert(project.id.clone());
-
         // Determine affected state
         if let Some(affected) = &mut self.affected {
             if let Some(by) = affected.is_project_affected(project) {
@@ -734,30 +748,16 @@ impl<'app> ActionGraphBuilder<'app> {
         // Syncing requires the language's tool to be installed
         let setup_tool_index = self.setup_toolchain(node.get_runtime());
         let index = self.insert_node(node);
-        let mut edges = vec![setup_tool_index];
 
-        // And we should also depend on other projects
-        for dep_project_id in self.workspace_graph.projects.dependencies_of(project) {
-            if cycle.contains(&dep_project_id) {
-                continue;
-            }
-
-            let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
-
-            if let Some(dep_project_index) = self.internal_sync_project(&dep_project, cycle)? {
-                if index != dep_project_index {
-                    edges.push(dep_project_index);
-                }
-            }
+        if let Some(setup_tool_index) = setup_tool_index {
+            self.link_requirements(index, vec![setup_tool_index]);
         }
-
-        self.link_requirements(index, edges);
 
         Ok(Some(index))
     }
 
     pub fn sync_workspace(&mut self) -> Option<NodeIndex> {
-        if !self.config.sync_workspace {
+        if !self.options.sync_workspace {
             return None;
         }
 

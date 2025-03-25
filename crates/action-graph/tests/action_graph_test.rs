@@ -7,9 +7,7 @@ use moon_action_context::TargetState;
 use moon_action_graph::*;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{
-    PipelineActionSwitch, PipelineConfig, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
-};
+use moon_config::{PipelineActionSwitch, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_workspace_graph;
@@ -2305,7 +2303,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_projects: false.into(),
                     ..Default::default()
                 },
@@ -2326,7 +2324,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("foo")]),
                     ..Default::default()
                 },
@@ -2347,7 +2345,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("bar")]),
                     ..Default::default()
                 },
@@ -2412,7 +2410,7 @@ mod action_graph {
 
             let mut builder = ActionGraphBuilder::new(
                 &wg,
-                PipelineConfig {
+                ActionGraphBuilderOptions {
                     sync_workspace: false,
                     ..Default::default()
                 },

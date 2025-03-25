@@ -30,9 +30,9 @@ impl ActionGraphContainer {
             &self.workspace_graph,
             ActionGraphBuilderOptions {
                 install_dependencies: config.install_dependencies.clone(),
-                setup_toolchains: true.into(),
                 sync_projects: config.sync_projects.clone(),
                 sync_workspace: config.sync_workspace,
+                ..Default::default()
             },
         )
         .unwrap()

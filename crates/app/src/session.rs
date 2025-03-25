@@ -96,6 +96,7 @@ impl CliSession {
                 install_dependencies: config.install_dependencies.clone(),
                 setup_toolchains: true.into(),
                 sync_projects: config.sync_projects.clone(),
+                sync_project_dependencies: config.sync_project_dependencies,
                 sync_workspace: config.sync_workspace,
             },
         )

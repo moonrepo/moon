@@ -17,6 +17,7 @@ pub async fn sync(session: CliSession) -> AppResult {
                 install_dependencies: false.into(),
                 setup_toolchains: false.into(),
                 sync_projects: true.into(),
+                sync_project_dependencies: true,
                 sync_workspace: false,
             },
         )

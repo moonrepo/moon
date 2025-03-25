@@ -2085,6 +2085,104 @@ mod action_graph {
                 ]
             );
         }
+
+        #[tokio::test]
+        async fn doesnt_add_if_disabled() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    setup_toolchains: false.into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let system = Runtime::system();
+            let node = Runtime::new(
+                Id::raw("node"),
+                create_runtime_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test]
+        async fn doesnt_add_if_not_listed() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    setup_toolchains: PipelineActionSwitch::Only(vec![Id::raw("system")]),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let system = Runtime::system();
+            let node = Runtime::new(
+                Id::raw("node"),
+                create_runtime_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                    // ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn adds_if_not_listed() {
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(
+                &wg,
+                ActionGraphBuilderOptions {
+                    setup_toolchains: PipelineActionSwitch::Only(vec![
+                        Id::raw("system"),
+                        Id::raw("node"),
+                    ]),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let system = Runtime::system();
+            let node = Runtime::new(
+                Id::raw("node"),
+                create_runtime_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                ]
+            );
+        }
     }
 
     mod sync_project {
@@ -2141,11 +2239,11 @@ mod action_graph {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("foo"),
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
+                        project_id: Id::raw("foo"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -2174,6 +2272,10 @@ mod action_graph {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_toolchain(SetupToolchainNode {
+                        runtime: Runtime::system()
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {

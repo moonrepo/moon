@@ -7,12 +7,6 @@
 - We have sunset our [moonbase](https://moonrepo.app/) service and removed its integration from
   moon. If you were using moonbase's remote caching, we suggest using
   [Depot or self-hosting](https://moonrepo.dev/docs/guides/remote-cache) instead.
-- When building the action graph and inserting the `SyncProject` action, we would also recursively
-  insert the action for all dependencies of a project, as a means to ensure that all repo/project
-  state's were clean. However, this has resulted in complex graph relationships when the project
-  count grows, so we've decided to stop linking `SyncProject` actions between projects, and will
-  only link it based on running tasks. Going forward, the `moon sync` commands can be used to ensure
-  everything is synced and clean.
 
 #### 🚀 Updates
 
@@ -24,6 +18,8 @@
   kinds of action nodes exist in the action graph when running tasks.
   - `syncWorkspace` setting toggles the root `SyncWorkspace` action.
   - `syncProjects` setting toggles the `SyncProject` actions, and can be scoped to project IDs.
+  - `syncProjectDependencies` setting toggles whether to recursively link `SyncProject` actions
+    based on project dependencies.
   - `installDependencies` setting toggles the `InstallWorkspaceDeps` and `InstallProjectDeps`
     actions, and can be scoped to toolchain IDs.
 - Added an `experiments.fasterGlobWalk` setting to `.moon/workspace.yml`, that will use a better

@@ -43,6 +43,7 @@ pub struct ActionGraphBuilderOptions {
     pub install_dependencies: PipelineActionSwitch,
     pub setup_toolchains: PipelineActionSwitch,
     pub sync_projects: PipelineActionSwitch,
+    pub sync_project_dependencies: bool,
     pub sync_workspace: bool,
 }
 
@@ -52,6 +53,7 @@ impl Default for ActionGraphBuilderOptions {
             install_dependencies: true.into(),
             setup_toolchains: true.into(),
             sync_projects: true.into(),
+            sync_project_dependencies: true,
             sync_workspace: true,
         }
     }
@@ -725,6 +727,14 @@ impl<'app> ActionGraphBuilder<'app> {
 
     #[instrument(skip_all)]
     pub fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
+        self.internal_sync_project(project, &mut FxHashSet::default())
+    }
+
+    fn internal_sync_project(
+        &mut self,
+        project: &Project,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<Option<NodeIndex>> {
         if !self.options.sync_projects.is_enabled(&project.id) {
             return Ok(None);
         }
@@ -738,6 +748,8 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(Some(*index));
         }
 
+        cycle.insert(project.id.clone());
+
         // Determine affected state
         if let Some(affected) = &mut self.affected {
             if let Some(by) = affected.is_project_affected(project) {
@@ -746,11 +758,33 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Syncing requires the language's tool to be installed
-        let setup_tool_index = self.setup_toolchain(node.get_runtime());
+        let mut edges = vec![];
+
+        if let Some(setup_tool_index) = self.setup_toolchain(node.get_runtime()) {
+            edges.push(setup_tool_index);
+        }
+
         let index = self.insert_node(node);
 
-        if let Some(setup_tool_index) = setup_tool_index {
-            self.link_requirements(index, vec![setup_tool_index]);
+        // And we should also depend on other projects
+        if self.options.sync_project_dependencies {
+            for dep_project_id in self.workspace_graph.projects.dependencies_of(project) {
+                if cycle.contains(&dep_project_id) {
+                    continue;
+                }
+
+                let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
+
+                if let Some(dep_project_index) = self.internal_sync_project(&dep_project, cycle)? {
+                    if index != dep_project_index {
+                        edges.push(dep_project_index);
+                    }
+                }
+            }
+        }
+
+        if !edges.is_empty() {
+            self.link_requirements(index, edges);
         }
 
         Ok(Some(index))

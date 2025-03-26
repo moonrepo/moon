@@ -38,6 +38,10 @@
   - Added `DefineDockerMetadataOutput.default_image` field.
   - Added `SettingPrompt.description` field.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.85.1.
+
 ## 1.33.3
 
 #### 🐞 Fixes

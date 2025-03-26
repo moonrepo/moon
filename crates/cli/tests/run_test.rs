@@ -1,7 +1,7 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialPipelineConfig,
-    PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
+    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialVcsConfig,
+    PartialWorkspaceConfig, VcsProvider,
 };
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils::{
@@ -225,6 +225,7 @@ fn runs_task_with_a_mutex_in_sequence() {
 #[cfg(not(windows))]
 mod general {
     use super::*;
+    use moon_config::PartialPipelineConfig;
 
     #[test]
     fn logs_command_for_project_root() {

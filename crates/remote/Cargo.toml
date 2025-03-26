@@ -36,6 +36,7 @@ tonic = { version = "0.13.0", default-features = false, features = [
     "codegen",
     "gzip",
     "tls-aws-lc",
+    "tls-native-roots",
 ] }
 tower = { version = "0.5.2", features = ["retry", "timeout"] }
 

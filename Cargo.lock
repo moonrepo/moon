@@ -7648,6 +7648,7 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
+ "rustls-native-certs",
  "socket2",
  "tokio",
  "tokio-rustls",

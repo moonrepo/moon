@@ -4,10 +4,9 @@ use miette::IntoDiagnostic;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
 use moon_plugin::{
-    PluginError, PluginHostData, PluginId, PluginManifest, PluginRegistry, PluginType,
-    serialize_config,
+    PluginError, PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config,
 };
-use proto_core::{ProtoEnvironment, inject_proto_manifest_config};
+use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
 use std::future::Future;
@@ -85,27 +84,19 @@ impl ToolchainRegistry {
     {
         let id = PluginId::raw(id.as_ref());
 
-        if self.is_registered(&id) {
-            return self.get_instance(&id).await;
+        if !self.is_registered(&id) {
+            if !self.configs.contains_key(&id) {
+                return Err(PluginError::UnknownId {
+                    id: id.to_string(),
+                    ty: PluginType::Toolchain,
+                }
+                .into());
+            }
+
+            self.load_many([&id]).await?;
         }
 
-        let Some(config) = self.configs.get(&id) else {
-            return Err(PluginError::UnknownId {
-                id: id.to_string(),
-                ty: PluginType::Toolchain,
-            }
-            .into());
-        };
-
-        let orig_id = id.clone();
-
-        self.registry
-            .load_with_config(&orig_id, config.plugin.as_ref().unwrap(), move |manifest| {
-                apply_config(&id, config, &self.registry.host_data.proto_env, manifest)
-            })
-            .await?;
-
-        self.get_instance(&orig_id).await
+        self.get_instance(&id).await
     }
 
     pub async fn load_all(&self) -> miette::Result<()> {
@@ -115,26 +106,57 @@ impl ToolchainRegistry {
 
         debug!("Loading all toolchain plugins");
 
+        self.load_many(self.get_plugin_ids()).await
+    }
+
+    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<()>
+    where
+        I: IntoIterator<Item = Id>,
+        Id: AsRef<str>,
+    {
         let mut set = JoinSet::new();
 
-        for (id, config) in self.configs.clone() {
+        for id in ids {
+            let id = PluginId::raw(id.as_ref());
+
+            if self.registry.is_registered(&id) {
+                continue;
+            }
+
+            let Some(config) = self.configs.get(&id) else {
+                continue;
+            };
+
             let registry = Arc::clone(&self.registry);
+            let config = config.to_owned();
 
             set.spawn(async move {
-                if registry.is_registered(&id) {
-                    return Ok(());
-                }
-
                 registry
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
-                        apply_config(&id, &config, &registry.host_data.proto_env, manifest)
+                        let value = serialize_config(config.config.iter())?;
+
+                        trace!(
+                            toolchain_id = id.as_str(),
+                            config = %value,
+                            "Storing moon toolchain configuration",
+                        );
+
+                        manifest
+                            .config
+                            .insert("moon_toolchain_config".to_owned(), value);
+
+                        inject_proto_manifest_config(&id, &registry.host_data.proto_env, manifest)?;
+
+                        Ok(())
                     })
                     .await
             });
         }
 
-        while let Some(result) = set.join_next().await {
-            result.into_diagnostic()??;
+        if !set.is_empty() {
+            while let Some(result) = set.join_next().await {
+                result.into_diagnostic()??;
+            }
         }
 
         Ok(())
@@ -153,7 +175,7 @@ impl ToolchainRegistry {
     ) -> miette::Result<Vec<CallResult<Out>>>
     where
         I: IntoIterator<Item = Id>,
-        Id: AsRef<str>,
+        Id: AsRef<str> + Clone,
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
         OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
@@ -164,6 +186,11 @@ impl ToolchainRegistry {
         if !self.has_plugins() {
             return Ok(results);
         }
+
+        let toolchain_ids = toolchain_ids.into_iter().collect::<Vec<_>>();
+
+        // Load the plugins on-demand when we need them
+        self.load_many(toolchain_ids.clone()).await?;
 
         // Use ordered futures because we need the results to
         // be in a deterministic order for operations to work
@@ -214,27 +241,4 @@ pub struct CallResult<T> {
     pub id: PluginId,
     pub operation: Operation,
     pub output: T,
-}
-
-fn apply_config(
-    id: &PluginId,
-    config: &ToolchainPluginConfig,
-    proto_env: &ProtoEnvironment,
-    manifest: &mut PluginManifest,
-) -> miette::Result<()> {
-    let value = serialize_config(config.config.iter())?;
-
-    trace!(
-        toolchain_id = id.as_str(),
-        config = %value,
-        "Storing moon toolchain configuration",
-    );
-
-    manifest
-        .config
-        .insert("moon_toolchain_config".to_owned(), value);
-
-    inject_proto_manifest_config(id, proto_env, manifest)?;
-
-    Ok(())
 }

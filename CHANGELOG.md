@@ -33,6 +33,8 @@
 - Deprecated the `pipeline.archivableTargets` setting. All tasks are now automatically cached if
   using Bazel Remote Caching.
 - Improved the performance of environment variable substitution.
+- Improved toolchain plugin loading to be on-demand.
+- Improved sync cache invalidation for codeowners, config schemas, and VCS hooks.
 - Updated `moon docker file` to inherit the default Docker image from any applicable toolchain
   plugins.
 - Updated `moon sync` to no longer be deprecated, and instead sync the workspace and all projects.

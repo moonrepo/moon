@@ -27,6 +27,7 @@ pub async fn sync_codeowners(
 
     // Generate a hash for the codeowners file
     let mut codeowners_hash = CodeownersHash::new(&app_context.workspace_config.codeowners);
+    codeowners_hash.file_exists = generator.file_path.exists();
 
     if !app_context
         .workspace_config

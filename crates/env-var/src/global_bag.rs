@@ -78,6 +78,7 @@ impl GlobalEnvBag {
             k.starts_with("PROTO")
                 || k.starts_with("STARBASE")
                 || k.starts_with("WARPGATE")
+                || k.contains("COLOR")
                 || k == "PATH"
         }) {
             unsafe {

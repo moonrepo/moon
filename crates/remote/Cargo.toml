@@ -12,7 +12,7 @@ moon_env_var = { path = "../env-var" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
-bazel-remote-apis = { version = "0.16.0", features = ["serde"] }
+bazel-remote-apis = { version = "0.17.0", features = ["serde"] }
 chrono = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true, features = ["json", "rustls-tls"] }
@@ -26,24 +26,19 @@ tokio = { workspace = true }
 tokio-util = { workspace = true, features = ["io"] }
 tracing = { workspace = true }
 uuid = { workspace = true }
-zstd = "0.13.2"
+zstd = "0.13.3"
 
 # gRPC
 async-stream = "0.3.6"
-http = "1.3.0"
-tonic = { version = "0.12.3", default-features = false, features = [
+http = "1.3.1"
+tonic = { version = "0.13.0", default-features = false, features = [
     "channel",
+    "codegen",
     "gzip",
-    "tls",
+    "tls-aws-lc",
     "tls-native-roots",
 ] }
-tower = { version = "0.4.13", features = ["retry", "timeout"] }
-
-# Temporary until tonic v0.13
-aws-lc-rs = { version = "1.12.5", default-features = false, features = [
-    "prebuilt-nasm",
-] }
-tokio-rustls = "0.26.2"
+tower = { version = "0.5.2", features = ["retry", "timeout"] }
 
 [lints]
 workspace = true

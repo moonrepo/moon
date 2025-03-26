@@ -208,6 +208,8 @@ export interface PipelineConfig {
 	/**
 	 * List of target's for tasks without outputs, that should be
 	 * cached and persisted.
+	 *
+	 * @deprecated
 	 */
 	archivableTargets: string[];
 	/**
@@ -243,6 +245,13 @@ export interface PipelineConfig {
 	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand: boolean;
+	/**
+	 * When creating `SyncProject` actions, recursively create a `SyncProject`
+	 * action for each project dependency, and link them as a relationship.
+	 *
+	 * @default true
+	 */
+	syncProjectDependencies?: boolean;
 	/**
 	 * Run the `SyncProject` actions in the pipeline for each owning project
 	 * of a running task.
@@ -689,6 +698,8 @@ export interface PartialPipelineConfig {
 	/**
 	 * List of target's for tasks without outputs, that should be
 	 * cached and persisted.
+	 *
+	 * @deprecated
 	 */
 	archivableTargets?: string[] | null;
 	/**
@@ -724,6 +735,13 @@ export interface PartialPipelineConfig {
 	killProcessThreshold?: number | null;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand?: boolean | null;
+	/**
+	 * When creating `SyncProject` actions, recursively create a `SyncProject`
+	 * action for each project dependency, and link them as a relationship.
+	 *
+	 * @default true
+	 */
+	syncProjectDependencies?: boolean | null;
 	/**
 	 * Run the `SyncProject` actions in the pipeline for each owning project
 	 * of a running task.

@@ -31,6 +31,7 @@ impl From<bool> for PipelineActionSwitch {
 pub struct PipelineConfig {
     /// List of target's for tasks without outputs, that should be
     /// cached and persisted.
+    #[deprecated]
     pub archivable_targets: Vec<Target>,
 
     /// Automatically clean the cache after every task run.

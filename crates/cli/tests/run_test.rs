@@ -1,14 +1,12 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialPipelineConfig,
-    PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
+    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialVcsConfig,
+    PartialWorkspaceConfig, VcsProvider,
 };
-use moon_task::Target;
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils::{
     Sandbox, assert_debug_snapshot, assert_snapshot, create_sandbox_with_config,
-    get_cases_fixture_configs,
-    predicates::{self, prelude::*},
+    get_cases_fixture_configs, predicates::prelude::*,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
@@ -227,6 +225,7 @@ fn runs_task_with_a_mutex_in_sequence() {
 #[cfg(not(windows))]
 mod general {
     use super::*;
+    use moon_config::PartialPipelineConfig;
 
     #[test]
     fn logs_command_for_project_root() {
@@ -1172,7 +1171,7 @@ mod outputs {
         use super::*;
 
         #[test]
-        fn doesnt_archive_non_build_tasks() {
+        fn archives_non_build_tasks() {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
@@ -1183,82 +1182,7 @@ mod outputs {
             let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert!(
-                !sandbox
-                    .path()
-                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                    .exists()
-            );
-        }
-
-        #[test]
-        fn archives_non_build_tasks_with_full_target() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse("outputs:noOutput").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            sandbox.enable_git();
-
-            sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:noOutput");
-            });
-
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            assert!(
                 sandbox
-                    .path()
-                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                    .exists()
-            );
-        }
-
-        #[test]
-        fn archives_non_build_tasks_with_all_target() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            sandbox.enable_git();
-
-            sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:noOutput");
-            });
-
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            assert!(
-                sandbox
-                    .path()
-                    .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                    .exists()
-            );
-        }
-
-        #[test]
-        fn doesnt_archive_non_build_tasks_for_nonmatch_target() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse(":otherTarget").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            sandbox.enable_git();
-
-            sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:noOutput");
-            });
-
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            assert!(
-                !sandbox
                     .path()
                     .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
                     .exists()
@@ -1267,13 +1191,7 @@ mod outputs {
 
         #[test]
         fn archives_std_output() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
+            let sandbox = cases_sandbox();
             sandbox.enable_git();
 
             sandbox.run_moon(|cmd| {
@@ -1293,13 +1211,7 @@ mod outputs {
 
         #[test]
         fn can_hydrate_archives() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
+            let sandbox = cases_sandbox();
             sandbox.enable_git();
 
             sandbox.run_moon(|cmd| {
@@ -1315,50 +1227,6 @@ mod outputs {
             let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert_eq!(hash1, hash2);
-        }
-
-        #[test]
-        fn errors_for_deps_target() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse("^:otherTarget").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            sandbox.enable_git();
-
-            let assert = sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:noOutput");
-            });
-
-            assert!(
-                predicates::str::contains(
-                    "Dependencies scope (^:) is not supported in run contexts."
-                )
-                .eval(&assert.output())
-            );
-        }
-
-        #[test]
-        fn errors_for_self_target() {
-            let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    archivable_targets: Some(vec![Target::parse("~:otherTarget").unwrap()]),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            sandbox.enable_git();
-
-            let assert = sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:noOutput");
-            });
-
-            assert!(
-                predicates::str::contains("Self scope (~:) is not supported in run contexts.")
-                    .eval(&assert.output())
-            );
         }
     }
 }

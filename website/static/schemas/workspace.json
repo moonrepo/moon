@@ -538,6 +538,7 @@
         "archivableTargets": {
           "title": "archivableTargets",
           "description": "List of target's for tasks without outputs, that should be cached and persisted.",
+          "deprecated": true,
           "type": "array",
           "items": {
             "type": "string"
@@ -581,6 +582,13 @@
           "title": "logRunningCommand",
           "description": "Logs the task's command and arguments when running the task.",
           "type": "boolean"
+        },
+        "syncProjectDependencies": {
+          "title": "syncProjectDependencies",
+          "description": "When creating SyncProject actions, recursively create a SyncProject action for each project dependency, and link them as a relationship.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "When creating `SyncProject` actions, recursively create a `SyncProject` action for each project dependency, and link them as a relationship."
         },
         "syncProjects": {
           "title": "syncProjects",

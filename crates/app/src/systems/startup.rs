@@ -1,9 +1,10 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
-use moon_api::Moonbase;
 use moon_common::consts::*;
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
+use moon_env_var::GlobalEnvBag;
+use moon_feature_flags::{FeatureFlags, Flag};
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
@@ -35,7 +36,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
         "Attempting to find workspace root from current working directory",
     );
 
-    let workspace_root = if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
+    let workspace_root = if let Some(root) = GlobalEnvBag::instance().get("MOON_WORKSPACE_ROOT") {
         debug!(
             env_var = root,
             "Inheriting from {} environment variable",
@@ -176,24 +177,25 @@ pub async fn load_tasks_configs(
 }
 
 #[instrument(skip_all)]
-pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> miette::Result<Option<Arc<Moonbase>>> {
-    if vcs.is_enabled() && env::var("MOONBASE_REPO_SLUG").is_err() {
+pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
+    let bag = GlobalEnvBag::instance();
+
+    if vcs.is_enabled() && !bag.has("MOON_VCS_REPO_SLUG") {
         if let Ok(slug) = vcs.get_repository_slug().await {
-            unsafe { env::set_var("MOONBASE_REPO_SLUG", slug.as_str()) };
+            bag.set("MOON_VCS_REPO_SLUG", slug.as_str());
         }
     }
 
-    let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
-        return Ok(None);
-    };
+    Ok(())
+}
 
-    let Ok(repo_slug) = env::var("MOONBASE_REPO_SLUG") else {
-        Moonbase::no_vcs_root();
+#[instrument(skip_all)]
+pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
+    FeatureFlags::default()
+        .set(Flag::FastGlobWalk, config.experiments.faster_glob_walk)
+        .register();
 
-        return Ok(None);
-    };
-
-    Ok(Moonbase::signin(secret_key, repo_slug).await)
+    Ok(())
 }
 
 #[instrument(skip_all)]

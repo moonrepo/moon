@@ -61,8 +61,8 @@ projects:
                 Ok(load_config_from_file(path))
             });
 
-            assert_eq!(config.runner.cache_lifetime, "3 hours");
-            assert!(!config.runner.log_running_command);
+            assert_eq!(config.pipeline.cache_lifetime, "3 hours");
+            assert!(!config.pipeline.log_running_command);
             assert_eq!(config.vcs.provider, VcsProvider::Bitbucket);
         }
 
@@ -630,14 +630,13 @@ notifier:
 
     mod runner {
         use super::*;
-        use moon_target::Target;
 
         #[test]
         fn loads_defaults() {
             let config = test_load_config(FILENAME, "runner: {}", load_config_from_root);
 
-            assert_eq!(config.runner.cache_lifetime, "7 days");
-            assert!(config.runner.inherit_colors_for_piped_tasks);
+            assert_eq!(config.pipeline.cache_lifetime, "7 days");
+            assert!(config.pipeline.inherit_colors_for_piped_tasks);
         }
 
         #[test]
@@ -652,38 +651,8 @@ runner:
                 load_config_from_root,
             );
 
-            assert_eq!(config.runner.cache_lifetime, "10 hours");
-            assert!(!config.runner.inherit_colors_for_piped_tasks);
-        }
-
-        #[test]
-        fn can_use_targets() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-runner:
-  archivableTargets: ['scope:task']
-",
-                load_config_from_root,
-            );
-
-            assert_eq!(
-                config.runner.archivable_targets,
-                vec![Target::new("scope", "task").unwrap()]
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "Invalid target ~:bad target")]
-        fn errors_on_invalid_target() {
-            test_load_config(
-                FILENAME,
-                r"
-runner:
-  archivableTargets: ['bad target']
-",
-                load_config_from_root,
-            );
+            assert_eq!(config.pipeline.cache_lifetime, "10 hours");
+            assert!(!config.pipeline.inherit_colors_for_piped_tasks);
         }
     }
 
@@ -846,7 +815,6 @@ extensions:
         use super::*;
         use indexmap::IndexMap;
         use moon_config::*;
-        use moon_target::Target;
         use starbase_sandbox::locate_fixture;
         use std::str::FromStr;
 
@@ -926,17 +894,14 @@ extensions:
                 })
             );
             assert_eq!(
-                config.runner,
-                RunnerConfig {
-                    archivable_targets: vec![
-                        Target::parse(":build").unwrap(),
-                        Target::parse("app:lint").unwrap()
-                    ],
+                config.pipeline,
+                PipelineConfig {
                     auto_clean_cache: false,
                     cache_lifetime: "1 day".into(),
                     inherit_colors_for_piped_tasks: false,
                     kill_process_threshold: 2000,
-                    log_running_command: true
+                    log_running_command: true,
+                    ..Default::default()
                 }
             );
             assert!(!config.telemetry);

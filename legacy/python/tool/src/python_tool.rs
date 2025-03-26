@@ -255,7 +255,6 @@ impl Tool for PythonTool {
 
             if setup || !self.tool.get_product_dir().exists() {
                 self.console
-                    .out
                     .print_checkpoint(Checkpoint::Setup, format!("installing python {version}"))?;
 
                 if self.tool.setup(version, InstallOptions::default()).await? {

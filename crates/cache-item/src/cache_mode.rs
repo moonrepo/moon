@@ -1,4 +1,4 @@
-use std::env;
+use moon_env_var::GlobalEnvBag;
 use std::fmt;
 use tracing::warn;
 
@@ -75,7 +75,7 @@ impl CacheMode {
 }
 
 pub fn get_cache_mode() -> CacheMode {
-    if let Ok(var) = env::var("MOON_CACHE") {
+    if let Some(var) = GlobalEnvBag::instance().get("MOON_CACHE") {
         return CacheMode::from(var);
     }
 

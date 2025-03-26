@@ -105,6 +105,8 @@ export interface ExperimentsConfig {
 	 * @default true
 	 */
 	disallowRunInCiMismatch?: boolean;
+	/** Enable faster glob file system walking. */
+	fasterGlobWalk: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -199,24 +201,15 @@ export interface NotifierConfig {
 	webhookUrl: string | null;
 }
 
-/** Configures projects in the workspace, using both globs and explicit source paths. */
-export interface WorkspaceProjectsConfig {
-	/**
-	 * A list of globs in which to locate project directories.
-	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
-	 */
-	globs: string[];
-	/** A mapping of project IDs to relative file paths to each project directory. */
-	sources: Record<string, string>;
-}
-
-export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<string, string>;
+export type PipelineActionSwitch = null | boolean | string[];
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
-export interface RunnerConfig {
+export interface PipelineConfig {
 	/**
 	 * List of target's for tasks without outputs, that should be
 	 * cached and persisted.
+	 *
+	 * @deprecated
 	 */
 	archivableTargets: string[];
 	/**
@@ -238,6 +231,11 @@ export interface RunnerConfig {
 	 */
 	inheritColorsForPipedTasks?: boolean;
 	/**
+	 * Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
+	 * each running task when changes to lockfiles and manifests are detected.
+	 */
+	installDependencies: PipelineActionSwitch;
+	/**
 	 * Threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
 	 * of 0 will not kill the process and let them run to completion.
@@ -247,7 +245,38 @@ export interface RunnerConfig {
 	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand: boolean;
+	/**
+	 * When creating `SyncProject` actions, recursively create a `SyncProject`
+	 * action for each project dependency, and link them as a relationship.
+	 *
+	 * @default true
+	 */
+	syncProjectDependencies?: boolean;
+	/**
+	 * Run the `SyncProject` actions in the pipeline for each owning project
+	 * of a running task.
+	 */
+	syncProjects: PipelineActionSwitch;
+	/**
+	 * Run the `SyncWorkspace` action before all actions in the pipeline.
+	 *
+	 * @default true
+	 */
+	syncWorkspace?: boolean;
 }
+
+/** Configures projects in the workspace, using both globs and explicit source paths. */
+export interface WorkspaceProjectsConfig {
+	/**
+	 * A list of globs in which to locate project directories.
+	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
+	 */
+	globs: string[];
+	/** A mapping of project IDs to relative file paths to each project directory. */
+	sources: Record<string, string>;
+}
+
+export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<string, string>;
 
 /** The API format of the remote service. */
 export type RemoteApi = 'grpc' | 'http';
@@ -456,14 +485,14 @@ export interface WorkspaceConfig {
 	hasher: HasherConfig;
 	/** Configures how and where notifications are sent. */
 	notifier: NotifierConfig;
+	/** Configures aspects of the action pipeline. */
+	pipeline: PipelineConfig;
 	/**
 	 * Configures all projects within the workspace to create a project graph.
 	 * Accepts a list of globs, a mapping of projects to relative file paths,
 	 * or both values.
 	 */
 	projects: WorkspaceProjects;
-	/** Configures aspects of the task runner (also known as the action pipeline). */
-	runner: RunnerConfig;
 	/**
 	 * Collects anonymous usage information, and checks for new moon versions.
 	 *
@@ -574,6 +603,8 @@ export interface PartialExperimentsConfig {
 	 * @default true
 	 */
 	disallowRunInCiMismatch?: boolean | null;
+	/** Enable faster glob file system walking. */
+	fasterGlobWalk?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated
@@ -660,27 +691,15 @@ export interface PartialNotifierConfig {
 	webhookUrl?: string | null;
 }
 
-/** Configures projects in the workspace, using both globs and explicit source paths. */
-export interface PartialWorkspaceProjectsConfig {
-	/**
-	 * A list of globs in which to locate project directories.
-	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
-	 */
-	globs?: string[] | null;
-	/** A mapping of project IDs to relative file paths to each project directory. */
-	sources?: Record<string, string> | null;
-}
-
-export type PartialWorkspaceProjects =
-	| PartialWorkspaceProjectsConfig
-	| string[]
-	| Record<string, string>;
+export type PartialPipelineActionSwitch = null | boolean | string[];
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
-export interface PartialRunnerConfig {
+export interface PartialPipelineConfig {
 	/**
 	 * List of target's for tasks without outputs, that should be
 	 * cached and persisted.
+	 *
+	 * @deprecated
 	 */
 	archivableTargets?: string[] | null;
 	/**
@@ -702,6 +721,11 @@ export interface PartialRunnerConfig {
 	 */
 	inheritColorsForPipedTasks?: boolean | null;
 	/**
+	 * Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
+	 * each running task when changes to lockfiles and manifests are detected.
+	 */
+	installDependencies?: PartialPipelineActionSwitch | null;
+	/**
 	 * Threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
 	 * of 0 will not kill the process and let them run to completion.
@@ -711,7 +735,41 @@ export interface PartialRunnerConfig {
 	killProcessThreshold?: number | null;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand?: boolean | null;
+	/**
+	 * When creating `SyncProject` actions, recursively create a `SyncProject`
+	 * action for each project dependency, and link them as a relationship.
+	 *
+	 * @default true
+	 */
+	syncProjectDependencies?: boolean | null;
+	/**
+	 * Run the `SyncProject` actions in the pipeline for each owning project
+	 * of a running task.
+	 */
+	syncProjects?: PartialPipelineActionSwitch | null;
+	/**
+	 * Run the `SyncWorkspace` action before all actions in the pipeline.
+	 *
+	 * @default true
+	 */
+	syncWorkspace?: boolean | null;
 }
+
+/** Configures projects in the workspace, using both globs and explicit source paths. */
+export interface PartialWorkspaceProjectsConfig {
+	/**
+	 * A list of globs in which to locate project directories.
+	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
+	 */
+	globs?: string[] | null;
+	/** A mapping of project IDs to relative file paths to each project directory. */
+	sources?: Record<string, string> | null;
+}
+
+export type PartialWorkspaceProjects =
+	| PartialWorkspaceProjectsConfig
+	| string[]
+	| Record<string, string>;
 
 /** Configures basic HTTP authentication. */
 export interface PartialRemoteAuthConfig {
@@ -897,14 +955,14 @@ export interface PartialWorkspaceConfig {
 	hasher?: PartialHasherConfig | null;
 	/** Configures how and where notifications are sent. */
 	notifier?: PartialNotifierConfig | null;
+	/** Configures aspects of the action pipeline. */
+	pipeline?: PartialPipelineConfig | null;
 	/**
 	 * Configures all projects within the workspace to create a project graph.
 	 * Accepts a list of globs, a mapping of projects to relative file paths,
 	 * or both values.
 	 */
 	projects?: PartialWorkspaceProjects | null;
-	/** Configures aspects of the task runner (also known as the action pipeline). */
-	runner?: PartialRunnerConfig | null;
 	/**
 	 * Collects anonymous usage information, and checks for new moon versions.
 	 *

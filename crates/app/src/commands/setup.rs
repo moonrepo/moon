@@ -1,18 +1,29 @@
-use crate::helpers::create_progress_bar;
+use crate::components::create_progress_loader;
 use crate::session::CliSession;
 use crate::systems::analyze;
+use iocraft::prelude::element;
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
 
 #[instrument]
 pub async fn setup(session: CliSession) -> AppResult {
-    let done = create_progress_bar("Downloading and installing tools...");
-
-    session.get_toolchain_registry().await?.load_all().await?;
+    let progress = create_progress_loader(
+        session.get_console()?,
+        "Downloading and installing tools...",
+    );
 
     analyze::load_toolchain().await?;
 
-    done("Setup complete", true);
+    progress.stop().await?;
+
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(content: "Toolchain has been setup!")
+            }
+        }
+    })?;
 
     Ok(None)
 }

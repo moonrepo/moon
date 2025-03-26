@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
-moon_config = { path = "../config", features = ["loader"] }
+moon_config = { path = "../config" }
 moon_file_group = { path = "../file-group" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
@@ -22,6 +22,7 @@ rustc-hash = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_config = { path = "../config", features = ["loader", "proto"] }
 moon_plugin = { path = "../plugin" }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }

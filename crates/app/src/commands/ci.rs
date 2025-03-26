@@ -47,7 +47,8 @@ struct CiConsole {
 
 impl CiConsole {
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
-        self.inner.out.write_line(data)
+        self.inner.out.write_line(data)?;
+        Ok(())
     }
 
     pub fn print_header(&mut self, title: &str) -> miette::Result<()> {

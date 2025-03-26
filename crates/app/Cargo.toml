@@ -18,10 +18,11 @@ moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_console = { path = "../console" }
-moon_console_reporter = { path = "../console-reporter" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
+moon_env_var = { path = "../env-var" }
 moon_extension_plugin = { path = "../extension-plugin" }
+moon_feature_flags = { path = "../feature-flags" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }
@@ -42,18 +43,20 @@ bytes = "1.10.1"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
-    "derive",
     "env",
     "help",
+    "string",
     "suggestions",
     "usage",
     "wrap_help",
 ] }
 clap_complete = { workspace = true }
 clap_complete_nushell = "4.5.5"
+clean-path = { workspace = true }
+convert_case = { workspace = true }
 diff = "0.1.13"
+iocraft = { workspace = true }
 miette = { workspace = true }
-once_cell = { workspace = true }
 proto_core = { workspace = true }
 proto_installer = { workspace = true }
 regex = { workspace = true }
@@ -78,9 +81,6 @@ tera = { workspace = true }
 tiny_http = "0.12.0"
 
 # TODO remove
-console = { workspace = true }
-dialoguer = { version = "0.11.0", default-features = false }
-indicatif = "0.17.11"
 moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }

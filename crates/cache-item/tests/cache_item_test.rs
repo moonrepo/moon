@@ -1,28 +1,28 @@
 use moon_cache_item::*;
+use moon_env_var::GlobalEnvBag;
 use serial_test::serial;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
-use std::env;
 use std::path::Path;
 
 fn run_with_mode<T, F>(mode: CacheMode, callback: F) -> T
 where
     F: FnOnce() -> T,
 {
-    unsafe {
-        env::set_var(
-            "MOON_CACHE",
-            match mode {
-                CacheMode::Off => "off",
-                CacheMode::Read => "read",
-                CacheMode::ReadWrite => "read-write",
-                CacheMode::Write => "write",
-            },
-        )
-    };
+    let bag = GlobalEnvBag::instance();
+
+    bag.set(
+        "MOON_CACHE",
+        match mode {
+            CacheMode::Off => "off",
+            CacheMode::Read => "read",
+            CacheMode::ReadWrite => "read-write",
+            CacheMode::Write => "write",
+        },
+    );
 
     let result = callback();
 
-    unsafe { env::remove_var("MOON_CACHE") };
+    bag.remove("MOON_CACHE");
 
     result
 }

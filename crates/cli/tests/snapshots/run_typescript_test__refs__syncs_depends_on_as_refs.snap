@@ -16,4 +16,3 @@ expression: "read_to_string(sandbox.path().join(\"syncs-deps-refs/tsconfig.json\
     }
   ]
 }
-

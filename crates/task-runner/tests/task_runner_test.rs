@@ -3,11 +3,11 @@ mod utils;
 use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::CacheMode;
+use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_time::now_millis;
-use std::env;
 use utils::*;
 
 mod task_runner {
@@ -487,7 +487,7 @@ mod task_runner {
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
-                unsafe { env::remove_var("MOON_CACHE") };
+                GlobalEnvBag::instance().remove("MOON_CACHE");
             }
 
             #[tokio::test]
@@ -506,7 +506,7 @@ mod task_runner {
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
-                unsafe { env::remove_var("MOON_CACHE") };
+                GlobalEnvBag::instance().remove("MOON_CACHE");
             }
         }
 
@@ -946,7 +946,6 @@ mod task_runner {
 
     mod archive {
         use super::*;
-        use std::sync::Arc;
 
         #[tokio::test]
         async fn creates_a_passed_operation_if_archived() {
@@ -966,32 +965,9 @@ mod task_runner {
         }
 
         #[tokio::test]
-        async fn creates_a_skipped_operation_if_not_archiveable() {
+        async fn can_archive_tasks_without_outputs() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
-
-            let mut runner = container.create_runner();
-            let result = runner.archive("hash123").await.unwrap();
-
-            assert!(!result);
-
-            let operation = runner.operations.last().unwrap();
-
-            assert!(operation.meta.is_archive_creation());
-            assert_eq!(operation.status, ActionStatus::Skipped);
-        }
-
-        #[tokio::test]
-        async fn can_archive_tasks_without_outputs() {
-            let mut container = TaskRunnerContainer::new("runner", "base").await;
-            container.sandbox.enable_git();
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .runner
-                    .archivable_targets
-                    .push(Target::new("project", "base").unwrap());
-            }
 
             let mut runner = container.create_runner();
 

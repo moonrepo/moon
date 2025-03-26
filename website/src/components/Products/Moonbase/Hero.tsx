@@ -1,10 +1,10 @@
 import LogoIcon from '../../../../static/brand/moonbase/icon.svg';
 import TextVector from '../../../../static/brand/moonbase/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';
-import Icon from '../../../ui/iconography/Icon';
+// import Icon from '../../../ui/iconography/Icon';
 import DocLink from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
-import CTA from '../../Home/CTA';
+// import CTA from '../../Home/CTA';
 import HeroIcon from '../HeroIcon';
 import Screenshots from './Screenshots';
 
@@ -16,7 +16,8 @@ export default function Hero() {
 					<HeroIcon icon={<LogoIcon height={77} />} text={<TextVector height={70} />} />
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A service for monitoring codebases, tracking ownership, and scaling CI pipelines.
+						A service for monitoring codebases, tracking ownership, and scaling CI pipelines.{' '}
+						<span className="text-red-500">This product has been discontinued!</span>
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
@@ -27,7 +28,7 @@ export default function Hero() {
 						powered repositories.
 					</p>
 
-					<div className="mt-3 flex justify-center md:justify-start">
+					{/* <div className="mt-3 flex justify-center md:justify-start">
 						<div>
 							<CTA href="https://moonrepo.app" color="bg-teal-600">
 								Try it today
@@ -38,7 +39,7 @@ export default function Hero() {
 								/>
 							</CTA>
 						</div>
-					</div>
+					</div> */}
 				</div>
 
 				<div className="mt-4 md:mt-0 md:w-5/12">

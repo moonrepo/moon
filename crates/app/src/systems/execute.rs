@@ -23,7 +23,7 @@ pub async fn check_for_new_version(
                 return Ok(None);
             }
 
-            console.out.print_checkpoint(
+            console.print_checkpoint(
                 Checkpoint::Announcement,
                 format!(
                     "There's a new version of moon available, {} (currently on {})!",
@@ -33,12 +33,10 @@ pub async fn check_for_new_version(
             )?;
 
             if let Some(newer_message) = result.message {
-                console
-                    .out
-                    .print_checkpoint(Checkpoint::Announcement, newer_message)?;
+                console.print_checkpoint(Checkpoint::Announcement, newer_message)?;
             }
 
-            console.out.print_checkpoint(
+            console.print_checkpoint(
                 Checkpoint::Announcement,
                 format!(
                     "Run {} or install from {}",

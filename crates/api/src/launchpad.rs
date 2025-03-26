@@ -1,8 +1,8 @@
 use miette::IntoDiagnostic;
 use moon_cache::{CacheEngine, cache_item};
-use moon_common::consts::CONFIG_DIRNAME;
-use moon_common::is_test_env;
+use moon_common::{consts::CONFIG_DIRNAME, is_test_env};
 use moon_env::MoonEnvironment;
+use moon_env_var::GlobalEnvBag;
 use moon_time::now_millis;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -46,7 +46,9 @@ fn create_anonymous_rid(workspace_root: &Path) -> String {
     format!(
         "{:x}",
         md5::compute(
-            env::var("MOONBASE_REPO_SLUG").unwrap_or_else(|_| fs::file_name(workspace_root)),
+            GlobalEnvBag::instance()
+                .get("MOON_VCS_REPO_SLUG")
+                .unwrap_or_else(|| fs::file_name(workspace_root)),
         )
     )
 }
@@ -99,7 +101,9 @@ impl Launchpad {
             return Ok(None);
         }
 
-        let version = env::var("MOON_VERSION").unwrap_or_default();
+        let version = GlobalEnvBag::instance()
+            .get("MOON_VERSION")
+            .unwrap_or_default();
 
         debug!(
             current_version = &version,

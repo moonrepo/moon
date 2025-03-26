@@ -1,28 +1,29 @@
 use miette::IntoDiagnostic;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 pub use regex::{Captures, Regex};
 
 // Capture group for IDs/names/etc
 pub static ID_GROUP: &str = "([A-Za-z]{1}[0-9A-Za-z/\\._-]*)";
 
-pub static ID_CLEAN: Lazy<regex::Regex> =
-    Lazy::new(|| create_regex("[^0-9A-Za-z/\\._-]+").unwrap());
+pub static ID_CLEAN: LazyLock<regex::Regex> =
+    LazyLock::new(|| create_regex("[^0-9A-Za-z/\\._-]+").unwrap());
 
-pub static ID_PATTERN: Lazy<regex::Regex> =
-    Lazy::new(|| create_regex(format!("^{}$", ID_GROUP)).unwrap());
+pub static ID_PATTERN: LazyLock<regex::Regex> =
+    LazyLock::new(|| create_regex(format!("^{}$", ID_GROUP)).unwrap());
 
-pub static TARGET_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
+pub static TARGET_PATTERN: LazyLock<regex::Regex> = LazyLock::new(|| {
     // Only target projects support `@` because of Node.js,
     // we don't want to support it in regular IDs!
     create_regex("^(?P<project>(?:[A-Za-z@#]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap()
 });
 
 // Input values
-pub static ENV_VAR: Lazy<regex::Regex> = Lazy::new(|| create_regex("^\\$[A-Z0-9_]+$").unwrap());
+pub static ENV_VAR: LazyLock<regex::Regex> =
+    LazyLock::new(|| create_regex("^\\$[A-Z0-9_]+$").unwrap());
 
-pub static ENV_VAR_SUBSTITUTE: Lazy<regex::Regex> =
-    Lazy::new(|| create_regex("\\$\\{([A-Z0-9_]+)\\}").unwrap());
+pub static ENV_VAR_SUBSTITUTE: LazyLock<regex::Regex> =
+    LazyLock::new(|| create_regex("\\$\\{([A-Z0-9_]+)\\}").unwrap());
 
 #[inline]
 pub fn create_regex<V: AsRef<str>>(value: V) -> miette::Result<Regex> {

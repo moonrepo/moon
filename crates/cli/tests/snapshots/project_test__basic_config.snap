@@ -2,28 +2,29 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
- BASIC 
+About ──────────────────
 
-Project: basic
-Source: basic
-Toolchain: node
-Language: javascript
-Stack: unknown
-Type: unknown
-Tags: vue
+  Project: basic
+  Source: basic
+  Toolchain: node
+  Language: javascript
+  Stack: unknown
+  Type: unknown
+  Depends on:
+    - noConfig (explicit, production)
 
- DEPENDS ON 
+Configuation ───────────
 
-  - noConfig (explicit, production)
+  Inherits from:
+    - .moon/tasks.yml
+  Tags:
+    - vue
+  Environment variables: —
 
- INHERITS FROM 
+File groups ────────────
 
-  - .moon/tasks.yml
-
- FILE GROUPS 
-
-sources:
-  - basic/src/**/*
-  - basic/types/**/*
-tests:
-  - basic/**/*_test.rs
+  sources:
+    - basic/src/**/*
+    - basic/types/**/*
+  tests:
+    - basic/**/*_test.rs

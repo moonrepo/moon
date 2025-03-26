@@ -6,7 +6,6 @@ use crate::run_state::*;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
-use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
@@ -157,7 +156,7 @@ impl<'task> TaskRunner<'task> {
 
                 self.report_item.hash = maybe_hash.clone();
 
-                self.app.console.reporter.on_task_completed(
+                self.app.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &self.report_item,
@@ -178,7 +177,7 @@ impl<'task> TaskRunner<'task> {
 
                 self.inject_failed_task_execution(Some(&error))?;
 
-                self.app.console.reporter.on_task_completed(
+                self.app.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &self.report_item,
@@ -326,21 +325,6 @@ impl<'task> TaskRunner<'task> {
                 state.set_action_result(result);
 
                 return Ok(Some(HydrateFrom::RemoteCache));
-            }
-        }
-
-        // Check if archive exists in moonbase (remote storage) by querying the artifacts
-        // endpoint. This only checks that the database record exists!
-        if let Some(moonbase) = Moonbase::session() {
-            if let Some((artifact, _)) = moonbase.read_artifact(hash).await? {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash,
-                    artifact_id = artifact.id,
-                    "Cache hit in remote cache, will attempt to download the archive"
-                );
-
-                return Ok(Some(HydrateFrom::Moonbase));
             }
         }
 
@@ -640,33 +624,27 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let archived = match self
+        let archived = self
             .archiver
             .archive(hash, self.remote_state.as_mut())
             .await?
-        {
-            Some(archive_file) => {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    archive_file = ?archive_file,
-                    "Ran cache archiving operation"
-                );
+            .is_some();
 
-                operation.finish(ActionStatus::Passed);
+        if archived {
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Ran cache archiving operation"
+            );
 
-                true
-            }
-            None => {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    "Nothing to archive"
-                );
+            operation.finish(ActionStatus::Passed);
+        } else {
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Nothing to archive"
+            );
 
-                operation.finish(ActionStatus::Skipped);
-
-                false
-            }
-        };
+            operation.finish(ActionStatus::Skipped);
+        }
 
         self.operations.push(operation);
 
@@ -764,7 +742,7 @@ impl<'task> TaskRunner<'task> {
 
         // Then finalize the operation and target state
         operation.finish(match from {
-            HydrateFrom::Moonbase | HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
             _ => ActionStatus::Cached,
         });
 
@@ -801,7 +779,7 @@ impl<'task> TaskRunner<'task> {
 
         operation.finish(ActionStatus::Aborted);
 
-        self.app.console.reporter.on_task_finished(
+        self.app.console.on_task_finished(
             &self.task.target,
             &operation,
             &self.report_item,

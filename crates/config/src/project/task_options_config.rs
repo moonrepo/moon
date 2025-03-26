@@ -153,8 +153,9 @@ impl TaskOperatingSystem {
 
 derive_enum!(
     /// A list of available shells on Unix.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskUnixShell {
+        #[default]
         Bash,
         Elvish,
         Fish,
@@ -171,7 +172,7 @@ derive_enum!(
 
 derive_enum!(
     /// A list of available shells on Windows.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskWindowsShell {
         Bash,
         Elvish,
@@ -179,6 +180,7 @@ derive_enum!(
         Murex,
         #[serde(alias = "nushell")]
         Nu,
+        #[default]
         #[serde(alias = "powershell")]
         Pwsh,
         Xonsh,

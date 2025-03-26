@@ -1,15 +1,18 @@
 use moon_common::path::RelativePathBuf;
 use moon_config::TemplateFrontmatterConfig;
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum MergeType {
     Json,
     Yaml,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum FileState {
     Create,
     Merge,
@@ -17,7 +20,7 @@ pub enum FileState {
     Skip,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct TemplateFile {
     /// Frontmatter extracted into a config.
     pub config: Option<TemplateFrontmatterConfig>,

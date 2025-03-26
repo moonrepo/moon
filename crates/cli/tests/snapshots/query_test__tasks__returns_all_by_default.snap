@@ -2,12 +2,22 @@
 source: crates/cli/tests/query_test.rs
 expression: assert.output_standardized()
 ---
-metadata
-	build | noop | test | system | Builds the project!
-	test | noop | test | system | Runs the test runner!
-platforms
-	node | node | test | node | ...
-	system | noop | test | system | ...
-tasks
-	lint | eslint | build | node, typescript | ...
-	test | jest | test | node, typescript | ...
+╭──────────────────────────────────────────────────────────╮
+│Task         Comman  Type    Prese  Toolchains      Descri│
+│             d               t                      ption │
+│──────────────────────────────────────────────────────────│
+│metadata:bu  noop   test          system         Builds   │
+│ild                                              the      │
+│                                                 project! │
+│metadata:t  noop    test         system         Runs      │
+│est                                             the test  │
+│                                                runner!   │
+│platforms:nod  node     test            node              │
+│e                                                         │
+│platforms:sys  noop     test            system            │
+│tem                                                       │
+│tasks:lint     eslint   build           node, typescript  │
+│                                                          │
+│tasks:test     jest     test            node, typescript  │
+│                                                          │
+╰──────────────────────────────────────────────────────────╯

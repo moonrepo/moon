@@ -17,6 +17,11 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
     // Hash all the hook commands
     let mut hooks_hash = HooksHash::new(&vcs_config.manager);
 
+    hooks_hash.files_exist = generator
+        .get_internal_hook_paths()
+        .into_iter()
+        .all(|file| file.exists());
+
     for (hook_name, commands) in &vcs_config.hooks {
         hooks_hash.add_hook(hook_name, commands);
     }

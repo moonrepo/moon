@@ -39,6 +39,9 @@ api_struct!(
         /// A condition to evaluate on whether to render this prompt.
         pub condition: Option<SettingCondition>,
 
+        /// Description of what the setting will do.
+        pub description: Option<String>,
+
         /// Will be rendered in the minimal initialization flow.
         pub minimal: bool,
 

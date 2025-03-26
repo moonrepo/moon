@@ -1,7 +1,8 @@
 use moon_common::path::RelativePathBuf;
+use serde::Serialize;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct AssetFile {
     /// Binary content.
     pub content: Vec<u8>,

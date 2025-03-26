@@ -2,27 +2,31 @@
 source: crates/cli/tests/run_bun_test.rs
 expression: assert.output()
 ---
- SCRIPTS 
+About ──────────────────
 
-Project: scripts
-Alias: test-bun-scripts
-Source: scripts
-Toolchain: bun
-Language: javascript
-Stack: unknown
-Type: unknown
+  Project: scripts
+  Alias: test-bun-scripts
+  Source: scripts
+  Toolchain: bun
+  Language: javascript
+  Stack: unknown
+  Type: unknown
+  Depends on: —
 
- INHERITS FROM 
+Configuation ───────────
 
-  - .moon/tasks.yml
+  Inherits from:
+    - .moon/tasks.yml
+  Tags: —
+  Environment variables: —
 
- TASKS 
+Tasks ──────────────────
 
-build: 
-  › bun run build
-lint-all: 
-  › bun run lint:all
-noop: 
-  › noop 
-version: 
-  › bun --version
+  build:
+    › bun run build
+  lint-all:
+    › bun run lint:all
+  noop:
+    › noop
+  version:
+    › bun --version

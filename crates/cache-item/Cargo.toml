@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_env_var = { path = "../env-var" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }

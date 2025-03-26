@@ -16,7 +16,7 @@ derived hash.
 
 To make use of remote caching, we provide 2 solutions.
 
-## Self-hosted (unstable)<VersionLabel version="1.30.0" />
+## Self-hosted <VersionLabel version="1.30.0" />
 
 This solution allows you to host any remote caching service that is compatible with the
 [Bazel Remote Execution v2 API](https://github.com/bazelbuild/remote-apis/tree/main/build/bazel/remote/execution/v2),
@@ -122,58 +122,14 @@ unstable_remote:
       'X-Depot-Org': '<your-org-id>'
 ```
 
-## Cloud-hosted: moonbase<VersionLabel version="0.23.3" />
-
-This solution utilizes our [moonbase](/moonbase) service, which is a SaaS cloud offering hosted and
-managed by us. This is also known as third-party hosting.
-
-### Sign up for an account
-
-Remote caching requires a [moonrepo.app](https://moonrepo.app) account. Creating an account requires
-a GitHub account. In the future we'll support additional OAuth providers.
-
-#### Create an organization
-
-A moonbase organization can represent a company, team, group, or personal workspace, and is required
-for housing repositories, projects, artifacts, and more. Begin by creating an organization from the
-dashboard.
-
-> The "Region" field is very important for remote caching, as it configures which S3 region to store
-> artifacts in. This _cannot_ be changed after creation, so choose wisely!
-
-#### Create a repository
-
-A moonbase repository is a direct relationship to a codebase repository, and is necessary for
-linking artifacts to the appropriate tasks. From an organization's page, you can create a
-repository.
-
-> The "Slug" field must match your repository's "remote/repo" naming exactly, as we compare these
-> values for authentication purposes.
-
-### Enabling remote caching
-
-Once you have a [moonrepo.app](https://moonrepo.app) account, an organization, and repository, you
-can enable remote caching in your CI pipeline. From a moonbase organization page, you can view your
-API key in the actions menu.
-
-In a repository's CI environment, set the following environment variable.
-
-```
-MOONBASE_SECRET_KEY=<secret key>
-```
-
-moon will automatically authenticate the remote caching service when credentials in the environment
-exist. Furthermore, the repository in question must be within the moonbase organization, and the
-repository slug (`<owner>/<repo>`) must match.
-
 ## FAQ
 
 #### What is an artifact?
 
 In the context of moon and remote caching, an artifact is the
-[outputs of a task](../config/project#outputs), a tar archive (`.tar.gz`) that contains all these
-outputs, as well as the stdout and stderr of the task that generated the outputs. Artifacts are
-uniquely identified by the [moon generated hash](../concepts/cache#hashing).
+[outputs of a task](../config/project#outputs), as well as the stdout and stderr of the task that
+generated the outputs. Artifacts are uniquely identified by the
+[moon generated hash](../concepts/cache#hashing).
 
 #### Do I have to use remote caching?
 
@@ -192,10 +148,6 @@ verify this, you can inspect the tar archives in `.moon/cache/outputs`.
 
 No, moon does not collect any PII as part of the remote caching process.
 
-However, to use [moonbase](/moonbase) remote caching, you must create a moonrepo account in which we
-require an email address, and information about your organization and repository.
-
 #### Are artifacts encrypted?
 
-For [moonbase](/moonbase), yes! We use AWS's built-in SSE-S3 encryption for all S3 buckets. For
-self-hosted services, encryption is up to you.
+We do not encrypt on moon's side, as encryption is provided by your cloud storage provider.

@@ -55,7 +55,7 @@ pub async fn install_deps(
         operations.push(
             Operation::task_execution(command)
                 .track_async(|| async {
-                    console.out.print_checkpoint(Checkpoint::Setup, command)?;
+                    console.print_checkpoint(Checkpoint::Setup, command)?;
 
                     python
                         .exec_venv(&venv_root, working_dir, workspace_root)
@@ -76,9 +76,9 @@ pub async fn install_deps(
 
         for attempt in 1..=3 {
             if attempt == 1 {
-                console.out.print_checkpoint(Checkpoint::Setup, command)?;
+                console.print_checkpoint(Checkpoint::Setup, command)?;
             } else {
-                console.out.print_checkpoint_with_comments(
+                console.print_checkpoint_with_comments(
                     Checkpoint::Setup,
                     command,
                     [format!("attempt {attempt} of 3")],

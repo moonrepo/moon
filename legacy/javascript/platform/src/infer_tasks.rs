@@ -9,35 +9,36 @@ use moon_target::Target;
 use moon_toolchain::detect::is_system_command;
 use moon_utils::regex::ID_CLEAN;
 use moon_utils::{regex, string_vec};
-use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::collections::BTreeMap;
+use std::sync::LazyLock;
 use tracing::{debug, warn};
 
-static WIN_DRIVE: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r#"^[A-Z]:"#).unwrap());
+static WIN_DRIVE: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r#"^[A-Z]:"#).unwrap());
 
-static ARG_ENV_VAR: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r#"^[A-Z0-9_]+="#).unwrap());
+static ARG_ENV_VAR: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r#"^[A-Z0-9_]+="#).unwrap());
 
-static ARG_OUTPUT_FLAG: Lazy<regex::Regex> = Lazy::new(|| {
+static ARG_OUTPUT_FLAG: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::create_regex(r#"^(-o|--(out|output|dist)(-{0,1}(?i:dir|file))?)$"#).unwrap()
 });
 
-static INFO_OPTIONS: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r#"--(help|version)"#).unwrap());
+static INFO_OPTIONS: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r#"--(help|version)"#).unwrap());
 
 // This isn't exhaustive but captures very popular tools
-static DEV_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
+static DEV_COMMAND: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::create_regex(r#"(astro (dev|preview))|(concurrently)|(gatsby (new|dev|develop|serve|repl))|(next (dev|start))|(nuxt (dev|preview))|(packemon watch)|(parcel [^build])|(react-scripts start)|(snowpack dev)|(solid-start (dev|start))|(vite (dev|preview|serve))|(vue-cli-service serve)|(webpack (s|serve|server|w|watch|-))"#).unwrap()
 });
 
-static DEV_COMMAND_SOLO: Lazy<regex::Regex> = Lazy::new(|| {
+static DEV_COMMAND_SOLO: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::create_regex(r#"^(npx |yarn dlx |pnpm dlx |bun x |bunx )?(parcel|vite|webpack)$"#)
         .unwrap()
 });
 
-static DEV_ONLY_NAME: Lazy<regex::Regex> = Lazy::new(|| {
+static DEV_ONLY_NAME: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::create_regex(
         r#"(^(dev|start|serve|preview)$)|(^(start|serve|preview):)|(:(start|serve|preview)$)"#,
     )
@@ -45,24 +46,26 @@ static DEV_ONLY_NAME: Lazy<regex::Regex> = Lazy::new(|| {
 });
 
 // Special package manager handling
-static PM_RUN_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
+static PM_RUN_COMMAND: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::create_regex(r#"(?:npm|pnpm|yarn|bun) run ([a-zA-Z0-9:-_]+)([^&]+)?"#).unwrap()
 });
 
-static PM_LIFE_CYCLES: Lazy<regex::Regex> = Lazy::new(|| {
+static PM_LIFE_CYCLES: LazyLock<regex::Regex> = LazyLock::new(|| {
     regex::create_regex(r#"^(preprepare|prepare|postprepare|prepublish|prepublishOnly|publish|postpublish|prepack|pack|postpack|preinstall|install|postinstall|preversion|version|postversion|dependencies)$"#).unwrap()
 });
 
 // These patterns are currently not allowed
-static INVALID_CD: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r"(^|\b|\s)cd ").unwrap());
+static INVALID_CD: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r"(^|\b|\s)cd ").unwrap());
 
-static INVALID_REDIRECT: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r"\s(<|<<|>>|>)\s").unwrap());
+static INVALID_REDIRECT: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r"\s(<|<<|>>|>)\s").unwrap());
 
-static INVALID_PIPE: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r"\s\|\s").unwrap());
+static INVALID_PIPE: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r"\s\|\s").unwrap());
 
-static INVALID_OPERATOR: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r"\s(\|\||;;)\s").unwrap());
+static INVALID_OPERATOR: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::create_regex(r"\s(\|\||;;)\s").unwrap());
 
 fn is_bash_script(arg: &str) -> bool {
     arg.ends_with(".sh")

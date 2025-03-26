@@ -137,11 +137,11 @@ const config: Config = {
 					...social[0],
 					position: 'left',
 				},
-				{
-					to: 'https://moonrepo.app',
-					label: 'Sign in',
-					position: 'right',
-				},
+				// {
+				// 	to: 'https://moonrepo.app',
+				// 	label: 'Sign in',
+				// 	position: 'right',
+				// },
 			],
 		},
 		footer: {

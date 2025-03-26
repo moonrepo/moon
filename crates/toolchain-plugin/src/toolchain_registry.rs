@@ -3,7 +3,9 @@ use futures::{StreamExt, stream::FuturesOrdered};
 use miette::IntoDiagnostic;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
-use moon_plugin::{PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config};
+use moon_plugin::{
+    PluginError, PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config,
+};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
@@ -76,6 +78,27 @@ impl ToolchainRegistry {
         !self.configs.is_empty()
     }
 
+    pub async fn load<I>(&self, id: I) -> miette::Result<Arc<ToolchainPlugin>>
+    where
+        I: AsRef<str>,
+    {
+        let id = PluginId::raw(id.as_ref());
+
+        if !self.is_registered(&id) {
+            if !self.configs.contains_key(&id) {
+                return Err(PluginError::UnknownId {
+                    id: id.to_string(),
+                    ty: PluginType::Toolchain,
+                }
+                .into());
+            }
+
+            self.load_many([&id]).await?;
+        }
+
+        self.get_instance(&id).await
+    }
+
     pub async fn load_all(&self) -> miette::Result<()> {
         if !self.has_plugins() {
             return Ok(());
@@ -83,10 +106,29 @@ impl ToolchainRegistry {
 
         debug!("Loading all toolchain plugins");
 
+        self.load_many(self.get_plugin_ids()).await
+    }
+
+    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<()>
+    where
+        I: IntoIterator<Item = Id>,
+        Id: AsRef<str>,
+    {
         let mut set = JoinSet::new();
 
-        for (id, config) in self.configs.clone() {
+        for id in ids {
+            let id = PluginId::raw(id.as_ref());
+
+            if self.registry.is_registered(&id) {
+                continue;
+            }
+
+            let Some(config) = self.configs.get(&id) else {
+                continue;
+            };
+
             let registry = Arc::clone(&self.registry);
+            let config = config.to_owned();
 
             set.spawn(async move {
                 registry
@@ -111,8 +153,10 @@ impl ToolchainRegistry {
             });
         }
 
-        while let Some(result) = set.join_next().await {
-            result.into_diagnostic()??;
+        if !set.is_empty() {
+            while let Some(result) = set.join_next().await {
+                result.into_diagnostic()??;
+            }
         }
 
         Ok(())
@@ -131,7 +175,7 @@ impl ToolchainRegistry {
     ) -> miette::Result<Vec<CallResult<Out>>>
     where
         I: IntoIterator<Item = Id>,
-        Id: AsRef<str>,
+        Id: AsRef<str> + Clone,
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
         OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
@@ -142,6 +186,11 @@ impl ToolchainRegistry {
         if !self.has_plugins() {
             return Ok(results);
         }
+
+        let toolchain_ids = toolchain_ids.into_iter().collect::<Vec<_>>();
+
+        // Load the plugins on-demand when we need them
+        self.load_many(toolchain_ids.clone()).await?;
 
         // Use ordered futures because we need the results to
         // be in a deterministic order for operations to work

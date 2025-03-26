@@ -17,6 +17,7 @@ starbase_utils = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_config = { path = "../config", features = ["loader"] }
 starbase_sandbox = { workspace = true }
 
 [lints]

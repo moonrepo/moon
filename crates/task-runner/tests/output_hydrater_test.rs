@@ -1,8 +1,8 @@
 mod utils;
 
 use moon_cache::CacheMode;
+use moon_env_var::GlobalEnvBag;
 use moon_task_runner::output_hydrater::HydrateFrom;
-use std::env;
 use utils::*;
 
 mod output_hydrater {
@@ -53,7 +53,7 @@ mod output_hydrater {
                     .unwrap()
             );
 
-            unsafe { env::remove_var("MOON_CACHE") };
+            GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
         #[tokio::test]
@@ -77,7 +77,7 @@ mod output_hydrater {
                     .unwrap()
             );
 
-            unsafe { env::remove_var("MOON_CACHE") };
+            GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
         #[tokio::test]

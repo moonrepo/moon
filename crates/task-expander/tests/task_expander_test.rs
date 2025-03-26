@@ -2,11 +2,11 @@ mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, OutputPath, TaskArgs, TaskDependencyConfig};
+use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_task_expander::TaskExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
-use std::env;
 use utils::{create_context, create_project, create_project_with_tasks, create_task};
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
@@ -119,20 +119,17 @@ mod task_expander {
             let mut task = create_task();
             task.command = "./$FOO/${BAR}/$BAZ_QUX".into();
 
-            unsafe {
-                env::set_var("FOO", "foo");
-                env::set_var("BAZ_QUX", "baz-qux");
-            }
+            let bag = GlobalEnvBag::instance();
+            bag.set("FOO", "foo");
+            bag.set("BAZ_QUX", "baz-qux");
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
-            unsafe {
-                env::remove_var("FOO");
-                env::remove_var("BAZ_QUX");
-            }
+            bag.remove("FOO");
+            bag.remove("BAZ_QUX");
 
             assert_eq!(task.command, "./foo/${BAR}/baz-qux");
         }
@@ -245,18 +242,15 @@ mod task_expander {
                 "c/${BAR_BAZ}/d".into(),
             ];
 
-            unsafe {
-                env::set_var("BAR_BAZ", "bar-baz");
-                env::set_var("FOO_BAR", "foo-bar");
-            }
+            let bag = GlobalEnvBag::instance();
+            bag.set("BAR_BAZ", "bar-baz");
+            bag.set("FOO_BAR", "foo-bar");
 
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
-            unsafe {
-                env::remove_var("FOO_BAR");
-                env::remove_var("BAR_BAZ");
-            }
+            bag.remove("FOO_BAR");
+            bag.remove("BAR_BAZ");
 
             assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
         }
@@ -455,18 +449,15 @@ mod task_expander {
             task.env.insert("KEY2".into(), "inner-${FOO}".into());
             task.env.insert("KEY3".into(), "$KEY1-self".into());
 
-            unsafe {
-                env::set_var("FOO", "foo");
-            }
+            let bag = GlobalEnvBag::instance();
+            bag.set("FOO", "foo");
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            unsafe {
-                env::remove_var("FOO");
-            }
+            bag.remove("FOO");
 
             assert_eq!(
                 task.env,
@@ -538,18 +529,15 @@ mod task_expander {
             task.env
                 .insert("KEY".into(), "$project-$FOO-$unknown".into());
 
-            unsafe {
-                env::set_var("FOO", "foo");
-            }
+            let bag = GlobalEnvBag::instance();
+            bag.set("FOO", "foo");
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            unsafe {
-                env::remove_var("FOO");
-            }
+            bag.remove("FOO");
 
             assert_eq!(
                 task.env,
@@ -584,12 +572,15 @@ mod task_expander {
 
         #[test]
         fn loads_from_root_env_file_and_substitutes() {
+            use std::env;
+
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
 
+            // dotenvy operates on actual env
             unsafe { env::set_var("EXTERNAL", "external-value") };
 
             let context = create_context(sandbox.path());
@@ -633,7 +624,8 @@ mod task_expander {
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());
 
-            unsafe { env::set_var("MYPATH", "/another/path") };
+            let bag = GlobalEnvBag::instance();
+            bag.set("MYPATH", "/another/path");
 
             let mut task = create_task();
             task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
@@ -645,7 +637,7 @@ mod task_expander {
 
             assert_eq!(task.env.get("MYPATH").unwrap(), "/path:/another/path");
 
-            unsafe { env::remove_var("MYPATH") };
+            bag.remove("MYPATH");
         }
 
         #[test]

@@ -296,7 +296,7 @@ mod paths {
         });
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("syncs-paths-refs:noop");
+            cmd.arg("sync").arg("projects");
         });
 
         assert_snapshot!(
@@ -314,7 +314,7 @@ mod paths {
         std::fs::remove_file(sandbox.path().join("syncs-paths-refs/moon.yml")).unwrap();
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("syncs-paths-refs:noop");
+            cmd.arg("sync").arg("projects");
         });
 
         assert_snapshot!(
@@ -332,7 +332,7 @@ mod paths {
         });
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("syncs-paths-refs:noop");
+            cmd.arg("sync").arg("projects");
         });
 
         assert_snapshot!(
@@ -347,7 +347,7 @@ mod paths {
         });
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("syncs-paths-refs-project-disabled:noop");
+            cmd.arg("sync").arg("projects");
         });
 
         assert_snapshot!(

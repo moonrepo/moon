@@ -5,14 +5,14 @@ use moon_common::{
     path::{self, WorkspaceRelativePathBuf},
 };
 use moon_config::{InputPath, OutputPath, ProjectMetadataConfig, patterns};
-use moon_env_var::substitute_env_var;
+use moon_env_var::{EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::env;
 use std::mem;
@@ -58,9 +58,6 @@ pub struct TokenExpander<'graph> {
     pub context: &'graph GraphExpanderContext,
 
     pub project: &'graph Project,
-
-    // In the current process
-    env_vars: Vec<String>,
 }
 
 impl<'graph> TokenExpander<'graph> {
@@ -69,7 +66,6 @@ impl<'graph> TokenExpander<'graph> {
             scope: TokenScope::Args,
             context,
             project,
-            env_vars: env::vars().map(|var| var.0).collect::<Vec<_>>(),
         }
     }
 
@@ -242,6 +238,7 @@ impl<'graph> TokenExpander<'graph> {
         self.scope = TokenScope::Inputs;
 
         let mut result = ExpandedResult::default();
+        let bag = GlobalEnvBag::instance();
 
         for input in &task.inputs {
             match input {
@@ -253,11 +250,13 @@ impl<'graph> TokenExpander<'graph> {
                         Regex::new(format!("^{}$", var_glob.replace('*', "[A-Z0-9_]+")).as_str())
                             .unwrap();
 
-                    for var_name in &self.env_vars {
-                        if pattern.is_match(var_name) {
-                            result.env.push(var_name.to_owned());
+                    bag.list(|var_name, _| {
+                        if let Some(var_name) = var_name.to_str() {
+                            if pattern.is_match(var_name) {
+                                result.env.push(var_name.to_owned());
+                            }
                         }
-                    }
+                    });
                 }
                 InputPath::TokenFunc(func) => {
                     let inner_result = self.replace_function(task, func)?;
@@ -664,12 +663,9 @@ impl<'graph> TokenExpander<'graph> {
         task: &Task,
         value: T,
     ) -> miette::Result<String> {
-        Ok(substitute_env_var(
-            "",
-            &self.replace_variables(task, value.as_ref())?,
-            &task.env,
-            &mut FxHashSet::default(),
-        ))
+        Ok(EnvSubstitutor::new()
+            .with_local_vars(&task.env)
+            .substitute(self.replace_variables(task, value.as_ref())?))
     }
 
     fn replace_all_variables_and_infer<T: AsRef<str>>(
@@ -677,15 +673,11 @@ impl<'graph> TokenExpander<'graph> {
         task: &mut Task,
         value: T,
     ) -> miette::Result<String> {
-        let mut found = FxHashSet::default();
-        let result = substitute_env_var(
-            "",
-            &self.replace_variables(task, value.as_ref())?,
-            &task.env,
-            &mut found,
-        );
+        let mut substitutor = EnvSubstitutor::new().with_local_vars(&task.env);
 
-        if task.options.infer_inputs && !found.is_empty() {
+        let result = substitutor.substitute(self.replace_variables(task, value.as_ref())?);
+
+        if task.options.infer_inputs && !substitutor.replaced.is_empty() {
             let mut blacklist = vec![
                 "CI_",
                 "GIT_",
@@ -710,13 +702,13 @@ impl<'graph> TokenExpander<'graph> {
                 blacklist.push(cd_prefix);
             }
 
-            found.retain(|key| {
+            substitutor.replaced.retain(|key| {
                 blacklist
                     .iter()
                     .all(|prefix| key != prefix && !key.starts_with(prefix))
             });
 
-            task.input_env.extend(found);
+            task.input_env.extend(substitutor.replaced);
         }
 
         Ok(result)
@@ -748,19 +740,24 @@ impl<'graph> TokenExpander<'graph> {
 
         // https://cygwin.com/cygwin-ug-net/cygpath.html
         #[cfg(windows)]
-        if env::var("MSYSTEM").is_ok_and(|value| value == "MINGW32" || value == "MINGW64") {
-            let mut value = moon_common::path::standardize_separators(value);
+        {
+            if GlobalEnvBag::instance()
+                .get("MSYSTEM")
+                .is_some_and(|value| value == "MINGW32" || value == "MINGW64")
+            {
+                let mut value = moon_common::path::standardize_separators(value);
 
-            if orig_value.is_absolute() {
-                for drive in 'A'..='Z' {
-                    if let Some(suffix) = value.strip_prefix(&format!("{drive}:/")) {
-                        value = format!("/{}/{suffix}", drive.to_ascii_lowercase());
-                        break;
+                if orig_value.is_absolute() {
+                    for drive in 'A'..='Z' {
+                        if let Some(suffix) = value.strip_prefix(&format!("{drive}:/")) {
+                            value = format!("/{}/{suffix}", drive.to_ascii_lowercase());
+                            break;
+                        }
                     }
                 }
-            }
 
-            return Ok(value);
+                return Ok(value);
+            }
         }
 
         Ok(value)

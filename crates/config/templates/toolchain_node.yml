@@ -1,62 +1,38 @@
 {%- if minimal -%}
 
 node:
-{%- if node_version != "" %}
+{%- if node_version is defined %}
   version: '{{ node_version }}'
 {%- else %}
   version: '20.0.0'
 {%- endif %}
   packageManager: '{{ package_manager }}'
-{%- if package_manager_version != "" %}
+{%- if package_manager_version is defined %}
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
 {%- endif %}
 
 {%- else -%}
 
-# Configures Node.js within the toolchain.
 node:
-  # The version to use. Must be a semantic version that includes major, minor, and patch.
-  # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-{%- if node_version != "" %}
+{%- if node_version is defined %}
   version: '{{ node_version }}'
 {%- else %}
   # version: '20.0.0'
 {%- endif %}
-
-  # The package manager to use when managing dependencies.
-  # Accepts "npm" (default), "pnpm", "yarn", or "bun".
   packageManager: '{{ package_manager }}'
-
-  # The version of the package manager (above) to use.
-{%- if package_manager_version != "" %}
+{%- if package_manager_version is defined %}
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
 {%- else %}
   {{ package_manager }}: {}
 {%- endif %}
-
-  # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
-
-  # Dedupe dependencies after the lockfile has changed.
   dedupeOnLockfileChange: {{ dedupe_lockfile }}
-
-  # Version format to use when syncing dependencies within the project's `package.json`.
   # dependencyVersionFormat: 'workspace'
-
-  # Infer and automatically create moon tasks from `package.json` scripts, per project.
-  # BEWARE: Tasks and scripts are not 1:1 in functionality, so please refer to the documentation.
   inferTasksFromScripts: {{ infer_tasks }}
-
-  # Support the "one version policy" by only declaring dependencies in the root `package.json`.
   # rootPackageOnly: true
-
-  # Sync a project's relationships as `dependencies` within the project's `package.json`.
   syncProjectWorkspaceDependencies: {{ sync_dependencies }}
-
-  # Sync `node.version` to a 3rd-party version manager's config file.
-  # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
 {%- if node_version_manager == "nvm" %}
   syncVersionManagerConfig: 'nvm'
 {%- elif node_version_manager == "nodenv" %}

@@ -1,29 +1,31 @@
 use crate::shapes::OneOrMany;
-use moon_common::Id;
+use moon_common::{Id, cacheable};
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
-        /// Configuration for a template variable.
-        #[derive(Clone, Config, Debug, Eq, PartialEq)]
-        pub struct $name {
-            /// The default value of the variable if none was provided.
-            #[setting(alias = "defaultValue")]
-            pub default: $ty,
+        cacheable!(
+            /// Configuration for a template variable.
+            #[derive(Clone, Config, Debug, Eq, PartialEq)]
+            pub struct $name {
+                /// The default value of the variable if none was provided.
+                #[setting(alias = "defaultValue")]
+                pub default: $ty,
 
-            /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-            pub internal: bool,
+                /// Marks the variable as internal, and won't be overwritten via CLI arguments.
+                pub internal: bool,
 
-            /// The order in which variables should be prompted for.
-            pub order: Option<usize>,
+                /// The order in which variables should be prompted for.
+                pub order: Option<usize>,
 
-            /// Prompt the user for a value when the generator is running.
-            pub prompt: Option<String>,
+                /// Prompt the user for a value when the generator is running.
+                pub prompt: Option<String>,
 
-            /// Marks the variable as required, and will not accept an empty value.
-            pub required: Option<bool>,
-        }
+                /// Marks the variable as required, and will not accept an empty value.
+                pub required: Option<bool>,
+            }
+        );
     };
 }
 
@@ -31,32 +33,38 @@ var_setting!(TemplateVariableBoolSetting, bool);
 var_setting!(TemplateVariableNumberSetting, isize);
 var_setting!(TemplateVariableStringSetting, String);
 
-#[derive(Clone, Config, Debug, Eq, PartialEq)]
-pub struct TemplateVariableEnumValueConfig {
-    /// A human-readable label for the value.
-    pub label: String,
-    /// The literal enumerable value.
-    pub value: String,
-}
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TemplateVariableEnumValueConfig {
+        /// A human-readable label for the value.
+        pub label: String,
+        /// The literal enumerable value.
+        pub value: String,
+    }
+);
 
-#[derive(Clone, Config, Debug, Eq, PartialEq)]
-#[config(serde(
-    untagged,
-    expecting = "expected a value string or value object with label"
-))]
-pub enum TemplateVariableEnumValue {
-    String(String),
-    #[setting(nested)]
-    Object(TemplateVariableEnumValueConfig),
-}
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[serde(
+        untagged,
+        expecting = "expected a value string or value object with label"
+    )]
+    pub enum TemplateVariableEnumValue {
+        String(String),
+        #[setting(nested)]
+        Object(TemplateVariableEnumValueConfig),
+    }
+);
 
-#[derive(Clone, Config, Debug, Eq, PartialEq)]
-#[config(serde(untagged))]
-pub enum TemplateVariableEnumDefault {
-    String(String),
-    #[setting(default)]
-    Vec(Vec<String>),
-}
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[serde(untagged)]
+    pub enum TemplateVariableEnumDefault {
+        String(String),
+        #[setting(default)]
+        Vec(Vec<String>),
+    }
+);
 
 impl TemplateVariableEnumDefault {
     pub fn to_vec(&self) -> Vec<&String> {
@@ -108,28 +116,30 @@ fn validate_enum_default<C>(
     Ok(())
 }
 
-#[derive(Clone, Config, Debug, Eq, PartialEq)]
-pub struct TemplateVariableEnumSetting {
-    /// The default value of the variable if none was provided.
-    #[setting(nested, validate = validate_enum_default)]
-    pub default: TemplateVariableEnumDefault,
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TemplateVariableEnumSetting {
+        /// The default value of the variable if none was provided.
+        #[setting(nested, validate = validate_enum_default)]
+        pub default: TemplateVariableEnumDefault,
 
-    /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-    pub internal: bool,
+        /// Marks the variable as internal, and won't be overwritten via CLI arguments.
+        pub internal: bool,
 
-    /// Allows multiple values to be selected.
-    pub multiple: Option<bool>,
+        /// Allows multiple values to be selected.
+        pub multiple: Option<bool>,
 
-    /// The order in which variables should be prompted for.
-    pub order: Option<usize>,
+        /// The order in which variables should be prompted for.
+        pub order: Option<usize>,
 
-    /// Prompt the user for a value when the generator is running.
-    pub prompt: Option<String>,
+        /// Prompt the user for a value when the generator is running.
+        pub prompt: Option<String>,
 
-    /// List of acceptable values for this variable.
-    #[setting(nested)]
-    pub values: Vec<TemplateVariableEnumValue>,
-}
+        /// List of acceptable values for this variable.
+        #[setting(nested)]
+        pub values: Vec<TemplateVariableEnumValue>,
+    }
+);
 
 impl TemplateVariableEnumSetting {
     pub fn get_labels(&self) -> Vec<&String> {
@@ -157,26 +167,28 @@ impl TemplateVariableEnumSetting {
     }
 }
 
-/// Each type of template variable.
-#[derive(Clone, Config, Debug, Eq, PartialEq)]
-#[config(serde(tag = "type", expecting = "expected a supported value type"))]
-pub enum TemplateVariable {
-    /// A boolean variable.
-    #[setting(nested)]
-    Boolean(TemplateVariableBoolSetting),
+cacheable!(
+    /// Each type of template variable.
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[serde(tag = "type", expecting = "expected a supported value type")]
+    pub enum TemplateVariable {
+        /// A boolean variable.
+        #[setting(nested)]
+        Boolean(TemplateVariableBoolSetting),
 
-    /// A string enumerable variable.
-    #[setting(nested)]
-    Enum(TemplateVariableEnumSetting),
+        /// A string enumerable variable.
+        #[setting(nested)]
+        Enum(TemplateVariableEnumSetting),
 
-    /// A number variable.
-    #[setting(nested)]
-    Number(TemplateVariableNumberSetting),
+        /// A number variable.
+        #[setting(nested)]
+        Number(TemplateVariableNumberSetting),
 
-    /// A string variable.
-    #[setting(nested)]
-    String(TemplateVariableStringSetting),
-}
+        /// A string variable.
+        #[setting(nested)]
+        String(TemplateVariableStringSetting),
+    }
+);
 
 impl TemplateVariable {
     pub fn get_order(&self) -> usize {
@@ -217,36 +229,38 @@ impl TemplateVariable {
     }
 }
 
-/// Configures a template and its files to be scaffolded.
-/// Docs: https://moonrepo.dev/docs/config/template
-#[derive(Clone, Config, Debug, PartialEq)]
-pub struct TemplateConfig {
-    #[setting(
-        default = "https://moonrepo.dev/schemas/template.json",
-        rename = "$schema"
-    )]
-    pub schema: String,
+cacheable!(
+    /// Configures a template and its files to be scaffolded.
+    /// Docs: https://moonrepo.dev/docs/config/template
+    #[derive(Clone, Config, Debug, PartialEq)]
+    pub struct TemplateConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/template.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
 
-    /// A description on what the template scaffolds.
-    #[setting(validate = validate::not_empty)]
-    pub description: String,
+        /// A description on what the template scaffolds.
+        #[setting(validate = validate::not_empty)]
+        pub description: String,
 
-    /// A pre-populated destination to scaffold to, relative from the
-    /// workspace root when leading with `/`, otherwise the working directory.
-    pub destination: Option<String>,
+        /// A pre-populated destination to scaffold to, relative from the
+        /// workspace root when leading with `/`, otherwise the working directory.
+        pub destination: Option<String>,
 
-    /// Extends one or many other templates.
-    pub extends: OneOrMany<Id>,
+        /// Extends one or many other templates.
+        pub extends: OneOrMany<Id>,
 
-    /// Overrides the ID of the template, instead of using the folder name.
-    pub id: Option<Id>,
+        /// Overrides the ID of the template, instead of using the folder name.
+        pub id: Option<Id>,
 
-    /// A human-readable title for the template.
-    #[setting(validate = validate::not_empty)]
-    pub title: String,
+        /// A human-readable title for the template.
+        #[setting(validate = validate::not_empty)]
+        pub title: String,
 
-    /// A mapping of variables that'll be interpolated within each template file.
-    /// Variables can also be populated by passing command line arguments.
-    #[setting(nested)]
-    pub variables: FxHashMap<String, TemplateVariable>,
-}
+        /// A mapping of variables that'll be interpolated within each template file.
+        /// Variables can also be populated by passing command line arguments.
+        #[setting(nested)]
+        pub variables: FxHashMap<String, TemplateVariable>,
+    }
+);

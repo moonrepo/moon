@@ -2,8 +2,10 @@
 source: crates/cli/tests/generate_test.rs
 expression: assert.output_standardized()
 ---
-Variable testing 
-A template for testing all variable config combinations.
+vars ───────────────────
+
+  Variable testing
+  A template for testing all variable config combinations.
 
 Error: codegen::args::parse_failed
 

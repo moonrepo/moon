@@ -123,7 +123,6 @@ impl Tool for UvTool {
         }
 
         self.console
-            .out
             .print_checkpoint(Checkpoint::Setup, format!("installing uv {version}"))?;
 
         if self.tool.setup(version, InstallOptions::default()).await? {

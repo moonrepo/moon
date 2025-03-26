@@ -17,9 +17,9 @@ moon_time = { path = "../time" }
 content_inspector = "0.2.4"
 convert_case = { workspace = true }
 miette = { workspace = true }
-once_cell = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_utils = { workspace = true, features = [
     "editor-config",
@@ -32,10 +32,6 @@ tera = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
-
-# Commands
-moon_console = { path = "../console" }
-clap = { workspace = true, features = ["string"] }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

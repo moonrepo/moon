@@ -12,4 +12,3 @@ expression: "read_to_string(sandbox.path().join(\"syncs-paths-refs-project-disab
     }
   ]
 }
-

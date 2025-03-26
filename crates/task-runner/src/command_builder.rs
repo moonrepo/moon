@@ -294,7 +294,7 @@ impl<'task> CommandBuilder<'task> {
         if self
             .app
             .workspace_config
-            .runner
+            .pipeline
             .inherit_colors_for_piped_tasks
         {
             self.command.inherit_colors();

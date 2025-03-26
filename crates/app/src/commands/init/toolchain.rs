@@ -1,15 +1,12 @@
 use super::InitOptions;
-use super::prompts::prompt_version;
-use dialoguer::theme::ColorfulTheme;
-use dialoguer::{Confirm, Input, Select};
-use miette::IntoDiagnostic;
-use moon_console::Console;
-use moon_pdk_api::{
-    ConditionType, InitializeToolchainInput, PromptType, SettingCondition, SettingPrompt,
+use super::prompts::*;
+use iocraft::prelude::element;
+use moon_console::{
+    Console,
+    ui::{Container, Entry, Section, Style, StyledText},
 };
+use moon_pdk_api::{ConditionType, InitializeToolchainInput, SettingCondition, SettingPrompt};
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
-use schematic::color::apply_style_tags;
-use starbase_styles::color;
 use starbase_utils::json::JsonValue;
 use starbase_utils::yaml::{self, YamlMapping, YamlNumber, YamlValue};
 use std::collections::VecDeque;
@@ -18,11 +15,10 @@ use tracing::instrument;
 
 #[instrument(skip_all)]
 pub async fn init_toolchain(
+    console: &Console,
+    options: &InitOptions,
     toolchain_registry: &ToolchainRegistry,
     toolchain: &ToolchainPlugin,
-    options: &InitOptions,
-    theme: &ColorfulTheme,
-    console: &Console,
     include_locator: bool,
 ) -> miette::Result<String> {
     // No instructions, so render an empty block
@@ -38,27 +34,47 @@ pub async fn init_toolchain(
         .await?;
 
     if !options.yes {
-        console.out.print_header(&toolchain.metadata.name)?;
-
-        console.out.write_raw(|buffer| {
-            buffer.extend_from_slice(
-                format!(
-                    "Toolchain: {}\n",
-                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
-                )
-                .as_bytes(),
-            );
-
-            if let Some(url) = &output.docs_url {
-                buffer.extend_from_slice(format!("Handbook: {}\n", color::url(url)).as_bytes());
-            }
-
-            if let Some(url) = &output.config_url {
-                buffer.extend_from_slice(format!("Config: {}\n\n", color::url(url)).as_bytes());
+        console.render(element! {
+            Container {
+                Section(title: &toolchain.metadata.name) {
+                    Entry(
+                        name: "Toolchain",
+                        value: element! {
+                            StyledText(
+                                content: "https://moonrepo.dev/docs/concepts/toolchain",
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    #(output.docs_url.as_ref().map(|url| {
+                        element! {
+                            Entry(
+                                name: "Handbook",
+                                value: element! {
+                                    StyledText(
+                                        content: url,
+                                        style: Style::Url
+                                    )
+                                }.into_any()
+                            )
+                        }
+                    }))
+                    #(output.config_url.as_ref().map(|url| {
+                        element! {
+                            Entry(
+                                name: "Config",
+                                value: element! {
+                                    StyledText(
+                                        content: url,
+                                        style: Style::Url
+                                    )
+                                }.into_any()
+                            )
+                        }
+                    }))
+                }
             }
         })?;
-
-        console.out.flush()?;
     }
 
     // Gather built-in settings
@@ -71,26 +87,26 @@ pub async fn init_toolchain(
         );
     }
 
-    if toolchain.has_func("detect_version_files").await {
-        if let Some(version) = toolchain.detect_version(&options.dir).await? {
-            settings.insert(
-                YamlValue::String("version".into()),
-                YamlValue::String(version.to_string()),
-            );
+    if toolchain.supports_tier_3().await {
+        if toolchain.has_func("detect_version_files").await {
+            if let Some(version) = toolchain.detect_version(&options.dir).await? {
+                settings.insert(
+                    YamlValue::String("version".into()),
+                    YamlValue::String(version.to_string()),
+                );
+            }
         }
-    }
 
-    if !settings.contains_key("version") && toolchain.supports_tier_3().await {
-        // TODO rewrite
-        let version = prompt_version(&toolchain.metadata.name, options, theme, || {
-            Ok(String::new())
-        })?;
-
-        if !version.is_empty() {
-            settings.insert(
-                YamlValue::String("version".into()),
-                YamlValue::String(version),
-            );
+        if !settings.contains_key("version") {
+            if let Some(version) =
+                render_version_prompt(console, options, &toolchain.metadata.name, || Ok(None))
+                    .await?
+            {
+                settings.insert(
+                    YamlValue::String("version".into()),
+                    YamlValue::String(version.to_string()),
+                );
+            }
         }
     }
 
@@ -99,7 +115,7 @@ pub async fn init_toolchain(
         inject_setting(key, value, &mut settings);
     }
 
-    evaluate_prompts(&output.prompts, &mut settings, options, theme)?;
+    evaluate_prompts(console, options, &output.prompts, &mut settings).await?;
 
     // Render into a YAML string
     let config = YamlValue::Mapping(YamlMapping::from_iter([(
@@ -110,11 +126,11 @@ pub async fn init_toolchain(
     Ok(yaml::format(&config)?)
 }
 
-fn evaluate_prompts(
+async fn evaluate_prompts(
+    console: &Console,
+    options: &InitOptions,
     prompts: &[SettingPrompt],
     settings: &mut YamlMapping,
-    options: &InitOptions,
-    theme: &ColorfulTheme,
 ) -> miette::Result<()> {
     for prompt in prompts
         .iter()
@@ -126,7 +142,7 @@ fn evaluate_prompts(
             }
         }
 
-        if let Some(value) = render_prompt(prompt, options, theme)? {
+        if let Some(value) = render_prompt(console, options, prompt).await? {
             let falsy = is_json_falsy(&value);
 
             if prompt.skip_if_falsy && falsy {
@@ -136,7 +152,13 @@ fn evaluate_prompts(
             inject_setting(prompt.setting.clone(), value, settings);
 
             if !falsy {
-                evaluate_prompts(&prompt.prompts, settings, options, theme)?;
+                Box::pin(evaluate_prompts(
+                    console,
+                    options,
+                    &prompt.prompts,
+                    settings,
+                ))
+                .await?;
             }
         }
     }
@@ -162,77 +184,6 @@ fn evaluate_condition(condition: &SettingCondition, settings: &YamlMapping) -> b
         }
         (ConditionType::StringEquals(expected), YamlValue::String(actual)) => expected == actual,
         _ => false,
-    }
-}
-
-fn render_prompt(
-    prompt: &SettingPrompt,
-    options: &InitOptions,
-    theme: &ColorfulTheme,
-) -> miette::Result<Option<JsonValue>> {
-    match &prompt.ty {
-        PromptType::None => Ok(None),
-        PromptType::Confirm { default } => {
-            let result = if options.yes {
-                *default
-            } else {
-                let confirm = Confirm::with_theme(theme)
-                    .with_prompt(apply_style_tags(&prompt.question))
-                    .default(*default)
-                    .show_default(true);
-
-                if prompt.required {
-                    confirm.interact().into_diagnostic()?
-                } else {
-                    confirm
-                        .interact_opt()
-                        .into_diagnostic()?
-                        .unwrap_or(*default)
-                }
-            };
-
-            Ok(Some(JsonValue::Bool(result)))
-        }
-        PromptType::Input { default } => {
-            let result = if options.yes {
-                default.to_owned()
-            } else {
-                Input::with_theme(theme)
-                    .with_prompt(apply_style_tags(&prompt.question))
-                    .default(default.to_owned())
-                    .show_default(true)
-                    .allow_empty(!prompt.required)
-                    .interact_text()
-                    .into_diagnostic()?
-            };
-
-            Ok(Some(JsonValue::String(result)))
-        }
-        PromptType::Select {
-            default_index,
-            options: items,
-        } => {
-            let index = if options.yes {
-                *default_index
-            } else {
-                let labels = items.iter().map(display_json_value).collect::<Vec<_>>();
-                let select = Select::with_theme(theme)
-                    .with_prompt(apply_style_tags(&prompt.question))
-                    .items(&labels)
-                    .default(*default_index);
-
-                if prompt.required {
-                    select.interact().into_diagnostic()?
-                } else {
-                    select
-                        .interact_opt()
-                        .into_diagnostic()?
-                        .unwrap_or(*default_index)
-                }
-            };
-
-            Ok(Some(items[index].clone()))
-        }
     }
 }
 
@@ -291,13 +242,5 @@ fn is_json_falsy(value: &JsonValue) -> bool {
         JsonValue::String(string) => string.is_empty(),
         JsonValue::Array(list) => list.is_empty(),
         JsonValue::Object(map) => map.is_empty(),
-    }
-}
-
-fn display_json_value(value: &JsonValue) -> String {
-    match value {
-        // Remove quotes
-        JsonValue::String(string) => string.to_owned(),
-        other => other.to_string(),
     }
 }

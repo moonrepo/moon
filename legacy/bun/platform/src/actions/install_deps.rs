@@ -31,11 +31,9 @@ pub async fn install_deps(
 
     for attempt in 1..=3 {
         if attempt == 1 {
-            console
-                .out
-                .print_checkpoint(Checkpoint::Setup, "bun install")?;
+            console.print_checkpoint(Checkpoint::Setup, "bun install")?;
         } else {
-            console.out.print_checkpoint_with_comments(
+            console.print_checkpoint_with_comments(
                 Checkpoint::Setup,
                 "bun install",
                 [format!("attempt {attempt} of 3")],

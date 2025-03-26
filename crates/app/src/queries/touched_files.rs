@@ -1,12 +1,12 @@
 use miette::IntoDiagnostic;
 use moon_common::is_ci;
 use moon_common::path::{WorkspaceRelativePathBuf, standardize_separators};
+use moon_env_var::GlobalEnvBag;
 use moon_vcs::{BoxedVcs, TouchedStatus};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::json;
-use std::env;
 use std::io::{IsTerminal, Read, stdin};
 use tracing::{debug, trace, warn};
 
@@ -55,11 +55,12 @@ pub async fn query_touched_files(
 ) -> miette::Result<QueryTouchedFilesResult> {
     debug!("Querying for touched files");
 
+    let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
-    let base_value = env::var("MOON_BASE").ok().or(options.base.clone());
+    let base_value = bag.get("MOON_BASE").or(options.base.clone());
     let base = base_value.as_deref().unwrap_or(&default_branch);
-    let head_value = env::var("MOON_HEAD").ok().or(options.head.clone());
+    let head_value = bag.get("MOON_HEAD").or(options.head.clone());
     let head = head_value.as_deref().unwrap_or("HEAD");
 
     // Determine whether we should check against the previous

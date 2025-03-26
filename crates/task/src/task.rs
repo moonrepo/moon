@@ -6,12 +6,12 @@ use moon_common::{
 use moon_config::{
     InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType,
 };
+use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
-use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob;
+use starbase_utils::glob::{self, GlobWalkOptions};
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -85,12 +85,6 @@ cacheable!(
 
         #[serde(rename = "type")]
         pub type_of: TaskType,
-
-        #[serde(skip)]
-        pub inputs_cache: OnceCell<Vec<PathBuf>>,
-
-        #[serde(skip)]
-        pub outputs_cache: OnceCell<Vec<PathBuf>>,
     }
 );
 
@@ -149,13 +143,12 @@ impl Task {
         }
 
         if !self.input_globs.is_empty() {
-            let globs = &self.input_globs;
-            let walk_paths = self
-                .inputs_cache
-                .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
-
-            // Glob results are absolute paths!
-            for file in walk_paths {
+            for file in glob_walk_with_options(
+                workspace_root,
+                &self.input_globs,
+                GlobWalkOptions::default().cache().files(),
+            )? {
+                // Glob results are absolute paths!
                 list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
@@ -176,13 +169,12 @@ impl Task {
         }
 
         if !self.output_globs.is_empty() {
-            let globs = &self.output_globs;
-            let walk_paths = self
-                .outputs_cache
-                .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
-
-            // Glob results are absolute paths!
-            for file in walk_paths {
+            for file in glob_walk_with_options(
+                workspace_root,
+                &self.output_globs,
+                GlobWalkOptions::default().cache().files(),
+            )? {
+                // Glob results are absolute paths!
                 list.insert(file.relative_to(workspace_root).unwrap());
             }
         }
@@ -284,8 +276,6 @@ impl Default for Task {
             target: Target::default(),
             toolchains: vec![Id::raw("system")],
             type_of: TaskType::default(),
-            inputs_cache: OnceCell::new(),
-            outputs_cache: OnceCell::new(),
         }
     }
 }

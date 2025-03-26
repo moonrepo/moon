@@ -42,6 +42,7 @@ jobs:
       - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
+          MOON_DEBUG_REMOTE: true
           MOON_NODE_VERSION: ${{ matrix.node-version }}
           RUST_BACKTRACE: '1'
       - uses: moonrepo/run-report-action@v1

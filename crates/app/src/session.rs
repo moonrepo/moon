@@ -4,13 +4,12 @@ use crate::commands::docker::DockerCommands;
 use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
-use moon_action_graph::ActionGraphBuilder;
+use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
-use moon_common::{is_ci, is_test_env};
+use moon_common::is_formatted_output;
 use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_console::Console;
-use moon_console_reporter::DefaultReporter;
+use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
@@ -21,14 +20,13 @@ use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
-use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use semver::Version;
 use starbase::{AppResult, AppSession};
 use std::env;
 use std::fmt;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tokio::try_join;
 use tracing::debug;
 
@@ -44,12 +42,12 @@ pub struct CliSession {
     pub proto_env: Arc<ProtoEnvironment>,
 
     // Lazy components
-    cache_engine: OnceCell<Arc<CacheEngine>>,
-    extension_registry: OnceCell<Arc<ExtensionRegistry>>,
-    project_graph: OnceCell<Arc<ProjectGraph>>,
-    task_graph: OnceCell<Arc<TaskGraph>>,
-    toolchain_registry: OnceCell<Arc<ToolchainRegistry>>,
-    vcs_adapter: OnceCell<Arc<BoxedVcs>>,
+    cache_engine: OnceLock<Arc<CacheEngine>>,
+    extension_registry: OnceLock<Arc<ExtensionRegistry>>,
+    project_graph: OnceLock<Arc<ProjectGraph>>,
+    task_graph: OnceLock<Arc<TaskGraph>>,
+    toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
+    vcs_adapter: OnceLock<Arc<BoxedVcs>>,
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -66,22 +64,22 @@ impl CliSession {
         debug!("Creating new application session");
 
         Self {
-            cache_engine: OnceCell::new(),
+            cache_engine: OnceLock::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
             config_loader: ConfigLoader::default(),
-            console: Console::new(cli.quiet),
-            extension_registry: OnceCell::new(),
+            console: Console::new(cli.quiet || is_formatted_output()),
+            extension_registry: OnceLock::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
-            project_graph: OnceCell::new(),
+            project_graph: OnceLock::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
-            task_graph: OnceCell::new(),
+            task_graph: OnceLock::new(),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
-            toolchain_registry: OnceCell::new(),
+            toolchain_registry: OnceLock::new(),
             working_dir: PathBuf::new(),
             workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
-            vcs_adapter: OnceCell::new(),
+            vcs_adapter: OnceLock::new(),
             cli,
         }
     }
@@ -90,14 +88,33 @@ impl CliSession {
         &self,
         workspace_graph: &'graph WorkspaceGraph,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(workspace_graph)
+        let config = &self.workspace_config.pipeline;
+
+        ActionGraphBuilder::new(
+            workspace_graph,
+            ActionGraphBuilderOptions {
+                install_dependencies: config.install_dependencies.clone(),
+                setup_toolchains: true.into(),
+                sync_projects: config.sync_projects.clone(),
+                sync_project_dependencies: config.sync_project_dependencies,
+                sync_workspace: config.sync_workspace,
+            },
+        )
+    }
+
+    pub async fn build_action_graph_with_options<'graph>(
+        &self,
+        workspace_graph: &'graph WorkspaceGraph,
+        options: ActionGraphBuilderOptions,
+    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+        ActionGraphBuilder::new(workspace_graph, options)
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
-            console: Arc::new(self.console.clone()),
+            console: self.get_console()?,
             vcs: self.get_vcs_adapter()?,
             toolchain_config: Arc::clone(&self.toolchain_config),
             toolchain_registry: self.get_toolchain_registry().await?,
@@ -108,11 +125,13 @@ impl CliSession {
     }
 
     pub fn get_cache_engine(&self) -> miette::Result<Arc<CacheEngine>> {
-        let item = self
-            .cache_engine
-            .get_or_try_init(|| CacheEngine::new(&self.workspace_root).map(Arc::new))?;
+        if self.cache_engine.get().is_none() {
+            let _ = self
+                .cache_engine
+                .set(Arc::new(CacheEngine::new(&self.workspace_root)?));
+        }
 
-        Ok(Arc::clone(item))
+        Ok(self.cache_engine.get().map(Arc::clone).unwrap())
     }
 
     pub fn get_console(&self) -> miette::Result<Arc<Console>> {
@@ -174,7 +193,7 @@ impl CliSession {
     }
 
     pub fn get_vcs_adapter(&self) -> miette::Result<Arc<BoxedVcs>> {
-        let item = self.vcs_adapter.get_or_try_init(|| {
+        if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
             let git = Git::load(
                 &self.workspace_root,
@@ -182,10 +201,10 @@ impl CliSession {
                 &config.remote_candidates,
             )?;
 
-            Ok::<_, miette::Report>(Arc::new(Box::new(git)))
-        })?;
+            let _ = self.vcs_adapter.set(Arc::new(Box::new(git)));
+        }
 
-        Ok(Arc::clone(item))
+        Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())
     }
 
     pub async fn get_workspace_graph(&self) -> miette::Result<WorkspaceGraph> {
@@ -243,7 +262,8 @@ impl CliSession {
 impl AppSession for CliSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
-        self.console.set_reporter(DefaultReporter::default());
+        self.console.set_reporter(MoonReporter::default());
+        self.console.set_theme(create_console_theme());
 
         startup::create_moonx_shims()?;
 
@@ -285,13 +305,12 @@ impl AppSession for CliSession {
 
         // Load components
 
-        if !is_test_env() && is_ci() {
-            let vcs = self.get_vcs_adapter()?;
+        let vcs = self.get_vcs_adapter()?;
 
-            startup::signin_to_moonbase(&vcs).await?;
-        }
+        startup::extract_repo_info(&vcs).await?;
+        startup::register_feature_flags(&self.workspace_config)?;
 
-        ProcessRegistry::register(self.workspace_config.runner.kill_process_threshold);
+        ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 
         Ok(None)
     }
@@ -320,8 +339,6 @@ impl AppSession for CliSession {
                 &self.workspace_root,
             )
             .await?;
-
-            self.get_toolchain_registry().await?.load_all().await?;
 
             if self.requires_toolchain_installed() {
                 analyze::load_toolchain().await?;

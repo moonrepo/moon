@@ -2,6 +2,7 @@ mod utils;
 
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
+use moon_env_var::GlobalEnvBag;
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
@@ -1059,12 +1060,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::EnvVarGlob("FOO_*".into())];
 
-            unsafe {
-                env::set_var("FOO_ONE", "1");
-                env::set_var("FOO_TWO", "2");
-                env::set_var("FOO_THREE", "3");
-                env::set_var("BAR_ONE", "1");
-            }
+            let bag = GlobalEnvBag::instance();
+            bag.set("FOO_ONE", "1");
+            bag.set("FOO_TWO", "2");
+            bag.set("FOO_THREE", "3");
+            bag.set("BAR_ONE", "1");
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1080,12 +1080,10 @@ mod token_expander {
                 }
             );
 
-            unsafe {
-                env::remove_var("FOO_ONE");
-                env::remove_var("FOO_TWO");
-                env::remove_var("FOO_THREE");
-                env::remove_var("BAR_ONE");
-            }
+            bag.remove("FOO_ONE");
+            bag.remove("FOO_TWO");
+            bag.remove("FOO_THREE");
+            bag.remove("BAR_ONE");
         }
 
         #[test]

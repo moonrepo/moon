@@ -16,7 +16,7 @@ use bazel_remote_apis::google::bytestream::{
 use http::header::HeaderMap;
 use moon_common::color;
 use moon_config::RemoteConfig;
-use starbase_utils::env::bool_var;
+use moon_env_var::GlobalEnvBag;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
@@ -129,7 +129,7 @@ impl RemoteClient for GrpcRemoteClient {
             }
         );
 
-        self.debug = bool_var("MOON_DEBUG_REMOTE");
+        self.debug = GlobalEnvBag::instance().should_debug_remote();
         self.config = config.to_owned();
 
         // Extract headers and abort early if not enabled

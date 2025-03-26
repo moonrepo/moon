@@ -4,14 +4,16 @@ use std::collections::BTreeMap;
 
 hash_content!(
     pub struct HooksHash<'cfg> {
-        hooks: BTreeMap<&'cfg str, &'cfg [String]>,
-        vcs: &'cfg VcsManager,
+        pub files_exist: bool,
+        pub hooks: BTreeMap<&'cfg str, &'cfg [String]>,
+        pub vcs: &'cfg VcsManager,
     }
 );
 
 impl<'cfg> HooksHash<'cfg> {
     pub fn new(vcs: &VcsManager) -> HooksHash {
         HooksHash {
+            files_exist: false,
             hooks: BTreeMap::new(),
             vcs,
         }

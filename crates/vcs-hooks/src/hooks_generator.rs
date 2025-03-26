@@ -96,6 +96,28 @@ impl<'app> HooksGenerator<'app> {
         Ok(true)
     }
 
+    pub fn get_internal_hook_paths(&self) -> Vec<PathBuf> {
+        let mut paths = vec![];
+
+        for (hook_name, commands) in &self.config.hooks {
+            if commands.is_empty() {
+                continue;
+            }
+
+            paths.push(self.create_internal_hook_path(hook_name));
+        }
+
+        paths
+    }
+
+    fn create_internal_hook_path(&self, hook_name: &str) -> PathBuf {
+        self.output_dir.join(if self.is_bash_format() {
+            format!("{}.sh", hook_name)
+        } else {
+            format!("{}.ps1", hook_name)
+        })
+    }
+
     fn create_hooks(&self) -> miette::Result<FxHashMap<&'app String, PathBuf>> {
         let mut hooks = FxHashMap::default();
 
@@ -104,11 +126,7 @@ impl<'app> HooksGenerator<'app> {
                 continue;
             }
 
-            let hook_path = self.output_dir.join(if self.is_bash_format() {
-                format!("{}.sh", hook_name)
-            } else {
-                format!("{}.ps1", hook_name)
-            });
+            let hook_path = self.create_internal_hook_path(hook_name);
 
             debug!(file = ?hook_path, "Creating {} hook", color::file(hook_name));
 

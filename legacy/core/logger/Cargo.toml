@@ -5,7 +5,6 @@ edition = "2024"
 publish = false
 
 [dependencies]
-console = { workspace = true }
 log = "0.4.22"
 
 [lints]

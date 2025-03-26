@@ -2,15 +2,15 @@ use crate::target_error::TargetError;
 use crate::target_scope::TargetScope;
 use compact_str::CompactString;
 use moon_common::{ID_CHARS, Id, Style, Stylize, color};
-use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use std::sync::LazyLock;
 use std::{cmp::Ordering, fmt};
 use tracing::instrument;
 
 // The @ is to support npm package scopes!
-pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
+pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&format!(
         r"^(?P<scope>(?:[A-Za-z@#_]{{1}}{chars}|\^|~))?:(?P<task>{chars})$",
         chars = ID_CHARS

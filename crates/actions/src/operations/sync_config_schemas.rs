@@ -7,7 +7,8 @@ use tracing::{instrument, warn};
 
 hash_content!(
     pub struct ConfigSchemaHash<'cfg> {
-        moon_version: &'cfg Version,
+        pub files_exist: bool,
+        pub moon_version: &'cfg Version,
     }
 );
 
@@ -25,11 +26,21 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
         )
         .map(|_| true)
     } else {
+        let files = vec![
+            out_dir.join("project.json"),
+            out_dir.join("tasks.json"),
+            out_dir.join("template-frontmatter.json"),
+            out_dir.join("template.json"),
+            out_dir.join("toolchain.json"),
+            out_dir.join("workspace.json"),
+        ];
+
         app_context
             .cache_engine
             .execute_if_changed(
                 "configSchemas.json",
                 ConfigSchemaHash {
+                    files_exist: files.into_iter().all(|file| file.exists()),
                     moon_version: &app_context.cli_version,
                 },
                 || async {

@@ -120,6 +120,23 @@ fn generate_toolchain(
 fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
     generator.add::<WorkspaceConfig>();
+
+    let pipeline_config = generator.schemas.get("PipelineConfig").cloned().unwrap();
+
+    if let Some(config) = generator.schemas.get_mut("WorkspaceConfig") {
+        if let SchemaType::Struct(inner) = &mut config.ty {
+            inner.fields.insert(
+                "runner".into(),
+                Box::new(SchemaField {
+                    deprecated: Some("Use `pipeline` instead.".into()),
+                    schema: pipeline_config,
+                    nullable: true,
+                    ..Default::default()
+                }),
+            );
+        }
+    }
+
     generator.generate(out_dir.join("workspace.json"), create_jsonschema_renderer())
 }
 

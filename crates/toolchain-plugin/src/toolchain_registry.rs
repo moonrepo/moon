@@ -3,8 +3,11 @@ use futures::{StreamExt, stream::FuturesOrdered};
 use miette::IntoDiagnostic;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
-use moon_plugin::{PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config};
-use proto_core::inject_proto_manifest_config;
+use moon_plugin::{
+    PluginError, PluginHostData, PluginId, PluginManifest, PluginRegistry, PluginType,
+    serialize_config,
+};
+use proto_core::{ProtoEnvironment, inject_proto_manifest_config};
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
 use std::future::Future;
@@ -76,6 +79,35 @@ impl ToolchainRegistry {
         !self.configs.is_empty()
     }
 
+    pub async fn load<I>(&self, id: I) -> miette::Result<Arc<ToolchainPlugin>>
+    where
+        I: AsRef<str>,
+    {
+        let id = PluginId::raw(id.as_ref());
+
+        if self.is_registered(&id) {
+            return self.get_instance(&id).await;
+        }
+
+        let Some(config) = self.configs.get(&id) else {
+            return Err(PluginError::UnknownId {
+                id: id.to_string(),
+                ty: PluginType::Toolchain,
+            }
+            .into());
+        };
+
+        let orig_id = id.clone();
+
+        self.registry
+            .load_with_config(&orig_id, config.plugin.as_ref().unwrap(), move |manifest| {
+                apply_config(&id, config, &self.registry.host_data.proto_env, manifest)
+            })
+            .await?;
+
+        self.get_instance(&orig_id).await
+    }
+
     pub async fn load_all(&self) -> miette::Result<()> {
         if !self.has_plugins() {
             return Ok(());
@@ -89,23 +121,13 @@ impl ToolchainRegistry {
             let registry = Arc::clone(&self.registry);
 
             set.spawn(async move {
+                if registry.is_registered(&id) {
+                    return Ok(());
+                }
+
                 registry
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
-                        let value = serialize_config(config.config.iter())?;
-
-                        trace!(
-                            toolchain_id = id.as_str(),
-                            config = %value,
-                            "Storing moon toolchain configuration",
-                        );
-
-                        manifest
-                            .config
-                            .insert("moon_toolchain_config".to_owned(), value);
-
-                        inject_proto_manifest_config(&id, &registry.host_data.proto_env, manifest)?;
-
-                        Ok(())
+                        apply_config(&id, &config, &registry.host_data.proto_env, manifest)
                     })
                     .await
             });
@@ -192,4 +214,27 @@ pub struct CallResult<T> {
     pub id: PluginId,
     pub operation: Operation,
     pub output: T,
+}
+
+fn apply_config(
+    id: &PluginId,
+    config: &ToolchainPluginConfig,
+    proto_env: &ProtoEnvironment,
+    manifest: &mut PluginManifest,
+) -> miette::Result<()> {
+    let value = serialize_config(config.config.iter())?;
+
+    trace!(
+        toolchain_id = id.as_str(),
+        config = %value,
+        "Storing moon toolchain configuration",
+    );
+
+    manifest
+        .config
+        .insert("moon_toolchain_config".to_owned(), value);
+
+    inject_proto_manifest_config(id, proto_env, manifest)?;
+
+    Ok(())
 }

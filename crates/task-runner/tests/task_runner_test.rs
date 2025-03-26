@@ -946,7 +946,6 @@ mod task_runner {
 
     mod archive {
         use super::*;
-        use std::sync::Arc;
 
         #[tokio::test]
         async fn creates_a_passed_operation_if_archived() {
@@ -966,24 +965,8 @@ mod task_runner {
         }
 
         #[tokio::test]
-        async fn creates_a_skipped_operation_if_not_archiveable() {
-            let container = TaskRunnerContainer::new("runner", "base").await;
-            container.sandbox.enable_git();
-
-            let mut runner = container.create_runner();
-            let result = runner.archive("hash123").await.unwrap();
-
-            assert!(!result);
-
-            let operation = runner.operations.last().unwrap();
-
-            assert!(operation.meta.is_archive_creation());
-            assert_eq!(operation.status, ActionStatus::Skipped);
-        }
-
-        #[tokio::test]
         async fn can_archive_tasks_without_outputs() {
-            let mut container = TaskRunnerContainer::new("runner", "base").await;
+            let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
             let mut runner = container.create_runner();

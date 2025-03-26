@@ -2,10 +2,8 @@ mod utils;
 
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
-use moon_task::Target;
 use starbase_archive::Archiver;
 use std::fs;
-use std::sync::Arc;
 use utils::*;
 
 mod output_archiver {
@@ -13,14 +11,6 @@ mod output_archiver {
 
     mod pack {
         use super::*;
-
-        #[tokio::test]
-        async fn does_nothing_if_no_outputs_in_task() {
-            let container = TaskRunnerContainer::new("archive", "no-outputs").await;
-            let archiver = container.create_archiver();
-
-            assert!(archiver.archive("hash123", None).await.unwrap().is_none());
-        }
 
         #[tokio::test]
         #[should_panic(expected = "Task project:file-outputs defines outputs but after being ran")]

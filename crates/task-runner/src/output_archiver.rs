@@ -3,7 +3,7 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project::Project;
 use moon_remote::{ActionState, RemoteService};
-use moon_task::{TargetError, TargetScope, Task};
+use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
 use std::path::{Path, PathBuf};
@@ -24,46 +24,42 @@ impl OutputArchiver<'_> {
         &self,
         hash: &str,
         remote_state: Option<&mut ActionState<'_>>,
-    ) -> miette::Result<bool> {
+    ) -> miette::Result<Option<PathBuf>> {
         let mut archived = false;
+        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
 
-        if self.task.is_build_type() {
-            // Check that outputs actually exist
-            if !self.has_outputs_been_created(false)? {
-                return Err(TaskRunnerError::MissingOutputs {
-                    target: self.task.target.clone(),
-                }
-                .into());
+        // Check that outputs actually exist
+        if self.task.is_build_type() && !self.has_outputs_been_created(false)? {
+            return Err(TaskRunnerError::MissingOutputs {
+                target: self.task.target.clone(),
             }
+            .into());
+        }
 
-            // If so, create and pack the archive!
-            let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
+        // If so, create and pack the archive!
+        if archive_file.exists() {
+            archived = true;
+        } else if self.app.cache_engine.is_writable() {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Archiving task outputs from project"
+            );
 
-            if !archive_file.exists() {
-                if self.app.cache_engine.is_writable() {
-                    debug!(
-                        task_target = self.task.target.as_str(),
-                        hash, "Archiving task outputs from project"
-                    );
-
-                    self.create_local_archive(hash, &archive_file)?;
-                    archived = true;
-                } else {
-                    debug!(
-                        task_target = self.task.target.as_str(),
-                        hash, "Cache is not writable, skipping output archiving"
-                    );
-                }
-            }
+            self.create_local_archive(hash, &archive_file)?;
+            archived = true;
+        } else {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Cache is not writable, skipping output archiving"
+            );
         }
 
         // Then cache the result in the remote service
         if let Some(state) = remote_state {
-            self.upload_to_remote_service(state).await?;
-            archived = true;
+            archived = self.upload_to_remote_service(state).await?;
         }
 
-        Ok(archived)
+        Ok(if archived { Some(archive_file) } else { None })
     }
 
     #[instrument(skip(self))]
@@ -147,14 +143,16 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self, state))]
-    async fn upload_to_remote_service(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+    async fn upload_to_remote_service(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
             state.compute_outputs(&self.app.workspace_root)?;
 
             remote.save_action(state).await?;
             remote.save_action_result(state).await?;
+
+            return Ok(true);
         }
 
-        Ok(())
+        Ok(false)
     }
 }

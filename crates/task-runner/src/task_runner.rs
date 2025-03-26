@@ -624,11 +624,13 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        if self
+        let archived = self
             .archiver
             .archive(hash, self.remote_state.as_mut())
             .await?
-        {
+            .is_some();
+
+        if archived {
             debug!(
                 task_target = self.task.target.as_str(),
                 "Ran cache archiving operation"

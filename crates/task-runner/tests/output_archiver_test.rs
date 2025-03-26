@@ -2,10 +2,8 @@ mod utils;
 
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
-use moon_task::Target;
 use starbase_archive::Archiver;
 use std::fs;
-use std::sync::Arc;
 use utils::*;
 
 mod output_archiver {
@@ -13,14 +11,6 @@ mod output_archiver {
 
     mod pack {
         use super::*;
-
-        #[tokio::test]
-        async fn does_nothing_if_no_outputs_in_task() {
-            let container = TaskRunnerContainer::new("archive", "no-outputs").await;
-            let archiver = container.create_archiver();
-
-            assert!(archiver.archive("hash123", None).await.unwrap().is_none());
-        }
 
         #[tokio::test]
         #[should_panic(expected = "Task project:file-outputs defines outputs but after being ran")]
@@ -316,192 +306,6 @@ mod output_archiver {
 
             assert!(dir.join("root.txt").exists());
             assert!(dir.join("project/file.txt").exists());
-        }
-    }
-
-    mod is_archivable {
-        use super::*;
-
-        #[tokio::test]
-        async fn returns_based_on_type() {
-            let container = TaskRunnerContainer::new("archive", "build-type").await;
-            let archiver = container.create_archiver();
-
-            assert!(archiver.is_archivable().unwrap());
-
-            let container = TaskRunnerContainer::new("archive", "run-type").await;
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
-
-            let container = TaskRunnerContainer::new("archive", "test-type").await;
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn can_return_true_for_run_type_if_workspace_configured() {
-            let mut container = TaskRunnerContainer::new("archive", "run-type").await;
-
-            // Project scope
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::new("project", "run-type").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn can_return_true_for_test_type_if_workspace_configured() {
-            let mut container = TaskRunnerContainer::new("archive", "test-type").await;
-
-            // All scope
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse(":test-type").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn matches_all_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse(":no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn doesnt_match_all_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse(":unknown-task").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn matches_project_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::new("project", "no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn doesnt_match_project_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::new("other-project", "no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn matches_tag_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse("#cache:no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        async fn doesnt_match_tag_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse("#other-tag:no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        #[should_panic(expected = "Dependencies scope (^:) is not supported in run contexts.")]
-        async fn errors_for_deps_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse("^:no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
-        }
-
-        #[tokio::test]
-        #[should_panic(expected = "Self scope (~:) is not supported in run contexts.")]
-        async fn errors_for_self_config() {
-            let mut container = TaskRunnerContainer::new("archive", "no-outputs").await;
-
-            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
-                config
-                    .pipeline
-                    .archivable_targets
-                    .push(Target::parse("~:no-outputs").unwrap());
-            }
-
-            let archiver = container.create_archiver();
-
-            assert!(!archiver.is_archivable().unwrap());
         }
     }
 

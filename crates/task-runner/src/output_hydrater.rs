@@ -56,7 +56,6 @@ impl OutputHydrater<'_> {
                     // Otherwise hydrate the cached archive into the task's outputs
                     if archive_file.exists() {
                         self.unpack_local_archive(hash, &archive_file)?;
-
                         hydrated = true
                     }
                 } else {

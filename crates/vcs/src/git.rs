@@ -433,6 +433,9 @@ impl Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
+            // This doesn't work with the `--modified` and `--others`
+            // flags, so we need to drill into each submodule manually
+            // "--recurse-submodules",
         ];
 
         if self.is_version_supported(">=2.31.0").await? {
@@ -470,6 +473,11 @@ impl Git {
     }
 
     // https://git-scm.com/docs/git-status#_short_format
+    // Requirements:
+    //  Root:
+    //    - Run at the root. Does not include submodule files.
+    //  Submodule:
+    //    - Run in the module root.
     #[instrument(skip(self))]
     async fn exec_status(&self, module: &GitModule) -> miette::Result<TouchedFiles> {
         let output = self
@@ -480,6 +488,9 @@ impl Git {
                         "status",
                         "--porcelain",
                         "--untracked-files",
+                        // Status does not show files within a submodule, and instead
+                        // shows something like `modified: submodules/name (untracked content)`,
+                        // so we need to ignore it, and run a status in the submodule directly
                         "--ignore-submodules",
                         // We use this option so that file names with special characters
                         // are displayed as-is and are not quoted/escaped

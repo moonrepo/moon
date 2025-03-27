@@ -57,6 +57,16 @@ impl ProcessCache {
         command
     }
 
+    pub fn create_command_in_cwd<I, A>(&self, args: I, dir: &Path) -> Command
+    where
+        I: IntoIterator<Item = A>,
+        A: AsRef<OsStr>,
+    {
+        let mut command = self.create_command(args);
+        command.cwd(dir);
+        command
+    }
+
     pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,

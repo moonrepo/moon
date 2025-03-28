@@ -1,8 +1,10 @@
+use moon_common::is_test_env;
 use moon_process::{Command, output_to_string};
 use scc::HashCache;
 use scc::hash_cache::Entry;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::process::Output;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -14,7 +16,9 @@ pub struct ProcessCache {
     pub bin: String,
 
     /// Root of the moon workspace, and where to run commands.
-    pub root: PathBuf,
+    pub workspace_root: PathBuf,
+
+    pub worktree_root: PathBuf,
 }
 
 impl ProcessCache {
@@ -22,7 +26,8 @@ impl ProcessCache {
         Self {
             cache: HashCache::new(),
             bin: bin.to_string(),
-            root: root.to_path_buf(),
+            workspace_root: root.to_path_buf(),
+            worktree_root: root.to_path_buf(),
         }
     }
 
@@ -35,7 +40,7 @@ impl ProcessCache {
         command.args(args);
         // Run from workspace root instead of git root so that we can avoid
         // prefixing all file paths to ensure everything is relative and accurate.
-        command.cwd(&self.root);
+        command.cwd(&self.workspace_root);
         // The VCS binary should be available on the system,
         // so avoid the shell overhead
         command.without_shell();
@@ -51,7 +56,7 @@ impl ProcessCache {
 
         // Run in a directory to support submodules
         if !dir.is_empty() && dir != "." {
-            command.cwd(self.root.join(dir));
+            command.cwd(self.workspace_root.join(dir));
         }
 
         command
@@ -99,6 +104,19 @@ impl ProcessCache {
         trim: bool,
         format: impl FnOnce(String) -> String,
     ) -> miette::Result<Arc<String>> {
+        let format_output = |output: Output| {
+            let value = output_to_string(&output.stdout);
+            Arc::new(format(if trim { value.trim().to_owned() } else { value }))
+        };
+
+        // Avoid caching while testing
+        if is_test_env() {
+            let output = command.exec_capture_output().await?;
+            let value = format_output(output);
+
+            return Ok(value);
+        }
+
         let cache_key = command.get_cache_key();
 
         // First check if the data has already been cached
@@ -111,8 +129,7 @@ impl ProcessCache {
             Entry::Occupied(o) => o.get().clone(),
             Entry::Vacant(v) => {
                 let output = command.exec_capture_output().await?;
-                let value = output_to_string(&output.stdout);
-                let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
+                let cache = format_output(output);
 
                 v.put_entry(Arc::clone(&cache));
 
@@ -123,6 +140,7 @@ impl ProcessCache {
         Ok(cache)
     }
 
+    #[deprecated]
     pub async fn run_command_without_cache(
         &self,
         mut command: Command,

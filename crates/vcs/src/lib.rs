@@ -1,6 +1,6 @@
 mod git;
 mod git_submodule;
-mod gitx;
+pub mod gitx;
 
 mod git_worktree;
 mod process_cache;

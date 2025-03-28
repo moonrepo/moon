@@ -120,7 +120,7 @@ impl<'task> TaskHasher<'task> {
                 // Collect inputs by querying VCS
             } else {
                 // Using VCS to collect inputs in a project is faster than globbing
-                for file in self.vcs.get_file_tree(self.project.source.as_str()).await? {
+                for file in self.vcs.get_file_tree(&self.project.source).await? {
                     files.insert(file.to_path(self.workspace_root));
                 }
 

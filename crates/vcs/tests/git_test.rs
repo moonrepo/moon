@@ -1,4 +1,4 @@
-use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
+use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs, clean_git_version};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{Sandbox, create_sandbox};
@@ -57,7 +57,7 @@ mod root_detection {
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree, None);
-        assert_eq!(git.process.root, sandbox.path());
+        assert_eq!(git.process.workspace_root, sandbox.path());
         assert_eq!(git.root_prefix, None);
     }
 
@@ -69,7 +69,7 @@ mod root_detection {
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree, None);
-        assert_eq!(git.process.root, sandbox.path());
+        assert_eq!(git.process.workspace_root, sandbox.path());
         assert_eq!(git.root_prefix, None);
     }
 
@@ -87,7 +87,10 @@ mod root_detection {
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree, None);
-        assert_eq!(git.process.root, sandbox.path().join("nested/moon"));
+        assert_eq!(
+            git.process.workspace_root,
+            sandbox.path().join("nested/moon")
+        );
         assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
 
@@ -114,7 +117,7 @@ mod root_detection {
                     .unwrap(),
             })
         );
-        assert_eq!(git.process.root, sandbox.path().join("tree"));
+        assert_eq!(git.process.workspace_root, sandbox.path().join("tree"));
         assert_eq!(git.root_prefix, None);
     }
 
@@ -146,7 +149,10 @@ mod root_detection {
                     .unwrap(),
             })
         );
-        assert_eq!(git.process.root, sandbox.path().join("tree/nested/moon"));
+        assert_eq!(
+            git.process.workspace_root,
+            sandbox.path().join("tree/nested/moon")
+        );
         assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
 }
@@ -292,7 +298,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         let tree = git
-            .get_file_tree(".")
+            .get_file_tree(&RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
@@ -341,7 +347,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
         let tree = git
-            .get_file_tree(".")
+            .get_file_tree(&RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
@@ -382,7 +388,7 @@ mod file_hashing {
         }
 
         let tree = git
-            .get_file_tree(".")
+            .get_file_tree(&RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
@@ -435,7 +441,7 @@ mod file_tree {
     async fn returns_from_dir() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git.get_file_tree("foo").await.unwrap();
+        let tree = git.get_file_tree(&RelativePath::new("foo")).await.unwrap();
 
         assert_eq!(
             tree,
@@ -451,7 +457,10 @@ mod file_tree {
     async fn returns_from_deeply_nested_dir() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git.get_file_tree("bar/sub/dir").await.unwrap();
+        let tree = git
+            .get_file_tree(&RelativePath::new("bar/sub/dir"))
+            .await
+            .unwrap();
 
         assert_eq!(
             tree,
@@ -465,7 +474,7 @@ mod file_tree {
 
         sandbox.create_file("baz/extra.txt", "");
 
-        let tree = git.get_file_tree("baz").await.unwrap();
+        let tree = git.get_file_tree(&RelativePath::new("baz")).await.unwrap();
 
         assert_eq!(
             tree,
@@ -482,7 +491,7 @@ mod file_tree {
         let (_sandbox, git) = create_nested_git_sandbox();
 
         assert_eq!(
-            git.get_file_tree(".").await.unwrap(),
+            git.get_file_tree(&RelativePath::new(".")).await.unwrap(),
             vec![WorkspaceRelativePathBuf::from("file.js")]
         );
     }

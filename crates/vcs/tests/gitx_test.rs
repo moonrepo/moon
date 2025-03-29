@@ -3,9 +3,8 @@ use moon_vcs::TouchedFiles;
 use moon_vcs::Vcs;
 use moon_vcs::gitx::*;
 use rustc_hash::FxHashSet;
-use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
+use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::collections::BTreeMap;
-use std::fs;
 
 fn create_root_sandbox() -> (Sandbox, Gitx) {
     let sandbox = create_empty_sandbox();
@@ -77,7 +76,6 @@ mod gitx {
 
             assert_eq!(git.repository_root, sandbox.path());
             assert_eq!(git.workspace_root, sandbox.path());
-            assert_eq!(git.worktree_root, None);
             assert_eq!(git.worktree.git_dir, sandbox.path().join(".git"));
             assert_eq!(git.worktree.work_dir, sandbox.path());
             assert_eq!(git.worktree.path.as_str(), "");
@@ -237,10 +235,6 @@ mod gitx {
 
             assert_eq!(git.repository_root, sandbox.path());
             assert_eq!(git.workspace_root, sandbox.path().join("worktrees/one"));
-            assert_eq!(
-                git.worktree_root,
-                Some(sandbox.path().join("worktrees/one"))
-            );
             assert!(git.worktree.git_dir.ends_with(".git/worktrees/one"),);
             assert_eq!(git.worktree.work_dir, sandbox.path().join("worktrees/one"));
             assert_eq!(git.worktree.path.as_str(), "");

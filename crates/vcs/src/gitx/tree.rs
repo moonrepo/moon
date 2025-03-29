@@ -3,12 +3,15 @@ use super::git_error::GitError;
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -234,14 +237,13 @@ impl GitTree {
     pub async fn exec_diff(
         &self,
         base_revision: &str,
-        merge_revision: Option<&str>,
-    ) -> miette::Result<TouchedFiles> {
+        head_revision: &str,
+    ) -> miette::Result<TouchedFiles<PathBuf>> {
         let process = self.get_process();
         let output = process
             .run_command(
                 process.create_command_in_cwd(
                     [
-                        "--no-pager",
                         "diff",
                         "--name-status",
                         "--no-color",
@@ -251,7 +253,8 @@ impl GitTree {
                         // We use this option so that file names with special characters
                         // are displayed as-is and are not quoted/escaped
                         "-z",
-                        merge_revision.as_deref().unwrap_or(base_revision),
+                        base_revision,
+                        head_revision,
                     ],
                     &self.work_dir,
                 ),
@@ -289,7 +292,7 @@ impl GitTree {
             let x = last_status.chars().next().unwrap_or_default();
 
             // Paths are relative from the cwd
-            let file = self.path.join(line);
+            let file = self.work_dir.join(line);
 
             match x {
                 'A' | 'C' => {
@@ -371,36 +374,76 @@ impl GitTree {
         Ok(paths)
     }
 
+    // https://git-scm.com/docs/git-ls-tree
+    //
+    // Requirements:
+    //  Root/Worktree:
+    //    - Run at the worktree root.
+    //    - Includes submodule directories in the output, but not their files.
+    //  Submodule:
+    //    - Run in the submodule root.
+    #[instrument(skip(self))]
+    pub async fn exec_ls_tree(&self, revision: &str) -> miette::Result<BTreeMap<PathBuf, String>> {
+        let process = self.get_process();
+        let output = process
+            .run_command(
+                process.create_command_in_cwd(["ls-tree", "-r", "-z", revision], &self.work_dir),
+                false,
+            )
+            .await?;
+
+        let mut tree = BTreeMap::default();
+
+        for line in output.split('\0') {
+            if line.is_empty() {
+                continue;
+            }
+
+            let parts = line.split(" ");
+
+            if let Some((hash, path)) = parts.last().and_then(|part| part.split_once("\t")) {
+                tree.insert(self.work_dir.join(path), hash.to_owned());
+            }
+        }
+
+        Ok(tree)
+    }
+
+    #[instrument(skip(self))]
     pub async fn exec_merge_base(
         &self,
-        base: &str,
-        head: &str,
+        base_revision: &str,
+        head_revision: &str,
         remote_candidates: &[String],
     ) -> miette::Result<Option<Arc<String>>> {
-        let mut args = vec!["merge-base", head];
-        let mut candidates = vec![base.to_owned()];
-        let process = self.get_process();
+        let mut args = vec!["merge-base".to_owned(), head_revision.to_owned()];
+        let mut candidates = vec![base_revision.to_owned()];
 
         for remote in remote_candidates {
-            candidates.push(format!("{remote}/{base}"));
+            candidates.push(format!("{remote}/{base_revision}"));
         }
 
         // To start, we need to find a working base
-        for candidate in &candidates {
-            if process
-                .run_command(
-                    process.create_command_in_cwd(["merge-base", candidate, head], &self.work_dir),
-                    true,
-                )
-                .await
-                .is_ok()
-            {
+        let mut set = JoinSet::new();
+
+        for candidate in candidates {
+            let process = Arc::clone(self.process.as_ref().unwrap());
+            let command = process
+                .create_command_in_cwd(["merge-base", &candidate, head_revision], &self.work_dir);
+
+            set.spawn(async move { process.run_command(command, true).await.map(|_| candidate) });
+        }
+
+        while let Some(result) = set.join_next().await {
+            if let Ok(candidate) = result.into_diagnostic()? {
                 args.push(candidate);
             }
         }
 
         // Then we need to run it again and extract the base hash.
         // This is necessary to support comparisons between forks!
+        let process = self.get_process();
+
         if let Ok(hash) = process
             .run_command(process.create_command_in_cwd(args, &self.work_dir), true)
             .await

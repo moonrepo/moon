@@ -1,5 +1,6 @@
 use moon_common::is_test_env;
 use moon_process::{Command, output_to_string};
+use rustc_hash::FxHashMap;
 use scc::HashCache;
 use scc::hash_cache::Entry;
 use std::ffi::OsStr;
@@ -15,10 +16,11 @@ pub struct ProcessCache {
     /// Binary/command to run.
     pub bin: String,
 
+    /// Environment variables to inject into each command.
+    pub env: FxHashMap<String, String>,
+
     /// Root of the moon workspace, and where to run commands.
     pub workspace_root: PathBuf,
-
-    pub worktree_root: PathBuf,
 }
 
 impl ProcessCache {
@@ -26,8 +28,8 @@ impl ProcessCache {
         Self {
             cache: HashCache::new(),
             bin: bin.to_string(),
+            env: FxHashMap::default(),
             workspace_root: root.to_path_buf(),
-            worktree_root: root.to_path_buf(),
         }
     }
 
@@ -38,6 +40,7 @@ impl ProcessCache {
     {
         let mut command = Command::new(&self.bin);
         command.args(args);
+        command.envs(&self.env);
         // Run from workspace root instead of git root so that we can avoid
         // prefixing all file paths to ensure everything is relative and accurate.
         command.cwd(&self.workspace_root);

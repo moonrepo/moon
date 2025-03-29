@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::Diagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_common::{Style, Stylize, is_test_env};
+use moon_common::{Style, Stylize};
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::FxHashSet;
 use semver::Version;
@@ -622,13 +622,7 @@ impl Vcs for Git {
         // hash-object requires new lines
         command.input(objects.iter().map(|obj| format!("{obj}\n")));
 
-        let output = if is_test_env() {
-            self.process
-                .run_command_without_cache(command, true)
-                .await?
-        } else {
-            self.process.run_command(command, true).await?
-        };
+        let output = self.process.run_command(command, true).await?;
 
         for (i, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {

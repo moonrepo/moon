@@ -6,7 +6,7 @@ use crate::touched_files::*;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, RelativePath, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
 use semver::Version;
 use std::collections::BTreeMap;
@@ -34,10 +34,6 @@ pub struct Gitx {
     /// the repository root, or worktree root.
     pub workspace_root: PathBuf,
 
-    /// Root of a worktree, as denoted by a `.git` file.
-    /// Not defined if not in a worktree.
-    pub worktree_root: Option<PathBuf>,
-
     /// The current working tree. Either a worktree checkout,
     /// or the root of the repository itself.
     pub worktree: GitTree,
@@ -52,7 +48,10 @@ impl Gitx {
         debug!("Using git as a version control system");
 
         let workspace_root = workspace_root.as_ref();
+
         let mut process = ProcessCache::new("git", workspace_root);
+        process.env.insert("GIT_OPTIONAL_LOCKS".into(), "0".into());
+        process.env.insert("GIT_PAGER".into(), "".into());
 
         debug!(
             starting_dir = ?workspace_root,
@@ -99,8 +98,8 @@ impl Gitx {
         }
 
         // Load the main worktree and submodule trees
-        let worktree = match &worktree_root {
-            Some(root) => GitTree::load_worktree(root)?,
+        let worktree = match worktree_root {
+            Some(root) => GitTree::load_worktree(&root)?,
             None => GitTree::load(&repository_root)?,
         };
 
@@ -113,11 +112,9 @@ impl Gitx {
             repository_root,
             submodules,
             workspace_root: workspace_root.to_path_buf(),
-            worktree_root,
             worktree,
         };
 
-        process.worktree_root = git.worktree.work_dir.clone();
         let process = Arc::new(process);
 
         for tree in git.submodules.iter_mut() {
@@ -241,45 +238,43 @@ impl Vcs for Gitx {
         dir: &WorkspaceRelativePath,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut paths = vec![];
-        let mut set = JoinSet::new();
-        let mut include_root = false;
+
+        // Use an absolute path t avoid issues where moon is nested
+        // within the repository and not at the root
+        let abs_dir = dir.to_logical_path(&self.workspace_root);
 
         // At the root, so also include files from all submodules, so
         // that we have a full list of files available
         if dir == "." || dir == "" {
-            include_root = true;
+            let mut set = JoinSet::new();
 
-            for submodule in self.submodules.clone() {
-                let target_dir = dir.to_owned();
+            for tree in self.get_all_trees() {
+                let target_dir = RelativePath::new(".");
 
-                set.spawn(async move { submodule.exec_ls_files(&target_dir).await });
+                set.spawn(async move { tree.exec_ls_files(&target_dir).await });
+            }
+
+            while let Some(result) = set.join_next().await {
+                paths.extend(result.into_diagnostic()??)
             }
         }
         // In a submodule, so only extract files from the target directory
         else if let Some(submodule) = self
             .submodules
             .iter()
-            .find(|submodule| dir.starts_with(&submodule.path))
-            .cloned()
+            .find(|submodule| abs_dir.starts_with(&submodule.work_dir))
         {
-            let target_dir = dir.strip_prefix(&submodule.path).unwrap().to_owned();
+            let target_dir = abs_dir.relative_to(&submodule.work_dir).into_diagnostic()?;
 
-            set.spawn(async move { submodule.exec_ls_files(&target_dir).await });
+            paths.extend(submodule.exec_ls_files(&target_dir).await?);
         }
         // In a directory in the root tree
         else {
-            include_root = true;
-        }
+            let target_dir = abs_dir
+                .relative_to(&self.worktree.work_dir)
+                .into_diagnostic()?;
 
-        if include_root {
-            let root = self.worktree.clone();
-            let target_dir = dir.to_owned();
-
-            set.spawn(async move { root.exec_ls_files(&target_dir).await });
-        }
-
-        while let Some(result) = set.join_next().await {
-            paths.extend(result.into_diagnostic()??)
+            paths.extend(self.worktree.exec_ls_files(&target_dir).await?);
         }
 
         map_absolute_to_workspace_relative_paths(paths, &self.workspace_root)
@@ -386,25 +381,48 @@ impl Vcs for Gitx {
     async fn get_touched_files_between_revisions(
         &self,
         base_revision: &str,
-        revision: &str,
+        head_revision: &str,
     ) -> miette::Result<TouchedFiles> {
         let mut touched_files = TouchedFiles::default();
 
-        // TODO: Revisit submodules
-        // https://github.com/moonrepo/moon/issues/1734
-        // for result in futures::future::try_join_all(self.modules.values().filter_map(|module| {
-        //     if module.is_root() {
-        //         Some(self.exec_diff(module, base_revision, revision))
-        //     } else {
-        //         None
-        //     }
-        // }))
-        // .await?
-        // {
-        //     touched_files.merge(result);
-        // }
+        // Load from root repo
+        touched_files.merge(
+            self.worktree
+                .exec_diff(base_revision, head_revision)
+                .await?,
+        );
 
-        Ok(touched_files)
+        // Load from each submodule
+        if !self.submodules.is_empty() {
+            let mut set = JoinSet::new();
+
+            // Since submodules are separate repos with their own history,
+            // we need to extract the base/head revisions from their history,
+            // using the changes in the current repo
+            let mut base_tree = self.worktree.exec_ls_tree(base_revision).await?;
+            let mut head_tree = self.worktree.exec_ls_tree(head_revision).await?;
+
+            for submodule in &self.submodules {
+                if let Some(base) = base_tree.remove(&submodule.work_dir) {
+                    let head = head_tree
+                        .remove(&submodule.work_dir)
+                        .unwrap_or("HEAD".into());
+
+                    if base != head {
+                        let submodule = submodule.to_owned();
+                        set.spawn(async move { submodule.exec_diff(&base, &head).await });
+                    }
+                }
+            }
+
+            if !set.is_empty() {
+                while let Some(result) = set.join_next().await {
+                    touched_files.merge(result.into_diagnostic()??);
+                }
+            }
+        }
+
+        touched_files.into_workspace_relative(&self.workspace_root)
     }
 
     async fn get_version(&self) -> miette::Result<Version> {

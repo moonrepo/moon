@@ -386,42 +386,48 @@ impl Vcs for Gitx {
     ) -> miette::Result<TouchedFiles> {
         let mut touched_files = TouchedFiles::default();
 
+        // Determine the merge base revision based on the base/head
+        let merge_base = self
+            .worktree
+            .exec_merge_base(base_revision, head_revision, &self.remote_candidates)
+            .await?;
+        let merge_base = merge_base
+            .as_ref()
+            .map(|rev| rev.as_str())
+            .unwrap_or(base_revision);
+
         // Load from root repo
-        touched_files.merge(
-            self.worktree
-                .exec_diff(base_revision, head_revision)
-                .await?,
-        );
+        touched_files.merge(self.worktree.exec_diff(merge_base, "").await?);
 
         // Load from each submodule
-        if !self.submodules.is_empty() {
-            let mut set = JoinSet::new();
+        //  if !self.submodules.is_empty() {
+        let mut set = JoinSet::new();
 
-            // Since submodules are separate repos with their own history,
-            // we need to extract the base/head revisions from their history,
-            // using the changes in the current repo
-            let mut base_tree = self.worktree.exec_ls_tree(base_revision).await?;
-            let mut head_tree = self.worktree.exec_ls_tree(head_revision).await?;
+        // Since submodules are separate repos with their own history,
+        // we need to extract the base/head revisions from their history,
+        // using the changes in the current repo
+        let mut base_tree = self.worktree.exec_ls_tree(base_revision).await?;
+        let mut head_tree = self.worktree.exec_ls_tree(head_revision).await?;
 
-            for submodule in &self.submodules {
-                if let Some(base) = base_tree.remove(&submodule.work_dir) {
-                    let head = head_tree
-                        .remove(&submodule.work_dir)
-                        .unwrap_or("HEAD".into());
+        for submodule in &self.submodules {
+            if let Some(base) = base_tree.remove(&submodule.work_dir) {
+                let head = head_tree
+                    .remove(&submodule.work_dir)
+                    .unwrap_or("HEAD".into());
 
-                    if base != head {
-                        let submodule = submodule.to_owned();
-                        set.spawn(async move { submodule.exec_diff(&base, &head).await });
-                    }
-                }
-            }
-
-            if !set.is_empty() {
-                while let Some(result) = set.join_next().await {
-                    touched_files.merge(result.into_diagnostic()??);
+                if base != head {
+                    let submodule = submodule.to_owned();
+                    set.spawn(async move { submodule.exec_diff(&base, &head).await });
                 }
             }
         }
+
+        if !set.is_empty() {
+            while let Some(result) = set.join_next().await {
+                touched_files.merge(result.into_diagnostic()??);
+            }
+        }
+        //  }
 
         touched_files.into_workspace_relative(&self.workspace_root)
     }

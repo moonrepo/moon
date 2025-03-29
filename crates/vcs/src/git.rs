@@ -581,15 +581,14 @@ impl Vcs for Git {
     #[instrument(skip_all)]
     async fn get_file_hashes(
         &self,
-        // TODO change
-        files: &[String], // Workspace relative
+        files: &[WorkspaceRelativePathBuf], // Workspace relative
         allow_ignored: bool,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
 
         for file in files {
-            let abs_file = self.process.workspace_root.join(file);
+            let abs_file = self.process.workspace_root.join(file.as_str());
 
             // File must exist or git fails
             if abs_file.exists()
@@ -602,7 +601,7 @@ impl Vcs for Git {
                 if let Some(prefix) = &self.root_prefix {
                     objects.push(prefix.join(file).as_str().to_owned());
                 } else {
-                    objects.push(file.to_owned());
+                    objects.push(file.to_string());
                 }
             }
         }

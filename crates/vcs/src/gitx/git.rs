@@ -6,14 +6,14 @@ use crate::touched_files::*;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_common::path::{RelativePathBuf, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
 use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 #[derive(Debug)]
 pub struct Gitx {
@@ -171,33 +171,36 @@ impl Vcs for Gitx {
             .await
     }
 
-    // TODO
-    #[instrument(skip_all)]
     async fn get_file_hashes(
         &self,
-        // TODO change
-        files: &[String], // Workspace relative
+        files: &[WorkspaceRelativePathBuf],
         allow_ignored: bool,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
+        let work_dir = &self.worktree.work_dir;
 
         for file in files {
-            let abs_file = self.get_process().workspace_root.join(file);
+            let abs_file = file.to_logical_path(&self.workspace_root);
 
-            // File must exist or git fails
+            // File must exist and must not be a directory or Git fails
             if abs_file.exists()
                 && abs_file.is_file()
                 && (allow_ignored || !self.is_ignored(&abs_file))
             {
-                // When moon is setup in a sub-folder and not the git root,
+                // When moon is setup in a sub-folder and not the Git root,
                 // we need to prefix the paths because `--stdin-paths` assumes
-                // the paths are from the git root and don't work correctly...
-                // if let Some(prefix) = &self.root_prefix {
-                //     objects.push(prefix.join(file).as_str().to_owned());
-                // } else {
-                objects.push(file.to_owned());
-                // }
+                // the paths are from the worktree root and don't work correctly...
+                if &self.workspace_root == work_dir {
+                    objects.push(file.to_string());
+                } else {
+                    objects.push(
+                        abs_file
+                            .relative_to(work_dir)
+                            .into_diagnostic()?
+                            .to_string(),
+                    );
+                }
             }
         }
 
@@ -208,22 +211,23 @@ impl Vcs for Gitx {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        let mut command = self
-            .get_process()
-            .create_command(["hash-object", "--stdin-paths"]);
+        let process = self.get_process();
+        let mut command = process.create_command_in_cwd(["hash-object", "--stdin-paths"], work_dir);
 
         command.set_continuous_pipe(true);
 
         // hash-object requires new lines
         command.input(objects.iter().map(|obj| format!("{obj}\n")));
 
-        let output = self.get_process().run_command(command, true).await?;
+        let output = process.run_command(command, true).await?;
 
         for (i, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
                 map.insert(
-                    // self.to_workspace_relative_path(&objects[i]),
-                    RelativePathBuf::from(&objects[i]),
+                    work_dir
+                        .join(&objects[i])
+                        .relative_to(&self.workspace_root)
+                        .into_diagnostic()?,
                     hash.to_owned(),
                 );
             }
@@ -232,7 +236,6 @@ impl Vcs for Gitx {
         Ok(map)
     }
 
-    #[instrument(skip(self))]
     async fn get_file_tree(
         &self,
         dir: &WorkspaceRelativePath,
@@ -435,8 +438,16 @@ impl Vcs for Gitx {
         self.worktree.git_dir.exists()
     }
 
-    // TODO
     fn is_ignored(&self, file: &Path) -> bool {
+        // Check if this path is within a submodule,
+        // and if so, use the ignore list there
+        for submodule in &self.submodules {
+            if file.starts_with(&submodule.work_dir) {
+                return submodule.is_ignored(file);
+            }
+        }
+
+        // Otherwise it's within the current worktree
         self.worktree.is_ignored(file)
     }
 

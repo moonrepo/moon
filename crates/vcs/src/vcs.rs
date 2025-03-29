@@ -26,7 +26,7 @@ pub trait Vcs: Debug {
     /// the workspace root.
     async fn get_file_hashes(
         &self,
-        files: &[String],
+        files: &[WorkspaceRelativePathBuf],
         allow_ignored: bool,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>>;
 

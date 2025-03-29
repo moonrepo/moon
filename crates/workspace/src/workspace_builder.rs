@@ -4,10 +4,11 @@ use crate::repo_type::RepoType;
 use crate::tasks_querent::*;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::*;
+use miette::IntoDiagnostic;
 use moon_cache::CacheEngine;
 use moon_common::{
     Id, color, consts,
-    path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string},
+    path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
     ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectsSourcesList,
@@ -642,7 +643,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Hash all project-level config files
         for build_data in self.project_data.values() {
             for name in &config_names {
-                configs.push(build_data.source.join(name).to_string());
+                configs.push(build_data.source.join(name));
             }
         }
 
@@ -652,9 +653,7 @@ impl<'app> WorkspaceBuilder<'app> {
             ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
             GlobWalkOptions::default().cache(),
         )? {
-            configs.push(to_virtual_string(
-                file.strip_prefix(context.workspace_root).unwrap(),
-            )?);
+            configs.push(file.relative_to(context.workspace_root).into_diagnostic()?);
         }
 
         context

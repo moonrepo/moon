@@ -1,5 +1,5 @@
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs, clean_git_version};
+use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs, gitx::common::clean_git_version};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{Sandbox, create_sandbox};
 use std::collections::BTreeMap;
@@ -302,7 +302,6 @@ mod file_hashing {
             .await
             .unwrap()
             .into_iter()
-            .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false).await.unwrap();
@@ -351,7 +350,6 @@ mod file_hashing {
             .await
             .unwrap()
             .into_iter()
-            .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false).await.unwrap();
@@ -392,7 +390,6 @@ mod file_hashing {
             .await
             .unwrap()
             .into_iter()
-            .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false).await.unwrap();

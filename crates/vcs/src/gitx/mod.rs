@@ -1,4 +1,4 @@
-pub(crate) mod common;
+pub mod common;
 mod git;
 mod git_error;
 mod tree;

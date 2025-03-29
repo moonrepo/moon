@@ -129,6 +129,44 @@ mod gitx {
         }
 
         #[tokio::test]
+        async fn get_file_hashes() {
+            let (_sandbox, git) = create_root_sandbox();
+
+            let map = git
+                .get_file_hashes(
+                    &[
+                        // In root
+                        WorkspaceRelativePathBuf::from("projects/a/moon.yml"),
+                        // In submodule
+                        WorkspaceRelativePathBuf::from("submodules/mono/packages/b/moon.yml"),
+                        // In subtree
+                        WorkspaceRelativePathBuf::from("subtrees/one/moon.yml"),
+                    ],
+                    false,
+                )
+                .await
+                .unwrap();
+
+            assert_eq!(
+                map,
+                BTreeMap::from_iter([
+                    (
+                        "projects/a/moon.yml".into(),
+                        "40273776247e4e2e36de5c005d9ab68b1ce185c8".into()
+                    ),
+                    (
+                        "submodules/mono/packages/b/moon.yml".into(),
+                        "de782e7483e43d345f671c872d0968f5993fc276".into()
+                    ),
+                    (
+                        "subtrees/one/moon.yml".into(),
+                        "6881b3074a0c606ed2af036c4ae33d9ae3320ae7".into()
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
         async fn get_file_tree() {
             let (_sandbox, git) = create_root_sandbox();
 
@@ -250,6 +288,44 @@ mod gitx {
             assert_eq!(
                 git.get_hooks_dir().await.unwrap(),
                 sandbox.path().join(".git/hooks")
+            );
+        }
+
+        #[tokio::test]
+        async fn get_file_hashes() {
+            let (_sandbox, git) = create_worktree_sandbox();
+
+            let map = git
+                .get_file_hashes(
+                    &[
+                        // In root
+                        WorkspaceRelativePathBuf::from("projects/a/moon.yml"),
+                        // In submodule
+                        WorkspaceRelativePathBuf::from("submodules/mono/packages/b/moon.yml"),
+                        // In subtree
+                        WorkspaceRelativePathBuf::from("subtrees/one/moon.yml"),
+                    ],
+                    false,
+                )
+                .await
+                .unwrap();
+
+            assert_eq!(
+                map,
+                BTreeMap::from_iter([
+                    (
+                        "projects/a/moon.yml".into(),
+                        "40273776247e4e2e36de5c005d9ab68b1ce185c8".into()
+                    ),
+                    (
+                        "submodules/mono/packages/b/moon.yml".into(),
+                        "de782e7483e43d345f671c872d0968f5993fc276".into()
+                    ),
+                    (
+                        "subtrees/one/moon.yml".into(),
+                        "6881b3074a0c606ed2af036c4ae33d9ae3320ae7".into()
+                    ),
+                ])
             );
         }
 

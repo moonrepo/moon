@@ -73,10 +73,7 @@ impl<'task> TaskHasher<'task> {
 
         if !processed_inputs.is_empty() {
             let mut hashed_inputs = BTreeMap::default();
-            let files = processed_inputs
-                .into_iter()
-                .map(|file| file.to_string())
-                .collect::<Vec<_>>();
+            let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
             hashed_inputs.extend(self.vcs.get_file_hashes(&files, true).await?);
 

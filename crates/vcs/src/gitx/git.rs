@@ -391,13 +391,13 @@ impl Vcs for Gitx {
             .worktree
             .exec_merge_base(base_revision, head_revision, &self.remote_candidates)
             .await?;
-        let merge_base = merge_base
+        let merge_base_revision = merge_base
             .as_ref()
             .map(|rev| rev.as_str())
             .unwrap_or(base_revision);
 
         // Load from root repo
-        touched_files.merge(self.worktree.exec_diff(merge_base, "").await?);
+        touched_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
 
         // Load from each submodule
         //  if !self.submodules.is_empty() {
@@ -406,7 +406,7 @@ impl Vcs for Gitx {
         // Since submodules are separate repos with their own history,
         // we need to extract the base/head revisions from their history,
         // using the changes in the current repo
-        let mut base_tree = self.worktree.exec_ls_tree(base_revision).await?;
+        let mut base_tree = self.worktree.exec_ls_tree(merge_base_revision).await?;
         let mut head_tree = self.worktree.exec_ls_tree(head_revision).await?;
 
         for submodule in &self.submodules {

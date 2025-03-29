@@ -1,7 +1,7 @@
 use crate::touched_files::TouchedFiles;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
@@ -26,13 +26,16 @@ pub trait Vcs: Debug {
     /// the workspace root.
     async fn get_file_hashes(
         &self,
-        files: &[String],
+        files: &[WorkspaceRelativePathBuf],
         allow_ignored: bool,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>>;
 
     /// Get a list of all files in the provided directory, recursing through all sub-directories.
     /// Directory *must* be relative from the workspace root.
-    async fn get_file_tree(&self, dir: &str) -> miette::Result<Vec<WorkspaceRelativePathBuf>>;
+    async fn get_file_tree(
+        &self,
+        dir: &WorkspaceRelativePath,
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>>;
 
     /// Return an absolute path to the hooks directory, when applicable.
     async fn get_hooks_dir(&self) -> miette::Result<PathBuf>;

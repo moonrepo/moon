@@ -27,6 +27,10 @@
   - In our benchmarks, it's on average 1.5-2x faster.
   - We also attempt to cache the results, which occurs quite often when running tasks.
   - Globs are now logged to better debug performance issues.
+- Added an `experiments.gitv2` setting to `.moon/workspace.yml`, that uses a new Git implementation.
+  - Has better support for submodules, subtrees, and worktrees.
+  - Parallelizes processes when applicable.
+  - Covers edge cases the v1 implementation did not support.
 - Added a `--no-actions` flag to `moon run`, that will run the task without including the other
   actions, like `SyncProject`, `SetupToolchain`, etc.
 - Added a `--json` flag to `moon templates`.

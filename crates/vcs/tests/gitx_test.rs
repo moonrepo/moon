@@ -169,7 +169,7 @@ mod gitx {
             let (_sandbox, git) = create_root_sandbox();
 
             // Returns all
-            let list = git.get_file_tree(&RelativePath::new(".")).await.unwrap();
+            let list = git.get_file_tree(RelativePath::new(".")).await.unwrap();
 
             assert_eq!(list.len(), 37);
             assert!(list.contains(&RelativePathBuf::from("projects/a/moon.yml"))); // In root
@@ -179,7 +179,7 @@ mod gitx {
 
             // Returns from root dir
             let list = git
-                .get_file_tree(&RelativePath::new("projects/a"))
+                .get_file_tree(RelativePath::new("projects/a"))
                 .await
                 .unwrap();
 
@@ -188,7 +188,7 @@ mod gitx {
 
             // Returns from submodule dir
             let list = git
-                .get_file_tree(&RelativePath::new("submodules/mono/packages/c"))
+                .get_file_tree(RelativePath::new("submodules/mono/packages/c"))
                 .await
                 .unwrap();
 
@@ -328,7 +328,7 @@ mod gitx {
             let (_sandbox, git) = create_worktree_sandbox();
 
             // Returns all
-            let list = git.get_file_tree(&RelativePath::new(".")).await.unwrap();
+            let list = git.get_file_tree(RelativePath::new(".")).await.unwrap();
 
             assert_eq!(list.len(), 37);
             assert!(list.contains(&RelativePathBuf::from("projects/a/moon.yml"))); // In root
@@ -338,7 +338,7 @@ mod gitx {
 
             // Returns from root dir
             let list = git
-                .get_file_tree(&RelativePath::new("projects/a"))
+                .get_file_tree(RelativePath::new("projects/a"))
                 .await
                 .unwrap();
 
@@ -347,7 +347,7 @@ mod gitx {
 
             // Returns from submodule dir
             let list = git
-                .get_file_tree(&RelativePath::new("submodules/mono/packages/c"))
+                .get_file_tree(RelativePath::new("submodules/mono/packages/c"))
                 .await
                 .unwrap();
 

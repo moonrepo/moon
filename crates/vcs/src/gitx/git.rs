@@ -251,7 +251,7 @@ impl Vcs for Gitx {
             for tree in self.get_all_trees() {
                 let target_dir = RelativePath::new(".");
 
-                set.spawn(async move { tree.exec_ls_files(&target_dir).await });
+                set.spawn(async move { tree.exec_ls_files(target_dir).await });
             }
 
             while let Some(result) = set.join_next().await {

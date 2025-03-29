@@ -298,7 +298,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         let tree = git
-            .get_file_tree(&RelativePath::new("."))
+            .get_file_tree(RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
@@ -346,7 +346,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
         let tree = git
-            .get_file_tree(&RelativePath::new("."))
+            .get_file_tree(RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
@@ -386,7 +386,7 @@ mod file_hashing {
         }
 
         let tree = git
-            .get_file_tree(&RelativePath::new("."))
+            .get_file_tree(RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
@@ -438,7 +438,7 @@ mod file_tree {
     async fn returns_from_dir() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git.get_file_tree(&RelativePath::new("foo")).await.unwrap();
+        let tree = git.get_file_tree(RelativePath::new("foo")).await.unwrap();
 
         assert_eq!(
             tree,
@@ -455,7 +455,7 @@ mod file_tree {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
         let tree = git
-            .get_file_tree(&RelativePath::new("bar/sub/dir"))
+            .get_file_tree(RelativePath::new("bar/sub/dir"))
             .await
             .unwrap();
 
@@ -471,7 +471,7 @@ mod file_tree {
 
         sandbox.create_file("baz/extra.txt", "");
 
-        let tree = git.get_file_tree(&RelativePath::new("baz")).await.unwrap();
+        let tree = git.get_file_tree(RelativePath::new("baz")).await.unwrap();
 
         assert_eq!(
             tree,
@@ -488,7 +488,7 @@ mod file_tree {
         let (_sandbox, git) = create_nested_git_sandbox();
 
         assert_eq!(
-            git.get_file_tree(&RelativePath::new(".")).await.unwrap(),
+            git.get_file_tree(RelativePath::new(".")).await.unwrap(),
             vec![WorkspaceRelativePathBuf::from("file.js")]
         );
     }

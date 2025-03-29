@@ -142,16 +142,4 @@ impl ProcessCache {
 
         Ok(cache)
     }
-
-    #[deprecated]
-    pub async fn run_command_without_cache(
-        &self,
-        mut command: Command,
-        trim: bool,
-    ) -> miette::Result<Arc<String>> {
-        let output = command.exec_capture_output().await?;
-        let value = output_to_string(&output.stdout);
-
-        Ok(Arc::new(if trim { value.trim().to_owned() } else { value }))
-    }
 }

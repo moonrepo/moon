@@ -45,7 +45,7 @@ impl Gitx {
         default_branch: B,
         remote_candidates: &[String],
     ) -> miette::Result<Gitx> {
-        debug!("Using git as a version control system");
+        debug!("Using git as a version control system (using v2 implementation)");
 
         let workspace_root = workspace_root.as_ref();
 

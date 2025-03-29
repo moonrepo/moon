@@ -67,11 +67,16 @@ const orchestrationFeatures: Feature[] = [
 		description:
 			'Executes actions in parallel and in order using a thread pool and our dependency graph.',
 	},
+	// {
+	// 	title: 'Action distribution',
+	// 	icon: 'material-symbols:arrow-upload-progress',
+	// 	description: 'Distributes actions across multiple machines to increase throughput.',
+	// 	status: 'coming-soon',
+	// },
 	{
-		title: 'Action distribution',
-		icon: 'material-symbols:arrow-upload-progress',
-		description: 'Distributes actions across multiple machines to increase throughput.',
-		status: 'coming-soon',
+		title: 'Advanced Git',
+		icon: 'material-symbols:network-node',
+		description: 'Supports advanced Git features like submodules, subtrees, and worktrees.',
 	},
 	{
 		title: 'Incremental builds',
@@ -185,7 +190,7 @@ export default function ProductMoon() {
 
 					<Features
 						header="Orchestration"
-						description="Offload heavy tasks"
+						description="Efficiently execute tasks"
 						features={orchestrationFeatures}
 						tier={3}
 					/>

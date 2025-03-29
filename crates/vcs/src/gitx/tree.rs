@@ -240,26 +240,25 @@ impl GitTree {
         head_revision: &str,
     ) -> miette::Result<TouchedFiles<PathBuf>> {
         let process = self.get_process();
+        let mut args = vec![
+            "diff",
+            "--name-status",
+            "--no-color",
+            "--relative",
+            // Ignore submodules since they would have different revisions
+            "--ignore-submodules",
+            // We use this option so that file names with special characters
+            // are displayed as-is and are not quoted/escaped
+            "-z",
+            base_revision,
+        ];
+
+        if !head_revision.is_empty() {
+            args.push(head_revision);
+        }
+
         let output = process
-            .run_command(
-                process.create_command_in_cwd(
-                    [
-                        "diff",
-                        "--name-status",
-                        "--no-color",
-                        "--relative",
-                        // Ignore submodules since they would have different revisions
-                        "--ignore-submodules",
-                        // We use this option so that file names with special characters
-                        // are displayed as-is and are not quoted/escaped
-                        "-z",
-                        base_revision,
-                        head_revision,
-                    ],
-                    &self.work_dir,
-                ),
-                false,
-            )
+            .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
             .await?;
 
         if output.is_empty() {

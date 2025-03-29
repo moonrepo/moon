@@ -307,6 +307,12 @@ docker:
 
 Enable or disable experiments that alter core functionality.
 
+:::warning
+
+Experiments are a work in progress and may be buggy. Please report any issues you encounter!
+
+:::
+
 ### `fasterGlobWalk`<VersionLabel version="1.34.0" />
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#fasterGlobWalk" />
@@ -318,6 +324,18 @@ Defaults to `false`.
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
   fasterGlobWalk: true
+```
+
+### `gitV2`<VersionLabel version="1.34.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#gitV2" />
+
+Utilizes a Git implementation, that has better support for submodules, subtrees, and workspaces.
+Additionally, processes are parallized when applicable. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  gitV2: true
 ```
 
 ## `extensions`<VersionLabel version="1.20.0" />

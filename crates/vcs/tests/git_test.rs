@@ -1,5 +1,5 @@
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs, gitx::common::clean_git_version};
+use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{Sandbox, create_sandbox};
 use std::collections::BTreeMap;
@@ -744,76 +744,5 @@ mod touched_files_via_diff {
                 ..TouchedFiles::default()
             }
         );
-    }
-}
-
-mod version_cleaning {
-    use super::*;
-
-    #[test]
-    fn unix() {
-        assert_eq!(clean_git_version("git version 1.2.3".into()), "1.2.3");
-        assert_eq!(clean_git_version(" git version 1.2.3".into()), "1.2.3");
-        assert_eq!(clean_git_version("git version 1.2.3 ".into()), "1.2.3");
-        assert_eq!(clean_git_version(" git version 1.2.3 ".into()), "1.2.3");
-        assert_eq!(
-            clean_git_version("git version 1.2.3 (64-bit)".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 1.2.3 (32bit)".into()),
-            "1.2.3"
-        );
-    }
-
-    #[test]
-    fn macos() {
-        assert_eq!(
-            clean_git_version("git version 1.2.3 (Apple Git-55)".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 2.15.1 (Apple Git-101)".into()),
-            "2.15.1"
-        );
-    }
-
-    #[test]
-    fn windows() {
-        assert_eq!(
-            clean_git_version("git version 1.2.3.windows.1".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version(" git for windows 1.2.3.windows.0".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 1.2.3.windows.10 (32-Bit)  ".into()),
-            "1.2.3"
-        );
-
-        assert_eq!(
-            clean_git_version("  git for windows 1.2.3.win.1".into()),
-            "1.2.3"
-        );
-        assert_eq!(clean_git_version("git 1.2.3.msysgit.1".into()), "1.2.3");
-        assert_eq!(
-            clean_git_version(" git version 1.2.3.msysgit.11 ".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git for windows 1.2.3.msysgit.23  (64bit) ".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 1.2.3.vfs.0.0".into()),
-            "1.2.3"
-        );
-    }
-
-    #[test]
-    fn other() {
-        assert_eq!(clean_git_version("git version 1.8.3.1".into()), "1.8.3");
     }
 }

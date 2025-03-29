@@ -6,7 +6,7 @@ use crate::touched_files::*;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_common::path::{PathExt, RelativePath, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
 use semver::Version;
 use std::collections::BTreeMap;
@@ -243,23 +243,8 @@ impl Vcs for Gitx {
         // within the repository and not at the root
         let abs_dir = dir.to_logical_path(&self.workspace_root);
 
-        // At the root, so also include files from all submodules, so
-        // that we have a full list of files available
-        if dir == "." || dir == "" {
-            let mut set = JoinSet::new();
-
-            for tree in self.get_all_trees() {
-                let target_dir = RelativePath::new(".");
-
-                set.spawn(async move { tree.exec_ls_files(target_dir).await });
-            }
-
-            while let Some(result) = set.join_next().await {
-                paths.extend(result.into_diagnostic()??)
-            }
-        }
         // In a submodule, so only extract files from the target directory
-        else if let Some(submodule) = self
+        if let Some(submodule) = self
             .submodules
             .iter()
             .find(|submodule| abs_dir.starts_with(&submodule.work_dir))
@@ -274,7 +259,23 @@ impl Vcs for Gitx {
                 .relative_to(&self.worktree.work_dir)
                 .into_diagnostic()?;
 
-            paths.extend(self.worktree.exec_ls_files(&target_dir).await?);
+            // At the root, so also include files from all submodules, so
+            // that we have a full list of files available
+            if dir == "." || dir == "" {
+                let mut set = JoinSet::new();
+
+                for tree in self.get_all_trees() {
+                    let target_dir = target_dir.clone();
+
+                    set.spawn(async move { tree.exec_ls_files(&target_dir).await });
+                }
+
+                while let Some(result) = set.join_next().await {
+                    paths.extend(result.into_diagnostic()??)
+                }
+            } else {
+                paths.extend(self.worktree.exec_ls_files(&target_dir).await?);
+            }
         }
 
         map_absolute_to_workspace_relative_paths(paths, &self.workspace_root)

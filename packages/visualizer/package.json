@@ -35,15 +35,9 @@
     "@types/cytoscape-dagre": "^2.3.3",
     "@types/cytoscape-klay": "^3.1.4",
     "autoprefixer": "^10.4.21",
-    "eslint-config-preact": "^1.5.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "vite": "^6.2.3",
     "vite-plugin-css-injected-by-js": "^3.5.2"
-  },
-  "eslint": {
-    "extends": [
-      "preact"
-    ]
   }
 }

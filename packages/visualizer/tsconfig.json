@@ -13,12 +13,13 @@
     "useDefineForClassFields": true
   },
   "include": [
-    "src/**/*",
-    "*.cjs",
-    "*.mjs"
+    "src/**/*"
   ],
   "exclude": [
     "**/*.css",
-    "**/*.html"
+    "**/*.html",
+    "postcss.config.cjs",
+    "tailwind.config.cjs",
+    "vite.config.mjs"
   ]
 }

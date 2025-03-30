@@ -17,6 +17,11 @@ const config = defineConfig([
 		'**/*.json',
 		'**/*.snap',
 		'**/*.mdx',
+		'**/*.css',
+		'**/*.html',
+
+		// It's buggy!
+		'packages/visualizer/**/*',
 	]),
 	...moonConfig,
 	...moonNodeConfig,
@@ -31,10 +36,6 @@ const config = defineConfig([
 		rules: {
 			'unicorn/no-abusive-eslint-disable': 'off',
 		},
-	},
-	{
-		files: ['packages/visualizer/**/*'],
-		ignores: ['**/*.css', '**/*.html'],
 	},
 	{
 		files: ['scripts/**/*'],

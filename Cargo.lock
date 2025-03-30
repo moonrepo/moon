@@ -7062,9 +7062,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89e134365685c659ccb5f0975b0c91fa810cc8b7527ed58f56a5ba5ac4c9cf52"
+checksum = "01cbefdd469dcc6c4e435e0c073cd407f7775883e296ef20c41b352d94cc48ae"
 dependencies = [
  "regex",
  "sysinfo",

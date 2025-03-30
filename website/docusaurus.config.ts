@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys */
 
-import path from 'node:path';
+// import path from 'node:path';
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
 import prismTheme from './prism.config';
@@ -249,15 +249,15 @@ const config: Config = {
 				],
 			},
 		],
-		[
-			'docusaurus-plugin-typedoc-api',
-			{
-				projectRoot: path.join(__dirname, '..'),
-				packages: ['packages/report', 'packages/runtime', 'packages/types'],
-				minimal: true,
-				readmes: true,
-			},
-		],
+		// [
+		// 	'docusaurus-plugin-typedoc-api',
+		// 	{
+		// 		projectRoot: path.join(__dirname, '..'),
+		// 		packages: ['packages/report', 'packages/runtime', 'packages/types'],
+		// 		minimal: true,
+		// 		readmes: true,
+		// 	},
+		// ],
 		function tailwind() {
 			return {
 				name: 'docusaurus-tailwindcss',

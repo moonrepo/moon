@@ -73,10 +73,7 @@ impl<'task> TaskHasher<'task> {
 
         if !processed_inputs.is_empty() {
             let mut hashed_inputs = BTreeMap::default();
-            let files = processed_inputs
-                .into_iter()
-                .map(|file| file.to_string())
-                .collect::<Vec<_>>();
+            let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
             hashed_inputs.extend(self.vcs.get_file_hashes(&files, true).await?);
 
@@ -120,7 +117,7 @@ impl<'task> TaskHasher<'task> {
                 // Collect inputs by querying VCS
             } else {
                 // Using VCS to collect inputs in a project is faster than globbing
-                for file in self.vcs.get_file_tree(self.project.source.as_str()).await? {
+                for file in self.vcs.get_file_tree(&self.project.source).await? {
                     files.insert(file.to_path(self.workspace_root));
                 }
 

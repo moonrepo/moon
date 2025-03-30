@@ -12,11 +12,13 @@ use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, Workspac
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
+use moon_feature_flags::{FeatureFlags, Flag};
 use moon_plugin::{PluginHostData, PluginId};
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
+use moon_vcs::gitx::Gitx;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
@@ -195,13 +197,22 @@ impl CliSession {
     pub fn get_vcs_adapter(&self) -> miette::Result<Arc<BoxedVcs>> {
         if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
-            let git = Git::load(
-                &self.workspace_root,
-                &config.default_branch,
-                &config.remote_candidates,
-            )?;
 
-            let _ = self.vcs_adapter.set(Arc::new(Box::new(git)));
+            let git: BoxedVcs = if FeatureFlags::instance().is_enabled(Flag::GitV2) {
+                Box::new(Gitx::load(
+                    &self.workspace_root,
+                    &config.default_branch,
+                    &config.remote_candidates,
+                )?)
+            } else {
+                Box::new(Git::load(
+                    &self.workspace_root,
+                    &config.default_branch,
+                    &config.remote_candidates,
+                )?)
+            };
+
+            let _ = self.vcs_adapter.set(Arc::new(git));
         }
 
         Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())
@@ -305,9 +316,6 @@ impl AppSession for CliSession {
 
         // Load components
 
-        let vcs = self.get_vcs_adapter()?;
-
-        startup::extract_repo_info(&vcs).await?;
         startup::register_feature_flags(&self.workspace_config)?;
 
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
@@ -320,6 +328,10 @@ impl AppSession for CliSession {
         if let Some(constraint) = &self.workspace_config.version_constraint {
             analyze::validate_version_constraint(constraint, &self.cli_version)?;
         }
+
+        let vcs = self.get_vcs_adapter()?;
+
+        analyze::extract_repo_info(&vcs).await?;
 
         if self.requires_workspace_configured() {
             let cache_engine = self.get_cache_engine()?;

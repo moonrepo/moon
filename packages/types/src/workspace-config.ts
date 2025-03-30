@@ -108,6 +108,11 @@ export interface ExperimentsConfig {
 	/** Enable faster glob file system walking. */
 	fasterGlobWalk: boolean;
 	/**
+	 * Enable a faster and more accurate Git implementation.
+	 * Supports submodules, subtrees, and worktrees.
+	 */
+	gitV2: boolean;
+	/**
 	 * @default true
 	 * @deprecated
 	 */
@@ -605,6 +610,11 @@ export interface PartialExperimentsConfig {
 	disallowRunInCiMismatch?: boolean | null;
 	/** Enable faster glob file system walking. */
 	fasterGlobWalk?: boolean | null;
+	/**
+	 * Enable a faster and more accurate Git implementation.
+	 * Supports submodules, subtrees, and worktrees.
+	 */
+	gitV2?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

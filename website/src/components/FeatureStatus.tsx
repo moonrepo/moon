@@ -8,6 +8,10 @@ export interface FeatureStatusProps {
 }
 
 export default function FeatureStatus({ className, status }: FeatureStatusProps) {
+	if (!status) {
+		return null;
+	}
+
 	switch (status) {
 		case 'experimental':
 			return <Label className={className} text="Experimental" variant="failure" />;
@@ -17,6 +21,8 @@ export default function FeatureStatus({ className, status }: FeatureStatusProps)
 			return <Label className={className} text="Coming soon" variant="warning" />;
 		case 'new':
 			return <Label className={className} text="New" variant="info" />;
+		// eslint-disable-next-line unicorn/no-useless-switch-case
+		case 'stable':
 		default:
 			return null;
 	}

@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys */
 
-import path from 'path';
+import path from 'node:path';
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
 import prismTheme from './prism.config';
@@ -262,7 +262,6 @@ const config: Config = {
 			return {
 				name: 'docusaurus-tailwindcss',
 				configurePostCss(postcssOptions) {
-					// eslint-disable-next-line import/no-extraneous-dependencies
 					postcssOptions.plugins.push(require('tailwindcss'));
 
 					return postcssOptions;

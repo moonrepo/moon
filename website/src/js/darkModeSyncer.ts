@@ -9,7 +9,6 @@ if (typeof document !== 'undefined') {
 	const app = document.querySelector('#__docusaurus')!;
 
 	// We can't set the class on `html` or `body` as Docusaurus rewrites the classes
-	// eslint-disable-next-line no-inner-declarations
 	function toggle() {
 		if (html.dataset.theme === 'dark') {
 			app.classList.add('dark');

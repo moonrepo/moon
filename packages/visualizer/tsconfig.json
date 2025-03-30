@@ -14,7 +14,11 @@
   },
   "include": [
     "src/**/*",
-    "vite.config.mjs",
-    "*.cjs"
+    "*.cjs",
+    "*.mjs"
+  ],
+  "exclude": [
+    "**/*.css",
+    "**/*.html"
   ]
 }

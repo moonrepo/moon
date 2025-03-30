@@ -70,7 +70,6 @@ export default function RemoteCacheBeta() {
 				},
 				method: 'post',
 			})
-				// eslint-disable-next-line no-console
 				.catch(console.error)
 				.finally(() => {
 					setSent(true);

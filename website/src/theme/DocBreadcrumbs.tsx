@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-
 import { useSidebarBreadcrumbs } from '@docusaurus/plugin-content-docs/client';
 import { useHomePageRoute } from '@docusaurus/theme-common/internal';
 import useBaseUrl from '@docusaurus/useBaseUrl';

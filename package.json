@@ -13,14 +13,14 @@
     "website"
   ],
   "engines": {
-    "node": ">=14.15.0"
+    "node": ">=22.14.0"
   },
   "devDependencies": {
     "@moonrepo/cli": "workspace:*",
-    "@types/node": "^20.17.28",
+    "@types/node": "^22.13.14",
     "babel-preset-moon": "^3.1.0",
-    "eslint": "^8.57.0",
-    "eslint-config-moon": "^3.1.2",
+    "eslint": "^9.23.0",
+    "eslint-config-moon": "^4.0.0",
     "execa": "^6.1.0",
     "jest": "^29.7.0",
     "jest-preset-moon": "^3.1.0",

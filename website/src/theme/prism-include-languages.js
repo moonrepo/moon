@@ -1,4 +1,3 @@
-/* eslint-disable node/no-unsupported-features/es-builtins */
 import siteConfig from '@generated/docusaurus.config';
 
 export default function prismIncludeLanguages(PrismObject) {
@@ -18,6 +17,7 @@ export default function prismIncludeLanguages(PrismObject) {
 
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 	additionalLanguages.forEach((lang) => {
+		// eslint-disable-next-line unicorn/prefer-module
 		require(`prismjs/components/prism-${lang}`);
 	});
 

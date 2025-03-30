@@ -1,5 +1,3 @@
-/* eslint-disable node/no-unsupported-features/node-builtins */
-
 import './app.css';
 import { useState } from 'preact/hooks';
 import { Graph } from './components/Graph';

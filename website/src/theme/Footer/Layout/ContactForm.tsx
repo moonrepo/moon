@@ -66,7 +66,7 @@ export default function ContactForm() {
 			});
 	}, [email, message, subject, handleNext]);
 
-	const isEmailValid = !!email.match(/^.+@.+$/);
+	const isEmailValid = Boolean(email.match(/^.+@.+$/));
 	const isMessageValid = message.length > 10;
 
 	return (

@@ -20,7 +20,7 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 	const [tools, setTools] = useState<ProtoTool[]>([]);
 
 	useEffect(() => {
-		// eslint-disable-next-line promise/prefer-await-to-then, no-console
+		// eslint-disable-next-line promise/prefer-await-to-then
 		loadToolsData('third-party').then(setTools).catch(console.error);
 	}, []);
 

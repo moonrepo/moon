@@ -13,7 +13,7 @@ declare module '@boost/common' {
 
 export function env(name: string): string {
 	if (process.env[name]) {
-		return process.env[name]!;
+		return process.env[name];
 	}
 
 	throw new Error(
@@ -52,10 +52,8 @@ export async function loadAndCacheJson<T>(
 		loadCache[key] = {};
 	}
 
-	if (!loadCache[key][root]) {
-		// eslint-disable-next-line require-atomic-updates
-		loadCache[key][root] = await op();
-	}
+	// eslint-disable-next-line require-atomic-updates
+	loadCache[key][root] ??= await op();
 
 	return loadCache[key][root] as T;
 }

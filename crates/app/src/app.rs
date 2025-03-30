@@ -3,6 +3,7 @@ use crate::commands::check::CheckArgs;
 use crate::commands::ci::CiArgs;
 use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
+use crate::commands::debug::DebugCommands;
 use crate::commands::docker::DockerCommands;
 use crate::commands::ext::ExtArgs;
 use crate::commands::generate::GenerateArgs;
@@ -45,6 +46,12 @@ pub enum Commands {
         about = "Initialize a new moon repository, or a new toolchain, by scaffolding config files."
     )]
     Init(InitArgs),
+
+    #[command(name = "debug", about = "Debug internals.", hide = true)]
+    Debug {
+        #[command(subcommand)]
+        command: DebugCommands,
+    },
 
     // TOOLCHAIN
 

@@ -20,7 +20,6 @@ export default function Hero() {
 		void fetch('https://raw.githubusercontent.com/moonrepo/proto/master/version')
 			.then((res) => res.text())
 			.then((text) => void setVersion(text.trim()))
-			// eslint-disable-next-line no-console
 			.catch(console.error);
 	}, []);
 

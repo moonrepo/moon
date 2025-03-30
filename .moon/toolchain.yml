@@ -7,10 +7,10 @@ $schema: '../website/static/schemas/toolchain.json'
 #   syncToolchainConfig: true
 
 node:
-  version: '20.15.0'
+  version: '22.14.0'
   packageManager: 'yarn'
   yarn:
-    version: '4.3.1'
+    version: '4.8.0'
   addEnginesConstraint: false
   inferTasksFromScripts: false
 

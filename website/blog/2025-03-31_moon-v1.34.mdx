@@ -1,0 +1,88 @@
+---
+slug: moon-v1.34
+title: moon v1.34 - ???
+authors: [milesj]
+tags: [toolchain, wasm, plugin, moonx, schema]
+# image: ./img/moon/v1.34.png
+---
+
+With this release, we're stoked to provide an initial release for plugin support.
+
+<!--truncate-->
+
+## moonbase has been sunset
+
+## Customize actions in the pipeline
+
+### New `--no-actions` flag
+
+## New experiments
+
+It's been a while since we've added new experiments, and in this release, we've got 2! We encourage
+everyone to enable these experiments to ensure they are working correctly, but do note that these
+are a work in progress and may be buggy.
+
+### Faster glob walking
+
+We've been monitoring glob performance for sometime now, as walking the filesystem has been one of
+the largest bottlenecks, especially in large codebases. We felt it was about time to tackle the
+problem.
+
+With this new implementation, we are doing a few things to increase performance. To start, we are
+parallelizing walking per directory, where previously this would happen serially. Next, we partition
+globs based on a common ancestor directory, which reduces the amount of unnecessary walking. And
+lastly, we cache common globs to avoid walking all together.
+
+In our benchmarks and tests (moon itself is already using it), we are seeing performance increases
+by 1.5-2x! To start using this new glob implementation, enable the new `fasterGlobWalk` experiment.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  fasterGlobWalk: true
+```
+
+### Better Git integration
+
+Our current Git integration works, assuming you're not doing anything complex, like using submodules
+or worktrees. If you are using the latter, things have been buggy. We're not happy about this, as we
+want to support all the different ways a repository can be architected.
+
+So we started over from scratch! We even created
+[real repositories](https://github.com/moonrepo/git-test) to ensure our understanding and
+implementation of these features is accurate. This new implementation achieves the following:
+
+- Supports submodules, subtrees, and worktees (unique among build systems).
+  - Our competitors don't support these, and we expect them to "borrow" our implementation in the
+    future (like they have with other features).
+- Git commands are parallelized when applicable.
+- Touched files within submodules are now properly extracted.
+- File discovery and hashing is more performant.
+
+If you'd like to try this new Git implementation (moon itself already is), enable the `gitV2`
+experiment.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  gitV2: true
+```
+
+## What's next?
+
+Going forward, we plan to release new updates on a bi-weekly schedule, instead of a monthly
+schedule. This will result in less features each release, but will reduce the burden and complexity
+of large releases. With that said, this is what we have tentatively planned for the next release!
+
+- Migrate the Rust toolchain to a WASM plugin.
+- Investigate a new args/command line parser.
+- Add Poetry support for the Python toolchain.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.34.0) for a full list
+of changes.
+
+- Added a `--json` flag to `moon templates`.
+- Integrated a new console rendering system with new terminal styles, prompts, and output.
+- Improved the performance of environment variable substitution.
+- Improved toolchain plugin loading to be on-demand.
+- Improved sync cache invalidation for codeowners, config schemas, and VCS hooks.

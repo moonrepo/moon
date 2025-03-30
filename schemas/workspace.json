@@ -96,6 +96,15 @@
         }
       ]
     },
+    "pipeline": {
+      "title": "pipeline",
+      "description": "Configures aspects of the action pipeline.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/PipelineConfig"
+        }
+      ]
+    },
     "projects": {
       "title": "projects",
       "description": "Configures all projects within the workspace to create a project graph. Accepts a list of globs, a mapping of projects to relative file paths, or both values.",
@@ -107,10 +116,10 @@
     },
     "runner": {
       "title": "runner",
-      "description": "Configures aspects of the task runner (also known as the action pipeline).",
+      "deprecated": true,
       "allOf": [
         {
-          "$ref": "#/definitions/RunnerConfig"
+          "$ref": "#/definitions/PipelineConfig"
         }
       ]
     },
@@ -326,6 +335,16 @@
           "type": "boolean",
           "markdownDescription": "Disallow task relationships with different `runInCI` options."
         },
+        "fasterGlobWalk": {
+          "title": "fasterGlobWalk",
+          "description": "Enable faster glob file system walking.",
+          "type": "boolean"
+        },
+        "gitV2": {
+          "title": "gitV2",
+          "description": "Enable a faster and more accurate Git implementation. Supports submodules, subtrees, and worktrees.",
+          "type": "boolean"
+        },
         "interweavedTaskInheritance": {
           "title": "interweavedTaskInheritance",
           "default": true,
@@ -506,6 +525,101 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PipelineActionSwitch": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "PipelineConfig": {
+      "description": "Configures aspects of the task runner (also known as the action pipeline).",
+      "type": "object",
+      "properties": {
+        "archivableTargets": {
+          "title": "archivableTargets",
+          "description": "List of target's for tasks without outputs, that should be cached and persisted.",
+          "deprecated": true,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "autoCleanCache": {
+          "title": "autoCleanCache",
+          "description": "Automatically clean the cache after every task run.",
+          "default": true,
+          "type": "boolean"
+        },
+        "cacheLifetime": {
+          "title": "cacheLifetime",
+          "description": "The lifetime in which task outputs will be cached.",
+          "default": "7 days",
+          "type": "string"
+        },
+        "inheritColorsForPipedTasks": {
+          "title": "inheritColorsForPipedTasks",
+          "description": "Automatically inherit color settings for all tasks being ran.",
+          "default": true,
+          "type": "boolean"
+        },
+        "installDependencies": {
+          "title": "installDependencies",
+          "description": "Run the InstallWorkspaceDeps and InstallProjectDeps actions for each running task when changes to lockfiles and manifests are detected.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PipelineActionSwitch"
+            }
+          ],
+          "markdownDescription": "Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for each running task when changes to lockfiles and manifests are detected."
+        },
+        "killProcessThreshold": {
+          "title": "killProcessThreshold",
+          "description": "Threshold in milliseconds in which to force kill running child processes after the pipeline receives an external signal. A value of 0 will not kill the process and let them run to completion.",
+          "default": 2000,
+          "type": "number"
+        },
+        "logRunningCommand": {
+          "title": "logRunningCommand",
+          "description": "Logs the task's command and arguments when running the task.",
+          "type": "boolean"
+        },
+        "syncProjectDependencies": {
+          "title": "syncProjectDependencies",
+          "description": "When creating SyncProject actions, recursively create a SyncProject action for each project dependency, and link them as a relationship.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "When creating `SyncProject` actions, recursively create a `SyncProject` action for each project dependency, and link them as a relationship."
+        },
+        "syncProjects": {
+          "title": "syncProjects",
+          "description": "Run the SyncProject actions in the pipeline for each owning project of a running task.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PipelineActionSwitch"
+            }
+          ],
+          "markdownDescription": "Run the `SyncProject` actions in the pipeline for each owning project of a running task."
+        },
+        "syncWorkspace": {
+          "title": "syncWorkspace",
+          "description": "Run the SyncWorkspace action before all actions in the pipeline.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Run the `SyncWorkspace` action before all actions in the pipeline."
         }
       },
       "additionalProperties": false
@@ -719,50 +833,6 @@
       },
       "additionalProperties": false,
       "markdownDescription": "Configures for server-only authentication with TLS."
-    },
-    "RunnerConfig": {
-      "description": "Configures aspects of the task runner (also known as the action pipeline).",
-      "type": "object",
-      "properties": {
-        "archivableTargets": {
-          "title": "archivableTargets",
-          "description": "List of target's for tasks without outputs, that should be cached and persisted.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "autoCleanCache": {
-          "title": "autoCleanCache",
-          "description": "Automatically clean the cache after every task run.",
-          "default": true,
-          "type": "boolean"
-        },
-        "cacheLifetime": {
-          "title": "cacheLifetime",
-          "description": "The lifetime in which task outputs will be cached.",
-          "default": "7 days",
-          "type": "string"
-        },
-        "inheritColorsForPipedTasks": {
-          "title": "inheritColorsForPipedTasks",
-          "description": "Automatically inherit color settings for all tasks being ran.",
-          "default": true,
-          "type": "boolean"
-        },
-        "killProcessThreshold": {
-          "title": "killProcessThreshold",
-          "description": "Threshold in milliseconds in which to force kill running child processes after the pipeline receives an external signal. A value of 0 will not kill the process and let them run to completion.",
-          "default": 2000,
-          "type": "number"
-        },
-        "logRunningCommand": {
-          "title": "logRunningCommand",
-          "description": "Logs the task's command and arguments when running the task.",
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
     },
     "VcsConfig": {
       "description": "Configures the version control system (VCS).",

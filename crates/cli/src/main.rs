@@ -3,6 +3,7 @@ mod lookup;
 use clap::Parser;
 use lookup::*;
 use mimalloc::MiMalloc;
+use moon_app::commands::debug::DebugCommands;
 use moon_app::commands::docker::DockerCommands;
 use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::node::NodeCommands;
@@ -146,6 +147,9 @@ async fn main() -> MainResult {
                 Commands::Completions(args) => {
                     commands::completions::completions(session, args).await
                 }
+                Commands::Debug { command } => match command {
+                    DebugCommands::Vcs => commands::debug::vcs::debug_vcs(session).await,
+                },
                 Commands::Docker { command } => match command {
                     DockerCommands::File(args) => commands::docker::file(session, args).await,
                     DockerCommands::Prune => commands::docker::prune(session).await,

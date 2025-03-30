@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys */
 
-import path from 'path';
+// import path from 'node:path';
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
 import prismTheme from './prism.config';
@@ -162,10 +162,10 @@ const config: Config = {
 							label: 'Blog',
 							to: '/blog',
 						},
-						{
-							label: 'API',
-							to: '/api',
-						},
+						// {
+						// 	label: 'API',
+						// 	to: '/api',
+						// },
 					],
 				},
 				{
@@ -249,20 +249,19 @@ const config: Config = {
 				],
 			},
 		],
-		[
-			'docusaurus-plugin-typedoc-api',
-			{
-				projectRoot: path.join(__dirname, '..'),
-				packages: ['packages/report', 'packages/runtime', 'packages/types'],
-				minimal: true,
-				readmes: true,
-			},
-		],
+		// [
+		// 	'docusaurus-plugin-typedoc-api',
+		// 	{
+		// 		projectRoot: path.join(__dirname, '..'),
+		// 		packages: ['packages/report', 'packages/runtime', 'packages/types'],
+		// 		minimal: true,
+		// 		readmes: true,
+		// 	},
+		// ],
 		function tailwind() {
 			return {
 				name: 'docusaurus-tailwindcss',
 				configurePostCss(postcssOptions) {
-					// eslint-disable-next-line import/no-extraneous-dependencies
 					postcssOptions.plugins.push(require('tailwindcss'));
 
 					return postcssOptions;

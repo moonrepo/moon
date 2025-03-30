@@ -1,0 +1,159 @@
+---
+slug: moon-v1.34
+title: moon v1.34 - Action customization, faster globs, better Git, and more!
+authors: [milesj]
+tags: [moonbase, remote, cache, action, pipeline, glob, git, experiment]
+image: ./img/moon/v1.34.png
+---
+
+With this release, we're introducing a handful of performance and customization improvements!
+
+<!--truncate-->
+
+## moonbase has been sunset
+
+As mentioned in previous releases, we have sunset [moonbase](/moonbase), our remote caching service.
+A while back we had internal discussions on whether to rework moonbase so that it could be
+self-hosted (on-premises), or adopt the
+[Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis) and utilize what the open
+source community has to offer. We ultimately decided with the latter, as it frees up resources on
+our end to focus on moon and proto, and also provides a better path forward for moon adoption.
+
+If you are currently using moonbase, we suggest migrating to our new
+[remote caching options](/docs/guides/remote-cache). And if you have an active moonbase
+subscription, it will be cancelled within the week, and any partial billing for this month will be
+reimbursed.
+
+## Customize actions in the pipeline
+
+When a task is ran in moon, we create an [action graph](/docs/how-it-works/action-graph) (not a task
+graph) of actions, which are operations required to run to ensure a successful execution. This
+includes non-task related functionality, like project and workspace syncing, installing
+dependencies, and ensuring the toolchain has been setup. While these actions only take milliseconds
+to execute (on a cache hit), they can become quite a barrier and source of friction (on cache miss).
+
+Until now, there wasn't anyway to disable/skip these extra actions -- besides some non-documented
+environment variables that didn't actually omit the actions (they were still in the graph), but
+simply skipped the inner execution. In this release, we're introducing 4 new settings for
+[`pipeline`](/docs/config/workspace#pipeline) (formerly `runner`) in
+[`.moon/workspace.yml`](/docs/config/workspace).
+
+- `installDependencies` setting toggles the inclusion of the `InstallWorkspaceDeps` and
+  `InstallProjectDeps` actions, and can be scoped to toolchain IDs.
+- `syncProjects` setting toggles the inclusion of the `SyncProject` actions, and can be scoped to
+  project IDs.
+- `syncProjectDependencies` setting toggles whether to recursively create `SyncProject` actions for
+  each dependency of a project, or just for itself.
+- `syncWorkspace` setting toggles the inclusion of the root `SyncWorkspace` action.
+
+For example, if you want to disable all of these actions entirely, you can do this:
+
+```yaml title=".moon/workspace.yml"
+pipeline:
+  installDependencies: false
+  syncProjects: false
+  syncProjectDependencies: false
+  syncWorkspace: false
+```
+
+And as mentioned above, the `installDependencies` and `syncProjects` settings support configuring a
+list of IDs, which acts as an allow list. Any IDs not listed here will not create actions.
+
+```yaml title=".moon/workspace.yml"
+pipeline:
+  # Only install Node.js dependencies
+  installDependencies: ['node']
+  # Only sync the `app` project
+  syncProjects: ['app']
+```
+
+:::info
+
+Even if you disable actions with the `pipeline` setting, the [`moon sync`](/docs/commands/sync)
+commands can still be used to run sync operations, as they ignore that setting. This provides a
+solution where you want to avoid the overhead when running a task, but still take advantage of
+moon's syncing to ensure a healthy repository state.
+
+:::
+
+### New `--no-actions` flag
+
+To expand upon the above, we're introducing a `--no-actions` flag to
+[`moon run`](/docs/commands/run), that will run the task without the other actions being added to
+the graph. We suggest only using this flag once dependencies have been installed, and the toolchain
+has been setup!
+
+```shell
+$ moon run app:start --no-actions
+```
+
+## New experiments
+
+It's been a while since we've added new experiments, and in this release, we've got 2! We encourage
+everyone to enable these experiments to ensure they are working correctly, but do note that these
+are a work in progress and may be buggy.
+
+### Faster glob walking
+
+We've been monitoring glob performance for sometime now, as walking the filesystem has been one of
+the largest bottlenecks, especially in large codebases. We felt it was about time to tackle the
+problem.
+
+With this new implementation, we are doing a few things to increase performance. To start, we are
+parallelizing walking per directory, where previously this would happen serially. Next, we partition
+globs based on a common ancestor directory, which reduces the amount of unnecessary walking. And
+lastly, we cache common globs to avoid walking all together.
+
+In our benchmarks and tests (moon itself is already using it), we are seeing performance increases
+by 1.5-2x! To start using this new glob implementation, enable the new `fasterGlobWalk` experiment.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  fasterGlobWalk: true
+```
+
+### Better Git integration
+
+Our current Git integration works, assuming you're not doing anything complex, like using submodules
+or worktrees. If you are using the latter, things have been buggy. We're not happy about this, as we
+want to support all the different ways a repository can be architected.
+
+So we started over from scratch! We even created
+[real repositories](https://github.com/moonrepo/git-test) to ensure our understanding and
+implementation of these features is accurate. This new implementation achieves the following:
+
+- Supports submodules, subtrees, and worktees (unique among build systems).
+  - Our competitors don't support these, and we expect them to "borrow" our implementation in the
+    future (like they have with other features).
+- Git commands are parallelized when applicable.
+- Touched files within submodules are now properly extracted.
+- File discovery and hashing is more performant.
+
+If you'd like to try this new Git implementation (moon itself already is), enable the `gitV2`
+experiment.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  gitV2: true
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.34.0) for a full list
+of changes.
+
+- Added a `--json` flag to `moon templates`.
+- Integrated a new console rendering system with new terminal styles, prompts, and output.
+- Improved the performance of environment variable substitution.
+- Improved toolchain plugin loading to be on-demand.
+- Improved sync cache invalidation for codeowners, config schemas, and VCS hooks.
+
+## What's next?
+
+Going forward, we plan to release new updates on a bi-weekly schedule, instead of a monthly
+schedule. This will result in less features each release, but will reduce the burden and complexity
+of large releases. With that said, this is what we have tentatively planned for the next release!
+
+- Migrate the Rust toolchain to a WASM plugin.
+- Investigate a new args/command line parser.
+- Add Poetry support for the Python toolchain.

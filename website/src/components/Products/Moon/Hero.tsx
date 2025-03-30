@@ -9,7 +9,7 @@ import CTA from '../../Home/CTA';
 import HeroIcon from '../HeroIcon';
 import HeroTerminal from './HeroTerminal';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
+// eslint-disable-next-line unicorn/prefer-module
 const { version } = require('@moonrepo/cli/package.json') as { version: string };
 
 export default function Hero() {

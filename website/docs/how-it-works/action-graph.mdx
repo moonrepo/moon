@@ -29,7 +29,8 @@ checks across the entire workspace.
 
 :::info
 
-This action can be skipped by setting the `MOON_SKIP_SYNC_WORKSPACE=true` environment variable.
+This action can be skipped by disabling the
+[`pipeline.syncWorkspace`](../config/workspace#syncworkspace) setting.
 
 :::
 
@@ -70,9 +71,8 @@ dependency versions.
 
 :::info
 
-This action can be skipped by setting the `MOON_SKIP_INSTALL_DEPS=true` environment variable. The
-skip can be scoped per tool by setting the value to the tool name (`node`), and also by project
-(`node:app`). Supports a comma-separated list.
+This action can be skipped by disabling the
+[`pipeline.installDependencies`](../config/workspace#installdependencies) setting.
 
 :::
 
@@ -97,9 +97,8 @@ What is synced or considered healthcare is dependent on the language and its eco
 
 :::info
 
-This action can be skipped by setting the `MOON_SKIP_SYNC_PROJECT=true` environment variable. The
-skip can be scoped per project by setting the value to the project ID (`app`). Supports a
-comma-separated list.
+This action can be skipped by disabling the
+[`pipeline.syncProject`](../config/workspace#syncproject) setting.
 
 :::
 

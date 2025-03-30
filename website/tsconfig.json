@@ -22,6 +22,9 @@
     "sidebars.ts",
     "src/**/*"
   ],
+  "exclude": [
+    "**/*.mdx"
+  ],
   "references": [
     {
       "path": "../packages/runtime"

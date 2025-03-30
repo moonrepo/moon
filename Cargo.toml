@@ -22,7 +22,7 @@ cached = "0.55.1"
 chrono = { version = "0.4.40", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.32", default-features = false, features = [
+clap = { version = "4.5.34", default-features = false, features = [
     "derive",
     "std",
     "error-context",
@@ -36,7 +36,7 @@ convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.8.0"
-iocraft = "0.7.2"
+iocraft = "0.7.4"
 md5 = "0.7.0"
 miette = "7.5.0"
 pathdiff = "0.2.3"
@@ -69,10 +69,10 @@ starbase_archive = { version = "0.10.1", default-features = false, features = [
     "miette",
     "tar-gz",
 ] }
-starbase_console = { version = "0.6.4", features = ["miette"] }
+starbase_console = { version = "0.6.5", features = ["miette"] }
 starbase_events = "0.7.1"
 starbase_sandbox = "0.9.1"
-starbase_shell = "0.7.1"
+starbase_shell = "0.7.2"
 starbase_styles = { version = "0.5.0", features = ["relative-path"] }
 starbase_utils = { version = "0.11.5", default-features = false, features = [
     "editor-config",

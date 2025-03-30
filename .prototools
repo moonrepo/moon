@@ -2,11 +2,12 @@
 # to exist in the environment!
 bun = "1.2.2"
 deno = "2.1.9"
-node = "20.8.0"
+node = "22.14.0"
 npm = "10.1.0"
 pkl = "0.27.2"
 python = "3.11.10"
 uv = "0.5.26"
+yarn = "4.8.0"
 
 [plugins]
 pkl = "https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml"

@@ -19,7 +19,7 @@ export default function Button({
 	id,
 	size,
 }: ButtonProps) {
-	const isLink = !!href;
+	const isLink = Boolean(href);
 	const Tag = isLink ? 'a' : 'button';
 
 	return (

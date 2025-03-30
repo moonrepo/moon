@@ -531,6 +531,13 @@ Configures aspects of task running and the action pipeline.
 
 <HeadingApiLink to="/api/types/interface/PipelineConfig#archivableTargets" />
 
+:::info
+
+This setting is deprecated and purely existed for moonbase, our old cloud remote caching service.
+Going forward, if using Bazel Remote Caching, all tasks are automatically cached (archived).
+
+:::
+
 Defines a list of [targets](../concepts/target), with or without scope, that will be cached and
 archived within the pipeline. Tasks that produce [outputs](./project#outputs) are automatically
 archived, and do not need to be defined here. Defaults to an empty list.

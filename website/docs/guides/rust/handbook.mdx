@@ -334,15 +334,3 @@ problem above.
    [moonrepo/setup-rust](https://github.com/moonrepo/setup-rust) action, which has built-in caching.
 2. A more integrated solution is [sccache](https://crates.io/crates/sccache), which stores build
    artifacts in a cloud storage provider.
-
-For moon, if you're looking to persist task results across CI runs, you can utilize the
-[`runner.archivableTargets`](../../config/workspace#archivabletargets) setting. This is useful for
-caching `cargo check`, `cargo clippy`, and other Cargo tasks that _do not_ produce direct outputs.
-
-```yaml title=".moon/workspace.yml"
-runner:
-  archivableTargets:
-    - 'rust:check'
-    - 'rust:lint'
-    - 'rust:test'
-```

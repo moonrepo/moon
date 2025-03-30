@@ -1,3 +1,5 @@
+/* eslint-disable no-magic-numbers */
+
 import type { Duration } from '@moonrepo/types';
 
 export function getDurationInMillis(duration: Duration): number {

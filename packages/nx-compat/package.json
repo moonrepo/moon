@@ -36,7 +36,7 @@
   "dependencies": {
     "@boost/common": "^5.0.0",
     "@moonrepo/types": "workspace:^",
-    "enhanced-resolve": "^5.17.0",
+    "enhanced-resolve": "^5.18.1",
     "execa": "^8.0.1",
     "yargs-parser": "^21.1.1"
   },

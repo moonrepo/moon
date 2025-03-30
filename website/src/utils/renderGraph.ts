@@ -32,16 +32,16 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 			{
 				selector: 'node',
 				style: {
-					// @ts-expect-error Types incorrect
 					'background-fill': 'linear-gradient',
 					'background-gradient-direction': 'to-bottom-right',
+					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#d7dfe9 #bdc9db #97a1af',
 					color: '#fff',
 					height: 60,
 					label: 'data(label)',
 					'overlay-color': '#99aab7',
 					'overlay-shape': 'ellipse',
-					padding: 0,
+					padding: '0',
 					shape: 'ellipse',
 					'text-halign': 'center',
 					'text-margin-y': 6,

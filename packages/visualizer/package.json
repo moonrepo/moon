@@ -34,7 +34,7 @@
     "@types/cytoscape": "^3.21.9",
     "@types/cytoscape-dagre": "^2.3.3",
     "@types/cytoscape-klay": "^3.1.4",
-    "autoprefixer": "^10.4.19",
+    "autoprefixer": "^10.4.21",
     "eslint-config-preact": "^1.4.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",

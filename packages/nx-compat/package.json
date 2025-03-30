@@ -41,7 +41,7 @@
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
-    "nx": "^19.3.1"
+    "nx": "^19.8.14"
   },
   "engines": {
     "node": ">=16.12.0"

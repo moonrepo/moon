@@ -12,6 +12,7 @@ use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
+use moon_vcs::BoxedVcs;
 use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
@@ -19,6 +20,19 @@ use starbase::AppResult;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
+
+#[instrument(skip_all)]
+pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
+    let bag = GlobalEnvBag::instance();
+
+    if vcs.is_enabled() && !bag.has("MOON_VCS_REPO_SLUG") {
+        if let Ok(slug) = vcs.get_repository_slug().await {
+            bag.set("MOON_VCS_REPO_SLUG", slug.as_str());
+        }
+    }
+
+    Ok(())
+}
 
 #[instrument]
 pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -> AppResult {

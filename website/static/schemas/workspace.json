@@ -114,6 +114,15 @@
         }
       ]
     },
+    "runner": {
+      "title": "runner",
+      "deprecated": true,
+      "allOf": [
+        {
+          "$ref": "#/definitions/PipelineConfig"
+        }
+      ]
+    },
     "telemetry": {
       "title": "telemetry",
       "description": "Collects anonymous usage information, and checks for new moon versions.",
@@ -329,6 +338,11 @@
         "fasterGlobWalk": {
           "title": "fasterGlobWalk",
           "description": "Enable faster glob file system walking.",
+          "type": "boolean"
+        },
+        "gitV2": {
+          "title": "gitV2",
+          "description": "Enable a faster and more accurate Git implementation. Supports submodules, subtrees, and worktrees.",
           "type": "boolean"
         },
         "interweavedTaskInheritance": {

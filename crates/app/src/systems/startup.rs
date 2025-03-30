@@ -5,7 +5,6 @@ use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, Workspac
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::{FeatureFlags, Flag};
-use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
@@ -177,22 +176,10 @@ pub async fn load_tasks_configs(
 }
 
 #[instrument(skip_all)]
-pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
-    let bag = GlobalEnvBag::instance();
-
-    if vcs.is_enabled() && !bag.has("MOON_VCS_REPO_SLUG") {
-        if let Ok(slug) = vcs.get_repository_slug().await {
-            bag.set("MOON_VCS_REPO_SLUG", slug.as_str());
-        }
-    }
-
-    Ok(())
-}
-
-#[instrument(skip_all)]
 pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
     FeatureFlags::default()
         .set(Flag::FastGlobWalk, config.experiments.faster_glob_walk)
+        .set(Flag::GitV2, config.experiments.git_v2)
         .register();
 
     Ok(())

@@ -62,3 +62,4 @@ unstable_remote:
 
 experiments:
   fasterGlobWalk: true
+  gitV2: true

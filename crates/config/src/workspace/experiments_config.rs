@@ -16,6 +16,10 @@ cacheable!(
         /// Enable faster glob file system walking.
         pub faster_glob_walk: bool,
 
+        /// Enable a faster and more accurate Git implementation.
+        /// Supports submodules, subtrees, and worktrees.
+        pub git_v2: bool,
+
         #[deprecated]
         #[setting(default = true)]
         pub interweaved_task_inheritance: bool,

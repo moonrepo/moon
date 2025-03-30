@@ -1,65 +1,22 @@
 use crate::git_submodule::*;
 use crate::git_worktree::*;
+use crate::gitx::common::*;
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::Diagnostic;
-use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_common::{Style, Stylize, is_test_env};
+use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
+use moon_common::{Style, Stylize};
 use moon_env_var::GlobalEnvBag;
-use regex::Regex;
 use rustc_hash::FxHashSet;
 use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use thiserror::Error;
 use tracing::{debug, instrument};
-
-pub static STATUS_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(M|T|A|D|R|C|U|\?|!| )(M|T|A|D|R|C|U|\?|!| ) ").unwrap());
-
-pub static DIFF_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(A|D|M|T|U|X)$").unwrap());
-
-pub static DIFF_SCORE_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
-
-pub static VERSION_CLEAN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
-
-pub fn clean_git_version(version: String) -> String {
-    let version = if let Some(index) = version.find('(') {
-        &version[0..index]
-    } else {
-        &version
-    };
-
-    let version = version
-        .to_lowercase()
-        .replace("git", "")
-        .replace("version", "")
-        .replace("for windows", "")
-        .replace("(32-bit)", "")
-        .replace("(64-bit)", "")
-        .replace("(32bit)", "")
-        .replace("(64bit)", "");
-
-    let version = VERSION_CLEAN.replace(&version, "");
-
-    // Some older versions have more than 3 numbers,
-    // so ignore any non major, minor, or patches
-    let mut parts = version.trim().split('.');
-
-    format!(
-        "{}.{}.{}",
-        parts.next().unwrap_or("0"),
-        parts.next().unwrap_or("0"),
-        parts.next().unwrap_or("0")
-    )
-}
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum GitError {
@@ -134,6 +91,7 @@ impl Git {
         debug!("Using git as a version control system");
 
         let workspace_root = workspace_root.as_ref();
+        let default_branch = default_branch.as_ref();
 
         debug!(
             starting_dir = ?workspace_root,
@@ -235,7 +193,7 @@ impl Git {
         }
 
         let git = Git {
-            default_branch: Arc::new(default_branch.as_ref().to_owned()),
+            default_branch: Arc::new(default_branch.to_owned()),
             ignore,
             remote_candidates: remote_candidates.to_owned(),
             root_prefix: if repository_root == workspace_root {
@@ -433,6 +391,9 @@ impl Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
+            // This doesn't work with the `--modified` and `--others`
+            // flags, so we need to drill into each submodule manually
+            // "--recurse-submodules",
         ];
 
         if self.is_version_supported(">=2.31.0").await? {
@@ -458,7 +419,7 @@ impl Git {
                 let path = module.path.join(self.to_workspace_relative_path(file));
 
                 // Do not include directories
-                if self.process.root.join(path.as_str()).is_file() {
+                if self.process.workspace_root.join(path.as_str()).is_file() {
                     Some(path)
                 } else {
                     None
@@ -470,6 +431,11 @@ impl Git {
     }
 
     // https://git-scm.com/docs/git-status#_short_format
+    // Requirements:
+    //  Root:
+    //    - Run at the root. Does not include submodule files.
+    //  Submodule:
+    //    - Run in the module root.
     #[instrument(skip(self))]
     async fn exec_status(&self, module: &GitModule) -> miette::Result<TouchedFiles> {
         let output = self
@@ -480,6 +446,9 @@ impl Git {
                         "status",
                         "--porcelain",
                         "--untracked-files",
+                        // Status does not show files within a submodule, and instead
+                        // shows something like `modified: submodules/name (untracked content)`,
+                        // so we need to ignore it, and run a status in the submodule directly
                         "--ignore-submodules",
                         // We use this option so that file names with special characters
                         // are displayed as-is and are not quoted/escaped
@@ -612,14 +581,14 @@ impl Vcs for Git {
     #[instrument(skip_all)]
     async fn get_file_hashes(
         &self,
-        files: &[String], // Workspace relative
+        files: &[WorkspaceRelativePathBuf], // Workspace relative
         allow_ignored: bool,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
 
         for file in files {
-            let abs_file = self.process.root.join(file);
+            let abs_file = self.process.workspace_root.join(file.as_str());
 
             // File must exist or git fails
             if abs_file.exists()
@@ -632,7 +601,7 @@ impl Vcs for Git {
                 if let Some(prefix) = &self.root_prefix {
                     objects.push(prefix.join(file).as_str().to_owned());
                 } else {
-                    objects.push(file.to_owned());
+                    objects.push(file.to_string());
                 }
             }
         }
@@ -653,13 +622,7 @@ impl Vcs for Git {
         // hash-object requires new lines
         command.input(objects.iter().map(|obj| format!("{obj}\n")));
 
-        let output = if is_test_env() {
-            self.process
-                .run_command_without_cache(command, true)
-                .await?
-        } else {
-            self.process.run_command(command, true).await?
-        };
+        let output = self.process.run_command(command, true).await?;
 
         for (i, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
@@ -674,24 +637,24 @@ impl Vcs for Git {
     }
 
     #[instrument(skip(self))]
-    async fn get_file_tree(&self, dir: &str) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+    async fn get_file_tree(
+        &self,
+        dir: &RelativePath,
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         // Check to see if the requested dir is within a submodule
         if let Some(module) = self
             .modules
             .values()
-            .find(|module| !module.is_root() && dir.starts_with(module.path.as_str()))
+            .find(|module| !module.is_root() && dir.starts_with(&module.path))
         {
             return self
-                .exec_ls_files(
-                    module,
-                    dir.strip_prefix(module.path.as_str()).unwrap_or_default(),
-                )
+                .exec_ls_files(module, dir.strip_prefix(&module.path).unwrap().as_str())
                 .await;
         }
 
         // If not, then check against the root
         if let Some(module) = self.modules.values().find(|module| module.is_root()) {
-            return self.exec_ls_files(module, dir).await;
+            return self.exec_ls_files(module, dir.as_str()).await;
         }
 
         Ok(vec![])

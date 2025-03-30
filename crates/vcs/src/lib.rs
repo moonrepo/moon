@@ -1,5 +1,7 @@
 mod git;
 mod git_submodule;
+pub mod gitx;
+
 mod git_worktree;
 mod process_cache;
 mod touched_files;

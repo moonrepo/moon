@@ -1,5 +1,5 @@
-use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs, clean_git_version};
+use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
+use moon_vcs::{Git, GitWorktree, TouchedFiles, Vcs};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{Sandbox, create_sandbox};
 use std::collections::BTreeMap;
@@ -57,7 +57,7 @@ mod root_detection {
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree, None);
-        assert_eq!(git.process.root, sandbox.path());
+        assert_eq!(git.process.workspace_root, sandbox.path());
         assert_eq!(git.root_prefix, None);
     }
 
@@ -69,7 +69,7 @@ mod root_detection {
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree, None);
-        assert_eq!(git.process.root, sandbox.path());
+        assert_eq!(git.process.workspace_root, sandbox.path());
         assert_eq!(git.root_prefix, None);
     }
 
@@ -87,7 +87,10 @@ mod root_detection {
 
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree, None);
-        assert_eq!(git.process.root, sandbox.path().join("nested/moon"));
+        assert_eq!(
+            git.process.workspace_root,
+            sandbox.path().join("nested/moon")
+        );
         assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
 
@@ -114,7 +117,7 @@ mod root_detection {
                     .unwrap(),
             })
         );
-        assert_eq!(git.process.root, sandbox.path().join("tree"));
+        assert_eq!(git.process.workspace_root, sandbox.path().join("tree"));
         assert_eq!(git.root_prefix, None);
     }
 
@@ -146,7 +149,10 @@ mod root_detection {
                     .unwrap(),
             })
         );
-        assert_eq!(git.process.root, sandbox.path().join("tree/nested/moon"));
+        assert_eq!(
+            git.process.workspace_root,
+            sandbox.path().join("tree/nested/moon")
+        );
         assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
 }
@@ -292,11 +298,10 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         let tree = git
-            .get_file_tree(".")
+            .get_file_tree(RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
-            .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false).await.unwrap();
@@ -341,11 +346,10 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
         let tree = git
-            .get_file_tree(".")
+            .get_file_tree(RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
-            .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false).await.unwrap();
@@ -382,11 +386,10 @@ mod file_hashing {
         }
 
         let tree = git
-            .get_file_tree(".")
+            .get_file_tree(RelativePath::new("."))
             .await
             .unwrap()
             .into_iter()
-            .map(|i| i.to_string())
             .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false).await.unwrap();
@@ -435,7 +438,7 @@ mod file_tree {
     async fn returns_from_dir() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git.get_file_tree("foo").await.unwrap();
+        let tree = git.get_file_tree(RelativePath::new("foo")).await.unwrap();
 
         assert_eq!(
             tree,
@@ -451,7 +454,10 @@ mod file_tree {
     async fn returns_from_deeply_nested_dir() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git.get_file_tree("bar/sub/dir").await.unwrap();
+        let tree = git
+            .get_file_tree(RelativePath::new("bar/sub/dir"))
+            .await
+            .unwrap();
 
         assert_eq!(
             tree,
@@ -465,7 +471,7 @@ mod file_tree {
 
         sandbox.create_file("baz/extra.txt", "");
 
-        let tree = git.get_file_tree("baz").await.unwrap();
+        let tree = git.get_file_tree(RelativePath::new("baz")).await.unwrap();
 
         assert_eq!(
             tree,
@@ -482,7 +488,7 @@ mod file_tree {
         let (_sandbox, git) = create_nested_git_sandbox();
 
         assert_eq!(
-            git.get_file_tree(".").await.unwrap(),
+            git.get_file_tree(RelativePath::new(".")).await.unwrap(),
             vec![WorkspaceRelativePathBuf::from("file.js")]
         );
     }
@@ -738,76 +744,5 @@ mod touched_files_via_diff {
                 ..TouchedFiles::default()
             }
         );
-    }
-}
-
-mod version_cleaning {
-    use super::*;
-
-    #[test]
-    fn unix() {
-        assert_eq!(clean_git_version("git version 1.2.3".into()), "1.2.3");
-        assert_eq!(clean_git_version(" git version 1.2.3".into()), "1.2.3");
-        assert_eq!(clean_git_version("git version 1.2.3 ".into()), "1.2.3");
-        assert_eq!(clean_git_version(" git version 1.2.3 ".into()), "1.2.3");
-        assert_eq!(
-            clean_git_version("git version 1.2.3 (64-bit)".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 1.2.3 (32bit)".into()),
-            "1.2.3"
-        );
-    }
-
-    #[test]
-    fn macos() {
-        assert_eq!(
-            clean_git_version("git version 1.2.3 (Apple Git-55)".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 2.15.1 (Apple Git-101)".into()),
-            "2.15.1"
-        );
-    }
-
-    #[test]
-    fn windows() {
-        assert_eq!(
-            clean_git_version("git version 1.2.3.windows.1".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version(" git for windows 1.2.3.windows.0".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 1.2.3.windows.10 (32-Bit)  ".into()),
-            "1.2.3"
-        );
-
-        assert_eq!(
-            clean_git_version("  git for windows 1.2.3.win.1".into()),
-            "1.2.3"
-        );
-        assert_eq!(clean_git_version("git 1.2.3.msysgit.1".into()), "1.2.3");
-        assert_eq!(
-            clean_git_version(" git version 1.2.3.msysgit.11 ".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git for windows 1.2.3.msysgit.23  (64bit) ".into()),
-            "1.2.3"
-        );
-        assert_eq!(
-            clean_git_version("git version 1.2.3.vfs.0.0".into()),
-            "1.2.3"
-        );
-    }
-
-    #[test]
-    fn other() {
-        assert_eq!(clean_git_version("git version 1.8.3.1".into()), "1.8.3");
     }
 }

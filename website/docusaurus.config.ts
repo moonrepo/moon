@@ -162,10 +162,10 @@ const config: Config = {
 							label: 'Blog',
 							to: '/blog',
 						},
-						{
-							label: 'API',
-							to: '/api',
-						},
+						// {
+						// 	label: 'API',
+						// 	to: '/api',
+						// },
 					],
 				},
 				{

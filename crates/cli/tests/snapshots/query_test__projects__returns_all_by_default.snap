@@ -3,30 +3,41 @@ source: crates/cli/tests/query_test.rs
 expression: assert.output_standardized()
 ---
 ╭──────────────────────────────────────────────────────────╮
-│Projec  Source   Stack    Type    Langu  Toolchains   Desc│
-│t                                 age                 ript│
-│                                                      ion │
+│Project           Source             Stack             Type
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
 │──────────────────────────────────────────────────────────│
-│advance  advanced  fronten  applica  typesc  node,        │
-│d                  d        tion     ript    typescript   │
-│bar      deps/bar  unknown  unknown  unknow  system       │
-│                                     n                    │
-│basic    basic     unknown  unknown  javasc  node         │
-│                                     ript                 │
-│baz      deps/baz  unknown  unknown  unknow  system       │
-│                                     n                    │
-│emptyCo  empty-    unknown  unknown  unknow  system       │
-│nfig     config                      n                    │
-│foo      deps/foo  unknown  applica  javasc  node         │
-│                            tion     ript                 │
-│metada  metadat  infras  config  unkno  system     Advance│
-│ta      a        tructu  uratio  wn                d      │
-│                 re      n                         example│
-│                                                   .      │
-│noConfi  no-       unknown  unknown  unknow  system       │
-│g        config                      n                    │
-│platfor  platform  unknown  unknown  unknow  system       │
-│ms       s                           n                    │
-│tasks    tasks     unknown  unknown  typesc  node,        │
-│                                     ript    typescript   │
+│advanced          advanced           frontend          appl
+│bar               deps/bar           unknown           unkn
+│basic             basic              unknown           unkn
+│baz               deps/baz           unknown           unkn
+│emptyConfig       empty-config       unknown           unkn
+│foo               deps/foo           unknown           appl
+│metadata          metadata           infrastructure    conf
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│noConfig          no-config          unknown           unkn
+│platforms         platforms          unknown           unkn
+│tasks             tasks              unknown           unkn
 ╰──────────────────────────────────────────────────────────╯

@@ -3,21 +3,55 @@ source: crates/cli/tests/query_test.rs
 expression: assert.output_standardized()
 ---
 ╭──────────────────────────────────────────────────────────╮
-│Task         Comman  Type    Prese  Toolchains      Descri│
-│             d               t                      ption │
+│Task                   Command      Type        Preset    │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
 │──────────────────────────────────────────────────────────│
-│metadata:bu  noop   test          system         Builds   │
-│ild                                              the      │
-│                                                 project! │
-│metadata:t  noop    test         system         Runs      │
-│est                                             the test  │
-│                                                runner!   │
-│platforms:nod  node     test            node              │
-│e                                                         │
-│platforms:sys  noop     test            system            │
-│tem                                                       │
-│tasks:lint     eslint   build           node, typescript  │
+│metadata:build         noop         test                  │
 │                                                          │
-│tasks:test     jest     test            node, typescript  │
 │                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│metadata:test          noop         test                  │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│                                                          │
+│platforms:node         node         test                  │
+│platforms:system       noop         test                  │
+│tasks:lint             eslint       build                 │
+│tasks:test             jest         test                  │
 ╰──────────────────────────────────────────────────────────╯

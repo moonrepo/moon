@@ -105,6 +105,10 @@ pub async fn run_action(
             result
         }
 
+        ActionNode::SetupToolchainPlugin(inner) => {
+            todo!("TODO");
+        }
+
         ActionNode::InstallWorkspaceDeps(inner) => {
             emitter
                 .emit(Event::DependenciesInstalling {

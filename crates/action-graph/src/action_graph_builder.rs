@@ -1,14 +1,14 @@
 use crate::action_graph::ActionGraph;
 use moon_action::{
     ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
-    SyncProjectNode,
+    SetupToolchainPluginNode, SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
-use moon_platform::{PlatformManager, Runtime};
+use moon_platform::{PlatformManager, Runtime, ToolchainSpec};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
@@ -280,7 +280,10 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Before we install deps, we must ensure the language has been installed
-        let setup_tool_index = self.setup_toolchain(node.get_runtime());
+        let setup_tool_index = match node.get_spec() {
+            Some(spec) => self.setup_toolchain_plugin(spec),
+            None => self.setup_toolchain(node.get_runtime()),
+        };
 
         // If installing dependencies is disabled, we still need to ensure the toolchain
         // has been setup, and indirectly, the sync workspace action
@@ -732,6 +735,30 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     #[instrument(skip_all)]
+    pub fn setup_toolchain_plugin(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
+        if !self.options.setup_toolchains.is_enabled(&spec.id) {
+            return None;
+        }
+
+        let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+            spec: spec.to_owned(),
+        });
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Some(*index);
+        }
+
+        let sync_workspace_index = self.sync_workspace();
+        let index = self.insert_node(node);
+
+        if let Some(edge) = sync_workspace_index {
+            self.link_requirements(index, vec![edge]);
+        }
+
+        Some(index)
+    }
+
+    #[instrument(skip_all)]
     pub fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
         self.internal_sync_project(project, &mut FxHashSet::default())
     }
@@ -766,7 +793,10 @@ impl<'app> ActionGraphBuilder<'app> {
         // Syncing requires the language's tool to be installed
         let mut edges = vec![];
 
-        if let Some(setup_tool_index) = self.setup_toolchain(node.get_runtime()) {
+        if let Some(setup_tool_index) = match node.get_spec() {
+            Some(spec) => self.setup_toolchain_plugin(spec),
+            None => self.setup_toolchain(node.get_runtime()),
+        } {
             edges.push(setup_tool_index);
         }
 

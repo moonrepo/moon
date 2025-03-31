@@ -192,6 +192,10 @@ impl ToolchainConfig {
 
         env
     }
+
+    pub fn is_plugin(&self, id: &str) -> bool {
+        self.plugins.contains_key(id)
+    }
 }
 
 #[cfg(feature = "proto")]

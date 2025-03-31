@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::Target;
-use moon_toolchain::Runtime;
+use moon_toolchain::{Runtime, ToolchainSpec};
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -9,6 +9,11 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SetupToolchainNode {
     pub runtime: Runtime,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct SetupToolchainPluginNode {
+    pub spec: ToolchainSpec,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -85,6 +90,9 @@ pub enum ActionNode {
     /// Setup a tool + version for the provided toolchain.
     SetupToolchain(Box<SetupToolchainNode>),
 
+    /// Setup a tool + version for the provided toolchain.
+    SetupToolchainPlugin(Box<SetupToolchainPluginNode>),
+
     /// Sync a project with language specific semantics.
     SyncProject(Box<SyncProjectNode>),
 
@@ -111,6 +119,10 @@ impl ActionNode {
         Self::SetupToolchain(Box::new(node))
     }
 
+    pub fn setup_toolchain_plugin(node: SetupToolchainPluginNode) -> Self {
+        Self::SetupToolchainPlugin(Box::new(node))
+    }
+
     pub fn sync_project(node: SyncProjectNode) -> Self {
         Self::SyncProject(Box::new(node))
     }
@@ -133,6 +145,13 @@ impl ActionNode {
             Self::RunTask(inner) => &inner.runtime,
             Self::SetupToolchain(inner) => &inner.runtime,
             Self::SyncProject(inner) => &inner.runtime,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn get_spec(&self) -> Option<&ToolchainSpec> {
+        match self {
+            Self::SetupToolchainPlugin(inner) => Some(&inner.spec),
             _ => unreachable!(),
         }
     }
@@ -197,6 +216,9 @@ impl ActionNode {
                 } else {
                     format!("SetupToolchain({})", inner.runtime.target())
                 }
+            }
+            Self::SetupToolchainPlugin(inner) => {
+                format!("SetupToolchain({})", inner.spec.target())
             }
             Self::SyncProject(inner) => {
                 format!("SyncProject({}, {})", inner.runtime.id(), inner.project_id)

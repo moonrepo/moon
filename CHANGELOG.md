@@ -4,7 +4,9 @@
 
 #### 🐞 Fixes
 
+- Fixed a compilation error when moon is installed through Cargo.
 - Fixed the version missing in `--version` and `--help`.
+- Fixed text wrapping issues when rendering tables in the terminal.
 
 ## 1.34.0
 

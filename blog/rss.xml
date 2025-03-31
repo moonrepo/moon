@@ -25,7 +25,7 @@ our end to focus on moon and proto, and also provides a better path forward for 
 <p>If you are currently using moonbase, we suggest migrating to our new
 <a href="https://moonrepo.dev/docs/guides/remote-cache">remote caching options</a>. And if you have an active moonbase
 subscription, it will be cancelled within the week, and any partial billing for this month will be
-reimbursed.</p>
+prorated.</p>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-actions-in-the-pipeline">Customize actions in the pipeline<a href="https://moonrepo.dev/blog/moon-v1.34#customize-actions-in-the-pipeline" class="hash-link" aria-label="Direct link to Customize actions in the pipeline" title="Direct link to Customize actions in the pipeline">​</a></h2>
 <p>When a task is ran in moon, we create an <a href="https://moonrepo.dev/docs/how-it-works/action-graph">action graph</a> (not a task
 graph) of actions, which are operations required to run to ensure a successful execution. This
@@ -124,6 +124,29 @@ of large releases. With that said, this is what we have tentatively planned for 
             <category>glob</category>
             <category>git</category>
             <category>experiment</category>
+        </item>
+        <item>
+            <title><![CDATA[moonbase has been sunset]]></title>
+            <link>https://moonrepo.dev/blog/moonbase-sunset</link>
+            <guid>https://moonrepo.dev/blog/moonbase-sunset</guid>
+            <pubDate>Mon, 31 Mar 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[As mentioned in previous moon releases and announcements, we have sunset moonbase, our]]></description>
+            <content:encoded><![CDATA[<p>As mentioned in previous moon releases and announcements, we have sunset <a href="https://moonrepo.dev/moonbase">moonbase</a>, our
+remote caching service. A while back we had internal discussions on whether to rework moonbase so
+that it could be self-hosted (on-premises), or adopt the
+<a href="https://github.com/bazelbuild/remote-apis" target="_blank" rel="noopener noreferrer">Bazel Remote Execution API</a> and utilize what the open
+source community has to offer. We ultimately decided with the latter, as it frees up resources on
+our end to focus on moon and proto, and also provides a better path forward for moon adoption.</p>
+<p>If you are currently using moonbase, we suggest migrating to our new
+<a href="https://moonrepo.dev/docs/guides/remote-cache">remote caching options</a>. And if you have an active moonbase
+subscription, it will be cancelled within the week, and any partial billing for this month will be
+prorated.</p>
+<p>With that said, we have some ideas brewing on how to bring this back in another form. Perhaps our
+own implementation of the Bazel Remote Execution API that can be self-hosted and deeply integrate
+with moon.</p>]]></content:encoded>
+            <category>moonbase</category>
+            <category>remote</category>
+            <category>cache</category>
         </item>
         <item>
             <title><![CDATA[moon v1.33 - Alpha support for toolchain WASM plugins]]></title>
@@ -1655,43 +1678,6 @@ performance improvements.</li>
             <category>console</category>
             <category>reporter</category>
             <category>operation</category>
-        </item>
-        <item>
-            <title><![CDATA[proto v0.35 - Support for more shells]]></title>
-            <link>https://moonrepo.dev/blog/proto-v0.35</link>
-            <guid>https://moonrepo.dev/blog/proto-v0.35</guid>
-            <pubDate>Sun, 05 May 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is a light release that adds support for more terminal shells.]]></description>
-            <content:encoded><![CDATA[<p>This is a light release that adds support for more terminal shells.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="experimental-support-for-new-shells">Experimental support for new shells<a href="https://moonrepo.dev/blog/proto-v0.35#experimental-support-for-new-shells" class="hash-link" aria-label="Direct link to Experimental support for new shells" title="Direct link to Experimental support for new shells">​</a></h2>
-<p>proto has always supported the primary and common shells like Bash, Zsh, Fish, PowerShell, and more.
-In recent years, there has been an influx of new and modern shells, built with technologies such as
-Rust. We felt it was time to start supporting some of these new shells, and have added
-<a href="https://crates.io/crates/starbase_shell" target="_blank" rel="noopener noreferrer">experimental support</a> for:</p>
-<ul>
-<li><a href="https://github.com/redox-os/ion" target="_blank" rel="noopener noreferrer">Ion</a></li>
-<li><a href="https://www.nushell.sh/" target="_blank" rel="noopener noreferrer">Nu</a></li>
-<li><a href="https://xon.sh/" target="_blank" rel="noopener noreferrer">Xonsh</a></li>
-</ul>
-<p>Furthermore, the <a href="https://moonrepo.dev/docs/proto/commands/setup"><code>proto setup</code></a> command (which is ran when installing
-proto) will now prompt the user to select a shell if one could not be detected.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="generate-trace-profiles">Generate trace profiles<a href="https://moonrepo.dev/blog/proto-v0.35#generate-trace-profiles" class="hash-link" aria-label="Direct link to Generate trace profiles" title="Direct link to Generate trace profiles">​</a></h2>
-<p>A major goal of proto is to be extremely efficient and to optimize as much as possible. To help
-accomplish this goal, we're introducing the global CLI <code>--dump</code> flag, which will generate a trace
-profile that can be loaded and reviewed in <code>chrome://tracing</code>.</p>
-<p>This will display a flame graph with labeled operations, their timing information, and any
-associated data. This is the first step in capturing this kind of information, and it will only get
-better moving forward.</p>
-<div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>Generating a profile for running a tool, either with <code>proto run node</code> or <code>node</code> itself, will not
-work. This is because the tool process <em>replaces</em> the current proto process entirely, causing the
-profile to be interrupted and abort.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.35#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.35.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>]]></content:encoded>
-            <category>shell</category>
-            <category>dump</category>
-            <category>profile</category>
-            <category>trace</category>
         </item>
     </channel>
 </rss>

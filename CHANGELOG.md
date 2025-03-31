@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed the version missing in `--version` and `--help`.
+
 ## 1.34.0
 
 #### 💥 Breaking

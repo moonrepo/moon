@@ -28,6 +28,25 @@ impl ToolchainRegistry {
         Ok(detected)
     }
 
+    pub async fn detect_task_usage(
+        &self,
+        ids: Vec<&Id>,
+        command: &String,
+        args: &[String],
+    ) -> miette::Result<Vec<Id>> {
+        let mut detected = vec![];
+
+        for id in ids {
+            if let Ok(toolchain) = self.load(id).await {
+                if toolchain.detect_task_usage(command, args)? {
+                    detected.push(Id::raw(id));
+                }
+            }
+        }
+
+        Ok(detected)
+    }
+
     pub async fn define_toolchain_config(&self) -> miette::Result<FxHashMap<String, ConfigSchema>> {
         let ids = self.get_plugin_ids();
 

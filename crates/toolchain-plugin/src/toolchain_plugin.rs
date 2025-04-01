@@ -165,6 +165,15 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub fn detect_task_usage(&self, command: &String, _args: &[String]) -> miette::Result<bool> {
+        if self.metadata.exe_names.contains(command) {
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+
+    #[instrument(skip(self))]
     pub async fn detect_version(
         &self,
         dir: &Path,

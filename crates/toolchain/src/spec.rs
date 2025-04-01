@@ -49,9 +49,7 @@ impl ToolchainSpec {
     }
 
     pub fn label(&self) -> String {
-        if self.id == "system" {
-            "system".into()
-        } else if let Some(req) = &self.req {
+        if let Some(req) = &self.req {
             format!("{} {}", self.id, req)
         } else {
             self.id.to_string()

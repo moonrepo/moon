@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_common::path::{WorkspaceRelativePath, is_root_level_source};
-use moon_common::{Id, color};
+use moon_common::{
+    Id, color,
+    path::{WorkspaceRelativePath, is_root_level_source},
+};
 use moon_config::{
     InheritedTasksConfig, InputPath, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
     TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
@@ -12,10 +14,12 @@ use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
 use moon_toolchain::detect::detect_task_toolchains;
+use moon_toolchain_plugin::ToolchainRegistry;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 struct ConfigChain<'proj> {
@@ -66,6 +70,7 @@ pub struct TasksBuilderContext<'proj> {
     pub enabled_toolchains: &'proj [Id],
     pub monorepo: bool,
     pub toolchain_config: &'proj ToolchainConfig,
+    pub toolchain_registry: Arc<ToolchainRegistry>,
     pub workspace_root: &'proj Path,
 }
 
@@ -497,11 +502,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.toolchains.is_empty() {
-            task.toolchains = detect_task_toolchains(
-                &task.command,
-                self.project_toolchains,
-                self.context.enabled_toolchains,
-            );
+            task.toolchains = self.detect_task_toolchains(&task).await?;
         }
 
         task.type_of = if !task.outputs.is_empty() {
@@ -695,6 +696,40 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         Ok(options)
+    }
+
+    async fn detect_task_toolchains(&self, task: &Task) -> miette::Result<Vec<Id>> {
+        // Detect using the registry first
+        let mut toolchains = self
+            .context
+            .toolchain_registry
+            .detect_task_usage(
+                self.context.enabled_toolchains.iter().collect(),
+                &task.command,
+                &task.args,
+            )
+            .await?;
+
+        // Then fallback to legacy detection
+        if toolchains.is_empty() {
+            toolchains = detect_task_toolchains(&task.command, self.context.enabled_toolchains);
+        }
+
+        // Or inherit the toolchain from the project's language
+        if toolchains.is_empty() {
+            for id in self.project_toolchains {
+                if self.context.enabled_toolchains.contains(id) {
+                    toolchains.push(id.to_owned());
+                }
+            }
+        }
+
+        // And always have something
+        if toolchains.is_empty() {
+            toolchains.push(Id::raw("system"));
+        }
+
+        Ok(toolchains)
     }
 
     fn inherit_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {

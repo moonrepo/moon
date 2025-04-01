@@ -15,6 +15,7 @@ moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 moon_task_args = { path = "../task-args" }
 moon_toolchain = { path = "../toolchain" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

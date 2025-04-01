@@ -4774,6 +4774,7 @@ dependencies = [
  "moon_task",
  "moon_task_args",
  "moon_toolchain",
+ "moon_toolchain_plugin",
  "rustc-hash 2.1.1",
  "starbase_sandbox",
  "thiserror 2.0.12",

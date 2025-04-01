@@ -5,10 +5,12 @@ use moon_target::Target;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use moon_toolchain::detect::detect_project_toolchains;
+use moon_toolchain_plugin::ToolchainRegistry;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 
 async fn build_tasks_with_config(
     root: &Path,
@@ -32,6 +34,7 @@ async fn build_tasks_with_config(
             enabled_toolchains: &enabled_toolchains,
             monorepo,
             toolchain_config: &toolchain_config,
+            toolchain_registry: Arc::new(ToolchainRegistry::default()),
             workspace_root: root,
         },
     );

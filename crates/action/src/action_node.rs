@@ -153,7 +153,7 @@ impl ActionNode {
     pub fn get_spec(&self) -> Option<&ToolchainSpec> {
         match self {
             Self::SetupToolchainPlugin(inner) => Some(&inner.spec),
-            _ => unreachable!(),
+            _ => None,
         }
     }
 

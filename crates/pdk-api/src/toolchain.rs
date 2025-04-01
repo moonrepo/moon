@@ -149,7 +149,7 @@ api_struct!(
     }
 );
 
-// SETUP TOOLCHAIN
+// SETUP / TEARDOWN
 
 api_struct!(
     /// Input passed to the `setup_toolchain` function.
@@ -167,7 +167,7 @@ api_struct!(
         pub toolchain_config: serde_json::Value,
 
         /// The resolved version specification that was setup.
-        pub version: VersionSpec,
+        pub version: Option<VersionSpec>,
     }
 );
 
@@ -181,6 +181,17 @@ api_struct!(
         /// Whether the tool was installed or not. This field is ignored
         /// if set, and is defined on moon's side.
         pub installed: bool,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `teardown_toolchain` function.
+    pub struct TeardownToolchainInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

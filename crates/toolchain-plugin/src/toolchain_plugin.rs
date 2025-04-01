@@ -5,7 +5,7 @@ use moon_pdk_api::{
     HashTaskContentsInput, HashTaskContentsOutput, InitializeToolchainInput,
     InitializeToolchainOutput, RegisterToolchainInput, RegisterToolchainOutput,
     ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
-    SyncOutput, SyncProjectInput, SyncWorkspaceInput, VirtualPath,
+    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput, VirtualPath,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
@@ -93,8 +93,10 @@ impl ToolchainPlugin {
     }
 
     pub async fn supports_tier_3(&self) -> bool {
-        self.tool.is_some()
-            && (self.has_func("download_prebuilt").await || self.has_func("native_install").await)
+        self.has_func("setup_toolchain").await
+            || self.tool.is_some()
+                && (self.has_func("download_prebuilt").await
+                    || self.has_func("native_install").await)
     }
 }
 
@@ -232,31 +234,34 @@ impl ToolchainPlugin {
     ) -> miette::Result<SetupToolchainOutput> {
         let mut output = SetupToolchainOutput::default();
 
-        let Some(tool) = &self.tool else {
-            return Ok(output);
-        };
+        if let Some(tool) = &self.tool {
+            let mut tool = tool.write().await;
 
-        let mut tool = tool.write().await;
+            // Resolve the version first so that it is available
+            input.version = Some(
+                tool.resolve_version(&input.configured_version, false)
+                    .await?,
+            );
 
-        // Resolve the version first so that it is available
-        input.version = tool
-            .resolve_version(&input.configured_version, false)
-            .await?;
+            // Only setup if not already been
+            if !tool.is_setup(&input.configured_version).await? {
+                on_setup()?;
 
-        // Only setup if not already been
-        if !tool.is_setup(&input.configured_version).await? {
-            on_setup()?;
+                output.installed = tool
+                    .setup(
+                        &input.configured_version,
+                        InstallOptions {
+                            skip_prompts: true,
+                            skip_ui: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
+            }
 
-            output.installed = tool
-                .setup(
-                    &input.configured_version,
-                    InstallOptions {
-                        skip_prompts: true,
-                        skip_ui: true,
-                        ..Default::default()
-                    },
-                )
-                .await?;
+            // Locate pieces that we'll need
+            tool.locate_exes_dirs().await?;
+            tool.locate_globals_dirs().await?;
         }
 
         if self.has_func("setup_toolchain").await {
@@ -300,6 +305,23 @@ impl ToolchainPlugin {
         self.handle_output_files(&mut output.changed_files);
 
         Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn teardown_toolchain(&self, input: TeardownToolchainInput) -> miette::Result<()> {
+        self.plugin
+            .call_func_without_output("teardown_toolchain", input)
+            .await?;
+
+        if let Some(tool) = &self.tool {
+            let mut tool = tool.write().await;
+
+            // TODO version
+
+            tool.teardown().await?;
+        }
+
+        Ok(())
     }
 }
 

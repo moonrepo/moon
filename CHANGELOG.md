@@ -7,6 +7,12 @@
 - Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
   toolchain WASM plugin is installing a tool (via proto).
 
+#### 🧩 Plugins
+
+- Added new toolchain WASM APIs.
+  - `setup_toolchain` - Runs operations after the tool has been installed.
+  - `teardown_toolchain` - Runs operations before the tool will be uninstalled.
+
 ## 1.34.0
 
 #### 💥 Breaking

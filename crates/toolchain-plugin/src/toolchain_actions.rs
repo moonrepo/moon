@@ -4,6 +4,7 @@ use moon_common::Id;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput,
     ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
+    TeardownToolchainInput,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
@@ -160,6 +161,21 @@ impl ToolchainRegistry {
             ids,
             input_factory,
             |toolchain, input| async move { toolchain.sync_workspace(input).await },
+        )
+        .await
+    }
+
+    pub async fn teardown<InFn>(&self, input_factory: InFn) -> miette::Result<Vec<CallResult<()>>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
+    {
+        let ids = self.get_plugin_ids();
+
+        self.call_func_all(
+            "teardown_toolchain",
+            ids,
+            input_factory,
+            |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
         )
         .await
     }

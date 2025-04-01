@@ -741,6 +741,7 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+            project_id: None, // TODO
             spec: spec.to_owned(),
         });
 

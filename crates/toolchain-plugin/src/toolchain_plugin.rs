@@ -4,10 +4,11 @@ use moon_pdk_api::{
     DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineToolchainConfigOutput,
     HashTaskContentsInput, HashTaskContentsOutput, InitializeToolchainInput,
     InitializeToolchainOutput, RegisterToolchainInput, RegisterToolchainOutput,
-    ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
-    VirtualPath,
+    ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
+    SyncOutput, SyncProjectInput, SyncWorkspaceInput, VirtualPath,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
 use starbase_utils::json::JsonValue;
 use std::fmt;
@@ -92,7 +93,8 @@ impl ToolchainPlugin {
     }
 
     pub async fn supports_tier_3(&self) -> bool {
-        self.tool.is_some() && self.has_func("download_prebuilt").await
+        self.tool.is_some()
+            && (self.has_func("download_prebuilt").await || self.has_func("native_install").await)
     }
 }
 
@@ -209,6 +211,53 @@ impl ToolchainPlugin {
             .plugin
             .cache_func_with("initialize_toolchain", input)
             .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self, on_setup))]
+    pub async fn setup_toolchain(
+        &self,
+        mut input: SetupToolchainInput,
+        on_setup: impl FnOnce() -> miette::Result<()>,
+    ) -> miette::Result<SetupToolchainOutput> {
+        let mut output = SetupToolchainOutput::default();
+
+        let Some(tool) = &self.tool else {
+            return Ok(output);
+        };
+
+        let mut tool = tool.write().await;
+
+        // Resolve the version first so that it is available
+        input.version = tool
+            .resolve_version(&input.configured_version, false)
+            .await?;
+
+        // Only setup if not already been
+        if !tool.is_setup(&input.configured_version).await? {
+            on_setup()?;
+
+            output.installed = tool
+                .setup(
+                    &input.configured_version,
+                    InstallOptions {
+                        skip_prompts: true,
+                        skip_ui: true,
+                        ..Default::default()
+                    },
+                )
+                .await?;
+        }
+
+        if self.has_func("setup_toolchain").await {
+            let mut post_output: SetupToolchainOutput =
+                self.plugin.call_func_with("setup_toolchain", input).await?;
+
+            self.handle_output_files(&mut post_output.changed_files);
+
+            output.changed_files.extend(post_output.changed_files);
+        }
 
         Ok(output)
     }

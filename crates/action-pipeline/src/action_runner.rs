@@ -106,7 +106,27 @@ pub async fn run_action(
         }
 
         ActionNode::SetupToolchainPlugin(inner) => {
-            todo!("TODO");
+            emitter
+                .emit(Event::ToolchainInstalling { spec: &inner.spec })
+                .await?;
+
+            let result = setup_toolchain_plugin(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await;
+
+            emitter
+                .emit(Event::ToolchainInstalled {
+                    error: extract_error(&result),
+                    spec: &inner.spec,
+                })
+                .await?;
+
+            result
         }
 
         ActionNode::InstallWorkspaceDeps(inner) => {

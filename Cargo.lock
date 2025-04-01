@@ -3651,6 +3651,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_config_schema",
+ "moon_console",
  "moon_env_var",
  "moon_hash",
  "moon_pdk_api",

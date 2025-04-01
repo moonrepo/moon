@@ -3,7 +3,7 @@ use moon_action::{Action, ActionNode, ActionPipelineStatus, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_project::Project;
 use moon_task::Target;
-use moon_toolchain::Runtime;
+use moon_toolchain::{Runtime, ToolchainSpec};
 use serde::Serialize;
 use std::sync::Arc;
 use std::time::Duration;
@@ -84,6 +84,13 @@ pub enum Event<'data> {
         error: Option<String>,
         runtime: &'data Runtime,
     },
+    ToolchainInstalling {
+        spec: &'data ToolchainSpec,
+    },
+    ToolchainInstalled {
+        error: Option<String>,
+        spec: &'data ToolchainSpec,
+    },
 
     // Syncing workspace
     WorkspaceSyncing,
@@ -107,6 +114,8 @@ impl Event<'_> {
             Event::TaskRan { .. } => "task.ran",
             Event::ToolInstalling { .. } => "tool.installing",
             Event::ToolInstalled { .. } => "tool.installed",
+            Event::ToolchainInstalling { .. } => "toolchain.installing",
+            Event::ToolchainInstalled { .. } => "toolchain.installed",
             Event::WorkspaceSyncing => "workspace.syncing",
             Event::WorkspaceSynced { .. } => "workspace.synced",
         }

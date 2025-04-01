@@ -40,6 +40,10 @@ impl ToolchainSpec {
         Self::new_global(Id::raw("system"))
     }
 
+    pub fn is_global(&self) -> bool {
+        self.req.is_none()
+    }
+
     pub fn is_system(&self) -> bool {
         self.id == "system"
     }

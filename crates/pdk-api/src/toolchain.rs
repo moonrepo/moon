@@ -1,6 +1,6 @@
 use crate::common::*;
 use crate::prompts::*;
-use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
+use moon_config::{DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, VersionSpec};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
@@ -146,6 +146,41 @@ api_struct!(
 
         /// Whether the action was skipped or not.
         pub skipped: bool,
+    }
+);
+
+// SETUP TOOLCHAIN
+
+api_struct!(
+    /// Input passed to the `setup_toolchain` function.
+    pub struct SetupToolchainInput {
+        /// The unresolved version specification that this toolchain was configured with.
+        pub configured_version: UnresolvedVersionSpec,
+
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Fragment of the project that the toolchain belongs to.
+        pub project: Option<ProjectFragment>,
+
+        /// Merged toolchain configuration.
+        pub toolchain_config: serde_json::Value,
+
+        /// The resolved version specification that was setup.
+        pub version: VersionSpec,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `setup_toolchain` function.
+    pub struct SetupToolchainOutput {
+        /// List of files that have been changed because of this action.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub changed_files: Vec<VirtualPath>,
+
+        /// Whether the tool was installed or not. This field is ignored
+        /// if set, and is defined on moon's side.
+        pub installed: bool,
     }
 );
 

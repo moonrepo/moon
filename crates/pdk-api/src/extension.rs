@@ -1,4 +1,4 @@
-use crate::common::MoonContext;
+use crate::context::MoonContext;
 use schematic::Schema;
 use warpgate_api::*;
 

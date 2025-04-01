@@ -5055,6 +5055,7 @@ dependencies = [
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
+ "moon_pdk_api",
  "moon_project",
  "moon_project_builder",
  "moon_project_constraints",

@@ -22,6 +22,11 @@ pub async fn teardown(session: CliSession) -> AppResult {
         .get_toolchain_registry()
         .await?
         .teardown(|registry, toolchain| TeardownToolchainInput {
+            configured_version: session
+                .toolchain_config
+                .plugins
+                .get(toolchain.id.as_str())
+                .and_then(|plugin| plugin.version.clone()),
             context: registry.create_context(),
             toolchain_config: registry.create_config(&toolchain.id, &session.toolchain_config),
         })

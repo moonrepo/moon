@@ -309,15 +309,15 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub async fn teardown_toolchain(&self, input: TeardownToolchainInput) -> miette::Result<()> {
+        let spec = input.configured_version.clone();
+
         self.plugin
             .call_func_without_output("teardown_toolchain", input)
             .await?;
 
-        if let Some(tool) = &self.tool {
+        if let (Some(tool), Some(spec)) = (&self.tool, &spec) {
             let mut tool = tool.write().await;
-
-            // TODO version
-
+            tool.resolve_version(spec, true).await?;
             tool.teardown().await?;
         }
 

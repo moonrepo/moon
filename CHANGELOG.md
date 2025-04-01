@@ -9,6 +9,8 @@
 
 #### 🧩 Plugins
 
+- Added tier 3 support (tier 2 still a work in progress).
+  - This utilizes the same APIs as proto: https://moonrepo.dev/docs/proto/wasm-plugin
 - Added new toolchain WASM APIs.
   - `setup_toolchain` - Runs operations after the tool has been installed.
   - `teardown_toolchain` - Runs operations before the tool will be uninstalled.

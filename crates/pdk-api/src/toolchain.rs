@@ -187,6 +187,9 @@ api_struct!(
 api_struct!(
     /// Input passed to the `teardown_toolchain` function.
     pub struct TeardownToolchainInput {
+        /// The unresolved version specification that this toolchain was configured with.
+        pub configured_version: Option<UnresolvedVersionSpec>,
+
         /// Current moon context.
         pub context: MoonContext,
 

@@ -285,11 +285,11 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
                 headers: vec![
                     TableHeader::new("Project", Size::Length((id_width + 5).max(10) as u32)),
                     TableHeader::new("Source", Size::Length((source_width + 5) as u32)),
-                    TableHeader::new("Stack", Size::Length(16)),
-                    TableHeader::new("Type", Size::Length(16)),
-                    TableHeader::new("Language", Size::Length(13)),
+                    TableHeader::new("Stack", Size::Length(16)).hide_below(160),
+                    TableHeader::new("Type", Size::Length(16)).hide_below(120),
+                    TableHeader::new("Language", Size::Length(13)).hide_below(140),
                     TableHeader::new("Toolchains", Size::Length(25)),
-                    TableHeader::new("Description", Size::Auto),
+                    TableHeader::new("Description", Size::Auto).hide_below(100),
                 ]
             ) {
                 #(projects.into_iter().enumerate().map(|(i, project)| {
@@ -479,10 +479,10 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
                 headers: vec![
                     TableHeader::new("Task", Size::Length((id_width + 5).max(10) as u32)),
                     TableHeader::new("Command", Size::Length((command_width + 5) as u32)),
-                    TableHeader::new("Type", Size::Length(10)),
-                    TableHeader::new("Preset", Size::Length(10)),
+                    TableHeader::new("Type", Size::Length(10)).hide_below(130),
+                    TableHeader::new("Preset", Size::Length(10)).hide_below(160),
                     TableHeader::new("Toolchains", Size::Length(25)),
-                    TableHeader::new("Description", Size::Auto),
+                    TableHeader::new("Description", Size::Auto).hide_below(100),
                 ]
             ) {
                 #(tasks.into_iter().enumerate().map(|(i, task)| {

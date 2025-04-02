@@ -250,7 +250,7 @@ mod projects {
             cmd.arg("query").arg("projects");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        assert.success();
     }
 
     #[test]
@@ -343,11 +343,16 @@ mod projects {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("query")
                 .arg("projects")
+                .arg("--json")
                 .arg("--affected")
                 .write_stdin(get_assert_stdout_output(&query.inner));
         });
 
-        assert_snapshot!(assert.output());
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
+
+        assert_eq!(ids, string_vec!["advanced", "metadata", "noConfig"]);
+        assert!(json.options.affected.is_some());
     }
 
     #[test]
@@ -692,7 +697,7 @@ mod tasks {
             cmd.arg("query").arg("tasks");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        assert.success();
     }
 
     #[test]

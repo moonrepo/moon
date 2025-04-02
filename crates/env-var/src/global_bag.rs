@@ -80,6 +80,7 @@ impl GlobalEnvBag {
                 || k.starts_with("WARPGATE")
                 || k.contains("COLOR")
                 || k == "PATH"
+                || k == "MOON_VERSION"
         }) {
             unsafe {
                 env::set_var(key, value);

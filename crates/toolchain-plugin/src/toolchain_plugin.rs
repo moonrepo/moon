@@ -1,12 +1,6 @@
 use async_trait::async_trait;
 use moon_feature_flags::glob_walk;
-use moon_pdk_api::{
-    DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineToolchainConfigOutput,
-    HashTaskContentsInput, HashTaskContentsOutput, InitializeToolchainInput,
-    InitializeToolchainOutput, RegisterToolchainInput, RegisterToolchainOutput,
-    ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
-    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput, VirtualPath,
-};
+use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
@@ -191,6 +185,17 @@ impl ToolchainPlugin {
         }
 
         Ok(None)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_project(
+        &self,
+        input: ExtendProjectInput,
+    ) -> miette::Result<ExtendProjectOutput> {
+        let output: ExtendProjectOutput =
+            self.plugin.cache_func_with("extend_project", input).await?;
+
+        Ok(output)
     }
 
     #[instrument(skip(self))]

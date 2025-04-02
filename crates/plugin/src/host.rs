@@ -1,5 +1,5 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
-use moon_common::{Id, color, serde::*};
+use moon_common::{Id, color};
 use moon_env::MoonEnvironment;
 use moon_target::Target;
 use moon_workspace_graph::WorkspaceGraph;
@@ -100,11 +100,7 @@ fn load_project(
         color::label("load_project_by_id"),
     );
 
-    enable_wasm_bridge();
-
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&project)?)?;
-
-    disable_wasm_bridge();
 
     Ok(())
 }
@@ -146,11 +142,7 @@ fn load_projects(
         color::label("load_projects_by_id"),
     );
 
-    enable_wasm_bridge();
-
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&projects)?)?;
-
-    disable_wasm_bridge();
 
     Ok(())
 }
@@ -195,11 +187,7 @@ fn load_task(
         color::label("load_task_by_target"),
     );
 
-    enable_wasm_bridge();
-
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&task)?)?;
-
-    disable_wasm_bridge();
 
     Ok(())
 }
@@ -248,11 +236,7 @@ fn load_tasks(
         color::label("load_tasks_by_target"),
     );
 
-    enable_wasm_bridge();
-
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&tasks)?)?;
-
-    disable_wasm_bridge();
 
     Ok(())
 }

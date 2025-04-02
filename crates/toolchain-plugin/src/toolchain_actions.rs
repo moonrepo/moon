@@ -2,9 +2,9 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_pdk_api::{
-    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput,
-    ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
-    TeardownToolchainInput,
+    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
+    ExtendProjectOutput, HashTaskContentsInput, ScaffoldDockerInput, ScaffoldDockerOutput,
+    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
@@ -81,6 +81,26 @@ impl ToolchainRegistry {
                 ids,
                 input_factory,
                 |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn extend_project<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendProjectOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_project",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_project(input).await },
             )
             .await?;
 

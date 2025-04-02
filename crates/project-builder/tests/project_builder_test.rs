@@ -6,7 +6,6 @@ use moon_config::{
     ToolchainPluginConfig,
 };
 use moon_file_group::FileGroup;
-use moon_plugin::PluginId;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_toolchain_plugin::ToolchainRegistry;
@@ -55,12 +54,7 @@ impl Stub {
 
     pub async fn create_builder(&self) -> ProjectBuilder {
         let mut toolchain_registry = ToolchainRegistry::default();
-
-        for (id, config) in &self.toolchain_config.plugins {
-            toolchain_registry
-                .configs
-                .insert(PluginId::raw(id.as_str()), config.to_owned());
-        }
+        toolchain_registry.inherit_configs(&self.toolchain_config.plugins);
 
         ProjectBuilder::new(
             &self.id,

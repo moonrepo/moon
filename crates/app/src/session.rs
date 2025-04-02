@@ -13,7 +13,7 @@ use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_feature_flags::{FeatureFlags, Flag};
-use moon_plugin::{PluginHostData, PluginId};
+use moon_plugin::PluginHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
@@ -148,10 +148,7 @@ impl CliSession {
                 workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
-            // Convert moon IDs to plugin IDs
-            for (id, config) in self.workspace_config.extensions.clone() {
-                registry.configs.insert(PluginId::raw(id), config);
-            }
+            registry.inherit_configs(&self.workspace_config.extensions);
 
             Arc::new(registry)
         });
@@ -183,10 +180,7 @@ impl CliSession {
                 workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
-            // Convert moon IDs to plugin IDs
-            for (id, config) in self.toolchain_config.plugins.clone() {
-                registry.configs.insert(PluginId::raw(id), config);
-            }
+            registry.inherit_configs(&self.toolchain_config.plugins);
 
             Arc::new(registry)
         });

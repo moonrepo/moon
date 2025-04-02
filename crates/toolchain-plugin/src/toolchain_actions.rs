@@ -14,6 +14,8 @@ use std::path::Path;
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
+// TODO: Remove the Ok(toolchain) checks once everything is on the registry!
+
 impl ToolchainRegistry {
     pub async fn detect_project_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
         let mut detected = vec![];

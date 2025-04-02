@@ -343,6 +343,7 @@ mod projects {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("query")
                 .arg("projects")
+                .arg("--json")
                 .arg("--affected")
                 .write_stdin(get_assert_stdout_output(&query.inner));
         });

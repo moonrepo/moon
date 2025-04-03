@@ -8,12 +8,11 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
-use moon_toolchain_plugin::ToolchainRegistry;
+use moon_test_utils2::AppContextMocker;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 // We need some top-level struct to hold the data used for lifetime refs.
 struct Stub {
@@ -28,7 +27,7 @@ struct Stub {
 impl Stub {
     pub fn new(id: &str, root: &Path) -> Self {
         // Enable platforms so that detection works
-        let mut toolchain_config = ToolchainConfig {
+        let toolchain_config = ToolchainConfig {
             bun: Some(BunConfig::default()),
             deno: Some(DenoConfig::default()),
             node: Some(NodeConfig::default()),
@@ -39,8 +38,6 @@ impl Stub {
             )]),
             ..ToolchainConfig::default()
         };
-
-        toolchain_config.inherit_plugin_locators().unwrap();
 
         Self {
             config_loader: ConfigLoader::default(),
@@ -53,8 +50,11 @@ impl Stub {
     }
 
     pub async fn create_builder(&self) -> ProjectBuilder {
-        let mut toolchain_registry = ToolchainRegistry::default();
-        toolchain_registry.inherit_configs(&self.toolchain_config.plugins);
+        let mut app_context = AppContextMocker::new(&self.workspace_root);
+        app_context.with_global_envs();
+        app_context.toolchain_config = self.toolchain_config.clone();
+
+        let app_context = app_context.mock();
 
         ProjectBuilder::new(
             &self.id,
@@ -65,7 +65,7 @@ impl Stub {
                 monorepo: true,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
-                toolchain_registry: Arc::new(toolchain_registry),
+                toolchain_registry: app_context.toolchain_registry,
                 workspace_root: &self.workspace_root,
             },
         )

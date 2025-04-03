@@ -4468,6 +4468,7 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_task_builder",
+ "moon_test_utils2",
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash 2.1.1",

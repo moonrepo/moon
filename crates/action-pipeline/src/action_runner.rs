@@ -60,10 +60,7 @@ pub async fn run_action(
             let project = workspace_graph.get_project(&inner.project_id)?;
 
             emitter
-                .emit(Event::ProjectSyncing {
-                    project: &project,
-                    runtime: &inner.runtime,
-                })
+                .emit(Event::ProjectSyncing { project: &project })
                 .await?;
 
             let result = sync_project(
@@ -79,7 +76,6 @@ pub async fn run_action(
                 .emit(Event::ProjectSynced {
                     error: extract_error(&result),
                     project: &project,
-                    runtime: &inner.runtime,
                 })
                 .await?;
 

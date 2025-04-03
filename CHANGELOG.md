@@ -6,6 +6,10 @@
 
 - Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
   toolchain WASM plugin is installing a tool (via proto).
+- Updated and simplified the relationships in the action graph.
+  - `SyncProject` no longer depends on the `SetupToolchain` action.
+  - `SyncProject` no longer is grouped by language/toolchain, and instead encompasses all of them
+    applicable to the project.
 
 #### 🧩 Plugins
 

@@ -25,6 +25,13 @@ impl ProjectToolchainEntry {
             Self::Config(config) => !config.disabled,
         }
     }
+
+    pub fn get_version(&self) -> Option<&UnresolvedVersionSpec> {
+        match self {
+            Self::Config(config) => config.version.as_ref(),
+            _ => None,
+        }
+    }
 }
 
 cacheable!(

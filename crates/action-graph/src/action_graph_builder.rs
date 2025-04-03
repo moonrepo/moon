@@ -5,6 +5,7 @@ use moon_action::{
 };
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_app_context::AppContext;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
@@ -17,6 +18,7 @@ use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphErr
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
+use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 #[derive(Default)]
@@ -67,6 +69,7 @@ impl ActionGraphBuilderOptions {
 
 pub struct ActionGraphBuilder<'app> {
     all_query: Option<Criteria<'app>>,
+    app_context: Arc<AppContext>,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
@@ -85,13 +88,20 @@ pub struct ActionGraphBuilder<'app> {
 
 impl<'app> ActionGraphBuilder<'app> {
     pub fn new(
+        app_context: Arc<AppContext>,
         workspace_graph: &'app WorkspaceGraph,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<Self> {
-        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph, options)
+        ActionGraphBuilder::with_platforms(
+            app_context,
+            PlatformManager::read(),
+            workspace_graph,
+            options,
+        )
     }
 
     pub fn with_platforms(
+        app_context: Arc<AppContext>,
         platform_manager: &'app PlatformManager,
         workspace_graph: &'app WorkspaceGraph,
         options: ActionGraphBuilderOptions,
@@ -101,6 +111,7 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok(ActionGraphBuilder {
             all_query: None,
             affected: None,
+            app_context,
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
             initial_targets: FxHashSet::default(),
@@ -158,6 +169,38 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         Runtime::system()
+    }
+
+    pub fn get_spec(
+        &self,
+        project: &Project,
+        toolchain: &Id,
+        allow_override: bool,
+    ) -> Option<ToolchainSpec> {
+        if let Some(config) = project.config.toolchain.plugins.get(toolchain) {
+            if !config.is_enabled() {
+                return None;
+            }
+
+            if let Some(version) = config.get_version() {
+                if allow_override {
+                    return Some(ToolchainSpec::new_override(
+                        toolchain.to_owned(),
+                        version.to_owned(),
+                    ));
+                }
+            }
+        }
+
+        if let Some(config) = self.app_context.toolchain_config.plugins.get(toolchain) {
+            return Some(if let Some(version) = &config.version {
+                ToolchainSpec::new(toolchain.to_owned(), version.to_owned())
+            } else {
+                ToolchainSpec::new_global(toolchain.to_owned())
+            });
+        }
+
+        None
     }
 
     pub fn set_affected(&mut self) {
@@ -280,9 +323,12 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Before we install deps, we must ensure the language has been installed
-        let setup_tool_index = match node.get_spec() {
-            Some(spec) => self.setup_toolchain_plugin(spec),
-            None => self.setup_toolchain(node.get_runtime()),
+        let setup_tool_index = if let Some(spec) =
+            self.get_spec(project, &primary_toolchain, in_project)
+        {
+            self.setup_toolchain_plugin(&spec, if spec.overridden { Some(project) } else { None })
+        } else {
+            self.setup_toolchain(node.get_runtime())
         };
 
         // If installing dependencies is disabled, we still need to ensure the toolchain
@@ -735,13 +781,17 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    pub fn setup_toolchain_plugin(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
+    pub fn setup_toolchain_plugin(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+    ) -> Option<NodeIndex> {
         if !self.options.setup_toolchains.is_enabled(&spec.id) {
             return None;
         }
 
         let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
-            project_id: None, // TODO
+            project_id: project.map(|p| p.id.to_owned()),
             spec: spec.to_owned(),
         });
 
@@ -775,7 +825,6 @@ impl<'app> ActionGraphBuilder<'app> {
 
         let node = ActionNode::sync_project(SyncProjectNode {
             project_id: project.id.clone(),
-            runtime: self.get_runtime(project, &project.toolchains[0], true),
         });
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -794,11 +843,8 @@ impl<'app> ActionGraphBuilder<'app> {
         // Syncing requires the language's tool to be installed
         let mut edges = vec![];
 
-        if let Some(setup_tool_index) = match node.get_spec() {
-            Some(spec) => self.setup_toolchain_plugin(spec),
-            None => self.setup_toolchain(node.get_runtime()),
-        } {
-            edges.push(setup_tool_index);
+        if let Some(edge) = self.sync_workspace() {
+            edges.push(edge);
         }
 
         let index = self.insert_node(node);

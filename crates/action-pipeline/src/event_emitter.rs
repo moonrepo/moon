@@ -57,12 +57,10 @@ pub enum Event<'data> {
     // Syncing projects
     ProjectSyncing {
         project: &'data Project,
-        runtime: &'data Runtime,
     },
     ProjectSynced {
         error: Option<String>,
         project: &'data Project,
-        runtime: &'data Runtime,
     },
 
     // Running targets

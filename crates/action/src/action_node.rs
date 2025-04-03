@@ -12,6 +12,7 @@ pub struct SetupToolchainNode {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SetupToolchainPluginNode {
     pub project_id: Option<Id>,
     pub spec: ToolchainSpec,
@@ -25,13 +26,16 @@ pub struct InstallWorkspaceDepsNode {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ScopedRuntimeNode {
+pub struct InstallProjectDepsNode {
     pub project_id: Id,
     pub runtime: Runtime,
 }
 
-pub type InstallProjectDepsNode = ScopedRuntimeNode;
-pub type SyncProjectNode = ScopedRuntimeNode;
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncProjectNode {
+    pub project_id: Id,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct RunTaskNode {
@@ -145,7 +149,6 @@ impl ActionNode {
             Self::InstallProjectDeps(inner) => &inner.runtime,
             Self::RunTask(inner) => &inner.runtime,
             Self::SetupToolchain(inner) => &inner.runtime,
-            Self::SyncProject(inner) => &inner.runtime,
             _ => unreachable!(),
         }
     }
@@ -222,7 +225,7 @@ impl ActionNode {
                 format!("SetupToolchain({})", inner.spec.target())
             }
             Self::SyncProject(inner) => {
-                format!("SyncProject({}, {})", inner.runtime.id(), inner.project_id)
+                format!("SyncProject({})", inner.project_id)
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),

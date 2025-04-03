@@ -180,7 +180,6 @@ export interface ActionNodeSetupToolchain {
 	};
 }
 
-
 export interface ActionNodeSetupToolchainPlugin {
 	action: 'setup-toolchain-plugin';
 	params: {

@@ -1,6 +1,7 @@
 language: rust
 
 tasks:
+  # Built-ins
   system:
     toolchain: system
   bun:
@@ -19,6 +20,14 @@ tasks:
     command: npm
   rust-via-cmd:
     command: cargo
+
+  # WASM plugins
+  typescript:
+    toolchain: typescript
+  typescript-via-cmd:
+    command: tsc
+
+  # Other
   unknown:
     toolchain: unknown
   unknown-implicit: {}

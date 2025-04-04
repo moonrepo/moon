@@ -9,6 +9,7 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
+#[derive(Debug)]
 pub struct StateEngine {
     /// The `.moon/cache/states` directory. Stores state information about anything...
     /// tools, dependencies, projects, tasks, etc.

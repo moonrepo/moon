@@ -15,6 +15,7 @@ use std::sync::RwLock;
 use std::time::Duration;
 use tracing::{debug, instrument};
 
+#[derive(Debug)]
 pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.

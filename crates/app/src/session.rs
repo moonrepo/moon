@@ -86,11 +86,9 @@ impl CliSession {
         }
     }
 
-    pub async fn build_action_graph<'graph>(
-        &self,
-        workspace_graph: &'graph WorkspaceGraph,
-    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+    pub async fn build_action_graph<'graph>(&self) -> miette::Result<ActionGraphBuilder<'graph>> {
         let app_context = self.get_app_context().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
         let config = &self.workspace_config.pipeline;
 
         ActionGraphBuilder::new(
@@ -108,10 +106,10 @@ impl CliSession {
 
     pub async fn build_action_graph_with_options<'graph>(
         &self,
-        workspace_graph: &'graph WorkspaceGraph,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
         let app_context = self.get_app_context().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
 
         ActionGraphBuilder::new(app_context, workspace_graph, options)
     }

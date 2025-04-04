@@ -13,7 +13,7 @@ use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_feature_flags::{FeatureFlags, Flag};
-use moon_plugin::{PluginHostData, PluginId};
+use moon_plugin::PluginHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
@@ -90,9 +90,11 @@ impl CliSession {
         &self,
         workspace_graph: &'graph WorkspaceGraph,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
+        let app_context = self.get_app_context().await?;
         let config = &self.workspace_config.pipeline;
 
         ActionGraphBuilder::new(
+            app_context,
             workspace_graph,
             ActionGraphBuilderOptions {
                 install_dependencies: config.install_dependencies.clone(),
@@ -109,7 +111,9 @@ impl CliSession {
         workspace_graph: &'graph WorkspaceGraph,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(workspace_graph, options)
+        let app_context = self.get_app_context().await?;
+
+        ActionGraphBuilder::new(app_context, workspace_graph, options)
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
@@ -148,10 +152,7 @@ impl CliSession {
                 workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
-            // Convert moon IDs to plugin IDs
-            for (id, config) in self.workspace_config.extensions.clone() {
-                registry.configs.insert(PluginId::raw(id), config);
-            }
+            registry.inherit_configs(&self.workspace_config.extensions);
 
             Arc::new(registry)
         });
@@ -183,10 +184,7 @@ impl CliSession {
                 workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
             });
 
-            // Convert moon IDs to plugin IDs
-            for (id, config) in self.toolchain_config.plugins.clone() {
-                registry.configs.insert(PluginId::raw(id), config);
-            }
+            registry.inherit_configs(&self.toolchain_config.plugins);
 
             Arc::new(registry)
         });

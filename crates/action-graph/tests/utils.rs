@@ -2,15 +2,17 @@ use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
 use moon_config::WorkspaceConfig;
 use moon_platform::PlatformManager;
 use moon_test_utils2::{
-    generate_platform_manager_from_sandbox, generate_workspace_graph_from_sandbox,
+    AppContextMocker, generate_platform_manager_from_sandbox, generate_workspace_graph_from_sandbox,
 };
 use moon_workspace_graph::WorkspaceGraph;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 pub struct ActionGraphContainer {
     pub platform_manager: PlatformManager,
     pub workspace_graph: WorkspaceGraph,
     pub workspace_config: WorkspaceConfig,
+    pub workspace_root: PathBuf,
 }
 
 impl ActionGraphContainer {
@@ -19,13 +21,16 @@ impl ActionGraphContainer {
             platform_manager: generate_platform_manager_from_sandbox(root).await,
             workspace_graph: generate_workspace_graph_from_sandbox(root).await,
             workspace_config: WorkspaceConfig::default(),
+            workspace_root: root.to_path_buf(),
         }
     }
 
     pub fn create_builder(&self) -> ActionGraphBuilder {
         let config = &self.workspace_config.pipeline;
+        let app_context = AppContextMocker::new(&self.workspace_root).mock();
 
         ActionGraphBuilder::with_platforms(
+            Arc::new(app_context),
             &self.platform_manager,
             &self.workspace_graph,
             ActionGraphBuilderOptions {

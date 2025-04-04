@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::Target;
-use moon_toolchain::Runtime;
+use moon_toolchain::{Runtime, ToolchainSpec};
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -12,6 +12,13 @@ pub struct SetupToolchainNode {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupToolchainPluginNode {
+    pub project_id: Option<Id>,
+    pub spec: ToolchainSpec,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct InstallWorkspaceDepsNode {
     pub runtime: Runtime,
     pub root: WorkspaceRelativePathBuf,
@@ -19,13 +26,16 @@ pub struct InstallWorkspaceDepsNode {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ScopedRuntimeNode {
+pub struct InstallProjectDepsNode {
     pub project_id: Id,
     pub runtime: Runtime,
 }
 
-pub type InstallProjectDepsNode = ScopedRuntimeNode;
-pub type SyncProjectNode = ScopedRuntimeNode;
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncProjectNode {
+    pub project_id: Id,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct RunTaskNode {
@@ -85,6 +95,9 @@ pub enum ActionNode {
     /// Setup a tool + version for the provided toolchain.
     SetupToolchain(Box<SetupToolchainNode>),
 
+    /// Setup a tool + version for the provided toolchain.
+    SetupToolchainPlugin(Box<SetupToolchainPluginNode>),
+
     /// Sync a project with language specific semantics.
     SyncProject(Box<SyncProjectNode>),
 
@@ -111,6 +124,10 @@ impl ActionNode {
         Self::SetupToolchain(Box::new(node))
     }
 
+    pub fn setup_toolchain_plugin(node: SetupToolchainPluginNode) -> Self {
+        Self::SetupToolchainPlugin(Box::new(node))
+    }
+
     pub fn sync_project(node: SyncProjectNode) -> Self {
         Self::SyncProject(Box::new(node))
     }
@@ -132,8 +149,14 @@ impl ActionNode {
             Self::InstallProjectDeps(inner) => &inner.runtime,
             Self::RunTask(inner) => &inner.runtime,
             Self::SetupToolchain(inner) => &inner.runtime,
-            Self::SyncProject(inner) => &inner.runtime,
             _ => unreachable!(),
+        }
+    }
+
+    pub fn get_spec(&self) -> Option<&ToolchainSpec> {
+        match self {
+            Self::SetupToolchainPlugin(inner) => Some(&inner.spec),
+            _ => None,
         }
     }
 
@@ -198,8 +221,11 @@ impl ActionNode {
                     format!("SetupToolchain({})", inner.runtime.target())
                 }
             }
+            Self::SetupToolchainPlugin(inner) => {
+                format!("SetupToolchain({})", inner.spec.target())
+            }
             Self::SyncProject(inner) => {
-                format!("SyncProject({}, {})", inner.runtime.id(), inner.project_id)
+                format!("SyncProject({})", inner.project_id)
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),

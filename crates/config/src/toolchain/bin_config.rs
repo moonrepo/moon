@@ -1,6 +1,5 @@
 use moon_common::cacheable;
 use schematic::Config;
-use serde::Serialize;
 
 cacheable!(
     /// Configures to a tool-specific binary to install.

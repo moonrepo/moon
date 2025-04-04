@@ -73,6 +73,7 @@ impl AppContextMocker {
     }
 
     pub fn mock(mut self) -> AppContext {
+        self.toolchain_config.inherit_default_plugins().unwrap();
         self.toolchain_config.inherit_plugin_locators().unwrap();
 
         AppContext {

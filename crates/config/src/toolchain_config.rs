@@ -273,6 +273,17 @@ impl ToolchainConfig {
         Ok(())
     }
 
+    pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {
+        for id in ["typescript"] {
+            if !self.plugins.contains_key(id) {
+                self.plugins
+                    .insert(Id::raw(id), ToolchainPluginConfig::default());
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
         use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 

@@ -43,6 +43,10 @@ fn create_runtime_with_version(version: Version) -> RuntimeReq {
     RuntimeReq::Toolchain(UnresolvedVersionSpec::Semantic(SemVer(version)))
 }
 
+fn create_spec_with_version(version: Version) -> UnresolvedVersionSpec {
+    UnresolvedVersionSpec::Semantic(SemVer(version))
+}
+
 fn create_node_runtime() -> Runtime {
     Runtime::new(
         Id::raw("node"),
@@ -339,6 +343,33 @@ mod action_graph {
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime(),
                         root: WorkspaceRelativePathBuf::new(),
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn supports_plugins() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let mut tsc = create_task("tsc", "bar");
+            tsc.toolchains = vec![Id::raw("typescript")];
+
+            let bar = container.workspace_graph.get_project("bar").unwrap();
+            builder.install_deps(&bar, Some(&tsc)).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+                        project_id: None,
+                        spec: ToolchainSpec::new_global(Id::raw("typescript"))
                     })
                 ]
             );
@@ -2019,7 +2050,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
                     ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
                 ]
             );
@@ -2064,10 +2094,10 @@ mod action_graph {
             let wg = WorkspaceGraph::default();
             let mut builder =
                 ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
-            let system = Runtime::system();
+            let node = create_node_runtime();
 
-            builder.setup_toolchain(&system);
-            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+            builder.setup_toolchain(&node);
 
             let graph = builder.build();
 
@@ -2075,7 +2105,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
                 ]
             );
         }
@@ -2133,13 +2163,7 @@ mod action_graph {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
-                ]
-            );
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test]
@@ -2174,8 +2198,40 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
                     ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                ]
+            );
+        }
+    }
+
+    mod setup_toolchain_plugin {
+        use super::*;
+
+        #[tokio::test]
+        async fn graphs() {
+            let wg = WorkspaceGraph::default();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+            let system = ToolchainSpec::system();
+            let node = ToolchainSpec::new(
+                Id::raw("node"),
+                create_spec_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain_plugin(&system, None);
+            builder.setup_toolchain_plugin(&node, None);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+                        project_id: None,
+                        spec: node
+                    }),
                 ]
             );
         }

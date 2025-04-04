@@ -63,17 +63,12 @@ impl ToolchainSpec {
     pub fn target(&self) -> String {
         let mut key = self.id();
 
-        match &self.req {
-            None => {
-                key.push_str(":global");
-            }
-            Some(spec) => {
-                let version = spec.to_string().replace(' ', "");
+        if let Some(spec) = &self.req {
+            let version = spec.to_string().replace(' ', "");
 
-                key.push(':');
-                key.push_str(&version);
-            }
-        };
+            key.push(':');
+            key.push_str(&version);
+        }
 
         key
     }

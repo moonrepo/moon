@@ -314,10 +314,6 @@ impl<'app> ActionGraphBuilder<'app> {
             })
         };
 
-        if node.get_runtime().is_system() {
-            return Ok(None);
-        }
-
         let mut edges = vec![];
 
         // Before we install deps, we must ensure the language has been installed
@@ -341,6 +337,7 @@ impl<'app> ActionGraphBuilder<'app> {
             .options
             .install_dependencies
             .is_enabled(&primary_toolchain)
+            || node.get_runtime().is_system()
         {
             return Ok(edges.first().cloned());
         }
@@ -763,7 +760,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
     #[instrument(skip_all)]
     pub fn setup_toolchain(&mut self, runtime: &Runtime) -> Option<NodeIndex> {
-        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) {
+        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) || runtime.is_system() {
             return None;
         }
 
@@ -791,7 +788,7 @@ impl<'app> ActionGraphBuilder<'app> {
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> Option<NodeIndex> {
-        if !self.options.setup_toolchains.is_enabled(&spec.id) {
+        if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return None;
         }
 

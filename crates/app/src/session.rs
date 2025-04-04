@@ -216,11 +216,11 @@ impl CliSession {
         Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())
     }
 
-    pub async fn get_workspace_graph(&self) -> miette::Result<WorkspaceGraph> {
+    pub async fn get_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let projects = self.get_project_graph().await?;
         let tasks = self.get_task_graph().await?;
 
-        Ok(WorkspaceGraph::new(projects, tasks))
+        Ok(Arc::new(WorkspaceGraph::new(projects, tasks)))
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {

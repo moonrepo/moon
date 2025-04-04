@@ -35,7 +35,7 @@ pub struct JobContext {
     pub toolchain_registry: Arc<ToolchainRegistry>,
 
     /// The project and task graphs, for use within actions
-    pub workspace_graph: WorkspaceGraph,
+    pub workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl JobContext {

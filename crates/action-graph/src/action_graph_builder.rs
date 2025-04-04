@@ -331,19 +331,9 @@ impl<'app> ActionGraphBuilder<'app> {
             // A project may override the toolchain version, which means we need to setup it
             // separately, but the install deps should only happen once
             let project_runtime = self.get_runtime(project, &primary_toolchain, true);
-            let workspace_runtime = self.get_runtime(project, &primary_toolchain, false);
 
-            if project_runtime == workspace_runtime {
-                if let Some(edge) = self.setup_toolchain(&project_runtime) {
-                    edges.push(edge);
-                }
-            } else {
-                if let Some(edge) = self.setup_toolchain(&project_runtime) {
-                    edges.push(edge);
-                }
-                if let Some(edge) = self.setup_toolchain(&workspace_runtime) {
-                    edges.push(edge);
-                }
+            if let Some(edge) = self.setup_toolchain(&project_runtime) {
+                edges.push(edge);
             }
         };
 
@@ -915,7 +905,9 @@ impl<'app> ActionGraphBuilder<'app> {
         );
 
         for edge in edges {
-            self.graph.add_edge(index, edge, ());
+            // Use `update_edge` instead of `add_edge` as it avoids
+            // duplicate edges from being inserted
+            self.graph.update_edge(index, edge, ());
         }
     }
 

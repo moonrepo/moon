@@ -328,8 +328,6 @@ impl<'app> ActionGraphBuilder<'app> {
                 edges.push(edge);
             }
         } else {
-            // A project may override the toolchain version, which means we need to setup it
-            // separately, but the install deps should only happen once
             let project_runtime = self.get_runtime(project, &primary_toolchain, true);
 
             if let Some(edge) = self.setup_toolchain(&project_runtime) {
@@ -344,8 +342,7 @@ impl<'app> ActionGraphBuilder<'app> {
             .install_dependencies
             .is_enabled(&primary_toolchain)
         {
-            // TODO revisit
-            return Ok(edges.get(0).cloned());
+            return Ok(edges.first().cloned());
         }
 
         let index = match self.get_index_from_node(&node) {

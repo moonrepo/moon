@@ -13,6 +13,8 @@ moon_app_context = { path = "../app-context" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config", features = ["loader", "proto"] }
 moon_console = { path = "../console" }
+moon_env = { path = "../env" }
+moon_plugin = { path = "../plugin" }
 moon_project_graph = { path = "../project-graph" }
 moon_task_graph = { path = "../task-graph" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }

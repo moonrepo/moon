@@ -1,7 +1,6 @@
 use moon_common::{
     Id, cacheable,
     path::{WorkspaceRelativePathBuf, is_root_level_source},
-    serde::is_wasm_bridge,
 };
 use moon_config::{
     DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, PlatformType,
@@ -23,7 +22,6 @@ cacheable!(
         pub alias: Option<String>,
 
         /// Project configuration loaded from "moon.*", if it exists.
-        #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.
@@ -36,7 +34,6 @@ cacheable!(
         pub id: Id,
 
         /// Task configuration that was inherited from ".moon/tasks".
-        #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub inherited: Option<InheritedTasksResult>,
 
         /// Primary programming language of the project.

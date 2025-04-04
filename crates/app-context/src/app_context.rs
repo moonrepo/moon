@@ -6,7 +6,7 @@ use moon_vcs::BoxedVcs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AppContext {
     pub cli_version: Version,
 

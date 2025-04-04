@@ -2,8 +2,9 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_pdk_api::{
-    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, HashTaskContentsInput,
-    ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput,
+    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
+    ExtendProjectOutput, HashTaskContentsInput, ScaffoldDockerInput, ScaffoldDockerOutput,
+    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
@@ -13,6 +14,8 @@ use std::path::Path;
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
+// TODO: Remove the Ok(toolchain) checks once everything is on the registry!
+
 impl ToolchainRegistry {
     pub async fn detect_project_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
         let mut detected = vec![];
@@ -20,6 +23,25 @@ impl ToolchainRegistry {
         for id in self.get_plugin_ids() {
             if let Ok(toolchain) = self.load(id).await {
                 if toolchain.detect_project_usage(dir)? {
+                    detected.push(Id::raw(id));
+                }
+            }
+        }
+
+        Ok(detected)
+    }
+
+    pub async fn detect_task_usage(
+        &self,
+        ids: Vec<&Id>,
+        command: &String,
+        args: &[String],
+    ) -> miette::Result<Vec<Id>> {
+        let mut detected = vec![];
+
+        for id in ids {
+            if let Ok(toolchain) = self.load(id).await {
+                if toolchain.detect_task_usage(command, args)? {
                     detected.push(Id::raw(id));
                 }
             }
@@ -61,6 +83,26 @@ impl ToolchainRegistry {
                 ids,
                 input_factory,
                 |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn extend_project<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendProjectOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_project",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_project(input).await },
             )
             .await?;
 
@@ -141,6 +183,21 @@ impl ToolchainRegistry {
             ids,
             input_factory,
             |toolchain, input| async move { toolchain.sync_workspace(input).await },
+        )
+        .await
+    }
+
+    pub async fn teardown<InFn>(&self, input_factory: InFn) -> miette::Result<Vec<CallResult<()>>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
+    {
+        let ids = self.get_plugin_ids();
+
+        self.call_func_all(
+            "teardown_toolchain",
+            ids,
+            input_factory,
+            |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
         )
         .await
     }

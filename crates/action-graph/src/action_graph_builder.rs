@@ -318,17 +318,33 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(None);
         }
 
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(Some(*index));
-        }
+        let mut edges = vec![];
 
         // Before we install deps, we must ensure the language has been installed
-        let setup_tool_index = if let Some(spec) =
-            self.get_spec(project, &primary_toolchain, in_project)
-        {
-            self.setup_toolchain_plugin(&spec, if spec.overridden { Some(project) } else { None })
+        if let Some(spec) = self.get_spec(project, &primary_toolchain, in_project) {
+            if let Some(edge) = self
+                .setup_toolchain_plugin(&spec, if spec.overridden { Some(project) } else { None })
+            {
+                edges.push(edge);
+            }
         } else {
-            self.setup_toolchain(node.get_runtime())
+            // A project may override the toolchain version, which means we need to setup it
+            // separately, but the install deps should only happen once
+            let project_runtime = self.get_runtime(project, &primary_toolchain, true);
+            let workspace_runtime = self.get_runtime(project, &primary_toolchain, false);
+
+            if project_runtime == workspace_runtime {
+                if let Some(edge) = self.setup_toolchain(&project_runtime) {
+                    edges.push(edge);
+                }
+            } else {
+                if let Some(edge) = self.setup_toolchain(&project_runtime) {
+                    edges.push(edge);
+                }
+                if let Some(edge) = self.setup_toolchain(&workspace_runtime) {
+                    edges.push(edge);
+                }
+            }
         };
 
         // If installing dependencies is disabled, we still need to ensure the toolchain
@@ -338,14 +354,16 @@ impl<'app> ActionGraphBuilder<'app> {
             .install_dependencies
             .is_enabled(&primary_toolchain)
         {
-            return Ok(setup_tool_index);
+            // TODO revisit
+            return Ok(edges.get(0).cloned());
         }
 
-        let index = self.insert_node(node);
+        let index = match self.get_index_from_node(&node) {
+            Some(i) => *i,
+            None => self.insert_node(node),
+        };
 
-        if let Some(setup_tool_index) = setup_tool_index {
-            self.link_requirements(index, vec![setup_tool_index]);
-        }
+        self.link_requirements(index, edges);
 
         Ok(Some(index))
     }

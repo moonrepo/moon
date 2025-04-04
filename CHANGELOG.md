@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
+  toolchain WASM plugin is installing a tool (via proto).
+- Updated and simplified the relationships in the action graph.
+  - `SyncProject` no longer depends on the `SetupToolchain` action.
+  - `SyncProject` no longer is grouped by language/toolchain, and instead encompasses all of them
+    applicable to the project.
+
+#### 🧩 Plugins
+
+- Added tier 3 support (tier 2 still a work in progress).
+  - This utilizes the same APIs as proto: https://moonrepo.dev/docs/proto/wasm-plugin
+- Added new toolchain WASM APIs.
+  - `setup_toolchain` - Runs operations after the tool has been installed.
+  - `teardown_toolchain` - Runs operations before the tool will be uninstalled.
+
 ## 1.34.1
 
 #### 🐞 Fixes

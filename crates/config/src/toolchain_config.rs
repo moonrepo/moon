@@ -192,6 +192,10 @@ impl ToolchainConfig {
 
         env
     }
+
+    pub fn is_plugin(&self, id: &str) -> bool {
+        self.plugins.contains_key(id)
+    }
 }
 
 #[cfg(feature = "proto")]
@@ -265,6 +269,17 @@ impl ToolchainConfig {
         }
 
         self.inherit_plugin_locators()?;
+
+        Ok(())
+    }
+
+    pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {
+        for id in ["typescript"] {
+            if !self.plugins.contains_key(id) {
+                self.plugins
+                    .insert(Id::raw(id), ToolchainPluginConfig::default());
+            }
+        }
 
         Ok(())
     }

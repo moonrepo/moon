@@ -169,7 +169,7 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("PROTO_VERSION", PROTO_CLI_VERSION);
 
         for (key, value) in self.app.toolchain_config.get_version_env_vars() {
-            // Don't overwrite proto version variables inherited from platforms
+            // Don't overwrite proto version variables inherited from toolchains
             self.command.env_if_missing(key, value);
         }
     }

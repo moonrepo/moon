@@ -1,104 +1,59 @@
-use std::time::{Duration, Instant, SystemTime};
-use warpgate_api::{VirtualPath, api_enum, api_struct};
+use crate::context::MoonContext;
+use moon_common::Id;
+use moon_config::{PartialDependencyConfig, PartialTaskConfig};
+use moon_project::ProjectFragment;
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
+use warpgate_api::*;
+
+// EXTENDING
 
 api_struct!(
-    /// Information about the current moon workspace.
-    pub struct MoonContext {
-        /// Virtual path to the current working directory.
-        pub working_dir: VirtualPath,
+    /// Input passed to the `extend_project_graph` function.
+    pub struct ExtendProjectGraphInput {
+        /// Current moon context.
+        pub context: MoonContext,
 
-        /// Virtual path to the workspace root.
-        pub workspace_root: VirtualPath,
-    }
-);
-
-impl MoonContext {
-    /// Return the provided file path as an absolute path (using virtual paths).
-    /// If the path is already absolute (either real or virtual), return it.
-    /// Otherwise prefix the path with the current working directory.
-    pub fn get_absolute_path<T: AsRef<std::path::Path>>(&self, path: T) -> VirtualPath {
-        let path = path.as_ref();
-
-        if path.is_absolute() {
-            return VirtualPath::OnlyReal(path.to_owned());
-        }
-
-        self.working_dir.join(path)
-    }
-}
-
-api_enum!(
-    /// The status of a performed operation.
-    #[derive(Default)]
-    pub enum OperationStatus {
-        #[default]
-        Pending,
-        Failed,
-        Passed,
+        /// Map of project IDs to their source location,
+        /// relative from the workspace root.
+        pub project_sources: BTreeMap<Id, String>,
     }
 );
 
 api_struct!(
-    /// An operation can be used to track timings, statuses, and results for
-    /// business logic that was performed within an action (a plugin function).
+    /// Output returned from the `extend_project_graph` function.
+    pub struct ExtendProjectGraphOutput {
+        /// Map of project IDs to their alias (typically from a manifest).
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        pub project_aliases: BTreeMap<Id, String>,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `extend_project` function.
+    pub struct ExtendProjectInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Fragment of the project to extend.
+        pub project: ProjectFragment,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `extend_project` function.
     #[serde(default)]
-    pub struct Operation {
+    pub struct ExtendProjectOutput {
+        /// A custom alias to be used alongside the project ID.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub duration: Option<Duration>,
+        pub alias: Option<String>,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub error: Option<String>,
+        /// Map of implicit dependencies, keyed by their alias, typically extracted from a manifest.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dependencies: FxHashMap<String, PartialDependencyConfig>,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub finished_at: Option<SystemTime>,
-
-        pub id: String,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub started_at: Option<SystemTime>,
-
-        #[serde(skip)]
-        pub start_time: Option<Instant>,
-
-        pub status: OperationStatus,
+        /// Map of inherited tasks, typically extracted from a manifest.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub tasks: FxHashMap<Id, PartialTaskConfig>,
     }
 );
-
-impl Operation {
-    /// Create a new operation with a unique ID. The ID
-    /// will be converted to kebab-case when serialized.
-    pub fn new(id: impl AsRef<str>) -> Self {
-        Operation {
-            duration: None,
-            error: None,
-            finished_at: None,
-            id: id.as_ref().to_owned(),
-            started_at: Some(SystemTime::now()),
-            start_time: Some(Instant::now()),
-            status: OperationStatus::Pending,
-        }
-    }
-
-    /// Mark the operation as finished with the provided status.
-    pub fn finish(&mut self, status: OperationStatus) {
-        self.finished_at = Some(SystemTime::now());
-        self.status = status;
-
-        if let Some(start) = &self.start_time {
-            self.duration = Some(start.elapsed());
-        }
-    }
-
-    /// Mark the operation as finished based on the state of a result.
-    pub fn finish_with_result<T, E: std::fmt::Display>(&mut self, result: &Result<T, E>) {
-        match result {
-            Ok(_) => {
-                self.finish(OperationStatus::Passed);
-            }
-            Err(error) => {
-                self.finish(OperationStatus::Failed);
-                self.error = Some(error.to_string());
-            }
-        }
-    }
-}

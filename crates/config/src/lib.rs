@@ -32,6 +32,7 @@ pub use language_platform::*;
 pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
+pub use schematic;
 pub use semver::{Version, VersionReq};
 pub use shapes::*;
 pub use template::*;
@@ -44,3 +45,9 @@ pub use types::*;
 pub use version_spec::{CalVer, SemVer, UnresolvedVersionSpec, VersionSpec};
 pub use workspace::*;
 pub use workspace_config::*;
+
+use schematic::{Config, PartialConfig};
+
+pub fn finalize_config<T: Config>(config: T::Partial) -> miette::Result<T> {
+    Ok(T::from_partial(config.finalize(&Default::default())?))
+}

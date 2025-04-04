@@ -4,6 +4,7 @@ use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
+#[derive(Debug)]
 pub struct HashEngine {
     /// The `.moon/cache/hashes` directory. Stores hash manifests.
     pub hashes_dir: PathBuf,

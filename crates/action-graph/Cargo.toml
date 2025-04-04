@@ -12,6 +12,7 @@ publish = false
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_affected = { path = "../affected" }
+moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 # TODO remove

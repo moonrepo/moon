@@ -4,8 +4,6 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SyncProject(foo)" ]
-    2 [ label="SyncProject(qux)" ]
+    1 [ label="SetupToolchain(typescript)" ]
     1 -> 0 [ ]
-    2 -> 0 [ ]
 }

@@ -5,16 +5,18 @@ mod utils;
 use moon_action::*;
 use moon_action_context::TargetState;
 use moon_action_graph::*;
+use moon_app_context::AppContext;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{PipelineActionSwitch, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
-use moon_test_utils2::generate_workspace_graph;
+use moon_test_utils2::{AppContextMocker, generate_workspace_graph};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_sandbox::{assert_snapshot, create_sandbox};
+use starbase_sandbox::{assert_snapshot, create_empty_sandbox, create_sandbox};
 use std::env;
+use std::sync::Arc;
 use utils::ActionGraphContainer;
 
 fn create_task(id: &str, project: &str) -> Task {
@@ -41,6 +43,10 @@ fn create_runtime_with_version(version: Version) -> RuntimeReq {
     RuntimeReq::Toolchain(UnresolvedVersionSpec::Semantic(SemVer(version)))
 }
 
+fn create_spec_with_version(version: Version) -> UnresolvedVersionSpec {
+    UnresolvedVersionSpec::Semantic(SemVer(version))
+}
+
 fn create_node_runtime() -> Runtime {
     Runtime::new(
         Id::raw("node"),
@@ -53,6 +59,11 @@ fn create_rust_runtime() -> Runtime {
         Id::raw("rust"),
         create_runtime_with_version(Version::new(1, 70, 0)),
     )
+}
+
+fn create_app_context() -> Arc<AppContext> {
+    let sandbox = create_empty_sandbox();
+    Arc::new(AppContextMocker::new(sandbox.path()).mock())
 }
 
 fn topo(graph: ActionGraph) -> Vec<ActionNode> {
@@ -336,6 +347,33 @@ mod action_graph {
                 ]
             );
         }
+
+        #[tokio::test]
+        async fn supports_plugins() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let mut tsc = create_task("tsc", "bar");
+            tsc.toolchains = vec![Id::raw("typescript")];
+
+            let bar = container.workspace_graph.get_project("bar").unwrap();
+            builder.install_deps(&bar, Some(&tsc)).unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+                        project_id: None,
+                        spec: ToolchainSpec::new_global(Id::raw("typescript"))
+                    })
+                ]
+            );
+        }
     }
 
     mod run_task {
@@ -370,7 +408,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
                 ]
@@ -411,7 +448,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
                 ]
@@ -448,12 +484,8 @@ mod action_graph {
                         project_id: Id::raw("bar"),
                         runtime: create_rust_runtime()
                     }),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: create_node_runtime()
-                    }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target, create_rust_runtime()))
                 ]
@@ -602,7 +634,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(
                         task.target.clone(),
@@ -669,7 +700,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target, create_node_runtime());
@@ -727,7 +757,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target, create_node_runtime());
@@ -794,7 +823,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(
                         task.target.clone(),
@@ -861,7 +889,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target, create_node_runtime());
@@ -942,7 +969,6 @@ mod action_graph {
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     }),
                     ActionNode::run_task(RunTaskNode::new(
                         task.target.clone(),
@@ -1076,12 +1102,8 @@ mod action_graph {
                     topo(graph),
                     vec![
                         ActionNode::sync_workspace(),
-                        ActionNode::setup_toolchain(SetupToolchainNode {
-                            runtime: Runtime::system()
-                        }),
                         ActionNode::sync_project(SyncProjectNode {
                             project_id: Id::raw("deps-affected"),
-                            runtime: Runtime::system()
                         }),
                         ActionNode::run_task(RunTaskNode::new(
                             Target::parse("deps-affected:c").unwrap(),
@@ -2010,7 +2032,8 @@ mod action_graph {
         #[tokio::test]
         async fn graphs() {
             let wg = WorkspaceGraph::default();
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
             let system = Runtime::system();
             let node = Runtime::new(
                 Id::raw("node"),
@@ -2027,7 +2050,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
                     ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
                 ]
             );
@@ -2036,7 +2058,8 @@ mod action_graph {
         #[tokio::test]
         async fn graphs_same_toolchain() {
             let wg = WorkspaceGraph::default();
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
 
             let node1 = Runtime::new(
                 Id::raw("node"),
@@ -2069,11 +2092,12 @@ mod action_graph {
         #[tokio::test]
         async fn ignores_dupes() {
             let wg = WorkspaceGraph::default();
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
-            let system = Runtime::system();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+            let node = create_node_runtime();
 
-            builder.setup_toolchain(&system);
-            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
+            builder.setup_toolchain(&node);
 
             let graph = builder.build();
 
@@ -2081,7 +2105,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
                 ]
             );
         }
@@ -2090,6 +2114,7 @@ mod action_graph {
         async fn doesnt_add_if_disabled() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     setup_toolchains: false.into(),
@@ -2117,6 +2142,7 @@ mod action_graph {
         async fn doesnt_add_if_not_listed() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     setup_toolchains: PipelineActionSwitch::Only(vec![Id::raw("system")]),
@@ -2137,19 +2163,14 @@ mod action_graph {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
-                ]
-            );
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test]
         async fn adds_if_not_listed() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     setup_toolchains: PipelineActionSwitch::Only(vec![
@@ -2177,8 +2198,40 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
                     ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                ]
+            );
+        }
+    }
+
+    mod setup_toolchain_plugin {
+        use super::*;
+
+        #[tokio::test]
+        async fn graphs() {
+            let wg = WorkspaceGraph::default();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+            let system = ToolchainSpec::system();
+            let node = ToolchainSpec::new(
+                Id::raw("node"),
+                create_spec_with_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain_plugin(&system, None);
+            builder.setup_toolchain_plugin(&node, None);
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+                        project_id: None,
+                        spec: node
+                    }),
                 ]
             );
         }
@@ -2190,7 +2243,8 @@ mod action_graph {
         #[tokio::test]
         async fn graphs_single() {
             let wg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
 
             let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).unwrap();
@@ -2202,12 +2256,8 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: Runtime::system()
                     })
                 ]
             );
@@ -2216,7 +2266,8 @@ mod action_graph {
         #[tokio::test]
         async fn graphs_multiple() {
             let wg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
 
             let foo = wg.get_project("foo").unwrap();
             builder.sync_project(&foo).unwrap();
@@ -2234,20 +2285,14 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("foo"),
-                        runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("qux"),
-                        runtime: Runtime::system()
                     }),
                 ]
             );
@@ -2257,6 +2302,7 @@ mod action_graph {
         async fn graphs_without_deps() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     sync_project_dependencies: false,
@@ -2278,16 +2324,11 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("foo"),
-                        runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("qux"),
-                        runtime: Runtime::system()
                     }),
                 ]
             );
@@ -2296,7 +2337,8 @@ mod action_graph {
         #[tokio::test]
         async fn ignores_dupes() {
             let wg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
 
             let foo = wg.get_project("foo").unwrap();
 
@@ -2310,97 +2352,12 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("foo"),
-                        runtime: Runtime::system()
                     })
-                ]
-            );
-        }
-
-        #[tokio::test]
-        async fn inherits_toolchain_tool() {
-            let sandbox = create_sandbox("projects");
-            let container = ActionGraphContainer::new(sandbox.path()).await;
-            let mut builder = container.create_builder();
-
-            let bar = container.workspace_graph.get_project("bar").unwrap();
-            builder.sync_project(&bar).unwrap();
-
-            let qux = container.workspace_graph.get_project("qux").unwrap();
-            builder.sync_project(&qux).unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: create_node_runtime()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
-                    }),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: create_rust_runtime()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("qux"),
-                        runtime: create_rust_runtime()
-                    }),
-                ]
-            );
-        }
-
-        #[tokio::test]
-        async fn supports_toolchain_override() {
-            let sandbox = create_sandbox("projects");
-            let container = ActionGraphContainer::new(sandbox.path()).await;
-            let mut builder = container.create_builder();
-
-            let bar = container.workspace_graph.get_project("bar").unwrap();
-            builder.sync_project(&bar).unwrap();
-
-            let baz = container.workspace_graph.get_project("baz").unwrap();
-            builder.sync_project(&baz).unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: create_node_runtime()
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("bar"),
-                        runtime: create_node_runtime()
-                    }),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::new_override(
-                            Id::raw("node"),
-                            create_runtime_with_version(Version::new(18, 0, 0))
-                        )
-                    }),
-                    ActionNode::sync_project(SyncProjectNode {
-                        project_id: Id::raw("baz"),
-                        runtime: Runtime::new_override(
-                            Id::raw("node"),
-                            create_runtime_with_version(Version::new(18, 0, 0))
-                        )
-                    }),
                 ]
             );
         }
@@ -2409,6 +2366,7 @@ mod action_graph {
         async fn doesnt_add_if_disabled() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     sync_projects: false.into(),
@@ -2430,6 +2388,7 @@ mod action_graph {
         async fn doesnt_add_if_not_listed() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("foo")]),
@@ -2451,6 +2410,7 @@ mod action_graph {
         async fn adds_if_listed() {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("bar")]),
@@ -2469,12 +2429,8 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system()
-                    }),
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
-                        runtime: Runtime::system()
                     })
                 ]
             );
@@ -2488,7 +2444,8 @@ mod action_graph {
         async fn graphs() {
             let wg = WorkspaceGraph::default();
 
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
             builder.sync_workspace();
 
             let graph = builder.build();
@@ -2501,7 +2458,8 @@ mod action_graph {
         async fn ignores_dupes() {
             let wg = WorkspaceGraph::default();
 
-            let mut builder = ActionGraphBuilder::new(&wg, Default::default()).unwrap();
+            let mut builder =
+                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
             builder.sync_workspace();
             builder.sync_workspace();
             builder.sync_workspace();
@@ -2516,6 +2474,7 @@ mod action_graph {
             let wg = WorkspaceGraph::default();
 
             let mut builder = ActionGraphBuilder::new(
+                create_app_context(),
                 &wg,
                 ActionGraphBuilderOptions {
                     sync_workspace: false,

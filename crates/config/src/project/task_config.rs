@@ -72,6 +72,7 @@ config_unit_enum!(
     /// Preset options to inherit.
     #[derive(ConfigEnum)]
     pub enum TaskPreset {
+        #[default] // ???
         Server,
         Watcher,
     }

@@ -1,12 +1,12 @@
-use moon_common::cacheable;
+use crate::config_struct;
 use schematic::Config;
 use std::collections::BTreeMap;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
-cacheable!(
+config_struct!(
     /// Configures an individual toolchain.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ToolchainPluginConfig {
         // TODO deprecate in v2

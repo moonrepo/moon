@@ -1,31 +1,34 @@
+use crate::{config_enum, config_unit_enum};
 use moon_common::{Id, IdError};
 use schematic::{ConfigEnum, derive_enum};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::str::FromStr;
 
-/// Supported programming languages that each project can be written in.
-#[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq)]
-pub enum LanguageType {
-    Bash,
-    Batch,
-    Go,
-    #[variant(value = "javascript")]
-    JavaScript,
-    Php,
-    Python,
-    Ruby,
-    Rust,
-    #[variant(value = "typescript")]
-    TypeScript,
+config_enum!(
+    /// Supported programming languages that each project can be written in.
+    #[derive(ConfigEnum, Default)]
+    pub enum LanguageType {
+        Bash,
+        Batch,
+        Go,
+        #[variant(value = "javascript")]
+        JavaScript,
+        Php,
+        Python,
+        Ruby,
+        Rust,
+        #[variant(value = "typescript")]
+        TypeScript,
 
-    /// Not explicitly set or detected.
-    #[default]
-    Unknown,
+        /// Not explicitly set or detected.
+        #[default]
+        Unknown,
 
-    /// An unsupported language.
-    #[variant(fallback)]
-    Other(Id),
-}
+        /// An unsupported language.
+        #[variant(fallback)]
+        Other(Id),
+    }
+);
 
 impl LanguageType {
     pub fn other(id: &str) -> Result<LanguageType, IdError> {
@@ -74,9 +77,9 @@ impl Serialize for LanguageType {
 }
 
 // TODO: Remove in 2.0
-derive_enum!(
+config_unit_enum!(
     /// Platforms that each programming language can belong to.
-    #[derive(ConfigEnum, Copy, Default, Hash)]
+    #[derive(ConfigEnum, Hash)]
     pub enum PlatformType {
         Bun,
         Deno,

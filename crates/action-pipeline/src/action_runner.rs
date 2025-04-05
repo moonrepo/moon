@@ -14,7 +14,7 @@ pub async fn run_action(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     toolchain_registry: Arc<ToolchainRegistry>,
     emitter: Arc<EventEmitter>,
 ) -> miette::Result<()> {

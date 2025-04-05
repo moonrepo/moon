@@ -130,6 +130,7 @@ config_unit_enum!(
     /// The operating system in which to only run this task on.
     #[derive(ConfigEnum)]
     pub enum TaskOperatingSystem {
+        #[default]
         Linux,
         #[serde(alias = "mac")]
         Macos,

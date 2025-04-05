@@ -31,6 +31,9 @@ export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
 /** The style in which task output will be printed to the console. */
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
+/** The priority levels a task can be bucketed into. */
+export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
+
 /** A list of available shells on Unix. */
 export type TaskUnixShell =
 	| 'bash'
@@ -141,6 +144,13 @@ export interface TaskOptionsConfig {
 	 * for watchers, servers, or never-ending processes.
 	 */
 	persistent: boolean | null;
+	/**
+	 * Marks the task with a certain priority, which determines the order
+	 * in which it is ran within the pipeline.
+	 *
+	 * @default 'normal'
+	 */
+	priority: TaskPriority | null;
 	/**
 	 * The number of times a failing task will be retried to succeed.
 	 *
@@ -412,6 +422,13 @@ export interface PartialTaskOptionsConfig {
 	 * for watchers, servers, or never-ending processes.
 	 */
 	persistent?: boolean | null;
+	/**
+	 * Marks the task with a certain priority, which determines the order
+	 * in which it is ran within the pipeline.
+	 *
+	 * @default 'normal'
+	 */
+	priority?: TaskPriority | null;
 	/**
 	 * The number of times a failing task will be retried to succeed.
 	 *

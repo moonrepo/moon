@@ -655,6 +655,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.persistent = *persistent;
             }
 
+            if let Some(priority) = &config.priority {
+                options.priority = *priority;
+            }
+
             if let Some(retry_count) = &config.retry_count {
                 options.retry_count = *retry_count;
             }

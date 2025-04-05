@@ -1,7 +1,7 @@
 use moon_common::cacheable;
 use moon_config::{
     InputPath, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOptionRunInCI,
-    TaskOutputStyle, TaskUnixShell, TaskWindowsShell,
+    TaskOutputStyle, TaskPriority, TaskUnixShell, TaskWindowsShell,
 };
 
 cacheable!(
@@ -50,6 +50,8 @@ cacheable!(
 
         pub persistent: bool,
 
+        pub priority: TaskPriority,
+
         pub retry_count: u8,
 
         pub run_deps_in_parallel: bool,
@@ -94,6 +96,7 @@ impl Default for TaskOptions {
             os: None,
             output_style: None,
             persistent: false,
+            priority: TaskPriority::Normal,
             retry_count: 0,
             run_deps_in_parallel: true,
             run_in_ci: TaskOptionRunInCI::Affected,

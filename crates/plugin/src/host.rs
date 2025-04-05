@@ -6,7 +6,7 @@ use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use std::fmt;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, OnceLock};
 use tracing::{instrument, trace};
 use warpgate::host::{HostData, create_host_functions as create_shared_host_functions};
 
@@ -14,7 +14,7 @@ use warpgate::host::{HostData, create_host_functions as create_shared_host_funct
 pub struct PluginHostData {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
-    pub workspace_graph: Arc<RwLock<WorkspaceGraph>>,
+    pub workspace_graph: Arc<OnceLock<Arc<WorkspaceGraph>>>,
 }
 
 impl fmt::Debug for PluginHostData {
@@ -88,7 +88,7 @@ fn load_project(
     let data = data.lock().unwrap();
     let project = data
         .workspace_graph
-        .read()
+        .get()
         .unwrap()
         .get_project(&id)
         .map_err(map_error)?;
@@ -125,7 +125,7 @@ fn load_projects(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let workspace_graph = data.workspace_graph.read().unwrap();
+    let workspace_graph = data.workspace_graph.get().unwrap();
     let mut projects = FxHashMap::default();
 
     for id in &ids {
@@ -175,7 +175,7 @@ fn load_task(
     let data = data.lock().unwrap();
     let task = data
         .workspace_graph
-        .read()
+        .get()
         .unwrap()
         .get_task(&target)
         .map_err(map_error)?;
@@ -212,7 +212,7 @@ fn load_tasks(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let workspace_graph = data.workspace_graph.read().unwrap();
+    let workspace_graph = data.workspace_graph.get().unwrap();
     let mut tasks = FxHashMap::default();
 
     for target in &targets {

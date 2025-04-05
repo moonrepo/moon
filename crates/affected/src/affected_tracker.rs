@@ -7,12 +7,13 @@ use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt;
+use std::sync::Arc;
 use tracing::{debug, trace};
 
-pub struct AffectedTracker<'app> {
+pub struct AffectedTracker {
     ci: bool,
 
-    workspace_graph: &'app WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 
     projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
@@ -24,9 +25,9 @@ pub struct AffectedTracker<'app> {
     task_upstream: UpstreamScope,
 }
 
-impl<'app> AffectedTracker<'app> {
+impl AffectedTracker {
     pub fn new(
-        workspace_graph: &'app WorkspaceGraph,
+        workspace_graph: Arc<WorkspaceGraph>,
         touched_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> Self {
         debug!("Creating affected tracker");
@@ -507,7 +508,7 @@ impl<'app> AffectedTracker<'app> {
     }
 }
 
-impl fmt::Debug for AffectedTracker<'_> {
+impl fmt::Debug for AffectedTracker {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AffectedTracker")
             .field("touched_files", &self.touched_files)

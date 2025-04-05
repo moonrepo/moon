@@ -43,7 +43,7 @@ mod affected_projects {
         let workspace_graph = generate_workspace_graph("projects").await;
         let touched_files = FxHashSet::default();
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
 
@@ -55,7 +55,7 @@ mod affected_projects {
         let workspace_graph = generate_workspace_graph("projects").await;
         let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
 
@@ -80,7 +80,7 @@ mod affected_projects {
             "e/file.txt".into(),
         ]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
@@ -104,7 +104,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -123,7 +123,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -144,7 +144,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -163,7 +163,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -185,7 +185,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -204,7 +204,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -233,7 +233,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -252,7 +252,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -273,7 +273,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -292,7 +292,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -313,7 +313,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -332,7 +332,7 @@ mod affected_projects {
             let workspace_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -401,7 +401,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::default();
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
 
@@ -413,7 +413,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:no-inputs").unwrap()])
             .unwrap();
@@ -427,7 +427,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
             .unwrap();
@@ -447,7 +447,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-glob").unwrap()])
             .unwrap();
@@ -470,7 +470,7 @@ mod affected_tasks {
 
         bag.set("ENV", "affected");
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-env").unwrap()])
             .unwrap();
@@ -492,7 +492,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["self/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker
             .track_tasks_by_target(&[Target::parse("self:c").unwrap()])
             .unwrap();
@@ -522,7 +522,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["parent/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker
             .track_tasks_by_target(&[Target::parse("parent:child").unwrap()])
             .unwrap();
@@ -556,7 +556,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
@@ -585,7 +585,7 @@ mod affected_tasks {
         let workspace_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["upstream/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
         tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
@@ -617,7 +617,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -642,7 +642,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -671,7 +671,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -696,7 +696,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -729,7 +729,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -754,7 +754,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -792,7 +792,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -817,7 +817,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -846,7 +846,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -871,7 +871,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -904,7 +904,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -929,7 +929,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -966,7 +966,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
@@ -987,7 +987,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
@@ -1008,7 +1008,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
@@ -1023,7 +1023,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
@@ -1044,7 +1044,7 @@ mod affected_tasks {
             let workspace_graph = generate_workspace_graph("tasks").await;
             let touched_files = FxHashSet::default();
 
-            let mut tracker = AffectedTracker::new(&workspace_graph, touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:always").unwrap()])

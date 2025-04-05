@@ -30,7 +30,7 @@ pub async fn install_deps(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     runtime: &Runtime,
     project: Option<&Project>,
     packages_root: Option<&WorkspaceRelativePath>,

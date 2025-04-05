@@ -240,17 +240,16 @@ impl ActionPipeline {
         job_context: JobContext,
     ) -> miette::Result<JoinHandle<JoinSet<()>>> {
         let node_indices = action_graph.sort_topological()?;
+        let node_count = node_indices.len();
+        let priority_groups = action_graph.group_priorities(node_indices);
         let app_context = Arc::clone(&self.app_context);
         let action_context = Arc::clone(&self.action_context);
 
-        debug!(
-            total_jobs = node_indices.len(),
-            "Dispatching jobs in the pipeline"
-        );
+        debug!(total_jobs = node_count, "Dispatching jobs in the pipeline");
 
         Ok(tokio::spawn(async move {
             let mut dispatcher =
-                JobDispatcher::new(&action_graph, job_context.clone(), node_indices);
+                JobDispatcher::new(&action_graph, job_context.clone(), priority_groups);
             let mut persistent_indices = vec![];
             let mut job_handles = JoinSet::new();
 

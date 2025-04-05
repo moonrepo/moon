@@ -162,6 +162,17 @@ config_unit_enum!(
     }
 );
 
+impl TaskPriority {
+    pub fn get_level(&self) -> u8 {
+        match self {
+            Self::Critical => 1,
+            Self::High => 2,
+            Self::Normal => 3,
+            Self::Low => 4,
+        }
+    }
+}
+
 config_unit_enum!(
     /// A list of available shells on Unix.
     #[derive(ConfigEnum)]

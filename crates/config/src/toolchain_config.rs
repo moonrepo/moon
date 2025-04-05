@@ -1,3 +1,4 @@
+use crate::config_struct;
 use crate::language_platform::*;
 use crate::toolchain::*;
 use moon_common::Id;
@@ -8,50 +9,52 @@ use version_spec::UnresolvedVersionSpec;
 #[cfg(feature = "proto")]
 use crate::{inherit_tool, is_using_tool_version};
 
-/// Configures all tools and platforms.
-/// Docs: https://moonrepo.dev/docs/config/toolchain
-#[derive(Clone, Config, Debug)]
-#[config(allow_unknown_fields)]
-pub struct ToolchainConfig {
-    #[setting(
-        default = "https://moonrepo.dev/schemas/toolchain.json",
-        rename = "$schema"
-    )]
-    pub schema: String,
+config_struct!(
+    /// Configures all tools and platforms.
+    /// Docs: https://moonrepo.dev/docs/config/toolchain
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    pub struct ToolchainConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/toolchain.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
 
-    /// Extends one or many toolchain configuration files.
-    /// Supports a relative file path or a secure URL.
-    #[setting(extend, validate = validate::extends_from)]
-    pub extends: Option<schematic::ExtendsFrom>,
+        /// Extends one or many toolchain configuration files.
+        /// Supports a relative file path or a secure URL.
+        #[setting(extend, validate = validate::extends_from)]
+        pub extends: Option<schematic::ExtendsFrom>,
 
-    /// Configures and enables the Bun platform.
-    #[setting(nested)]
-    pub bun: Option<BunConfig>,
+        /// Configures and enables the Bun platform.
+        #[setting(nested)]
+        pub bun: Option<BunConfig>,
 
-    /// Configures and enables the Deno platform.
-    #[setting(nested)]
-    pub deno: Option<DenoConfig>,
+        /// Configures and enables the Deno platform.
+        #[setting(nested)]
+        pub deno: Option<DenoConfig>,
 
-    /// Configures moon itself.
-    #[setting(nested)]
-    pub moon: MoonConfig,
+        /// Configures moon itself.
+        #[setting(nested)]
+        pub moon: MoonConfig,
 
-    /// Configures and enables the Node.js platform.
-    #[setting(nested)]
-    pub node: Option<NodeConfig>,
+        /// Configures and enables the Node.js platform.
+        #[setting(nested)]
+        pub node: Option<NodeConfig>,
 
-    /// Configures and enables the Python platform.
-    #[setting(nested)]
-    pub python: Option<PythonConfig>,
+        /// Configures and enables the Python platform.
+        #[setting(nested)]
+        pub python: Option<PythonConfig>,
 
-    /// Configures and enables the Rust platform.
-    #[setting(nested)]
-    pub rust: Option<RustConfig>,
+        /// Configures and enables the Rust platform.
+        #[setting(nested)]
+        pub rust: Option<RustConfig>,
 
-    /// All configured toolchains by unique ID.
-    #[setting(flatten, nested)]
-    pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
-}
+        /// All configured toolchains by unique ID.
+        #[setting(flatten, nested)]
+        pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
+    }
+);
 
 impl ToolchainConfig {
     pub fn get_enabled(&self) -> Vec<Id> {

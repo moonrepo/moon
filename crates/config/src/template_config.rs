@@ -1,13 +1,14 @@
 use crate::shapes::OneOrMany;
-use moon_common::{Id, cacheable};
+use crate::{config_enum, config_struct};
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
-        cacheable!(
+        config_struct!(
             /// Configuration for a template variable.
-            #[derive(Clone, Config, Debug, Eq, PartialEq)]
+            #[derive(Config)]
             pub struct $name {
                 /// The default value of the variable if none was provided.
                 #[setting(alias = "defaultValue")]
@@ -33,8 +34,8 @@ var_setting!(TemplateVariableBoolSetting, bool);
 var_setting!(TemplateVariableNumberSetting, isize);
 var_setting!(TemplateVariableStringSetting, String);
 
-cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+config_struct!(
+    #[derive(Config)]
     pub struct TemplateVariableEnumValueConfig {
         /// A human-readable label for the value.
         pub label: String,
@@ -43,8 +44,8 @@ cacheable!(
     }
 );
 
-cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+config_enum!(
+    #[derive(Config)]
     #[serde(
         untagged,
         expecting = "expected a value string or value object with label"
@@ -56,8 +57,8 @@ cacheable!(
     }
 );
 
-cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+config_enum!(
+    #[derive(Config)]
     #[serde(untagged)]
     pub enum TemplateVariableEnumDefault {
         String(String),
@@ -116,8 +117,8 @@ fn validate_enum_default<C>(
     Ok(())
 }
 
-cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+config_struct!(
+    #[derive(Config)]
     pub struct TemplateVariableEnumSetting {
         /// The default value of the variable if none was provided.
         #[setting(nested, validate = validate_enum_default)]
@@ -167,9 +168,9 @@ impl TemplateVariableEnumSetting {
     }
 }
 
-cacheable!(
+config_enum!(
     /// Each type of template variable.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     #[serde(tag = "type", expecting = "expected a supported value type")]
     pub enum TemplateVariable {
         /// A boolean variable.
@@ -229,10 +230,10 @@ impl TemplateVariable {
     }
 }
 
-cacheable!(
+config_struct!(
     /// Configures a template and its files to be scaffolded.
     /// Docs: https://moonrepo.dev/docs/config/template
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct TemplateConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/template.json",

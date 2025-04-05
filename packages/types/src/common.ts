@@ -13,4 +13,10 @@ export interface Runtime {
 	overridden?: boolean;
 }
 
+export interface ToolchainSpec {
+	id: string;
+	overridden: boolean;
+	req?: string | null;
+}
+
 export type ExtendsFrom = string[] | string;

@@ -1,16 +1,16 @@
 #![allow(clippy::from_over_into)]
 
-use crate::patterns;
 use crate::portable_path::is_glob_like;
 use crate::validate::validate_child_relative_path;
+use crate::{config_enum, patterns};
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
-use schematic::{ParseError, Schema, SchemaBuilder, Schematic, derive_enum};
+use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
-derive_enum!(
+config_enum!(
     /// The different patterns a task output can be defined.
     #[serde(untagged, into = "String", try_from = "String")]
     pub enum OutputPath {

@@ -26,12 +26,6 @@ const config = defineConfig([
 	...moonConfig,
 	...moonNodeConfig,
 	{
-		files: ['packages/nx-compat/**/*'],
-		rules: {
-			'node/no-unpublished-import': 'off',
-		},
-	},
-	{
 		files: ['packages/types/**/*'],
 		rules: {
 			'unicorn/no-abusive-eslint-disable': 'off',

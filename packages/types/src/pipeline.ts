@@ -1,4 +1,4 @@
-import type { Duration, Runtime } from './common';
+import type { Duration, Runtime, ToolchainSpec } from './common';
 
 export type ActionStatus =
 	| 'aborted'
@@ -140,6 +140,7 @@ export type ActionNode =
 	| ActionNodeInstallWorkspaceDeps
 	| ActionNodeRunTask
 	| ActionNodeSetupToolchain
+	| ActionNodeSetupToolchainPlugin
 	| ActionNodeSyncProject
 	| ActionNodeSyncWorkspace;
 
@@ -179,10 +180,17 @@ export interface ActionNodeSetupToolchain {
 	};
 }
 
+export interface ActionNodeSetupToolchainPlugin {
+	action: 'setup-toolchain-plugin';
+	params: {
+		projectId: string | null;
+		spec: ToolchainSpec;
+	};
+}
+
 export interface ActionNodeSyncProject {
 	action: 'sync-project';
 	params: {
-		runtime: Runtime;
 		projectId: string;
 	};
 }

@@ -1,4 +1,5 @@
 use crate::extension_plugin::ExtensionPlugin;
+use moon_common::Id;
 use moon_config::ExtensionConfig;
 use moon_plugin::{
     PluginError, PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config,
@@ -31,6 +32,13 @@ impl ExtensionRegistry {
         Self {
             configs: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Extension, host_data)),
+        }
+    }
+
+    pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ExtensionConfig>) {
+        for (id, config) in configs {
+            // Convert moon IDs to plugin IDs
+            self.configs.insert(PluginId::raw(id), config.to_owned());
         }
     }
 

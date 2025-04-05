@@ -98,7 +98,7 @@ impl<'task> TaskHasher<'task> {
 
         if !self.task.input_files.is_empty() {
             for input in &self.task.input_files {
-                files.insert(input.to_path(self.workspace_root));
+                files.insert(input.to_logical_path(self.workspace_root));
             }
         }
 
@@ -118,7 +118,7 @@ impl<'task> TaskHasher<'task> {
             } else {
                 // Using VCS to collect inputs in a project is faster than globbing
                 for file in self.vcs.get_file_tree(&self.project.source).await? {
-                    files.insert(file.to_path(self.workspace_root));
+                    files.insert(file.to_logical_path(self.workspace_root));
                 }
 
                 // However that completely ignores workspace level globs,
@@ -144,7 +144,7 @@ impl<'task> TaskHasher<'task> {
         // Also run this LAST as it should take highest precedence!
         if !is_ci() {
             for local_file in self.vcs.get_touched_files().await?.all() {
-                let abs_file = local_file.to_path(self.workspace_root);
+                let abs_file = local_file.to_logical_path(self.workspace_root);
 
                 // Deleted files are listed in `git status` but are
                 // not valid inputs, so avoid hashing them!

@@ -15,12 +15,15 @@ moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 moon_task_args = { path = "../task-args" }
 moon_toolchain = { path = "../toolchain" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_config = { path = "../config", features = ["loader", "proto"] }
+moon_test_utils2 = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

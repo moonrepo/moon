@@ -223,7 +223,6 @@ pub struct QueryProjectsArgs {
 #[instrument(skip_all)]
 pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult {
     let console = &session.console;
-    let workspace_graph = session.get_workspace_graph().await?;
 
     let mut options = QueryProjectsOptions {
         alias: args.alias,
@@ -243,7 +242,8 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
-        let mut affected_tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let workspace_graph = session.get_workspace_graph().await?;
+        let mut affected_tracker = AffectedTracker::new(workspace_graph, touched_files);
 
         #[allow(deprecated)]
         if args.dependents {
@@ -261,6 +261,7 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         options.affected = Some(affected_tracker.build());
     }
 
+    let workspace_graph = session.get_workspace_graph().await?;
     let mut projects = query_projects(&workspace_graph, &options).await?;
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
@@ -409,7 +410,6 @@ pub struct QueryTasksArgs {
 #[instrument(skip_all)]
 pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     let console = &session.console;
-    let workspace_graph = session.get_workspace_graph().await?;
 
     let mut options = QueryTasksOptions {
         id: args.id,
@@ -429,8 +429,9 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
+        let workspace_graph = session.get_workspace_graph().await?;
 
-        let mut affected_tracker = AffectedTracker::new(&workspace_graph, touched_files);
+        let mut affected_tracker = AffectedTracker::new(workspace_graph, touched_files);
         affected_tracker.with_task_scopes(args.upstream, args.downstream);
         affected_tracker.track_tasks()?;
 
@@ -438,6 +439,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     }
 
     // Query for tasks that match the filters
+    let workspace_graph = session.get_workspace_graph().await?;
     let mut tasks = query_tasks(&workspace_graph, &options).await?;
     tasks.sort_by(|a, d| a.target.cmp(&d.target));
 

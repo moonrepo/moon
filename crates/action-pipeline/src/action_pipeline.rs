@@ -41,14 +41,14 @@ pub struct ActionPipeline {
     action_context: Arc<ActionContext>,
     emitter: Arc<EventEmitter>,
     toolchain_registry: Arc<ToolchainRegistry>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl ActionPipeline {
     pub fn new(
         app_context: Arc<AppContext>,
         toolchain_registry: Arc<ToolchainRegistry>,
-        workspace_graph: WorkspaceGraph,
+        workspace_graph: Arc<WorkspaceGraph>,
     ) -> Self {
         debug!("Creating pipeline to run actions");
 

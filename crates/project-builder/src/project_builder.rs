@@ -415,6 +415,7 @@ impl<'app> ProjectBuilder<'app> {
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,
                 toolchain_config: self.context.toolchain_config,
+                toolchain_registry: self.context.toolchain_registry.clone(),
                 workspace_root: self.context.workspace_root,
             },
         );

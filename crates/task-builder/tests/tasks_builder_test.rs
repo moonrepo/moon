@@ -4,6 +4,7 @@ use moon_config::*;
 use moon_target::Target;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
+use moon_test_utils2::AppContextMocker;
 use moon_toolchain::detect::detect_project_toolchains;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
@@ -24,6 +25,11 @@ async fn build_tasks_with_config(
     let project_toolchains =
         detect_project_toolchains(root, &root.join(source.as_str()), &local_config.language);
 
+    let mut app_context = AppContextMocker::new(root);
+    app_context.with_global_envs();
+    app_context.toolchain_config = toolchain_config;
+    let app_context = app_context.mock();
+
     let mut builder = TasksBuilder::new(
         &id,
         &source,
@@ -31,7 +37,8 @@ async fn build_tasks_with_config(
         TasksBuilderContext {
             enabled_toolchains: &enabled_toolchains,
             monorepo,
-            toolchain_config: &toolchain_config,
+            toolchain_config: &app_context.toolchain_config,
+            toolchain_registry: app_context.toolchain_registry,
             workspace_root: root,
         },
     );
@@ -94,19 +101,25 @@ async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<
         config_path.replace("/moon.yml", "")
     };
 
+    let mut toolchain = ToolchainConfig {
+        bun: Some(BunConfig::default()),
+        deno: Some(DenoConfig::default()),
+        node: Some(NodeConfig::default()),
+        rust: Some(RustConfig::default()),
+        ..ToolchainConfig::default()
+    };
+
+    toolchain
+        .plugins
+        .insert(Id::raw("typescript"), ToolchainPluginConfig::default());
+
     build_tasks_with_config(
         root,
         &source,
         ConfigLoader::default()
             .load_project_config_from_source(root, &source)
             .unwrap(),
-        ToolchainConfig {
-            bun: Some(BunConfig::default()),
-            deno: Some(DenoConfig::default()),
-            node: Some(NodeConfig::default()),
-            rust: Some(RustConfig::default()),
-            ..ToolchainConfig::default()
-        },
+        toolchain,
         None,
         true,
     )
@@ -441,7 +454,7 @@ mod tasks_builder {
             assert_eq!(task.toolchains, vec![Id::raw("node")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_from_command_name() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml").await;
@@ -529,9 +542,13 @@ mod tasks_builder {
             let task = tasks.get("node").unwrap();
 
             assert_eq!(task.toolchains, vec![Id::raw("node")]);
+
+            let task = tasks.get("typescript").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("typescript")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_from_command_name() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_toolchain(sandbox.path(), "toolchains/moon.yml").await;
@@ -551,6 +568,10 @@ mod tasks_builder {
             let task = tasks.get("rust-via-cmd").unwrap();
 
             assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+
+            // let task = tasks.get("typescript-via-cmd").unwrap();
+
+            // assert_eq!(task.toolchains, vec![Id::raw("typescript")]);
         }
 
         #[tokio::test]
@@ -571,6 +592,10 @@ mod tasks_builder {
             assert_eq!(task.toolchains, vec![Id::raw("system")]);
 
             let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
+
+            let task = tasks.get("typescript-via-cmd").unwrap();
 
             assert_eq!(task.toolchains, vec![Id::raw("system")]);
         }

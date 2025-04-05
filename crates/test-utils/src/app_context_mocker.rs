@@ -9,7 +9,7 @@ use moon_vcs::{BoxedVcs, Git};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::{ProtoConfig, ProtoEnvironment};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, OnceLock};
 
 #[derive(Default)]
 pub struct AppContextMocker {
@@ -103,9 +103,7 @@ impl AppContextMocker {
         let mut registry = ToolchainRegistry::new(PluginHostData {
             moon_env: Arc::new(self.moon_env.clone()),
             proto_env: Arc::new(self.proto_env.clone()),
-            workspace_graph: Arc::new(RwLock::new(
-                self.workspace_graph.clone().unwrap_or_default(),
-            )),
+            workspace_graph: Arc::new(OnceLock::new()),
         });
         registry.inherit_configs(&self.toolchain_config.plugins);
         registry

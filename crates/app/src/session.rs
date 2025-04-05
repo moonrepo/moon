@@ -149,7 +149,7 @@ impl CliSession {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
+                workspace_graph: Arc::new(OnceLock::new()),
             });
 
             registry.inherit_configs(&self.workspace_config.extensions);
@@ -181,7 +181,7 @@ impl CliSession {
             let mut registry = ToolchainRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
+                workspace_graph: Arc::new(OnceLock::new()),
             });
 
             registry.inherit_configs(&self.toolchain_config.plugins);
@@ -218,12 +218,7 @@ impl CliSession {
 
     pub async fn get_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         if self.workspace_graph.get().is_none() {
-            let projects = self.get_project_graph().await?;
-            let tasks = self.get_task_graph().await?;
-
-            let _ = self
-                .workspace_graph
-                .set(Arc::new(WorkspaceGraph::new(projects, tasks)));
+            self.load_workspace_graph().await?;
         }
 
         Ok(self.workspace_graph.get().map(Arc::clone).unwrap())
@@ -256,18 +251,25 @@ impl CliSession {
         let cache_engine = self.get_cache_engine()?;
         let context = create_workspace_graph_context(self).await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
-        let result = builder.build().await?;
-
-        // Set the internal graphs
-        let _ = self.project_graph.set(result.projects.clone());
-        let _ = self.task_graph.set(result.tasks.clone());
+        let workspace_graph = Arc::new(builder.build().await?);
 
         // Update the plugin registries with the graph
         let extensions = self.get_extension_registry().await?;
-        *extensions.host_data.workspace_graph.write().unwrap() = result.clone();
+        let _ = extensions
+            .host_data
+            .workspace_graph
+            .set(workspace_graph.clone());
 
         let toolchains = self.get_toolchain_registry().await?;
-        *toolchains.host_data.workspace_graph.write().unwrap() = result;
+        let _ = toolchains
+            .host_data
+            .workspace_graph
+            .set(workspace_graph.clone());
+
+        // Set the internal graphs
+        let _ = self.project_graph.set(workspace_graph.projects.clone());
+        let _ = self.task_graph.set(workspace_graph.tasks.clone());
+        let _ = self.workspace_graph.set(workspace_graph);
 
         Ok(())
     }

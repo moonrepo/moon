@@ -16,7 +16,7 @@ pub async fn sync_project(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     node: &SyncProjectNode,
 ) -> miette::Result<ActionStatus> {
     let project_id = &node.project_id;

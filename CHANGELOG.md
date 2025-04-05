@@ -19,6 +19,10 @@
   - `setup_toolchain` - Runs operations after the tool has been installed.
   - `teardown_toolchain` - Runs operations before the tool will be uninstalled.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.86.0.
+
 ## 1.34.2
 
 #### 🚀 Updates

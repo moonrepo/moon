@@ -12,7 +12,7 @@ pub async fn run_task(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     node: &RunTaskNode,
 ) -> miette::Result<ActionStatus> {
     let project_id = node

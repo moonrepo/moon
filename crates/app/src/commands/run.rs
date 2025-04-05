@@ -122,7 +122,6 @@ pub async fn run_target(
     target_locators: &[TargetLocator],
 ) -> AppResult {
     let cache_engine = session.get_cache_engine()?;
-    let workspace_graph = session.get_workspace_graph().await?;
     let vcs = session.get_vcs_adapter()?;
 
     // Force cache to update using write-only mode
@@ -158,13 +157,10 @@ pub async fn run_target(
     // Generate a dependency graph for all the targets that need to be ran
     let mut action_graph_builder = if args.no_actions {
         session
-            .build_action_graph_with_options(
-                &workspace_graph,
-                ActionGraphBuilderOptions::new(false),
-            )
+            .build_action_graph_with_options(ActionGraphBuilderOptions::new(false))
             .await?
     } else {
-        session.build_action_graph(&workspace_graph).await?
+        session.build_action_graph().await?
     };
 
     action_graph_builder.set_touched_files(touched_files)?;

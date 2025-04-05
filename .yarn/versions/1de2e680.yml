@@ -10,7 +10,6 @@ releases:
   '@moonrepo/types': minor
 
 declined:
-  - '@moonrepo/nx-compat'
   - '@moonrepo/report'
   - '@moonrepo/runtime'
   - website

@@ -1,9 +1,8 @@
 use crate::is_glob_like;
 use crate::portable_path::{FilePath, GlobPath};
 use regex::Regex;
-use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
+use schematic::{ParseError, Schema, SchemaBuilder, Schematic, derive_enum};
 use semver::Version;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 use std::sync::LazyLock;
@@ -17,24 +16,25 @@ static NPM: LazyLock<Regex> = LazyLock::new(|| {
         .unwrap()
 });
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(untagged, try_from = "String", into = "String")]
-pub enum TemplateLocator {
-    File {
-        path: FilePath,
-    },
-    Glob {
-        glob: GlobPath,
-    },
-    Git {
-        remote_url: String,
-        revision: String,
-    },
-    Npm {
-        package: String,
-        version: Version,
-    },
-}
+derive_enum!(
+    #[serde(untagged, try_from = "String", into = "String")]
+    pub enum TemplateLocator {
+        File {
+            path: FilePath,
+        },
+        Glob {
+            glob: GlobPath,
+        },
+        Git {
+            remote_url: String,
+            revision: String,
+        },
+        Npm {
+            package: String,
+            version: Version,
+        },
+    }
+);
 
 impl fmt::Display for TemplateLocator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

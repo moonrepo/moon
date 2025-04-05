@@ -1,9 +1,9 @@
-use moon_common::cacheable;
+use crate::{config_enum, config_struct};
 use schematic::Config;
 
-cacheable!(
+config_struct!(
     /// Configures to a tool-specific binary to install.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct BinConfig {
         /// Name of the binary, with optional version separated by `@`.
         pub bin: String,
@@ -19,9 +19,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_enum!(
     /// Configures to a tool-specific binary to install.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     #[serde(untagged, expecting = "expecting a bin name, or bin config object")]
     pub enum BinEntry {
         /// Name of a binary to install.

@@ -4,6 +4,7 @@ use moon_target::Target;
 use schematic::Config;
 
 config_enum!(
+    /// Toggles the state of actions within the pipeline.
     #[derive(Config)]
     #[serde(untagged)]
     pub enum PipelineActionSwitch {

@@ -54,7 +54,7 @@ macro_rules! config_enum {
 #[macro_export]
 macro_rules! config_unit_enum {
     ($impl:item) => {
-        crate::config_enum!(
+        $crate::config_enum!(
             #[derive(Copy, Default)]
             $impl
         );

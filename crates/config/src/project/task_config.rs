@@ -68,11 +68,10 @@ pub(crate) fn validate_deps<D, C>(
     Ok(())
 }
 
-config_unit_enum!(
+config_enum!(
     /// Preset options to inherit.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, Copy)]
     pub enum TaskPreset {
-        #[default] // ???
         Server,
         Watcher,
     }

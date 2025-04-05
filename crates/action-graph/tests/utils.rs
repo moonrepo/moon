@@ -32,7 +32,6 @@ impl ActionGraphContainer {
             .mock_app_context();
 
         ActionGraphBuilder::with_platforms(
-            Arc::new(app_context),
             &self.platform_manager,
             Arc::new(app_context),
             Arc::new(self.workspace_graph.clone()),

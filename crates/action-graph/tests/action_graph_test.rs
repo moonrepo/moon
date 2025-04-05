@@ -28,8 +28,8 @@ fn create_task(id: &str, project: &str) -> Task {
     }
 }
 
-async fn create_project_graph() -> WorkspaceGraph {
-    generate_workspace_graph("projects").await
+async fn create_project_graph() -> Arc<WorkspaceGraph> {
+    Arc::new(generate_workspace_graph("projects").await)
 }
 
 // fn create_bun_runtime() -> Runtime {
@@ -2033,7 +2033,8 @@ mod action_graph {
         async fn graphs() {
             let wg = WorkspaceGraph::default();
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.into(), Default::default())
+                    .unwrap();
             let system = Runtime::system();
             let node = Runtime::new(
                 Id::raw("node"),
@@ -2059,7 +2060,8 @@ mod action_graph {
         async fn graphs_same_toolchain() {
             let wg = WorkspaceGraph::default();
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.into(), Default::default())
+                    .unwrap();
 
             let node1 = Runtime::new(
                 Id::raw("node"),
@@ -2093,7 +2095,8 @@ mod action_graph {
         async fn ignores_dupes() {
             let wg = WorkspaceGraph::default();
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.into(), Default::default())
+                    .unwrap();
             let node = create_node_runtime();
 
             builder.setup_toolchain(&node);
@@ -2115,7 +2118,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg,
                 ActionGraphBuilderOptions {
                     setup_toolchains: false.into(),
                     ..Default::default()
@@ -2143,7 +2146,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg,
                 ActionGraphBuilderOptions {
                     setup_toolchains: PipelineActionSwitch::Only(vec![Id::raw("system")]),
                     ..Default::default()
@@ -2171,7 +2174,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg,
                 ActionGraphBuilderOptions {
                     setup_toolchains: PipelineActionSwitch::Only(vec![
                         Id::raw("system"),
@@ -2211,7 +2214,8 @@ mod action_graph {
         async fn graphs() {
             let wg = WorkspaceGraph::default();
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.into(), Default::default())
+                    .unwrap();
             let system = ToolchainSpec::system();
             let node = ToolchainSpec::new(
                 Id::raw("node"),
@@ -2244,7 +2248,8 @@ mod action_graph {
         async fn graphs_single() {
             let wg = create_project_graph().await;
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.clone(), Default::default())
+                    .unwrap();
 
             let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).unwrap();
@@ -2267,7 +2272,8 @@ mod action_graph {
         async fn graphs_multiple() {
             let wg = create_project_graph().await;
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.clone(), Default::default())
+                    .unwrap();
 
             let foo = wg.get_project("foo").unwrap();
             builder.sync_project(&foo).unwrap();
@@ -2303,7 +2309,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg.clone(),
                 ActionGraphBuilderOptions {
                     sync_project_dependencies: false,
                     ..Default::default()
@@ -2338,7 +2344,8 @@ mod action_graph {
         async fn ignores_dupes() {
             let wg = create_project_graph().await;
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.clone(), Default::default())
+                    .unwrap();
 
             let foo = wg.get_project("foo").unwrap();
 
@@ -2367,7 +2374,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg.clone(),
                 ActionGraphBuilderOptions {
                     sync_projects: false.into(),
                     ..Default::default()
@@ -2389,7 +2396,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg.clone(),
                 ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("foo")]),
                     ..Default::default()
@@ -2411,7 +2418,7 @@ mod action_graph {
             let wg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg.clone(),
                 ActionGraphBuilderOptions {
                     sync_projects: PipelineActionSwitch::Only(vec![Id::raw("bar")]),
                     ..Default::default()
@@ -2445,7 +2452,8 @@ mod action_graph {
             let wg = WorkspaceGraph::default();
 
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.into(), Default::default())
+                    .unwrap();
             builder.sync_workspace();
 
             let graph = builder.build();
@@ -2459,7 +2467,8 @@ mod action_graph {
             let wg = WorkspaceGraph::default();
 
             let mut builder =
-                ActionGraphBuilder::new(create_app_context(), &wg, Default::default()).unwrap();
+                ActionGraphBuilder::new(create_app_context(), wg.into(), Default::default())
+                    .unwrap();
             builder.sync_workspace();
             builder.sync_workspace();
             builder.sync_workspace();
@@ -2475,7 +2484,7 @@ mod action_graph {
 
             let mut builder = ActionGraphBuilder::new(
                 create_app_context(),
-                &wg,
+                wg.into(),
                 ActionGraphBuilderOptions {
                     sync_workspace: false,
                     ..Default::default()

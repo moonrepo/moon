@@ -1,9 +1,9 @@
-use moon_common::cacheable;
+use crate::config_struct;
 use schematic::Config;
 
-cacheable!(
+config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct TemplateFrontmatterConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/template-frontmatter.json",

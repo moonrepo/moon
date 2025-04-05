@@ -1,9 +1,9 @@
-use moon_common::cacheable;
+use crate::config_struct;
 use schematic::Config;
 
-cacheable!(
+config_struct!(
     /// Configures experiments across the entire moon workspace.
-    #[derive(Clone, Config, Debug)]
+    #[derive(Config)]
     pub struct ExperimentsConfig {
         #[deprecated]
         #[setting(default = true)]

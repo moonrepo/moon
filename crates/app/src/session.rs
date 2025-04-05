@@ -240,7 +240,7 @@ impl CliSession {
             self.cli.command,
             Commands::Bin(_)
                 | Commands::Docker {
-                    command: DockerCommands::Prune {}
+                    command: DockerCommands::Prune
                 }
                 | Commands::Node { .. }
                 | Commands::Teardown

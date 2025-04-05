@@ -1,11 +1,11 @@
+use crate::{config_enum, config_struct};
 use indexmap::IndexMap;
-use moon_common::cacheable;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
 
-cacheable!(
+config_enum!(
     /// A mapping of file paths and file globs to owners.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     #[serde(
         untagged,
         expecting = "expected a list of paths, or a map of paths to owners"
@@ -57,10 +57,10 @@ fn validate_paths<C>(
     Ok(())
 }
 
-cacheable!(
+config_struct!(
     /// Defines ownership of source code within the current project, by mapping
     /// file paths and globs to owners. An owner is either a user, team, or group.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct OwnersConfig {
         /// Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
         /// to a list of user and normal groups.

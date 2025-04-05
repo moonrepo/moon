@@ -29,6 +29,24 @@ impl<'graph> JobDispatcher<'graph> {
     pub fn has_queued_jobs(&self) -> bool {
         self.visited.len() < self.graph.node_count()
     }
+
+    pub fn find_next_index(
+        &self,
+        index: NodeIndex,
+        completed: &FxHashSet<NodeIndex>,
+    ) -> Option<NodeIndex> {
+        for dep_index in self.graph.neighbors_directed(index, Direction::Outgoing) {
+            if completed.contains(&dep_index) {
+                continue;
+            }
+
+            if let Some(next_index) = self.find_next_index(dep_index, completed) {
+                return Some(next_index);
+            }
+        }
+
+        None
+    }
 }
 
 // This is based on the `Topo` struct from petgraph!
@@ -38,7 +56,7 @@ impl JobDispatcher<'_> {
 
         // Loop based on priority groups, from critical to low
         {
-            for indices in self.groups.values() {
+            for (group, indices) in &self.groups {
                 // Then loop through the indices within the group,
                 // which are topologically sorted
                 for index in indices {
@@ -48,12 +66,25 @@ impl JobDispatcher<'_> {
 
                     // Ensure all dependencies of the current index have
                     // completed before dispatching
-                    if self
+                    let index_to_dispatch = if self
                         .graph
                         .neighbors_directed(*index, Direction::Outgoing)
-                        .all(|dep| completed.contains(&dep))
+                        .all(|dep_index| completed.contains(&dep_index))
                     {
-                        if let Some(node) = self.graph.node_weight(*index) {
+                        Some(*index)
+                    }
+                    // If not all dependencies have completed yet,
+                    // attempt to find a dependency to run
+                    else if *group < 2 {
+                        self.find_next_index(*index, &completed)
+                    }
+                    // Otherwise do nothing
+                    else {
+                        None
+                    };
+
+                    if let Some(index) = index_to_dispatch {
+                        if let Some(node) = self.graph.node_weight(index) {
                             let id = node.get_id();
 
                             // If the same exact action is currently running,
@@ -79,15 +110,15 @@ impl JobDispatcher<'_> {
                                     continue;
                                 }
 
-                                self.context.running_jobs.write().await.insert(*index, id);
+                                self.context.running_jobs.write().await.insert(index, id);
                             }
                         }
 
                         trace!(index = index.index(), "Dispatching job");
 
-                        self.visited.insert(*index);
+                        self.visited.insert(index);
 
-                        return Some(*index);
+                        return Some(index);
                     }
                 }
             }

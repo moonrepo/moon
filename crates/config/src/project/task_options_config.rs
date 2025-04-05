@@ -154,22 +154,17 @@ config_unit_enum!(
     /// The priority levels a task can be bucketed into.
     #[derive(ConfigEnum)]
     pub enum TaskPriority {
-        Critical,
-        High,
+        Critical = 0,
+        High = 1,
         #[default]
-        Normal,
-        Low,
+        Normal = 2,
+        Low = 3,
     }
 );
 
 impl TaskPriority {
     pub fn get_level(&self) -> u8 {
-        match self {
-            Self::Critical => 1,
-            Self::High => 2,
-            Self::Normal => 3,
-            Self::Low => 4,
-        }
+        *self as u8
     }
 }
 

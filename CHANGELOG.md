@@ -4,6 +4,8 @@
 
 #### 🚀 Updates
 
+- Added a new task option, `priority`, that controls the position in the pipeline queue.
+  - Supports `critical`, `high`, `normal` (default), or `low`.
 - Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
   toolchain WASM plugin is installing a tool (via proto).
 - Updated and simplified the relationships in the action graph.

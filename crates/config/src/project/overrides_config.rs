@@ -1,13 +1,13 @@
 use crate::shapes::OneOrMany;
 use crate::toolchain::ToolchainPluginConfig;
+use crate::{config_enum, config_struct};
 use moon_common::Id;
-use moon_common::cacheable;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 
-cacheable!(
-    #[derive(Clone, Config, Debug, PartialEq)]
+config_enum!(
+    #[derive(Config)]
     #[serde(untagged)]
     pub enum ProjectToolchainEntry {
         Disabled, // null
@@ -34,18 +34,18 @@ impl ProjectToolchainEntry {
     }
 }
 
-cacheable!(
+config_struct!(
     /// Overrides top-level toolchain settings.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct ProjectToolchainCommonToolConfig {
         /// Version of the tool this project will use.
         pub version: Option<UnresolvedVersionSpec>,
     }
 );
 
-cacheable!(
+config_struct!(
     /// Overrides top-level toolchain settings, scoped to this project.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {
         /// The default toolchain(s) for all tasks within the project,
@@ -78,9 +78,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Controls how tasks are inherited.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
         /// Excludes inheriting tasks by ID.
         pub exclude: Vec<Id>,
@@ -95,9 +95,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Overrides top-level workspace settings, scoped to this project.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct ProjectWorkspaceConfig {
         /// Controls how tasks are inherited.
         #[setting(nested)]

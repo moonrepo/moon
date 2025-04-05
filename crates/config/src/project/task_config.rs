@@ -1,10 +1,11 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OneOrMany, OutputPath};
-use moon_common::{Id, cacheable};
+use crate::{config_enum, config_struct, config_unit_enum};
+use moon_common::Id;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{Config, ConfigEnum, ValidateError, derive_enum, merge};
+use schematic::{Config, ConfigEnum, ValidateError, merge};
 
 fn validate_command<C>(
     command: &PartialTaskArgs,
@@ -67,18 +68,18 @@ pub(crate) fn validate_deps<D, C>(
     Ok(())
 }
 
-derive_enum!(
+config_unit_enum!(
     /// Preset options to inherit.
-    #[derive(ConfigEnum, Copy)]
+    #[derive(ConfigEnum)]
     pub enum TaskPreset {
         Server,
         Watcher,
     }
 );
 
-derive_enum!(
+config_unit_enum!(
     /// The type of task.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum TaskType {
         Build,
         Run,
@@ -87,9 +88,9 @@ derive_enum!(
     }
 );
 
-cacheable!(
+config_enum!(
     /// Configures a command to execute, and its arguments.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     #[serde(untagged, expecting = "expected a string or a list of strings")]
     pub enum TaskArgs {
         /// No value defined.
@@ -102,9 +103,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Expanded information about a task dependency.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct TaskDependencyConfig {
         /// Additional arguments to pass to this dependency when it's ran.
         #[setting(nested)]
@@ -140,9 +141,9 @@ impl TaskDependencyConfig {
     }
 }
 
-cacheable!(
+config_enum!(
     /// Configures another task that a task depends on.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     #[serde(
         untagged,
         expecting = "expected a valid target or dependency config object"
@@ -166,9 +167,9 @@ impl TaskDependency {
     }
 }
 
-cacheable!(
+config_struct!(
     /// Configures a task to be ran within the action pipeline.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct TaskConfig {
         /// Extends settings from a sibling task by ID.
         pub extends: Option<Id>,

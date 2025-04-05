@@ -10,7 +10,7 @@ use tracing::{debug, instrument, warn};
 /// the project folder.
 fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry> {
     let (id, source) = if path.contains('/') {
-        (path.split('/').last().unwrap().to_owned(), path)
+        (path.split('/').next_back().unwrap().to_owned(), path)
     } else {
         (path.to_owned(), path)
     };

@@ -74,10 +74,10 @@ pub struct ActionGraphBuilder<'app> {
     indices: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
     platform_manager: &'app PlatformManager,
-    workspace_graph: &'app WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
 
     // Affected states
-    affected: Option<AffectedTracker<'app>>,
+    affected: Option<AffectedTracker>,
     touched_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
@@ -89,21 +89,21 @@ pub struct ActionGraphBuilder<'app> {
 impl<'app> ActionGraphBuilder<'app> {
     pub fn new(
         app_context: Arc<AppContext>,
-        workspace_graph: &'app WorkspaceGraph,
+        workspace_graph: Arc<WorkspaceGraph>,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<Self> {
         ActionGraphBuilder::with_platforms(
-            app_context,
             PlatformManager::read(),
+            app_context,
             workspace_graph,
             options,
         )
     }
 
     pub fn with_platforms(
-        app_context: Arc<AppContext>,
         platform_manager: &'app PlatformManager,
-        workspace_graph: &'app WorkspaceGraph,
+        app_context: Arc<AppContext>,
+        workspace_graph: Arc<WorkspaceGraph>,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<Self> {
         debug!("Building action graph");
@@ -210,7 +210,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         if self.affected.is_none() {
             self.affected = Some(AffectedTracker::new(
-                self.workspace_graph,
+                Arc::clone(&self.workspace_graph),
                 touched_files.to_owned(),
             ));
         }
@@ -921,8 +921,8 @@ impl<'app> ActionGraphBuilder<'app> {
 }
 
 #[cfg(debug_assertions)]
-impl<'app> ActionGraphBuilder<'app> {
-    pub fn mock_affected(&mut self, mut op: impl FnMut(&mut AffectedTracker<'app>)) {
+impl ActionGraphBuilder<'_> {
+    pub fn mock_affected(&mut self, mut op: impl FnMut(&mut AffectedTracker)) {
         if let Some(affected) = self.affected.as_mut() {
             op(affected);
         }

@@ -30,9 +30,9 @@ impl ActionGraphContainer {
         let app_context = AppContextMocker::new(&self.workspace_root).mock();
 
         ActionGraphBuilder::with_platforms(
-            Arc::new(app_context),
             &self.platform_manager,
-            &self.workspace_graph,
+            Arc::new(app_context),
+            Arc::new(self.workspace_graph.clone()),
             ActionGraphBuilderOptions {
                 install_dependencies: config.install_dependencies.clone(),
                 sync_projects: config.sync_projects.clone(),

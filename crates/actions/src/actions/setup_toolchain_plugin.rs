@@ -19,7 +19,7 @@ pub async fn setup_toolchain_plugin(
     _action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     node: &SetupToolchainPluginNode,
 ) -> miette::Result<ActionStatus> {
     // No version configured, use globals on PATH

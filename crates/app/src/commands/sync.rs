@@ -39,7 +39,7 @@ pub enum SyncCommands {
 pub async fn sync(session: CliSession) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut action_graph_builder = session
-        .build_action_graph_with_options(&workspace_graph, ActionGraphBuilderOptions::default())
+        .build_action_graph_with_options(ActionGraphBuilderOptions::default())
         .await?;
 
     action_graph_builder.sync_workspace();

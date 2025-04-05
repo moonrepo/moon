@@ -1,10 +1,10 @@
+use crate::{config_struct, config_unit_enum};
 use indexmap::IndexMap;
-use moon_common::cacheable;
-use schematic::{Config, ConfigEnum, derive_enum};
+use schematic::{Config, ConfigEnum};
 
-derive_enum!(
+config_unit_enum!(
     /// How to order ownership rules within the generated file.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum CodeownersOrderBy {
         /// By file source path.
         #[default]
@@ -14,9 +14,9 @@ derive_enum!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Configures code ownership rules for generating a `CODEOWNERS` file.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct CodeownersConfig {
         /// Paths that are applied globally to all projects. Can be relative
         /// from the workspace root, or a wildcard match for any depth.

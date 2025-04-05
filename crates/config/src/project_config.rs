@@ -1,9 +1,10 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
-use moon_common::{Id, cacheable};
+use crate::{config_enum, config_struct, config_unit_enum};
+use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{Config, ConfigEnum, ValidateError, derive_enum, validate};
+use schematic::{Config, ConfigEnum, ValidateError, validate};
 use std::collections::BTreeMap;
 
 fn validate_channel<D, C>(
@@ -19,9 +20,9 @@ fn validate_channel<D, C>(
     Ok(())
 }
 
-derive_enum!(
+config_unit_enum!(
     /// The technology stack of the project, for categorizing.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum StackType {
         Backend,
         Frontend,
@@ -32,9 +33,9 @@ derive_enum!(
     }
 );
 
-derive_enum!(
+config_unit_enum!(
     /// The type of project, for categorizing.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum ProjectType {
         Application,
         Automation,
@@ -47,9 +48,9 @@ derive_enum!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Expanded information about the project.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct ProjectMetadataConfig {
         /// A human-readable name of the project.
         pub name: Option<String>,
@@ -75,9 +76,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_enum!(
     /// Expanded information about a project dependency.
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"
@@ -92,10 +93,10 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Configures information and tasks for a project.
     /// Docs: https://moonrepo.dev/docs/config/project
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct ProjectConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/project.json",

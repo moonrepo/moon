@@ -530,6 +530,7 @@
       "additionalProperties": false
     },
     "PipelineActionSwitch": {
+      "description": "Toggles the state of actions within the pipeline.",
       "anyOf": [
         {
           "type": "null"

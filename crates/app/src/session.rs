@@ -50,6 +50,7 @@ pub struct CliSession {
     task_graph: OnceLock<Arc<TaskGraph>>,
     toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceLock<Arc<BoxedVcs>>,
+    workspace_graph: OnceLock<Arc<WorkspaceGraph>>,
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -79,8 +80,9 @@ impl CliSession {
             toolchain_config: Arc::new(ToolchainConfig::default()),
             toolchain_registry: OnceLock::new(),
             working_dir: PathBuf::new(),
-            workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
+            workspace_graph: OnceLock::new(),
+            workspace_root: PathBuf::new(),
             vcs_adapter: OnceLock::new(),
             cli,
         }
@@ -215,10 +217,16 @@ impl CliSession {
     }
 
     pub async fn get_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
-        let projects = self.get_project_graph().await?;
-        let tasks = self.get_task_graph().await?;
+        if self.workspace_graph.get().is_none() {
+            let projects = self.get_project_graph().await?;
+            let tasks = self.get_task_graph().await?;
 
-        Ok(Arc::new(WorkspaceGraph::new(projects, tasks)))
+            let _ = self
+                .workspace_graph
+                .set(Arc::new(WorkspaceGraph::new(projects, tasks)));
+        }
+
+        Ok(self.workspace_graph.get().map(Arc::clone).unwrap())
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {

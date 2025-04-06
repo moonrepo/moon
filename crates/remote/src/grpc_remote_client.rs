@@ -333,7 +333,7 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<Option<Blob>>> {
         trace!(
             hash = &action_digest.hash,
             compression = self.config.cache.compression.to_string(),
@@ -383,7 +383,9 @@ impl RemoteClient for GrpcRemoteClient {
                 blob.compressed = get_compression_from_code(download.compressor);
                 blob.decompress()?;
 
-                blobs.push(blob);
+                blobs.push(Some(blob));
+            } else {
+                blobs.push(None);
             }
 
             total_count += 1;
@@ -454,14 +456,11 @@ impl RemoteClient for GrpcRemoteClient {
         let blob = Blob::from(bytes);
 
         if blob.digest != blob_digest {
-            warn!(
-                hash = &action_digest.hash,
-                blob_hash = &blob_digest.hash,
-                "Failed to download blob, mismatched blob digests, received unexpected hash {}",
-                blob.digest.hash
-            );
-
-            return Ok(None);
+            return Err(RemoteError::GrpcDownloadDigestMismatch {
+                actual: blob.digest.clone(),
+                expected: blob_digest.clone(),
+            }
+            .into());
         }
 
         Ok(Some(blob))
@@ -561,7 +560,7 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         blob: Blob,
-    ) -> miette::Result<Option<Digest>> {
+    ) -> miette::Result<Digest> {
         trace!(
             hash = &action_digest.hash,
             blob_hash = &blob.digest.hash,
@@ -617,14 +616,11 @@ impl RemoteClient for GrpcRemoteClient {
                 let result = response.into_inner();
 
                 if result.committed_size != -1 && result.committed_size < total_bytes {
-                    warn!(
-                        hash = &action_digest.hash,
-                        blob_hash = &blob.digest.hash,
-                        "Failed to upload blob, streamed bytes was {}, but we required {total_bytes}",
-                        result.committed_size
-                    );
-
-                    return Ok(None);
+                    return Err(RemoteError::GrpcUploadBytesMismatch {
+                        actual: result.committed_size,
+                        expected: total_bytes,
+                    }
+                    .into());
                 }
             }
             Err(status) => {
@@ -632,6 +628,6 @@ impl RemoteClient for GrpcRemoteClient {
             }
         };
 
-        Ok(Some(blob.digest))
+        Ok(blob.digest)
     }
 }

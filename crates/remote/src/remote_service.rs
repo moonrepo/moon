@@ -192,9 +192,9 @@ impl RemoteService {
     }
 
     #[instrument(skip(self, state))]
-    pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+    pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if !self.cache_enabled {
-            return Ok(());
+            return Ok(false);
         }
 
         let missing = self
@@ -216,19 +216,30 @@ impl RemoteService {
                 .await?;
         }
 
-        Ok(())
+        Ok(true)
     }
 
     #[instrument(skip(self, state))]
-    pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+    pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if !self.cache_enabled {
-            return Ok(());
+            return Ok(false);
         }
 
         let Some((mut result, blobs)) = state.extract_for_upload() else {
-            return Ok(());
+            return Ok(false);
         };
 
+        // If no blobs, upload in the current thread
+        if blobs.is_empty() {
+            let value = self
+                .client
+                .update_action_result(&state.digest, result)
+                .await?;
+
+            return Ok(value.is_some());
+        }
+
+        // Otherwise upload in the background
         let client = Arc::clone(&self.client);
         let digest = state.digest.clone();
         let max_size = self.get_max_batch_size();
@@ -237,41 +248,33 @@ impl RemoteService {
             .write()
             .await
             .push(tokio::spawn(async move {
-                if !blobs.is_empty() {
-                    if let Some(metadata) = &mut result.execution_metadata {
-                        metadata.output_upload_start_timestamp =
-                            create_timestamp(SystemTime::now());
-                    }
+                if let Some(metadata) = &mut result.execution_metadata {
+                    metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
+                }
 
-                    // Don't save the action result if some of the blobs failed to upload
-                    match batch_upload_blobs(
-                        client.clone(),
-                        digest.clone(),
-                        blobs,
-                        max_size as usize,
-                    )
+                // Don't save the action result if some of the blobs failed to upload
+                match batch_upload_blobs(client.clone(), digest.clone(), blobs, max_size as usize)
                     .await
-                    {
-                        Ok(uploaded) => {
-                            if !uploaded {
-                                return;
-                            }
-                        }
-                        Err(error) => {
-                            warn!(
-                                hash = &digest.hash,
-                                "Failed to cache action result: {}",
-                                color::muted_light(error.to_string()),
-                            );
-
+                {
+                    Ok(uploaded) => {
+                        if !uploaded {
                             return;
                         }
-                    };
-
-                    if let Some(metadata) = &mut result.execution_metadata {
-                        metadata.output_upload_completed_timestamp =
-                            create_timestamp(SystemTime::now());
                     }
+                    Err(error) => {
+                        warn!(
+                            hash = &digest.hash,
+                            "Failed to upload blobs and cache action result: {}",
+                            color::muted_light(error.to_string()),
+                        );
+
+                        return;
+                    }
+                };
+
+                if let Some(metadata) = &mut result.execution_metadata {
+                    metadata.output_upload_completed_timestamp =
+                        create_timestamp(SystemTime::now());
                 }
 
                 if let Err(error) = client.update_action_result(&digest, result).await {
@@ -283,7 +286,8 @@ impl RemoteService {
                 }
             }));
 
-        Ok(())
+        // We don't actually know at this point if they all uploaded
+        Ok(true)
     }
 
     #[instrument(skip(self, state))]
@@ -296,7 +300,7 @@ impl RemoteService {
             return Ok(false);
         };
 
-        if let Err(error) = batch_download_blobs(
+        match batch_download_blobs(
             self.client.clone(),
             &state.digest,
             result,
@@ -305,14 +309,21 @@ impl RemoteService {
         )
         .await
         {
-            warn!(
-                hash = &state.digest.hash,
-                "Failed to restore action result: {}",
-                color::muted_light(error.to_string()),
-            );
+            Ok(downloaded) => {
+                if !downloaded {
+                    return Ok(false);
+                }
+            }
+            Err(error) => {
+                warn!(
+                    hash = &state.digest.hash,
+                    "Failed to download blobs and restore action result: {}",
+                    color::muted_light(error.to_string()),
+                );
 
-            return Ok(false);
-        }
+                return Ok(false);
+            }
+        };
 
         // The stderr/stdout blobs may not have been inlined,
         // so we need to fetch them manually
@@ -336,6 +347,10 @@ impl RemoteService {
                 .batch_read_blobs(&state.digest, stdio_digests)
                 .await?
             {
+                let Some(blob) = blob else {
+                    continue;
+                };
+
                 if result
                     .stderr_digest
                     .as_ref()
@@ -407,7 +422,7 @@ async fn batch_upload_blobs(
                 client
                     .stream_update_blob(&action_digest, group.items.remove(0))
                     .await
-                    .map(|res| vec![res])
+                    .map(|res| vec![Some(res)])
             });
 
             continue;
@@ -445,7 +460,7 @@ async fn batch_download_blobs(
     result: &ActionResult,
     workspace_root: &Path,
     max_size: usize,
-) -> miette::Result<()> {
+) -> miette::Result<bool> {
     let mut file_map = FxHashMap::default();
     let mut blob_digests = vec![];
 
@@ -461,11 +476,11 @@ async fn batch_download_blobs(
         partition_into_groups(blob_digests, max_size, |dig| dig.size_bytes as usize);
 
     if digest_groups.is_empty() {
-        return Ok(());
+        return Ok(true);
     }
 
     let group_total = digest_groups.len();
-    let mut set = JoinSet::<miette::Result<Vec<Blob>>>::default();
+    let mut set = JoinSet::<miette::Result<Vec<Option<Blob>>>>::default();
 
     for (group_index, mut group) in digest_groups.into_iter() {
         let client = Arc::clone(&client);
@@ -474,16 +489,10 @@ async fn batch_download_blobs(
         // Streaming
         if group.stream {
             set.spawn(async move {
-                let mut blobs = vec![];
-
-                if let Some(blob) = client
+                client
                     .stream_read_blob(&action_digest, group.items.remove(0))
-                    .await?
-                {
-                    blobs.push(blob);
-                }
-
-                Ok(blobs)
+                    .await
+                    .map(|res| vec![res])
             });
 
             continue;
@@ -507,6 +516,10 @@ async fn batch_download_blobs(
 
     while let Some(res) = set.join_next().await {
         for blob in res.into_diagnostic()?? {
+            let Some(blob) = blob else {
+                return Ok(false);
+            };
+
             if let Some(file) = file_map.get(&blob.digest.hash) {
                 write_output_file(workspace_root.join(&file.path), blob.bytes, file)?;
             }
@@ -523,7 +536,7 @@ async fn batch_download_blobs(
         )?;
     }
 
-    Ok(())
+    Ok(true)
 }
 
 struct Partition<T> {

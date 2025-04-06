@@ -1,3 +1,4 @@
+use bazel_remote_apis::build::bazel::remote::execution::v2::Digest;
 use miette::Diagnostic;
 use moon_config::RemoteCompression;
 use thiserror::Error;
@@ -21,6 +22,20 @@ pub enum RemoteError {
         #[source]
         error: Box<tonic::Status>,
     },
+
+    #[diagnostic(code(remote::grpc::download_digest_mismatch))]
+    #[error(
+        "Failed to download blob, mismatched blob digests. Received {}:{}, but we expected {}:{}.",
+        .actual.hash,
+        .actual.size_bytes,
+        .expected.hash,
+        .expected.size_bytes,
+    )]
+    GrpcDownloadDigestMismatch { actual: Digest, expected: Digest },
+
+    #[diagnostic(code(remote::grpc::upload_bytes_mismatch))]
+    #[error("Failed to upload blob. Received bytes was {actual}, but we expected {expected}.")]
+    GrpcUploadBytesMismatch { actual: i64, expected: i64 },
 
     #[diagnostic(code(remote::grpc::stream_download_failed))]
     #[error("Failed to stream download blob.")]

@@ -259,7 +259,7 @@ impl RemoteClient for HttpRemoteClient {
         &self,
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<Option<Blob>>> {
         trace!(
             hash = &action_digest.hash,
             compression = self.config.cache.compression.to_string(),
@@ -303,9 +303,7 @@ impl RemoteClient for HttpRemoteClient {
         let total_count = requests.len();
 
         for future in requests {
-            if let Some(blob) = future.await.into_diagnostic()?? {
-                blobs.push(blob);
-            }
+            blobs.push(future.await.into_diagnostic()??);
         }
 
         trace!(

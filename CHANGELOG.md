@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Minor change to remote caching up/download batching to increase performance.
+- Reworked remote caching error handling.
 
 #### 🐞 Fixes
 

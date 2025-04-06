@@ -6,16 +6,18 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionCacheUpdateCapabilities, ActionResult, CacheCapabilities, Digest, ServerCapabilities,
     digest_function,
 };
+use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_config::{RemoteCompression, RemoteConfig};
 use moon_env_var::GlobalEnvBag;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
-use std::sync::Arc;
+use std::path::Path;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
-use std::{path::Path, sync::OnceLock};
 use tokio::sync::Semaphore;
-use tracing::{debug, error, trace, warn};
+use tokio::task::JoinHandle;
+use tracing::{debug, error, trace};
 
 pub struct HttpRemoteClient {
     client: OnceLock<Arc<Client>>,
@@ -57,7 +59,7 @@ impl HttpRemoteClient {
 
         let client = client
             .build()
-            .map_err(|error| self.map_error("create_client", error))?;
+            .map_err(|error| map_error("create_client", error, self.debug))?;
 
         Ok(client)
     }
@@ -71,16 +73,6 @@ impl HttpRemoteClient {
             "{}/{}/{path}/{hash}",
             self.config.host, self.config.cache.instance_name
         )
-    }
-
-    fn map_error(&self, method: &str, error: reqwest::Error) -> RemoteError {
-        if self.debug {
-            error!("{method}: {:#?}", error);
-        }
-
-        RemoteError::HttpCallFailed {
-            error: Box::new(error),
-        }
     }
 }
 
@@ -187,7 +179,9 @@ impl RemoteClient for HttpRemoteClient {
             .await
         {
             Ok(response) => {
-                if response.status().is_success() {
+                let status = response.status();
+
+                if status.is_success() {
                     let result: ActionResult =
                         response
                             .json()
@@ -206,13 +200,15 @@ impl RemoteClient for HttpRemoteClient {
                     );
 
                     Ok(Some(result))
-                } else {
+                } else if status.as_u16() == 404 {
                     trace!(hash = &action_digest.hash, "Cache miss on action result");
 
                     Ok(None)
+                } else {
+                    Err(map_response_error("get_action_result", response, self.debug).into())
                 }
             }
-            Err(error) => Err(self.map_error("get_action_result", error).into()),
+            Err(error) => Err(map_error("get_action_result", error, self.debug).into()),
         }
     }
 
@@ -239,26 +235,17 @@ impl RemoteClient for HttpRemoteClient {
             .await
         {
             Ok(response) => {
-                let status = response.status();
-
                 // Doesn't return a response body
                 // https://github.com/buchgr/bazel-remote/blob/master/server/http.go#L429
-                if status.is_success() {
+                if response.status().is_success() {
                     trace!(hash = &action_digest.hash, "Cached action result");
 
                     Ok(Some(result))
                 } else {
-                    warn!(
-                        hash = &action_digest.hash,
-                        code = status.as_u16(),
-                        "Failed to cache action result: {}",
-                        color::muted_light(status.to_string()),
-                    );
-
-                    Ok(None)
+                    Err(map_response_error("get_action_result", response, self.debug).into())
                 }
             }
-            Err(error) => Err(self.map_error("update_action_result", error).into()),
+            Err(error) => Err(map_error("update_action_result", error, self.debug).into()),
         }
     }
 
@@ -280,18 +267,17 @@ impl RemoteClient for HttpRemoteClient {
             blob_digests.len()
         );
 
-        let mut requests = vec![];
+        let mut requests: Vec<JoinHandle<miette::Result<Option<Blob>>>> = vec![];
         let debug_enabled = self.debug;
 
         for blob_digest in blob_digests {
             let client = self.get_client();
-            let action_hash = action_digest.hash.clone();
             let url = self.get_endpoint("cas", &blob_digest.hash);
             let semaphore = self.semaphore.clone();
 
             requests.push(tokio::spawn(async move {
                 let Ok(_permit) = semaphore.acquire().await else {
-                    return None;
+                    return Ok(None);
                 };
 
                 match client.get(url).send().await {
@@ -299,33 +285,17 @@ impl RemoteClient for HttpRemoteClient {
                         let status = response.status();
 
                         if status.is_success() {
-                            if let Ok(bytes) = response.bytes().await {
-                                return Some(Blob::new(blob_digest, bytes.to_vec()));
-                            }
+                            return if let Ok(bytes) = response.bytes().await {
+                                Ok(Some(Blob::new(blob_digest, bytes.to_vec())))
+                            } else {
+                                Ok(None)
+                            };
                         }
 
-                        warn!(
-                            hash = &action_hash,
-                            blob_hash = &blob_digest.hash,
-                            "Failed to download blob: {}",
-                            color::muted_light(status.to_string()),
-                        );
+                        Err(map_response_error("batch_read_blobs", response, debug_enabled).into())
                     }
-                    Err(error) => {
-                        warn!(
-                            hash = &action_hash,
-                            blob_hash = &blob_digest.hash,
-                            "Failed to download blob: {}",
-                            color::muted_light(error.to_string()),
-                        );
-
-                        if debug_enabled {
-                            trace!("read_blob: {:?}", error);
-                        }
-                    }
+                    Err(error) => Err(map_error("batch_read_blobs", error, debug_enabled).into()),
                 }
-
-                None
             }));
         }
 
@@ -333,7 +303,7 @@ impl RemoteClient for HttpRemoteClient {
         let total_count = requests.len();
 
         for future in requests {
-            if let Ok(Some(blob)) = future.await {
+            if let Some(blob) = future.await.into_diagnostic()?? {
                 blobs.push(blob);
             }
         }
@@ -354,7 +324,7 @@ impl RemoteClient for HttpRemoteClient {
         blobs: Vec<Blob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
-        let mut requests = vec![];
+        let mut requests: Vec<JoinHandle<miette::Result<Option<Digest>>>> = vec![];
 
         trace!(
             hash = &action_digest.hash,
@@ -367,13 +337,12 @@ impl RemoteClient for HttpRemoteClient {
 
         for blob in blobs {
             let client = self.get_client();
-            let action_hash = action_digest.hash.clone();
             let url = self.get_endpoint("cas", &blob.digest.hash);
             let semaphore = self.semaphore.clone();
 
             requests.push(tokio::spawn(async move {
                 let Ok(_permit) = semaphore.acquire().await else {
-                    return None;
+                    return Ok(None);
                 };
 
                 match client.put(url).body(blob.bytes).send().await {
@@ -381,31 +350,16 @@ impl RemoteClient for HttpRemoteClient {
                         let status = response.status();
 
                         if status.is_success() {
-                            return Some(blob.digest);
+                            return Ok(Some(blob.digest));
                         }
 
-                        warn!(
-                            hash = &action_hash,
-                            blob_hash = &blob.digest.hash,
-                            "Failed to upload blob: {}",
-                            color::muted_light(status.to_string()),
-                        );
+                        Err(
+                            map_response_error("batch_update_blobs", response, debug_enabled)
+                                .into(),
+                        )
                     }
-                    Err(error) => {
-                        warn!(
-                            hash = &action_hash,
-                            blob_hash = &blob.digest.hash,
-                            "Failed to upload blob: {}",
-                            color::muted_light(error.to_string()),
-                        );
-
-                        if debug_enabled {
-                            trace!("update_blob: {:?}", error);
-                        }
-                    }
+                    Err(error) => Err(map_error("batch_update_blobs", error, debug_enabled).into()),
                 }
-
-                None
             }));
         }
 
@@ -413,18 +367,13 @@ impl RemoteClient for HttpRemoteClient {
         let mut uploaded_count = 0;
 
         for future in requests {
-            match future.await {
-                Ok(upload) => {
-                    if upload.is_some() {
-                        uploaded_count += 1;
-                    }
+            let upload = future.await.into_diagnostic()??;
 
-                    digests.push(upload);
-                }
-                _ => {
-                    digests.push(None);
-                }
+            if upload.is_some() {
+                uploaded_count += 1;
             }
+
+            digests.push(upload);
         }
 
         trace!(
@@ -435,5 +384,25 @@ impl RemoteClient for HttpRemoteClient {
         );
 
         Ok(digests)
+    }
+}
+
+fn map_error(method: &str, error: reqwest::Error, debug: bool) -> RemoteError {
+    if debug {
+        error!("{method}: {:#?}", error);
+    }
+
+    RemoteError::HttpCallFailed {
+        error: Box::new(error),
+    }
+}
+
+fn map_response_error(method: &str, res: reqwest::Response, debug: bool) -> RemoteError {
+    if debug {
+        error!("{method}: {:#?}", res);
+    }
+
+    RemoteError::HttpRequestFailed {
+        status: Box::new(res.status()),
     }
 }

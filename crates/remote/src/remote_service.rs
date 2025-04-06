@@ -176,7 +176,7 @@ impl RemoteService {
         // bump the total body size larger than the actual limit. Is there a better
         // way to handle this? Probably, but for now, just reduce the size by 1%,
         // which is about 42k bytes.
-        max - (max as f64 * 0.015) as i64
+        max - (max as f64 * 0.0125) as i64
     }
 
     #[instrument(skip(self, state))]
@@ -243,18 +243,30 @@ impl RemoteService {
                             create_timestamp(SystemTime::now());
                     }
 
-                    let upload_result = batch_upload_blobs(
+                    // Don't save the action result if some of the blobs failed to upload
+                    match batch_upload_blobs(
                         client.clone(),
                         digest.clone(),
                         blobs,
                         max_size as usize,
                     )
-                    .await;
+                    .await
+                    {
+                        Ok(uploaded) => {
+                            if !uploaded {
+                                return;
+                            }
+                        }
+                        Err(error) => {
+                            warn!(
+                                hash = &digest.hash,
+                                "Failed to cache action result: {}",
+                                color::muted_light(error.to_string()),
+                            );
 
-                    // Don't save the action result if some of the blobs failed to upload
-                    if upload_result.is_err() || upload_result.is_ok_and(|res| !res) {
-                        return;
-                    }
+                            return;
+                        }
+                    };
 
                     if let Some(metadata) = &mut result.execution_metadata {
                         metadata.output_upload_completed_timestamp =
@@ -275,23 +287,32 @@ impl RemoteService {
     }
 
     #[instrument(skip(self, state))]
-    pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<()> {
+    pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if !self.cache_enabled {
-            return Ok(());
+            return Ok(false);
         }
 
         let Some(result) = &mut state.action_result else {
-            return Ok(());
+            return Ok(false);
         };
 
-        batch_download_blobs(
+        if let Err(error) = batch_download_blobs(
             self.client.clone(),
             &state.digest,
             result,
             &self.workspace_root,
             self.get_max_batch_size() as usize,
         )
-        .await?;
+        .await
+        {
+            warn!(
+                hash = &state.digest.hash,
+                "Failed to restore action result: {}",
+                color::muted_light(error.to_string()),
+            );
+
+            return Ok(false);
+        }
 
         // The stderr/stdout blobs may not have been inlined,
         // so we need to fetch them manually
@@ -334,7 +355,7 @@ impl RemoteService {
             }
         }
 
-        Ok(())
+        Ok(true)
     }
 
     #[instrument(skip(self))]
@@ -383,26 +404,10 @@ async fn batch_upload_blobs(
         // Streaming
         if group.stream {
             set.spawn(async move {
-                match client
+                client
                     .stream_update_blob(&action_digest, group.items.remove(0))
                     .await
-                {
-                    Ok(result) => {
-                        if result.is_some() {
-                            return true;
-                        }
-                    }
-                    Err(error) => {
-                        warn!(
-                            hash = &action_digest.hash,
-                            group = group_index + 1,
-                            "Failed to stream upload blob: {}",
-                            color::muted_light(error.to_string()),
-                        );
-                    }
-                };
-
-                false
+                    .map(|res| vec![res])
             });
 
             continue;
@@ -414,37 +419,24 @@ async fn batch_upload_blobs(
                 hash = &action_digest.hash,
                 blobs = group.items.len(),
                 size = group.size,
-                max_size,
                 "Batching blobs upload (group {} of {})",
                 group_index + 1,
                 group_total
             );
         }
 
-        set.spawn(async move {
-            match client.batch_update_blobs(&action_digest, group.items).await {
-                Ok(result) => {
-                    if result.into_iter().all(|res| res.is_some()) {
-                        return true;
-                    }
-                }
-                Err(error) => {
-                    warn!(
-                        hash = &action_digest.hash,
-                        group = group_index + 1,
-                        "Failed to upload blobs: {}",
-                        color::muted_light(error.to_string()),
-                    );
-                }
-            };
-
-            false
-        });
+        set.spawn(async move { client.batch_update_blobs(&action_digest, group.items).await });
     }
 
-    let results = set.join_all().await;
+    while let Some(res) = set.join_next().await {
+        for maybe_digest in res.into_diagnostic()?? {
+            if maybe_digest.is_none() {
+                return Ok(false);
+            }
+        }
+    }
 
-    Ok(results.into_iter().all(|passed| passed))
+    Ok(true)
 }
 
 async fn batch_download_blobs(

@@ -15,6 +15,27 @@ pub enum RemoteError {
         error: Box<tonic::transport::Error>,
     },
 
+    #[diagnostic(code(remote::grpc::out_of_storage_space))]
+    #[error("Remote service is out of storage space.")]
+    GrpcOutOfStorageSpace {
+        #[source]
+        error: Box<tonic::Status>,
+    },
+
+    #[diagnostic(code(remote::grpc::stream_download_failed))]
+    #[error("Failed to stream download blob.")]
+    GrpcStreamDownloadFailed {
+        #[source]
+        error: Box<tonic::Status>,
+    },
+
+    #[diagnostic(code(remote::grpc::stream_upload_failed))]
+    #[error("Failed to stream upload blob.")]
+    GrpcStreamUploadFailed {
+        #[source]
+        error: Box<std::io::Error>,
+    },
+
     #[diagnostic(code(remote::http::call_failed))]
     #[error("Failed to make HTTP call.")]
     HttpCallFailed {
@@ -25,6 +46,10 @@ pub enum RemoteError {
     #[diagnostic(code(remote::http::connect_failed))]
     #[error("Failed to connect to HTTP host ({code} {reason}).")]
     HttpConnectFailed { code: u16, reason: String },
+
+    #[diagnostic(code(remote::http::request_failed))]
+    #[error("Failed to make HTTP request ({status}).")]
+    HttpRequestFailed { status: Box<reqwest::StatusCode> },
 
     #[diagnostic(code(remote::compression_failed))]
     #[error("Failed to compress blob using {format}.")]

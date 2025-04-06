@@ -151,6 +151,24 @@ impl TaskOperatingSystem {
 }
 
 config_unit_enum!(
+    /// The priority levels a task can be bucketed into.
+    #[derive(ConfigEnum)]
+    pub enum TaskPriority {
+        Critical = 0,
+        High = 1,
+        #[default]
+        Normal = 2,
+        Low = 3,
+    }
+);
+
+impl TaskPriority {
+    pub fn get_level(&self) -> u8 {
+        *self as u8
+    }
+}
+
+config_unit_enum!(
     /// A list of available shells on Unix.
     #[derive(ConfigEnum)]
     pub enum TaskUnixShell {
@@ -258,6 +276,10 @@ config_struct!(
         /// Marks the task as persistent (continuously running). This is ideal
         /// for watchers, servers, or never-ending processes.
         pub persistent: Option<bool>,
+
+        /// Marks the task with a certain priority, which determines the order
+        /// in which it is ran within the pipeline.
+        pub priority: Option<TaskPriority>,
 
         /// The number of times a failing task will be retried to succeed.
         #[setting(env = "MOON_RETRY_COUNT")]

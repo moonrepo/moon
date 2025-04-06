@@ -446,6 +446,8 @@ async fn batch_upload_blobs(
     while let Some(res) = set.join_next().await {
         for maybe_digest in res.into_diagnostic()?? {
             if maybe_digest.is_none() {
+                set.abort_all();
+
                 return Ok(false);
             }
         }
@@ -517,6 +519,8 @@ async fn batch_download_blobs(
     while let Some(res) = set.join_next().await {
         for blob in res.into_diagnostic()?? {
             let Some(blob) = blob else {
+                set.abort_all();
+
                 return Ok(false);
             };
 

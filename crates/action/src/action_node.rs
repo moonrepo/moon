@@ -43,6 +43,7 @@ pub struct RunTaskNode {
     pub env: FxHashMap<String, String>,
     pub interactive: bool, // Interactive with stdin
     pub persistent: bool,  // Never terminates
+    pub priority: u8,
     pub runtime: Runtime,
     pub target: Target,
     pub id: Option<u64>, // For action graph states
@@ -55,6 +56,7 @@ impl RunTaskNode {
             env: FxHashMap::default(),
             interactive: false,
             persistent: false,
+            priority: 2, // normal
             runtime,
             target,
             id: None,
@@ -157,6 +159,13 @@ impl ActionNode {
         match self {
             Self::SetupToolchainPlugin(inner) => Some(&inner.spec),
             _ => None,
+        }
+    }
+
+    pub fn get_priority(&self) -> u8 {
+        match self {
+            Self::RunTask(inner) => inner.priority,
+            _ => 0,
         }
     }
 

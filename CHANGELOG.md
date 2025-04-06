@@ -8,6 +8,10 @@
   exceed the max upload size.
 - Fixed an issue where the same plugin could be loaded multiple times.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.34.1
 
 #### 🐞 Fixes

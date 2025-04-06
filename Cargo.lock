@@ -1986,9 +1986,9 @@ checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
 
 [[package]]
 name = "flate2"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11faaf5a5236997af9848be0bef4db95824b1d534ebc64d0f0c6cf3e67bd38dc"
+checksum = "7ced92e76e966ca2fd84c8f7aa01a4aea65b0eb6648d72f7c8f3e2764a67fece"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -2920,9 +2920,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.8.0"
+version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3954d50fe15b02142bf25d3b8bdadb634ec3948f103d04ffe3031bc8fe9d7058"
+checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
@@ -2960,9 +2960,9 @@ checksum = "06432fb54d3be7964ecd3649233cddf80db2832f47fec34c01f65b3d9d774983"
 
 [[package]]
 name = "iocraft"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dc6805810bb6c554e8eeb716fded65cb709c10a202a8243f102c212f6b9eedb"
+checksum = "060f5548eab03fbf73d9e7abd6eb769e4e70d3851f4dfdcebcc36cf9d258cd32"
 dependencies = [
  "any_key",
  "bitflags",
@@ -5214,6 +5214,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-core-foundation"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daeaf60f25471d26948a1c2f840e3f7d86f4109e3af4e8e4b5cd70c39690d925"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
 name = "object"
 version = "0.36.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5813,9 +5822,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.47.12"
+version = "0.47.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "665157ee9b8163ca1790e6ce6a440bfc8f8a6f9b82d4762bf3dfaa8c880ef539"
+checksum = "73e5ee977dea2397972e5a88e5d69647dab6a3973d60c7c080ac1a3d97f6fc29"
 dependencies = [
  "convert_case",
  "dotenvy",
@@ -6987,9 +6996,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52154b5f12289fe90f92091117edae6b91d83a5e307b20bd246b3b6e725f6ccb"
+checksum = "c81ed9dfd9ed616f2289eae633e713fdde4008e2409b38616119654c62c45872"
 dependencies = [
  "binstall-tar",
  "bzip2",
@@ -7062,9 +7071,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01cbefdd469dcc6c4e435e0c073cd407f7775883e296ef20c41b352d94cc48ae"
+checksum = "55eea0c752835b845e203e18b82933d2f38b0af059188a378fd3184ca82437dd"
 dependencies = [
  "regex",
  "sysinfo",
@@ -7229,14 +7238,14 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.33.1"
+version = "0.34.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fc858248ea01b66f19d8e8a6d55f41deaf91e9d495246fd01368d99935c6c01"
+checksum = "a4b93974b3d3aeaa036504b8eefd4c039dced109171c1ae973f1dc63b2c7e4b2"
 dependencies = [
- "core-foundation-sys",
  "libc",
  "memchr",
  "ntapi",
+ "objc2-core-foundation",
  "windows 0.57.0",
 ]
 
@@ -7521,9 +7530,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.44.1"
+version = "1.44.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f382da615b842244d4b8738c82ed1275e6c5dd90c459a30941cd07080b06c91a"
+checksum = "e6b88822cbe49de4185e3a4cbf8321dd487cf5fe0c5c65695fef6346371e9c48"
 dependencies = [
  "backtrace",
  "bytes",
@@ -8083,9 +8092,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.23.8"
+version = "0.23.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbb536036d70fb600791f58dd0ce587d3f32f7ba2b03a716b13d843faab74cf4"
+checksum = "183cdc9503279049c74c549fb5ea247b6dce164f519cd0a7dce7bba975205aa8"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",

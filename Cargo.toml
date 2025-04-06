@@ -35,8 +35,8 @@ compact_str = { version = "0.9.0", default-features = false, features = [
 convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
-indexmap = "2.8.0"
-iocraft = "0.7.4"
+indexmap = "2.9.0"
+iocraft = "0.7.5"
 md5 = "0.7.0"
 miette = "7.5.0"
 pathdiff = "0.2.3"
@@ -65,14 +65,14 @@ serde_json = "1.0.140"
 serde_yml = "0.0.12"
 sha2 = "0.10.8"
 starbase = { version = "0.10.1" }
-starbase_archive = { version = "0.10.1", default-features = false, features = [
+starbase_archive = { version = "0.10.2", default-features = false, features = [
     "miette",
     "tar-gz",
 ] }
 starbase_console = { version = "0.6.6", features = ["miette"] }
 starbase_events = "0.7.1"
 starbase_sandbox = "0.9.1"
-starbase_shell = "0.7.2"
+starbase_shell = "0.7.3"
 starbase_styles = { version = "0.5.0", features = ["relative-path"] }
 starbase_utils = { version = "0.11.5", default-features = false, features = [
     "editor-config",
@@ -81,7 +81,7 @@ starbase_utils = { version = "0.11.5", default-features = false, features = [
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
 thiserror = "2.0.12"
-tokio = { version = "1.44.1", default-features = false, features = [
+tokio = { version = "1.44.2", default-features = false, features = [
     "macros",
     "process",
     "rt-multi-thread",
@@ -98,11 +98,11 @@ uuid = { version = "1.16.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.10.0"
 extism-pdk = "1.4.0"
-proto_core = "0.47.12"
+proto_core = "0.47.14"
 proto_installer = "0.12.3"
 system_env = "0.8.0"
 version_spec = "0.9.1"
-warpgate = "0.23.8"
+warpgate = "0.23.9"
 warpgate_api = "0.13.4"
 warpgate_pdk = "0.12.2"
 

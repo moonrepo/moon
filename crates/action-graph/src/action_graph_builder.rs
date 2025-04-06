@@ -435,6 +435,7 @@ impl<'app> ActionGraphBuilder<'app> {
             env,
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
+            priority: task.options.priority.get_level(),
             runtime: self.get_runtime(project, &task.toolchains[0], true),
             target: task.target.to_owned(),
             id: None,

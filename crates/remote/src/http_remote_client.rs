@@ -242,7 +242,7 @@ impl RemoteClient for HttpRemoteClient {
 
                     Ok(Some(result))
                 } else {
-                    Err(map_response_error("get_action_result", response, self.debug).into())
+                    Err(map_response_error("update_action_result", response, self.debug).into())
                 }
             }
             Err(error) => Err(map_error("update_action_result", error, self.debug).into()),

@@ -547,19 +547,32 @@ fn partition_into_groups<T>(
 ) -> BTreeMap<i32, Partition<T>> {
     let mut groups = BTreeMap::<i32, Partition<T>>::default();
 
+    // If the max size is larger than 2mb, we reduce the
+    // group overall size by half, so that we divide blobs
+    // across multiple groups, allowing them to be parallelized
+    // better. Waiting for a 2mb up/download is much slower
+    // than waiting for multiple parallel 500kb up/downloads.
+    let max_group_size = if max_size >= 4194304 {
+        2097144
+    } else if max_size > 2097144 {
+        max_size / 2
+    } else {
+        max_size
+    };
+
     for item in items {
         let item_size = get_size(&item);
         let mut index_to_use = -1;
         let mut stream = false;
 
         // Item is too large, must be streamed
-        if item_size >= max_size {
+        if item_size >= max_group_size {
             stream = true;
         }
         // Try and find a partition that this item can go into
         else {
             for (index, group) in &groups {
-                if !group.stream && (group.size + item_size) <= max_size {
+                if !group.stream && (group.size + item_size) <= max_group_size {
                     index_to_use = *index;
                     break;
                 }

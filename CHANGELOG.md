@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Minor change to remote caching up/download batching to increase performance.
+
 #### 🐞 Fixes
 
 - Fixed an issue where remote caching would fail to upload multiple blobs if the sum of their sizes

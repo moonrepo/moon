@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where remote caching would fail to upload multiple blobs if the sum of their sizes
+  exceed the max upload size.
+
 ## 1.34.1
 
 #### 🐞 Fixes

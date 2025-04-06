@@ -176,7 +176,7 @@ impl RemoteService {
         // bump the total body size larger than the actual limit. Is there a better
         // way to handle this? Probably, but for now, just reduce the size by 1%,
         // which is about 42k bytes.
-        max - (max as f64 * 0.01) as i64
+        max - (max as f64 * 0.015) as i64
     }
 
     #[instrument(skip(self, state))]

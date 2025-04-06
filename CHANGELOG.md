@@ -6,6 +6,7 @@
 
 - Fixed an issue where remote caching would fail to upload multiple blobs if the sum of their sizes
   exceed the max upload size.
+- Fixed an issue where the same plugin could be loaded multiple times.
 
 ## 1.34.1
 

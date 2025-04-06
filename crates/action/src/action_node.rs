@@ -56,7 +56,7 @@ impl RunTaskNode {
             env: FxHashMap::default(),
             interactive: false,
             persistent: false,
-            priority: 0,
+            priority: 2, // normal
             runtime,
             target,
             id: None,

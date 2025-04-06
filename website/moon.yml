@@ -21,6 +21,7 @@ tasks:
     outputs:
       - 'build'
     options:
+      priority: high
       shell: true
 
   start:

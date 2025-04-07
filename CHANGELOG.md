@@ -12,7 +12,7 @@
 - Fixed an issue where remote caching would fail to upload multiple blobs if the sum of their sizes
   exceed the max upload size.
 - Fixed an issue where the same plugin could be loaded multiple times.
-- Fixed an issue when parsing config files that contain a byte-order mark (BOM).
+- Fixed an issue when parsing config/template files that contain a byte-order mark (BOM).
 
 #### ⚙️ Internal
 

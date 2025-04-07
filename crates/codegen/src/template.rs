@@ -4,7 +4,7 @@ use crate::{CodegenError, filters, funcs};
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{RelativePathBuf, to_virtual_string};
-use moon_config::{ConfigLoader, TemplateConfig};
+use moon_config::{ConfigLoader, TemplateConfig, schematic::strip_bom};
 use regex::Regex;
 use serde::Serialize;
 use starbase_utils::{fs, json, yaml};
@@ -152,12 +152,13 @@ impl Template {
                 continue;
             }
 
-            let content = unsafe { String::from_utf8_unchecked(source_content) };
+            let base_content = unsafe { String::from_utf8_unchecked(source_content) };
+            let content = strip_bom(&base_content);
 
             // Add partial templates to Tera, but skip including them as a file
             if name.as_str().contains("partial") {
                 self.engine
-                    .add_raw_template(name.as_str(), &content)
+                    .add_raw_template(name.as_str(), content)
                     .map_err(|error| CodegenError::LoadTemplateFileFailed {
                         path: source_path.clone(),
                         error: Box::new(error),
@@ -183,10 +184,10 @@ impl Template {
             let mut file = TemplateFile::new(name, source_path);
 
             if file.raw {
-                file.content = content;
+                file.content = content.to_owned();
             } else {
                 self.engine
-                    .add_raw_template(file.name.as_str(), &content)
+                    .add_raw_template(file.name.as_str(), content)
                     .map_err(|error| CodegenError::LoadTemplateFileFailed {
                         path: file.source_path.clone(),
                         error: Box::new(error),

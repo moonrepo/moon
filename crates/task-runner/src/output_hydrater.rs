@@ -114,9 +114,7 @@ impl OutputHydrater<'_> {
         state: &mut ActionState<'_>,
     ) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
-            remote.restore_action_result(state).await?;
-
-            return Ok(true);
+            return remote.restore_action_result(state).await;
         }
 
         Ok(false)

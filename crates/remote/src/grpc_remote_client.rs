@@ -300,26 +300,11 @@ impl RemoteClient for GrpcRemoteClient {
                 Ok(Some(response.into_inner()))
             }
             Err(status) => {
-                let code = status.code();
-
-                if matches!(code, Code::InvalidArgument | Code::FailedPrecondition) {
-                    warn!(
-                        hash = &action_digest.hash,
-                        code = ?code,
-                        "Failed to cache action result: {}",
-                        color::muted_light(status.message()),
-                    );
-
-                    Ok(None)
-                } else if matches!(code, Code::ResourceExhausted) {
-                    warn!(
-                        hash = &action_digest.hash,
-                        code = ?code,
-                        "Remote service is out of storage space: {}",
-                        color::muted_light(status.message()),
-                    );
-
-                    Ok(None)
+                if matches!(status.code(), Code::ResourceExhausted) {
+                    Err(RemoteError::GrpcOutOfStorageSpace {
+                        error: Box::new(status),
+                    }
+                    .into())
                 } else {
                     Err(self.map_status_error("update_action_result", status).into())
                 }
@@ -348,7 +333,7 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<Option<Blob>>> {
         trace!(
             hash = &action_digest.hash,
             compression = self.config.cache.compression.to_string(),
@@ -367,18 +352,7 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => response,
-            Err(status) => {
-                return if matches!(status.code(), Code::InvalidArgument) {
-                    warn!(
-                        hash = &action_digest.hash,
-                        "Attempted to download more blobs than the allowed limit"
-                    );
-
-                    Ok(vec![])
-                } else {
-                    Err(self.map_status_error("batch_read_blobs", status).into())
-                };
-            }
+            Err(status) => return Err(self.map_status_error("batch_read_blobs", status).into()),
         };
 
         let mut blobs = vec![];
@@ -409,7 +383,9 @@ impl RemoteClient for GrpcRemoteClient {
                 blob.compressed = get_compression_from_code(download.compressor);
                 blob.decompress()?;
 
-                blobs.push(blob);
+                blobs.push(Some(blob));
+            } else {
+                blobs.push(None);
             }
 
             total_count += 1;
@@ -469,14 +445,10 @@ impl RemoteClient for GrpcRemoteClient {
                     bytes.extend(data.data);
                 }
                 Err(error) => {
-                    warn!(
-                        hash = &action_digest.hash,
-                        blob_hash = &blob_digest.hash,
-                        "Failed to stream download blob: {}",
-                        color::muted_light(error.to_string()),
-                    );
-
-                    return Ok(None);
+                    return Err(RemoteError::GrpcStreamDownloadFailed {
+                        error: Box::new(error),
+                    }
+                    .into());
                 }
             }
         }
@@ -484,14 +456,11 @@ impl RemoteClient for GrpcRemoteClient {
         let blob = Blob::from(bytes);
 
         if blob.digest != blob_digest {
-            warn!(
-                hash = &action_digest.hash,
-                blob_hash = &blob_digest.hash,
-                "Failed to download blob, mismatched blob digests, received unexpected hash {}",
-                blob.digest.hash
-            );
-
-            return Ok(None);
+            return Err(RemoteError::GrpcDownloadDigestMismatch {
+                actual: blob.digest.clone(),
+                expected: blob_digest.clone(),
+            }
+            .into());
         }
 
         Ok(Some(blob))
@@ -536,24 +505,11 @@ impl RemoteClient for GrpcRemoteClient {
         {
             Ok(response) => response,
             Err(status) => {
-                let code = status.code();
-
-                return if matches!(code, Code::InvalidArgument) {
-                    warn!(
-                        hash = &action_digest.hash,
-                        "Attempted to upload more blobs than the allowed limit"
-                    );
-
-                    Ok(vec![])
-                } else if matches!(code, Code::ResourceExhausted) {
-                    warn!(
-                        hash = &action_digest.hash,
-                        code = ?code,
-                        "Remote service exhausted resource: {}",
-                        color::muted_light(status.message()),
-                    );
-
-                    Ok(vec![])
+                return if matches!(status.code(), Code::ResourceExhausted) {
+                    Err(RemoteError::GrpcOutOfStorageSpace {
+                        error: Box::new(status),
+                    }
+                    .into())
                 } else {
                     Err(self.map_status_error("batch_update_blobs", status).into())
                 };
@@ -604,7 +560,7 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         blob: Blob,
-    ) -> miette::Result<Option<Digest>> {
+    ) -> miette::Result<Digest> {
         trace!(
             hash = &action_digest.hash,
             blob_hash = &blob.digest.hash,
@@ -648,15 +604,11 @@ impl RemoteClient for GrpcRemoteClient {
 
         let result = self.get_bs_client().write(Request::new(stream)).await;
 
-        if let Some(ref error) = *stream_error.lock().await {
-            warn!(
-                hash = &action_digest.hash,
-                blob_hash = &blob.digest.hash,
-                "Failed to stream upload blob: {}",
-                color::muted_light(error.to_string()),
-            );
-
-            return Ok(None);
+        if let Some(error) = Arc::into_inner(stream_error).and_then(|error| error.into_inner()) {
+            return Err(RemoteError::GrpcStreamUploadFailed {
+                error: Box::new(error),
+            }
+            .into());
         }
 
         match result {
@@ -664,14 +616,11 @@ impl RemoteClient for GrpcRemoteClient {
                 let result = response.into_inner();
 
                 if result.committed_size != -1 && result.committed_size < total_bytes {
-                    warn!(
-                        hash = &action_digest.hash,
-                        blob_hash = &blob.digest.hash,
-                        "Failed to upload blob, streamed bytes was {}, but we required {total_bytes}",
-                        result.committed_size
-                    );
-
-                    return Ok(None);
+                    return Err(RemoteError::GrpcUploadBytesMismatch {
+                        actual: result.committed_size,
+                        expected: total_bytes,
+                    }
+                    .into());
                 }
             }
             Err(status) => {
@@ -679,6 +628,6 @@ impl RemoteClient for GrpcRemoteClient {
             }
         };
 
-        Ok(Some(blob.digest))
+        Ok(blob.digest)
     }
 }

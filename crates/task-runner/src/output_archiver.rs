@@ -147,10 +147,9 @@ impl OutputArchiver<'_> {
         if let Some(remote) = RemoteService::session() {
             state.compute_outputs(&self.app.workspace_root)?;
 
-            remote.save_action(state).await?;
-            remote.save_action_result(state).await?;
-
-            return Ok(true);
+            if remote.save_action(state).await? {
+                return remote.save_action_result(state).await;
+            }
         }
 
         Ok(false)

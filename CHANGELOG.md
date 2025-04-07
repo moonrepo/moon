@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Minor change to remote caching up/download batching to increase performance.
+- Reworked remote caching error handling.
+
+#### 🐞 Fixes
+
+- Fixed an issue where remote caching would fail to upload multiple blobs if the sum of their sizes
+  exceed the max upload size.
+- Fixed an issue where the same plugin could be loaded multiple times.
+- Fixed an issue when parsing config/template files that contain a byte-order mark (BOM).
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.34.1
 
 #### 🐞 Fixes

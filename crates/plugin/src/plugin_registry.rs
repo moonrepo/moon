@@ -3,6 +3,7 @@ use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
+use scc::hash_map::Entry;
 use starbase_utils::fs;
 use std::fmt;
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
@@ -155,57 +156,67 @@ impl<T: Plugin> PluginRegistry<T> {
         let id = Id::raw(id.as_ref());
         let locator = locator.as_ref();
 
-        if self.plugins.contains(&id) {
-            return Err(PluginError::ExistingId {
-                id: id.to_string(),
-                ty: self.type_of,
+        // Use an entry so that it creates a lock,
+        // and hopefully avoids parallel registrations
+        match self.plugins.entry_async(id).await {
+            Entry::Occupied(entry) => {
+                return Err(PluginError::ExistingId {
+                    id: entry.key().to_string(),
+                    ty: self.type_of,
+                }
+                .into());
             }
-            .into());
-        }
+            Entry::Vacant(entry) => {
+                debug!(
+                    plugin = self.type_of.get_label(),
+                    id = entry.key().as_str(),
+                    "Attempting to load and register plugin",
+                );
 
-        debug!(
-            plugin = self.type_of.get_label(),
-            id = id.as_str(),
-            "Attempting to load and register plugin",
-        );
+                // Load the WASM file (this must happen first because of async)
+                let plugin_file = self.loader.load_plugin(entry.key(), locator).await?;
 
-        // Load the WASM file (this must happen first because of async)
-        let plugin_file = self.loader.load_plugin(&id, locator).await?;
+                // Create host functions (provided by warpgate)
+                let functions = create_host_functions(
+                    self.host_data.clone(),
+                    HostData {
+                        cache_dir: self.host_data.moon_env.cache_dir.clone(),
+                        http_client: self.loader.get_client()?.clone(),
+                        virtual_paths: self.virtual_paths.clone(),
+                        working_dir: self.host_data.moon_env.working_dir.clone(),
+                    },
+                );
 
-        // Create host functions (provided by warpgate)
-        let functions = create_host_functions(
-            self.host_data.clone(),
-            HostData {
-                cache_dir: self.host_data.moon_env.cache_dir.clone(),
-                http_client: self.loader.get_client()?.clone(),
-                virtual_paths: self.virtual_paths.clone(),
-                working_dir: self.host_data.moon_env.working_dir.clone(),
-            },
-        );
+                // Create the manifest and let the consumer configure it
+                let mut manifest = self.create_manifest(entry.key(), plugin_file)?;
 
-        // Create the manifest and let the consumer configure it
-        let mut manifest = self.create_manifest(&id, plugin_file)?;
+                op(&mut manifest)?;
 
-        op(&mut manifest)?;
+                debug!(
+                    plugin = self.type_of.get_label(),
+                    id = entry.key().as_str(),
+                    "Updated plugin manifest, attempting to register plugin",
+                );
 
-        debug!(
-            plugin = self.type_of.get_label(),
-            id = id.as_str(),
-            "Updated plugin manifest, attempting to register plugin",
-        );
+                // Combine everything into the container and register
+                let plugin = T::new(PluginRegistration {
+                    container: PluginContainer::new(entry.key().to_owned(), manifest, functions)?,
+                    locator: locator.to_owned(),
+                    id: entry.key().to_owned(),
+                    moon_env: Arc::clone(&self.host_data.moon_env),
+                    proto_env: Arc::clone(&self.host_data.proto_env),
+                })
+                .await?;
 
-        // Combine everything into the container and register
-        self.register(
-            id.to_owned(),
-            T::new(PluginRegistration {
-                container: PluginContainer::new(id.to_owned(), manifest, functions)?,
-                locator: locator.to_owned(),
-                id: id.to_owned(),
-                moon_env: Arc::clone(&self.host_data.moon_env),
-                proto_env: Arc::clone(&self.host_data.proto_env),
-            })
-            .await?,
-        );
+                debug!(
+                    plugin = self.type_of.get_label(),
+                    id = entry.key().as_str(),
+                    "Registered plugin",
+                );
+
+                entry.insert_entry(Arc::new(plugin));
+            }
+        };
 
         Ok(())
     }

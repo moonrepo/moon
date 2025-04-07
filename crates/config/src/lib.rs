@@ -44,3 +44,5 @@ pub use types::*;
 pub use version_spec::{CalVer, SemVer, UnresolvedVersionSpec, VersionSpec};
 pub use workspace::*;
 pub use workspace_config::*;
+
+pub use schematic;

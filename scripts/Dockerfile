@@ -64,6 +64,7 @@ RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
+COPY .cargo .cargo
 COPY rust-toolchain.toml .
 RUN rustup update && rustup toolchain install && rustup target add x86_64-unknown-linux-musl
 
@@ -113,6 +114,7 @@ RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 
 # RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
+COPY .cargo .cargo
 COPY rust-toolchain.toml .
 RUN rustup update && rustup toolchain install && rustup target add aarch64-unknown-linux-musl
 

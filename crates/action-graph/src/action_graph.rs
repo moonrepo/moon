@@ -11,14 +11,14 @@ use std::sync::{Arc, RwLock, mpsc};
 use std::thread::spawn;
 use tracing::{debug, trace};
 
-pub type GraphType = DiGraph<ActionNode, ()>;
+pub type ActionGraphType = DiGraph<ActionNode, ()>;
 
 pub struct ActionGraph {
-    graph: GraphType,
+    graph: ActionGraphType,
 }
 
 impl ActionGraph {
-    pub fn new(graph: GraphType) -> Self {
+    pub fn new(graph: ActionGraphType) -> Self {
         debug!("Creating action graph");
 
         ActionGraph { graph }
@@ -32,7 +32,7 @@ impl ActionGraph {
         self.get_node_count() == 0
     }
 
-    pub fn get_inner_graph(&self) -> &GraphType {
+    pub fn get_inner_graph(&self) -> &ActionGraphType {
         &self.graph
     }
 
@@ -177,7 +177,7 @@ impl ActionGraph {
 
 pub struct ActionGraphIter<'graph> {
     completed: Arc<RwLock<FxHashSet<NodeIndex>>>,
-    graph: &'graph GraphType,
+    graph: &'graph ActionGraphType,
     indices: Vec<NodeIndex>,
     running: Arc<RwLock<FxHashMap<NodeIndex, String>>>,
     visited: FxHashSet<NodeIndex>,
@@ -187,7 +187,7 @@ pub struct ActionGraphIter<'graph> {
 }
 
 impl<'graph> ActionGraphIter<'graph> {
-    pub fn new(graph: &'graph GraphType, indices: Vec<NodeIndex>) -> Self {
+    pub fn new(graph: &'graph ActionGraphType, indices: Vec<NodeIndex>) -> Self {
         let (sender, receiver) = mpsc::channel();
 
         Self {

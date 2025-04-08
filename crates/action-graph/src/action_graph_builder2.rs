@@ -97,6 +97,54 @@ impl ActionGraphBuilder {
     }
 
     #[instrument(skip_all)]
+    pub async fn setup_toolchain_legacy(&mut self, runtime: &Runtime) -> Option<NodeIndex> {
+        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) || runtime.is_system() {
+            return None;
+        }
+
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
+            runtime: runtime.to_owned(),
+        });
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Some(index);
+        }
+
+        let sync_workspace_index = self.sync_workspace().await;
+        let index = self.insert_node(node);
+
+        if let Some(edge) = sync_workspace_index {
+            self.link_requirements(index, vec![edge]);
+        }
+
+        Some(index)
+    }
+
+    #[instrument(skip_all)]
+    pub async fn setup_toolchain_plugin(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
+        if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
+            return None;
+        }
+
+        let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+            spec: spec.to_owned(),
+        });
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Some(index);
+        }
+
+        let sync_workspace_index = self.sync_workspace().await;
+        let index = self.insert_node(node);
+
+        if let Some(edge) = sync_workspace_index {
+            self.link_requirements(index, vec![edge]);
+        }
+
+        Some(index)
+    }
+
+    #[instrument(skip_all)]
     pub async fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
         self.internal_sync_project(project, &mut FxHashSet::default())
             .await

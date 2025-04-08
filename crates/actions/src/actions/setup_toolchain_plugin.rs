@@ -7,19 +7,17 @@ use moon_common::path::encode_component;
 use moon_console::Checkpoint;
 use moon_pdk_api::SetupToolchainInput;
 use moon_time::now_millis;
-use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
 // Temporarily match this with the legacy action!
 use super::setup_toolchain::ToolCacheState;
 
-#[instrument(skip(_action, _action_context, app_context, workspace_graph))]
+#[instrument(skip(_action, _action_context, app_context))]
 pub async fn setup_toolchain_plugin(
     _action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: Arc<WorkspaceGraph>,
     node: &SetupToolchainPluginNode,
 ) -> miette::Result<ActionStatus> {
     // No version configured, use globals on PATH
@@ -70,33 +68,22 @@ pub async fn setup_toolchain_plugin(
     if node.spec.req != state.data.requirement {
         if let Some(req) = &node.spec.req {
             let registry = &app_context.toolchain_registry;
-            let mut input = SetupToolchainInput {
-                configured_version: req.to_owned(),
-                context: registry.create_context(),
-                toolchain_config: registry
-                    .create_config(&toolchain.id, &app_context.toolchain_config),
-                ..Default::default()
-            };
-
-            // If this toolchain belongs to a specific project using an override,
-            // include the project and its configuration in the input
-            if let Some(project_id) = &node.project_id {
-                let project = workspace_graph.get_project(project_id)?;
-
-                input.project = Some(project.to_fragment());
-                input.toolchain_config = registry.create_merged_config(
-                    &toolchain.id,
-                    &app_context.toolchain_config,
-                    &project.config,
-                );
-            }
 
             let output = toolchain
-                .setup_toolchain(input, || {
-                    app_context
-                        .console
-                        .print_checkpoint(Checkpoint::Setup, format!("installing {log_label}"))
-                })
+                .setup_toolchain(
+                    SetupToolchainInput {
+                        configured_version: req.to_owned(),
+                        context: registry.create_context(),
+                        toolchain_config: registry
+                            .create_config(&toolchain.id, &app_context.toolchain_config),
+                        ..Default::default()
+                    },
+                    || {
+                        app_context
+                            .console
+                            .print_checkpoint(Checkpoint::Setup, format!("installing {log_label}"))
+                    },
+                )
                 .await?;
 
             installed = output.installed;

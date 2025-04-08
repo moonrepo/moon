@@ -48,12 +48,25 @@ impl ActionGraphBuilderOptions {
     }
 }
 
+// sync_workspace
+//   - change workspace/root files
+//   - change toolchain files
+// sync_project
+//   - change project files/manifests
+//   - change toolchain files
+// install_deps:
+// setup_toolchain:
+// run_task:
 pub struct ActionGraphBuilder {
     all_query: Option<Criteria<'static>>,
     app_context: Arc<AppContext>,
     graph: DiGraph<ActionNode, ()>,
     options: ActionGraphBuilderOptions,
     workspace_graph: Arc<WorkspaceGraph>,
+
+    // Affected tracking
+    affected: Option<AffectedTracker>,
+    touched_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 }
 
 impl ActionGraphBuilder {
@@ -65,8 +78,8 @@ impl ActionGraphBuilder {
         debug!("Building action graph");
 
         Ok(ActionGraphBuilder {
+            affected: None,
             all_query: None,
-            // affected: None,
             app_context,
             graph: DiGraph::new(),
             // initial_targets: FxHashSet::default(),
@@ -74,13 +87,79 @@ impl ActionGraphBuilder {
             // passthrough_targets: FxHashSet::default(),
             // platform_manager,
             // primary_targets: FxHashSet::default(),
+            touched_files: None,
             workspace_graph,
-            // touched_files: None,
         })
     }
 
     pub fn build(self) -> ActionGraph {
         ActionGraph::new(self.graph)
+    }
+
+    #[instrument(skip_all)]
+    pub async fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
+        self.internal_sync_project(project, &mut FxHashSet::default())
+            .await
+    }
+
+    async fn internal_sync_project(
+        &mut self,
+        project: &Project,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<Option<NodeIndex>> {
+        if !self.options.sync_projects.is_enabled(&project.id) {
+            return Ok(None);
+        }
+
+        let node = ActionNode::sync_project(SyncProjectNode {
+            project_id: project.id.clone(),
+        });
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Ok(Some(index));
+        }
+
+        cycle.insert(project.id.clone());
+
+        // Determine affected state
+        if let Some(affected) = &mut self.affected {
+            if let Some(by) = affected.is_project_affected(project) {
+                affected.mark_project_affected(project, by)?;
+            }
+        }
+
+        let mut edges = vec![];
+
+        if let Some(edge) = self.sync_workspace().await {
+            edges.push(edge);
+        }
+
+        let index = self.insert_node(node);
+
+        // And we should also depend on other projects
+        if self.options.sync_project_dependencies {
+            for dep_project_id in self.workspace_graph.projects.dependencies_of(project) {
+                if cycle.contains(&dep_project_id) {
+                    continue;
+                }
+
+                let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
+
+                if let Some(dep_project_index) =
+                    Box::pin(self.internal_sync_project(&dep_project, cycle)).await?
+                {
+                    if index != dep_project_index {
+                        edges.push(dep_project_index);
+                    }
+                }
+            }
+        }
+
+        if !edges.is_empty() {
+            self.link_requirements(index, edges);
+        }
+
+        Ok(Some(index))
     }
 
     pub async fn sync_workspace(&mut self) -> Option<NodeIndex> {

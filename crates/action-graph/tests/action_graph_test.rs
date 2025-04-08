@@ -364,7 +364,6 @@ mod action_graph {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
-                        project_id: None,
                         spec: ToolchainSpec::new_global(Id::raw("typescript"))
                     })
                 ]
@@ -2218,8 +2217,8 @@ mod action_graph {
                 create_spec_with_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain_plugin(&system, None);
-            builder.setup_toolchain_plugin(&node, None);
+            builder.setup_toolchain_plugin(&system);
+            builder.setup_toolchain_plugin(&node);
 
             let graph = builder.build();
 
@@ -2228,10 +2227,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
-                        project_id: None,
-                        spec: node
-                    }),
+                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node }),
                 ]
             );
         }

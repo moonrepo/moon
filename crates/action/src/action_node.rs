@@ -12,9 +12,7 @@ pub struct SetupToolchainNode {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct SetupToolchainPluginNode {
-    pub project_id: Option<Id>,
     pub spec: ToolchainSpec,
 }
 

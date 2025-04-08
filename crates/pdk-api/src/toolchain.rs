@@ -160,9 +160,6 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Fragment of the project that the toolchain belongs to.
-        pub project: Option<ProjectFragment>,
-
         /// Merged toolchain configuration.
         pub toolchain_config: serde_json::Value,
 

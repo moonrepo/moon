@@ -33,15 +33,14 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
 }
 
 async fn generate_graph(workspace_root: &Path) -> (WorkspaceGraph, Arc<BoxedVcs>) {
-    let mut mock = create_workspace_graph_mocker(workspace_root);
-    mock.with_vcs();
+    let mock = create_workspace_graph_mocker(workspace_root);
 
     create_out_files(workspace_root);
 
-    let graph = mock.build_workspace_graph().await;
-    let vcs = mock.vcs.take().unwrap();
+    let graph = mock.mock_workspace_graph().await;
+    let vcs = mock.mock_vcs_adapter();
 
-    (graph, vcs)
+    (graph, vcs.into())
 }
 
 async fn generate_hash<'a>(

@@ -123,7 +123,7 @@ mod project_graph {
 
             mock.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*", "."]);
 
-            let graph = mock.build_workspace_graph().await;
+            let graph = mock.mock_workspace_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -138,7 +138,7 @@ mod project_graph {
 
             mock.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*/moon.yml"]);
 
-            let graph = mock.build_workspace_graph().await;
+            let graph = mock.mock_workspace_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -156,7 +156,7 @@ mod project_graph {
                 (Id::raw("b"), "b".into()),
             ]));
 
-            let graph = mock.build_workspace_graph().await;
+            let graph = mock.mock_workspace_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -177,7 +177,7 @@ mod project_graph {
                 ]),
             });
 
-            let graph = mock.build_workspace_graph().await;
+            let graph = mock.mock_workspace_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -220,10 +220,9 @@ mod project_graph {
             sandbox.enable_git();
             sandbox.create_file(".gitignore", "*-other");
 
-            let mut mock = create_workspace_graph_mocker(sandbox.path());
-            mock.with_vcs();
+            let mock = create_workspace_graph_mocker(sandbox.path());
 
-            let graph = mock.build_workspace_graph().await;
+            let graph = mock.mock_workspace_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -260,10 +259,9 @@ mod project_graph {
         async fn do_generate(root: &Path) -> WorkspaceGraph {
             let cache_engine = CacheEngine::new(root).unwrap();
 
-            let mut mock = create_workspace_graph_mocker(root);
-            mock.with_vcs();
+            let mock = create_workspace_graph_mocker(root);
 
-            mock.build_workspace_graph_with_options(WorkspaceMockOptions {
+            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
                 cache: Some(cache_engine),
                 ..Default::default()
             })
@@ -499,7 +497,7 @@ mod project_graph {
                 .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
                 .unwrap();
 
-            mock.build_workspace_graph().await
+            mock.mock_workspace_graph().await
         }
 
         #[tokio::test]
@@ -872,7 +870,7 @@ mod project_graph {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_graph_mocker(sandbox.path());
 
-                let graph = mock.build_workspace_graph_for(&["no-depends-on"]).await;
+                let graph = mock.mock_workspace_graph_for(&["no-depends-on"]).await;
 
                 assert_eq!(map_ids(graph.projects.get_node_keys()), ["no-depends-on"]);
             }
@@ -882,7 +880,7 @@ mod project_graph {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_graph_mocker(sandbox.path());
 
-                let graph = mock.build_workspace_graph_for(&["some-depends-on"]).await;
+                let graph = mock.mock_workspace_graph_for(&["some-depends-on"]).await;
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
@@ -895,7 +893,7 @@ mod project_graph {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_graph_mocker(sandbox.path());
 
-                let graph = mock.build_workspace_graph_for(&["from-task-deps"]).await;
+                let graph = mock.mock_workspace_graph_for(&["from-task-deps"]).await;
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
@@ -914,7 +912,7 @@ mod project_graph {
                 let mock = create_workspace_graph_mocker(sandbox.path());
 
                 let graph = mock
-                    .build_workspace_graph_for(&["from-root-task-deps"])
+                    .mock_workspace_graph_for(&["from-root-task-deps"])
                     .await;
 
                 assert_eq!(
@@ -935,7 +933,7 @@ mod project_graph {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_graph_mocker(sandbox.path());
 
-                let graph = mock.build_workspace_graph_for(&["self-task-deps"]).await;
+                let graph = mock.mock_workspace_graph_for(&["self-task-deps"]).await;
 
                 assert_eq!(map_ids(graph.projects.get_node_keys()), ["self-task-deps"]);
             }
@@ -952,7 +950,7 @@ mod project_graph {
         async fn generate_aliases_project_graph_for_fixture(fixture: &str) -> WorkspaceGraph {
             let sandbox = create_sandbox(fixture);
             let mock = create_workspace_graph_mocker(sandbox.path());
-            let context = mock.create_context();
+            let context = mock.mock_workspace_builder_context();
 
             // Set aliases for projects
             context
@@ -1007,7 +1005,7 @@ mod project_graph {
                 )
                 .await;
 
-            mock.build_workspace_graph_with_options(WorkspaceMockOptions {
+            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
                 context: Some(context),
                 ..Default::default()
             })
@@ -1151,7 +1149,7 @@ mod project_graph {
         async fn ignores_duplicate_aliases_if_ids_match() {
             let sandbox = create_sandbox("aliases-conflict");
             let mock = create_workspace_graph_mocker(sandbox.path());
-            let context = mock.create_context();
+            let context = mock.mock_workspace_builder_context();
 
             context
                 .extend_project_graph
@@ -1172,7 +1170,7 @@ mod project_graph {
                 .await;
 
             let graph = mock
-                .build_workspace_graph_with_options(WorkspaceMockOptions {
+                .mock_workspace_graph_with_options(WorkspaceMockOptions {
                     context: Some(context),
                     ..Default::default()
                 })
@@ -1199,7 +1197,7 @@ mod project_graph {
                 .constraints
                 .enforce_project_type_relationships = true;
 
-            mock.build_workspace_graph().await
+            mock.mock_workspace_graph().await
         }
 
         #[tokio::test]
@@ -1338,7 +1336,7 @@ mod project_graph {
                 vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
             );
 
-            mock.build_workspace_graph().await
+            mock.mock_workspace_graph().await
         }
 
         #[tokio::test]
@@ -1600,7 +1598,7 @@ mod project_graph {
             let sandbox = create_sandbox("dependencies");
             let mock = create_workspace_graph_mocker(sandbox.path());
 
-            let graph = mock.build_workspace_graph_for(&["b"]).await;
+            let graph = mock.mock_workspace_graph_for(&["b"]).await;
 
             assert_snapshot!(graph.projects.to_dot());
         }

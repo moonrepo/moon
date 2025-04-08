@@ -1,3 +1,5 @@
+mod utils;
+
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::*;
@@ -10,6 +12,7 @@ use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::Path;
+use utils::TasksBuilderContainer;
 
 async fn build_tasks_with_config(
     root: &Path,
@@ -132,8 +135,9 @@ mod tasks_builder {
     #[tokio::test]
     async fn loads_local_tasks() {
         let sandbox = create_sandbox("builder");
-        let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
+        let container = TasksBuilderContainer::new(sandbox.path());
 
+        let tasks = container.build_tasks("local").await;
         let build = tasks.get("local-build").unwrap();
 
         assert_eq!(build.command, "local-build");

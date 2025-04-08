@@ -1,10 +1,13 @@
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
+use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
 use moon_platform::PlatformManager;
 use moon_plugin::PluginHostData;
+use moon_project_builder::*;
+use moon_project_graph::Project;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
@@ -21,6 +24,7 @@ use crate::generate_platform_manager;
 pub struct WorkspaceMocker {
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
+    pub monorepo: bool,
     pub moon_env: MoonEnvironment,
     pub proto_env: ProtoEnvironment,
     pub toolchain_config: ToolchainConfig,
@@ -53,6 +57,20 @@ impl WorkspaceMocker {
 
         self.workspace_config = self.config_loader.load_workspace_config(root).unwrap();
 
+        self
+    }
+
+    pub fn load_inherited_tasks_from(mut self, dir: &str) -> Self {
+        self.inherited_tasks = self
+            .config_loader
+            .load_tasks_manager_from(&self.workspace_root, self.workspace_root.join(dir))
+            .unwrap();
+
+        self
+    }
+
+    pub fn set_polyrepo(mut self) -> Self {
+        self.monorepo = false;
         self
     }
 
@@ -102,6 +120,16 @@ impl WorkspaceMocker {
         self
     }
 
+    pub fn with_all_toolchains(self) -> Self {
+        self.update_toolchain_config(|config| {
+            config.bun = Some(BunConfig::default());
+            config.deno = Some(DenoConfig::default());
+            config.node = Some(NodeConfig::default());
+            config.rust = Some(RustConfig::default());
+            config.inherit_default_plugins().unwrap();
+        })
+    }
+
     pub fn with_default_toolchains(mut self) -> Self {
         if self.toolchain_config.node.is_none() {
             self.toolchain_config.node = Some(NodeConfig::default());
@@ -140,6 +168,35 @@ impl WorkspaceMocker {
         );
 
         self
+    }
+
+    pub async fn build_project(&self, id: &str) -> Project {
+        let source = WorkspaceRelativePathBuf::from(id);
+        let id = Id::raw(id);
+
+        let toolchain_config = self.mock_toolchain_config();
+        let enabled_toolchains = toolchain_config.get_enabled();
+
+        let mut builder = ProjectBuilder::new(
+            &id,
+            &source,
+            ProjectBuilderContext {
+                config_loader: &self.config_loader,
+                enabled_toolchains: &enabled_toolchains,
+                monorepo: self.monorepo,
+                root_project_id: None,
+                toolchain_config: &toolchain_config,
+                toolchain_registry: Arc::new(self.mock_toolchain_registry()),
+                workspace_root: &self.workspace_root,
+            },
+        )
+        .unwrap();
+
+        builder.load_local_config().await.unwrap();
+        builder
+            .inherit_global_config(&self.inherited_tasks)
+            .unwrap();
+        builder.build().await.unwrap()
     }
 
     pub fn mock_app_context(&self) -> AppContext {

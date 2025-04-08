@@ -168,7 +168,7 @@ impl WorkspaceMocker {
 
     pub fn mock_toolchain_config(&self) -> ToolchainConfig {
         let mut config = self.toolchain_config.clone();
-        config.inherit_default_plugins().unwrap();
+        // config.inherit_default_plugins().unwrap();
         config.inherit_plugin_locators().unwrap();
         config
     }
@@ -208,7 +208,11 @@ impl WorkspaceMocker {
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),
-            vcs: Some(Arc::new(self.mock_vcs_adapter())),
+            vcs: if self.workspace_root.join(".git").exists() {
+                Some(Arc::new(self.mock_vcs_adapter()))
+            } else {
+                None
+            },
             working_dir: &self.workspace_root,
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,

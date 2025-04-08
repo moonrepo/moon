@@ -3,6 +3,7 @@ use moon_cache::CacheEngine;
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
+use moon_platform::PlatformManager;
 use moon_plugin::PluginHostData;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
@@ -13,6 +14,8 @@ use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+
+use crate::generate_platform_manager;
 
 #[derive(Default)]
 pub struct WorkspaceMocker {
@@ -164,6 +167,16 @@ impl WorkspaceMocker {
         let mut console = Console::new_testing();
         console.set_reporter(MoonReporter::default());
         console
+    }
+
+    pub async fn mock_platform_manager(&self) -> PlatformManager {
+        generate_platform_manager(
+            &self.workspace_root,
+            &self.toolchain_config,
+            Arc::new(self.proto_env.clone()),
+            Arc::new(self.mock_console()),
+        )
+        .await
     }
 
     pub fn mock_toolchain_config(&self) -> ToolchainConfig {

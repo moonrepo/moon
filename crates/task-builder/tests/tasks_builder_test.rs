@@ -4,7 +4,7 @@ use moon_config::*;
 use moon_target::Target;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
-use moon_test_utils2::AppContextMocker;
+use moon_test_utils2::WorkspaceMocker;
 use moon_toolchain::detect::detect_project_toolchains;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
@@ -25,10 +25,10 @@ async fn build_tasks_with_config(
     let project_toolchains =
         detect_project_toolchains(root, &root.join(source.as_str()), &local_config.language);
 
-    let mut app_context = AppContextMocker::new(root);
-    app_context.with_global_envs();
-    app_context.toolchain_config = toolchain_config;
-    let app_context = app_context.mock();
+    let app_context = WorkspaceMocker::new(root)
+        .with_global_envs()
+        .set_toolchain_config(toolchain_config)
+        .mock_app_context();
 
     let mut builder = TasksBuilder::new(
         &id,

@@ -8,7 +8,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
-use moon_test_utils2::AppContextMocker;
+use moon_test_utils2::WorkspaceMocker;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
@@ -50,11 +50,10 @@ impl Stub {
     }
 
     pub async fn create_builder(&self) -> ProjectBuilder {
-        let mut app_context = AppContextMocker::new(&self.workspace_root);
-        app_context.with_global_envs();
-        app_context.toolchain_config = self.toolchain_config.clone();
-
-        let app_context = app_context.mock();
+        let app_context = WorkspaceMocker::new(&self.workspace_root)
+            .with_global_envs()
+            .set_toolchain_config(self.toolchain_config.clone())
+            .mock_app_context();
 
         ProjectBuilder::new(
             &self.id,

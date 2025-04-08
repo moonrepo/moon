@@ -2,7 +2,7 @@ use moon_action::ActionNode;
 use moon_action_graph::{ActionGraph, action_graph_builder2::*};
 use moon_app_context::AppContext;
 use moon_test_utils2::{AppContextMocker, WorkspaceGraph};
-use starbase_sandbox::{assert_snapshot, create_empty_sandbox, create_sandbox};
+use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::sync::Arc;
 
 fn mock_app_context() -> Arc<AppContext> {
@@ -15,13 +15,9 @@ fn mock_workspace_graph() -> Arc<WorkspaceGraph> {
 
 fn topo(graph: ActionGraph) -> Vec<ActionNode> {
     let mut nodes = vec![];
-    let mut iter = graph.create_iter(graph.sort_topological().unwrap());
 
-    while iter.has_pending() {
-        if let Some(index) = iter.next() {
-            nodes.push(graph.get_node_from_index(&index).unwrap().to_owned());
-            iter.mark_completed(index);
-        }
+    for index in graph.sort_topological().unwrap() {
+        nodes.push(graph.get_node_from_index(&index).unwrap().to_owned());
     }
 
     nodes

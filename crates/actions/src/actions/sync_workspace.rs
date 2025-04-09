@@ -18,7 +18,7 @@ pub async fn sync_workspace(
     action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     toolchain_registry: Arc<ToolchainRegistry>,
 ) -> miette::Result<ActionStatus> {
     let _lock = app_context.cache_engine.create_lock("syncWorkspace")?;

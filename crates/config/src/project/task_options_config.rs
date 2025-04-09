@@ -1,9 +1,8 @@
-use crate::generate_switch;
 use crate::portable_path::FilePath;
 use crate::shapes::{InputPath, OneOrMany};
-use moon_common::cacheable;
+use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
-use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError, derive_enum};
+use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
 use std::env::consts;
 use std::str::FromStr;
 
@@ -22,7 +21,7 @@ fn validate_interactive<C>(
     Ok(())
 }
 
-derive_enum!(
+config_enum!(
     /// The pattern in which affected files will be passed to the affected task.
     #[serde(expecting = "expected `args`, `env`, or a boolean")]
     pub enum TaskOptionAffectedFiles {
@@ -38,7 +37,7 @@ derive_enum!(
 
 generate_switch!(TaskOptionAffectedFiles, ["args", "env"]);
 
-derive_enum!(
+config_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
     #[serde(
         untagged,
@@ -86,7 +85,7 @@ impl Schematic for TaskOptionEnvFile {
     }
 }
 
-derive_enum!(
+config_enum!(
     /// The pattern in which to run the task automatically in CI.
     #[serde(expecting = "expected `always`, `affected`, or a boolean")]
     pub enum TaskOptionRunInCI {
@@ -102,9 +101,9 @@ derive_enum!(
 
 generate_switch!(TaskOptionRunInCI, ["always", "affected"]);
 
-derive_enum!(
+config_unit_enum!(
     /// The strategy in which to merge a specific task option.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum TaskMergeStrategy {
         #[default]
         Append,
@@ -114,9 +113,9 @@ derive_enum!(
     }
 );
 
-derive_enum!(
+config_unit_enum!(
     /// The style in which task output will be printed to the console.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum TaskOutputStyle {
         #[default]
         Buffer,
@@ -127,7 +126,7 @@ derive_enum!(
     }
 );
 
-derive_enum!(
+config_enum!(
     /// The operating system in which to only run this task on.
     #[derive(ConfigEnum, Copy)]
     pub enum TaskOperatingSystem {
@@ -151,9 +150,27 @@ impl TaskOperatingSystem {
     }
 }
 
-derive_enum!(
+config_unit_enum!(
+    /// The priority levels a task can be bucketed into.
+    #[derive(ConfigEnum)]
+    pub enum TaskPriority {
+        Critical = 0,
+        High = 1,
+        #[default]
+        Normal = 2,
+        Low = 3,
+    }
+);
+
+impl TaskPriority {
+    pub fn get_level(&self) -> u8 {
+        *self as u8
+    }
+}
+
+config_unit_enum!(
     /// A list of available shells on Unix.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum TaskUnixShell {
         #[default]
         Bash,
@@ -170,9 +187,9 @@ derive_enum!(
     }
 );
 
-derive_enum!(
+config_unit_enum!(
     /// A list of available shells on Windows.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum TaskWindowsShell {
         Bash,
         Elvish,
@@ -187,9 +204,9 @@ derive_enum!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Options to control task inheritance and execution.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
         pub affected_files: Option<TaskOptionAffectedFiles>,
@@ -259,6 +276,10 @@ cacheable!(
         /// Marks the task as persistent (continuously running). This is ideal
         /// for watchers, servers, or never-ending processes.
         pub persistent: Option<bool>,
+
+        /// Marks the task with a certain priority, which determines the order
+        /// in which it is ran within the pipeline.
+        pub priority: Option<TaskPriority>,
 
         /// The number of times a failing task will be retried to succeed.
         #[setting(env = "MOON_RETRY_COUNT")]

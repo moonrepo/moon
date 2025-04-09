@@ -6,6 +6,7 @@ use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock, mpsc};
 use std::thread::spawn;
 use tracing::{debug, trace};
@@ -49,6 +50,42 @@ impl ActionGraph {
 
     pub fn labeled_graph(&self) -> DiGraph<String, String> {
         self.graph.map(|_, n| n.label(), |_, _| String::new())
+    }
+
+    pub fn group_priorities(&self, topo_indices: Vec<NodeIndex>) -> BTreeMap<u8, Vec<NodeIndex>> {
+        let mut groups = BTreeMap::default();
+
+        // These are purely for debugging
+        let mut critical = vec![];
+        let mut high = vec![];
+        let mut normal = vec![];
+        let mut low = vec![];
+
+        for index in topo_indices {
+            let node = self.graph.node_weight(index).unwrap();
+            let node_index = index.index();
+            let priority = node.get_priority();
+
+            match priority {
+                0 => critical.push(node_index),
+                1 => high.push(node_index),
+                2 => normal.push(node_index),
+                3 => low.push(node_index),
+                _ => {}
+            };
+
+            groups.entry(priority).or_insert_with(Vec::new).push(index);
+        }
+
+        debug!(
+            critical = ?critical,
+            high = ?high,
+            normal = ?normal,
+            low = ?low,
+            "Grouping action graph based on priority",
+        );
+
+        groups
     }
 
     pub fn sort_topological(&self) -> miette::Result<Vec<NodeIndex>> {

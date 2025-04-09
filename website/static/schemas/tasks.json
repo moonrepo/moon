@@ -679,6 +679,19 @@
           ],
           "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes."
         },
+        "priority": {
+          "title": "priority",
+          "description": "Marks the task with a certain priority, which determines the order in which it is ran within the pipeline.",
+          "default": "normal",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskPriority"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "retryCount": {
           "title": "retryCount",
           "description": "The number of times a failing task will be retried to succeed.",
@@ -812,6 +825,16 @@
       "enum": [
         "server",
         "watcher"
+      ]
+    },
+    "TaskPriority": {
+      "description": "The priority levels a task can be bucketed into.",
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "normal",
+        "low"
       ]
     },
     "TaskType": {

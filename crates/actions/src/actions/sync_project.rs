@@ -16,7 +16,7 @@ pub async fn sync_project(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     node: &SyncProjectNode,
 ) -> miette::Result<ActionStatus> {
     let project_id = &node.project_id;
@@ -66,10 +66,19 @@ pub async fn sync_project(
     }
 
     // Sync the projects and return true if any files have been mutated
-    let mut mutated_files = PlatformManager::read()
-        .get_by_toolchain(&node.runtime.toolchain)?
-        .sync_project(&action_context, &project, &dependencies)
-        .await?;
+    let mut mutated_files = false;
+
+    // Loop through legacy platforms
+    for toolchain_id in project.get_enabled_toolchains() {
+        if let Ok(platform) = PlatformManager::read().get_by_toolchain(toolchain_id) {
+            if platform
+                .sync_project(&action_context, &project, &dependencies)
+                .await?
+            {
+                mutated_files = true;
+            }
+        }
+    }
 
     // Loop through each toolchain and sync
     for sync_result in app_context

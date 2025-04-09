@@ -1,5 +1,5 @@
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
-use crate::workspace::*;
+use crate::{config_enum, config_struct, workspace::*};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError, validate};
@@ -62,108 +62,114 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
-/// Configures projects in the workspace, using both globs and explicit source paths.
-#[derive(Clone, Config, Debug, PartialEq)]
-pub struct WorkspaceProjectsConfig {
-    /// A list of globs in which to locate project directories.
-    /// Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
-    pub globs: Vec<String>,
+config_struct!(
+    /// Configures projects in the workspace, using both globs and explicit source paths.
+    #[derive(Config)]
+    pub struct WorkspaceProjectsConfig {
+        /// A list of globs in which to locate project directories.
+        /// Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
+        pub globs: Vec<String>,
 
-    /// A mapping of project IDs to relative file paths to each project directory.
-    pub sources: FxHashMap<Id, String>,
-}
+        /// A mapping of project IDs to relative file paths to each project directory.
+        pub sources: FxHashMap<Id, String>,
+    }
+);
 
-/// Configures projects in the workspace.
-#[derive(Clone, Config, Debug, PartialEq)]
-#[config(serde(
-    untagged,
-    expecting = "expected a list of globs, a map of projects, or both"
-))]
-pub enum WorkspaceProjects {
-    /// Using both globs and explicit source paths.
-    #[setting(nested)]
-    Both(WorkspaceProjectsConfig),
-
-    /// Using globs. Suffix with `moon.yml` or `moon.pkl` to be distinct.
-    Globs(Vec<String>),
-
-    /// Using a mapping of IDs to source paths.
-    #[setting(default)]
-    Sources(FxHashMap<Id, String>),
-}
-
-/// Configures all aspects of the moon workspace.
-/// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Clone, Config, Debug)]
-pub struct WorkspaceConfig {
-    #[setting(
-        default = "https://moonrepo.dev/schemas/workspace.json",
-        rename = "$schema"
+config_enum!(
+    /// Configures projects in the workspace.
+    #[derive(Config)]
+    #[serde(
+        untagged,
+        expecting = "expected a list of globs, a map of projects, or both"
     )]
-    pub schema: String,
+    pub enum WorkspaceProjects {
+        /// Using both globs and explicit source paths.
+        #[setting(nested)]
+        Both(WorkspaceProjectsConfig),
 
-    /// Configures code ownership rules for generating a `CODEOWNERS` file.
-    #[setting(nested)]
-    pub codeowners: CodeownersConfig,
+        /// Using globs. Suffix with `moon.yml` or `moon.pkl` to be distinct.
+        Globs(Vec<String>),
 
-    /// Configures boundaries and constraints between projects.
-    #[setting(nested)]
-    pub constraints: ConstraintsConfig,
+        /// Using a mapping of IDs to source paths.
+        #[setting(default)]
+        Sources(FxHashMap<Id, String>),
+    }
+);
 
-    /// Configures Docker integration for the workspace.
-    #[setting(nested)]
-    pub docker: DockerConfig,
+config_struct!(
+    /// Configures all aspects of the moon workspace.
+    /// Docs: https://moonrepo.dev/docs/config/workspace
+    #[derive(Config)]
+    pub struct WorkspaceConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/workspace.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
 
-    /// Configures experiments across the entire moon workspace.
-    #[setting(nested)]
-    pub experiments: ExperimentsConfig,
+        /// Configures code ownership rules for generating a `CODEOWNERS` file.
+        #[setting(nested)]
+        pub codeowners: CodeownersConfig,
 
-    /// Extends one or many workspace configuration file. Supports a relative
-    /// file path or a secure URL.
-    #[setting(extend, validate = validate::extends_from)]
-    pub extends: Option<schematic::ExtendsFrom>,
+        /// Configures boundaries and constraints between projects.
+        #[setting(nested)]
+        pub constraints: ConstraintsConfig,
 
-    /// Configures extensions that can be executed with `moon ext`.
-    #[setting(nested)]
-    pub extensions: FxHashMap<Id, ExtensionConfig>,
+        /// Configures Docker integration for the workspace.
+        #[setting(nested)]
+        pub docker: DockerConfig,
 
-    /// Configures the generator for scaffolding from templates.
-    #[setting(nested)]
-    pub generator: GeneratorConfig,
+        /// Configures experiments across the entire moon workspace.
+        #[setting(nested)]
+        pub experiments: ExperimentsConfig,
 
-    /// Configures aspects of the content hashing engine.
-    #[setting(nested)]
-    pub hasher: HasherConfig,
+        /// Extends one or many workspace configuration file. Supports a relative
+        /// file path or a secure URL.
+        #[setting(extend, validate = validate::extends_from)]
+        pub extends: Option<schematic::ExtendsFrom>,
 
-    /// Configures how and where notifications are sent.
-    #[setting(nested)]
-    pub notifier: NotifierConfig,
+        /// Configures extensions that can be executed with `moon ext`.
+        #[setting(nested)]
+        pub extensions: FxHashMap<Id, ExtensionConfig>,
 
-    /// Configures aspects of the action pipeline.
-    #[setting(nested, alias = "runner")]
-    pub pipeline: PipelineConfig,
+        /// Configures the generator for scaffolding from templates.
+        #[setting(nested)]
+        pub generator: GeneratorConfig,
 
-    /// Configures all projects within the workspace to create a project graph.
-    /// Accepts a list of globs, a mapping of projects to relative file paths,
-    /// or both values.
-    #[setting(nested, validate = validate_projects)]
-    pub projects: WorkspaceProjects,
+        /// Configures aspects of the content hashing engine.
+        #[setting(nested)]
+        pub hasher: HasherConfig,
 
-    /// Configures aspects of the remote service.
-    #[setting(nested, rename = "unstable_remote")]
-    pub remote: Option<RemoteConfig>,
+        /// Configures how and where notifications are sent.
+        #[setting(nested)]
+        pub notifier: NotifierConfig,
 
-    /// Collects anonymous usage information, and checks for new moon versions.
-    #[setting(default = true)]
-    pub telemetry: bool,
+        /// Configures aspects of the action pipeline.
+        #[setting(nested, alias = "runner")]
+        pub pipeline: PipelineConfig,
 
-    /// Configures the version control system (VCS).
-    #[setting(nested)]
-    pub vcs: VcsConfig,
+        /// Configures all projects within the workspace to create a project graph.
+        /// Accepts a list of globs, a mapping of projects to relative file paths,
+        /// or both values.
+        #[setting(nested, validate = validate_projects)]
+        pub projects: WorkspaceProjects,
 
-    /// Requires a specific version of the `moon` binary.
-    pub version_constraint: Option<VersionReq>,
-}
+        /// Configures aspects of the remote service.
+        #[setting(nested, rename = "unstable_remote")]
+        pub remote: Option<RemoteConfig>,
+
+        /// Collects anonymous usage information, and checks for new moon versions.
+        #[setting(default = true)]
+        pub telemetry: bool,
+
+        /// Configures the version control system (VCS).
+        #[setting(nested)]
+        pub vcs: VcsConfig,
+
+        /// Requires a specific version of the `moon` binary.
+        pub version_constraint: Option<VersionReq>,
+    }
+);
 
 impl WorkspaceConfig {
     pub fn inherit_default_plugins(&mut self) {

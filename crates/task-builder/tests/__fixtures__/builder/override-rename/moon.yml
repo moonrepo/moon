@@ -1,0 +1,6 @@
+workspace:
+  inheritedTasks:
+    rename:
+      global-build: 'renamed-build'
+      global-test: 'renamedTest'
+      global-run: 'renamed.test'

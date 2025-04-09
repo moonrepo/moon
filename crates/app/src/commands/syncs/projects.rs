@@ -11,16 +11,13 @@ pub async fn sync(session: CliSession) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut project_count = 0;
     let mut action_graph_builder = session
-        .build_action_graph_with_options(
-            &workspace_graph,
-            ActionGraphBuilderOptions {
-                install_dependencies: false.into(),
-                setup_toolchains: false.into(),
-                sync_projects: true.into(),
-                sync_project_dependencies: true,
-                sync_workspace: false,
-            },
-        )
+        .build_action_graph_with_options(ActionGraphBuilderOptions {
+            install_dependencies: false.into(),
+            setup_toolchains: false.into(),
+            sync_projects: true.into(),
+            sync_project_dependencies: true,
+            sync_workspace: false,
+        })
         .await?;
 
     for project in workspace_graph.projects.get_all_unexpanded() {

@@ -10,7 +10,7 @@ expression: assert.output()
     },
     {
       "id": 3,
-      "label": "SyncProject(node, basic)"
+      "label": "SyncProject(basic)"
     },
     {
       "id": 1,
@@ -39,10 +39,10 @@ expression: assert.output()
       "target": 1
     },
     {
-      "id": "3 -> 1",
+      "id": "3 -> 0",
       "label": "",
       "source": 3,
-      "target": 1
+      "target": 0
     },
     {
       "id": "4 -> 2",

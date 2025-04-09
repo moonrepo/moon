@@ -26,11 +26,7 @@ pub fn is_system_command(command: &str) -> bool {
     unix.is_match(command) || windows.is_match(command)
 }
 
-pub fn detect_task_toolchains(
-    command: &str,
-    project_toolchains: &[Id],
-    enabled_toolchains: &[Id],
-) -> Vec<Id> {
+pub fn detect_task_toolchains(command: &str, enabled_toolchains: &[Id]) -> Vec<Id> {
     let mut toolchains = vec![];
     let detectors = vec![
         (
@@ -67,17 +63,8 @@ pub fn detect_task_toolchains(
         }
     }
 
-    // Inherit the toolchain from the project's language
-    if toolchains.is_empty() {
-        for id in project_toolchains {
-            if enabled_toolchains.contains(id) {
-                toolchains.push(id.to_owned());
-            }
-        }
-    }
-
     // If no toolchain detected or inherited, fallback to the system
-    if is_system_command(command) || toolchains.is_empty() {
+    if is_system_command(command) {
         toolchains.push(Id::raw("system"));
     }
 

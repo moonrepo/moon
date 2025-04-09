@@ -1,6 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use futures::{StreamExt, stream::FuturesOrdered};
 use miette::IntoDiagnostic;
+use moon_common::Id;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
 use moon_plugin::{
@@ -38,6 +39,13 @@ impl ToolchainRegistry {
         Self {
             configs: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
+        }
+    }
+
+    pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ToolchainPluginConfig>) {
+        for (id, config) in configs {
+            // Convert moon IDs to plugin IDs
+            self.configs.insert(PluginId::raw(id), config.to_owned());
         }
     }
 

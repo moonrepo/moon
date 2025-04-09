@@ -14,7 +14,7 @@ pub async fn run_action(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: WorkspaceGraph,
+    workspace_graph: Arc<WorkspaceGraph>,
     toolchain_registry: Arc<ToolchainRegistry>,
     emitter: Arc<EventEmitter>,
 ) -> miette::Result<()> {
@@ -60,10 +60,7 @@ pub async fn run_action(
             let project = workspace_graph.get_project(&inner.project_id)?;
 
             emitter
-                .emit(Event::ProjectSyncing {
-                    project: &project,
-                    runtime: &inner.runtime,
-                })
+                .emit(Event::ProjectSyncing { project: &project })
                 .await?;
 
             let result = sync_project(
@@ -79,7 +76,6 @@ pub async fn run_action(
                 .emit(Event::ProjectSynced {
                     error: extract_error(&result),
                     project: &project,
-                    runtime: &inner.runtime,
                 })
                 .await?;
 
@@ -99,6 +95,30 @@ pub async fn run_action(
                 .emit(Event::ToolInstalled {
                     error: extract_error(&result),
                     runtime: &inner.runtime,
+                })
+                .await?;
+
+            result
+        }
+
+        ActionNode::SetupToolchainPlugin(inner) => {
+            emitter
+                .emit(Event::ToolchainInstalling { spec: &inner.spec })
+                .await?;
+
+            let result = setup_toolchain_plugin(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await;
+
+            emitter
+                .emit(Event::ToolchainInstalled {
+                    error: extract_error(&result),
+                    spec: &inner.spec,
                 })
                 .await?;
 

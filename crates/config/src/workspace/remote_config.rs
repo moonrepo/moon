@@ -1,6 +1,7 @@
 use crate::portable_path::FilePath;
+use crate::{config_struct, config_unit_enum};
 use rustc_hash::FxHashMap;
-use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, derive_enum, env, validate};
+use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, env, validate};
 
 fn path_is_required<D, C>(
     value: &FilePath,
@@ -15,9 +16,9 @@ fn path_is_required<D, C>(
     Ok(())
 }
 
-derive_enum!(
+config_unit_enum!(
     /// The API format of the remote service.
-    #[derive(Copy, ConfigEnum, Default)]
+    #[derive(ConfigEnum)]
     pub enum RemoteApi {
         /// gRPC(S) endpoints.
         #[default]
@@ -27,20 +28,22 @@ derive_enum!(
     }
 );
 
-/// Configures basic HTTP authentication.
-#[derive(Clone, Config, Debug)]
-pub struct RemoteAuthConfig {
-    /// HTTP headers to inject into every request.
-    pub headers: FxHashMap<String, String>,
+config_struct!(
+    /// Configures basic HTTP authentication.
+    #[derive(Config)]
+    pub struct RemoteAuthConfig {
+        /// HTTP headers to inject into every request.
+        pub headers: FxHashMap<String, String>,
 
-    /// The name of an environment variable to use as a bearer token.
-    #[setting(env = "MOON_REMOTE_AUTH_TOKEN")]
-    pub token: Option<String>,
-}
+        /// The name of an environment variable to use as a bearer token.
+        #[setting(env = "MOON_REMOTE_AUTH_TOKEN")]
+        pub token: Option<String>,
+    }
+);
 
-derive_enum!(
+config_unit_enum!(
     /// Supported blob compression levels for gRPC APIs.
-    #[derive(Copy, ConfigEnum, Default)]
+    #[derive(ConfigEnum)]
     pub enum RemoteCompression {
         /// No compression.
         #[default]
@@ -56,93 +59,101 @@ impl RemoteCompression {
     }
 }
 
-/// Configures the action cache (AC) and content addressable cache (CAS).
-#[derive(Clone, Config, Debug)]
-pub struct RemoteCacheConfig {
-    /// The compression format to use when uploading/downloading blobs.
-    #[setting(env = "MOON_REMOTE_CACHE_COMPRESSION")]
-    pub compression: RemoteCompression,
-
-    /// Unique instance name for blobs. Will be used as a folder name.
-    #[setting(default = "moon-outputs", env = "MOON_REMOTE_CACHE_INSTANCE_NAME")]
-    pub instance_name: String,
-}
-
-/// Configures for server-only authentication with TLS.
-#[derive(Clone, Config, Debug)]
-pub struct RemoteTlsConfig {
-    /// If true, assume that the server supports HTTP/2,
-    /// even if it doesn't provide protocol negotiation via ALPN.
-    #[setting(env = "MOON_REMOTE_TLS_HTTP2", parse_env = env::parse_bool)]
-    pub assume_http2: bool,
-
-    /// A file path, relative from the workspace root, to the
-    /// certificate authority PEM encoded X509 certificate.
-    #[setting(env = "MOON_REMOTE_TLS_CERT", validate = path_is_required)]
-    pub cert: FilePath,
-
-    /// The domain name in which to verify the TLS certificate.
-    #[setting(env = "MOON_REMOTE_TLS_DOMAIN")]
-    pub domain: Option<String>,
-}
-
-/// Configures for both server and client authentication with mTLS.
-#[derive(Clone, Config, Debug)]
-pub struct RemoteMtlsConfig {
-    /// If true, assume that the server supports HTTP/2,
-    /// even if it doesn't provide protocol negotiation via ALPN.
-    #[setting(env = "MOON_REMOTE_MTLS_HTTP", parse_env = env::parse_bool)]
-    pub assume_http2: bool,
-
-    /// A file path, relative from the workspace root, to the
-    /// certificate authority PEM encoded X509 certificate.
-    #[setting(env = "MOON_REMOTE_MTLS_CA_CERT", validate = path_is_required)]
-    pub ca_cert: FilePath,
-
-    /// A file path, relative from the workspace root, to the
-    /// client's PEM encoded X509 certificate.
-    #[setting(env = "MOON_REMOTE_MTLS_CLIENT_CERT", validate = path_is_required)]
-    pub client_cert: FilePath,
-
-    /// A file path, relative from the workspace root, to the
-    /// client's PEM encoded X509 private key.
-    #[setting(env = "MOON_REMOTE_MTLS_CLIENT_KEY", validate = path_is_required)]
-    pub client_key: FilePath,
-
-    /// The domain name in which to verify the TLS certificate.
-    #[setting(env = "MOON_REMOTE_MTLS_DOMAIN")]
-    pub domain: Option<String>,
-}
-
-/// Configures the remote service, powered by the Bazel Remote Execution API.
-#[derive(Clone, Config, Debug)]
-pub struct RemoteConfig {
-    /// The API format of the remote service.
-    #[setting(env = "MOON_REMOTE_API")]
-    pub api: RemoteApi,
-
-    /// Connect to the host using basic HTTP authentication.
-    #[setting(nested)]
-    pub auth: Option<RemoteAuthConfig>,
-
+config_struct!(
     /// Configures the action cache (AC) and content addressable cache (CAS).
-    #[setting(nested)]
-    pub cache: RemoteCacheConfig,
+    #[derive(Config)]
+    pub struct RemoteCacheConfig {
+        /// The compression format to use when uploading/downloading blobs.
+        #[setting(env = "MOON_REMOTE_CACHE_COMPRESSION")]
+        pub compression: RemoteCompression,
 
-    /// The remote host to connect and send requests to.
-    /// Supports gRPC protocols.
-    #[setting(env = "MOON_REMOTE_HOST", validate = validate::not_empty)]
-    pub host: String,
+        /// Unique instance name for blobs. Will be used as a folder name.
+        #[setting(default = "moon-outputs", env = "MOON_REMOTE_CACHE_INSTANCE_NAME")]
+        pub instance_name: String,
+    }
+);
 
-    /// Connect to the host using server and client authentication with mTLS.
-    /// This takes precedence over normal TLS.
-    #[setting(nested)]
-    pub mtls: Option<RemoteMtlsConfig>,
+config_struct!(
+    /// Configures for server-only authentication with TLS.
+    #[derive(Config)]
+    pub struct RemoteTlsConfig {
+        /// If true, assume that the server supports HTTP/2,
+        /// even if it doesn't provide protocol negotiation via ALPN.
+        #[setting(env = "MOON_REMOTE_TLS_HTTP2", parse_env = env::parse_bool)]
+        pub assume_http2: bool,
 
-    /// Connect to the host using server-only authentication with TLS.
-    #[setting(nested)]
-    pub tls: Option<RemoteTlsConfig>,
-}
+        /// A file path, relative from the workspace root, to the
+        /// certificate authority PEM encoded X509 certificate.
+        #[setting(env = "MOON_REMOTE_TLS_CERT", validate = path_is_required)]
+        pub cert: FilePath,
+
+        /// The domain name in which to verify the TLS certificate.
+        #[setting(env = "MOON_REMOTE_TLS_DOMAIN")]
+        pub domain: Option<String>,
+    }
+);
+
+config_struct!(
+    /// Configures for both server and client authentication with mTLS.
+    #[derive(Config)]
+    pub struct RemoteMtlsConfig {
+        /// If true, assume that the server supports HTTP/2,
+        /// even if it doesn't provide protocol negotiation via ALPN.
+        #[setting(env = "MOON_REMOTE_MTLS_HTTP", parse_env = env::parse_bool)]
+        pub assume_http2: bool,
+
+        /// A file path, relative from the workspace root, to the
+        /// certificate authority PEM encoded X509 certificate.
+        #[setting(env = "MOON_REMOTE_MTLS_CA_CERT", validate = path_is_required)]
+        pub ca_cert: FilePath,
+
+        /// A file path, relative from the workspace root, to the
+        /// client's PEM encoded X509 certificate.
+        #[setting(env = "MOON_REMOTE_MTLS_CLIENT_CERT", validate = path_is_required)]
+        pub client_cert: FilePath,
+
+        /// A file path, relative from the workspace root, to the
+        /// client's PEM encoded X509 private key.
+        #[setting(env = "MOON_REMOTE_MTLS_CLIENT_KEY", validate = path_is_required)]
+        pub client_key: FilePath,
+
+        /// The domain name in which to verify the TLS certificate.
+        #[setting(env = "MOON_REMOTE_MTLS_DOMAIN")]
+        pub domain: Option<String>,
+    }
+);
+
+config_struct!(
+    /// Configures the remote service, powered by the Bazel Remote Execution API.
+    #[derive(Config)]
+    pub struct RemoteConfig {
+        /// The API format of the remote service.
+        #[setting(env = "MOON_REMOTE_API")]
+        pub api: RemoteApi,
+
+        /// Connect to the host using basic HTTP authentication.
+        #[setting(nested)]
+        pub auth: Option<RemoteAuthConfig>,
+
+        /// Configures the action cache (AC) and content addressable cache (CAS).
+        #[setting(nested)]
+        pub cache: RemoteCacheConfig,
+
+        /// The remote host to connect and send requests to.
+        /// Supports gRPC protocols.
+        #[setting(env = "MOON_REMOTE_HOST", validate = validate::not_empty)]
+        pub host: String,
+
+        /// Connect to the host using server and client authentication with mTLS.
+        /// This takes precedence over normal TLS.
+        #[setting(nested)]
+        pub mtls: Option<RemoteMtlsConfig>,
+
+        /// Connect to the host using server-only authentication with TLS.
+        #[setting(nested)]
+        pub tls: Option<RemoteTlsConfig>,
+    }
+);
 
 impl RemoteConfig {
     pub fn is_bearer_auth(&self) -> bool {

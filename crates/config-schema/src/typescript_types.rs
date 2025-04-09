@@ -35,6 +35,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskOptionsConfig".into(),
                 "TaskOutputStyle".into(),
                 "TaskPreset".into(),
+                "TaskPriority".into(),
                 "TaskUnixShell".into(),
                 "TaskWindowsShell".into(),
                 "TaskType".into(),

@@ -1,9 +1,10 @@
-use moon_common::{Id, cacheable};
-use schematic::{Config, ConfigEnum, derive_enum};
+use crate::{config_struct, config_unit_enum};
+use moon_common::Id;
+use schematic::{Config, ConfigEnum};
 
-derive_enum!(
+config_unit_enum!(
     /// The task-to-task relationship of the dependency.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum DependencyType {
         Cleanup,
         #[default]
@@ -12,9 +13,9 @@ derive_enum!(
     }
 );
 
-derive_enum!(
+config_unit_enum!(
     /// The scope and or relationship of the dependency.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum DependencyScope {
         Build,
         Development,
@@ -27,10 +28,10 @@ derive_enum!(
     }
 );
 
-derive_enum!(
+config_unit_enum!(
     /// The source where the dependency comes from. Either explicitly
     /// defined in configuration, or implicitly derived from source files.
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum)]
     pub enum DependencySource {
         #[default]
         Explicit,
@@ -38,9 +39,9 @@ derive_enum!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Expanded information about a project dependency.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct DependencyConfig {
         /// ID of the depended on project.
         pub id: Id,

@@ -1,3 +1,4 @@
+use crate::config_struct;
 use crate::project::{TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps};
 use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
@@ -30,11 +31,11 @@ where
     Ok(Some(prev))
 }
 
-cacheable!(
+config_struct!(
     /// Configures tasks and task related settings that'll be inherited by all
     /// matching projects.
     /// Docs: https://moonrepo.dev/docs/config/tasks
-    #[derive(Clone, Config, Debug, PartialEq)]
+    #[derive(Config)]
     pub struct InheritedTasksConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/tasks.json",

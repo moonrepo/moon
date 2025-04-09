@@ -13,7 +13,7 @@ use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_feature_flags::{FeatureFlags, Flag};
-use moon_plugin::{PluginHostData, PluginId};
+use moon_plugin::PluginHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
@@ -50,6 +50,7 @@ pub struct CliSession {
     task_graph: OnceLock<Arc<TaskGraph>>,
     toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceLock<Arc<BoxedVcs>>,
+    workspace_graph: OnceLock<Arc<WorkspaceGraph>>,
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -79,20 +80,21 @@ impl CliSession {
             toolchain_config: Arc::new(ToolchainConfig::default()),
             toolchain_registry: OnceLock::new(),
             working_dir: PathBuf::new(),
-            workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
+            workspace_graph: OnceLock::new(),
+            workspace_root: PathBuf::new(),
             vcs_adapter: OnceLock::new(),
             cli,
         }
     }
 
-    pub async fn build_action_graph<'graph>(
-        &self,
-        workspace_graph: &'graph WorkspaceGraph,
-    ) -> miette::Result<ActionGraphBuilder<'graph>> {
+    pub async fn build_action_graph<'graph>(&self) -> miette::Result<ActionGraphBuilder<'graph>> {
+        let app_context = self.get_app_context().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
         let config = &self.workspace_config.pipeline;
 
         ActionGraphBuilder::new(
+            app_context,
             workspace_graph,
             ActionGraphBuilderOptions {
                 install_dependencies: config.install_dependencies.clone(),
@@ -106,10 +108,12 @@ impl CliSession {
 
     pub async fn build_action_graph_with_options<'graph>(
         &self,
-        workspace_graph: &'graph WorkspaceGraph,
         options: ActionGraphBuilderOptions,
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(workspace_graph, options)
+        let app_context = self.get_app_context().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
+
+        ActionGraphBuilder::new(app_context, workspace_graph, options)
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
@@ -145,13 +149,10 @@ impl CliSession {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
+                workspace_graph: Arc::new(OnceLock::new()),
             });
 
-            // Convert moon IDs to plugin IDs
-            for (id, config) in self.workspace_config.extensions.clone() {
-                registry.configs.insert(PluginId::raw(id), config);
-            }
+            registry.inherit_configs(&self.workspace_config.extensions);
 
             Arc::new(registry)
         });
@@ -180,13 +181,10 @@ impl CliSession {
             let mut registry = ToolchainRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                workspace_graph: Arc::new(std::sync::RwLock::new(WorkspaceGraph::default())),
+                workspace_graph: Arc::new(OnceLock::new()),
             });
 
-            // Convert moon IDs to plugin IDs
-            for (id, config) in self.toolchain_config.plugins.clone() {
-                registry.configs.insert(PluginId::raw(id), config);
-            }
+            registry.inherit_configs(&self.toolchain_config.plugins);
 
             Arc::new(registry)
         });
@@ -218,11 +216,12 @@ impl CliSession {
         Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())
     }
 
-    pub async fn get_workspace_graph(&self) -> miette::Result<WorkspaceGraph> {
-        let projects = self.get_project_graph().await?;
-        let tasks = self.get_task_graph().await?;
+    pub async fn get_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
+        if self.workspace_graph.get().is_none() {
+            self.load_workspace_graph().await?;
+        }
 
-        Ok(WorkspaceGraph::new(projects, tasks))
+        Ok(self.workspace_graph.get().map(Arc::clone).unwrap())
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {
@@ -241,7 +240,7 @@ impl CliSession {
             self.cli.command,
             Commands::Bin(_)
                 | Commands::Docker {
-                    command: DockerCommands::Prune {}
+                    command: DockerCommands::Prune
                 }
                 | Commands::Node { .. }
                 | Commands::Teardown
@@ -252,18 +251,25 @@ impl CliSession {
         let cache_engine = self.get_cache_engine()?;
         let context = create_workspace_graph_context(self).await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
-        let result = builder.build().await?;
-
-        // Set the internal graphs
-        let _ = self.project_graph.set(result.projects.clone());
-        let _ = self.task_graph.set(result.tasks.clone());
+        let workspace_graph = Arc::new(builder.build().await?);
 
         // Update the plugin registries with the graph
         let extensions = self.get_extension_registry().await?;
-        *extensions.host_data.workspace_graph.write().unwrap() = result.clone();
+        let _ = extensions
+            .host_data
+            .workspace_graph
+            .set(workspace_graph.clone());
 
         let toolchains = self.get_toolchain_registry().await?;
-        *toolchains.host_data.workspace_graph.write().unwrap() = result;
+        let _ = toolchains
+            .host_data
+            .workspace_graph
+            .set(workspace_graph.clone());
+
+        // Set the internal graphs
+        let _ = self.project_graph.set(workspace_graph.projects.clone());
+        let _ = self.task_graph.set(workspace_graph.tasks.clone());
+        let _ = self.workspace_graph.set(workspace_graph);
 
         Ok(())
     }

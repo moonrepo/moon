@@ -1193,6 +1193,7 @@ mod task_manager {
                         ])),
                         output_style: Some(TaskOutputStyle::Stream),
                         persistent: Some(true),
+                        priority: None,
                         retry_count: Some(3),
                         run_deps_in_parallel: Some(false),
                         run_in_ci: Some(TaskOptionRunInCI::Enabled(true)),

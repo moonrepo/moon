@@ -202,13 +202,12 @@ fn distribute_targets_across_jobs(
 async fn generate_action_graph(
     console: &mut CiConsole,
     session: &CliSession,
-    workspace_graph: &WorkspaceGraph,
     targets: &TargetList,
     touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 ) -> miette::Result<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
-    let mut action_graph_builder = session.build_action_graph(workspace_graph).await?;
+    let mut action_graph_builder = session.build_action_graph().await?;
     action_graph_builder.set_touched_files(touched_files)?;
     action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep)?;
 
@@ -253,14 +252,8 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     }
 
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
-    let (action_graph, action_context) = generate_action_graph(
-        &mut console,
-        &session,
-        &workspace_graph,
-        &targets,
-        touched_files,
-    )
-    .await?;
+    let (action_graph, action_context) =
+        generate_action_graph(&mut console, &session, &targets, touched_files).await?;
 
     if action_graph.is_empty() {
         console.write_line(color::invalid("No tasks affected based on touched files"))?;

@@ -1319,6 +1319,27 @@ tasks:
 > We suggest using the [`local`](#local) setting instead, which enables this setting, amongst other
 > useful settings.
 
+#### `priority`<VersionLabel version="1.35.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#priority" />
+
+The priority level determines the position of the task within the action pipeline queue. A task with
+a higher priority will run sooner rather than later, while still respecting the topological order.
+Supports the following levels:
+
+- `critical`
+- `high`
+- `normal` (default)
+- `low`
+
+```yaml title="moon.yml" {5}
+tasks:
+  build:
+    # ...
+    options:
+      priority: 'high'
+```
+
 #### `retryCount`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#retryCount" />

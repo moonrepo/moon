@@ -1,10 +1,10 @@
+use crate::config_struct;
 use crate::portable_path::GlobPath;
-use moon_common::cacheable;
 use schematic::Config;
 
-cacheable!(
+config_struct!(
     /// Configures aspects of the Docker pruning process.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct DockerPruneConfig {
         /// Automatically delete vendor directories (package manager
         /// dependencies, build targets, etc) while pruning.
@@ -18,9 +18,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Configures aspects of the Docker scaffolding process.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct DockerScaffoldConfig {
         /// Copy toolchain specific configs/manifests/files into
         /// the workspace skeleton.
@@ -33,9 +33,9 @@ cacheable!(
     }
 );
 
-cacheable!(
+config_struct!(
     /// Configures our Docker integration.
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Config)]
     pub struct DockerConfig {
         /// Configures aspects of the Docker pruning process.
         #[setting(nested)]

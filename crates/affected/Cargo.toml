@@ -23,6 +23,7 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils2 = { path = "../test-utils" }
+starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 
 [lints]

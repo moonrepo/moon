@@ -1,34 +1,54 @@
+use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
+use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::*;
+use moon_console::{Console, MoonReporter};
+use moon_env::MoonEnvironment;
+use moon_platform::PlatformManager;
+use moon_plugin::PluginHostData;
+use moon_project_builder::*;
+use moon_project_graph::Project;
+use moon_task_builder::*;
+use moon_task_graph::Task;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 use moon_workspace_graph::WorkspaceGraph;
-use proto_core::ProtoConfig;
+use proto_core::{ProtoConfig, ProtoEnvironment};
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+
+use crate::generate_platform_manager;
 
 #[derive(Default)]
 pub struct WorkspaceMocker {
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
+    pub monorepo: bool,
+    pub moon_env: MoonEnvironment,
+    pub proto_env: ProtoEnvironment,
     pub toolchain_config: ToolchainConfig,
     pub workspace_config: WorkspaceConfig,
     pub workspace_root: PathBuf,
-    pub vcs: Option<Arc<BoxedVcs>>,
+    pub vcs: Option<BoxedVcs>,
 }
 
 impl WorkspaceMocker {
     pub fn new(root: impl AsRef<Path>) -> Self {
+        let root = root.as_ref();
+
         Self {
-            workspace_root: root.as_ref().to_path_buf(),
+            monorepo: true,
+            moon_env: MoonEnvironment::new_testing(root),
+            proto_env: ProtoEnvironment::new_testing(root).unwrap(),
+            workspace_root: root.to_path_buf(),
             ..Default::default()
         }
     }
 
-    pub fn with_default_configs(&mut self) -> &mut Self {
+    pub fn load_default_configs(mut self) -> Self {
         let root = &self.workspace_root;
 
         self.inherited_tasks = self.config_loader.load_tasks_manager(root).unwrap();
@@ -43,7 +63,44 @@ impl WorkspaceMocker {
         self
     }
 
-    pub fn with_default_projects(&mut self) -> &mut Self {
+    pub fn load_inherited_tasks_from(mut self, dir: &str) -> Self {
+        self.inherited_tasks = self
+            .config_loader
+            .load_tasks_manager_from(&self.workspace_root, self.workspace_root.join(dir))
+            .unwrap();
+
+        self
+    }
+
+    pub fn set_polyrepo(mut self) -> Self {
+        self.monorepo = false;
+        self
+    }
+
+    pub fn set_toolchain_config(mut self, mut config: ToolchainConfig) -> Self {
+        config.inherit_plugin_locators().unwrap();
+
+        self.toolchain_config = config;
+        self
+    }
+
+    pub fn set_workspace_config(mut self, config: WorkspaceConfig) -> Self {
+        self.workspace_config = config;
+        self
+    }
+
+    pub fn update_toolchain_config(mut self, mut op: impl FnMut(&mut ToolchainConfig)) -> Self {
+        op(&mut self.toolchain_config);
+        self.toolchain_config.inherit_plugin_locators().unwrap();
+        self
+    }
+
+    pub fn update_workspace_config(mut self, mut op: impl FnMut(&mut WorkspaceConfig)) -> Self {
+        op(&mut self.workspace_config);
+        self
+    }
+
+    pub fn with_default_projects(mut self) -> Self {
         if !self.workspace_root.join(".moon/workspace.yml").exists() {
             // Use folders as project names
             let mut projects = WorkspaceProjectsConfig {
@@ -69,15 +126,39 @@ impl WorkspaceMocker {
         self
     }
 
-    pub fn with_default_toolchain(&mut self) -> &mut Self {
-        if self.toolchain_config.node.is_none() {
-            self.toolchain_config.node = Some(NodeConfig::default());
-        }
+    pub fn with_all_toolchains(self) -> Self {
+        self.update_toolchain_config(|config| {
+            config.bun = Some(BunConfig::default());
+            config.deno = Some(DenoConfig::default());
+            config.node = Some(NodeConfig::default());
+            config.rust = Some(RustConfig::default());
+            config.inherit_default_plugins().unwrap();
+        })
+    }
+
+    pub fn with_default_toolchains(self) -> Self {
+        self.update_toolchain_config(|config| {
+            if config.node.is_none() {
+                config.node = Some(NodeConfig::default());
+            }
+        })
+    }
+
+    pub fn with_global_envs(mut self) -> Self {
+        #[allow(deprecated)]
+        let home_dir = std::env::home_dir().unwrap();
+
+        self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();
+        self.moon_env.working_dir = self.workspace_root.clone();
+        self.moon_env.workspace_root = self.workspace_root.clone();
+
+        self.proto_env = ProtoEnvironment::from(home_dir.join(".proto"), home_dir).unwrap();
+        self.proto_env.working_dir = self.workspace_root.clone();
 
         self
     }
 
-    pub fn with_global_tasks(&mut self) -> &mut Self {
+    pub fn with_inherited_tasks(mut self) -> Self {
         self.inherited_tasks.configs.insert(
             "*".into(),
             InheritedTasksEntry {
@@ -95,15 +176,152 @@ impl WorkspaceMocker {
         self
     }
 
-    pub fn with_vcs(&mut self) -> &mut Self {
-        self.vcs = Some(Arc::new(Box::new(
-            Git::load(&self.workspace_root, "master", &[]).unwrap(),
-        )));
-
-        self
+    pub async fn build_project(&self, id: &str) -> Project {
+        self.build_project_with(id, |_| {}).await
     }
 
-    pub fn create_context(&self) -> WorkspaceBuilderContext {
+    pub async fn build_project_with(
+        &self,
+        id: &str,
+        mut op: impl FnMut(&mut ProjectBuilder),
+    ) -> Project {
+        let source = if id == "root" {
+            WorkspaceRelativePathBuf::new()
+        } else {
+            WorkspaceRelativePathBuf::from(id)
+        };
+        let id = Id::raw(id);
+
+        let enabled_toolchains = self.toolchain_config.get_enabled();
+
+        let mut builder = ProjectBuilder::new(
+            &id,
+            &source,
+            ProjectBuilderContext {
+                config_loader: &self.config_loader,
+                enabled_toolchains: &enabled_toolchains,
+                monorepo: self.monorepo,
+                root_project_id: None,
+                toolchain_config: &self.toolchain_config,
+                toolchain_registry: Arc::new(self.mock_toolchain_registry()),
+                workspace_root: &self.workspace_root,
+            },
+        )
+        .unwrap();
+
+        builder.load_local_config().await.unwrap();
+        builder
+            .inherit_global_config(&self.inherited_tasks)
+            .unwrap();
+
+        op(&mut builder);
+
+        builder.build().await.unwrap()
+    }
+
+    pub async fn build_tasks(&self, project: &Project) -> BTreeMap<Id, Task> {
+        self.build_tasks_with(project, |_| {}).await
+    }
+
+    pub async fn build_tasks_with(
+        &self,
+        project: &Project,
+        mut op: impl FnMut(&mut TasksBuilder),
+    ) -> BTreeMap<Id, Task> {
+        let toolchain_registry = self.mock_toolchain_registry();
+        let enabled_toolchains = self.toolchain_config.get_enabled();
+
+        let mut builder = TasksBuilder::new(
+            &project.id,
+            &project.source,
+            &project.toolchains,
+            TasksBuilderContext {
+                enabled_toolchains: &enabled_toolchains,
+                monorepo: self.monorepo,
+                toolchain_config: &self.toolchain_config,
+                toolchain_registry: toolchain_registry.into(),
+                workspace_root: &self.workspace_root,
+            },
+        );
+
+        builder.load_local_tasks(&project.config);
+
+        let global_config = self
+            .inherited_tasks
+            .get_inherited_config(
+                &project.toolchains,
+                &project.config.stack,
+                &project.config.type_of,
+                &project.config.tags,
+            )
+            .unwrap();
+
+        builder.inherit_global_tasks(
+            &global_config.config,
+            Some(&project.config.workspace.inherited_tasks),
+        );
+
+        op(&mut builder);
+
+        builder.build().await.unwrap()
+    }
+
+    pub fn mock_app_context(&self) -> AppContext {
+        AppContext {
+            cli_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
+            cache_engine: Arc::new(self.mock_cache_engine()),
+            console: Arc::new(self.mock_console()),
+            toolchain_registry: Arc::new(self.mock_toolchain_registry()),
+            vcs: Arc::new(self.mock_vcs_adapter()),
+            toolchain_config: Arc::new(self.toolchain_config.clone()),
+            working_dir: self.workspace_root.clone(),
+            workspace_config: Arc::new(self.workspace_config.clone()),
+            workspace_root: self.workspace_root.clone(),
+        }
+    }
+
+    pub fn mock_cache_engine(&self) -> CacheEngine {
+        CacheEngine::new(&self.workspace_root).unwrap()
+    }
+
+    pub fn mock_console(&self) -> Console {
+        let mut console = Console::new_testing();
+        console.set_reporter(MoonReporter::default());
+        console
+    }
+
+    pub async fn mock_platform_manager(&self) -> PlatformManager {
+        generate_platform_manager(
+            &self.workspace_root,
+            &self.toolchain_config,
+            Arc::new(self.proto_env.clone()),
+            Arc::new(self.mock_console()),
+        )
+        .await
+    }
+
+    pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
+        let mut registry = ToolchainRegistry::new(PluginHostData {
+            moon_env: Arc::new(self.moon_env.clone()),
+            proto_env: Arc::new(self.proto_env.clone()),
+            workspace_graph: Arc::new(OnceLock::new()),
+        });
+        registry.inherit_configs(&self.toolchain_config.plugins);
+        registry
+    }
+
+    pub fn mock_vcs_adapter(&self) -> BoxedVcs {
+        Box::new(
+            Git::load(
+                &self.workspace_root,
+                &self.workspace_config.vcs.default_branch,
+                &self.workspace_config.vcs.remote_candidates,
+            )
+            .unwrap(),
+        )
+    }
+
+    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchain_config.get_enabled(),
@@ -111,35 +329,39 @@ impl WorkspaceMocker {
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
-            toolchain_registry: Arc::new(ToolchainRegistry::default()),
-            vcs: self.vcs.clone(),
+            toolchain_registry: Arc::new(self.mock_toolchain_registry()),
+            vcs: if self.workspace_root.join(".git").exists() {
+                Some(Arc::new(self.mock_vcs_adapter()))
+            } else {
+                None
+            },
             working_dir: &self.workspace_root,
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,
         }
     }
 
-    pub async fn build_workspace_graph(&self) -> WorkspaceGraph {
-        self.build_workspace_graph_with_options(WorkspaceMockOptions::default())
+    pub async fn mock_workspace_graph(&self) -> WorkspaceGraph {
+        self.mock_workspace_graph_with_options(WorkspaceMockOptions::default())
             .await
     }
 
-    pub async fn build_workspace_graph_for(&self, ids: &[&str]) -> WorkspaceGraph {
-        self.build_workspace_graph_with_options(WorkspaceMockOptions {
+    pub async fn mock_workspace_graph_for(&self, ids: &[&str]) -> WorkspaceGraph {
+        self.mock_workspace_graph_with_options(WorkspaceMockOptions {
             ids: Vec::from_iter(ids.iter().map(|id| id.to_string())),
             ..Default::default()
         })
         .await
     }
 
-    pub async fn build_workspace_graph_with_options(
+    pub async fn mock_workspace_graph_with_options(
         &self,
         mut options: WorkspaceMockOptions<'_>,
     ) -> WorkspaceGraph {
         let context = options
             .context
             .take()
-            .unwrap_or_else(|| self.create_context());
+            .unwrap_or_else(|| self.mock_workspace_builder_context());
 
         let mut builder = match &options.cache {
             Some(engine) => WorkspaceBuilder::new_with_cache(context, engine)

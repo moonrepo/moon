@@ -1,0 +1,11 @@
+workspace:
+  inheritedTasks:
+    exclude: ['test']
+    rename:
+      build: 'compile'
+
+tasks:
+  build:
+    command: 'build-local'
+  test:
+    command: 'test-local'

@@ -27,7 +27,9 @@ impl ActionGraphContainer {
 
     pub fn create_builder(&self) -> ActionGraphBuilder {
         let config = &self.workspace_config.pipeline;
-        let app_context = WorkspaceMocker::new(&self.workspace_root).mock_app_context();
+        let app_context = WorkspaceMocker::new(&self.workspace_root)
+            .with_all_toolchains()
+            .mock_app_context();
 
         ActionGraphBuilder::with_platforms(
             &self.platform_manager,

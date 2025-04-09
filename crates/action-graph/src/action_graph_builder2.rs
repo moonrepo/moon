@@ -97,51 +97,61 @@ impl ActionGraphBuilder {
     }
 
     #[instrument(skip_all)]
-    pub async fn setup_toolchain_legacy(&mut self, runtime: &Runtime) -> Option<NodeIndex> {
+    pub async fn setup_toolchain_legacy(
+        &mut self,
+        runtime: &Runtime,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let sync_workspace_index = self.sync_workspace().await;
+
+        // Explicitly disabled
         if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) || runtime.is_system() {
-            return None;
+            return Ok(sync_workspace_index);
         }
 
         let node = ActionNode::setup_toolchain(SetupToolchainNode {
             runtime: runtime.to_owned(),
         });
 
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Some(index);
-        }
-
-        let sync_workspace_index = self.sync_workspace().await;
         let index = self.insert_node(node);
 
         if let Some(edge) = sync_workspace_index {
             self.link_requirements(index, vec![edge]);
         }
 
-        Some(index)
+        Ok(Some(index))
     }
 
     #[instrument(skip_all)]
-    pub async fn setup_toolchain(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
+    pub async fn setup_toolchain(
+        &mut self,
+        spec: &ToolchainSpec,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let sync_workspace_index = self.sync_workspace().await;
+
+        // Explicitly disabled
         if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
-            return None;
+            return Ok(sync_workspace_index);
+        }
+
+        // TODO remove Ok() check when fully on plugins
+        if let Ok(toolchain) = self.app_context.toolchain_registry.load(&spec.id).await {
+            // Toolchain does not support tier 3
+            if !toolchain.supports_tier_3().await {
+                return Ok(sync_workspace_index);
+            }
         }
 
         let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
             spec: spec.to_owned(),
         });
 
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Some(index);
-        }
-
-        let sync_workspace_index = self.sync_workspace().await;
         let index = self.insert_node(node);
 
         if let Some(edge) = sync_workspace_index {
             self.link_requirements(index, vec![edge]);
         }
 
-        Some(index)
+        Ok(Some(index))
     }
 
     #[instrument(skip_all)]
@@ -155,30 +165,31 @@ impl ActionGraphBuilder {
         project: &Project,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<Option<NodeIndex>> {
+        let sync_workspace_index = self.sync_workspace().await;
+
+        // Explicitly disabled
         if !self.options.sync_projects.is_enabled(&project.id) {
-            return Ok(None);
+            return Ok(sync_workspace_index);
         }
 
         let node = ActionNode::sync_project(SyncProjectNode {
             project_id: project.id.clone(),
         });
 
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(Some(index));
-        }
-
         cycle.insert(project.id.clone());
 
         // Determine affected state
         if let Some(affected) = &mut self.affected {
-            if let Some(by) = affected.is_project_affected(project) {
-                affected.mark_project_affected(project, by)?;
+            if !affected.is_project_marked(project) {
+                if let Some(by) = affected.is_project_affected(project) {
+                    affected.mark_project_affected(project, by)?;
+                }
             }
         }
 
         let mut edges = vec![];
 
-        if let Some(edge) = self.sync_workspace().await {
+        if let Some(edge) = sync_workspace_index {
             edges.push(edge);
         }
 
@@ -215,13 +226,7 @@ impl ActionGraphBuilder {
             return None;
         }
 
-        let node = ActionNode::sync_workspace();
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Some(index);
-        }
-
-        Some(self.insert_node(node))
+        Some(self.insert_node(ActionNode::sync_workspace()))
     }
 
     // PRIVATE
@@ -248,6 +253,10 @@ impl ActionGraphBuilder {
     }
 
     fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
+        if let Some(index) = self.get_index_from_node(&node) {
+            return index;
+        }
+
         let label = node.label();
         let index = self.graph.add_node(node);
 

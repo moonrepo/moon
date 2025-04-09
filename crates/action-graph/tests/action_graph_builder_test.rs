@@ -60,7 +60,7 @@ mod action_graph_builder {
     mod setup_toolchain_legacy {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -74,8 +74,8 @@ mod action_graph_builder {
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain_legacy(&system).await;
-            builder.setup_toolchain_legacy(&node).await;
+            builder.setup_toolchain_legacy(&system).await.unwrap();
+            builder.setup_toolchain_legacy(&node).await.unwrap();
 
             let graph = builder.build();
 
@@ -89,7 +89,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_same_toolchain() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -107,9 +107,9 @@ mod action_graph_builder {
             );
             let node3 = Runtime::new(Id::raw("node"), RuntimeReq::Global);
 
-            builder.setup_toolchain_legacy(&node1).await;
-            builder.setup_toolchain_legacy(&node2).await;
-            builder.setup_toolchain_legacy(&node3).await;
+            builder.setup_toolchain_legacy(&node1).await.unwrap();
+            builder.setup_toolchain_legacy(&node2).await.unwrap();
+            builder.setup_toolchain_legacy(&node3).await.unwrap();
 
             let graph = builder.build();
 
@@ -125,7 +125,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -135,8 +135,8 @@ mod action_graph_builder {
 
             let node = create_node_runtime();
 
-            builder.setup_toolchain_legacy(&node).await;
-            builder.setup_toolchain_legacy(&node).await;
+            builder.setup_toolchain_legacy(&node).await.unwrap();
+            builder.setup_toolchain_legacy(&node).await.unwrap();
 
             let graph = builder.build();
 
@@ -149,7 +149,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -171,16 +171,16 @@ mod action_graph_builder {
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain_legacy(&system).await;
-            builder.setup_toolchain_legacy(&node).await;
+            builder.setup_toolchain_legacy(&system).await.unwrap();
+            builder.setup_toolchain_legacy(&node).await.unwrap();
 
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -202,16 +202,16 @@ mod action_graph_builder {
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain_legacy(&system).await;
-            builder.setup_toolchain_legacy(&node).await;
+            builder.setup_toolchain_legacy(&system).await.unwrap();
+            builder.setup_toolchain_legacy(&node).await.unwrap();
 
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -236,8 +236,8 @@ mod action_graph_builder {
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain_legacy(&system).await;
-            builder.setup_toolchain_legacy(&node).await;
+            builder.setup_toolchain_legacy(&system).await.unwrap();
+            builder.setup_toolchain_legacy(&node).await.unwrap();
 
             let graph = builder.build();
 
@@ -255,7 +255,25 @@ mod action_graph_builder {
     mod setup_toolchain {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_graph_if_not_tier3() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let ts = ToolchainSpec::new_global(Id::raw("typescript"));
+
+            builder.setup_toolchain(&ts).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace(),]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -269,8 +287,8 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await;
-            builder.setup_toolchain(&node).await;
+            builder.setup_toolchain(&system).await.unwrap();
+            builder.setup_toolchain(&node).await.unwrap();
 
             let graph = builder.build();
 
@@ -284,7 +302,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_same_toolchain() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -302,9 +320,9 @@ mod action_graph_builder {
             );
             let node3 = ToolchainSpec::new_global(Id::raw("node"));
 
-            builder.setup_toolchain(&node1).await;
-            builder.setup_toolchain(&node2).await;
-            builder.setup_toolchain(&node3).await;
+            builder.setup_toolchain(&node1).await.unwrap();
+            builder.setup_toolchain(&node2).await.unwrap();
+            builder.setup_toolchain(&node3).await.unwrap();
 
             let graph = builder.build();
 
@@ -320,7 +338,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -330,8 +348,8 @@ mod action_graph_builder {
 
             let node = create_node_spec();
 
-            builder.setup_toolchain(&node).await;
-            builder.setup_toolchain(&node).await;
+            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&node).await.unwrap();
 
             let graph = builder.build();
 
@@ -344,7 +362,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -366,16 +384,16 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await;
-            builder.setup_toolchain(&node).await;
+            builder.setup_toolchain(&system).await.unwrap();
+            builder.setup_toolchain(&node).await.unwrap();
 
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -397,16 +415,16 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await;
-            builder.setup_toolchain(&node).await;
+            builder.setup_toolchain(&system).await.unwrap();
+            builder.setup_toolchain(&node).await.unwrap();
 
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -431,8 +449,8 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await;
-            builder.setup_toolchain(&node).await;
+            builder.setup_toolchain(&system).await.unwrap();
+            builder.setup_toolchain(&node).await.unwrap();
 
             let graph = builder.build();
 
@@ -450,7 +468,7 @@ mod action_graph_builder {
     mod sync_project {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_single() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -475,7 +493,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_multiple() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -512,7 +530,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_without_deps() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -551,7 +569,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -581,7 +599,7 @@ mod action_graph_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -603,10 +621,10 @@ mod action_graph_builder {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -628,10 +646,10 @@ mod action_graph_builder {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -668,7 +686,7 @@ mod action_graph_builder {
     mod sync_workspace {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -685,7 +703,7 @@ mod action_graph_builder {
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -703,7 +721,7 @@ mod action_graph_builder {
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());

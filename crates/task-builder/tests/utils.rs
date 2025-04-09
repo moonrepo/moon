@@ -18,18 +18,18 @@ impl TasksBuilderContainer {
         }
     }
 
-    pub fn as_polyrepo(mut self) -> Self {
-        self.mocker = self.mocker.set_polyrepo();
+    pub fn with_all_toolchains(mut self) -> Self {
+        self.mocker = self.mocker.with_all_toolchains();
         self
     }
 
-    pub fn inherit_global_tasks(mut self, dir: &str) -> Self {
+    pub fn with_global_tasks(mut self, dir: &str) -> Self {
         self.mocker = self.mocker.load_inherited_tasks_from(dir);
         self
     }
 
-    pub fn with_all_toolchains(mut self) -> Self {
-        self.mocker = self.mocker.with_all_toolchains();
+    pub fn with_polyrepo(mut self) -> Self {
+        self.mocker = self.mocker.set_polyrepo();
         self
     }
 

@@ -995,7 +995,7 @@ mod tasks_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn handles_different_inputs_for_root_tasks_when_a_polyrepo() {
             let sandbox = create_sandbox("builder-poly");
-            let container = TasksBuilderContainer::new(sandbox.path()).as_polyrepo();
+            let container = TasksBuilderContainer::new(sandbox.path()).with_polyrepo();
 
             let tasks = container.build_tasks("root").await;
 
@@ -1762,7 +1762,7 @@ mod tasks_builder {
         async fn applies_overrides_to_global_task_deps() {
             let sandbox = create_sandbox("builder");
             let container =
-                TasksBuilderContainer::new(sandbox.path()).inherit_global_tasks("global-overrides");
+                TasksBuilderContainer::new(sandbox.path()).with_global_tasks("global-overrides");
 
             let tasks = container.build_tasks("override-global").await;
 
@@ -2070,8 +2070,8 @@ mod tasks_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn can_interweave_global_and_local_extends() {
             let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path())
-                .inherit_global_tasks("global-interweave");
+            let container =
+                TasksBuilderContainer::new(sandbox.path()).with_global_tasks("global-interweave");
 
             let tasks = container.build_tasks("extends-interweave").await;
             let task = tasks.get("child").unwrap();

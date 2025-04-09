@@ -1,106 +1,60 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
-    BunConfig, ConfigLoader, DenoConfig, DependencyConfig, DependencyScope, DependencySource,
-    LanguageType, NodeConfig, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
-    ToolchainPluginConfig,
+    DependencyConfig, DependencyScope, DependencySource, LanguageType, TaskArgs, TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
-use moon_test_utils2::AppContextMocker;
-use rustc_hash::FxHashMap;
+use moon_project_builder::ProjectBuilder;
+use moon_test_utils2::WorkspaceMocker;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-// We need some top-level struct to hold the data used for lifetime refs.
-struct Stub {
-    config_loader: ConfigLoader,
-    enabled_toolchains: Vec<Id>,
-    toolchain_config: ToolchainConfig,
-    workspace_root: PathBuf,
-    id: Id,
-    source: WorkspaceRelativePathBuf,
+struct ProjectBuilderContainer {
+    pub mocker: WorkspaceMocker,
 }
 
-impl Stub {
-    pub fn new(id: &str, root: &Path) -> Self {
-        // Enable platforms so that detection works
-        let toolchain_config = ToolchainConfig {
-            bun: Some(BunConfig::default()),
-            deno: Some(DenoConfig::default()),
-            node: Some(NodeConfig::default()),
-            rust: Some(RustConfig::default()),
-            plugins: FxHashMap::from_iter([(
-                Id::raw("typescript"),
-                ToolchainPluginConfig::default(),
-            )]),
-            ..ToolchainConfig::default()
-        };
-
+impl ProjectBuilderContainer {
+    pub fn new(root: &Path) -> Self {
         Self {
-            config_loader: ConfigLoader::default(),
-            enabled_toolchains: toolchain_config.get_enabled(),
-            toolchain_config,
-            workspace_root: root.to_path_buf(),
-            id: Id::raw(id),
-            source: WorkspaceRelativePathBuf::from(id),
+            mocker: WorkspaceMocker::new(root)
+                .with_all_toolchains()
+                .with_global_envs(),
         }
     }
 
-    pub async fn create_builder(&self) -> ProjectBuilder {
-        let mut app_context = AppContextMocker::new(&self.workspace_root);
-        app_context.with_global_envs();
-        app_context.toolchain_config = self.toolchain_config.clone();
+    pub fn inherit_global_tasks(mut self) -> Self {
+        self.mocker = self.mocker.load_inherited_tasks_from("global");
+        self
+    }
 
-        let app_context = app_context.mock();
+    pub async fn build_project(&self, id: &str) -> Project {
+        self.mocker.build_project(id).await
+    }
 
-        ProjectBuilder::new(
-            &self.id,
-            &self.source,
-            ProjectBuilderContext {
-                config_loader: &self.config_loader,
-                enabled_toolchains: &self.enabled_toolchains,
-                monorepo: true,
-                root_project_id: None,
-                toolchain_config: &self.toolchain_config,
-                toolchain_registry: app_context.toolchain_registry,
-                workspace_root: &self.workspace_root,
-            },
-        )
-        .unwrap()
+    pub async fn build_project_with(
+        &self,
+        id: &str,
+        op: impl FnMut(&mut ProjectBuilder),
+    ) -> Project {
+        self.mocker.build_project_with(id, op).await
     }
 }
 
 async fn build_project(id: &str, root: &Path) -> Project {
-    let stub = Stub::new(id, root);
-
-    let manager = ConfigLoader::default()
-        .load_tasks_manager_from(root, root.join("global"))
-        .unwrap();
-
-    let mut builder = stub.create_builder().await;
-    builder.load_local_config().await.unwrap();
-    builder.inherit_global_config(&manager).unwrap();
-    builder.build().await.unwrap()
+    ProjectBuilderContainer::new(root)
+        .inherit_global_tasks()
+        .build_project(id)
+        .await
 }
 
 async fn build_project_without_inherited(id: &str, root: &Path) -> Project {
-    let stub = Stub::new(id, root);
-
-    let mut builder = stub.create_builder().await;
-    builder.load_local_config().await.unwrap();
-    builder.build().await.unwrap()
+    ProjectBuilderContainer::new(root).build_project(id).await
 }
 
 async fn build_lang_project(id: &str) -> Project {
-    let sandbox = create_sandbox("langs");
-    let stub = Stub::new(id, sandbox.path());
-
-    let mut builder = stub.create_builder().await;
-    builder.load_local_config().await.unwrap();
-    builder.build().await.unwrap()
+    build_project_without_inherited(id, create_sandbox("langs").path()).await
 }
 
 mod project_builder {
@@ -140,12 +94,13 @@ mod project_builder {
     }
 
     // Tasks are tested heavily in the tasks-builder crate
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn builds_tasks() {
         let sandbox = create_sandbox("builder");
-        let a = build_project("foo", sandbox.path()).await;
-        let b = build_project("bar", sandbox.path()).await;
-        let c = build_project("baz", sandbox.path()).await;
+        let container = ProjectBuilderContainer::new(sandbox.path()).inherit_global_tasks();
+        let a = container.build_project("foo").await;
+        let b = container.build_project("bar").await;
+        let c = container.build_project("baz").await;
 
         assert_eq!(a.tasks.len(), 4);
         assert_eq!(b.tasks.len(), 3);
@@ -463,18 +418,17 @@ mod project_builder {
         #[tokio::test]
         async fn inherits_dep() {
             let sandbox = create_sandbox("builder");
-            let stub = Stub::new("bar", sandbox.path());
+            let container = ProjectBuilderContainer::new(sandbox.path());
 
-            let mut builder = stub.create_builder().await;
-            builder.load_local_config().await.unwrap();
-
-            builder.extend_with_dependency(DependencyConfig {
-                id: "foo".try_into().unwrap(),
-                scope: DependencyScope::Development,
-                ..DependencyConfig::default()
-            });
-
-            let project = builder.build().await.unwrap();
+            let project = container
+                .build_project_with("bar", |builder| {
+                    builder.extend_with_dependency(DependencyConfig {
+                        id: "foo".try_into().unwrap(),
+                        scope: DependencyScope::Development,
+                        ..DependencyConfig::default()
+                    });
+                })
+                .await;
 
             assert_eq!(
                 project.dependencies,
@@ -490,40 +444,38 @@ mod project_builder {
         #[tokio::test]
         async fn inherits_task() {
             let sandbox = create_sandbox("builder");
-            let stub = Stub::new("bar", sandbox.path());
+            let container = ProjectBuilderContainer::new(sandbox.path());
 
-            let mut builder = stub.create_builder().await;
-            builder.load_local_config().await.unwrap();
-
-            builder.extend_with_task(
-                Id::raw("task"),
-                TaskConfig {
-                    ..TaskConfig::default()
-                },
-            );
-
-            let project = builder.build().await.unwrap();
+            let project = container
+                .build_project_with("bar", |builder| {
+                    builder.extend_with_task(
+                        Id::raw("task"),
+                        TaskConfig {
+                            ..TaskConfig::default()
+                        },
+                    );
+                })
+                .await;
 
             assert!(project.tasks.contains_key("task"));
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_override_task_of_same_id() {
             let sandbox = create_sandbox("builder");
-            let stub = Stub::new("baz", sandbox.path());
+            let container = ProjectBuilderContainer::new(sandbox.path());
 
-            let mut builder = stub.create_builder().await;
-            builder.load_local_config().await.unwrap();
-
-            builder.extend_with_task(
-                Id::raw("baz"),
-                TaskConfig {
-                    command: TaskArgs::String("new-command-name".into()),
-                    ..TaskConfig::default()
-                },
-            );
-
-            let project = builder.build().await.unwrap();
+            let project = container
+                .build_project_with("baz", |builder| {
+                    builder.extend_with_task(
+                        Id::raw("baz"),
+                        TaskConfig {
+                            command: TaskArgs::String("new-command-name".into()),
+                            ..TaskConfig::default()
+                        },
+                    );
+                })
+                .await;
 
             assert!(project.tasks.contains_key("baz"));
             assert_eq!(project.tasks.get("baz").unwrap().command, "baz");

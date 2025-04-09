@@ -7,7 +7,6 @@ use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
 use std::fs;
 use std::path::Path;
-use std::sync::Arc;
 
 fn create_out_files(project_root: &Path) {
     let out_dir = project_root.join("out");
@@ -32,16 +31,12 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
     )
 }
 
-async fn generate_graph(workspace_root: &Path) -> (WorkspaceGraph, Arc<BoxedVcs>) {
-    let mut mock = create_workspace_graph_mocker(workspace_root);
-    mock.with_vcs();
-
+async fn mock_workspace(workspace_root: &Path) -> (WorkspaceGraph, BoxedVcs) {
     create_out_files(workspace_root);
 
-    let graph = mock.build_workspace_graph().await;
-    let vcs = mock.vcs.take().unwrap();
+    let mock = create_workspace_graph_mocker(workspace_root).with_global_envs();
 
-    (graph, vcs)
+    (mock.mock_workspace_graph().await, mock.mock_vcs_adapter())
 }
 
 async fn generate_hash<'a>(
@@ -64,7 +59,7 @@ mod task_hasher {
         let sandbox = create_sandbox("ignore-patterns");
         sandbox.enable_git();
 
-        let (wg, vcs) = generate_graph(sandbox.path()).await;
+        let (wg, vcs) = mock_workspace(sandbox.path()).await;
         let project = wg.get_project("root").unwrap();
         let task = wg.get_task_from_project("root", "testPatterns").unwrap();
 
@@ -89,7 +84,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "files").unwrap();
@@ -112,7 +107,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "dirs").unwrap();
@@ -135,7 +130,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "globStar").unwrap();
@@ -158,7 +153,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "globNestedStar").unwrap();
@@ -188,7 +183,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "globGroup").unwrap();
@@ -234,7 +229,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "none").unwrap();
 
@@ -255,7 +250,7 @@ mod task_hasher {
                 cmd.args(["add", "created.txt", "filtered.txt"]);
             });
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "touched").unwrap();
 
@@ -272,7 +267,7 @@ mod task_hasher {
             sandbox.enable_git();
             sandbox.create_file(".env", "");
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "envFile").unwrap();
@@ -297,7 +292,7 @@ mod task_hasher {
             sandbox.create_file(".env.prod", "");
             sandbox.create_file(".env.local", "");
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "envFileList").unwrap();
@@ -324,7 +319,7 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutFile").unwrap();
@@ -352,7 +347,7 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutDir").unwrap();
@@ -375,7 +370,7 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutGlob").unwrap();
@@ -398,7 +393,7 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inGlobOutFile").unwrap();
@@ -429,7 +424,7 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inGlobOutDir").unwrap();
@@ -457,7 +452,7 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inGlobOutGlob").unwrap();

@@ -22,7 +22,6 @@ mod template_file {
     }
 
     mod mergeable {
-
         use super::*;
 
         #[test]

@@ -418,6 +418,14 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Inputs are tricky, as they come from many sources. We need to ensure that user configured
         // inputs are handled explicitly, while globally inherited sources are handled implicitly.
+
+        dbg!(
+            &target,
+            configured_inputs,
+            has_configured_inputs,
+            self.context.monorepo,
+            task.state.root_level
+        );
         if configured_inputs == 0 {
             if has_configured_inputs {
                 trace!(

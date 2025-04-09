@@ -8,6 +8,8 @@ use moon_platform::PlatformManager;
 use moon_plugin::PluginHostData;
 use moon_project_builder::*;
 use moon_project_graph::Project;
+use moon_task_builder::*;
+use moon_task_graph::Task;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
@@ -38,6 +40,7 @@ impl WorkspaceMocker {
         let root = root.as_ref();
 
         Self {
+            monorepo: true,
             moon_env: MoonEnvironment::new_testing(root),
             proto_env: ProtoEnvironment::new_testing(root).unwrap(),
             workspace_root: root.to_path_buf(),
@@ -74,7 +77,9 @@ impl WorkspaceMocker {
         self
     }
 
-    pub fn set_toolchain_config(mut self, config: ToolchainConfig) -> Self {
+    pub fn set_toolchain_config(mut self, mut config: ToolchainConfig) -> Self {
+        config.inherit_plugin_locators().unwrap();
+
         self.toolchain_config = config;
         self
     }
@@ -86,6 +91,7 @@ impl WorkspaceMocker {
 
     pub fn update_toolchain_config(mut self, mut op: impl FnMut(&mut ToolchainConfig)) -> Self {
         op(&mut self.toolchain_config);
+        self.toolchain_config.inherit_plugin_locators().unwrap();
         self
     }
 
@@ -130,12 +136,12 @@ impl WorkspaceMocker {
         })
     }
 
-    pub fn with_default_toolchains(mut self) -> Self {
-        if self.toolchain_config.node.is_none() {
-            self.toolchain_config.node = Some(NodeConfig::default());
-        }
-
-        self
+    pub fn with_default_toolchains(self) -> Self {
+        self.update_toolchain_config(|config| {
+            if config.node.is_none() {
+                config.node = Some(NodeConfig::default());
+            }
+        })
     }
 
     pub fn with_global_envs(mut self) -> Self {
@@ -179,11 +185,14 @@ impl WorkspaceMocker {
         id: &str,
         mut op: impl FnMut(&mut ProjectBuilder),
     ) -> Project {
-        let source = WorkspaceRelativePathBuf::from(id);
+        let source = if id == "root" {
+            WorkspaceRelativePathBuf::new()
+        } else {
+            WorkspaceRelativePathBuf::from(id)
+        };
         let id = Id::raw(id);
 
-        let toolchain_config = self.mock_toolchain_config();
-        let enabled_toolchains = toolchain_config.get_enabled();
+        let enabled_toolchains = self.toolchain_config.get_enabled();
 
         let mut builder = ProjectBuilder::new(
             &id,
@@ -193,7 +202,7 @@ impl WorkspaceMocker {
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,
                 root_project_id: None,
-                toolchain_config: &toolchain_config,
+                toolchain_config: &self.toolchain_config,
                 toolchain_registry: Arc::new(self.mock_toolchain_registry()),
                 workspace_root: &self.workspace_root,
             },
@@ -210,19 +219,63 @@ impl WorkspaceMocker {
         builder.build().await.unwrap()
     }
 
-    pub fn mock_app_context(&self) -> AppContext {
-        let toolchain_config = self.mock_toolchain_config();
-        let workspace_config = self.mock_workspace_config();
+    pub async fn build_tasks(&self, project: &Project) -> BTreeMap<Id, Task> {
+        self.build_tasks_with(project, |_| {}).await
+    }
 
+    pub async fn build_tasks_with(
+        &self,
+        project: &Project,
+        mut op: impl FnMut(&mut TasksBuilder),
+    ) -> BTreeMap<Id, Task> {
+        let toolchain_registry = self.mock_toolchain_registry();
+        let enabled_toolchains = self.toolchain_config.get_enabled();
+
+        let mut builder = TasksBuilder::new(
+            &project.id,
+            &project.source,
+            &project.toolchains,
+            TasksBuilderContext {
+                enabled_toolchains: &enabled_toolchains,
+                monorepo: self.monorepo,
+                toolchain_config: &self.toolchain_config,
+                toolchain_registry: toolchain_registry.into(),
+                workspace_root: &self.workspace_root,
+            },
+        );
+
+        builder.load_local_tasks(&project.config);
+
+        let global_config = self
+            .inherited_tasks
+            .get_inherited_config(
+                &project.toolchains,
+                &project.config.stack,
+                &project.config.type_of,
+                &project.config.tags,
+            )
+            .unwrap();
+
+        builder.inherit_global_tasks(
+            &global_config.config,
+            Some(&project.config.workspace.inherited_tasks),
+        );
+
+        op(&mut builder);
+
+        builder.build().await.unwrap()
+    }
+
+    pub fn mock_app_context(&self) -> AppContext {
         AppContext {
             cli_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
             cache_engine: Arc::new(self.mock_cache_engine()),
             console: Arc::new(self.mock_console()),
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),
             vcs: Arc::new(self.mock_vcs_adapter()),
-            toolchain_config: Arc::new(toolchain_config),
+            toolchain_config: Arc::new(self.toolchain_config.clone()),
             working_dir: self.workspace_root.clone(),
-            workspace_config: Arc::new(workspace_config),
+            workspace_config: Arc::new(self.workspace_config.clone()),
             workspace_root: self.workspace_root.clone(),
         }
     }
@@ -247,21 +300,13 @@ impl WorkspaceMocker {
         .await
     }
 
-    pub fn mock_toolchain_config(&self) -> ToolchainConfig {
-        let mut config = self.toolchain_config.clone();
-        // config.inherit_default_plugins().unwrap();
-        config.inherit_plugin_locators().unwrap();
-        config
-    }
-
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
-        let config = self.mock_toolchain_config();
         let mut registry = ToolchainRegistry::new(PluginHostData {
             moon_env: Arc::new(self.moon_env.clone()),
             proto_env: Arc::new(self.proto_env.clone()),
             workspace_graph: Arc::new(OnceLock::new()),
         });
-        registry.inherit_configs(&config.plugins);
+        registry.inherit_configs(&self.toolchain_config.plugins);
         registry
     }
 
@@ -274,10 +319,6 @@ impl WorkspaceMocker {
             )
             .unwrap(),
         )
-    }
-
-    pub fn mock_workspace_config(&self) -> WorkspaceConfig {
-        self.workspace_config.clone()
     }
 
     pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext {

@@ -4929,6 +4929,7 @@ dependencies = [
  "moon_python_platform",
  "moon_rust_platform",
  "moon_system_platform",
+ "moon_task_builder",
  "moon_task_graph",
  "moon_toolchain_plugin",
  "moon_vcs",

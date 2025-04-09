@@ -12,10 +12,7 @@ use moon_task_runner::command_builder::CommandBuilder;
 use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
-use moon_test_utils2::{
-    WorkspaceGraph, generate_app_context_from_sandbox, generate_platform_manager_from_sandbox,
-    generate_workspace_graph_from_sandbox,
-};
+use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use starbase_archive::Archiver;
 use starbase_sandbox::{Sandbox, create_sandbox};
 use std::fs;
@@ -43,9 +40,13 @@ pub struct TaskRunnerContainer {
 impl TaskRunnerContainer {
     pub async fn new_for_project(fixture: &str, project_id: &str, task_id: &str) -> Self {
         let sandbox = create_sandbox(fixture);
-        let app_context = generate_app_context_from_sandbox(sandbox.path());
-        let workspace_graph = generate_workspace_graph_from_sandbox(sandbox.path()).await;
-        let platform_manager = generate_platform_manager_from_sandbox(sandbox.path()).await;
+        let mocker = WorkspaceMocker::new(sandbox.path())
+            .load_default_configs()
+            .with_global_envs();
+
+        let app_context = mocker.mock_app_context();
+        let workspace_graph = mocker.mock_workspace_graph().await;
+        let platform_manager = mocker.mock_platform_manager().await;
         let project = workspace_graph.get_project(project_id).unwrap();
         let task = workspace_graph
             .get_task_from_project(project_id, task_id)

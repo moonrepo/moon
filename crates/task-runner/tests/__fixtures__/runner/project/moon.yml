@@ -26,4 +26,4 @@ tasks:
   cache-lifetime:
     command: noop
     options:
-      cacheLifetime: '5s'
+      cacheLifetime: '2s'

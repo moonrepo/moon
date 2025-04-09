@@ -543,16 +543,16 @@ mod task_runner {
                     Some(HydrateFrom::PreviousOutput)
                 );
 
-                tokio::time::sleep(Duration::from_secs(3)).await;
+                tokio::time::sleep(Duration::from_secs(1)).await;
 
                 assert_eq!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
                 );
 
-                tokio::time::sleep(Duration::from_secs(3)).await;
+                tokio::time::sleep(Duration::from_secs(1)).await;
 
-                // lifetime is 5 seconds
+                // lifetime is 2 seconds
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
         }

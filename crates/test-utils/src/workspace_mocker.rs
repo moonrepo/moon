@@ -171,6 +171,14 @@ impl WorkspaceMocker {
     }
 
     pub async fn build_project(&self, id: &str) -> Project {
+        self.build_project_with(id, |_| {}).await
+    }
+
+    pub async fn build_project_with(
+        &self,
+        id: &str,
+        mut op: impl FnMut(&mut ProjectBuilder),
+    ) -> Project {
         let source = WorkspaceRelativePathBuf::from(id);
         let id = Id::raw(id);
 
@@ -196,6 +204,9 @@ impl WorkspaceMocker {
         builder
             .inherit_global_config(&self.inherited_tasks)
             .unwrap();
+
+        op(&mut builder);
+
         builder.build().await.unwrap()
     }
 

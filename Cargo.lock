@@ -4467,7 +4467,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_file_group",
- "moon_plugin",
  "moon_project",
  "moon_task",
  "moon_task_builder",

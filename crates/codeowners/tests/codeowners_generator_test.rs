@@ -44,30 +44,34 @@ fn load_generator(provider: VcsProvider) -> Sandbox {
     sandbox
 }
 
-#[test]
-fn generates_bitbucket() {
-    let sandbox = load_generator(VcsProvider::Bitbucket);
+mod codeowners {
+    use super::*;
 
-    assert_snapshot!(fs::read_to_string(sandbox.path().join("CODEOWNERS")).unwrap());
-}
+    #[test]
+    fn generates_bitbucket() {
+        let sandbox = load_generator(VcsProvider::Bitbucket);
 
-#[test]
-fn generates_github() {
-    let sandbox = load_generator(VcsProvider::GitHub);
+        assert_snapshot!(fs::read_to_string(sandbox.path().join("CODEOWNERS")).unwrap());
+    }
 
-    assert_snapshot!(fs::read_to_string(sandbox.path().join(".github/CODEOWNERS")).unwrap());
-}
+    #[test]
+    fn generates_github() {
+        let sandbox = load_generator(VcsProvider::GitHub);
 
-#[test]
-fn generates_gitlab() {
-    let sandbox = load_generator(VcsProvider::GitLab);
+        assert_snapshot!(fs::read_to_string(sandbox.path().join(".github/CODEOWNERS")).unwrap());
+    }
 
-    assert_snapshot!(fs::read_to_string(sandbox.path().join(".gitlab/CODEOWNERS")).unwrap());
-}
+    #[test]
+    fn generates_gitlab() {
+        let sandbox = load_generator(VcsProvider::GitLab);
 
-#[test]
-fn generates_other() {
-    let sandbox = load_generator(VcsProvider::Other);
+        assert_snapshot!(fs::read_to_string(sandbox.path().join(".gitlab/CODEOWNERS")).unwrap());
+    }
 
-    assert_snapshot!(fs::read_to_string(sandbox.path().join("CODEOWNERS")).unwrap());
+    #[test]
+    fn generates_other() {
+        let sandbox = load_generator(VcsProvider::Other);
+
+        assert_snapshot!(fs::read_to_string(sandbox.path().join("CODEOWNERS")).unwrap());
+    }
 }

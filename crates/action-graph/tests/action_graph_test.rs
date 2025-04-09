@@ -11,7 +11,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{PipelineActionSwitch, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI};
 use moon_platform::*;
 use moon_task::{Target, TargetLocator, Task};
-use moon_test_utils2::{AppContextMocker, generate_workspace_graph};
+use moon_test_utils2::{WorkspaceMocker, generate_workspace_graph};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox, create_sandbox};
@@ -63,7 +63,7 @@ fn create_rust_runtime() -> Runtime {
 
 fn create_app_context() -> Arc<AppContext> {
     let sandbox = create_empty_sandbox();
-    Arc::new(AppContextMocker::new(sandbox.path()).mock())
+    Arc::new(WorkspaceMocker::new(sandbox.path()).mock_app_context())
 }
 
 fn topo(graph: ActionGraph) -> Vec<ActionNode> {

@@ -22,8 +22,6 @@ rustc-hash = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon_config = { path = "../config", features = ["loader", "proto"] }
-moon_plugin = { path = "../plugin" }
 moon_test_utils2 = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }

@@ -121,7 +121,7 @@ impl ActionGraphBuilder {
     }
 
     #[instrument(skip_all)]
-    pub async fn setup_toolchain_plugin(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
+    pub async fn setup_toolchain(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
         if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return None;
         }

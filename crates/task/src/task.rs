@@ -9,7 +9,7 @@ use moon_config::{
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::{self, GlobWalkOptions};
+use starbase_utils::glob::{self, GlobWalkOptions, split_patterns};
 use std::fmt;
 use std::path::Path;
 
@@ -91,10 +91,23 @@ cacheable!(
 impl Task {
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
-        Ok(glob::GlobSet::new_split(
-            &self.input_globs,
-            &self.output_globs,
-        )?)
+        // Both inputs/outputs may have a mix of negated and
+        // non-negated globs, so we must split them into groups
+        let (gi, ni) = split_patterns(&self.input_globs);
+        let (go, no) = split_patterns(&self.output_globs);
+
+        // We then only match against non-negated inputs
+        let g = gi;
+
+        // While output non-negated/negated and negated inputs
+        // are all considered negations (inputs and outputs
+        // shouldn't overlay)
+        let mut n = vec![];
+        n.extend(go);
+        n.extend(ni);
+        n.extend(no);
+
+        Ok(glob::GlobSet::new_split(g, n)?)
     }
 
     /// Return a list of project-relative affected files filtered down from

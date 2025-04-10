@@ -86,33 +86,4 @@ mod plugin_registry {
             .await
             .unwrap();
     }
-
-    #[tokio::test]
-    #[should_panic(expected = "The extension plugin id already exists.")]
-    async fn loads_errors_if_id_exists() {
-        let sandbox = create_sandbox("wasm");
-        let registry = create_registry(sandbox.path());
-
-        registry
-            .load_without_config(
-                Id::raw("id"),
-                PluginLocator::File(Box::new(FileLocator {
-                    file: "".into(),
-                    path: Some(sandbox.path().join("test.wasm")),
-                })),
-            )
-            .await
-            .unwrap();
-
-        registry
-            .load_without_config(
-                Id::raw("id"),
-                PluginLocator::File(Box::new(FileLocator {
-                    file: "".into(),
-                    path: Some(sandbox.path().join("test.wasm")),
-                })),
-            )
-            .await
-            .unwrap();
-    }
 }

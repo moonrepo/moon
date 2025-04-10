@@ -78,9 +78,9 @@ impl ToolchainRegistry {
         !self.configs.is_empty()
     }
 
-    pub async fn load<I>(&self, id: I) -> miette::Result<Arc<ToolchainPlugin>>
+    pub async fn load<Id>(&self, id: Id) -> miette::Result<Arc<ToolchainPlugin>>
     where
-        I: AsRef<str>,
+        Id: AsRef<str>,
     {
         let id = PluginId::raw(id.as_ref());
 
@@ -132,7 +132,7 @@ impl ToolchainRegistry {
 
             set.spawn(async move {
                 registry
-                    .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
+                    .load(&id, config.plugin.as_ref().unwrap(), |manifest| {
                         let value = serialize_config(config.config.iter())?;
 
                         trace!(
@@ -200,7 +200,7 @@ impl ToolchainRegistry {
         for toolchain_id in toolchain_ids {
             let toolchain_id = toolchain_id.as_ref();
 
-            if let Ok(toolchain) = self.registry.load(toolchain_id).await {
+            if let Ok(toolchain) = self.load(toolchain_id).await {
                 if toolchain.has_func(func_name).await {
                     let mut operation = Operation::new(format!("{toolchain_id}:{func_name}"));
                     let id = toolchain.id.clone();

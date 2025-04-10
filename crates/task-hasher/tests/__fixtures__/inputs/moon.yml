@@ -36,6 +36,13 @@ tasks:
     inputs:
       - 'dir/{a,xy}z.txt'
 
+  globNegated:
+    command: noop
+    inputs:
+      - '**/*.txt'
+      - '!dir/az.txt'
+      - '!{1,3}.txt'
+
   envFile:
     command: noop
     options:

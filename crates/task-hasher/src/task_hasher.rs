@@ -98,7 +98,7 @@ impl<'task> TaskHasher<'task> {
 
         if !self.task.input_files.is_empty() {
             for input in &self.task.input_files {
-                files.insert(input.to_path(self.workspace_root));
+                files.insert(input.to_logical_path(self.workspace_root));
             }
         }
 
@@ -113,12 +113,11 @@ impl<'task> TaskHasher<'task> {
                     &self.task.input_globs,
                     GlobWalkOptions::default().cache().files(),
                 )?);
-
-                // Collect inputs by querying VCS
-            } else {
-                // Using VCS to collect inputs in a project is faster than globbing
+            }
+            // Collect inputs by querying VCS which is faster than globbing
+            else {
                 for file in self.vcs.get_file_tree(&self.project.source).await? {
-                    files.insert(file.to_path(self.workspace_root));
+                    files.insert(file.to_logical_path(self.workspace_root));
                 }
 
                 // However that completely ignores workspace level globs,
@@ -127,7 +126,7 @@ impl<'task> TaskHasher<'task> {
                     .task
                     .input_globs
                     .iter()
-                    .filter(|g| !g.starts_with(&self.project.source))
+                    .filter(|g| !g.as_str().starts_with(self.project.source.as_str()))
                     .collect::<Vec<_>>();
 
                 if !workspace_globs.is_empty() {
@@ -144,7 +143,7 @@ impl<'task> TaskHasher<'task> {
         // Also run this LAST as it should take highest precedence!
         if !is_ci() {
             for local_file in self.vcs.get_touched_files().await?.all() {
-                let abs_file = local_file.to_path(self.workspace_root);
+                let abs_file = local_file.to_logical_path(self.workspace_root);
 
                 // Deleted files are listed in `git status` but are
                 // not valid inputs, so avoid hashing them!
@@ -197,16 +196,24 @@ impl<'task> TaskHasher<'task> {
         let mut files = FxHashSet::default();
         let ignore = GlobSet::new(&self.hasher_config.ignore_patterns)?;
         let ignore_missing = GlobSet::new(&self.hasher_config.ignore_missing_patterns)?;
+        let globset = self.task.create_globset()?;
+        let has_globs = !self.task.input_globs.is_empty() || !self.task.output_globs.is_empty();
 
-        for path in inputs {
+        for abs_path in inputs {
             // We need to use relative paths from the workspace root
             // so that it works the same across all machines
-            let rel_path = path.relative_to(self.workspace_root).into_diagnostic()?;
+            let rel_path = abs_path
+                .relative_to(self.workspace_root)
+                .into_diagnostic()?;
+
+            if has_globs && !self.is_valid_input_source(&globset, &rel_path) {
+                continue;
+            }
 
             // `git hash-object` will fail if you pass an unknown file
-            if !path.exists() && self.hasher_config.warn_on_missing_inputs {
+            if !abs_path.exists() && self.hasher_config.warn_on_missing_inputs {
                 if self.hasher_config.ignore_missing_patterns.is_empty()
-                    || !ignore_missing.is_match(path)
+                    || !ignore_missing.is_match(abs_path)
                 {
                     warn!(
                         "Attempted to hash input {} but it does not exist, skipping",
@@ -217,7 +224,7 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if !path.is_file() {
+            if !abs_path.is_file() {
                 warn!(
                     "Attempted to hash input {} but only files can be hashed, try using a glob instead",
                     color::rel_path(&rel_path),
@@ -226,7 +233,7 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if ignore.is_match(path) {
+            if ignore.is_match(abs_path) {
                 trace!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),
@@ -234,13 +241,6 @@ impl<'task> TaskHasher<'task> {
             } else {
                 files.insert(rel_path);
             }
-        }
-
-        // Filter out unwanted files
-        if !files.is_empty() {
-            let globset = self.task.create_globset()?;
-
-            files.retain(|file| self.is_valid_input_source(&globset, file));
         }
 
         Ok(files)

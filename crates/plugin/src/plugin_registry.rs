@@ -9,8 +9,8 @@ use std::fmt;
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
-    Id, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm, host::HostData,
-    inject_default_manifest_config, to_virtual_path,
+    Id as PluginId, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm,
+    host::HostData, inject_default_manifest_config, to_virtual_path,
 };
 
 #[allow(dead_code)]
@@ -18,7 +18,7 @@ pub struct PluginRegistry<T: Plugin> {
     pub host_data: PluginHostData,
 
     loader: PluginLoader,
-    plugins: Arc<scc::HashMap<Id, Arc<T>>>,
+    plugins: Arc<scc::HashMap<PluginId, Arc<T>>>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
@@ -62,7 +62,11 @@ impl<T: Plugin> PluginRegistry<T> {
         }
     }
 
-    pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
+    pub fn create_manifest(
+        &self,
+        id: &PluginId,
+        wasm_file: PathBuf,
+    ) -> miette::Result<PluginManifest> {
         debug!(
             plugin = self.type_of.get_label(),
             id = id.as_str(),
@@ -100,7 +104,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, Arc<T>>> {
+    pub fn get_cache(&self) -> Arc<scc::HashMap<PluginId, Arc<T>>> {
         Arc::clone(&self.plugins)
     }
 
@@ -108,7 +112,7 @@ impl<T: Plugin> PluginRegistry<T> {
         &self.virtual_paths
     }
 
-    pub async fn get_instance(&self, id: &Id) -> miette::Result<Arc<T>> {
+    pub async fn get_instance(&self, id: &PluginId) -> miette::Result<Arc<T>> {
         Ok(self
             .plugins
             .get_async(id)
@@ -120,51 +124,25 @@ impl<T: Plugin> PluginRegistry<T> {
             })?)
     }
 
-    pub fn is_registered(&self, id: &Id) -> bool {
+    pub fn is_registered(&self, id: &PluginId) -> bool {
         self.plugins.contains(id)
     }
 
-    pub async fn load<I>(&self, id: I) -> miette::Result<Arc<T>>
-    where
-        I: AsRef<str>,
-    {
-        let id = Id::raw(id.as_ref());
-
-        if self.is_registered(&id) {
-            return self.get_instance(&id).await;
-        }
-
-        Err(PluginError::UnknownId {
-            id: id.to_string(),
-            ty: self.type_of,
-        }
-        .into())
-    }
-
     #[instrument(skip(self, op))]
-    pub async fn load_with_config<I, L, F>(
-        &self,
-        id: I,
-        locator: L,
-        mut op: F,
-    ) -> miette::Result<()>
+    pub async fn load<I, L, F>(&self, id: I, locator: L, mut op: F) -> miette::Result<()>
     where
         I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
-        let id = Id::raw(id.as_ref());
+        let id = PluginId::raw(id.as_ref());
         let locator = locator.as_ref();
 
         // Use an entry so that it creates a lock,
         // and hopefully avoids parallel registrations
         match self.plugins.entry_async(id).await {
-            Entry::Occupied(entry) => {
-                return Err(PluginError::ExistingId {
-                    id: entry.key().to_string(),
-                    ty: self.type_of,
-                }
-                .into());
+            Entry::Occupied(_) => {
+                // Already loaded
             }
             Entry::Vacant(entry) => {
                 debug!(
@@ -226,10 +204,18 @@ impl<T: Plugin> PluginRegistry<T> {
         I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
     {
-        self.load_with_config(id, locator, |_| Ok(())).await
+        self.load(id, locator, |_| Ok(())).await
     }
 
-    pub fn register(&self, id: Id, plugin: T) {
+    pub fn register(&self, id: PluginId, plugin: T) -> miette::Result<()> {
+        if self.is_registered(&id) {
+            return Err(PluginError::ExistingId {
+                id: id.to_string(),
+                ty: self.type_of,
+            }
+            .into());
+        }
+
         debug!(
             plugin = self.type_of.get_label(),
             id = id.as_str(),
@@ -237,6 +223,8 @@ impl<T: Plugin> PluginRegistry<T> {
         );
 
         let _ = self.plugins.insert(id, Arc::new(plugin));
+
+        Ok(())
     }
 }
 

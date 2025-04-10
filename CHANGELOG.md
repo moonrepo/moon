@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Attempted fix for the "plugin typescript already exists" error.
+- Fixed an issue where negated glob task `inputs` wouldn't filter the file list when hashing.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.34.2
 
 #### 🚀 Updates

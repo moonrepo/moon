@@ -1,7 +1,7 @@
 use crate::action_graph::ActionGraph;
 use moon_action::{
-    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
-    SetupToolchainPluginNode, SyncProjectNode,
+    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode,
+    SetupToolchainLegacyNode, SetupToolchainNode, SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
@@ -763,7 +763,7 @@ impl<'app> ActionGraphBuilder<'app> {
             return None;
         }
 
-        let node = ActionNode::setup_toolchain(SetupToolchainNode {
+        let node = ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
             runtime: runtime.to_owned(),
         });
 
@@ -787,7 +787,7 @@ impl<'app> ActionGraphBuilder<'app> {
             return None;
         }
 
-        let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
             spec: spec.to_owned(),
         });
 

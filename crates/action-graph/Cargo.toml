@@ -15,6 +15,7 @@ moon_affected = { path = "../affected" }
 moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_pdk_api = { path = "../pdk-api" }
 # TODO remove
 moon_platform = { path = "../../legacy/core/platform" }
 moon_project = { path = "../project" }
@@ -26,6 +27,7 @@ graph-cycles = "0.2.0"
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

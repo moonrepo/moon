@@ -1,14 +1,16 @@
 use crate::action_graph::ActionGraph;
+use miette::IntoDiagnostic;
 use moon_action::{
-    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
-    SetupToolchainPluginNode, SyncProjectNode,
+    ActionNode, InstallDependenciesNode, InstallProjectDepsNode, InstallWorkspaceDepsNode,
+    RunTaskNode, SetupToolchainLegacyNode, SetupToolchainNode, SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
+use moon_pdk_api::LocateDependenciesRootInput;
 use moon_platform::{PlatformManager, Runtime, ToolchainSpec};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
@@ -18,6 +20,7 @@ use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphErr
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::glob::GlobSet;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -96,6 +99,115 @@ impl ActionGraphBuilder {
         ActionGraph::new(self.graph)
     }
 
+    pub fn get_spec(
+        &self,
+        project: &Project,
+        toolchain_id: &Id,
+        allow_override: bool,
+    ) -> Option<ToolchainSpec> {
+        if let Some(config) = project.config.toolchain.plugins.get(toolchain_id) {
+            if !config.is_enabled() {
+                return None;
+            }
+
+            if allow_override {
+                if let Some(version) = config.get_version() {
+                    return Some(ToolchainSpec::new_override(
+                        toolchain_id.to_owned(),
+                        version.to_owned(),
+                    ));
+                }
+            }
+        }
+
+        if let Some(config) = self.app_context.toolchain_config.plugins.get(toolchain_id) {
+            return Some(match &config.version {
+                Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
+                None => ToolchainSpec::new_global(toolchain_id.to_owned()),
+            });
+        }
+
+        None
+    }
+
+    #[instrument(skip_all)]
+    pub async fn install_dependencies(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: &Project,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+
+        // Explicitly disabled
+        if !self.options.install_dependencies.is_enabled(&spec.id) || spec.is_system() {
+            return Ok(setup_toolchain_index);
+        }
+
+        let registry = &self.app_context.toolchain_registry;
+
+        // TODO remove Ok() check when fully on plugins
+        let Ok(toolchain) = registry.load(&spec.id).await else {
+            return Ok(setup_toolchain_index);
+        };
+
+        // Toolchain does not support this action, so skip and fall through
+        if !toolchain.has_func("locate_dependencies_root").await
+            || !toolchain.has_func("install_dependencies").await
+        {
+            return Ok(setup_toolchain_index);
+        }
+
+        let output = toolchain
+            .locate_dependencies_root(LocateDependenciesRootInput {
+                context: registry.create_context(),
+                starting_dir: toolchain.to_virtual_path(&project.root),
+            })
+            .await?;
+
+        // Only insert this action if a root was located
+        if let Some(root) = output.root {
+            let abs_root = toolchain.from_virtual_path(root.any_path());
+            let rel_root = abs_root
+                .relative_to(&self.app_context.workspace_root)
+                .into_diagnostic()?;
+
+            // Determine if we're in the workspace
+            let in_project = project.root == abs_root;
+            let in_workspace = if let Some(globs) = output.members {
+                if in_project {
+                    true // Root always in the workspace
+                } else {
+                    GlobSet::new(&globs)?.matches(rel_root.as_str())
+                }
+            } else {
+                true
+            };
+
+            if in_workspace {
+                let index =
+                    self.insert_node(ActionNode::install_dependencies(InstallDependenciesNode {
+                        root: rel_root,
+                        spec: spec.to_owned(),
+                        // Only track the project ID when the dependencies root is a
+                        // project root, and is not a mooon workspace root project. This
+                        // typically means that the project installs its own dependencies
+                        // and is not part of a package workspace.
+                        project_id: if in_project && !is_root_level_source(&project.source) {
+                            Some(project.id.clone())
+                        } else {
+                            None
+                        },
+                    }));
+
+                self.link_requirements(index, vec![setup_toolchain_index]);
+
+                return Ok(Some(index));
+            }
+        }
+
+        Ok(setup_toolchain_index)
+    }
+
     #[instrument(skip_all)]
     pub async fn setup_toolchain_legacy(
         &mut self,
@@ -108,15 +220,13 @@ impl ActionGraphBuilder {
             return Ok(sync_workspace_index);
         }
 
-        let node = ActionNode::setup_toolchain(SetupToolchainNode {
-            runtime: runtime.to_owned(),
-        });
+        let index = self.insert_node(ActionNode::setup_toolchain_legacy(
+            SetupToolchainLegacyNode {
+                runtime: runtime.to_owned(),
+            },
+        ));
 
-        let index = self.insert_node(node);
-
-        if let Some(edge) = sync_workspace_index {
-            self.link_requirements(index, vec![edge]);
-        }
+        self.link_requirements(index, vec![sync_workspace_index]);
 
         Ok(Some(index))
     }
@@ -141,15 +251,11 @@ impl ActionGraphBuilder {
             }
         }
 
-        let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
+        let index = self.insert_node(ActionNode::setup_toolchain(SetupToolchainNode {
             spec: spec.to_owned(),
-        });
+        }));
 
-        let index = self.insert_node(node);
-
-        if let Some(edge) = sync_workspace_index {
-            self.link_requirements(index, vec![edge]);
-        }
+        self.link_requirements(index, vec![sync_workspace_index]);
 
         Ok(Some(index))
     }
@@ -187,12 +293,7 @@ impl ActionGraphBuilder {
             }
         }
 
-        let mut edges = vec![];
-
-        if let Some(edge) = sync_workspace_index {
-            edges.push(edge);
-        }
-
+        let mut edges = vec![sync_workspace_index];
         let index = self.insert_node(node);
 
         // And we should also depend on other projects
@@ -208,7 +309,7 @@ impl ActionGraphBuilder {
                     Box::pin(self.internal_sync_project(&dep_project, cycle)).await?
                 {
                     if index != dep_project_index {
-                        edges.push(dep_project_index);
+                        edges.push(Some(dep_project_index));
                     }
                 }
             }
@@ -238,17 +339,19 @@ impl ActionGraphBuilder {
             .map(|(i, _)| i)
     }
 
-    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) {
+    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
         trace!(
             index = index.index(),
-            requires = ?edges.iter().map(|i| i.index()).collect::<Vec<_>>(),
+            requires = ?edges.iter().flat_map(|idx| idx.map(|i| i.index())).collect::<Vec<_>>(),
             "Linking requirements for index"
         );
 
         for edge in edges {
             // Use `update_edge` instead of `add_edge` as it avoids
             // duplicate edges from being inserted
-            self.graph.update_edge(index, edge, ());
+            if let Some(edge) = edge {
+                self.graph.update_edge(index, edge, ());
+            }
         }
     }
 

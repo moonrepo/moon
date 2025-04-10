@@ -2,7 +2,8 @@ use crate::action_graph::ActionGraph;
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, InstallProjectDepsNode, InstallWorkspaceDepsNode,
-    RunTaskNode, SetupToolchainLegacyNode, SetupToolchainNode, SyncProjectNode,
+    RunTaskNode, SetupEnvironmentNode, SetupToolchainLegacyNode, SetupToolchainNode,
+    SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
@@ -171,7 +172,7 @@ impl ActionGraphBuilder {
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
-            // Determine if we're in the workspace
+            // Determine if we're in the dependencies workspace
             let in_project = project.root == abs_root;
             let in_workspace = if let Some(globs) = output.members {
                 if in_project {
@@ -184,22 +185,32 @@ impl ActionGraphBuilder {
             };
 
             if in_workspace {
+                // Only track the project ID when the dependencies root is a
+                // project root, and is not a moon workspace root project. This
+                // typically means that the project installs its own dependencies
+                // and is not part of a package workspace.
+                let project_id = if in_project && !is_root_level_source(&project.source) {
+                    Some(project.id.clone())
+                } else {
+                    None
+                };
+
+                let setup_env_index =
+                    self.insert_node(ActionNode::setup_environment(SetupEnvironmentNode {
+                        root: rel_root.clone(),
+                        spec: spec.to_owned(),
+                        project_id: project_id.clone(),
+                    }));
+
                 let index =
                     self.insert_node(ActionNode::install_dependencies(InstallDependenciesNode {
                         root: rel_root,
                         spec: spec.to_owned(),
-                        // Only track the project ID when the dependencies root is a
-                        // project root, and is not a mooon workspace root project. This
-                        // typically means that the project installs its own dependencies
-                        // and is not part of a package workspace.
-                        project_id: if in_project && !is_root_level_source(&project.source) {
-                            Some(project.id.clone())
-                        } else {
-                            None
-                        },
+                        project_id,
                     }));
 
-                self.link_requirements(index, vec![setup_toolchain_index]);
+                self.link_requirements(index, vec![Some(setup_env_index)]);
+                self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
 
                 return Ok(Some(index));
             }

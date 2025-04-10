@@ -6,25 +6,6 @@ use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
-// DEPRECATED
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
-pub struct SetupToolchainLegacyNode {
-    pub runtime: Runtime,
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
-pub struct SetupToolchainNode {
-    pub spec: ToolchainSpec,
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SetupEnvironmentNode {
-    pub project_id: Option<Id>,
-    pub root: WorkspaceRelativePathBuf,
-    pub spec: ToolchainSpec,
-}
-
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallDependenciesNode {
@@ -46,6 +27,25 @@ pub struct InstallWorkspaceDepsNode {
 pub struct InstallProjectDepsNode {
     pub project_id: Id,
     pub runtime: Runtime,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupEnvironmentNode {
+    pub project_id: Option<Id>,
+    pub root: WorkspaceRelativePathBuf,
+    pub spec: ToolchainSpec,
+}
+
+// DEPRECATED
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+pub struct SetupToolchainLegacyNode {
+    pub runtime: Runtime,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+pub struct SetupToolchainNode {
+    pub spec: ToolchainSpec,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -149,6 +149,10 @@ impl ActionNode {
         Self::RunTask(Box::new(node))
     }
 
+    pub fn setup_environment(node: SetupEnvironmentNode) -> Self {
+        Self::SetupEnvironment(Box::new(node))
+    }
+
     pub fn setup_toolchain_legacy(node: SetupToolchainLegacyNode) -> Self {
         Self::SetupToolchainLegacy(Box::new(node))
     }
@@ -185,6 +189,7 @@ impl ActionNode {
     pub fn get_spec(&self) -> Option<&ToolchainSpec> {
         match self {
             Self::InstallDependencies(inner) => Some(&inner.spec),
+            Self::SetupEnvironment(inner) => Some(&inner.spec),
             Self::SetupToolchain(inner) => Some(&inner.spec),
             _ => None,
         }

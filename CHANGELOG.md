@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.34.2
 
 #### 🚀 Updates

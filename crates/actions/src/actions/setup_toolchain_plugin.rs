@@ -1,5 +1,5 @@
 use crate::utils::should_skip_action_matching;
-use moon_action::{Action, ActionStatus, SetupToolchainPluginNode};
+use moon_action::{Action, ActionStatus, SetupToolchainNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
@@ -18,7 +18,7 @@ pub async fn setup_toolchain_plugin(
     _action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    node: &SetupToolchainPluginNode,
+    node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
     // No version configured, use globals on PATH
     if node.spec.is_global() {

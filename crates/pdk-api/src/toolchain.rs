@@ -195,6 +195,33 @@ api_struct!(
     }
 );
 
+// DEPENDENCIES
+
+api_struct!(
+    /// Input passed to the `locate_dependencies_root` function.
+    pub struct LocateDependenciesRootInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// The starting directory in which to locate the root.
+        /// This is typically a project root.
+        pub starting_dir: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `hash_task_contents` function.
+    pub struct LocateDependenciesRootOutput {
+        /// A list of globs for all members (packages, libs, etc)
+        /// within the current dependencies workspace.
+        pub members: Option<Vec<String>>,
+
+        /// Virtual path to the located root. If no root was found,
+        /// return `None` to abort any relevant operations.
+        pub root: Option<VirtualPath>,
+    }
+);
+
 // RUN TASK
 
 api_struct!(

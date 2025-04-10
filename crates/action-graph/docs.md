@@ -1,0 +1,65 @@
+# Actions
+
+- SyncWorkspace
+  - Runs in the workspace root
+  - Runs `sync_workspace` for all toolchains (optional)
+    - Root config
+- SyncProject
+  - Runs in the project root
+  - Runs `sync_project` for project toolchains (optional)
+    - Root + project config
+  - Data:
+    - Project ID
+  - Depends on:
+    - SyncWorkspace
+- SetupToolchain
+  - Installs the tool into proto (optional)
+  - Runs `setup_toolchain` for the toolchain (optional)
+    - Root config
+  - Data:
+    - Toolchain ID
+    - Version
+  - Depends on:
+    - SyncWorkspace
+- SetupEnvironment
+  - Sets up the toolchain/dependencies environment
+  - Runs `setup_environment` for the toolchain (required)
+    - Root config
+    - Root + project config (if in the project root)
+  - Data:
+    - Project ID?
+    - Toolchain ID
+    - Deps root
+  - Depends on:
+    - SetupToolchain
+- InstallDependencies
+  - Installs dependencies using a package manager
+  - Runs `install_dependencies` for the toolchain (required)
+    - Root config
+    - Root + project config (if in the project root)
+  - Data:
+    - Project ID?
+    - Toolchain ID
+    - Deps root
+  - Depends on
+    - SetupToolchain / SetupEnvironment
+
+# What config setting in each action?
+
+- (non action)
+  - `infer_tasks_from_scripts`
+- SyncWorkspace
+- SyncProject
+  - `sync_project_workspace_dependencies`
+- SetupToolchain
+- SetupEnvironment
+  - `add_engines_constraint`
+  - `root_venv_only` (init venv)
+  - `sync_package_manager_field`
+  - `sync_version_manager_config`
+  - `sync_toolchain_config`
+  - rust install components/targets/etc
+- InstallDependencies
+  - `root_package_only`
+  - `dedupe_on_lockfile_change`
+- RunTask

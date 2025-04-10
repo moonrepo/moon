@@ -84,7 +84,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
         }
@@ -118,9 +118,9 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node1 }),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node2 }),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node3 }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node1 }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node2 }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node3 }),
                 ]
             );
         }
@@ -144,7 +144,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
         }
@@ -246,7 +246,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
         }
@@ -297,7 +297,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node }),
                 ]
             );
         }
@@ -331,9 +331,9 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node1 }),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node2 }),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node3 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node1 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node2 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node3 }),
                 ]
             );
         }
@@ -357,7 +357,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node }),
                 ]
             );
         }
@@ -459,7 +459,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode { spec: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node }),
                 ]
             );
         }

@@ -207,6 +207,29 @@ mod task_hasher {
         }
 
         #[tokio::test]
+        async fn excludes_glob_negations() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "globNegated").unwrap();
+
+            let expected = ["2.txt", "dir/abc.txt", "dir/xyz.txt"];
+
+            // VCS
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+
+            // Glob
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+        }
+
+        #[tokio::test]
         async fn includes_none() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();

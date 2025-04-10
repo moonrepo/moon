@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Attempted fix for the "plugin typescript already exists" error.
+
 #### ⚙️ Internal
 
 - Updated dependencies.

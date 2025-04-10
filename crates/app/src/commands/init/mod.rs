@@ -186,7 +186,7 @@ pub async fn init_for_toolchain(
             let toolchain_registry = session.get_toolchain_registry().await?;
 
             toolchain_registry
-                .load_with_config(&plugin_id, plugin_locator, |_| Ok(()))
+                .load_without_config(&plugin_id, plugin_locator)
                 .await?;
 
             let toolchain = toolchain_registry.get_instance(&plugin_id).await?;

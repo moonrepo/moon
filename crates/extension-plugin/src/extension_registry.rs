@@ -34,12 +34,17 @@ impl ExtensionRegistry {
         }
     }
 
-    pub async fn load(&self, id: &PluginId) -> miette::Result<Arc<ExtensionPlugin>> {
-        if self.is_registered(id) {
-            return self.get_instance(id).await;
+    pub async fn load<Id>(&self, id: Id) -> miette::Result<Arc<ExtensionPlugin>>
+    where
+        Id: AsRef<str>,
+    {
+        let id = PluginId::raw(id.as_ref());
+
+        if self.is_registered(&id) {
+            return self.get_instance(&id).await;
         }
 
-        let Some(config) = self.configs.get(id) else {
+        let Some(config) = self.configs.get(&id) else {
             return Err(PluginError::UnknownId {
                 id: id.to_string(),
                 ty: PluginType::Extension,
@@ -47,12 +52,14 @@ impl ExtensionRegistry {
             .into());
         };
 
+        let ext_id = id.clone();
+
         self.registry
-            .load_with_config(&id, config.get_plugin_locator(), move |manifest| {
+            .load(&id, config.get_plugin_locator(), move |manifest| {
                 let value = serialize_config(config.config.iter())?;
 
                 trace!(
-                    extension_id = id.as_str(),
+                    extension_id = ext_id.as_str(),
                     config = %value,
                     "Storing moon extension configuration",
                 );
@@ -65,7 +72,7 @@ impl ExtensionRegistry {
             })
             .await?;
 
-        self.get_instance(id).await
+        self.get_instance(&id).await
     }
 }
 

@@ -113,21 +113,31 @@ impl<'task> TaskHasher<'task> {
                     &self.task.input_globs,
                     GlobWalkOptions::default().cache().files(),
                 )?);
+            }
+            // Collect inputs by querying VCS which is faster than globbing
+            else {
+                let mut file_tree = self.vcs.get_file_tree(&self.project.source).await?;
 
-                // Collect inputs by querying VCS
-            } else {
-                // Using VCS to collect inputs in a project is faster than globbing
-                for file in self.vcs.get_file_tree(&self.project.source).await? {
-                    files.insert(file.to_path(self.workspace_root));
+                // However that completely ignores workspace/negated globs,
+                // so we must still manually glob those here!
+                let negated_globs = self
+                    .task
+                    .input_globs
+                    .iter()
+                    .filter(|g| g.as_str().starts_with("!"))
+                    .collect::<Vec<_>>();
+
+                if !negated_globs.is_empty() {
+                    let globset = GlobSet::new(negated_globs)?;
+
+                    file_tree.retain(|file| !globset.is_negated(file.as_str()));
                 }
 
-                // However that completely ignores workspace level globs,
-                // so we must still manually glob those here!
                 let workspace_globs = self
                     .task
                     .input_globs
                     .iter()
-                    .filter(|g| !g.starts_with(&self.project.source))
+                    .filter(|g| !g.as_str().starts_with(self.project.source.as_str()))
                     .collect::<Vec<_>>();
 
                 if !workspace_globs.is_empty() {
@@ -136,6 +146,10 @@ impl<'task> TaskHasher<'task> {
                         workspace_globs,
                         GlobWalkOptions::default().cache().files(),
                     )?);
+                }
+
+                for file in file_tree {
+                    files.insert(file.to_path(self.workspace_root));
                 }
             }
         }

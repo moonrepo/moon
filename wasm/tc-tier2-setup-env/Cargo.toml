@@ -1,5 +1,5 @@
 [package]
-name = "tc_tier3"
+name = "tc_tier2_setup_env"
 version = "0.0.1"
 edition = "2024"
 publish = false

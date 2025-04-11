@@ -5,9 +5,10 @@ edition = "2024"
 publish = false
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
+tc_tier1 = { path = "../tc-tier1" }
 moon_common = { workspace = true }
 moon_config = { workspace = true }
 moon_pdk = { workspace = true }

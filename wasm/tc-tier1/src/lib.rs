@@ -3,10 +3,10 @@ use moon_pdk_api::*;
 
 #[plugin_fn]
 pub fn register_toolchain(
-    Json(_): Json<RegisterToolchainInput>,
+    Json(input): Json<RegisterToolchainInput>,
 ) -> FnResult<Json<RegisterToolchainOutput>> {
     Ok(Json(RegisterToolchainOutput {
-        name: "tc-tier1".into(),
+        name: input.id.into(),
         ..Default::default()
     }))
 }

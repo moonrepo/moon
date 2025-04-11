@@ -825,6 +825,7 @@ dependencies = [
  "moon_config",
  "moon_project",
  "moon_task",
+ "proto_pdk_api",
  "rustc-hash",
  "schematic",
  "serde",
@@ -987,6 +988,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "proto_pdk_api"
+version = "0.27.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2f3c3b418d1c26fba0ef7c69c1ea5be6ae3d15047681331e8caa41a5a965039"
+dependencies = [
+ "rustc-hash",
+ "schematic",
+ "semver",
+ "serde",
+ "serde_json",
+ "system_env",
+ "thiserror 2.0.12",
+ "version_spec",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -1394,6 +1412,20 @@ dependencies = [
  "moon_pdk",
  "moon_pdk_api",
  "moon_target",
+ "tc_tier1",
+]
+
+[[package]]
+name = "tc_tier2_setup_env"
+version = "0.0.1"
+dependencies = [
+ "extism-pdk",
+ "moon_common",
+ "moon_config",
+ "moon_pdk",
+ "moon_pdk_api",
+ "moon_target",
+ "tc_tier2",
 ]
 
 [[package]]
@@ -1406,6 +1438,7 @@ dependencies = [
  "moon_pdk",
  "moon_pdk_api",
  "moon_target",
+ "tc_tier2",
 ]
 
 [[package]]

@@ -141,7 +141,7 @@ impl WorkspaceMocker {
         let target_dir = PathBuf::from(std::env::var("CARGO_TARGET_DIR").unwrap());
 
         self.update_toolchain_config(|config| {
-            for id in ["tc-tier1", "tc-tier2", "tc-tier3"] {
+            for id in ["tc-tier1", "tc-tier2", "tc-tier2-setup-env", "tc-tier3"] {
                 config.plugins.insert(
                     Id::raw(&id),
                     ToolchainPluginConfig {

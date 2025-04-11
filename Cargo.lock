@@ -4364,6 +4364,7 @@ dependencies = [
  "moon_config",
  "moon_project",
  "moon_task",
+ "proto_pdk_api",
  "rustc-hash 2.1.1",
  "schematic",
  "serde",

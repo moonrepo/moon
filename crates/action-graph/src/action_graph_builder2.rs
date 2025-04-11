@@ -148,9 +148,7 @@ impl ActionGraphBuilder {
         let toolchain = registry.load(&spec.id).await?;
 
         // Toolchain does not support this action, so skip and fall through
-        if !toolchain.has_func("locate_dependencies_root").await
-            || !toolchain.has_func("install_dependencies").await
-        {
+        if !toolchain.supports_tier_2().await {
             return Ok(setup_toolchain_index);
         }
 
@@ -191,24 +189,51 @@ impl ActionGraphBuilder {
                     None
                 };
 
-                let setup_env_index =
-                    self.insert_node(ActionNode::setup_environment(SetupEnvironmentNode {
-                        root: rel_root.clone(),
-                        spec: spec.to_owned(),
-                        project_id: project_id.clone(),
-                    }));
+                let setup_env = ActionNode::setup_environment(SetupEnvironmentNode {
+                    root: rel_root.clone(),
+                    spec: spec.to_owned(),
+                    project_id: project_id.clone(),
+                });
 
-                let index =
-                    self.insert_node(ActionNode::install_dependencies(InstallDependenciesNode {
-                        root: rel_root,
-                        spec: spec.to_owned(),
-                        project_id,
-                    }));
+                let install_deps = ActionNode::install_dependencies(InstallDependenciesNode {
+                    root: rel_root,
+                    spec: spec.to_owned(),
+                    project_id,
+                });
 
-                self.link_requirements(index, vec![Some(setup_env_index)]);
-                self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
+                // We need to conditionally create nodes and edges based on what
+                // APIs have been implemented by the plugin
+                let has_install_deps = toolchain.has_func("install_dependencies").await;
+                let has_setup_env = toolchain.has_func("setup_environment").await;
 
-                return Ok(Some(index));
+                let index = match (has_install_deps, has_setup_env) {
+                    (true, true) => {
+                        let setup_env_index = self.insert_node(setup_env);
+                        let install_deps_index = self.insert_node(install_deps);
+
+                        self.link_requirements(install_deps_index, vec![Some(setup_env_index)]);
+                        self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
+
+                        Some(install_deps_index)
+                    }
+                    (true, false) => {
+                        let install_deps_index = self.insert_node(install_deps);
+
+                        self.link_requirements(install_deps_index, vec![setup_toolchain_index]);
+
+                        Some(install_deps_index)
+                    }
+                    (false, true) => {
+                        let setup_env_index = self.insert_node(setup_env);
+
+                        self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
+
+                        Some(setup_env_index)
+                    }
+                    (false, false) => setup_toolchain_index,
+                };
+
+                return Ok(index);
             }
         }
 

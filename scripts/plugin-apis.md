@@ -18,8 +18,8 @@
 - [ ] `extend_task_command`
 - [ ] `hash_manifest_contents`
 - [x] `hash_task_contents`
-- [ ] `install_dependencies`
-- [ ] `locate_dependencies_root`
+- [x] `install_dependencies`
+- [x] `locate_dependencies_root`
 - [ ] `parse_lockfile`
 - [ ] `parse_manifest`
 - [x] `sync_workspace`

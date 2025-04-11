@@ -67,7 +67,9 @@ impl Estimate {
             }
 
             match &*result.node {
-                ActionNode::SetupToolchainLegacy(_)
+                ActionNode::SetupToolchain(_)
+                | ActionNode::SetupToolchainLegacy(_)
+                | ActionNode::InstallDependencies(_)
                 | ActionNode::InstallWorkspaceDeps(_)
                 | ActionNode::InstallProjectDeps(_) => {
                     install_duration += task_duration;

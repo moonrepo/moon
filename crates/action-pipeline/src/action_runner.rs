@@ -253,7 +253,11 @@ pub async fn run_action(
         // If these actions failed, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupToolchainLegacy { .. } | ActionNode::InstallWorkspaceDeps { .. }
+            ActionNode::SetupToolchain { .. }
+                | ActionNode::SetupToolchainLegacy { .. }
+                | ActionNode::InstallDependencies { .. }
+                | ActionNode::InstallProjectDeps { .. }
+                | ActionNode::InstallWorkspaceDeps { .. }
         ) {
             action.abort();
         }

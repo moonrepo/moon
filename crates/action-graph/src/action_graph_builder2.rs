@@ -172,69 +172,67 @@ impl ActionGraphBuilder {
                 if in_project {
                     true // Root always in the workspace
                 } else {
-                    GlobSet::new(&globs)?.matches(rel_root.as_str())
+                    GlobSet::new(&globs)?.matches(project.source.as_str())
                 }
             } else {
                 true
             };
 
-            if in_workspace {
-                // Only track the project ID when the dependencies root is a
-                // project root, and is not a moon workspace root project. This
-                // typically means that the project installs its own dependencies
-                // and is not part of a package workspace.
-                let project_id = if in_project && !is_root_level_source(&project.source) {
-                    Some(project.id.clone())
+            // If not in the dependencies workspace (if there is one),
+            // or is a stand-alone project with its own lockfile,
+            // we must extract the project ID and source (root)
+            let (project_id, root) =
+                if !in_workspace || in_project && !is_root_level_source(&project.source) {
+                    (Some(project.id.clone()), project.source.clone())
                 } else {
-                    None
+                    (None, rel_root)
                 };
 
-                let setup_env = ActionNode::setup_environment(SetupEnvironmentNode {
-                    project_id: project_id.clone(),
-                    root: rel_root.clone(),
-                    toolchain_id: spec.id.clone(),
-                });
+            let setup_env = ActionNode::setup_environment(SetupEnvironmentNode {
+                project_id: project_id.clone(),
+                root: root.clone(),
+                toolchain_id: spec.id.clone(),
+            });
 
-                let install_deps = ActionNode::install_dependencies(InstallDependenciesNode {
-                    project_id,
-                    root: rel_root,
-                    toolchain_id: spec.id.clone(),
-                });
+            let install_deps = ActionNode::install_dependencies(InstallDependenciesNode {
+                project_id,
+                root,
+                toolchain_id: spec.id.clone(),
+            });
 
-                // We need to conditionally create nodes and edges based on what
-                // APIs have been implemented by the plugin
-                let has_install_deps = toolchain.has_func("install_dependencies").await;
-                let has_setup_env = toolchain.has_func("setup_environment").await;
+            // We need to conditionally create nodes and edges based on what
+            // APIs have been implemented by the plugin
+            let has_install_deps = toolchain.has_func("install_dependencies").await;
+            let has_setup_env = toolchain.has_func("setup_environment").await;
 
-                let index = match (has_install_deps, has_setup_env) {
-                    (true, true) => {
-                        let setup_env_index = self.insert_node(setup_env);
-                        let install_deps_index = self.insert_node(install_deps);
+            let index = match (has_install_deps, has_setup_env) {
+                (true, true) => {
+                    let setup_env_index = self.insert_node(setup_env);
+                    let install_deps_index = self.insert_node(install_deps);
 
-                        self.link_requirements(install_deps_index, vec![Some(setup_env_index)]);
-                        self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
+                    self.link_requirements(install_deps_index, vec![Some(setup_env_index)]);
+                    self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
 
-                        Some(install_deps_index)
-                    }
-                    (true, false) => {
-                        let install_deps_index = self.insert_node(install_deps);
+                    Some(install_deps_index)
+                }
+                (true, false) => {
+                    let install_deps_index = self.insert_node(install_deps);
 
-                        self.link_requirements(install_deps_index, vec![setup_toolchain_index]);
+                    self.link_requirements(install_deps_index, vec![setup_toolchain_index]);
 
-                        Some(install_deps_index)
-                    }
-                    (false, true) => {
-                        let setup_env_index = self.insert_node(setup_env);
+                    Some(install_deps_index)
+                }
+                (false, true) => {
+                    let setup_env_index = self.insert_node(setup_env);
 
-                        self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
+                    self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
 
-                        Some(setup_env_index)
-                    }
-                    (false, false) => setup_toolchain_index,
-                };
+                    Some(setup_env_index)
+                }
+                (false, false) => setup_toolchain_index,
+            };
 
-                return Ok(index);
-            }
+            return Ok(index);
         }
 
         Ok(setup_toolchain_index)
@@ -309,10 +307,6 @@ impl ActionGraphBuilder {
             return Ok(sync_workspace_index);
         }
 
-        let node = ActionNode::sync_project(SyncProjectNode {
-            project_id: project.id.clone(),
-        });
-
         cycle.insert(project.id.clone());
 
         // Determine affected state
@@ -325,7 +319,9 @@ impl ActionGraphBuilder {
         }
 
         let mut edges = vec![sync_workspace_index];
-        let index = self.insert_node(node);
+        let index = self.insert_node(ActionNode::sync_project(SyncProjectNode {
+            project_id: project.id.clone(),
+        }));
 
         // And we should also depend on other projects
         if self.options.sync_project_dependencies {
@@ -373,7 +369,7 @@ impl ActionGraphBuilder {
     fn link_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
         trace!(
             index = index.index(),
-            requires = ?edges.iter().flat_map(|idx| idx.map(|i| i.index())).collect::<Vec<_>>(),
+            requires = ?edges.iter().flat_map(|edge| edge.map(|i| i.index())).collect::<Vec<_>>(),
             "Linking requirements for index"
         );
 

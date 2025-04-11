@@ -70,6 +70,11 @@ impl ActionGraphContainer2 {
         }
     }
 
+    pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
+        self.mocker = self.mocker.set_working_dir(dir);
+        self
+    }
+
     pub async fn create_workspace_graph(&self) -> Arc<WorkspaceGraph> {
         Arc::new(self.mocker.mock_workspace_graph().await)
     }

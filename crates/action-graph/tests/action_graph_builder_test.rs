@@ -65,6 +65,54 @@ mod action_graph_builder {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_graph_if_tier1() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(1);
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_if_tier2() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(2);
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::new(),
+                        toolchain_id: spec.id,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_toolchain_if_tier3() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -74,8 +122,8 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(3);
 
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
 
             let graph = builder.build();
 
@@ -104,8 +152,8 @@ mod action_graph_builder {
 
             let spec = create_tier_spec_with_name("tc-tier2-setup-env");
 
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
 
             let graph = builder.build();
 
@@ -129,54 +177,6 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn graphs_if_tier2() {
-            let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
-
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
-
-            let spec = create_tier_spec(2);
-
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::install_dependencies(InstallDependenciesNode {
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
-                        toolchain_id: spec.id,
-                    })
-                ]
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_graph_if_tier1() {
-            let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
-
-            let wg = container.create_workspace_graph().await;
-            let mut builder = container.create_builder(wg.clone()).await;
-
-            let spec = create_tier_spec(1);
-
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
@@ -194,8 +194,8 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
 
             let graph = builder.build();
 
@@ -221,8 +221,8 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
 
             let graph = builder.build();
 
@@ -248,12 +248,132 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
-            let bar = wg.get_project("bar").unwrap();
-            builder.install_dependencies(&spec, &bar).await.unwrap();
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
 
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::new(),
+                        toolchain_id: spec.id,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_project_if_in_project_root() {
+            let sandbox = create_sandbox("dep-workspace");
+            let mut container = ActionGraphContainer2::new(sandbox.path())
+                // Plugin matches based on cwd
+                .set_working_dir(sandbox.path().join("isolated"));
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(2);
+
+            let project = wg.get_project("isolated").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        project_id: Some(Id::raw("isolated")),
+                        root: WorkspaceRelativePathBuf::from("isolated"),
+                        toolchain_id: spec.id,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_not_in_deps_workspace() {
+            let sandbox = create_sandbox("dep-workspace");
+            let mut container = ActionGraphContainer2::new(sandbox.path())
+                // Plugin matches based on cwd
+                .set_working_dir(sandbox.path().join("out"));
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(2);
+
+            let project = wg.get_project("out").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        project_id: Some(Id::raw("out")),
+                        root: WorkspaceRelativePathBuf::from("out"),
+                        toolchain_id: spec.id,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_in_deps_workspace() {
+            let sandbox = create_sandbox("dep-workspace");
+            let mut container = ActionGraphContainer2::new(sandbox.path())
+                // Plugin matches based on cwd
+                .set_working_dir(sandbox.path().join("in"));
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(2);
+
+            let project = wg.get_project("in").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::new(),
+                        toolchain_id: spec.id,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_in_deps_workspace_if_root_level() {
+            let sandbox = create_sandbox("dep-workspace");
+            let mut container = ActionGraphContainer2::new(sandbox.path())
+                // Plugin matches based on cwd
+                .set_working_dir(sandbox.path().join("in-root"));
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(2);
+
+            let project = wg.get_project("root").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let graph = builder.build();
+
             assert_eq!(
                 topo(graph),
                 vec![

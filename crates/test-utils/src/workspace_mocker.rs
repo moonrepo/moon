@@ -31,9 +31,9 @@ pub struct WorkspaceMocker {
     pub moon_env: MoonEnvironment,
     pub proto_env: ProtoEnvironment,
     pub toolchain_config: ToolchainConfig,
+    pub working_dir: PathBuf,
     pub workspace_config: WorkspaceConfig,
     pub workspace_root: PathBuf,
-    pub vcs: Option<BoxedVcs>,
 }
 
 impl WorkspaceMocker {
@@ -44,6 +44,7 @@ impl WorkspaceMocker {
             monorepo: true,
             moon_env: MoonEnvironment::new_testing(root),
             proto_env: ProtoEnvironment::new_testing(root).unwrap(),
+            working_dir: root.to_path_buf(),
             workspace_root: root.to_path_buf(),
             ..Default::default()
         }
@@ -82,6 +83,13 @@ impl WorkspaceMocker {
         config.inherit_plugin_locators().unwrap();
 
         self.toolchain_config = config;
+        self
+    }
+
+    pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
+        self.moon_env.working_dir = dir.clone();
+        self.proto_env.working_dir = dir.clone();
+        self.working_dir = dir;
         self
     }
 
@@ -172,11 +180,11 @@ impl WorkspaceMocker {
         let home_dir = std::env::home_dir().unwrap();
 
         self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();
-        self.moon_env.working_dir = self.workspace_root.clone();
+        self.moon_env.working_dir = self.working_dir.clone();
         self.moon_env.workspace_root = self.workspace_root.clone();
 
         self.proto_env = ProtoEnvironment::from(home_dir.join(".proto"), home_dir).unwrap();
-        self.proto_env.working_dir = self.workspace_root.clone();
+        self.proto_env.working_dir = self.working_dir.clone();
 
         self
     }
@@ -297,7 +305,7 @@ impl WorkspaceMocker {
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),
             vcs: Arc::new(self.mock_vcs_adapter()),
             toolchain_config: Arc::new(self.toolchain_config.clone()),
-            working_dir: self.workspace_root.clone(),
+            working_dir: self.working_dir.clone(),
             workspace_config: Arc::new(self.workspace_config.clone()),
             workspace_root: self.workspace_root.clone(),
         }
@@ -358,7 +366,7 @@ impl WorkspaceMocker {
             } else {
                 None
             },
-            working_dir: &self.workspace_root,
+            working_dir: &self.working_dir,
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,
         }

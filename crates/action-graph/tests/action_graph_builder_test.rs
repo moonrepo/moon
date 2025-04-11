@@ -30,9 +30,9 @@ fn create_rust_runtime() -> Runtime {
     )
 }
 
-fn create_node_spec() -> ToolchainSpec {
+fn create_tier_spec(tier: u8) -> ToolchainSpec {
     ToolchainSpec::new(
-        Id::raw("node"),
+        Id::raw(format!("tc-tier{tier}")),
         create_unresolved_version(Version::new(20, 0, 0)),
     )
 }
@@ -256,21 +256,39 @@ mod action_graph_builder {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_graph_if_not_tier3() {
+        async fn doesnt_graph_if_tier1() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer2::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
 
-            let ts = ToolchainSpec::new_global(Id::raw("typescript"));
+            let ts = ToolchainSpec::new_global(Id::raw("tc-tier1"));
 
             builder.setup_toolchain(&ts).await.unwrap();
 
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace(),]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_graph_if_tier2() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let ts = ToolchainSpec::new_global(Id::raw("tc-tier2"));
+
+            builder.setup_toolchain(&ts).await.unwrap();
+
+            let graph = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -283,7 +301,7 @@ mod action_graph_builder {
 
             let system = ToolchainSpec::system();
             let node = ToolchainSpec::new(
-                Id::raw("node"),
+                Id::raw("tc-tier3"),
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
@@ -311,14 +329,14 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let node1 = ToolchainSpec::new(
-                Id::raw("node"),
+                Id::raw("tc-tier3"),
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
             let node2 = ToolchainSpec::new_override(
-                Id::raw("node"),
+                Id::raw("tc-tier3"),
                 create_unresolved_version(Version::new(4, 5, 6)),
             );
-            let node3 = ToolchainSpec::new_global(Id::raw("node"));
+            let node3 = ToolchainSpec::new_global(Id::raw("tc-tier3"));
 
             builder.setup_toolchain(&node1).await.unwrap();
             builder.setup_toolchain(&node2).await.unwrap();
@@ -346,7 +364,7 @@ mod action_graph_builder {
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
 
-            let node = create_node_spec();
+            let node = create_tier_spec(3);
 
             builder.setup_toolchain(&node).await.unwrap();
             builder.setup_toolchain(&node).await.unwrap();
@@ -380,7 +398,7 @@ mod action_graph_builder {
 
             let system = ToolchainSpec::system();
             let node = ToolchainSpec::new(
-                Id::raw("node"),
+                Id::raw("tc-tier3"),
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
@@ -411,7 +429,7 @@ mod action_graph_builder {
 
             let system = ToolchainSpec::system();
             let node = ToolchainSpec::new(
-                Id::raw("node"),
+                Id::raw("tc-tier3"),
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
@@ -436,7 +454,7 @@ mod action_graph_builder {
                     ActionGraphBuilderOptions {
                         setup_toolchains: PipelineActionSwitch::Only(vec![
                             Id::raw("system"),
-                            Id::raw("node"),
+                            Id::raw("tc-tier3"),
                         ]),
                         ..Default::default()
                     },
@@ -445,7 +463,7 @@ mod action_graph_builder {
 
             let system = ToolchainSpec::system();
             let node = ToolchainSpec::new(
-                Id::raw("node"),
+                Id::raw("tc-tier3"),
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 

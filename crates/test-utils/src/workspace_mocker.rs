@@ -14,7 +14,8 @@ use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 use moon_workspace_graph::WorkspaceGraph;
-use proto_core::{ProtoConfig, ProtoEnvironment};
+use proto_core::warpgate::FileLocator;
+use proto_core::{PluginLocator, ProtoConfig, ProtoEnvironment};
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -133,6 +134,28 @@ impl WorkspaceMocker {
             config.node = Some(NodeConfig::default());
             config.rust = Some(RustConfig::default());
             config.inherit_default_plugins().unwrap();
+        })
+    }
+
+    pub fn with_test_toolchains(self) -> Self {
+        let target_dir = PathBuf::from(std::env::var("CARGO_TARGET_DIR").unwrap());
+
+        self.update_toolchain_config(|config| {
+            for id in ["tc-tier1", "tc-tier2", "tc-tier3"] {
+                config.plugins.insert(
+                    Id::raw(&id),
+                    ToolchainPluginConfig {
+                        plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                            file: "".into(),
+                            path: Some(target_dir.join(format!(
+                                "wasm32-wasip1/release/{}.wasm",
+                                id.replace("-", "_")
+                            ))),
+                        }))),
+                        ..Default::default()
+                    },
+                );
+            }
         })
     }
 

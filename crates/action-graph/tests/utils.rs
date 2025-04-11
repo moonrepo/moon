@@ -63,6 +63,7 @@ impl ActionGraphContainer2 {
             mocker: WorkspaceMocker::new(root)
                 .load_default_configs()
                 .with_all_toolchains()
+                .with_test_toolchains()
                 .with_default_projects()
                 .with_global_envs(),
             platform: None,

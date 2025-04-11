@@ -145,11 +145,7 @@ impl ActionGraphBuilder {
         }
 
         let registry = &self.app_context.toolchain_registry;
-
-        // TODO remove Ok() check when fully on plugins
-        let Ok(toolchain) = registry.load(&spec.id).await else {
-            return Ok(setup_toolchain_index);
-        };
+        let toolchain = registry.load(&spec.id).await?;
 
         // Toolchain does not support this action, so skip and fall through
         if !toolchain.has_func("locate_dependencies_root").await
@@ -254,12 +250,11 @@ impl ActionGraphBuilder {
             return Ok(sync_workspace_index);
         }
 
-        // TODO remove Ok() check when fully on plugins
-        if let Ok(toolchain) = self.app_context.toolchain_registry.load(&spec.id).await {
-            // Toolchain does not support tier 3
-            if !toolchain.supports_tier_3().await {
-                return Ok(sync_workspace_index);
-            }
+        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
+
+        // Toolchain does not support tier 3
+        if !toolchain.supports_tier_3().await {
+            return Ok(sync_workspace_index);
         }
 
         let index = self.insert_node(ActionNode::setup_toolchain(SetupToolchainNode {

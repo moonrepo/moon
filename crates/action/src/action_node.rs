@@ -11,7 +11,7 @@ use std::hash::{Hash, Hasher};
 pub struct InstallDependenciesNode {
     pub project_id: Option<Id>,
     pub root: WorkspaceRelativePathBuf,
-    pub spec: ToolchainSpec,
+    pub toolchain_id: Id,
 }
 
 // DEPRECATED
@@ -34,7 +34,7 @@ pub struct InstallProjectDepsNode {
 pub struct SetupEnvironmentNode {
     pub project_id: Option<Id>,
     pub root: WorkspaceRelativePathBuf,
-    pub spec: ToolchainSpec,
+    pub toolchain_id: Id,
 }
 
 // DEPRECATED
@@ -188,8 +188,6 @@ impl ActionNode {
 
     pub fn get_spec(&self) -> Option<&ToolchainSpec> {
         match self {
-            Self::InstallDependencies(inner) => Some(&inner.spec),
-            Self::SetupEnvironment(inner) => Some(&inner.spec),
             Self::SetupToolchain(inner) => Some(&inner.spec),
             _ => None,
         }
@@ -227,12 +225,11 @@ impl ActionNode {
         match self {
             Self::InstallDependencies(inner) => {
                 if inner.root.as_str().is_empty() {
-                    format!("InstallDependencies({})", inner.spec.target())
+                    format!("InstallDependencies({})", inner.toolchain_id)
                 } else {
                     format!(
                         "InstallDependencies({}, {})",
-                        inner.spec.target(),
-                        inner.root
+                        inner.toolchain_id, inner.root
                     )
                 }
             }
@@ -269,9 +266,9 @@ impl ActionNode {
             }
             Self::SetupEnvironment(inner) => {
                 if inner.root.as_str().is_empty() {
-                    format!("SetupEnvironment({})", inner.spec.target())
+                    format!("SetupEnvironment({})", inner.toolchain_id)
                 } else {
-                    format!("SetupEnvironment({}, {})", inner.spec.target(), inner.root)
+                    format!("SetupEnvironment({}, {})", inner.toolchain_id, inner.root)
                 }
             }
             Self::SetupToolchainLegacy(inner) => {

@@ -190,15 +190,15 @@ impl ActionGraphBuilder {
                 };
 
                 let setup_env = ActionNode::setup_environment(SetupEnvironmentNode {
-                    root: rel_root.clone(),
-                    spec: spec.to_owned(),
                     project_id: project_id.clone(),
+                    root: rel_root.clone(),
+                    toolchain_id: spec.id.clone(),
                 });
 
                 let install_deps = ActionNode::install_dependencies(InstallDependenciesNode {
-                    root: rel_root,
-                    spec: spec.to_owned(),
                     project_id,
+                    root: rel_root,
+                    toolchain_id: spec.id.clone(),
                 });
 
                 // We need to conditionally create nodes and edges based on what

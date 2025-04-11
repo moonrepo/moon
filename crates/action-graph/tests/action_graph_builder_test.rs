@@ -88,7 +88,7 @@ mod action_graph_builder {
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
-                        spec,
+                        toolchain_id: spec.id,
                     })
                 ]
             );
@@ -117,12 +117,12 @@ mod action_graph_builder {
                     ActionNode::setup_environment(SetupEnvironmentNode {
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
-                        spec: spec.clone()
+                        toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
-                        spec,
+                        toolchain_id: spec.id,
                     })
                 ]
             );
@@ -151,7 +151,7 @@ mod action_graph_builder {
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
-                        spec,
+                        toolchain_id: spec.id,
                     })
                 ]
             );
@@ -261,7 +261,7 @@ mod action_graph_builder {
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
-                        spec,
+                        toolchain_id: spec.id,
                     })
                 ]
             );

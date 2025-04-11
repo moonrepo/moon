@@ -1,7 +1,7 @@
 use crate::action_graph::ActionGraph;
 use moon_action::{
-    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
-    SetupToolchainPluginNode, SyncProjectNode,
+    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode,
+    SetupToolchainLegacyNode, SetupToolchainNode, SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
@@ -318,9 +318,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // Before we install deps, we must ensure the language has been installed
         if let Some(spec) = self.get_spec(project, &primary_toolchain, in_project) {
-            if let Some(edge) = self
-                .setup_toolchain_plugin(&spec, if spec.overridden { Some(project) } else { None })
-            {
+            if let Some(edge) = self.setup_toolchain_plugin(&spec) {
                 edges.push(edge);
             }
         } else {
@@ -765,7 +763,7 @@ impl<'app> ActionGraphBuilder<'app> {
             return None;
         }
 
-        let node = ActionNode::setup_toolchain(SetupToolchainNode {
+        let node = ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
             runtime: runtime.to_owned(),
         });
 
@@ -784,17 +782,12 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    pub fn setup_toolchain_plugin(
-        &mut self,
-        spec: &ToolchainSpec,
-        project: Option<&Project>,
-    ) -> Option<NodeIndex> {
+    pub fn setup_toolchain_plugin(&mut self, spec: &ToolchainSpec) -> Option<NodeIndex> {
         if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return None;
         }
 
-        let node = ActionNode::setup_toolchain_plugin(SetupToolchainPluginNode {
-            project_id: project.map(|p| p.id.to_owned()),
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
             spec: spec.to_owned(),
         });
 

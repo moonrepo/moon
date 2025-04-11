@@ -3,6 +3,7 @@ use crate::prompts::*;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, VersionSpec};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
+use proto_pdk_api::ExecCommandInput;
 use rustc_hash::FxHashMap;
 use schematic::Schema;
 use serde_json::Value;
@@ -160,9 +161,6 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Fragment of the project that the toolchain belongs to.
-        pub project: Option<ProjectFragment>,
-
         /// Merged toolchain configuration.
         pub toolchain_config: serde_json::Value,
 
@@ -195,6 +193,73 @@ api_struct!(
 
         /// Merged toolchain configuration.
         pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `setup_environment` function.
+    pub struct SetupEnvironmentInput {
+        /// Current moon context.
+        pub context: MoonContext,
+        // TODO
+    }
+);
+
+api_struct!(
+    /// Output returned from the `setup_environment` function.
+    pub struct SetupEnvironmentOutput {}
+);
+
+// DEPENDENCIES
+
+api_struct!(
+    /// Input passed to the `locate_dependencies_root` function.
+    pub struct LocateDependenciesRootInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// The starting directory in which to locate the root.
+        /// This is typically a project root.
+        pub starting_dir: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `locate_dependencies_root` function.
+    pub struct LocateDependenciesRootOutput {
+        /// A list of relative globs for all members (packages, libs, etc)
+        /// within the current dependencies workspace. If not defined,
+        /// the current project is the root, or there is no workspace.
+        pub members: Option<Vec<String>>,
+
+        /// Virtual path to the located root. If no root was found,
+        /// return `None` to abort any relevant operations.
+        pub root: Option<VirtualPath>,
+    }
+);
+
+api_struct!(
+    /// Input passed to the `install_dependencies` function.
+    pub struct InstallDependenciesInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        // Virtual path to the dependencies root. This is where
+        // the lockfile and root manifest should exist.
+        pub root: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `install_dependencies` function.
+    pub struct InstallDependenciesOutput {
+        /// The command to run in the dependencies root to dedupe
+        /// dependencies. If not defined, will not dedupe.
+        pub dedupe_command: Option<ExecCommandInput>,
+
+        /// The command to run in the dependencies root to install
+        /// dependencies. If not defined, will not install.
+        pub install_command: Option<ExecCommandInput>,
     }
 );
 

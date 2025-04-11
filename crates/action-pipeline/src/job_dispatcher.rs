@@ -1,5 +1,5 @@
 use crate::job_context::JobContext;
-use moon_action_graph::{ActionGraph, GraphType};
+use moon_action_graph::{ActionGraph, ActionGraphType};
 use petgraph::prelude::*;
 use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
@@ -7,7 +7,7 @@ use tracing::trace;
 
 pub struct JobDispatcher<'graph> {
     context: JobContext,
-    graph: &'graph GraphType,
+    graph: &'graph ActionGraphType,
     groups: BTreeMap<u8, Vec<NodeIndex>>, // topo
     visited: FxHashSet<NodeIndex>,
 }

@@ -122,9 +122,11 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system(),
-                    })),
+                    node: Arc::new(ActionNode::setup_toolchain_legacy(
+                        SetupToolchainLegacyNode {
+                            runtime: Runtime::system(),
+                        },
+                    )),
                     ..Action::default()
                 },
                 Action {
@@ -197,9 +199,11 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system(),
-                    })),
+                    node: Arc::new(ActionNode::setup_toolchain_legacy(
+                        SetupToolchainLegacyNode {
+                            runtime: Runtime::system(),
+                        },
+                    )),
                     ..Action::default()
                 },
                 Action {
@@ -273,9 +277,11 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
-                        runtime: Runtime::system(),
-                    })),
+                    node: Arc::new(ActionNode::setup_toolchain_legacy(
+                        SetupToolchainLegacyNode {
+                            runtime: Runtime::system(),
+                        },
+                    )),
                     ..Action::default()
                 },
                 Action {

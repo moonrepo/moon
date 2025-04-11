@@ -1,5 +1,5 @@
 [package]
-name = "test_plugin"
+name = "tc_tier3"
 version = "0.0.1"
 edition = "2024"
 publish = false
@@ -10,4 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 moon_common = { workspace = true }
 moon_config = { workspace = true }
+moon_pdk = { workspace = true }
+moon_pdk_api = { workspace = true }
 moon_target = { workspace = true }
+extism-pdk = { workspace = true }

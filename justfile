@@ -10,12 +10,15 @@ build:
 	cargo build --workspace
 
 build-wasm:
-	cd wasm/test-plugin && cargo build --target wasm32-wasip1
+	cd wasm && cargo build --workspace --target wasm32-wasip1 --release
 
 # CHECKING
 
 check:
 	cargo check --workspace
+
+check-wasm:
+	cd wasm && cargo check --workspace
 
 format:
 	cargo fmt --all -- --emit=files

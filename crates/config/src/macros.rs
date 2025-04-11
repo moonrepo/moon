@@ -34,8 +34,7 @@ macro_rules! generate_switch {
 #[macro_export]
 macro_rules! config_struct {
     ($impl:item) => {
-        #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
-        #[cfg_attr(debug_assertions, derive(Eq, PartialEq))]
+        #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
         #[serde(rename_all = "camelCase")]
         $impl
     };
@@ -44,8 +43,7 @@ macro_rules! config_struct {
 #[macro_export]
 macro_rules! config_enum {
     ($impl:item) => {
-        #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
-        #[cfg_attr(debug_assertions, derive(Eq, PartialEq))]
+        #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
         #[serde(rename_all = "kebab-case")]
         $impl
     };

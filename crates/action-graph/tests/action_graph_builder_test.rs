@@ -77,7 +77,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -96,7 +96,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -125,7 +125,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -155,7 +155,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -197,7 +197,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -224,7 +224,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -251,7 +251,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -282,7 +282,7 @@ mod action_graph_builder {
             let project = wg.get_project("isolated").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -312,7 +312,7 @@ mod action_graph_builder {
             let project = wg.get_project("out").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -342,7 +342,7 @@ mod action_graph_builder {
             let project = wg.get_project("in").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -372,7 +372,7 @@ mod action_graph_builder {
             let project = wg.get_project("root").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -408,7 +408,7 @@ mod action_graph_builder {
             builder.setup_toolchain_legacy(&system).await.unwrap();
             builder.setup_toolchain_legacy(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -442,7 +442,7 @@ mod action_graph_builder {
             builder.setup_toolchain_legacy(&node2).await.unwrap();
             builder.setup_toolchain_legacy(&node3).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -469,7 +469,7 @@ mod action_graph_builder {
             builder.setup_toolchain_legacy(&node).await.unwrap();
             builder.setup_toolchain_legacy(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -505,7 +505,7 @@ mod action_graph_builder {
             builder.setup_toolchain_legacy(&system).await.unwrap();
             builder.setup_toolchain_legacy(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -536,7 +536,7 @@ mod action_graph_builder {
             builder.setup_toolchain_legacy(&system).await.unwrap();
             builder.setup_toolchain_legacy(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -570,7 +570,7 @@ mod action_graph_builder {
             builder.setup_toolchain_legacy(&system).await.unwrap();
             builder.setup_toolchain_legacy(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -598,7 +598,7 @@ mod action_graph_builder {
 
             builder.setup_toolchain(&ts).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -616,7 +616,7 @@ mod action_graph_builder {
 
             builder.setup_toolchain(&ts).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -639,7 +639,7 @@ mod action_graph_builder {
             builder.setup_toolchain(&system).await.unwrap();
             builder.setup_toolchain(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -673,7 +673,7 @@ mod action_graph_builder {
             builder.setup_toolchain(&node2).await.unwrap();
             builder.setup_toolchain(&node3).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -700,7 +700,7 @@ mod action_graph_builder {
             builder.setup_toolchain(&node).await.unwrap();
             builder.setup_toolchain(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -736,7 +736,7 @@ mod action_graph_builder {
             builder.setup_toolchain(&system).await.unwrap();
             builder.setup_toolchain(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -767,7 +767,7 @@ mod action_graph_builder {
             builder.setup_toolchain(&system).await.unwrap();
             builder.setup_toolchain(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -801,7 +801,7 @@ mod action_graph_builder {
             builder.setup_toolchain(&system).await.unwrap();
             builder.setup_toolchain(&node).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -828,7 +828,7 @@ mod action_graph_builder {
             let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -859,7 +859,7 @@ mod action_graph_builder {
             let qux = wg.get_project("qux").unwrap();
             builder.sync_project(&qux).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -901,7 +901,7 @@ mod action_graph_builder {
             let qux = wg.get_project("qux").unwrap();
             builder.sync_project(&qux).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -932,7 +932,7 @@ mod action_graph_builder {
             builder.sync_project(&foo).await.unwrap();
             builder.sync_project(&foo).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -967,7 +967,7 @@ mod action_graph_builder {
             let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -992,7 +992,7 @@ mod action_graph_builder {
             let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -1017,7 +1017,7 @@ mod action_graph_builder {
             let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).await.unwrap();
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1046,7 +1046,7 @@ mod action_graph_builder {
 
             builder.sync_workspace().await;
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -1065,7 +1065,7 @@ mod action_graph_builder {
             builder.sync_workspace().await;
             builder.sync_workspace().await;
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
@@ -1087,7 +1087,7 @@ mod action_graph_builder {
 
             builder.sync_workspace().await;
 
-            let graph = builder.build();
+            let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);

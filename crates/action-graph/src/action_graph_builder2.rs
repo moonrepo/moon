@@ -26,8 +26,17 @@ use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
+#[derive(Default)]
+pub struct RunRequirements {
+    pub ci: bool,          // Are we in a CI environment
+    pub ci_check: bool,    // Check the `runInCI` option
+    pub dependents: bool,  // Run dependent tasks as well
+    pub interactive: bool, // Entire pipeline is interactive
+}
+
 pub struct ActionGraphBuilderOptions {
     pub install_dependencies: PipelineActionSwitch,
+    pub setup_environment: PipelineActionSwitch, // TODO
     pub setup_toolchains: PipelineActionSwitch,
     pub sync_projects: PipelineActionSwitch,
     pub sync_project_dependencies: bool,
@@ -44,6 +53,7 @@ impl ActionGraphBuilderOptions {
     pub fn new(state: bool) -> Self {
         Self {
             install_dependencies: state.into(),
+            setup_environment: state.into(),
             setup_toolchains: state.into(),
             sync_projects: state.into(),
             sync_project_dependencies: state,
@@ -61,19 +71,25 @@ impl ActionGraphBuilderOptions {
 // install_deps:
 // setup_toolchain:
 // run_task:
-pub struct ActionGraphBuilder {
-    all_query: Option<Criteria<'static>>,
+pub struct ActionGraphBuilder<'query> {
+    all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
     graph: DiGraph<ActionNode, ()>,
     options: ActionGraphBuilderOptions,
+    platform_manager: Option<PlatformManager>,
     workspace_graph: Arc<WorkspaceGraph>,
 
     // Affected tracking
     affected: Option<AffectedTracker>,
     touched_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
+
+    // Target tracking
+    // initial_targets: FxHashSet<Target>,
+    passthrough_targets: FxHashSet<Target>,
+    primary_targets: FxHashSet<Target>,
 }
 
-impl ActionGraphBuilder {
+impl<'query> ActionGraphBuilder<'query> {
     pub fn new(
         app_context: Arc<AppContext>,
         workspace_graph: Arc<WorkspaceGraph>,
@@ -88,16 +104,62 @@ impl ActionGraphBuilder {
             graph: DiGraph::new(),
             // initial_targets: FxHashSet::default(),
             options,
-            // passthrough_targets: FxHashSet::default(),
-            // platform_manager,
-            // primary_targets: FxHashSet::default(),
+            passthrough_targets: FxHashSet::default(),
+            platform_manager: None,
+            primary_targets: FxHashSet::default(),
             touched_files: None,
             workspace_graph,
         })
     }
 
-    pub fn build(self) -> ActionGraph {
-        ActionGraph::new(self.graph)
+    pub fn build(mut self) -> (ActionContext, ActionGraph) {
+        let mut context = ActionContext {
+            affected: self.affected.take().map(|affected| affected.build()),
+            ..ActionContext::default()
+        };
+
+        // TODO
+        // if !self.initial_targets.is_empty() {
+        //     context.initial_targets = mem::take(&mut self.initial_targets);
+        // }
+
+        if !self.passthrough_targets.is_empty() {
+            for target in mem::take(&mut self.passthrough_targets) {
+                context.set_target_state(target, TargetState::Passthrough);
+            }
+        }
+
+        if !self.primary_targets.is_empty() {
+            context.primary_targets = mem::take(&mut self.primary_targets);
+        }
+
+        if let Some(files) = self.touched_files.take() {
+            context.touched_files = files.to_owned();
+        }
+
+        (context, ActionGraph::new(self.graph))
+    }
+
+    pub fn get_runtime(
+        &self,
+        project: &Project,
+        toolchain_id: &Id,
+        allow_override: bool,
+    ) -> Runtime {
+        if let Ok(platform) = self
+            .platform_manager
+            .as_ref()
+            .unwrap()
+            .get_by_toolchain(toolchain_id)
+        {
+            return platform.get_runtime_from_config(if allow_override {
+                Some(&project.config)
+            } else {
+                None
+            });
+        }
+
+        Runtime::system()
     }
 
     pub fn get_spec(
@@ -129,6 +191,74 @@ impl ActionGraphBuilder {
         }
 
         None
+    }
+
+    pub fn set_affected(&mut self) -> miette::Result<()> {
+        if self.affected.is_none() {
+            self.affected = Some(AffectedTracker::new(
+                Arc::clone(&self.workspace_graph),
+                self.touched_files
+                    .as_ref()
+                    .expect("Touched files are required for affected tracking.")
+                    .to_owned(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_affected_scopes(
+        &mut self,
+        upstream: UpstreamScope,
+        downstream: DownstreamScope,
+    ) -> miette::Result<()> {
+        // If we require dependents, then we must load all projects into the
+        // graph so that the edges are created!
+        if downstream != DownstreamScope::None {
+            debug!("Force loading all projects and tasks to determine relationships");
+
+            self.workspace_graph.get_projects()?;
+            self.workspace_graph.get_tasks_with_internal()?;
+        }
+
+        self.set_affected()?;
+        self.affected
+            .as_mut()
+            .unwrap()
+            .with_scopes(upstream, downstream);
+
+        Ok(())
+    }
+
+    pub fn set_platform_manager(&mut self, manager: PlatformManager) -> miette::Result<()> {
+        self.platform_manager = Some(manager);
+
+        Ok(())
+    }
+
+    pub fn set_query(&mut self, input: &'query str) -> miette::Result<()> {
+        self.all_query = Some(build_query(input)?);
+
+        Ok(())
+    }
+
+    pub fn set_touched_files(
+        &mut self,
+        touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    ) -> miette::Result<()> {
+        self.touched_files = Some(touched_files);
+
+        Ok(())
+    }
+
+    pub fn track_affected(&mut self, ci_check: bool) -> miette::Result<()> {
+        if let Some(affected) = self.affected.as_mut() {
+            affected.set_ci_check(ci_check);
+            affected.track_projects()?;
+            affected.track_tasks()?;
+        }
+
+        Ok(())
     }
 
     #[instrument(skip_all)]
@@ -238,6 +368,401 @@ impl ActionGraphBuilder {
         Ok(setup_toolchain_index)
     }
 
+    pub async fn run_task(
+        &mut self,
+        task: &Task,
+        reqs: &RunRequirements,
+    ) -> miette::Result<Option<NodeIndex>> {
+        if let Some(index) = self.internal_run_task(&task, reqs, None).await? {
+            // Only track primary targets at the top-level run methods,
+            // as these are explicitly called by pipeline consumers!
+            self.primary_targets.insert(task.target.clone());
+
+            return Ok(Some(index));
+        }
+
+        Ok(None)
+    }
+
+    pub async fn run_task_by_target<T: AsRef<Target>>(
+        &mut self,
+        target: T,
+        reqs: &RunRequirements,
+    ) -> miette::Result<FxHashSet<NodeIndex>> {
+        let target = target.as_ref();
+        let mut indexes = FxHashSet::default();
+
+        for task in self
+            .internal_resolve_tasks_from_target(target, false)
+            .await?
+        {
+            if let Some(index) = self.run_task(&task, reqs).await? {
+                indexes.insert(index);
+            }
+        }
+
+        Ok(indexes)
+    }
+
+    pub async fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
+        &mut self,
+        locator: T,
+        reqs: &RunRequirements,
+    ) -> miette::Result<FxHashSet<NodeIndex>> {
+        let locator = locator.as_ref();
+        let mut indexes = FxHashSet::default();
+
+        for task in self
+            .internal_resolve_tasks_from_target_locator(locator, false)
+            .await?
+        {
+            if let Some(index) = self.run_task(&task, reqs).await? {
+                indexes.insert(index);
+            }
+        }
+
+        Ok(indexes)
+    }
+
+    pub async fn run_task_dependencies(
+        &mut self,
+        task: &Task,
+        reqs: &RunRequirements,
+    ) -> miette::Result<Vec<Option<NodeIndex>>> {
+        let parallel = task.options.run_deps_in_parallel;
+        let mut indexes: Vec<Option<NodeIndex>> = vec![];
+        let mut previous_target_index: Option<NodeIndex> = None;
+
+        for dep in &task.deps {
+            for dep_task in self
+                .internal_resolve_tasks_from_target(&dep.target, true)
+                .await?
+            {
+                if let Some(dep_index) = self.internal_run_task(&dep_task, reqs, Some(dep)).await? {
+                    // When parallel, parent depends on child
+                    if parallel {
+                        indexes.push(Some(dep_index));
+                    }
+                    // When serial, next child depends on previous child
+                    else {
+                        self.link_requirements(dep_index, vec![previous_target_index]);
+                    }
+
+                    previous_target_index = Some(dep_index);
+                }
+            }
+        }
+
+        if !parallel {
+            indexes.push(previous_target_index);
+        }
+
+        Ok(indexes)
+    }
+
+    pub async fn run_task_dependents(
+        &mut self,
+        task: &Task,
+        reqs: &RunRequirements,
+    ) -> miette::Result<Vec<Option<NodeIndex>>> {
+        let mut indexes = vec![];
+
+        for dep_target in self.workspace_graph.tasks.dependents_of(task) {
+            for dep_task in self
+                .internal_resolve_tasks_from_target(&dep_target, true)
+                .await?
+            {
+                indexes.push(self.internal_run_task(&dep_task, reqs, None).await?);
+            }
+        }
+
+        Ok(indexes)
+    }
+
+    #[instrument(skip_all)]
+    async fn internal_resolve_tasks_from_target(
+        &mut self,
+        target: &Target,
+        allow_internal: bool,
+    ) -> miette::Result<Vec<Arc<Task>>> {
+        let mut tasks = vec![];
+
+        match &target.scope {
+            // :task
+            TargetScope::All => {
+                let mut projects = vec![];
+
+                if let Some(all_query) = &self.all_query {
+                    projects.extend(self.workspace_graph.query_projects(all_query)?);
+                } else {
+                    projects.extend(self.workspace_graph.get_projects()?);
+                };
+
+                for project in projects {
+                    // Don't error if the task does not exist
+                    if let Ok(task) = self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, &target.task_id)
+                    {
+                        if !allow_internal && task.is_internal() {
+                            continue;
+                        }
+
+                        tasks.push(task);
+                    }
+                }
+            }
+            // ^:task
+            TargetScope::Deps => {
+                return Err(TargetError::NoDepsInRunContext.into());
+            }
+            // project:task
+            TargetScope::Project(project_id) => {
+                let task = self
+                    .workspace_graph
+                    .get_task_from_project(project_id, &target.task_id)?;
+
+                // Don't allow internal tasks to be ran
+                if !allow_internal && task.is_internal() {
+                    return Err(TaskGraphError::UnconfiguredTarget(task.target.clone()).into());
+                }
+
+                tasks.push(task);
+            }
+            // #tag:task
+            TargetScope::Tag(tag) => {
+                let projects = self
+                    .workspace_graph
+                    .query_projects(build_query(format!("tag={}", tag).as_str())?)?;
+
+                for project in projects {
+                    // Don't error if the task does not exist
+                    if let Ok(task) = self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, &target.task_id)
+                    {
+                        if !allow_internal && task.is_internal() {
+                            continue;
+                        }
+
+                        tasks.push(task);
+                    }
+                }
+            }
+            // ~:task
+            TargetScope::OwnSelf => {
+                return Err(TargetError::NoSelfInRunContext.into());
+            }
+        };
+
+        Ok(tasks)
+    }
+
+    #[instrument(skip_all)]
+    async fn internal_resolve_tasks_from_target_locator(
+        &mut self,
+        locator: &TargetLocator,
+        allow_internal: bool,
+    ) -> miette::Result<Vec<Arc<Task>>> {
+        let mut tasks = vec![];
+
+        match locator {
+            TargetLocator::GlobMatch {
+                project_glob,
+                task_glob,
+                scope,
+                ..
+            } => {
+                let mut is_all = false;
+                let mut do_query = false;
+                let mut projects = vec![];
+
+                // Query for all applicable projects first since we can't
+                // query projects + tasks at the same time
+                if let Some(glob) = project_glob {
+                    let query = if let Some(tag_glob) = glob.strip_prefix('#') {
+                        format!("tag~{tag_glob}")
+                    } else {
+                        format!("project~{glob}")
+                    };
+
+                    projects = self.workspace_graph.query_projects(build_query(&query)?)?;
+                    do_query = !projects.is_empty();
+                } else {
+                    match scope {
+                        Some(TargetScope::All) => {
+                            is_all = true;
+                            do_query = true;
+                        }
+                        _ => {
+                            // Don't query for the other scopes,
+                            // since they're not valid from the run context
+                        }
+                    };
+                }
+
+                // Then query for all tasks within the queried projects
+                if do_query {
+                    let mut query = format!("task~{task_glob}");
+
+                    if !is_all {
+                        query = format!(
+                            "project=[{}] && {query}",
+                            projects
+                                .into_iter()
+                                .map(|project| project.id.to_string())
+                                .collect::<Vec<_>>()
+                                .join(",")
+                        );
+                    }
+
+                    for task in self.workspace_graph.query_tasks(build_query(&query)?)? {
+                        if !allow_internal && task.is_internal() {
+                            continue;
+                        }
+
+                        tasks.push(task);
+                    }
+                }
+            }
+            TargetLocator::Qualified(target) => {
+                let target = if target.scope == TargetScope::OwnSelf {
+                    Target::new(
+                        &self.workspace_graph.get_project_from_path(None)?.id,
+                        &target.task_id,
+                    )?
+                } else {
+                    target.to_owned()
+                };
+
+                tasks.extend(
+                    self.internal_resolve_tasks_from_target(&target, allow_internal)
+                        .await?,
+                );
+            }
+            TargetLocator::TaskFromWorkingDir(task_id) => {
+                let target = Target::new(
+                    &self.workspace_graph.get_project_from_path(None)?.id,
+                    task_id,
+                )?;
+
+                tasks.extend(
+                    self.internal_resolve_tasks_from_target(&target, allow_internal)
+                        .await?,
+                );
+            }
+        };
+
+        Ok(tasks)
+    }
+
+    #[instrument(skip_all)]
+    async fn internal_run_task(
+        &mut self,
+        task: &Task,
+        reqs: &RunRequirements,
+        config: Option<&TaskDependencyConfig>,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let child_reqs = RunRequirements {
+            ci: reqs.ci,
+            ci_check: reqs.ci_check,
+            dependents: false,
+            interactive: reqs.interactive,
+        };
+
+        // Abort early if not affected
+        if let Some(affected) = &mut self.affected {
+            if !affected.is_task_marked(task) {
+                return Ok(None);
+            }
+        }
+
+        // These tasks shouldn't actually run, so filter them out
+        if self.passthrough_targets.contains(&task.target) {
+            trace!(
+                task_target = task.target.as_str(),
+                "Not running task {} because it has been marked as passthrough",
+                color::id(&task.target.id),
+            );
+
+            return Ok(None);
+        }
+
+        // Only apply checks when requested. This applies to `moon ci`,
+        // but not `moon run`, since the latter should be able to
+        // manually run local tasks in CI (deploys, etc).
+        if reqs.ci && reqs.ci_check && !task.should_run_in_ci() {
+            self.passthrough_targets.insert(task.target.clone());
+
+            debug!(
+                task_target = task.target.as_str(),
+                "Not running task {} because {} is false",
+                color::id(&task.target.id),
+                color::property("runInCI"),
+            );
+
+            // Dependents may still want to run though!
+            if reqs.dependents {
+                Box::pin(self.run_task_dependents(task, &child_reqs)).await?;
+            }
+
+            return Ok(None);
+        }
+
+        let project = self
+            .workspace_graph
+            .get_project(task.target.get_project_id().unwrap())?;
+
+        // Create initial edges
+        let mut edges = vec![self.sync_project(&project).await?];
+
+        for toolchain_id in &task.toolchains {
+            if self.app_context.toolchain_config.is_plugin(toolchain_id) {
+                if let Some(spec) = self.get_spec(&project, toolchain_id, true) {
+                    edges.push(self.install_dependencies(&spec, &project).await?);
+                }
+            } else {
+                // Legacy
+                let runtime = self.get_runtime(&project, toolchain_id, true);
+                // edges.push(self.install_dependencies(spec, project))
+                // TODO
+            }
+        }
+
+        // Create the node
+        let mut args = vec![];
+        let mut env = FxHashMap::default();
+
+        if let Some(config) = config {
+            args.extend(parse_task_args(&config.args)?);
+            env.extend(config.env.clone());
+        }
+
+        let index = self.insert_node(ActionNode::run_task(RunTaskNode {
+            args,
+            env,
+            interactive: task.is_interactive() || reqs.interactive,
+            persistent: task.is_persistent(),
+            priority: task.options.priority.get_level(),
+            target: task.target.to_owned(),
+            id: None,
+        }));
+
+        // And then create edges for task dependencies
+        if !task.deps.is_empty() {
+            edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs)).await?);
+        }
+
+        self.link_requirements(index, edges);
+
+        // And possibly dependents
+        if reqs.dependents {
+            Box::pin(self.run_task_dependents(task, &child_reqs)).await?;
+        }
+
+        Ok(None)
+    }
+
     #[instrument(skip_all)]
     pub async fn setup_toolchain_legacy(
         &mut self,
@@ -307,16 +832,14 @@ impl ActionGraphBuilder {
             return Ok(sync_workspace_index);
         }
 
-        cycle.insert(project.id.clone());
-
-        // Determine affected state
+        // Abort early if not affected
         if let Some(affected) = &mut self.affected {
             if !affected.is_project_marked(project) {
-                if let Some(by) = affected.is_project_affected(project) {
-                    affected.mark_project_affected(project, by)?;
-                }
+                return Ok(None);
             }
         }
+
+        cycle.insert(project.id.clone());
 
         let mut edges = vec![sync_workspace_index];
         let index = self.insert_node(ActionNode::sync_project(SyncProjectNode {
@@ -397,5 +920,14 @@ impl ActionGraphBuilder {
         );
 
         index
+    }
+}
+
+#[cfg(debug_assertions)]
+impl ActionGraphBuilder<'_> {
+    pub fn mock_affected(&mut self, mut op: impl FnMut(&mut AffectedTracker)) {
+        if let Some(affected) = self.affected.as_mut() {
+            op(affected);
+        }
     }
 }

@@ -83,7 +83,7 @@ pub async fn sync_project(
     // Loop through each toolchain and sync
     for sync_result in app_context
         .toolchain_registry
-        .sync_project(project.get_enabled_toolchains(), |registry, toolchain| {
+        .sync_project_many(project.get_enabled_toolchains(), |registry, toolchain| {
             SyncProjectInput {
                 context: registry.create_context(),
                 project_dependencies: dependency_fragments.clone(),

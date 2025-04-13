@@ -31,7 +31,7 @@ async fn get_toolchain_globs(
     let outputs = session
         .get_toolchain_registry()
         .await?
-        .define_docker_metadata(|registry, toolchain| DefineDockerMetadataInput {
+        .define_docker_metadata_all(|registry, toolchain| DefineDockerMetadataInput {
             context: registry.create_context(),
             toolchain_config: match project {
                 Some(proj) => registry.create_merged_config(
@@ -202,7 +202,7 @@ async fn scaffold_workspace_project(
         session
             .get_toolchain_registry()
             .await?
-            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+            .scaffold_docker_many(toolchains, |registry, toolchain| ScaffoldDockerInput {
                 context: registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
@@ -349,7 +349,7 @@ async fn scaffold_sources_project(
         session
             .get_toolchain_registry()
             .await?
-            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+            .scaffold_docker_many(toolchains, |registry, toolchain| ScaffoldDockerInput {
                 context: registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),

@@ -439,7 +439,7 @@ impl<'task> TaskRunner<'task> {
         for content in self
             .app
             .toolchain_registry
-            .hash_task_contents(
+            .hash_task_contents_many(
                 self.project.get_enabled_toolchains(),
                 |registry, toolchain| HashTaskContentsInput {
                     context: registry.create_context(),

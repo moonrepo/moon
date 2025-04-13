@@ -7,7 +7,7 @@
 - Added a new task option, `priority`, that controls the position in the pipeline queue.
   - Supports `critical`, `high`, `normal` (default), or `low`.
 - Added a `--log=verbose` level, which includes span information on top of the trace level.
-- Added a light terminal theme. Can be enabled with `--theme=light` or `PROTO_THEME=light`.
+- Added a light terminal theme. Can be enabled with `--theme=light` or `MOON_THEME=light`.
   - This is still a work in progress. Open to feedback on color/contrast choices.
 - Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
   toolchain WASM plugin is installing a tool (via proto).
@@ -26,6 +26,8 @@
 
 #### ⚙️ Internal
 
+- Updated proto to [v0.47.11](https://github.com/moonrepo/proto/releases/tag/v0.47.11) (from
+  0.47.7).
 - Updated Rust to v1.86.0.
 
 ## 1.34.3

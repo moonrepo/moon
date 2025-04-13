@@ -4,6 +4,8 @@
 
 #### 🚀 Updates
 
+- Added a new task option, `cacheKey`, which can be used to seed the hash, and invalidate local and
+  remote caches.
 - Added a new task option, `priority`, that controls the position in the pipeline queue.
   - Supports `critical`, `high`, `normal` (default), or `low`.
 - Added a `--log=verbose` level, which includes span information on top of the trace level.

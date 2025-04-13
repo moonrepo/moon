@@ -1175,6 +1175,7 @@ mod task_manager {
                         affected_pass_inputs: Some(true),
                         allow_failure: Some(true),
                         cache: Some(false),
+                        cache_key: None,
                         cache_lifetime: None,
                         env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
                         infer_inputs: None,

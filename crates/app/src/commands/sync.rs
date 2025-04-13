@@ -2,7 +2,7 @@ use super::syncs::codeowners::SyncCodeownersArgs;
 use super::syncs::config_schemas::SyncConfigSchemasArgs;
 use super::syncs::hooks::SyncHooksArgs;
 use crate::components::run_action_pipeline;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Subcommand;
 use iocraft::prelude::element;
 use moon_action_graph::ActionGraphBuilderOptions;
@@ -36,7 +36,7 @@ pub enum SyncCommands {
     Projects,
 }
 
-pub async fn sync(session: CliSession) -> AppResult {
+pub async fn sync(session: MoonSession) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions::default())

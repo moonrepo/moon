@@ -1,5 +1,5 @@
 use crate::components::create_progress_loader;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use crate::systems::analyze;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
@@ -7,7 +7,7 @@ use starbase::AppResult;
 use tracing::instrument;
 
 #[instrument]
-pub async fn setup(session: CliSession) -> AppResult {
+pub async fn setup(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
         "Downloading and installing tools...",

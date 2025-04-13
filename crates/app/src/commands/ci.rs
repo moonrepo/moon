@@ -1,7 +1,7 @@
 use crate::app_error::AppError;
 use crate::components::run_action_pipeline;
 use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::Args;
 use moon_action_context::ActionContext;
@@ -85,7 +85,7 @@ impl CiConsole {
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
     console: &mut CiConsole,
-    session: &CliSession,
+    session: &MoonSession,
     args: &CiArgs,
 ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     console.print_header("Gathering touched files")?;
@@ -201,7 +201,7 @@ fn distribute_targets_across_jobs(
 /// Generate a dependency graph with the runnable targets.
 async fn generate_action_graph(
     console: &mut CiConsole,
-    session: &CliSession,
+    session: &MoonSession,
     targets: &TargetList,
     touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 ) -> miette::Result<(ActionGraph, ActionContext)> {
@@ -231,7 +231,7 @@ async fn generate_action_graph(
 }
 
 #[instrument(skip_all)]
-pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
+pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     let mut console = CiConsole {
         inner: session.get_console()?,
         output: ci_env::get_output().unwrap_or(CiOutput {

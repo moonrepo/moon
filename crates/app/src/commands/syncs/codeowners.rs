@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_actions::operations::{sync_codeowners, unsync_codeowners};
@@ -16,7 +16,7 @@ pub struct SyncCodeownersArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
+pub async fn sync(session: MoonSession, args: SyncCodeownersArgs) -> AppResult {
     let context = session.get_app_context().await?;
 
     let message = if args.clean {

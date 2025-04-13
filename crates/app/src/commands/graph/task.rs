@@ -1,5 +1,5 @@
 use super::utils::{run_server, task_graph_repr};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use moon_task::Target;
 use moon_task_graph::{GraphToDot, GraphToJson};
@@ -23,7 +23,7 @@ pub struct TaskGraphArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn task_graph(session: CliSession, args: TaskGraphArgs) -> AppResult {
+pub async fn task_graph(session: MoonSession, args: TaskGraphArgs) -> AppResult {
     let mut task_graph = session.get_task_graph().await?;
 
     if let Some(target) = &args.target {

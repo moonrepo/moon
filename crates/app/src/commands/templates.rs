@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
@@ -22,7 +22,7 @@ pub struct TemplatesArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn templates(session: CliSession, args: TemplatesArgs) -> AppResult {
+pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
     let mut generator = CodeGenerator::new(
         &session.workspace_root,
         &session.workspace_config.generator,

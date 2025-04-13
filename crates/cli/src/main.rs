@@ -9,7 +9,7 @@ use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
-use moon_app::{Cli, CliSession, Commands, commands, systems::bootstrap};
+use moon_app::{Cli, Commands, MoonSession, commands, systems::bootstrap};
 use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
@@ -135,7 +135,7 @@ async fn main() -> MainResult {
 
     // Otherwise just run the CLI
     let exit_code = app
-        .run(CliSession::new(cli, version), |session| async {
+        .run(MoonSession::new(cli, version), |session| async {
             match session.cli.command.clone() {
                 Commands::ActionGraph(args) => {
                     commands::graph::action::action_graph(session, args).await

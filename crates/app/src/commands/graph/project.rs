@@ -1,5 +1,5 @@
 use super::utils::{project_graph_repr, run_server};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
 use moon_project_graph::{GraphToDot, GraphToJson};
@@ -23,7 +23,7 @@ pub struct ProjectGraphArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppResult {
+pub async fn project_graph(session: MoonSession, args: ProjectGraphArgs) -> AppResult {
     let mut project_graph = session.get_project_graph().await?;
 
     if let Some(id) = &args.id {

@@ -97,6 +97,7 @@ async fn main() -> MainResult {
         intercept_log: true,
         log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
+        show_spans: cli.log.is_verbose(),
         ..TracingOptions::default()
     });
 

@@ -54,7 +54,6 @@ impl ActionGraphContainer {
 
 pub struct ActionGraphContainer2 {
     pub mocker: WorkspaceMocker,
-    pub platform: Option<PlatformManager>,
 }
 
 impl ActionGraphContainer2 {
@@ -66,7 +65,6 @@ impl ActionGraphContainer2 {
                 .with_test_toolchains()
                 .with_default_projects()
                 .with_global_envs(),
-            platform: None,
         }
     }
 
@@ -102,17 +100,15 @@ impl ActionGraphContainer2 {
         workspace_graph: Arc<WorkspaceGraph>,
         options: ActionGraphBuilderOptions2,
     ) -> ActionGraphBuilder2 {
-        if self.platform.is_none() {
-            self.platform = Some(self.mocker.mock_platform_manager().await);
-        }
-
-        // ActionGraphBuilder2::with_platforms(
-        // self.platform.as_ref().unwrap(),
-        ActionGraphBuilder2::new(
+        let mut builder = ActionGraphBuilder2::new(
             Arc::new(self.mocker.mock_app_context()),
             workspace_graph,
             options,
         )
-        .unwrap()
+        .unwrap();
+        builder
+            .set_platform_manager(self.mocker.mock_platform_manager().await)
+            .unwrap();
+        builder
     }
 }

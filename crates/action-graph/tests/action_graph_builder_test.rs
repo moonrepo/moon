@@ -61,6 +61,35 @@ fn topo(graph: ActionGraph) -> Vec<ActionNode> {
 mod action_graph_builder {
     use super::*;
 
+    #[tokio::test(flavor = "multi_thread")]
+    #[should_panic(expected = "A dependency cycle has been detected for RunTask(deps:cycle2) →")]
+    async fn errors_on_cycle() {
+        let sandbox = create_sandbox("tasks");
+        let mut container = ActionGraphContainer2::new(sandbox.path());
+
+        let wg = container.create_workspace_graph().await;
+        let mut builder = container.create_builder(wg.clone()).await;
+
+        builder
+            .run_task(
+                &wg.get_task_from_project("deps", "cycle1").unwrap(),
+                &RunRequirements::default(),
+            )
+            .await
+            .unwrap();
+        builder
+            .run_task(
+                &wg.get_task_from_project("deps", "cycle2").unwrap(),
+                &RunRequirements::default(),
+            )
+            .await
+            .unwrap();
+
+        let (_, ag) = builder.build();
+
+        ag.sort_topological().unwrap();
+    }
+
     mod install_deps {
         use super::*;
 

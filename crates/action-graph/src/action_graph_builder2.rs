@@ -207,29 +207,6 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    pub fn set_affected_scopes(
-        &mut self,
-        upstream: UpstreamScope,
-        downstream: DownstreamScope,
-    ) -> miette::Result<()> {
-        // If we require dependents, then we must load all projects into the
-        // graph so that the edges are created!
-        if downstream != DownstreamScope::None {
-            debug!("Force loading all projects and tasks to determine relationships");
-
-            self.workspace_graph.get_projects()?;
-            self.workspace_graph.get_tasks_with_internal()?;
-        }
-
-        self.set_affected()?;
-        self.affected
-            .as_mut()
-            .unwrap()
-            .with_scopes(upstream, downstream);
-
-        Ok(())
-    }
-
     pub fn set_platform_manager(&mut self, manager: PlatformManager) -> miette::Result<()> {
         self.platform_manager = Some(manager);
 
@@ -251,14 +228,98 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    pub fn track_affected(&mut self, ci_check: bool) -> miette::Result<()> {
+    pub fn track_affected(
+        &mut self,
+        upstream: UpstreamScope,
+        downstream: DownstreamScope,
+        ci_check: bool,
+    ) -> miette::Result<()> {
+        // If we require dependents, then we must load all projects into the
+        // graph so that the edges are created!
+        if downstream != DownstreamScope::None {
+            debug!("Force loading all projects and tasks to determine relationships");
+
+            self.workspace_graph.get_projects()?;
+            self.workspace_graph.get_tasks_with_internal()?;
+        }
+
+        self.set_affected()?;
+
         if let Some(affected) = self.affected.as_mut() {
             affected.set_ci_check(ci_check);
+            affected.with_scopes(upstream, downstream);
             affected.track_projects()?;
             affected.track_tasks()?;
         }
 
         Ok(())
+    }
+
+    #[instrument(skip_all)]
+    pub async fn install_dependencies_legacy(
+        &mut self,
+        runtime: &Runtime,
+        project: &Project,
+        has_bun_and_node: bool,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let setup_toolchain_index = self.setup_toolchain_legacy(runtime).await?;
+
+        if !self
+            .options
+            .install_dependencies
+            .is_enabled(&runtime.toolchain)
+            || runtime.is_system()
+        {
+            return Ok(setup_toolchain_index);
+        }
+
+        // If Bun and Node.js are enabled, they will both attempt to install
+        // dependencies in the target root. We need to avoid this problem,
+        // so always prefer Node.js instead. Revisit in the future.
+        if has_bun_and_node && runtime.toolchain == "bun" {
+            debug!(
+                "Already installing dependencies with node, skipping a conflicting install from bun"
+            );
+
+            return Ok(setup_toolchain_index);
+        }
+
+        let platform = self
+            .platform_manager
+            .as_ref()
+            .unwrap()
+            .get_by_toolchain(&runtime.toolchain)?;
+
+        let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
+        let mut in_project = false;
+
+        // If project is NOT in the package manager workspace, then we should
+        // install dependencies in the project, not the workspace root.
+        if !platform.is_project_in_dependency_workspace(&packages_root, project.source.as_str())? {
+            in_project = true;
+
+            debug!(
+                "Project {} is not within the dependency manager workspace, dependencies will be installed within the project instead of the root",
+                color::id(&project.id),
+            );
+        }
+
+        let index = self.insert_node(if in_project {
+            ActionNode::install_project_deps(InstallProjectDepsNode {
+                project_id: project.id.to_owned(),
+                runtime: runtime.to_owned(),
+            })
+        } else {
+            ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                runtime: runtime.to_owned(),
+                root: packages_root,
+            })
+        });
+
+        // Before we install deps, we must ensure the language has been installed
+        self.link_requirements(index, vec![setup_toolchain_index]);
+
+        Ok(Some(index))
     }
 
     #[instrument(skip_all)]
@@ -709,26 +770,6 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        let project = self
-            .workspace_graph
-            .get_project(task.target.get_project_id().unwrap())?;
-
-        // Create initial edges
-        let mut edges = vec![self.sync_project(&project).await?];
-
-        for toolchain_id in &task.toolchains {
-            if self.app_context.toolchain_config.is_plugin(toolchain_id) {
-                if let Some(spec) = self.get_spec(&project, toolchain_id, true) {
-                    edges.push(self.install_dependencies(&spec, &project).await?);
-                }
-            } else {
-                // Legacy
-                let runtime = self.get_runtime(&project, toolchain_id, true);
-                // edges.push(self.install_dependencies(spec, project))
-                // TODO
-            }
-        }
-
         // Create the node
         let mut args = vec![];
         let mut env = FxHashMap::default();
@@ -738,7 +779,7 @@ impl<'query> ActionGraphBuilder<'query> {
             env.extend(config.env.clone());
         }
 
-        let index = self.insert_node(ActionNode::run_task(RunTaskNode {
+        let node = ActionNode::run_task(RunTaskNode {
             args,
             env,
             interactive: task.is_interactive() || reqs.interactive,
@@ -746,7 +787,36 @@ impl<'query> ActionGraphBuilder<'query> {
             priority: task.options.priority.get_level(),
             target: task.target.to_owned(),
             id: None,
-        }));
+        });
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Ok(Some(index));
+        }
+
+        let index = self.insert_node(node);
+        let project = self
+            .workspace_graph
+            .get_project(task.target.get_project_id().unwrap())?;
+
+        // Create initial edges
+        let mut edges = vec![self.sync_project(&project).await?];
+        let has_bun_and_node = task.toolchains.iter().any(|tc| tc == "node")
+            && task.toolchains.iter().any(|tc| tc == "bun");
+
+        for toolchain_id in &task.toolchains {
+            if self.app_context.toolchain_config.is_plugin(toolchain_id) {
+                if let Some(spec) = self.get_spec(&project, toolchain_id, true) {
+                    edges.push(self.install_dependencies(&spec, &project).await?);
+                }
+            } else {
+                let runtime = self.get_runtime(&project, toolchain_id, true);
+
+                edges.push(
+                    self.install_dependencies_legacy(&runtime, &project, has_bun_and_node)
+                        .await?,
+                );
+            }
+        }
 
         // And then create edges for task dependencies
         if !task.deps.is_empty() {

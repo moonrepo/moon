@@ -1,7 +1,6 @@
-use super::app_context::create_test_console;
 use moon_bun_platform::BunPlatform;
 use moon_config::{BunConfig, ConfigLoader, PlatformType, ToolchainConfig};
-use moon_console::Console;
+use moon_console::{Console, MoonReporter};
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
@@ -11,6 +10,12 @@ use moon_system_platform::SystemPlatform;
 use proto_core::{ProtoConfig, ProtoEnvironment};
 use std::path::Path;
 use std::sync::Arc;
+
+fn create_test_console() -> Console {
+    let mut console = Console::new_testing();
+    console.set_reporter(MoonReporter::default());
+    console
+}
 
 pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformManager {
     let proto = Arc::new(ProtoEnvironment::new_testing(root).unwrap());

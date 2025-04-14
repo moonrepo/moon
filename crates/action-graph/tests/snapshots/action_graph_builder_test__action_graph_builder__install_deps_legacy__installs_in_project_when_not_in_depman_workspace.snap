@@ -1,0 +1,13 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SetupToolchain(node:20.0.0)" ]
+    2 [ label="InstallWorkspaceDeps(node:20.0.0)" ]
+    3 [ label="InstallProjectDeps(node:20.0.0, out)" ]
+    1 -> 0 [ ]
+    2 -> 1 [ ]
+    3 -> 1 [ ]
+}

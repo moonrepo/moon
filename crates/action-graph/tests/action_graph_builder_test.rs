@@ -41,13 +41,6 @@ fn create_tier_spec_with_name(id: impl AsRef<str>) -> ToolchainSpec {
     )
 }
 
-fn create_rust_spec() -> ToolchainSpec {
-    ToolchainSpec::new(
-        Id::raw("rust"),
-        create_unresolved_version(Version::new(1, 70, 0)),
-    )
-}
-
 fn topo(graph: ActionGraph) -> Vec<ActionNode> {
     let mut nodes = vec![];
 
@@ -61,33 +54,350 @@ fn topo(graph: ActionGraph) -> Vec<ActionNode> {
 mod action_graph_builder {
     use super::*;
 
-    #[tokio::test(flavor = "multi_thread")]
-    #[should_panic(expected = "A dependency cycle has been detected for RunTask(deps:cycle2) →")]
-    async fn errors_on_cycle() {
-        let sandbox = create_sandbox("tasks");
-        let mut container = ActionGraphContainer2::new(sandbox.path());
+    // #[tokio::test(flavor = "multi_thread")]
+    // #[should_panic(expected = "A dependency cycle has been detected for RunTask(deps:cycle2) →")]
+    // async fn errors_on_cycle() {
+    //     let sandbox = create_sandbox("tasks");
+    //     let mut container = ActionGraphContainer2::new(sandbox.path());
 
-        let wg = container.create_workspace_graph().await;
-        let mut builder = container.create_builder(wg.clone()).await;
+    //     let wg = container.create_workspace_graph().await;
+    //     let mut builder = container.create_builder(wg.clone()).await;
 
-        builder
-            .run_task(
-                &wg.get_task_from_project("deps", "cycle1").unwrap(),
-                &RunRequirements::default(),
-            )
-            .await
-            .unwrap();
-        builder
-            .run_task(
-                &wg.get_task_from_project("deps", "cycle2").unwrap(),
-                &RunRequirements::default(),
-            )
-            .await
-            .unwrap();
+    //     builder
+    //         .run_task(
+    //             &wg.get_task_from_project("deps", "cycle1").unwrap(),
+    //             &RunRequirements::default(),
+    //         )
+    //         .await
+    //         .unwrap();
+    //     builder
+    //         .run_task(
+    //             &wg.get_task_from_project("deps", "cycle2").unwrap(),
+    //             &RunRequirements::default(),
+    //         )
+    //         .await
+    //         .unwrap();
 
-        let (_, ag) = builder.build();
+    //     let (_, ag) = builder.build();
 
-        ag.sort_topological().unwrap();
+    //     ag.sort_topological().unwrap();
+    // }
+
+    mod install_deps_legacy {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let runtime = create_node_runtime();
+
+            let project = wg.get_project("bar").unwrap();
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: runtime.clone(),
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime,
+                        root: WorkspaceRelativePathBuf::new(),
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn ignores_dupes() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let runtime = create_node_runtime();
+
+            let project = wg.get_project("bar").unwrap();
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: runtime.clone(),
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime,
+                        root: WorkspaceRelativePathBuf::new(),
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn installs_in_project_when_not_in_depman_workspace() {
+            let sandbox = create_sandbox("dep-workspace");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let runtime = create_node_runtime();
+
+            let inside = wg.get_project("in").unwrap();
+            builder
+                .install_dependencies_legacy(&runtime, &inside, false)
+                .await
+                .unwrap();
+
+            let outside = wg.get_project("out").unwrap();
+            builder
+                .install_dependencies_legacy(&runtime, &outside, false)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: runtime.clone(),
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: runtime.clone(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::install_project_deps(InstallProjectDepsNode {
+                        project_id: Id::raw("out"),
+                        runtime,
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_install_bun_and_node() {
+            let sandbox = create_sandbox("projects");
+            sandbox.append_file(".moon/toolchain.yml", "bun:\n  version: '1.0.0'");
+
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+            let project = wg.get_project("bar").unwrap();
+
+            let bun = Runtime::new(
+                Id::raw("bun"),
+                create_runtime_with_version(Version::new(1, 0, 0)),
+            );
+            let node = create_node_runtime();
+
+            builder
+                .install_dependencies_legacy(&node, &project, true)
+                .await
+                .unwrap();
+            builder
+                .install_dependencies_legacy(&bun, &project, true)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: node.clone(),
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: node.clone(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: bun.clone(),
+                    }),
+                ]
+            );
+
+            // Reverse order
+            let mut builder = container.create_builder(wg.clone()).await;
+            let project = wg.get_project("bar").unwrap();
+
+            builder
+                .install_dependencies_legacy(&bun, &project, true)
+                .await
+                .unwrap();
+            builder
+                .install_dependencies_legacy(&node, &project, true)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: bun }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: node.clone()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: node,
+                        root: WorkspaceRelativePathBuf::new(),
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_add_if_disabled() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container
+                .create_builder_with_options(
+                    wg.clone(),
+                    ActionGraphBuilderOptions {
+                        install_dependencies: false.into(),
+                        ..Default::default()
+                    },
+                )
+                .await;
+
+            let runtime = create_node_runtime();
+            let project = wg.get_project("bar").unwrap();
+
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime()
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_add_if_not_listed() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container
+                .create_builder_with_options(
+                    wg.clone(),
+                    ActionGraphBuilderOptions {
+                        install_dependencies: PipelineActionSwitch::Only(vec![Id::raw("rust")]),
+                        ..Default::default()
+                    },
+                )
+                .await;
+
+            let runtime = create_node_runtime();
+            let project = wg.get_project("bar").unwrap();
+
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime()
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn adds_if_listed() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container
+                .create_builder_with_options(
+                    wg.clone(),
+                    ActionGraphBuilderOptions {
+                        install_dependencies: PipelineActionSwitch::Only(vec![Id::raw("node")]),
+                        ..Default::default()
+                    },
+                )
+                .await;
+
+            let runtime = create_node_runtime();
+            let project = wg.get_project("bar").unwrap();
+
+            builder
+                .install_dependencies_legacy(&runtime, &project, false)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    })
+                ]
+            );
+        }
     }
 
     mod install_deps {

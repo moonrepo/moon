@@ -100,18 +100,23 @@ export interface ExperimentsConfig {
 	 */
 	actionPipelineV2?: boolean;
 	/**
-	 * Disallow task relationships with different `runInCI` options.
+	 * @default true
+	 * @deprecated
+	 */
+	disallowRunInCiMismatch?: boolean;
+	/**
+	 * Enable faster glob file system walking.
 	 *
 	 * @default true
 	 */
-	disallowRunInCiMismatch?: boolean;
-	/** Enable faster glob file system walking. */
-	fasterGlobWalk: boolean;
+	fasterGlobWalk?: boolean;
 	/**
 	 * Enable a faster and more accurate Git implementation.
 	 * Supports submodules, subtrees, and worktrees.
+	 *
+	 * @default true
 	 */
-	gitV2: boolean;
+	gitV2?: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -123,10 +128,10 @@ export interface ExperimentsConfig {
 	 */
 	strictProjectAliases?: boolean;
 	/**
-	 * Disallow referencing the original ID of a renamed project when
-	 * building the project graph.
+	 * @default true
+	 * @deprecated
 	 */
-	strictProjectIds: boolean;
+	strictProjectIds?: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -603,16 +608,21 @@ export interface PartialExperimentsConfig {
 	 */
 	actionPipelineV2?: boolean | null;
 	/**
-	 * Disallow task relationships with different `runInCI` options.
+	 * @default true
+	 * @deprecated
+	 */
+	disallowRunInCiMismatch?: boolean | null;
+	/**
+	 * Enable faster glob file system walking.
 	 *
 	 * @default true
 	 */
-	disallowRunInCiMismatch?: boolean | null;
-	/** Enable faster glob file system walking. */
 	fasterGlobWalk?: boolean | null;
 	/**
 	 * Enable a faster and more accurate Git implementation.
 	 * Supports submodules, subtrees, and worktrees.
+	 *
+	 * @default true
 	 */
 	gitV2?: boolean | null;
 	/**
@@ -626,8 +636,8 @@ export interface PartialExperimentsConfig {
 	 */
 	strictProjectAliases?: boolean | null;
 	/**
-	 * Disallow referencing the original ID of a renamed project when
-	 * building the project graph.
+	 * @default true
+	 * @deprecated
 	 */
 	strictProjectIds?: boolean | null;
 	/**

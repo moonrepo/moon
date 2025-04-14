@@ -724,6 +724,10 @@ impl<'query> ActionGraphBuilder<'query> {
         reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
+        let project = self
+            .workspace_graph
+            .get_project(task.target.get_project_id().unwrap())?;
+
         let child_reqs = RunRequirements {
             ci: reqs.ci,
             ci_check: reqs.ci_check,
@@ -789,14 +793,10 @@ impl<'query> ActionGraphBuilder<'query> {
             id: None,
         });
 
+        // Check if the node exists to avoid all the overhead below
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(index));
         }
-
-        let index = self.insert_node(node);
-        let project = self
-            .workspace_graph
-            .get_project(task.target.get_project_id().unwrap())?;
 
         // Create initial edges
         let mut edges = vec![self.sync_project(&project).await?];
@@ -818,7 +818,9 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        // And then create edges for task dependencies
+        // Insert and then link edges
+        let index = self.insert_node(node);
+
         if !task.deps.is_empty() {
             edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs)).await?);
         }
@@ -830,7 +832,7 @@ impl<'query> ActionGraphBuilder<'query> {
             Box::pin(self.run_task_dependents(task, &child_reqs)).await?;
         }
 
-        Ok(None)
+        Ok(Some(index))
     }
 
     #[instrument(skip_all)]
@@ -960,18 +962,22 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     fn link_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
+        let edges = edges.into_iter().flatten().collect::<Vec<_>>();
+
+        if edges.is_empty() {
+            return;
+        }
+
         trace!(
             index = index.index(),
-            requires = ?edges.iter().flat_map(|edge| edge.map(|i| i.index())).collect::<Vec<_>>(),
+            requires = ?edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
             "Linking requirements for index"
         );
 
         for edge in edges {
             // Use `update_edge` instead of `add_edge` as it avoids
             // duplicate edges from being inserted
-            if let Some(edge) = edge {
-                self.graph.update_edge(index, edge, ());
-            }
+            self.graph.update_edge(index, edge, ());
         }
     }
 

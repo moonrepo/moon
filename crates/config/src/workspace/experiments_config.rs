@@ -9,15 +9,17 @@ config_struct!(
         #[setting(default = true)]
         pub action_pipeline_v2: bool,
 
-        /// Disallow task relationships with different `runInCI` options.
+        #[deprecated]
         #[setting(default = true)]
         pub disallow_run_in_ci_mismatch: bool,
 
         /// Enable faster glob file system walking.
+        #[setting(default = true)]
         pub faster_glob_walk: bool,
 
         /// Enable a faster and more accurate Git implementation.
         /// Supports submodules, subtrees, and worktrees.
+        #[setting(default = true)]
         pub git_v2: bool,
 
         #[deprecated]
@@ -28,9 +30,8 @@ config_struct!(
         #[setting(default = true)]
         pub strict_project_aliases: bool,
 
-        /// Disallow referencing the original ID of a renamed project when
-        /// building the project graph.
-        // #[setting(default = true)]
+        #[deprecated]
+        #[setting(default = true)]
         pub strict_project_ids: bool,
 
         #[deprecated]

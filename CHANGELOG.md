@@ -13,6 +13,7 @@
   - This is still a work in progress. Open to feedback on color/contrast choices.
 - Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
   toolchain WASM plugin is installing a tool (via proto).
+- Enabled the `experiments.fasterGlobWalk` and `experiments.gitV2` experiments.
 - Updated and simplified the relationships in the action graph.
   - `SyncProject` no longer depends on the `SetupToolchain` action.
   - `SyncProject` no longer is grouped by language/toolchain, and instead encompasses all of them
@@ -96,7 +97,7 @@
   - In our benchmarks, it's on average 1.5-2x faster.
   - We also attempt to cache the results, which occurs quite often when running tasks.
   - Globs are now logged to better debug performance issues.
-- Added an `experiments.gitv2` setting to `.moon/workspace.yml`, that uses a new Git implementation.
+- Added an `experiments.gitV2` setting to `.moon/workspace.yml`, that uses a new Git implementation.
   - Has better support for submodules, subtrees, and worktrees.
   - Parallelizes processes when applicable.
   - Covers edge cases the v1 implementation did not support.

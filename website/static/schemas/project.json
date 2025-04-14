@@ -1140,7 +1140,7 @@
         },
         "cache": {
           "title": "cache",
-          "description": "Caches the outputs of the task",
+          "description": "Caches the outputs of the task. Defaults to true if outputs are configured for the task.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1149,7 +1149,19 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Caches the `outputs` of the task"
+          "markdownDescription": "Caches the `outputs` of the task. Defaults to `true` if outputs are configured for the task."
+        },
+        "cacheKey": {
+          "title": "cacheKey",
+          "description": "A custom key to include in the cache hashing process. Can be used to invalidate local and remote caches.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "cacheLifetime": {
           "title": "cacheLifetime",

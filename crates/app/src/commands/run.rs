@@ -1,6 +1,6 @@
 use crate::components::run_action_pipeline;
 use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_action_context::{ActionContext, ProfileType};
@@ -117,7 +117,7 @@ pub fn is_local(args: &RunArgs) -> bool {
 }
 
 pub async fn run_target(
-    session: &CliSession,
+    session: &MoonSession,
     args: &RunArgs,
     target_locators: &[TargetLocator],
 ) -> AppResult {
@@ -254,6 +254,6 @@ pub async fn run_target(
 }
 
 #[instrument(skip_all)]
-pub async fn run(session: CliSession, args: RunArgs) -> AppResult {
+pub async fn run(session: MoonSession, args: RunArgs) -> AppResult {
     return run_target(&session, &args, &args.targets).await;
 }

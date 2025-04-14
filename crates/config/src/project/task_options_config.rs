@@ -218,8 +218,13 @@ config_struct!(
         /// Allows the task to fail without failing the entire pipeline.
         pub allow_failure: Option<bool>,
 
-        /// Caches the `outputs` of the task
+        /// Caches the `outputs` of the task. Defaults to `true` if outputs
+        /// are configured for the task.
         pub cache: Option<bool>,
+
+        /// A custom key to include in the cache hashing process. Can be
+        /// used to invalidate local and remote caches.
+        pub cache_key: Option<String>,
 
         /// Lifetime to cache the task itself, in the format of "1h", "30m", etc.
         /// If not defined, caches live forever, or until inputs change.

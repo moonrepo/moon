@@ -1,5 +1,5 @@
 use crate::app::Commands;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_action::Action;
@@ -18,7 +18,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub async fn run_action_pipeline(
-    session: &CliSession,
+    session: &MoonSession,
     action_context: ActionContext,
     action_graph: ActionGraph,
 ) -> miette::Result<Vec<Action>> {
@@ -61,7 +61,7 @@ pub async fn run_action_pipeline(
 }
 
 pub async fn create_workspace_graph_context(
-    session: &CliSession,
+    session: &MoonSession,
 ) -> miette::Result<WorkspaceBuilderContext> {
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,

@@ -1,3 +1,4 @@
+use crate::app_options::*;
 use crate::commands::bin::BinArgs;
 use crate::commands::check::CheckArgs;
 use crate::commands::ci::CiArgs;
@@ -25,7 +26,6 @@ use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
 use moon_common::consts::BIN_NAME;
 use moon_env_var::GlobalEnvBag;
-use starbase::tracing::LogLevel;
 use starbase_styles::color::Color as ColorType;
 use std::env;
 use std::path::PathBuf;
@@ -295,6 +295,7 @@ pub struct Cli {
     pub dump: bool,
 
     #[arg(
+        value_enum,
         long,
         global = true,
         env = "MOON_LOG",
@@ -320,6 +321,16 @@ pub struct Cli {
     )]
     pub quiet: bool,
 
+    #[arg(
+        value_enum,
+        long,
+        global = true,
+        env = "MOON_THEME",
+        help = "Terminal theme to print with",
+        default_value_t
+    )]
+    pub theme: AppTheme,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -330,13 +341,18 @@ impl Cli {
 
         let bag = GlobalEnvBag::instance();
         bag.set("STARBASE_LOG", self.log.to_string());
+        bag.set("STARBASE_THEME", self.theme.to_string());
+
+        if !bag.has("MOON_CACHE") {
+            bag.set("MOON_CACHE", self.cache.to_string());
+        }
 
         if !bag.has("MOON_LOG") {
             bag.set("MOON_LOG", self.log.to_string());
         }
 
-        if !bag.has("MOON_CACHE") {
-            bag.set("MOON_CACHE", self.cache.to_string());
+        if !bag.has("MOON_THEME") {
+            bag.set("MOON_THEME", self.theme.to_string());
         }
 
         if matches!(self.cache, CacheMode::Off | CacheMode::Write) {

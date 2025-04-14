@@ -1,12 +1,12 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::components::run_action_pipeline;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
-pub async fn setup(session: CliSession) -> AppResult {
+pub async fn setup(session: MoonSession) -> AppResult {
     let manifest_path = session.workspace_root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {

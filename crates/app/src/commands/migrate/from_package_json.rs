@@ -1,5 +1,5 @@
 use super::check_dirty_repo;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
 use moon_config::{
@@ -24,7 +24,7 @@ pub struct FromPackageJsonArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -> AppResult {
+pub async fn from_package_json(session: MoonSession, args: FromPackageJsonArgs) -> AppResult {
     if args.skip_touched_files_check {
         info!("Skipping touched files check.");
     } else {

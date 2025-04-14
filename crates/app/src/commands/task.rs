@@ -1,5 +1,5 @@
 use crate::app_error::AppError;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_common::is_test_env;
@@ -21,7 +21,7 @@ pub struct TaskArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
+pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
     let TargetScope::Project(project_locator) = &args.target.scope else {
         return Err(AppError::ProjectIdRequired.into());
     };

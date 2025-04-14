@@ -1,5 +1,5 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use moon_bun_tool::BunTool;
 use moon_common::Id;
 use moon_config::PlatformType;
@@ -18,7 +18,7 @@ use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn prune_toolchain(
-    session: &CliSession,
+    session: &MoonSession,
     toolchain_registry: &ToolchainRegistry,
     toolchain: &ToolchainPlugin,
 ) -> AppResult {
@@ -74,7 +74,7 @@ pub async fn prune_toolchain(
 #[instrument(skip_all)]
 pub async fn prune_bun(
     bun: &BunTool,
-    session: &CliSession,
+    session: &MoonSession,
     manifest: &DockerManifest,
 ) -> AppResult {
     let project_graph = session.get_project_graph().await?;
@@ -126,7 +126,7 @@ pub async fn prune_bun(
 #[instrument(skip_all)]
 pub async fn prune_deno(
     deno: &DenoTool,
-    session: &CliSession,
+    session: &MoonSession,
     _manifest: &DockerManifest,
 ) -> AppResult {
     // noop
@@ -140,7 +140,7 @@ pub async fn prune_deno(
 #[instrument(skip_all)]
 pub async fn prune_node(
     node: &NodeTool,
-    session: &CliSession,
+    session: &MoonSession,
     manifest: &DockerManifest,
 ) -> AppResult {
     let project_graph = session.get_project_graph().await?;
@@ -192,7 +192,7 @@ pub async fn prune_node(
 
 // This assumes that the project was built in --release mode. Is this correct?
 #[instrument(skip_all)]
-pub async fn prune_rust(_rust: &RustTool, session: &CliSession) -> AppResult {
+pub async fn prune_rust(_rust: &RustTool, session: &MoonSession) -> AppResult {
     if session
         .workspace_config
         .docker
@@ -217,7 +217,7 @@ pub async fn prune_rust(_rust: &RustTool, session: &CliSession) -> AppResult {
 }
 
 #[instrument(skip_all)]
-pub async fn prune(session: CliSession) -> AppResult {
+pub async fn prune(session: MoonSession) -> AppResult {
     let manifest_path = session.workspace_root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {

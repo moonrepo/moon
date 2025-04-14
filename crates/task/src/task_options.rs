@@ -18,6 +18,9 @@ cacheable!(
         pub cache: bool,
 
         #[serde(skip_serializing_if = "Option::is_none")]
+        pub cache_key: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub cache_lifetime: Option<String>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -82,6 +85,7 @@ impl Default for TaskOptions {
             affected_pass_inputs: false,
             allow_failure: false,
             cache: true,
+            cache_key: None,
             cache_lifetime: None,
             env_files: None,
             infer_inputs: true,

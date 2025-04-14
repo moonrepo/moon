@@ -1064,6 +1064,21 @@ tasks:
       cache: false
 ```
 
+#### `cacheKey`<VersionLabel version="1.35.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cacheKey" />
+
+A custom key to include in the cache and task hashing process. Can be used to invalidate local and
+remote caches.
+
+```yaml title="moon.yml" {5}
+tasks:
+  build:
+    command: 'some-costly-build'
+    options:
+      cacheKey: 'v1'
+```
+
 #### `cacheLifetime`<VersionLabel version="1.29.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cacheLifetime" />

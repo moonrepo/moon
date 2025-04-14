@@ -1,5 +1,5 @@
 use super::{DockerManifest, MANIFEST_NAME};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use async_recursion::async_recursion;
 use clap::Args;
 use moon_common::consts::*;
@@ -25,13 +25,13 @@ pub struct DockerScaffoldArgs {
 }
 
 async fn get_toolchain_globs(
-    session: &CliSession,
+    session: &MoonSession,
     project: Option<&Project>,
 ) -> miette::Result<FxHashSet<String>> {
     let outputs = session
         .get_toolchain_registry()
         .await?
-        .define_docker_metadata(|registry, toolchain| DefineDockerMetadataInput {
+        .define_docker_metadata_all(|registry, toolchain| DefineDockerMetadataInput {
             context: registry.create_context(),
             toolchain_config: match project {
                 Some(proj) => registry.create_merged_config(
@@ -102,7 +102,7 @@ fn create_files<I: IntoIterator<Item = String>>(list: I, dest: &Path) -> miette:
 }
 
 fn scaffold_files(
-    session: &CliSession,
+    session: &MoonSession,
     src_dir: &Path,
     out_dir: &Path,
     shared_globs: &FxHashSet<String>,
@@ -179,7 +179,7 @@ fn scaffold_files(
 
 #[instrument(skip(session))]
 async fn scaffold_workspace_project(
-    session: &CliSession,
+    session: &MoonSession,
     docker_workspace_root: &Path,
     project: &Project,
     shared_globs: &FxHashSet<String>,
@@ -202,7 +202,7 @@ async fn scaffold_workspace_project(
         session
             .get_toolchain_registry()
             .await?
-            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+            .scaffold_docker_many(toolchains, |registry, toolchain| ScaffoldDockerInput {
                 context: registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
@@ -218,7 +218,7 @@ async fn scaffold_workspace_project(
 
 #[instrument(skip(session, project_graph))]
 async fn scaffold_workspace(
-    session: &CliSession,
+    session: &MoonSession,
     project_graph: &ProjectGraph,
     docker_root: &Path,
 ) -> AppResult {
@@ -297,7 +297,7 @@ async fn scaffold_workspace(
 #[instrument(skip(session, project_graph, manifest))]
 #[async_recursion]
 async fn scaffold_sources_project(
-    session: &CliSession,
+    session: &MoonSession,
     project_graph: &ProjectGraph,
     docker_sources_root: &Path,
     project_id: &Id,
@@ -349,7 +349,7 @@ async fn scaffold_sources_project(
         session
             .get_toolchain_registry()
             .await?
-            .scaffold_docker(toolchains, |registry, toolchain| ScaffoldDockerInput {
+            .scaffold_docker_many(toolchains, |registry, toolchain| ScaffoldDockerInput {
                 context: registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
@@ -387,7 +387,7 @@ async fn scaffold_sources_project(
 
 #[instrument(skip(session, project_graph))]
 async fn scaffold_sources(
-    session: &CliSession,
+    session: &MoonSession,
     project_graph: &ProjectGraph,
     docker_root: &Path,
     project_ids: &[Id],
@@ -481,7 +481,7 @@ fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 }
 
 #[instrument(skip_all)]
-pub async fn scaffold(session: CliSession, args: DockerScaffoldArgs) -> AppResult {
+pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> AppResult {
     check_docker_ignore(&session.workspace_root)?;
 
     let docker_root = session.workspace_root.join(CONFIG_DIRNAME).join("docker");

@@ -22,7 +22,7 @@ cached = "0.55.1"
 chrono = { version = "0.4.40", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.35", default-features = false, features = [
+clap = { version = "4.5.36", default-features = false, features = [
     "derive",
     "std",
     "error-context",
@@ -55,7 +55,7 @@ reqwest = { version = "0.12.15", default-features = false, features = [
 ] }
 rustc-hash = "2.1.1"
 scc = "2.3.3"
-schematic = { version = "0.18.3", default-features = false, features = [
+schematic = { version = "0.18.4", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
@@ -64,17 +64,17 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 serde_yml = "0.0.12"
 sha2 = "0.10.8"
-starbase = { version = "0.10.1" }
-starbase_archive = { version = "0.10.2", default-features = false, features = [
+starbase = { version = "0.10.2" }
+starbase_archive = { version = "0.10.3", default-features = false, features = [
     "miette",
     "tar-gz",
 ] }
-starbase_console = { version = "0.6.6", features = ["miette"] }
+starbase_console = { version = "0.6.7", features = ["miette"] }
 starbase_events = "0.7.1"
 starbase_sandbox = "0.9.1"
 starbase_shell = "0.7.3"
-starbase_styles = { version = "0.5.0", features = ["relative-path"] }
-starbase_utils = { version = "0.11.5", default-features = false, features = [
+starbase_styles = { version = "0.6.0", features = ["relative-path"] }
+starbase_utils = { version = "0.11.6", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
@@ -98,11 +98,11 @@ uuid = { version = "1.16.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.10.0"
 extism-pdk = "1.4.0"
-proto_core = "0.47.15"
-proto_installer = "0.12.3"
+proto_core = "0.47.16"
+proto_installer = "0.12.4"
 system_env = "0.8.0"
 version_spec = "0.9.1"
-warpgate = "0.23.9"
+warpgate = "0.23.10"
 warpgate_api = "0.13.4"
 warpgate_pdk = "0.12.2"
 

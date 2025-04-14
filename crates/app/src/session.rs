@@ -33,7 +33,7 @@ use tokio::try_join;
 use tracing::debug;
 
 #[derive(Clone)]
-pub struct CliSession {
+pub struct MoonSession {
     pub cli: Cli,
     pub cli_version: Version,
 
@@ -62,7 +62,7 @@ pub struct CliSession {
     pub workspace_root: PathBuf,
 }
 
-impl CliSession {
+impl MoonSession {
     pub fn new(cli: Cli, cli_version: String) -> Self {
         debug!("Creating new application session");
 
@@ -276,7 +276,7 @@ impl CliSession {
 }
 
 #[async_trait]
-impl AppSession for CliSession {
+impl AppSession for MoonSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
         self.console.set_reporter(MoonReporter::default());
@@ -399,7 +399,7 @@ impl AppSession for CliSession {
     }
 }
 
-impl fmt::Debug for CliSession {
+impl fmt::Debug for MoonSession {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CliSession")
             .field("cli", &self.cli)

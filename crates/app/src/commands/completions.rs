@@ -1,5 +1,5 @@
 use crate::app::Cli;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::{Args, CommandFactory};
 use clap_complete::{Shell, generate};
 use clap_complete_nushell::Nushell;
@@ -15,7 +15,7 @@ pub struct CompletionsArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn completions(session: CliSession, args: CompletionsArgs) -> AppResult {
+pub async fn completions(session: MoonSession, args: CompletionsArgs) -> AppResult {
     let shell = match args.shell {
         Some(value) => value,
         None => ShellType::try_detect().into_diagnostic()?,

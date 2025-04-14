@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
@@ -12,7 +12,7 @@ pub struct CleanArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn clean(session: CliSession, args: CleanArgs) -> AppResult {
+pub async fn clean(session: MoonSession, args: CleanArgs) -> AppResult {
     let (files_deleted, bytes_saved) = session
         .get_cache_engine()?
         .clean_stale_cache(&args.lifetime, true)?;

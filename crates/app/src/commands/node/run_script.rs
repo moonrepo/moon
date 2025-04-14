@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use miette::miette;
 use moon_common::Id;
@@ -19,7 +19,7 @@ pub struct RunScriptArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
+pub async fn run_script(session: MoonSession, args: RunScriptArgs) -> AppResult {
     let node = PlatformManager::read()
         .get_by_toolchain(&Id::raw("node"))?
         .get_tool()?

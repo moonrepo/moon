@@ -21,7 +21,7 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
             out_dir,
             app_context
                 .toolchain_registry
-                .define_toolchain_config()
+                .define_toolchain_config_all()
                 .await?,
         )
         .map(|_| true)
@@ -48,7 +48,7 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
                         out_dir,
                         app_context
                             .toolchain_registry
-                            .define_toolchain_config()
+                            .define_toolchain_config_all()
                             .await?,
                     )
                 },

@@ -1,5 +1,6 @@
 mod app;
 mod app_error;
+mod app_options;
 pub mod commands;
 mod components;
 pub mod queries;

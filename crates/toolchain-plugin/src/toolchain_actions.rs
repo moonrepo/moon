@@ -50,7 +50,9 @@ impl ToolchainRegistry {
         Ok(detected)
     }
 
-    pub async fn define_toolchain_config(&self) -> miette::Result<FxHashMap<String, ConfigSchema>> {
+    pub async fn define_toolchain_config_all(
+        &self,
+    ) -> miette::Result<FxHashMap<String, ConfigSchema>> {
         let ids = self.get_plugin_ids();
 
         let results = self
@@ -68,7 +70,7 @@ impl ToolchainRegistry {
             .collect())
     }
 
-    pub async fn define_docker_metadata<InFn>(
+    pub async fn define_docker_metadata_all<InFn>(
         &self,
         input_factory: InFn,
     ) -> miette::Result<Vec<DefineDockerMetadataOutput>>
@@ -89,7 +91,7 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn extend_project<InFn>(
+    pub async fn extend_project_many<InFn>(
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
@@ -109,7 +111,7 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn hash_task_contents<InFn>(
+    pub async fn hash_task_contents_many<InFn>(
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
@@ -132,7 +134,7 @@ impl ToolchainRegistry {
             .collect())
     }
 
-    pub async fn scaffold_docker<InFn>(
+    pub async fn scaffold_docker_many<InFn>(
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
@@ -152,7 +154,7 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn sync_project<InFn>(
+    pub async fn sync_project_many<InFn>(
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
@@ -169,7 +171,7 @@ impl ToolchainRegistry {
         .await
     }
 
-    pub async fn sync_workspace<InFn>(
+    pub async fn sync_workspace_all<InFn>(
         &self,
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<SyncOutput>>>
@@ -187,7 +189,10 @@ impl ToolchainRegistry {
         .await
     }
 
-    pub async fn teardown<InFn>(&self, input_factory: InFn) -> miette::Result<Vec<CallResult<()>>>
+    pub async fn teardown_all<InFn>(
+        &self,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<CallResult<()>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
     {

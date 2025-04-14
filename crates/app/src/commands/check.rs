@@ -1,5 +1,5 @@
 use crate::commands::run::{RunArgs, run_target};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
 use moon_project::Project;
@@ -34,7 +34,7 @@ pub struct CheckArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
+pub async fn check(session: MoonSession, args: CheckArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut projects: Vec<Arc<Project>> = vec![];
 

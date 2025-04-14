@@ -4,7 +4,7 @@ mod from_turborepo;
 pub use from_package_json::{FromPackageJsonArgs, from_package_json};
 pub use from_turborepo::*;
 
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Subcommand;
 use miette::miette;
 use starbase::AppResult;
@@ -25,7 +25,7 @@ pub enum MigrateCommands {
     FromTurborepo,
 }
 
-pub async fn check_dirty_repo(session: &CliSession) -> AppResult {
+pub async fn check_dirty_repo(session: &MoonSession) -> AppResult {
     if !session
         .get_vcs_adapter()?
         .get_touched_files()

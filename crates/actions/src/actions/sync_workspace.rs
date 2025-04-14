@@ -106,7 +106,7 @@ pub async fn sync_workspace(
             let mut ops = vec![];
 
             for sync_result in toolchain_registry
-                .sync_workspace(|registry, _| SyncWorkspaceInput {
+                .sync_workspace_all(|registry, _| SyncWorkspaceInput {
                     context: registry.create_context(),
                 })
                 .await?

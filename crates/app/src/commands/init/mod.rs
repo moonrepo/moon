@@ -4,7 +4,7 @@ mod prompts;
 mod rust;
 mod toolchain;
 
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use bun::init_bun;
 use clap::Args;
 use clean_path::Clean;
@@ -143,7 +143,7 @@ async fn verify_dest_dir(
 }
 
 pub async fn init_for_toolchain(
-    session: &CliSession,
+    session: &MoonSession,
     args: &InitArgs,
     options: &InitOptions,
 ) -> AppResult {
@@ -227,7 +227,7 @@ pub async fn init_for_toolchain(
 }
 
 #[instrument(skip_all)]
-pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
+pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     let dest_path = PathBuf::from(&args.dest);
     let dest_dir = if args.dest == "." {
         session.working_dir.clone()

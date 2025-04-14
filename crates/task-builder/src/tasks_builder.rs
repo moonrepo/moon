@@ -591,6 +591,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.cache = *cache;
             }
 
+            if let Some(cache_key) = &config.cache_key {
+                options.cache_key = Some(cache_key.to_owned());
+            }
+
             if let Some(cache_lifetime) = &config.cache_lifetime {
                 options.cache_lifetime = Some(cache_lifetime.to_owned());
             }

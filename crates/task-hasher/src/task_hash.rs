@@ -8,6 +8,10 @@ use std::collections::BTreeMap;
 
 hash_content!(
     pub struct TaskHash<'task> {
+        // Task option `cacheKey`
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub cache_key: Option<&'task str>,
+
         // Task `command`
         pub command: &'task str,
 
@@ -33,6 +37,7 @@ hash_content!(
         pub project_deps: Vec<&'task Id>,
 
         // Task `script`
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub script: Option<&'task str>,
 
         // Task `target`
@@ -49,6 +54,7 @@ hash_content!(
 impl<'task> TaskHash<'task> {
     pub fn new(project: &'task Project, task: &'task Task) -> Self {
         Self {
+            cache_key: task.options.cache_key.as_deref(),
             command: &task.command,
             args: task.args.iter().map(|a| a.as_str()).collect(),
             deps: BTreeMap::new(),
@@ -66,7 +72,8 @@ impl<'task> TaskHash<'task> {
             toolchains: task.toolchains.iter().collect(),
             // 1 - Original implementation
             // 2 - New task runner crate, tarball structure changed
-            version: "2".into(),
+            // 3 - New action pipeline
+            version: "3".into(),
         }
     }
 }

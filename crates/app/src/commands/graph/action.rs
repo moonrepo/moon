@@ -1,5 +1,5 @@
 use crate::commands::graph::utils::{action_graph_repr, run_server};
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use moon_action_graph::RunRequirements;
 use moon_task::Target;
@@ -23,7 +23,7 @@ pub struct ActionGraphArgs {
 }
 
 #[instrument]
-pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResult {
+pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut action_graph_builder = session.build_action_graph().await?;
 

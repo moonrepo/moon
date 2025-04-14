@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;
@@ -41,7 +41,7 @@ pub struct DockerFileArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
+pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     let console = &session.console;
     let workspace_graph = session.get_workspace_graph().await?;
 
@@ -214,7 +214,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     Ok(None)
 }
 
-async fn get_base_image(session: &CliSession, project: &Project) -> miette::Result<String> {
+async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Result<String> {
     let Some(toolchain_id) = project.toolchains.first() else {
         return Ok("scratch".into());
     };

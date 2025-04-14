@@ -1,6 +1,6 @@
 use crate::app_error::AppError;
 use crate::components::create_progress_loader;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use bytes::Buf;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
@@ -27,7 +27,7 @@ pub fn is_musl() -> bool {
 }
 
 #[instrument(skip_all)]
-pub async fn upgrade(session: CliSession) -> AppResult {
+pub async fn upgrade(session: MoonSession) -> AppResult {
     if proto_core::is_offline() {
         return Err(AppError::UpgradeRequiresInternet.into());
     }

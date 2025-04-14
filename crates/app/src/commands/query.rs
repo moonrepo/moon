@@ -3,7 +3,7 @@ pub use crate::queries::hash_diff::query_hash_diff;
 pub use crate::queries::projects::*;
 pub use crate::queries::tasks::*;
 pub use crate::queries::touched_files::*;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::{Args, Subcommand};
 use iocraft::prelude::{Size, element};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
@@ -65,7 +65,7 @@ pub struct QueryHashArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn hash(session: CliSession, args: QueryHashArgs) -> AppResult {
+pub async fn hash(session: MoonSession, args: QueryHashArgs) -> AppResult {
     let console = &session.console;
     let cache_engine = session.get_cache_engine()?;
     let result = query_hash(&cache_engine, &args.hash).await?;
@@ -95,7 +95,7 @@ pub struct QueryHashDiffArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResult {
+pub async fn hash_diff(session: MoonSession, args: QueryHashDiffArgs) -> AppResult {
     let console = &session.console;
     let cache_engine = session.get_cache_engine()?;
     let mut result = query_hash_diff(&cache_engine, &args.left, &args.right).await?;
@@ -221,7 +221,7 @@ pub struct QueryProjectsArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult {
+pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResult {
     let console = &session.console;
 
     let mut options = QueryProjectsOptions {
@@ -408,7 +408,7 @@ pub struct QueryTasksArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
+pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
     let console = &session.console;
 
     let mut options = QueryTasksOptions {
@@ -561,7 +561,7 @@ pub struct QueryTouchedFilesArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn touched_files(session: CliSession, args: QueryTouchedFilesArgs) -> AppResult {
+pub async fn touched_files(session: MoonSession, args: QueryTouchedFilesArgs) -> AppResult {
     let console = &session.console;
     let vcs = session.get_vcs_adapter()?;
 

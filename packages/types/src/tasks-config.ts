@@ -60,8 +60,16 @@ export interface TaskOptionsConfig {
 	affectedPassInputs: boolean | null;
 	/** Allows the task to fail without failing the entire pipeline. */
 	allowFailure: boolean | null;
-	/** Caches the `outputs` of the task */
+	/**
+	 * Caches the `outputs` of the task. Defaults to `true` if outputs
+	 * are configured for the task.
+	 */
 	cache: boolean | null;
+	/**
+	 * A custom key to include in the cache hashing process. Can be
+	 * used to invalidate local and remote caches.
+	 */
+	cacheKey: string | null;
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.
@@ -338,8 +346,16 @@ export interface PartialTaskOptionsConfig {
 	affectedPassInputs?: boolean | null;
 	/** Allows the task to fail without failing the entire pipeline. */
 	allowFailure?: boolean | null;
-	/** Caches the `outputs` of the task */
+	/**
+	 * Caches the `outputs` of the task. Defaults to `true` if outputs
+	 * are configured for the task.
+	 */
 	cache?: boolean | null;
+	/**
+	 * A custom key to include in the cache hashing process. Can be
+	 * used to invalidate local and remote caches.
+	 */
+	cacheKey?: string | null;
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.

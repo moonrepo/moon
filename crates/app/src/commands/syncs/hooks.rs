@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_actions::operations::{sync_vcs_hooks, unsync_vcs_hooks};
@@ -16,7 +16,7 @@ pub struct SyncHooksArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
+pub async fn sync(session: MoonSession, args: SyncHooksArgs) -> AppResult {
     if session.workspace_config.vcs.hooks.is_empty() {
         session.console.render(element! {
             Container {

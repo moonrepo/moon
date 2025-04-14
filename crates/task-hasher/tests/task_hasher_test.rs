@@ -206,7 +206,7 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "globNegated").unwrap();

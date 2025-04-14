@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use convert_case::{Case, Casing};
 use iocraft::prelude::{View, element};
@@ -23,7 +23,7 @@ pub struct ProjectArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
+pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let project = workspace_graph.get_project_with_tasks(&args.id)?;
     let config = &project.config;

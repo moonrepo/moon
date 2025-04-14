@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_actions::operations::sync_config_schemas;
@@ -13,7 +13,7 @@ pub struct SyncConfigSchemasArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn sync(session: CliSession, args: SyncConfigSchemasArgs) -> AppResult {
+pub async fn sync(session: MoonSession, args: SyncConfigSchemasArgs) -> AppResult {
     let context = session.get_app_context().await?;
 
     sync_config_schemas(&context, args.force).await?;

@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon_tool::{get_proto_env_vars, get_proto_paths, prepend_path_env_var};
@@ -13,7 +13,7 @@ pub struct BinArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn bin(session: CliSession, args: BinArgs) -> AppResult {
+pub async fn bin(session: MoonSession, args: BinArgs) -> AppResult {
     session.console.quiet();
 
     let result = Command::new("proto")

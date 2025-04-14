@@ -1,5 +1,5 @@
 use crate::components::create_progress_loader;
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_pdk_api::TeardownToolchainInput;
@@ -8,7 +8,7 @@ use starbase::AppResult;
 use tracing::instrument;
 
 #[instrument]
-pub async fn teardown(session: CliSession) -> AppResult {
+pub async fn teardown(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
         "Tearing down and uninstalling tools...",
@@ -21,7 +21,7 @@ pub async fn teardown(session: CliSession) -> AppResult {
     session
         .get_toolchain_registry()
         .await?
-        .teardown(|registry, toolchain| TeardownToolchainInput {
+        .teardown_all(|registry, toolchain| TeardownToolchainInput {
             configured_version: session
                 .toolchain_config
                 .plugins

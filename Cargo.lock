@@ -909,9 +909,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.18"
+version = "1.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "525046617d8376e3db1deffb079e91cef90a89fc3ca5c185bbf8c9ecdd15cd5c"
+checksum = "8e3a13707ac958681c13b39b458c073d0d9bc8a22cb1b2f4c8e55eb72c13f362"
 dependencies = [
  "jobserver",
  "libc",
@@ -1019,9 +1019,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.35"
+version = "4.5.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8aa86934b44c19c50f87cc2790e19f54f7a67aedb64101c2e1a2e5ecfb73944"
+checksum = "2df961d8c8a0d08aa9945718ccf584145eee3f3aa06cddbeac12933781102e04"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1029,9 +1029,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.35"
+version = "4.5.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2414dbb2dd0695280da6ea9261e327479e9d37b0630f6b53ba2a11c60c679fd9"
+checksum = "132dbda40fb6753878316a489d5a1242a8ef2f0d9e47ba01c951ea8aa7d013a5"
 dependencies = [
  "anstream",
  "anstyle",
@@ -3242,9 +3242,9 @@ checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
 
 [[package]]
 name = "libmimalloc-sys"
-version = "0.1.40"
+version = "0.1.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07d0e07885d6a754b9c7993f2625187ad694ee985d60f23355ff0e7077261502"
+checksum = "ec9d6fac27761dabcd4ee73571cdb06b7022dc99089acbe5435691edffaac0f4"
 dependencies = [
  "cc",
  "libc",
@@ -3492,9 +3492,9 @@ dependencies = [
 
 [[package]]
 name = "mimalloc"
-version = "0.1.44"
+version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99585191385958383e13f6b822e6b6d8d9cf928e7d286ceb092da92b43c87bc1"
+checksum = "995942f432bbb4822a7e9c3faa87a695185b0d09273ba85f097b54f4e458f2af"
 dependencies = [
  "libmimalloc-sys",
 ]
@@ -3930,7 +3930,6 @@ dependencies = [
  "clap",
  "extism",
  "httpmock",
- "libmimalloc-sys",
  "mimalloc",
  "moon_app",
  "moon_cache",
@@ -5838,9 +5837,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.47.15"
+version = "0.47.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09b7e968f05f1c067a9c7626c71ad34ce6e3a26458b024d881989d195ad474e7"
+checksum = "108d428bf29b82d0e0590e22823afac31fbbe883c3ddd3c570b1984922174be7"
 dependencies = [
  "convert_case",
  "dotenvy",
@@ -5877,9 +5876,9 @@ dependencies = [
 
 [[package]]
 name = "proto_installer"
-version = "0.12.3"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c97c0cc632bf029276fe1bdc7d1298197faf68df2702a44b662d436af7a2f06d"
+checksum = "8f5171b8f82c6db132e4a6912e818edc89cfd8bf45cf1bd4c0ab0a8dd284a876"
 dependencies = [
  "miette 7.5.0",
  "reqwest",
@@ -6542,9 +6541,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.3"
+version = "0.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c97a6ec250f1faa0d151684001b1998810599809b3a1b4b295d74fc555a650d8"
+checksum = "c5ef6e8280c23aaea2fd335c7c6add3be31618f80e8a9883d2e77927a9aa3f40"
 dependencies = [
  "garde",
  "indexmap",
@@ -6567,9 +6566,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.18.2"
+version = "0.18.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4fb2bfd11a97d3ac2f333552298c77612d3ac2899c3511f5fbe0e07c834b343"
+checksum = "37774001c08aa18ec7bb0d2c216f6897d29c5b4773f5dcae9b464a8d1285d1ae"
 dependencies = [
  "convert_case",
  "darling",
@@ -6580,9 +6579,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb7015e8ac80472bdf12ddde4f0cf059acdbe92eff225bd6812c6036fec704fd"
+checksum = "b57d406829eeb15dcdb5e8b450310458cfe337f298f804e2e5c0d2c59eb764e4"
 dependencies = [
  "indexmap",
  "rpkl",
@@ -6995,9 +6994,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffd178ce1b0a9121832ee0e134001043593612ad1d048b1ef13f6002bdb72b19"
+checksum = "a3e88836ebb24bde8f9e63fe6b955ca3e324325de3ee936cca0b4b089bcbf287"
 dependencies = [
  "async-trait",
  "chrono",
@@ -7012,9 +7011,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c81ed9dfd9ed616f2289eae633e713fdde4008e2409b38616119654c62c45872"
+checksum = "1556978037d67428ba5003433729e4f32cb41eb260d6e1ee99724f1d74267739"
 dependencies = [
  "binstall-tar",
  "bzip2",
@@ -7032,9 +7031,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51a0bcffc33307019a59b713ae88792db064b9131438d9aa4ebab896dfe8ccf"
+checksum = "7f96a428bb014a9f2320b001da5f75ce2ef45d336d333411431d581c009c74fb"
 dependencies = [
  "crossterm",
  "iocraft",
@@ -7099,9 +7098,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3285706e93b8c15eb432f18ede4043a1698ddbd2ac2536fdfd9765a5fe8f0af"
+checksum = "dd1333c654161a61bb2a89aa474aad3d1f393e9ac442d5c48f6924b4062e8c50"
 dependencies = [
  "dirs 6.0.0",
  "miette 7.5.0",
@@ -7112,9 +7111,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.11.5"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35767b510e6a15d9ae64e1f295f1eba1ddd585e85db6d7f0b1fddb834c3c03ba"
+checksum = "ae2263828399f7637ec390eed434e0d0dd09cab3f4cd38622db87d496fc462c5"
 dependencies = [
  "async-trait",
  "dirs 6.0.0",
@@ -8108,9 +8107,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.23.9"
+version = "0.23.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "183cdc9503279049c74c549fb5ea247b6dce164f519cd0a7dce7bba975205aa8"
+checksum = "50e0771f22421f0c7c00ddc3d7e7411d461d3ee870ca688a3e8e9e91aa7926c5"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",

@@ -1,4 +1,4 @@
-use crate::session::CliSession;
+use crate::session::MoonSession;
 use clap::Args;
 use clap::builder::{
     BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser,
@@ -435,7 +435,7 @@ pub async fn gather_variables(
 }
 
 #[instrument(skip_all)]
-pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
+pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
     let mut generator = CodeGenerator::new(
         &session.workspace_root,
         &session.workspace_config.generator,

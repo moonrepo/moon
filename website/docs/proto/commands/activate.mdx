@@ -7,14 +7,6 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.38.0" header />
 
-:::danger
-
-This feature is extremely experimental and may change based on feedback! If you run into any issues,
-please report an issue on [GitHub](https://github.com/moonrepo/proto) or
-[Discord](https://discord.gg/qCh9MEynv2).
-
-:::
-
 The `proto activate <shell>` command will activate proto for the current shell session, by exporting
 environment variables and prepending `PATH` for each tool configured in the current directory.
 Activation is ran each time the current directory changes using a shell hook.

@@ -67,7 +67,7 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 					</Link>
 
 					<Text className="m-0" variant="muted">
-						+ pip, uv
+						+ pip, poetry, uv
 					</Text>
 				</div>
 
@@ -86,9 +86,9 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 
 			<div className="text-center mt-3">
 				<Text weight="bold" variant="muted">
-					<Link href="/docs/proto/tools#third-party">
-						...with {tools.length} more and growing...
-					</Link>
+					... with{' '}
+					<Link href="/docs/proto/tools#third-party">{tools.length} more proto plugins</Link>, and
+					over <Link href="/docs/proto/tool-spec#asdf">800 asdf plugins</Link>...
 				</Text>
 			</div>
 		</div>

@@ -311,7 +311,7 @@ mod file_hashing {
             BTreeMap::from([
                 (
                     WorkspaceRelativePathBuf::from(".gitignore"),
-                    "2af87dfdb98c33090cc68007ddba6ab8ad714d16".to_owned()
+                    "2c085d1d2fb7e1d865a5c1161f0fbbcb682af240".to_owned()
                 ),
                 (
                     WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt"),

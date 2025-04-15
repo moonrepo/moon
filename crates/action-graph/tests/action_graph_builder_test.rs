@@ -13,7 +13,7 @@ use moon_platform::{Runtime, RuntimeReq, ToolchainSpec};
 use moon_task::{Target, TargetLocator, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
-use utils::ActionGraphContainer2;
+use utils::ActionGraphContainer;
 
 fn create_task(project: &str, id: &str) -> Task {
     Task {
@@ -102,7 +102,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -136,7 +136,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -177,7 +177,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn installs_in_project_when_not_in_depman_workspace() {
             let sandbox = create_sandbox("dep-workspace");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -223,7 +223,7 @@ mod action_graph_builder {
             let sandbox = create_sandbox("projects");
             sandbox.append_file(".moon/toolchain.yml", "bun:\n  version: '1.0.0'");
 
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -297,7 +297,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -335,7 +335,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -373,7 +373,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -419,7 +419,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_graph_if_tier1() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -438,7 +438,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_if_tier2() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -467,7 +467,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_toolchain_if_tier3() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -497,7 +497,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_env_chain_if_defined() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -531,7 +531,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -558,7 +558,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -585,7 +585,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -622,7 +622,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn sets_project_if_in_project_root() {
             let sandbox = create_sandbox("dep-workspace");
-            let mut container = ActionGraphContainer2::new(sandbox.path())
+            let mut container = ActionGraphContainer::new(sandbox.path())
                 // Plugin matches based on cwd
                 .set_working_dir(sandbox.path().join("isolated"));
 
@@ -652,7 +652,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_not_in_deps_workspace() {
             let sandbox = create_sandbox("dep-workspace");
-            let mut container = ActionGraphContainer2::new(sandbox.path())
+            let mut container = ActionGraphContainer::new(sandbox.path())
                 // Plugin matches based on cwd
                 .set_working_dir(sandbox.path().join("out"));
 
@@ -682,7 +682,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_in_deps_workspace() {
             let sandbox = create_sandbox("dep-workspace");
-            let mut container = ActionGraphContainer2::new(sandbox.path())
+            let mut container = ActionGraphContainer::new(sandbox.path())
                 // Plugin matches based on cwd
                 .set_working_dir(sandbox.path().join("in"));
 
@@ -712,7 +712,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_in_deps_workspace_if_root_level() {
             let sandbox = create_sandbox("dep-workspace");
-            let mut container = ActionGraphContainer2::new(sandbox.path())
+            let mut container = ActionGraphContainer::new(sandbox.path())
                 // Plugin matches based on cwd
                 .set_working_dir(sandbox.path().join("in-root"));
 
@@ -746,7 +746,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -786,7 +786,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -833,7 +833,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn sets_interactive() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -861,7 +861,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn sets_interactive_from_requirement() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -894,7 +894,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn sets_persistent() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -922,7 +922,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn distinguishes_between_args() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1001,7 +1001,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn flattens_same_args() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1059,7 +1059,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn flattens_same_args_with_diff_enum() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1117,7 +1117,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn distinguishes_between_env() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1196,7 +1196,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn flattens_same_env() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1254,7 +1254,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn distinguishes_between_args_and_env() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1359,7 +1359,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_graph_if_not_affected_by_touched_files() {
                 let sandbox = create_sandbox("projects");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
@@ -1390,7 +1390,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn graphs_if_affected_by_touched_files() {
                 let sandbox = create_sandbox("projects");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
@@ -1422,7 +1422,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn includes_deps_if_owning_task_is_affected() {
                 let sandbox = create_sandbox("tasks");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
 
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
@@ -1478,7 +1478,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn graphs_if_ci_check_true() {
                 let sandbox = create_sandbox("projects");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
@@ -1507,7 +1507,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_run_dependents_if_its_ci_false() {
                 let sandbox = create_sandbox("tasks");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
 
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
@@ -1535,7 +1535,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn runs_dependents_if_both_are_ci_true() {
                 let sandbox = create_sandbox("tasks");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
 
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
@@ -1567,7 +1567,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_graph_if_ci_check_true() {
                 let sandbox = create_sandbox("projects");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
@@ -1603,7 +1603,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn graphs_if_ci_check_false() {
                 let sandbox = create_sandbox("projects");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
@@ -1632,7 +1632,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn graphs_if_ci_false() {
                 let sandbox = create_sandbox("projects");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
@@ -1661,7 +1661,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_run_dependents_if_dependency_is_ci_false_and_not_affected() {
                 let sandbox = create_sandbox("tasks");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
 
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
@@ -1689,7 +1689,7 @@ mod action_graph_builder {
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_run_dependents_if_both_are_ci_false() {
                 let sandbox = create_sandbox("tasks");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
 
                 let wg = container.create_workspace_graph().await;
                 let mut builder = container.create_builder(wg.clone()).await;
@@ -1720,7 +1720,7 @@ mod action_graph_builder {
             )]
             async fn errors_if_dependency_is_ci_false_and_constraint_enabled() {
                 let sandbox = create_sandbox("tasks-ci-mismatch");
-                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut container = ActionGraphContainer::new(sandbox.path());
 
                 container
                     .create_builder(container.create_workspace_graph().await)
@@ -1735,7 +1735,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_deps_in_parallel() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -1759,7 +1759,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_deps_in_serial() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -1783,7 +1783,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn can_create_a_chain() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -1807,7 +1807,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_include_dependents() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -1831,7 +1831,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn includes_dependents() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -1861,7 +1861,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn includes_dependents_for_ci() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -1898,7 +1898,7 @@ mod action_graph_builder {
         #[should_panic(expected = "Dependencies scope (^:) is not supported in run contexts.")]
         async fn errors_on_parent_scope() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1916,7 +1916,7 @@ mod action_graph_builder {
         #[should_panic(expected = "Self scope (~:) is not supported in run contexts.")]
         async fn errors_on_self_scope() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1935,7 +1935,7 @@ mod action_graph_builder {
         )]
         async fn errors_for_unknown_project() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1953,7 +1953,7 @@ mod action_graph_builder {
         #[should_panic(expected = "Unknown task unknown for project server.")]
         async fn errors_for_unknown_project_task() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1971,7 +1971,7 @@ mod action_graph_builder {
         #[should_panic(expected = "Unknown task internal for project common.")]
         async fn errors_for_internal_task_when_explicit() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -1988,7 +1988,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_all() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2018,7 +2018,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_all_with_query() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2045,7 +2045,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_all_no_nodes() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2067,7 +2067,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_run_all_internal() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2089,7 +2089,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_by_project() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2114,7 +2114,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_for_internal_task_when_depended_on() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2139,7 +2139,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_tag() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2167,7 +2167,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_tag_no_nodes() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2189,7 +2189,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_run_tags_internal() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2216,7 +2216,7 @@ mod action_graph_builder {
         #[should_panic(expected = "Unknown task internal for project common.")]
         async fn errors_for_internal_task_when_explicit() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2234,7 +2234,7 @@ mod action_graph_builder {
         #[should_panic(expected = "Unknown task internal for project common.")]
         async fn errors_for_internal_task_when_explicit_via_dir() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path())
+            let mut container = ActionGraphContainer::new(sandbox.path())
                 .set_working_dir(sandbox.path().join("common"));
 
             let mut builder = container
@@ -2253,7 +2253,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_by_target() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2278,7 +2278,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_by_task_glob() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2319,7 +2319,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_by_tag_glob() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2347,7 +2347,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_by_project_glob() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2372,7 +2372,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn returns_empty_result_for_no_glob_match() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2394,7 +2394,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_for_internal_task_when_depended_on() {
             let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
                 .await;
@@ -2423,7 +2423,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2452,7 +2452,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_same_toolchain() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2488,7 +2488,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2512,7 +2512,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2543,7 +2543,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2574,7 +2574,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2618,7 +2618,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_graph_if_tier1() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2636,7 +2636,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_graph_if_tier2() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2654,7 +2654,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2683,7 +2683,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_same_toolchain() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2719,7 +2719,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2743,7 +2743,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2774,7 +2774,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2805,7 +2805,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2849,7 +2849,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_single() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2874,7 +2874,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_multiple() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2911,7 +2911,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_without_deps() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -2950,7 +2950,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -2980,7 +2980,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -3005,7 +3005,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -3030,7 +3030,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -3067,7 +3067,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
@@ -3084,7 +3084,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_dupes() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let mut builder = container
                 .create_builder(container.create_workspace_graph().await)
@@ -3102,7 +3102,7 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path());
 
             let mut builder = container
                 .create_builder_with_options(

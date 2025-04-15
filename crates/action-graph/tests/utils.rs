@@ -7,11 +7,11 @@ use moon_workspace_graph::WorkspaceGraph;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-pub struct ActionGraphContainer2 {
+pub struct ActionGraphContainer {
     pub mocker: WorkspaceMocker,
 }
 
-impl ActionGraphContainer2 {
+impl ActionGraphContainer {
     pub fn new(root: &Path) -> Self {
         Self {
             mocker: WorkspaceMocker::new(root)

@@ -152,7 +152,8 @@ impl WorkspaceMocker {
                 let mut current_dir = Some(start_dir.as_path());
 
                 while let Some(dir) = current_dir {
-                    if dir.join("target").exists() {
+                    // Avoids our target crate
+                    if dir.join("target").join("CACHEDIR.TAG").exists() {
                         break;
                     }
 

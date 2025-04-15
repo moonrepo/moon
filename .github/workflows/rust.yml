@@ -11,7 +11,19 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For setup-rust
+  # RUST_LOG: trace
+  # setup-rust
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # sccache
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' || '' }}
+  SCCACHE_BUCKET: moon-ci-sccache
+  SCCACHE_S3_KEY_PREFIX: v1
+  SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
+  # SCCACHE_LOG: trace
+  # SCCACHE_NO_DAEMON: 1
+  SCCACHE_REGION: us-east-2
 
 jobs:
   build-wasm:
@@ -80,18 +92,6 @@ jobs:
     env:
       # Windows runs out of disk space
       COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
-      # sccache
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      # RUST_LOG: trace
-      RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' || '' }}
-      SCCACHE_BUCKET: moon-ci-sccache
-      SCCACHE_S3_KEY_PREFIX: v1
-      SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
-      # SCCACHE_LOG: trace
-      # SCCACHE_NO_DAEMON: 1
-      SCCACHE_REGION: us-east-2
-      SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
@@ -108,6 +108,8 @@ jobs:
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
+      - name: Build plugins
+        run: just build-wasm
       - name: Run tests
         if: ${{ env.COVERAGE == 'false' }}
         run: just test-ci

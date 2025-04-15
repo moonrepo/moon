@@ -13,7 +13,7 @@ use moon_task_graph::Task;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
-use moon_workspace_graph::WorkspaceGraph;
+pub use moon_workspace_graph::WorkspaceGraph;
 use proto_core::warpgate::FileLocator;
 use proto_core::{PluginLocator, ProtoConfig, ProtoEnvironment};
 use starbase_events::Emitter;
@@ -151,7 +151,7 @@ impl WorkspaceMocker {
         self.update_toolchain_config(|config| {
             for id in ["tc-tier1", "tc-tier2", "tc-tier2-setup-env", "tc-tier3"] {
                 config.plugins.insert(
-                    Id::raw(&id),
+                    Id::raw(id),
                     ToolchainPluginConfig {
                         plugin: Some(PluginLocator::File(Box::new(FileLocator {
                             file: "".into(),

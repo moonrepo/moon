@@ -1,7 +1,4 @@
-use moon_action_graph::action_graph_builder2::{
-    ActionGraphBuilder as ActionGraphBuilder2,
-    ActionGraphBuilderOptions as ActionGraphBuilderOptions2,
-};
+use moon_action_graph::*;
 use moon_test_utils2::WorkspaceMocker;
 use moon_workspace_graph::WorkspaceGraph;
 use std::path::{Path, PathBuf};
@@ -35,12 +32,12 @@ impl ActionGraphContainer {
     pub async fn create_builder(
         &mut self,
         workspace_graph: Arc<WorkspaceGraph>,
-    ) -> ActionGraphBuilder2 {
+    ) -> ActionGraphBuilder {
         let config = &self.mocker.workspace_config.pipeline;
 
         self.create_builder_with_options(
             workspace_graph,
-            ActionGraphBuilderOptions2 {
+            ActionGraphBuilderOptions {
                 install_dependencies: config.install_dependencies.clone(),
                 sync_projects: config.sync_projects.clone(),
                 sync_workspace: config.sync_workspace,
@@ -53,9 +50,9 @@ impl ActionGraphContainer {
     pub async fn create_builder_with_options(
         &mut self,
         workspace_graph: Arc<WorkspaceGraph>,
-        options: ActionGraphBuilderOptions2,
-    ) -> ActionGraphBuilder2 {
-        let mut builder = ActionGraphBuilder2::new(
+        options: ActionGraphBuilderOptions,
+    ) -> ActionGraphBuilder {
+        let mut builder = ActionGraphBuilder::new(
             Arc::new(self.mocker.mock_app_context()),
             workspace_graph,
             options,

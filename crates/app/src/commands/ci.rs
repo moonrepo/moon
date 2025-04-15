@@ -209,19 +209,24 @@ async fn generate_action_graph(
 
     let mut action_graph_builder = session.build_action_graph().await?;
     action_graph_builder.set_touched_files(touched_files)?;
-    action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep)?;
+    action_graph_builder.track_affected(UpstreamScope::Deep, DownstreamScope::Deep, true)?;
 
     // Run dependents to ensure consumers still work correctly
-    action_graph_builder.run_from_requirements(RunRequirements {
+    let reqs = RunRequirements {
         ci: true,
         ci_check: true,
         dependents: true,
-        target_locators: FxHashSet::from_iter(targets.clone()),
-        ..Default::default()
-    })?;
+        interactive: true,
+    };
 
-    let action_context = action_graph_builder.build_context();
-    let action_graph = action_graph_builder.build();
+    for locator in targets {
+        action_graph_builder
+            .run_task_by_target_locator(locator, &reqs)
+            .await?;
+    }
+
+    let (mut action_context, action_graph) = action_graph_builder.build();
+    action_context.initial_targets.extend(targets.clone());
 
     console.write_line(format!("Target count: {}", targets.len()))?;
     console.write_line(format!("Action count: {}", action_graph.get_node_count()))?;

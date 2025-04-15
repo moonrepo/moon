@@ -56,6 +56,8 @@ mod command_builder {
     }
 
     mod args {
+        use moon_task::TargetLocator;
+
         use super::*;
 
         #[tokio::test]
@@ -103,7 +105,7 @@ mod command_builder {
             context.passthrough_args.push("--passthrough".into());
             context
                 .initial_targets
-                .insert(Target::parse(":base").unwrap());
+                .insert(TargetLocator::Qualified(Target::parse(":base").unwrap()));
 
             let command = container.create_command(context).await;
 

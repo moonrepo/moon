@@ -13,6 +13,7 @@ pub async fn sync(session: MoonSession) -> AppResult {
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions {
             install_dependencies: false.into(),
+            setup_environment: false.into(),
             setup_toolchains: false.into(),
             sync_projects: true.into(),
             sync_project_dependencies: true,
@@ -21,16 +22,13 @@ pub async fn sync(session: MoonSession) -> AppResult {
         .await?;
 
     for project in workspace_graph.projects.get_all_unexpanded() {
-        action_graph_builder.sync_project(project)?;
+        action_graph_builder.sync_project(project).await?;
         project_count += 1;
     }
 
-    run_action_pipeline(
-        &session,
-        action_graph_builder.build_context(),
-        action_graph_builder.build(),
-    )
-    .await?;
+    let (action_context, action_graph) = action_graph_builder.build();
+
+    run_action_pipeline(&session, action_context, action_graph).await?;
 
     session.console.render(element! {
         Container {

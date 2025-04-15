@@ -2,7 +2,7 @@ mod utils;
 
 use moon_action::*;
 use moon_action_context::TargetState;
-use moon_action_graph::{ActionGraph, action_graph_builder2::*};
+use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::AffectedBy;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{

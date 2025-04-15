@@ -6,6 +6,6 @@ digraph {
     0 [ label="SyncWorkspace" ]
     1 [ label="SetupEnvironment(tc-tier2-setup-env)" ]
     2 [ label="InstallDependencies(tc-tier2-setup-env)" ]
-    2 -> 1 [ ]
     1 -> 0 [ ]
+    2 -> 1 [ ]
 }

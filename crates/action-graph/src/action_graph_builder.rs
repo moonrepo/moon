@@ -261,17 +261,17 @@ impl<'query> ActionGraphBuilder<'query> {
         project: &Project,
         has_bun_and_node: bool,
     ) -> miette::Result<Option<NodeIndex>> {
-        let setup_toolchain_index = self.setup_toolchain_legacy(runtime).await?;
-
         if !self
             .options
             .install_dependencies
             .is_enabled(&runtime.toolchain)
+            || runtime.is_system()
         {
-            return Ok(setup_toolchain_index);
-        } else if runtime.is_system() {
             return Ok(None);
         };
+
+        let sync_workspace_index = self.sync_workspace().await?;
+        let setup_toolchain_index = self.setup_toolchain_legacy(runtime).await?;
 
         // If Bun and Node.js are enabled, they will both attempt to install
         // dependencies in the target root. We need to avoid this problem,
@@ -319,8 +319,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         );
 
-        // Before we install deps, we must ensure the language has been installed
-        self.link_requirements(index, vec![setup_toolchain_index]);
+        self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index]);
 
         Ok(Some(index))
     }
@@ -331,17 +330,14 @@ impl<'query> ActionGraphBuilder<'query> {
         spec: &ToolchainSpec,
         project: &Project,
     ) -> miette::Result<Option<NodeIndex>> {
-        let setup_toolchain_index = self.setup_toolchain(spec).await?;
-
         // Explicitly disabled
-        if !self.options.install_dependencies.is_enabled(&spec.id) {
-            return Ok(setup_toolchain_index);
-        } else if spec.is_system() {
+        if !self.options.install_dependencies.is_enabled(&spec.id) || spec.is_system() {
             return Ok(None);
         }
 
-        let registry = &self.app_context.toolchain_registry;
-        let toolchain = registry.load(&spec.id).await?;
+        let sync_workspace_index = self.sync_workspace().await?;
+        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
 
         // Toolchain does not support this action, so skip and fall through
         if !toolchain.supports_tier_2().await {
@@ -350,7 +346,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let output = toolchain
             .locate_dependencies_root(LocateDependenciesRootInput {
-                context: registry.create_context(),
+                context: self.app_context.toolchain_registry.create_context(),
                 starting_dir: toolchain.to_virtual_path(&project.root),
             })
             .await?;
@@ -384,53 +380,36 @@ impl<'query> ActionGraphBuilder<'query> {
                     (None, rel_root)
                 };
 
-            let setup_env = ActionNode::setup_environment(SetupEnvironmentNode {
-                project_id: project_id.clone(),
-                root: root.clone(),
-                toolchain_id: spec.id.clone(),
-            });
+            let setup_env_index = self
+                .setup_environment(spec, &root, project_id.as_ref().map(|_| project))
+                .await?;
 
-            let install_deps = ActionNode::install_dependencies(InstallDependenciesNode {
-                project_id,
-                root,
-                toolchain_id: spec.id.clone(),
-            });
+            // Only create this action if the plugin supports it
+            if toolchain.has_func("install_dependencies").await {
+                let index = insert_node_or_exit!(
+                    self,
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        project_id,
+                        root,
+                        toolchain_id: spec.id.clone(),
+                    })
+                );
 
-            // We need to conditionally create nodes and edges based on what
-            // APIs have been implemented by the plugin
-            let has_install_deps = toolchain.has_func("install_dependencies").await;
-            let has_setup_env = toolchain.has_func("setup_environment").await;
+                self.link_first_requirement(
+                    index,
+                    vec![setup_env_index, setup_toolchain_index, sync_workspace_index],
+                );
 
-            let index = match (has_install_deps, has_setup_env) {
-                (true, true) => {
-                    let setup_env_index = self.insert_node(setup_env);
-                    let install_deps_index = self.insert_node(install_deps);
+                return Ok(Some(index));
+            }
 
-                    self.link_requirements(install_deps_index, vec![Some(setup_env_index)]);
-                    self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
-
-                    Some(install_deps_index)
-                }
-                (true, false) => {
-                    let install_deps_index = self.insert_node(install_deps);
-
-                    self.link_requirements(install_deps_index, vec![setup_toolchain_index]);
-
-                    Some(install_deps_index)
-                }
-                (false, true) => {
-                    let setup_env_index = self.insert_node(setup_env);
-
-                    self.link_requirements(setup_env_index, vec![setup_toolchain_index]);
-
-                    Some(setup_env_index)
-                }
-                (false, false) => setup_toolchain_index,
-            };
-
-            return Ok(index);
+            // Otherwise pass through to setup environment
+            if let Some(setup_env_index) = setup_env_index {
+                return Ok(Some(setup_env_index));
+            }
         }
 
+        // Or fallback entirely to setup toolchain
         Ok(setup_toolchain_index)
     }
 
@@ -454,6 +433,7 @@ impl<'query> ActionGraphBuilder<'query> {
             toolchains.iter().any(|tc| tc == "node") && toolchains.iter().any(|tc| tc == "bun");
 
         for toolchain_id in toolchains {
+            #[allow(clippy::collapsible_else_if)]
             if self.app_context.toolchain_config.is_plugin(toolchain_id) {
                 if let Some(spec) = self.get_spec(project, toolchain_id, true) {
                     indexes.push(self.install_dependencies(&spec, project).await?);
@@ -557,8 +537,8 @@ impl<'query> ActionGraphBuilder<'query> {
                         indexes.push(Some(dep_index));
                     }
                     // When serial, next child depends on previous child
-                    else {
-                        self.link_requirements(dep_index, vec![previous_target_index]);
+                    else if let Some(prev) = previous_target_index {
+                        self.link_requirements(dep_index, vec![prev]);
                     }
 
                     previous_target_index = Some(dep_index);
@@ -873,7 +853,7 @@ impl<'query> ActionGraphBuilder<'query> {
             edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs)).await?);
         }
 
-        self.link_requirements(index, edges);
+        self.link_optional_requirements(index, edges);
 
         // And possibly dependents
         if reqs.dependents {
@@ -884,18 +864,52 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip_all)]
+    pub async fn setup_environment(
+        &mut self,
+        spec: &ToolchainSpec,
+        root: &WorkspaceRelativePathBuf,
+        project: Option<&Project>,
+    ) -> miette::Result<Option<NodeIndex>> {
+        // Explicitly disabled
+        if !self.options.setup_environment.is_enabled(&spec.id) || spec.is_system() {
+            return Ok(None);
+        }
+
+        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
+
+        // Toolchain does not support it
+        if !toolchain.has_func("setup_environment").await {
+            return Ok(None);
+        }
+
+        let sync_workspace_index = self.sync_workspace().await?;
+        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+
+        let index = insert_node_or_exit!(
+            self,
+            ActionNode::setup_environment(SetupEnvironmentNode {
+                project_id: project.map(|p| p.id.clone()),
+                root: root.clone(),
+                toolchain_id: spec.id.clone(),
+            })
+        );
+
+        self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index]);
+
+        Ok(Some(index))
+    }
+
+    #[instrument(skip_all)]
     pub async fn setup_toolchain_legacy(
         &mut self,
         runtime: &Runtime,
     ) -> miette::Result<Option<NodeIndex>> {
-        let sync_workspace_index = self.sync_workspace().await?;
-
         // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) {
-            return Ok(sync_workspace_index);
-        } else if runtime.is_system() {
+        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) || runtime.is_system() {
             return Ok(None);
         }
+
+        let sync_workspace_index = self.sync_workspace().await?;
 
         let index = insert_node_or_exit!(
             self,
@@ -904,7 +918,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_requirements(index, vec![sync_workspace_index]);
+        self.link_optional_requirements(index, vec![sync_workspace_index]);
 
         Ok(Some(index))
     }
@@ -914,12 +928,8 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         spec: &ToolchainSpec,
     ) -> miette::Result<Option<NodeIndex>> {
-        let sync_workspace_index = self.sync_workspace().await?;
-
         // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&spec.id) {
-            return Ok(sync_workspace_index);
-        } else if spec.is_system() {
+        if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return Ok(None);
         }
 
@@ -927,8 +937,10 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Toolchain does not support tier 3
         if !toolchain.supports_tier_3().await {
-            return Ok(sync_workspace_index);
+            return Ok(None);
         }
+
+        let sync_workspace_index = self.sync_workspace().await?;
 
         let index = insert_node_or_exit!(
             self,
@@ -937,7 +949,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_requirements(index, vec![sync_workspace_index]);
+        self.link_optional_requirements(index, vec![sync_workspace_index]);
 
         Ok(Some(index))
     }
@@ -966,7 +978,11 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Insert the node and edges
-        let mut edges = vec![self.sync_workspace().await?];
+        let mut edges = vec![];
+
+        if let Some(sync_workspace_index) = self.sync_workspace().await? {
+            edges.push(sync_workspace_index);
+        }
 
         let index = insert_node_or_exit!(
             self,
@@ -990,7 +1006,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     Box::pin(self.internal_sync_project(&dep_project, cycle)).await?
                 {
                     if index != dep_project_index {
-                        edges.push(Some(dep_project_index));
+                        edges.push(dep_project_index);
                     }
                 }
             }
@@ -1019,9 +1035,17 @@ impl<'query> ActionGraphBuilder<'query> {
         self.nodes.get(node).cloned()
     }
 
-    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
-        let edges = edges.into_iter().flatten().collect::<Vec<_>>();
+    fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
+        if let Some(edge) = edges.into_iter().flatten().next() {
+            self.link_requirements(index, vec![edge]);
+        }
+    }
 
+    fn link_optional_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
+        self.link_requirements(index, edges.into_iter().flatten().collect());
+    }
+
+    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) {
         if edges.is_empty() {
             return;
         }

@@ -321,15 +321,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
-                        runtime: create_node_runtime()
-                    }),
-                ]
-            );
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -359,15 +351,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(
-                topo(graph),
-                vec![
-                    ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
-                        runtime: create_node_runtime()
-                    }),
-                ]
-            );
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -552,7 +536,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -579,7 +563,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2537,7 +2521,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2568,7 +2552,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2630,7 +2614,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2648,7 +2632,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2768,7 +2752,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2799,7 +2783,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

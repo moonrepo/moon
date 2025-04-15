@@ -141,8 +141,8 @@ export type ActionNode =
 	| ActionNodeInstallWorkspaceDeps
 	| ActionNodeRunTask
 	| ActionNodeSetupEnvironment
-	| ActionNodeSetupToolchainLegacy
 	| ActionNodeSetupToolchain
+	| ActionNodeSetupToolchainLegacy
 	| ActionNodeSyncProject
 	| ActionNodeSyncWorkspace;
 

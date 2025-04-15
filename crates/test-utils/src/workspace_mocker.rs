@@ -1,3 +1,4 @@
+use crate::generate_platform_manager;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
@@ -20,8 +21,6 @@ use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-
-use crate::generate_platform_manager;
 
 #[derive(Default)]
 pub struct WorkspaceMocker {
@@ -146,7 +145,28 @@ impl WorkspaceMocker {
     }
 
     pub fn with_test_toolchains(self) -> Self {
-        let target_dir = PathBuf::from(std::env::var("CARGO_TARGET_DIR").unwrap());
+        let target_dir = match std::env::var("CARGO_TARGET_DIR") {
+            Ok(dir) => PathBuf::from(dir),
+            Err(_) => {
+                let start_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                let mut current_dir = Some(start_dir.as_path());
+
+                while let Some(dir) = current_dir {
+                    if dir.join("target").exists() {
+                        break;
+                    }
+
+                    match dir.parent() {
+                        Some(parent) => current_dir = Some(parent),
+                        None => {
+                            panic!("Unable to find the Cargo target directory!");
+                        }
+                    }
+                }
+
+                current_dir.unwrap().join("target")
+            }
+        };
 
         self.update_toolchain_config(|config| {
             for id in ["tc-tier1", "tc-tier2", "tc-tier2-setup-env", "tc-tier3"] {

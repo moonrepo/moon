@@ -33,9 +33,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          bins: just, cargo-wasi
+          bins: just
           cache: false
           targets: wasm32-wasip1
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Building crates
         run: just build-wasm
   format:
@@ -48,6 +50,8 @@ jobs:
           bins: just
           cache: false
           components: rustfmt
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Check formatting
         run: just format-check
   lint:
@@ -64,6 +68,8 @@ jobs:
           bins: just
           cache: false
           components: clippy
+      - uses: mozilla-actions/sccache-action@v0.0.7
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Run linter
         run: just lint
   test-plan:
@@ -99,6 +105,7 @@ jobs:
           bins: just, cargo-nextest, cargo-llvm-cov
           cache: false
           components: llvm-tools-preview
+          targets: wasm32-wasip1
       - uses: moonrepo/setup-toolchain@v0
         with:
           auto-install: true

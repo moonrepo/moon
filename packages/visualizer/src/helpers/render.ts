@@ -19,8 +19,12 @@ function getActionType(label: string) {
 		return 'sync-project';
 	}
 
-	if (label.startsWith('Install') && label.includes('Deps')) {
-		return 'install-deps';
+	if (label.startsWith('Install') && (label.includes('Deps') || label.includes('Dependencies'))) {
+		return 'install-dependencies';
+	}
+
+	if (label.startsWith('Setup') && label.includes('Env')) {
+		return 'setup-environment';
 	}
 
 	if (label.startsWith('Setup') && label.includes('Tool')) {
@@ -123,10 +127,19 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 				},
 			},
 			{
-				selector: 'node[type="install-deps"]',
+				selector: 'node[type="install-dependencies"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
+					height: 100,
+					width: 100,
+				},
+			},
+			{
+				selector: 'node[type="setup-environment"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#c9e166 #b7d733 #a5cd00',
 					height: 100,
 					width: 100,
 				},

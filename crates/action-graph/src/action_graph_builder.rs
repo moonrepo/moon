@@ -36,7 +36,7 @@ pub struct RunRequirements {
 
 pub struct ActionGraphBuilderOptions {
     pub install_dependencies: PipelineActionSwitch,
-    pub setup_environment: PipelineActionSwitch, // TODO
+    pub setup_environment: PipelineActionSwitch,
     pub setup_toolchains: PipelineActionSwitch,
     pub sync_projects: PipelineActionSwitch,
     pub sync_project_dependencies: bool,
@@ -62,15 +62,6 @@ impl ActionGraphBuilderOptions {
     }
 }
 
-// sync_workspace
-//   - change workspace/root files
-//   - change toolchain files
-// sync_project
-//   - change project files/manifests
-//   - change toolchain files
-// install_deps:
-// setup_toolchain:
-// run_task:
 pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
@@ -102,7 +93,6 @@ impl<'query> ActionGraphBuilder<'query> {
             all_query: None,
             app_context,
             graph: DiGraph::new(),
-            // initial_targets: FxHashSet::default(),
             options,
             passthrough_targets: FxHashSet::default(),
             platform_manager: None,
@@ -117,11 +107,6 @@ impl<'query> ActionGraphBuilder<'query> {
             affected: self.affected.take().map(|affected| affected.build()),
             ..ActionContext::default()
         };
-
-        // TODO
-        // if !self.initial_targets.is_empty() {
-        //     context.initial_targets = mem::take(&mut self.initial_targets);
-        // }
 
         if !self.passthrough_targets.is_empty() {
             for target in mem::take(&mut self.passthrough_targets) {
@@ -146,12 +131,12 @@ impl<'query> ActionGraphBuilder<'query> {
         toolchain_id: &Id,
         allow_override: bool,
     ) -> Runtime {
-        if let Ok(platform) = self
-            .platform_manager
-            .as_ref()
-            .unwrap()
-            .get_by_toolchain(toolchain_id)
-        {
+        let manager = match &self.platform_manager {
+            Some(manager) => manager,
+            None => PlatformManager::read(),
+        };
+
+        if let Ok(platform) = manager.get_by_toolchain(toolchain_id) {
             return platform.get_runtime_from_config(if allow_override {
                 Some(&project.config)
             } else {
@@ -284,11 +269,11 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(setup_toolchain_index);
         }
 
-        let platform = self
-            .platform_manager
-            .as_ref()
-            .unwrap()
-            .get_by_toolchain(&runtime.toolchain)?;
+        let manager = match &self.platform_manager {
+            Some(manager) => manager,
+            None => PlatformManager::read(),
+        };
+        let platform = manager.get_by_toolchain(&runtime.toolchain)?;
 
         let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
         let mut in_project = false;
@@ -836,6 +821,7 @@ impl<'query> ActionGraphBuilder<'query> {
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             priority: task.options.priority.get_level(),
+            runtime: self.get_runtime(&project, &task.toolchains[0], true), // TODO
             target: task.target.to_owned(),
             id: None,
         });

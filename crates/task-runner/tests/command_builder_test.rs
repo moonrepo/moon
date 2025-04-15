@@ -7,7 +7,7 @@ use moon_action_context::ActionContext;
 use moon_affected::Affected;
 use moon_config::TaskOptionAffectedFiles;
 use moon_process::Command;
-use moon_task::Target;
+use moon_task::{Target, TargetLocator};
 use std::ffi::OsString;
 use utils::*;
 
@@ -56,8 +56,6 @@ mod command_builder {
     }
 
     mod args {
-        use moon_task::TargetLocator;
-
         use super::*;
 
         #[tokio::test]

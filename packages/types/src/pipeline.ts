@@ -136,13 +136,24 @@ export interface RunReport {
 // NODES
 
 export type ActionNode =
+	| ActionNodeInstallDependencies
 	| ActionNodeInstallProjectDeps
 	| ActionNodeInstallWorkspaceDeps
 	| ActionNodeRunTask
+	| ActionNodeSetupEnvironment
+	| ActionNodeSetupToolchainLegacy
 	| ActionNodeSetupToolchain
-	| ActionNodeSetupToolchainPlugin
 	| ActionNodeSyncProject
 	| ActionNodeSyncWorkspace;
+
+export interface ActionNodeInstallDependencies {
+	action: 'install-dependencies';
+	params: {
+		projectId: string | null;
+		root: string;
+		toolchainId: string;
+	};
+}
 
 export interface ActionNodeInstallWorkspaceDeps {
 	action: 'install-workspace-deps';
@@ -173,15 +184,24 @@ export interface ActionNodeRunTask {
 	};
 }
 
-export interface ActionNodeSetupToolchain {
-	action: 'setup-toolchain';
+export interface ActionNodeSetupEnvironment {
+	action: 'install-environment';
+	params: {
+		projectId: string | null;
+		root: string;
+		toolchainId: string;
+	};
+}
+
+export interface ActionNodeSetupToolchainLegacy {
+	action: 'setup-toolchain-legacy';
 	params: {
 		runtime: Runtime;
 	};
 }
 
-export interface ActionNodeSetupToolchainPlugin {
-	action: 'setup-toolchain-plugin';
+export interface ActionNodeSetupToolchain {
+	action: 'setup-toolchain';
 	params: {
 		projectId: string | null;
 		spec: ToolchainSpec;

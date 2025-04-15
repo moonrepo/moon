@@ -61,18 +61,20 @@ pub struct RunTaskNode {
     pub interactive: bool, // Interactive with stdin
     pub persistent: bool,  // Never terminates
     pub priority: u8,
+    pub runtime: Runtime,
     pub target: Target,
     pub id: Option<u64>, // For action graph states
 }
 
 impl RunTaskNode {
-    pub fn new(target: Target, _runtime: Runtime) -> Self {
+    pub fn new(target: Target, runtime: Runtime) -> Self {
         Self {
             args: vec![],
             env: FxHashMap::default(),
             interactive: false,
             persistent: false,
             priority: 2, // normal
+            runtime,
             target,
             id: None,
         }
@@ -179,6 +181,7 @@ impl ActionNode {
             Self::InstallWorkspaceDeps(inner) => &inner.runtime,
             Self::InstallProjectDeps(inner) => &inner.runtime,
             Self::SetupToolchainLegacy(inner) => &inner.runtime,
+            Self::RunTask(inner) => &inner.runtime,
             _ => unreachable!(),
         }
     }

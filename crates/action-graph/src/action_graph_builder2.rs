@@ -445,6 +445,16 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(None)
     }
 
+    #[cfg(debug_assertions)]
+    pub async fn run_task_with_config(
+        &mut self,
+        task: &Task,
+        reqs: &RunRequirements,
+        config: &TaskDependencyConfig,
+    ) -> miette::Result<Option<NodeIndex>> {
+        self.internal_run_task(&task, reqs, Some(config)).await
+    }
+
     pub async fn run_task_by_target<T: AsRef<Target>>(
         &mut self,
         target: T,

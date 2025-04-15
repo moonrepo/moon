@@ -1,13 +1,28 @@
 mod utils;
 
 use moon_action::*;
+use moon_action_context::TargetState;
 use moon_action_graph::{ActionGraph, action_graph_builder2::*};
+use moon_affected::AffectedBy;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
-use moon_config::{PipelineActionSwitch, SemVer, UnresolvedVersionSpec, Version};
+use moon_config::{
+    PipelineActionSwitch, SemVer, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
+    UnresolvedVersionSpec, Version,
+};
 use moon_platform::{Runtime, RuntimeReq, ToolchainSpec};
-use moon_task::{Target, TargetLocator};
+use moon_task::{Target, TargetLocator, Task};
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::ActionGraphContainer2;
+
+fn create_task(project: &str, id: &str) -> Task {
+    Task {
+        id: Id::raw(id),
+        target: Target::new(project, id).unwrap(),
+        toolchains: vec![Id::raw("node")],
+        ..Task::default()
+    }
+}
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {
     UnresolvedVersionSpec::Semantic(SemVer(version))
@@ -24,11 +39,8 @@ fn create_node_runtime() -> Runtime {
     )
 }
 
-fn create_rust_runtime() -> Runtime {
-    Runtime::new(
-        Id::raw("rust"),
-        create_runtime_with_version(Version::new(1, 70, 0)),
-    )
+fn create_node_runtime_global() -> Runtime {
+    Runtime::new(Id::raw("node"), RuntimeReq::Global)
 }
 
 fn create_tier_spec(tier: u8) -> ToolchainSpec {
@@ -725,6 +737,995 @@ mod action_graph_builder {
                     })
                 ]
             );
+        }
+    }
+
+    mod run_task {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime_global()
+                    ))
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn ignores_dupes() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime_global()
+                    ))
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_interactive() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let mut task = create_task("bar", "build");
+            task.options.interactive = true;
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph).last().unwrap(),
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                    node.interactive = true;
+                    node
+                })
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_interactive_from_requirement() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            builder
+                .run_task(
+                    &task,
+                    &RunRequirements {
+                        interactive: true,
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph).last().unwrap(),
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                    node.interactive = true;
+                    node
+                })
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_persistent() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let mut task = create_task("bar", "build");
+            task.options.persistent = true;
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph).last().unwrap(),
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                    node.persistent = true;
+                    node
+                })
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn distinguishes_between_args() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            // Test collapsing
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            // Separate nodes
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["x".into(), "y".into(), "z".into()]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime_global()
+                    )),
+                    ActionNode::run_task({
+                        let mut node =
+                            RunTaskNode::new(task.target.clone(), create_node_runtime_global());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
+                        node.args = vec!["x".into(), "y".into(), "z".into()];
+                        node
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn flattens_same_args() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn flattens_same_args_with_diff_enum() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn distinguishes_between_env() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            // Test collapsing
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            // Separate nodes
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime_global()
+                    )),
+                    ActionNode::run_task({
+                        let mut node =
+                            RunTaskNode::new(task.target.clone(), create_node_runtime_global());
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn flattens_same_env() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
+                    }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn distinguishes_between_args_and_env() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            let task = create_task("bar", "build");
+
+            // Test collapsing
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            // Separate nodes
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &task,
+                    &RunRequirements::default(),
+                    &TaskDependencyConfig {
+                        args: TaskArgs::String("x y z".into()),
+                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        ..TaskDependencyConfig::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::sync_project(SyncProjectNode {
+                        project_id: Id::raw("bar"),
+                    }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: create_node_runtime_global()
+                    }),
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                        runtime: create_node_runtime_global(),
+                        root: WorkspaceRelativePathBuf::new(),
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime_global()
+                    )),
+                    ActionNode::run_task({
+                        let mut node =
+                            RunTaskNode::new(task.target.clone(), create_node_runtime_global());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node =
+                            RunTaskNode::new(task.target.clone(), create_node_runtime_global());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
+                        node.args = vec!["x".into(), "y".into(), "z".into()];
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
+                    }),
+                ]
+            );
+        }
+
+        mod affected {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_graph_if_not_affected_by_touched_files() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let task = create_task("bar", "build");
+
+                // Empty set works fine, just needs to be some
+                let touched_files = FxHashSet::default();
+                builder.set_touched_files(touched_files).unwrap();
+                builder.set_affected().unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert!(!topo(graph).into_iter().any(|node| {
+                    if let ActionNode::RunTask(inner) = &node {
+                        inner.target.as_str() == "bar:build"
+                    } else {
+                        false
+                    }
+                }));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn graphs_if_affected_by_touched_files() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let file = WorkspaceRelativePathBuf::from("bar/file.js");
+
+                let mut task = create_task("bar", "build");
+                task.input_files.insert(file.clone());
+
+                let touched_files = FxHashSet::from_iter([file]);
+                builder.set_touched_files(touched_files).unwrap();
+                builder.set_affected().unwrap();
+                builder.mock_affected(|affected| {
+                    affected
+                        .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                        .unwrap();
+                });
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn includes_deps_if_owning_task_is_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "b").unwrap();
+
+                let touched_files =
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]);
+                builder.set_touched_files(touched_files).unwrap();
+                builder.set_affected().unwrap();
+                builder.mock_affected(|affected| {
+                    affected
+                        .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                        .unwrap();
+                });
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependents: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    topo(graph),
+                    vec![
+                        ActionNode::sync_workspace(),
+                        ActionNode::sync_project(SyncProjectNode {
+                            project_id: Id::raw("deps-affected"),
+                        }),
+                        ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:c").unwrap(),
+                            Runtime::system()
+                        )),
+                        ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:b").unwrap(),
+                            Runtime::system()
+                        )),
+                    ]
+                );
+            }
+        }
+
+        mod run_in_ci {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn graphs_if_ci_check_true() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let mut task = create_task("bar", "build");
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.get_target_states(), FxHashMap::default());
+                assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_dependents_if_its_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("ci", "ci3-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_dependents_if_both_are_ci_true() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("ci", "ci4-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+        }
+
+        mod dont_run_in_ci {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_graph_if_ci_check_true() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let mut task = create_task("bar", "build");
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(
+                    context.get_target_states(),
+                    FxHashMap::from_iter([(
+                        Target::parse("bar:build").unwrap(),
+                        TargetState::Passthrough
+                    )])
+                );
+
+                assert!(topo(graph).is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn graphs_if_ci_check_false() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let mut task = create_task("bar", "build");
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: false,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.get_target_states(), FxHashMap::default());
+                assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn graphs_if_ci_false() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let mut task = create_task("bar", "build");
+                task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: false,
+                            ci_check: false,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.get_target_states(), FxHashMap::default());
+                assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_dependents_if_dependency_is_ci_false_and_not_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("ci", "ci2-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_dependents_if_both_are_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("ci", "ci2-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(
+                expected = "Task ci:ci1-dependent cannot depend on task ci:ci1-dependency"
+            )]
+            async fn errors_if_dependency_is_ci_false_and_constraint_enabled() {
+                let sandbox = create_sandbox("tasks-ci-mismatch");
+                let mut container = ActionGraphContainer2::new(sandbox.path());
+
+                container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+            }
         }
     }
 

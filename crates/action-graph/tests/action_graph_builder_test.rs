@@ -5,7 +5,7 @@ use moon_action_graph::{ActionGraph, action_graph_builder2::*};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{PipelineActionSwitch, SemVer, UnresolvedVersionSpec, Version};
 use moon_platform::{Runtime, RuntimeReq, ToolchainSpec};
-use moon_task::Target;
+use moon_task::{Target, TargetLocator};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::ActionGraphContainer2;
 
@@ -1110,51 +1110,6 @@ mod action_graph_builder {
             );
         }
 
-        // #[tokio::test(flavor = "multi_thread")]
-        // #[should_panic(expected = "Unknown task internal for project common.")]
-        // async fn errors_for_internal_task_when_explicit() {
-        //     let sandbox = create_sandbox("tasks");
-        //     let mut container = ActionGraphContainer2::new(sandbox.path());
-        //     let mut builder = container
-        //         .create_builder(container.create_workspace_graph().await)
-        //         .await;
-
-        //     let locator = TargetLocator::Qualified(Target::parse("common:internal").unwrap());
-
-        //     builder
-        //         .run_task_by_target(
-        //             Target::parse("common:internal").unwrap(),
-        //             &RunRequirements {
-        //                 target_locators: FxHashSet::from_iter([locator]),
-        //                 ..RunRequirements::default()
-        //             },
-        //         )
-        //         .await
-        //         .unwrap();
-        // }
-
-        // #[tokio::test(flavor = "multi_thread")]
-        // #[should_panic(expected = "Unknown task internal for project common.")]
-        // async fn errors_for_internal_task_when_explicit_via_dir() {
-        //     let sandbox = create_sandbox("tasks");
-        //     let mut container = ActionGraphContainer2::new(sandbox.path());
-        //     let mut builder = container
-        //         .create_builder(container.create_workspace_graph().await)
-        //         .await;
-
-        //     let locator = TargetLocator::TaskFromWorkingDir(Id::raw("internal"));
-
-        //     builder
-        //         .run_task_by_target(
-        //             Target::parse("common:internal").unwrap(),
-        //             &RunRequirements {
-        //                 target_locators: FxHashSet::from_iter([locator]),
-        //                 ..RunRequirements::default()
-        //             },
-        //         )
-        //         .unwrap();
-        // }
-
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_for_internal_task_when_depended_on() {
             let sandbox = create_sandbox("tasks");
@@ -1250,6 +1205,214 @@ mod action_graph_builder {
 
             assert!(graph.is_empty());
             assert!(context.primary_targets.is_empty());
+        }
+    }
+
+    mod run_task_by_target_locator {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unknown task internal for project common.")]
+        async fn errors_for_internal_task_when_explicit() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::Qualified(Target::parse("common:internal").unwrap()),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unknown task internal for project common.")]
+        async fn errors_for_internal_task_when_explicit_via_dir() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path())
+                .set_working_dir(sandbox.path().join("common"));
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::TaskFromWorkingDir(Id::raw("internal")),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_by_target() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::Qualified(Target::parse("server:build").unwrap()),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [Target::parse("server:build").unwrap()]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_by_task_glob() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::parse(":*-dependency").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::parse(":{a,c}").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [
+                    Target::parse("deps:a").unwrap(),
+                    Target::parse("ci:ci4-dependency").unwrap(),
+                    Target::parse("deps-affected:a").unwrap(),
+                    Target::parse("deps:c").unwrap(),
+                    Target::parse("ci:ci2-dependency").unwrap(),
+                    Target::parse("ci:ci3-dependency").unwrap(),
+                    Target::parse("deps-affected:c").unwrap(),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_by_tag_glob() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::parse("#front*:build").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [
+                    Target::parse("client:build").unwrap(),
+                    Target::parse("common:build").unwrap(),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_by_project_glob() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::parse("c{lient,ommon}:test").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [Target::parse("client:test").unwrap(),]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_empty_result_for_no_glob_match() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::parse("{foo,bar}:task-*").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert!(context.primary_targets.is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_error_for_internal_task_when_depended_on() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer2::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::Qualified(Target::parse("misc:requiresInternal").unwrap()),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [Target::parse("misc:requiresInternal").unwrap()]
+            );
         }
     }
 

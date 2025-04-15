@@ -851,7 +851,7 @@ mod action_graph_builder {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::run_task({
-                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
                     node.interactive = true;
                     node
                 })
@@ -884,7 +884,7 @@ mod action_graph_builder {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::run_task({
-                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
                     node.interactive = true;
                     node
                 })
@@ -912,7 +912,7 @@ mod action_graph_builder {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::run_task({
-                    let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                    let mut node = RunTaskNode::new(task.target, create_node_runtime_global());
                     node.persistent = true;
                     node
                 })
@@ -2999,7 +2999,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -3024,7 +3024,7 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+            assert_eq!(topo(graph), vec![]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -3073,7 +3073,7 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder.sync_workspace().await;
+            builder.sync_workspace().await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3090,9 +3090,9 @@ mod action_graph_builder {
                 .create_builder(container.create_workspace_graph().await)
                 .await;
 
-            builder.sync_workspace().await;
-            builder.sync_workspace().await;
-            builder.sync_workspace().await;
+            builder.sync_workspace().await.unwrap();
+            builder.sync_workspace().await.unwrap();
+            builder.sync_workspace().await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3114,7 +3114,7 @@ mod action_graph_builder {
                 )
                 .await;
 
-            builder.sync_workspace().await;
+            builder.sync_workspace().await.unwrap();
 
             let (_, graph) = builder.build();
 

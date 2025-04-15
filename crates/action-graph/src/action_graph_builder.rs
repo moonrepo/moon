@@ -19,12 +19,24 @@ use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
-use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::GlobSet;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
+
+macro_rules! insert_node_or_exit {
+    ($builder:ident, $node:expr) => {{
+        let node = $node;
+
+        match $builder.get_index_from_node(&node) {
+            Some(index) => {
+                return Ok(Some(index));
+            }
+            None => $builder.insert_node(node),
+        }
+    }};
+}
 
 #[derive(Default)]
 pub struct RunRequirements {
@@ -66,6 +78,7 @@ pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
     graph: DiGraph<ActionNode, ()>,
+    nodes: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
     platform_manager: Option<PlatformManager>,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -93,6 +106,7 @@ impl<'query> ActionGraphBuilder<'query> {
             all_query: None,
             app_context,
             graph: DiGraph::new(),
+            nodes: FxHashMap::default(),
             options,
             passthrough_targets: FxHashSet::default(),
             platform_manager: None,
@@ -130,21 +144,21 @@ impl<'query> ActionGraphBuilder<'query> {
         project: &Project,
         toolchain_id: &Id,
         allow_override: bool,
-    ) -> Runtime {
+    ) -> Option<Runtime> {
         let manager = match &self.platform_manager {
             Some(manager) => manager,
             None => PlatformManager::read(),
         };
 
         if let Ok(platform) = manager.get_by_toolchain(toolchain_id) {
-            return platform.get_runtime_from_config(if allow_override {
+            return Some(platform.get_runtime_from_config(if allow_override {
                 Some(&project.config)
             } else {
                 None
-            });
+            }));
         }
 
-        Runtime::system()
+        None
     }
 
     pub fn get_spec(
@@ -253,10 +267,11 @@ impl<'query> ActionGraphBuilder<'query> {
             .options
             .install_dependencies
             .is_enabled(&runtime.toolchain)
-            || runtime.is_system()
         {
             return Ok(setup_toolchain_index);
-        }
+        } else if runtime.is_system() {
+            return Ok(None);
+        };
 
         // If Bun and Node.js are enabled, they will both attempt to install
         // dependencies in the target root. We need to avoid this problem,
@@ -269,11 +284,11 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(setup_toolchain_index);
         }
 
-        let manager = match &self.platform_manager {
+        let platform = match &self.platform_manager {
             Some(manager) => manager,
             None => PlatformManager::read(),
-        };
-        let platform = manager.get_by_toolchain(&runtime.toolchain)?;
+        }
+        .get_by_toolchain(&runtime.toolchain)?;
 
         let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
         let mut in_project = false;
@@ -289,17 +304,20 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
-        let index = self.insert_node(if in_project {
-            ActionNode::install_project_deps(InstallProjectDepsNode {
-                project_id: project.id.to_owned(),
-                runtime: runtime.to_owned(),
-            })
-        } else {
-            ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                runtime: runtime.to_owned(),
-                root: packages_root,
-            })
-        });
+        let index = insert_node_or_exit!(
+            self,
+            if in_project {
+                ActionNode::install_project_deps(InstallProjectDepsNode {
+                    project_id: project.id.to_owned(),
+                    runtime: runtime.to_owned(),
+                })
+            } else {
+                ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
+                    runtime: runtime.to_owned(),
+                    root: packages_root,
+                })
+            }
+        );
 
         // Before we install deps, we must ensure the language has been installed
         self.link_requirements(index, vec![setup_toolchain_index]);
@@ -316,8 +334,10 @@ impl<'query> ActionGraphBuilder<'query> {
         let setup_toolchain_index = self.setup_toolchain(spec).await?;
 
         // Explicitly disabled
-        if !self.options.install_dependencies.is_enabled(&spec.id) || spec.is_system() {
+        if !self.options.install_dependencies.is_enabled(&spec.id) {
             return Ok(setup_toolchain_index);
+        } else if spec.is_system() {
+            return Ok(None);
         }
 
         let registry = &self.app_context.toolchain_registry;
@@ -439,12 +459,12 @@ impl<'query> ActionGraphBuilder<'query> {
                     indexes.push(self.install_dependencies(&spec, project).await?);
                 }
             } else {
-                let runtime = self.get_runtime(project, toolchain_id, true);
-
-                indexes.push(
-                    self.install_dependencies_legacy(&runtime, project, has_bun_and_node)
-                        .await?,
-                );
+                if let Some(runtime) = self.get_runtime(project, toolchain_id, true) {
+                    indexes.push(
+                        self.install_dependencies_legacy(&runtime, project, has_bun_and_node)
+                            .await?,
+                    );
+                }
             }
         }
 
@@ -821,7 +841,9 @@ impl<'query> ActionGraphBuilder<'query> {
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             priority: task.options.priority.get_level(),
-            runtime: self.get_runtime(&project, &task.toolchains[0], true), // TODO
+            runtime: self
+                .get_runtime(&project, &task.toolchains[0], true)
+                .unwrap(), // TODO
             target: task.target.to_owned(),
             id: None,
         });
@@ -838,6 +860,11 @@ impl<'query> ActionGraphBuilder<'query> {
             self.install_dependencies_by_toolchains(&project, &task.toolchains)
                 .await?,
         );
+
+        // If no edges created, we should at minimum sync the workspace
+        if edges.is_empty() || edges.iter().all(|edge| edge.is_none()) {
+            edges.push(self.sync_workspace().await?);
+        }
 
         // Insert and then link edges
         let index = self.insert_node(node);
@@ -861,18 +888,21 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         runtime: &Runtime,
     ) -> miette::Result<Option<NodeIndex>> {
-        let sync_workspace_index = self.sync_workspace().await;
+        let sync_workspace_index = self.sync_workspace().await?;
 
         // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) || runtime.is_system() {
+        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) {
             return Ok(sync_workspace_index);
+        } else if runtime.is_system() {
+            return Ok(None);
         }
 
-        let index = self.insert_node(ActionNode::setup_toolchain_legacy(
-            SetupToolchainLegacyNode {
+        let index = insert_node_or_exit!(
+            self,
+            ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                 runtime: runtime.to_owned(),
-            },
-        ));
+            })
+        );
 
         self.link_requirements(index, vec![sync_workspace_index]);
 
@@ -884,11 +914,13 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         spec: &ToolchainSpec,
     ) -> miette::Result<Option<NodeIndex>> {
-        let sync_workspace_index = self.sync_workspace().await;
+        let sync_workspace_index = self.sync_workspace().await?;
 
         // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
+        if !self.options.setup_toolchains.is_enabled(&spec.id) {
             return Ok(sync_workspace_index);
+        } else if spec.is_system() {
+            return Ok(None);
         }
 
         let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
@@ -898,9 +930,12 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(sync_workspace_index);
         }
 
-        let index = self.insert_node(ActionNode::setup_toolchain(SetupToolchainNode {
-            spec: spec.to_owned(),
-        }));
+        let index = insert_node_or_exit!(
+            self,
+            ActionNode::setup_toolchain(SetupToolchainNode {
+                spec: spec.to_owned(),
+            })
+        );
 
         self.link_requirements(index, vec![sync_workspace_index]);
 
@@ -918,29 +953,32 @@ impl<'query> ActionGraphBuilder<'query> {
         project: &Project,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<Option<NodeIndex>> {
-        let sync_workspace_index = self.sync_workspace().await;
-
         // Explicitly disabled
         if !self.options.sync_projects.is_enabled(&project.id) {
-            return Ok(sync_workspace_index);
+            return Ok(None);
         }
 
-        // Abort early if not affected
+        // Return early if not affected
         if let Some(affected) = &mut self.affected {
             if !affected.is_project_marked(project) {
                 return Ok(None);
             }
         }
 
-        cycle.insert(project.id.clone());
+        // Insert the node and edges
+        let mut edges = vec![self.sync_workspace().await?];
 
-        let mut edges = vec![sync_workspace_index];
-        let index = self.insert_node(ActionNode::sync_project(SyncProjectNode {
-            project_id: project.id.clone(),
-        }));
+        let index = insert_node_or_exit!(
+            self,
+            ActionNode::sync_project(SyncProjectNode {
+                project_id: project.id.clone(),
+            })
+        );
 
-        // And we should also depend on other projects
+        // We should also depend on other projects
         if self.options.sync_project_dependencies {
+            cycle.insert(project.id.clone());
+
             for dep_project_id in self.workspace_graph.projects.dependencies_of(project) {
                 if cycle.contains(&dep_project_id) {
                     continue;
@@ -965,21 +1003,20 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
-    pub async fn sync_workspace(&mut self) -> Option<NodeIndex> {
+    pub async fn sync_workspace(&mut self) -> miette::Result<Option<NodeIndex>> {
         if !self.options.sync_workspace {
-            return None;
+            return Ok(None);
         }
 
-        Some(self.insert_node(ActionNode::sync_workspace()))
+        let index = insert_node_or_exit!(self, ActionNode::sync_workspace());
+
+        Ok(Some(index))
     }
 
     // PRIVATE
 
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
-        self.graph
-            .node_references()
-            .find(|(_, n)| *n == node)
-            .map(|(i, _)| i)
+        self.nodes.get(node).cloned()
     }
 
     fn link_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
@@ -1003,12 +1040,10 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
-        if let Some(index) = self.get_index_from_node(&node) {
-            return index;
-        }
-
         let label = node.label();
-        let index = self.graph.add_node(node);
+        let index = self.graph.add_node(node.clone());
+
+        self.nodes.insert(node, index);
 
         debug!(
             index = index.index(),

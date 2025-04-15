@@ -42,7 +42,7 @@ pub async fn sync(session: MoonSession) -> AppResult {
         .build_action_graph_with_options(ActionGraphBuilderOptions::default())
         .await?;
 
-    action_graph_builder.sync_workspace().await;
+    action_graph_builder.sync_workspace().await?;
 
     for project in workspace_graph.projects.get_all_unexpanded() {
         action_graph_builder.sync_project(project).await?;

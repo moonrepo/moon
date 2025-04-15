@@ -8,5 +8,4 @@ digraph {
     2 [ label="RunTask(ci:ci3-dependency)" ]
     1 -> 0 [ ]
     2 -> 1 [ ]
-    2 -> 0 [ ]
 }

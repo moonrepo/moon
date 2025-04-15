@@ -7,6 +7,7 @@
 - Rewrote the action graph to support plugins. The following changes have been made.
   - Is now async compatible. In the future, we'll update it to also support concurrency, so that the
     graph can be built in parallel across threads.
+  - Reduced the amount of edges (relationships) being created between nodes (actions).
   - Added a new `InstallDependencies` action for WASM plugins.
     - The dependencies root is now dynamically located by traversing the file system, unlike the
       previous implementation that assumed everything was in the workspace root.

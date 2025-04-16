@@ -10,74 +10,74 @@ export default function ActionGraph() {
 				edges: [
 					{
 						data: {
-							source: 'sync-workspace',
+							source: 'node-toolchain',
+							target: 'sync-workspace',
+						},
+					},
+					{
+						data: {
+							source: 'node-env',
 							target: 'node-toolchain',
 						},
 					},
 					{
 						data: {
-							source: 'sync-workspace',
-							target: 'system-toolchain',
-						},
-					},
-					{
-						data: {
-							source: 'node-toolchain',
-							target: 'node-deps',
-						},
-					},
-					{
-						data: {
-							source: 'system-toolchain',
-							target: 'system-deps',
-						},
-					},
-					{
-						data: {
-							source: 'node-toolchain',
-							target: 'node-sync',
-						},
-					},
-					{
-						data: {
-							source: 'system-toolchain',
-							target: 'system-sync',
-						},
-					},
-					{
-						data: {
-							source: 'system-sync',
-							target: 'target-clean',
-						},
-					},
-					{
-						data: {
-							source: 'system-deps',
-							target: 'target-clean',
-						},
-					},
-					{
-						data: {
-							source: 'node-sync',
-							target: 'target-build',
-						},
-					},
-					{
-						data: {
 							source: 'node-deps',
-							target: 'target-build',
+							target: 'node-env',
+						},
+					},
+					{
+						data: {
+							source: 'sync-project',
+							target: 'sync-workspace',
+						},
+					},
+					{
+						data: {
+							source: 'sync-project',
+							target: 'sync-workspace',
 						},
 					},
 					{
 						data: {
 							source: 'target-clean',
-							target: 'target-build',
+							target: 'sync-project',
 						},
 					},
 					{
 						data: {
 							source: 'target-build',
-							target: 'target-package',
+							target: 'sync-project',
+						},
+					},
+					{
+						data: {
+							source: 'target-build',
+							target: 'node-deps',
+						},
+					},
+					{
+						data: {
+							source: 'target-build',
+							target: 'target-clean',
+						},
+					},
+					{
+						data: {
+							source: 'target-package',
+							target: 'target-build',
+						},
+					},
+					{
+						data: {
+							source: 'target-package',
+							target: 'node-deps',
+						},
+					},
+					{
+						data: {
+							source: 'target-package',
+							target: 'sync-project',
 						},
 					},
 				],
@@ -96,40 +96,27 @@ export default function ActionGraph() {
 							type: 'xl',
 						},
 					},
+					// Setup env
 					{
 						data: {
-							id: 'system-toolchain',
-							label: 'SetupToolchain(system)',
-							type: 'xl',
+							id: 'node-env',
+							label: 'SetupEnvironment(node)',
+							type: 'setup-environment',
 						},
 					},
 					// Install deps
 					{
 						data: {
 							id: 'node-deps',
-							label: 'InstallWorkspaceDeps(node:18.0.0)',
-							type: 'lg',
-						},
-					},
-					{
-						data: {
-							id: 'system-deps',
-							label: 'InstallProjectDeps(node:18.0.0, example)',
+							label: 'InstallWorkspaceDeps(node)',
 							type: 'lg',
 						},
 					},
 					// Sync project
 					{
 						data: {
-							id: 'node-sync',
-							label: 'SyncProject(node, example)',
-							type: 'md',
-						},
-					},
-					{
-						data: {
-							id: 'system-sync',
-							label: 'SyncProject(system, example)',
+							id: 'sync-project',
+							label: 'SyncProject(example)',
 							type: 'md',
 						},
 					},

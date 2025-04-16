@@ -147,8 +147,22 @@ impl OutputArchiver<'_> {
         if let Some(remote) = RemoteService::session() {
             state.compute_outputs(&self.app.workspace_root)?;
 
-            if remote.save_action(state).await? {
-                return remote.save_action_result(state).await;
+            match remote.save_action(state).await {
+                Ok(saved) => {
+                    // Saves in a background thread
+                    remote.save_action_result(state).await?;
+
+                    return Ok(saved);
+                }
+                Err(error) => {
+                    // If the task is successful but the upload fails,
+                    // we don't want to mark the task as failed, so
+                    // don't bubble up the error
+                    warn!(
+                        "Failed to upload to remote service: {}",
+                        color::muted_light(error.to_string())
+                    );
+                }
             }
         }
 

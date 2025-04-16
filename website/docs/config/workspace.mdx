@@ -319,7 +319,7 @@ Experiments are a work in progress and may be buggy. Please report any issues yo
 
 Utilizes a new concurrent glob walking implementation that is on average, 1.5-2x faster than the
 current implementation. Additionally, common globs are now cached for the duration of the process.
-Defaults to `false`.
+Defaults to `true`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
@@ -331,7 +331,7 @@ experiments:
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#gitV2" />
 
 Utilizes a Git implementation, that has better support for submodules, subtrees, and workspaces.
-Additionally, processes are parallized when applicable. Defaults to `false`.
+Additionally, processes are parallized when applicable. Defaults to `true`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:

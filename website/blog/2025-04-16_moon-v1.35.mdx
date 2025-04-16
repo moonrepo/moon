@@ -1,0 +1,116 @@
+---
+slug: moon-v1.35
+title: moon v1.35 - Action graph improvements, task priorities, and more!
+authors: [milesj]
+tags: [action, graph, task, priority, experiment, terminal, theme]
+image: ./img/moon/v1.34.png
+---
+
+With this release, we're taking yet another step to supporting plugins.
+
+<!--truncate-->
+
+## Improved action graph
+
+For this release we wanted to introduce a new WASM based Rust toolchain, but we encountered a few
+blockers while integrating with the action graph, so instead of working on the toolchain, we decided
+to rewrite the action graph to properly support plugins.
+
+The biggest blocker was around locating the toolchain's dependency root, and in Rust's case, the
+Cargo workspace (where `Cargo.lock` is located). We technically have some of this logic in the
+current Rust platform, but it always assumed that the Cargo workspace was in the root of the moon
+workspace (the same applies to Bun and Node). This heavily restricted all moon users. With the new
+plugin system, the dependency root can be located anywhere in the moon workspace, and we'll attempt
+to locate it!
+
+While rewriting the action graph, we made a ton of improvements (some won't be noticeable until
+plugins are more prevalent). To start the graph is now async compatible, and in the future, we'll
+update it to also support concurrency, so that the graph can be built in parallel across threads.
+Additionally, a main focus was reducing the amount of edges (relationships) being created between
+nodes (actions). And lastly, the following changes were made for the actions themselves.
+
+- Added a new `InstallDependencies` action for WASM plugins.
+  - The dependencies root is now dynamically located by traversing the file system, unlike the
+    previous implementation that assumed everything was in the workspace root.
+- Added a new `SetupEnvironment` action for WASM plugins.
+  - This runs after `SetupToolchain` but before `InstallDependencies`.
+  - Can be used to setup the workspace or project environment. For example, initializing Python
+    venv, or making manifest/lockfile changes.
+- Updated `RunTask` to setup toolchains and install dependencies for each `toolchain` that has been
+  configured, instead of just the 1st one (work in progress).
+- Updated `SyncProject` to no longer depend on `SetupToolchain`, and not be grouped by
+  language/toolchain, and instead encompass all of them applicable to the project.
+
+## Task priorities
+
+Based on a request from the community that we really liked, we're introducing a new concept called
+task priorities. Each task can configure a priority level using the new task option
+[`priority`](/docs/config/project#priority), and the priority level determines the position of the
+task within the action pipeline queue. A task with a higher priority will run sooner rather than
+later, while still respecting the topological order.
+
+```yaml title="app/moon.yml" {5}
+tasks:
+  build:
+    # ...
+    options:
+      priority: 'high'
+```
+
+There are a few things to be aware of with this implementation:
+
+- All non-task related actions (like setup toolchain) will still always run first.
+- Higher priority tasks that depend on lower priority tasks will effectively mark them as high
+  priority, as we attempt to complete them sooner.
+- The order within each priority level is sorted topological, but is still non-deterministic if
+  tasks run in parallel.
+
+## Enabled experiments
+
+In our last release, we introduced [2 new experiments](./moon-v1.34#new-experiments),
+`fasterGlobWalk` and `gitV2`. In the past few weeks, we've had many users (including ourself) enable
+these experiments without issue. As such, we've decided to enable them by default in this release.
+
+If you encounter an issue with either of these experiments, you can disable them in
+`.moon/workspace.yml`. And of course, please report it so we can fix it!
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  fasterGlobWalk: false
+  gitV2: false
+```
+
+## Light terminal theme
+
+By default, moon assumes a dark themed terminal is being used, and will output our branded colors
+accordingly. However, if you use a light theme, these colors are hard to read, and there's no way to
+change them.
+
+To mitigate this, we're introducing a light based terminal theme, which can be enabled with the
+`--theme` global option, or the `MOON_THEME` environment variable.
+
+```shell
+$ moon run app:build --theme light
+# Or
+$ MOON_THEME=light moon run app:build
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.35.0) for a full list
+of changes.
+
+- Added a new task option, `cacheKey`, which can be used to seed the hash, and invalidate local and
+  remote caches.
+- Added a `--log=verbose` level, which includes span information on top of the trace level.
+- Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
+  toolchain WASM plugin is installing a tool (via proto).
+
+## What's next?
+
+Now that are action graph supports plugins, we can take the next step in migrating an existing
+platform into a toolchain.
+
+- Migrate the Rust toolchain to a WASM plugin.
+- Investigate a new args/command line parser.
+- Add Poetry support for the Python toolchain.

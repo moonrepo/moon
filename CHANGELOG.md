@@ -42,8 +42,14 @@
   - `setup_toolchain` - Runs operations after the tool has been installed.
   - `teardown_toolchain` - Runs operations before the tool will be uninstalled.
 
+#### 🐞 Fixes
+
+- Fixed the error handling of remote service uploads and downloads.
+- Fixed a timed out task displaying a generic and unhelpful error message.
+
 #### ⚙️ Internal
 
+- Linux binaries are now built on Ubuntu v22 instead of v20.
 - Rewrote our testing utilities and updated all tests.
 - Updated proto to [v0.47.11](https://github.com/moonrepo/proto/releases/tag/v0.47.11) (from
   0.47.7).

@@ -67,9 +67,10 @@ impl WorkspaceGraph {
 
     pub fn get_task_from_project(
         &self,
-        project_id: impl AsRef<str>,
+        project_id_or_alias: impl AsRef<str>,
         task_id: impl AsRef<str>,
     ) -> miette::Result<Arc<Task>> {
+        let project_id = self.projects.resolve_id(project_id_or_alias.as_ref());
         let target = Target::new(project_id, task_id)?;
 
         self.tasks.get(&target)
@@ -77,9 +78,9 @@ impl WorkspaceGraph {
 
     pub fn get_tasks_from_project(
         &self,
-        project_id: impl AsRef<str>,
+        project_id_or_alias: impl AsRef<str>,
     ) -> miette::Result<Vec<Arc<Task>>> {
-        let project = self.get_project(project_id)?;
+        let project = self.get_project(project_id_or_alias)?;
         let mut all = vec![];
 
         for target in &project.task_targets {

@@ -2,7 +2,7 @@ use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::{TaskHash, TaskHasher};
-use moon_test_utils2::{WorkspaceGraph, create_workspace_graph_mocker};
+use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
 use std::fs;
@@ -34,7 +34,12 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
 async fn mock_workspace(workspace_root: &Path) -> (WorkspaceGraph, BoxedVcs) {
     create_out_files(workspace_root);
 
-    let mock = create_workspace_graph_mocker(workspace_root).with_global_envs();
+    let mock = WorkspaceMocker::new(workspace_root)
+        .load_default_configs()
+        .with_default_projects()
+        .with_default_toolchains()
+        .with_inherited_tasks()
+        .with_global_envs();
 
     (mock.mock_workspace_graph().await, mock.mock_vcs_adapter())
 }

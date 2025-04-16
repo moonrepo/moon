@@ -1,40 +1,42 @@
-use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
-use moon_config::WorkspaceConfig;
-use moon_platform::PlatformManager;
-use moon_test_utils2::{
-    WorkspaceMocker, generate_platform_manager_from_sandbox, generate_workspace_graph_from_sandbox,
-};
+use moon_action_graph::*;
+use moon_test_utils2::WorkspaceMocker;
 use moon_workspace_graph::WorkspaceGraph;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub struct ActionGraphContainer {
-    pub platform_manager: PlatformManager,
-    pub workspace_graph: WorkspaceGraph,
-    pub workspace_config: WorkspaceConfig,
-    pub workspace_root: PathBuf,
+    pub mocker: WorkspaceMocker,
 }
 
 impl ActionGraphContainer {
-    pub async fn new(root: &Path) -> Self {
+    pub fn new(root: &Path) -> Self {
         Self {
-            platform_manager: generate_platform_manager_from_sandbox(root).await,
-            workspace_graph: generate_workspace_graph_from_sandbox(root).await,
-            workspace_config: WorkspaceConfig::default(),
-            workspace_root: root.to_path_buf(),
+            mocker: WorkspaceMocker::new(root)
+                .load_default_configs()
+                .with_all_toolchains()
+                .with_test_toolchains()
+                .with_default_projects()
+                .with_global_envs(),
         }
     }
 
-    pub fn create_builder(&self) -> ActionGraphBuilder {
-        let config = &self.workspace_config.pipeline;
-        let app_context = WorkspaceMocker::new(&self.workspace_root)
-            .with_all_toolchains()
-            .mock_app_context();
+    pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
+        self.mocker = self.mocker.set_working_dir(dir);
+        self
+    }
 
-        ActionGraphBuilder::with_platforms(
-            &self.platform_manager,
-            Arc::new(app_context),
-            Arc::new(self.workspace_graph.clone()),
+    pub async fn create_workspace_graph(&self) -> Arc<WorkspaceGraph> {
+        Arc::new(self.mocker.mock_workspace_graph().await)
+    }
+
+    pub async fn create_builder(
+        &mut self,
+        workspace_graph: Arc<WorkspaceGraph>,
+    ) -> ActionGraphBuilder {
+        let config = &self.mocker.workspace_config.pipeline;
+
+        self.create_builder_with_options(
+            workspace_graph,
             ActionGraphBuilderOptions {
                 install_dependencies: config.install_dependencies.clone(),
                 sync_projects: config.sync_projects.clone(),
@@ -42,6 +44,23 @@ impl ActionGraphContainer {
                 ..Default::default()
             },
         )
-        .unwrap()
+        .await
+    }
+
+    pub async fn create_builder_with_options(
+        &mut self,
+        workspace_graph: Arc<WorkspaceGraph>,
+        options: ActionGraphBuilderOptions,
+    ) -> ActionGraphBuilder {
+        let mut builder = ActionGraphBuilder::new(
+            Arc::new(self.mocker.mock_app_context()),
+            workspace_graph,
+            options,
+        )
+        .unwrap();
+        builder
+            .set_platform_manager(self.mocker.mock_platform_manager().await)
+            .unwrap();
+        builder
     }
 }

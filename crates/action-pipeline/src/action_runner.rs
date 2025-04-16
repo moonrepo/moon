@@ -82,7 +82,7 @@ pub async fn run_action(
             result
         }
 
-        ActionNode::SetupToolchain(inner) => {
+        ActionNode::SetupToolchainLegacy(inner) => {
             emitter
                 .emit(Event::ToolInstalling {
                     runtime: &inner.runtime,
@@ -101,19 +101,12 @@ pub async fn run_action(
             result
         }
 
-        ActionNode::SetupToolchainPlugin(inner) => {
+        ActionNode::SetupToolchain(inner) => {
             emitter
                 .emit(Event::ToolchainInstalling { spec: &inner.spec })
                 .await?;
 
-            let result = setup_toolchain_plugin(
-                action,
-                action_context,
-                app_context,
-                workspace_graph.clone(),
-                inner,
-            )
-            .await;
+            let result = setup_toolchain_plugin(action, action_context, app_context, inner).await;
 
             emitter
                 .emit(Event::ToolchainInstalled {
@@ -214,6 +207,11 @@ pub async fn run_action(
 
             result
         }
+
+        _ => {
+            // TODO
+            Ok(ActionStatus::Skipped)
+        }
     };
 
     match result {
@@ -255,7 +253,11 @@ pub async fn run_action(
         // If these actions failed, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupToolchain { .. } | ActionNode::InstallWorkspaceDeps { .. }
+            ActionNode::SetupToolchain { .. }
+                | ActionNode::SetupToolchainLegacy { .. }
+                | ActionNode::InstallDependencies { .. }
+                | ActionNode::InstallProjectDeps { .. }
+                | ActionNode::InstallWorkspaceDeps { .. }
         ) {
             action.abort();
         }

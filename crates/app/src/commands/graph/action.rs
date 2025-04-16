@@ -35,19 +35,19 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppRes
     // Focus a target and its dependencies/dependents
     if let Some(targets) = &args.targets {
         for target in targets {
-            action_graph_builder.run_task_by_target(target, &requirements)?;
+            action_graph_builder
+                .run_task_by_target(target, &requirements)
+                .await?;
         }
     }
     // Show all targets and actions
     else {
-        for project in workspace_graph.get_projects()? {
-            for task in workspace_graph.get_tasks_from_project(&project.id)? {
-                action_graph_builder.run_task(&project, &task, &requirements)?;
-            }
+        for task in workspace_graph.get_tasks()? {
+            action_graph_builder.run_task(&task, &requirements).await?;
         }
     }
 
-    let action_graph = action_graph_builder.build();
+    let (_, action_graph) = action_graph_builder.build();
 
     if args.dot {
         session.console.out.write_line(action_graph.to_dot())?;

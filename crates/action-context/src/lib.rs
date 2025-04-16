@@ -1,7 +1,7 @@
 use clap::ValueEnum;
 use moon_affected::Affected;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_target::Target;
+use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -43,7 +43,7 @@ pub struct ActionContext {
     pub affected: Option<Affected>,
 
     /// Initial target locators passed to `moon run`, `moon ci`, etc.
-    pub initial_targets: FxHashSet<Target>,
+    pub initial_targets: FxHashSet<TargetLocator>,
 
     /// Active mutexes for tasks to acquire locks against.
     /// @mutable
@@ -121,8 +121,10 @@ impl ActionContext {
 
         // :task == scope:task
         for other_target in &self.initial_targets {
-            if other_target.is_all_task(&target.task_id) {
-                return true;
+            if let TargetLocator::Qualified(other_target) = other_target {
+                if other_target.is_all_task(&target.task_id) {
+                    return true;
+                }
             }
         }
 

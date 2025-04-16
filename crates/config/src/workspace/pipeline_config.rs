@@ -15,6 +15,14 @@ config_enum!(
 );
 
 impl PipelineActionSwitch {
+    pub fn is_disabled(&self) -> bool {
+        match self {
+            Self::Default => false,
+            Self::Enabled(value) => !value,
+            Self::Only(list) => list.is_empty(),
+        }
+    }
+
     pub fn is_enabled(&self, id: &Id) -> bool {
         match self {
             Self::Default => true,

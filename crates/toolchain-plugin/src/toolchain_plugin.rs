@@ -67,25 +67,30 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    // Ensure we are dealing with real paths from this point onwards
+    fn handle_output_file(&self, file: &mut VirtualPath) {
+        *file = VirtualPath::OnlyReal(
+            file.real_path()
+                .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
+        );
+    }
+
     fn handle_output_files(&self, files: &mut [VirtualPath]) {
         for file in files {
-            *file = VirtualPath::OnlyReal(
-                file.real_path()
-                    .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
-            );
+            self.handle_output_file(file);
         }
     }
 
+    // Detection
     pub async fn supports_tier_1(&self) -> bool {
         self.has_func("parse_lockfile").await || self.has_func("parse_manifest").await
     }
 
+    // Install dependencies
     pub async fn supports_tier_2(&self) -> bool {
-        // TODO
-        false
+        self.has_func("locate_dependencies_root").await
     }
 
+    // Setup toolchain
     pub async fn supports_tier_3(&self) -> bool {
         self.has_func("setup_toolchain").await
             || self.tool.is_some()
@@ -226,6 +231,19 @@ impl ToolchainPlugin {
         let output: InitializeToolchainOutput = self
             .plugin
             .cache_func_with("initialize_toolchain", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn locate_dependencies_root(
+        &self,
+        input: LocateDependenciesRootInput,
+    ) -> miette::Result<LocateDependenciesRootOutput> {
+        let output: LocateDependenciesRootOutput = self
+            .plugin
+            .cache_func_with("locate_dependencies_root", input)
             .await?;
 
         Ok(output)

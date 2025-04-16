@@ -1,4 +1,5 @@
 /target
+/wasm/target
 /wasm/*/target
 node_modules/
 bazel-remote

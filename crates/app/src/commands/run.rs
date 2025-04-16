@@ -170,17 +170,25 @@ pub async fn run_target(
     }
 
     if should_run_affected {
-        action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep)?;
+        action_graph_builder.track_affected(UpstreamScope::Deep, DownstreamScope::Deep, false)?;
     }
 
     // Run targets, optionally based on affected files
-    let inserted_nodes = action_graph_builder.run_from_requirements(RunRequirements {
+    let reqs = RunRequirements {
         ci: is_ci(),
+        ci_check: false,
         dependents: args.dependents,
         interactive: args.interactive,
-        target_locators: FxHashSet::from_iter(target_locators.to_owned()),
-        ..Default::default()
-    })?;
+    };
+    let mut inserted_nodes = FxHashSet::default();
+
+    for locator in target_locators {
+        inserted_nodes.extend(
+            action_graph_builder
+                .run_task_by_target_locator(locator, &reqs)
+                .await?,
+        );
+    }
 
     if inserted_nodes.is_empty() {
         let targets_list = target_locators
@@ -225,14 +233,16 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
+    let (action_context, action_graph) = action_graph_builder.build();
+
     let results = run_action_pipeline(
         session,
         ActionContext {
             passthrough_args: args.passthrough.to_owned(),
             profile: args.profile.to_owned(),
-            ..action_graph_builder.build_context()
+            ..action_context
         },
-        action_graph_builder.build(),
+        action_graph,
     )
     .await?;
 

@@ -6,8 +6,12 @@ tags: [moonbase, remote, cache]
 ---
 
 As mentioned in previous moon releases and announcements, we have sunset [moonbase](/moonbase), our
-remote caching service. A while back we had internal discussions on whether to rework moonbase so
-that it could be self-hosted (on-premises), or adopt the
+remote caching service.
+
+<!-- truncate -->
+
+A while back we had internal discussions on whether to rework moonbase so that it could be
+self-hosted (on-premises), or adopt the
 [Bazel Remote Execution API](https://github.com/bazelbuild/remote-apis) and utilize what the open
 source community has to offer. We ultimately decided with the latter, as it frees up resources on
 our end to focus on moon and proto, and also provides a better path forward for moon adoption.

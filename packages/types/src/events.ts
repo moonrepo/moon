@@ -1,5 +1,11 @@
-import type { Duration, Runtime } from './common';
-import type { Action, ActionContext, ActionNode, ActionNodeRunTask } from './pipeline';
+import type { Duration, Runtime, ToolchainSpec } from './common';
+import type {
+	Action,
+	ActionContext,
+	ActionNode,
+	ActionNodeRunTask,
+	ActionPipelineStatus,
+} from './pipeline';
 import type { Project } from './project';
 
 export interface ProviderEnvironment {
@@ -37,6 +43,8 @@ export type EventType =
 	| 'task.running'
 	| 'tool.installed'
 	| 'tool.installing'
+	| 'toolchain.installed'
+	| 'toolchain.installing'
 	| 'workspace.synced'
 	| 'workspace.syncing'
 	// Legacy < 1.26
@@ -84,7 +92,6 @@ export type PayloadDependenciesInstalled = WebhookPayload<
 
 export interface EventProjectSyncing {
 	project: Project;
-	runtime: Runtime;
 }
 
 export type PayloadProjectSyncing = WebhookPayload<'project.syncing', EventProjectSyncing>;
@@ -92,7 +99,6 @@ export type PayloadProjectSyncing = WebhookPayload<'project.syncing', EventProje
 export interface EventProjectSynced {
 	error: string | null;
 	project: Project;
-	runtime: Runtime;
 }
 
 export type PayloadProjectSynced = WebhookPayload<'project.synced', EventProjectSynced>;
@@ -107,10 +113,10 @@ export type PayloadPipelineStarted = WebhookPayload<'pipeline.started', EventPip
 
 export interface EventPipelineCompleted {
 	actions: Action[];
-	aborted: boolean;
 	context: ActionContext;
 	duration: Duration | null;
 	error: string | null;
+	status: ActionPipelineStatus;
 }
 
 export type PayloadPipelineCompleted = WebhookPayload<'pipeline.completed', EventPipelineCompleted>;
@@ -142,6 +148,25 @@ export interface EventToolInstalled {
 }
 
 export type PayloadToolInstalled = WebhookPayload<'tool.installed', EventToolInstalled>;
+
+export interface EventToolchainInstalling {
+	spec: ToolchainSpec;
+}
+
+export type PayloadToolchainInstalling = WebhookPayload<
+	'toolchain.installing',
+	EventToolchainInstalling
+>;
+
+export interface EventToolchainInstalled {
+	error: string | null;
+	spec: ToolchainSpec;
+}
+
+export type PayloadToolchainInstalled = WebhookPayload<
+	'toolchain.installed',
+	EventToolchainInstalled
+>;
 
 export type PayloadWorkspaceSyncing = WebhookPayload<'workspace.syncing', {}>;
 

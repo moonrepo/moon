@@ -3,6 +3,7 @@ title: Action graph
 ---
 
 import ActionGraph from '@site/src/components/Docs/ActionGraph';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 When you run a [task](../config/project#tasks-1) on the command line, we generate an action graph to
 ensure [dependencies](../config/project#deps) of tasks have ran before running run the primary task.
@@ -53,6 +54,13 @@ skip can be scoped per tool by setting the value to the tool name (`node`), and 
 
 :::
 
+### Setup environment<VersionLabel version="1.35.0" />
+
+This action runs after the toolchain has been setup, but before dependencies are installed, so that
+the development environment can be setup and configured. This includes operations such as modifying
+a manifest (`package.json`, etc), updating configuration files, initializing venv's (Python), so on
+and so forth.
+
 ### Install dependencies
 
 Before we run a task, we ensure that all language dependencies (`node_modules` for example) have
@@ -66,9 +74,6 @@ dependency versions.
 - Actions will be scoped by language and version, also known as a runtime. For example,
   `InstallWorkspaceDeps(node:18.1.0)` or `InstallProjectDeps(node:18.1.0, example)`.
 
-> This action depends on the setup toolchain action, because we utilize the binaries in the
-> toolchain to install dependencies.
-
 :::info
 
 This action can be skipped by disabling the
@@ -79,21 +84,8 @@ This action can be skipped by disabling the
 ### Sync project
 
 To ensure a consistently healthy project and repository, we run a process known as syncing
-_everytime_ a task is ran. Actions will be scoped by language, for example,
-`SyncProject(node, example)`.
-
-What is synced or considered healthcare is dependent on the language and its ecosystem.
-
-- JavaScript
-  - Syncs `package.json` dependencies based on [project graph](./project-graph) dependencies.
-  - Applies [`deno`](../config/toolchain#deno) and [`node`](../config/toolchain#node) related
-    settings.
-- TypeScript
-  - Syncs project references based on [project graph](./project-graph) dependencies.
-  - Applies [`typescript`](../config/toolchain#typescript) related settings.
-
-> This action depends on the setup toolchain action, in case it requires binaries or functionality
-> that the toolchain provides.
+_everytime_ a task is ran. This action will run sync operations for all toolchains associated with
+the project.
 
 :::info
 
@@ -108,9 +100,6 @@ The primary action in the graph is the run [task](../concepts/task) action, whic
 task as a child process, derived from a [target](../concepts/target). Tasks can depend on other
 tasks, and they'll be effectively orchestrated and executed by running in topological order using a
 thread pool.
-
-> This action depends on the previous actions, as the toolchain is used for running the task's
-> command, and the outcome of the task is best when the project state is healthy and deterministic.
 
 ### Run interactive task
 

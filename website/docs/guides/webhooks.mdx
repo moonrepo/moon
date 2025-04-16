@@ -380,6 +380,57 @@ Tools can be scoped with the `SetupToolchain(...)` labels.
 }
 ```
 
+### `toolchain.installing`
+
+<HeadingApiLink to="/api/types#PayloadToolchainInstalling" />
+
+Triggered when a toolchain plugin has started downloading and installing.
+
+This event is _always_ triggered, regardless of whether the tool has already been installed or not.
+For an accurate state, use the [`action.finished`](#actionfinished) event. If the `status` is
+"skipped", then the tool was already installed.
+
+```json
+{
+  "type": "toolchain.installing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "spec": {
+      "id": "node",
+      "req": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `toolchain.installed`
+
+<HeadingApiLink to="/api/types#PayloadToolchainInstalled" />
+
+Triggered when a toolchain plugin has finished installing. If the install failed, the `error` field
+will be set with the error message.
+
+For more information about the action, refer to the [`action.finished`](#actionfinished) event.
+Tools can be scoped with the `SetupToolchain(...)` labels.
+
+```json
+{
+  "type": "toolchain.installed",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "spec": {
+      "id": "node",
+      "req": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
 ### `task.running`
 
 <HeadingApiLink to="/api/types#PayloadTaskRunning" />

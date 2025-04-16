@@ -45,6 +45,7 @@
 #### 🐞 Fixes
 
 - Fixed the error handling of remote service uploads and downloads.
+- Fixed a timed out task displaying a generic and unhelpful error message.
 
 #### ⚙️ Internal
 

@@ -52,25 +52,25 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            host: ubuntu-20.04
+            host: ubuntu-22.04
             binary: moon
             docker-target: bin-gnu
             docker-platform: linux/amd64
 
           - target: x86_64-unknown-linux-musl
-            host: ubuntu-20.04
+            host: ubuntu-22.04
             binary: moon
             docker-target: bin-musl
             docker-platform: linux/amd64
 
           - target: aarch64-unknown-linux-gnu
-            host: ubuntu-20.04
+            host: ubuntu-22.04
             binary: moon
             docker-target: bin-gnu
             docker-platform: linux/arm64
 
           - target: aarch64-unknown-linux-musl
-            host: ubuntu-20.04
+            host: ubuntu-22.04
             binary: moon
             docker-target: bin-musl
             docker-platform: linux/arm64
@@ -147,10 +147,10 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            host: ubuntu-20.04
+            host: ubuntu-22.04
 
           - target: x86_64-unknown-linux-musl
-            host: ubuntu-20.04
+            host: ubuntu-22.04
             image: clux/muslrust:stable
             setup: yarn config set supportedArchitectures.libc "musl"
 
@@ -197,7 +197,7 @@ jobs:
   publish:
     if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - plan
       - test
@@ -274,7 +274,7 @@ jobs:
     needs:
       - plan
     name: Publish npm packages
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

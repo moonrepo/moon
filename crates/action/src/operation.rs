@@ -88,7 +88,11 @@ impl Operation {
 
                 None
             })
-            .unwrap_or_else(|| "unknown failure".into())
+            .unwrap_or_else(|| match self.status {
+                ActionStatus::Skipped => "skipped".into(),
+                ActionStatus::TimedOut => "timed out".into(),
+                _ => "unknown failure".into(),
+            })
     }
 
     pub fn get_sync_result(&self) -> Option<&OperationMetaSync> {

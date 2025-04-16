@@ -1,5 +1,12 @@
 import type { Duration, Runtime, ToolchainSpec } from './common';
 
+export type ActionPipelineStatus =
+	| 'aborted'
+	| 'completed'
+	| 'interrupted'
+	| 'pending'
+	| 'terminated';
+
 export type ActionStatus =
 	| 'aborted'
 	| 'cached-from-remote'

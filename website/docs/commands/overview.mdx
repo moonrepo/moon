@@ -14,6 +14,7 @@ The following options are available for _all_ moon commands.
 - `--log <level>` - The lowest [log level to output](#logging).
 - `--logFile <file>` - Write logs to the defined file.
 - `--quiet`, `-q` - Hide all non-important moon specific terminal output.
+- `--theme` - Terminal theme to write output in. <VersionLabel version="1.35.0" />
 - `--version` - Display the version of the CLI.
 
 ## Caching
@@ -58,6 +59,18 @@ numerical values for the desired level of color support. This is automatically i
 - `2` - 256 colors
 - `3` - 16 million colors (truecolor)
 
+### Themes<VersionLabel version="1.35.0" />
+
+By default, moon assumes a dark themed terminal is being used, and will output colors accordingly.
+However, if you use a light theme, these colors are hard to read. To mitigate this, we support
+changing the theme with the `--theme` global option, or the `MOON_THEME` environment variable.
+
+```shell
+$ moon run app:build --theme light
+# Or
+$ MOON_THEME=light moon run app:build
+```
+
 ### Piped output
 
 When tasks (child processes) are piped, colors and ANSI escape sequences are lost, since the target
@@ -66,7 +79,7 @@ However, many tools and CLIs support a `--color` option to work around this limi
 force colors, even when not a TTY.
 
 To mitigate this problem as a whole, and to avoid requiring `--color` for every task, moon supports
-the [`runner.inheritColorsForPipedTasks`](../config/workspace#inheritcolorsforpipedtasks)
+the [`pipeline.inheritColorsForPipedTasks`](../config/workspace#inheritcolorsforpipedtasks)
 configuration setting. When enabled, all piped child processes will inherit the color settings of
 the currently running terminal.
 
@@ -104,7 +117,7 @@ sifting through the logs. We also provide the following environment variables to
 
 By default, moon aims to output as little as possible, as we want to preserve the original output of
 the command's being ran, excluding warnings and errors. This is managed through log levels, which
-can be defined with the `--log` global option, or the `MOON_LOG` environment level. The following
+can be defined with the `--log` global option, or the `MOON_LOG` environment variable. The following
 levels are supported, in priority order.
 
 - `off` - Turn off logging entirely.
@@ -113,6 +126,7 @@ levels are supported, in priority order.
 - `info` (default) - Only show info logs and above.
 - `debug` - Only show debug logs and above.
 - `trace` - Show all logs, including network requests and child processes.
+- `verbose` - Like `trace` but also includes span information. <VersionLabel version="1.35.0" />
 
 ```shell
 $ moon run app:build --log trace
@@ -120,7 +134,7 @@ $ moon run app:build --log trace
 $ MOON_LOG=trace moon run app:build
 ```
 
-### Outputting logs to a file
+### Writing logs to a file
 
 moon can dump the logs from a command to a file using the `--logFile` option, or the `MOON_LOG_FILE`
 environment variable. The dumped logs will respect the `--log` option and filter the logs piped to

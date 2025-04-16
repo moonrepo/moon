@@ -19,13 +19,17 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				selector: 'edges',
 				style: {
 					'arrow-scale': 2,
+					color: '#e4f7fb',
 					'curve-style': 'straight',
+					'font-size': 12,
+					label: 'data(label)',
 					'line-cap': 'round',
 					'line-color': '#c9eef6', // '#012a4a',
 					'line-opacity': 0.25,
 					'overlay-color': '#c9eef6',
 					'target-arrow-color': '#c9eef6', // '#1a3f5c',
-					'target-arrow-shape': 'tee',
+					'target-arrow-shape': 'chevron',
+					'text-opacity': 0.6,
 					width: 3,
 				},
 			},
@@ -74,10 +78,19 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				},
 			},
 			{
-				selector: 'node[type="install-deps"], node[type="lg"]',
+				selector: 'node[type="install-dependencies"], node[type="lg"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
+					height: 100,
+					width: 100,
+				},
+			},
+			{
+				selector: 'node[type="setup-environment"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#c9e166 #b7d733 #a5cd00',
 					height: 100,
 					width: 100,
 				},

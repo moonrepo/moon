@@ -15,6 +15,16 @@ impl MoonSandbox {
 
         Self { sandbox }
     }
+
+    pub fn capture_plugin_logs(&self) {
+        extism::set_log_callback(
+            |line| {
+                println!("{line}");
+            },
+            "debug",
+        )
+        .unwrap();
+    }
 }
 
 impl Deref for MoonSandbox {

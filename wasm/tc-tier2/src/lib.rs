@@ -13,7 +13,11 @@ fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
         } => inner,
     };
 
-    outer.ends_with("in") || outer.ends_with("in-root") || outer.ends_with("out")
+    // `ends_with` or `file_name` didn't work on Windows...
+    let value = outer.to_string_lossy();
+    let res = value.ends_with("in") || value.ends_with("in-root") || value.ends_with("out");
+
+    res
 }
 
 #[plugin_fn]

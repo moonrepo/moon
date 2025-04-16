@@ -4915,6 +4915,7 @@ dependencies = [
 name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
+ "extism",
  "moon_app_context",
  "moon_bun_platform",
  "moon_cache",

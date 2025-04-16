@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["*"]
+exclude = ["target"]
 
 [workspace.dependencies]
 moon_common = { path = "../crates/common" }

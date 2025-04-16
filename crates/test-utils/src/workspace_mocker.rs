@@ -164,7 +164,7 @@ impl WorkspaceMocker {
                     }
                 }
 
-                current_dir.unwrap().join("target")
+                current_dir.unwrap().join("wasm/target")
             }
         };
 

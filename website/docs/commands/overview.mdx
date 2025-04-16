@@ -62,8 +62,8 @@ numerical values for the desired level of color support. This is automatically i
 ### Themes<VersionLabel version="1.35.0" />
 
 By default, moon assumes a dark themed terminal is being used, and will output colors accordingly.
-However, if you use a light theme, these colors are hard to read. This mitigate this, we support
-changing the theme with the `--theme` global option, or the `MOON_THEME` environment level.
+However, if you use a light theme, these colors are hard to read. To mitigate this, we support
+changing the theme with the `--theme` global option, or the `MOON_THEME` environment variable.
 
 ```shell
 $ moon run app:build --theme light
@@ -117,7 +117,7 @@ sifting through the logs. We also provide the following environment variables to
 
 By default, moon aims to output as little as possible, as we want to preserve the original output of
 the command's being ran, excluding warnings and errors. This is managed through log levels, which
-can be defined with the `--log` global option, or the `MOON_LOG` environment level. The following
+can be defined with the `--log` global option, or the `MOON_LOG` environment variable. The following
 levels are supported, in priority order.
 
 - `off` - Turn off logging entirely.

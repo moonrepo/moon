@@ -4,6 +4,21 @@
 
 #### 🚀 Updates
 
+- Rewrote the action graph to support plugins. The following changes have been made.
+  - Is now async compatible. In the future, we'll update it to also support concurrency, so that the
+    graph can be built in parallel across threads.
+  - Reduced the amount of edges (relationships) being created between nodes (actions).
+  - Added a new `InstallDependencies` action for WASM plugins.
+    - The dependencies root is now dynamically located by traversing the file system, unlike the
+      previous implementation that assumed everything was in the workspace root.
+  - Added a new `SetupEnvironment` action for WASM plugins.
+    - This runs after `SetupToolchain` but before `InstallDependencies`.
+    - Can be used to setup the workspace or project environment. For example, initializing Python
+      venv, or making manifest/lockfile changes.
+  - Updated `RunTask` to setup toolchains and install dependencies for each `toolchain` that has
+    been configured, instead of just the 1st one (work in progress).
+  - Updated `SyncProject` to no longer depend on `SetupToolchain`, and not be grouped by
+    language/toolchain, and instead encompass all of them applicable to the project.
 - Added a new task option, `cacheKey`, which can be used to seed the hash, and invalidate local and
   remote caches.
 - Added a new task option, `priority`, that controls the position in the pipeline queue.
@@ -14,21 +29,22 @@
 - Added 2 new webhooks, `toolchain.installing` and `toolchain.installed`, which emit when a
   toolchain WASM plugin is installing a tool (via proto).
 - Enabled the `experiments.fasterGlobWalk` and `experiments.gitV2` experiments.
-- Updated and simplified the relationships in the action graph.
-  - `SyncProject` no longer depends on the `SetupToolchain` action.
-  - `SyncProject` no longer is grouped by language/toolchain, and instead encompasses all of them
-    applicable to the project.
 
 #### 🧩 Plugins
 
 - Added tier 3 support (tier 2 still a work in progress).
   - This utilizes the same APIs as proto: https://moonrepo.dev/docs/proto/wasm-plugin
 - Added new toolchain WASM APIs.
+  - `locate_dependencies_root` - Locates the dependencies root (workspace).
+  - `setup_environment` - Runs operations to setup an environment for a project/workspace before
+    installing dependencies and running tasks.
+  - `install_dependencies` - Defines commands to install/dedupe dependencies.
   - `setup_toolchain` - Runs operations after the tool has been installed.
   - `teardown_toolchain` - Runs operations before the tool will be uninstalled.
 
 #### ⚙️ Internal
 
+- Rewrote our testing utilities and updated all tests.
 - Updated proto to [v0.47.11](https://github.com/moonrepo/proto/releases/tag/v0.47.11) (from
   0.47.7).
 - Updated Rust to v1.86.0.

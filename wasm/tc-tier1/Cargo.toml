@@ -1,0 +1,16 @@
+[package]
+name = "tc_tier1"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+moon_common = { workspace = true }
+moon_config = { workspace = true }
+moon_pdk = { workspace = true }
+moon_pdk_api = { workspace = true }
+moon_target = { workspace = true }
+extism-pdk = { workspace = true }

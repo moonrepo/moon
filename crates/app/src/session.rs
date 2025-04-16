@@ -89,21 +89,17 @@ impl MoonSession {
     }
 
     pub async fn build_action_graph<'graph>(&self) -> miette::Result<ActionGraphBuilder<'graph>> {
-        let app_context = self.get_app_context().await?;
-        let workspace_graph = self.get_workspace_graph().await?;
         let config = &self.workspace_config.pipeline;
 
-        ActionGraphBuilder::new(
-            app_context,
-            workspace_graph,
-            ActionGraphBuilderOptions {
-                install_dependencies: config.install_dependencies.clone(),
-                setup_toolchains: true.into(),
-                sync_projects: config.sync_projects.clone(),
-                sync_project_dependencies: config.sync_project_dependencies,
-                sync_workspace: config.sync_workspace,
-            },
-        )
+        self.build_action_graph_with_options(ActionGraphBuilderOptions {
+            install_dependencies: config.install_dependencies.clone(),
+            setup_environment: true.into(),
+            setup_toolchains: true.into(),
+            sync_projects: config.sync_projects.clone(),
+            sync_project_dependencies: config.sync_project_dependencies,
+            sync_workspace: config.sync_workspace,
+        })
+        .await
     }
 
     pub async fn build_action_graph_with_options<'graph>(

@@ -1,0 +1,33 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SyncProject(common)" ]
+    2 [ label="SyncProject(base)" ]
+    3 [ label="RunTask(common:build)" ]
+    4 [ label="SyncProject(client)" ]
+    5 [ label="SyncProject(server)" ]
+    6 [ label="RunTask(client:build)" ]
+    7 [ label="SetupToolchain(rust:global)" ]
+    8 [ label="InstallProjectDeps(rust:global, server)" ]
+    9 [ label="RunTask(server:build)" ]
+    10 [ label="RunTask(base:build)" ]
+    2 -> 0 [ ]
+    1 -> 0 [ ]
+    1 -> 2 [ ]
+    3 -> 1 [ ]
+    5 -> 0 [ ]
+    4 -> 0 [ ]
+    4 -> 5 [ ]
+    4 -> 1 [ ]
+    7 -> 0 [ ]
+    8 -> 7 [ ]
+    9 -> 5 [ ]
+    9 -> 8 [ ]
+    6 -> 4 [ ]
+    6 -> 9 [ ]
+    6 -> 3 [ ]
+    10 -> 2 [ ]
+}

@@ -3593,6 +3593,7 @@ dependencies = [
  "moon_app_context",
  "moon_common",
  "moon_config",
+ "moon_pdk_api",
  "moon_platform",
  "moon_project",
  "moon_query",
@@ -3603,6 +3604,7 @@ dependencies = [
  "petgraph 0.7.1",
  "rustc-hash 2.1.1",
  "starbase_sandbox",
+ "starbase_utils",
  "thiserror 2.0.12",
  "tokio",
  "tracing",
@@ -4361,6 +4363,7 @@ dependencies = [
  "moon_config",
  "moon_project",
  "moon_task",
+ "proto_pdk_api",
  "rustc-hash 2.1.1",
  "schematic",
  "serde",
@@ -4912,6 +4915,7 @@ dependencies = [
 name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
+ "extism",
  "moon_app_context",
  "moon_bun_platform",
  "moon_cache",

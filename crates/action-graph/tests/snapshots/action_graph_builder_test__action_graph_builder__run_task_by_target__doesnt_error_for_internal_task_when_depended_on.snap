@@ -1,0 +1,20 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SyncProject(misc)" ]
+    2 [ label="SyncProject(common)" ]
+    3 [ label="SyncProject(base)" ]
+    4 [ label="RunTask(misc:requiresInternal)" ]
+    5 [ label="RunTask(common:internal)" ]
+    3 -> 0 [ ]
+    2 -> 0 [ ]
+    2 -> 3 [ ]
+    1 -> 0 [ ]
+    1 -> 2 [ ]
+    5 -> 2 [ ]
+    4 -> 1 [ ]
+    4 -> 5 [ ]
+}

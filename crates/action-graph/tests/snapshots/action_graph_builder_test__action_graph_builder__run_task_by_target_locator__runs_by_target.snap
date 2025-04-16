@@ -1,0 +1,16 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SyncProject(server)" ]
+    2 [ label="SetupToolchain(rust:global)" ]
+    3 [ label="InstallProjectDeps(rust:global, server)" ]
+    4 [ label="RunTask(server:build)" ]
+    1 -> 0 [ ]
+    2 -> 0 [ ]
+    3 -> 2 [ ]
+    4 -> 1 [ ]
+    4 -> 3 [ ]
+}

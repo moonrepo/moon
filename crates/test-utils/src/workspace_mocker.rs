@@ -1,3 +1,4 @@
+use crate::generate_platform_manager;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
@@ -13,14 +14,13 @@ use moon_task_graph::Task;
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
-use moon_workspace_graph::WorkspaceGraph;
-use proto_core::{ProtoConfig, ProtoEnvironment};
+pub use moon_workspace_graph::WorkspaceGraph;
+use proto_core::warpgate::FileLocator;
+use proto_core::{PluginLocator, ProtoConfig, ProtoEnvironment};
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-
-use crate::generate_platform_manager;
 
 #[derive(Default)]
 pub struct WorkspaceMocker {
@@ -30,9 +30,9 @@ pub struct WorkspaceMocker {
     pub moon_env: MoonEnvironment,
     pub proto_env: ProtoEnvironment,
     pub toolchain_config: ToolchainConfig,
+    pub working_dir: PathBuf,
     pub workspace_config: WorkspaceConfig,
     pub workspace_root: PathBuf,
-    pub vcs: Option<BoxedVcs>,
 }
 
 impl WorkspaceMocker {
@@ -43,6 +43,7 @@ impl WorkspaceMocker {
             monorepo: true,
             moon_env: MoonEnvironment::new_testing(root),
             proto_env: ProtoEnvironment::new_testing(root).unwrap(),
+            working_dir: root.to_path_buf(),
             workspace_root: root.to_path_buf(),
             ..Default::default()
         }
@@ -81,6 +82,13 @@ impl WorkspaceMocker {
         config.inherit_plugin_locators().unwrap();
 
         self.toolchain_config = config;
+        self
+    }
+
+    pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
+        self.moon_env.working_dir = dir.clone();
+        self.proto_env.working_dir = dir.clone();
+        self.working_dir = dir;
         self
     }
 
@@ -136,6 +144,49 @@ impl WorkspaceMocker {
         })
     }
 
+    pub fn with_test_toolchains(self) -> Self {
+        let target_dir = match std::env::var("CARGO_TARGET_DIR") {
+            Ok(dir) => PathBuf::from(dir),
+            Err(_) => {
+                let start_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+                let mut current_dir = Some(start_dir.as_path());
+
+                while let Some(dir) = current_dir {
+                    if dir.join("Cargo.lock").exists() {
+                        break;
+                    }
+
+                    match dir.parent() {
+                        Some(parent) => current_dir = Some(parent),
+                        None => {
+                            panic!("Unable to find the Cargo workspace root!");
+                        }
+                    }
+                }
+
+                current_dir.unwrap().join("wasm/target")
+            }
+        };
+
+        self.update_toolchain_config(|config| {
+            for id in ["tc-tier1", "tc-tier2", "tc-tier2-setup-env", "tc-tier3"] {
+                config.plugins.insert(
+                    Id::raw(id),
+                    ToolchainPluginConfig {
+                        plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                            file: "".into(),
+                            path: Some(target_dir.join(format!(
+                                "wasm32-wasip1/release/{}.wasm",
+                                id.replace("-", "_")
+                            ))),
+                        }))),
+                        ..Default::default()
+                    },
+                );
+            }
+        })
+    }
+
     pub fn with_default_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
             if config.node.is_none() {
@@ -149,11 +200,11 @@ impl WorkspaceMocker {
         let home_dir = std::env::home_dir().unwrap();
 
         self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();
-        self.moon_env.working_dir = self.workspace_root.clone();
+        self.moon_env.working_dir = self.working_dir.clone();
         self.moon_env.workspace_root = self.workspace_root.clone();
 
         self.proto_env = ProtoEnvironment::from(home_dir.join(".proto"), home_dir).unwrap();
-        self.proto_env.working_dir = self.workspace_root.clone();
+        self.proto_env.working_dir = self.working_dir.clone();
 
         self
     }
@@ -274,7 +325,7 @@ impl WorkspaceMocker {
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),
             vcs: Arc::new(self.mock_vcs_adapter()),
             toolchain_config: Arc::new(self.toolchain_config.clone()),
-            working_dir: self.workspace_root.clone(),
+            working_dir: self.working_dir.clone(),
             workspace_config: Arc::new(self.workspace_config.clone()),
             workspace_root: self.workspace_root.clone(),
         }
@@ -335,7 +386,7 @@ impl WorkspaceMocker {
             } else {
                 None
             },
-            working_dir: &self.workspace_root,
+            working_dir: &self.working_dir,
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,
         }

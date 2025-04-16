@@ -1,0 +1,14 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SyncProject(foo)" ]
+    2 [ label="SyncProject(bar)" ]
+    3 [ label="SyncProject(qux)" ]
+    2 -> 0 [ ]
+    1 -> 0 [ ]
+    1 -> 2 [ ]
+    3 -> 0 [ ]
+}

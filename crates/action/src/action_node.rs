@@ -6,32 +6,49 @@ use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct SetupToolchainNode {
-    pub runtime: Runtime,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SetupToolchainPluginNode {
+pub struct InstallDependenciesNode {
     pub project_id: Option<Id>,
-    pub spec: ToolchainSpec,
+    pub root: WorkspaceRelativePathBuf,
+    pub toolchain_id: Id,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+// DEPRECATED
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct InstallWorkspaceDepsNode {
     pub runtime: Runtime,
     pub root: WorkspaceRelativePathBuf,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+// DEPRECATED
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallProjectDepsNode {
     pub project_id: Id,
     pub runtime: Runtime,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupEnvironmentNode {
+    pub project_id: Option<Id>,
+    pub root: WorkspaceRelativePathBuf,
+    pub toolchain_id: Id,
+}
+
+// DEPRECATED
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+pub struct SetupToolchainLegacyNode {
+    pub runtime: Runtime,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+pub struct SetupToolchainNode {
+    pub spec: ToolchainSpec,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncProjectNode {
     pub project_id: Id,
@@ -85,6 +102,9 @@ pub enum ActionNode {
     #[default]
     None,
 
+    /// Install toolchain dependencies in the closest root.
+    InstallDependencies(Box<InstallDependenciesNode>),
+
     /// Install tool dependencies in the project root.
     InstallProjectDeps(Box<InstallProjectDepsNode>),
 
@@ -94,11 +114,14 @@ pub enum ActionNode {
     /// Run a project's task.
     RunTask(Box<RunTaskNode>),
 
-    /// Setup a tool + version for the provided toolchain.
-    SetupToolchain(Box<SetupToolchainNode>),
+    /// Setup the environment for the provided toolchain.
+    SetupEnvironment(Box<SetupEnvironmentNode>),
 
     /// Setup a tool + version for the provided toolchain.
-    SetupToolchainPlugin(Box<SetupToolchainPluginNode>),
+    SetupToolchainLegacy(Box<SetupToolchainLegacyNode>),
+
+    /// Setup a tool + version for the provided toolchain.
+    SetupToolchain(Box<SetupToolchainNode>),
 
     /// Sync a project with language specific semantics.
     SyncProject(Box<SyncProjectNode>),
@@ -108,6 +131,10 @@ pub enum ActionNode {
 }
 
 impl ActionNode {
+    pub fn install_dependencies(node: InstallDependenciesNode) -> Self {
+        Self::InstallDependencies(Box::new(node))
+    }
+
     pub fn install_project_deps(node: InstallProjectDepsNode) -> Self {
         Self::InstallProjectDeps(Box::new(node))
     }
@@ -122,12 +149,16 @@ impl ActionNode {
         Self::RunTask(Box::new(node))
     }
 
-    pub fn setup_toolchain(node: SetupToolchainNode) -> Self {
-        Self::SetupToolchain(Box::new(node))
+    pub fn setup_environment(node: SetupEnvironmentNode) -> Self {
+        Self::SetupEnvironment(Box::new(node))
     }
 
-    pub fn setup_toolchain_plugin(node: SetupToolchainPluginNode) -> Self {
-        Self::SetupToolchainPlugin(Box::new(node))
+    pub fn setup_toolchain_legacy(node: SetupToolchainLegacyNode) -> Self {
+        Self::SetupToolchainLegacy(Box::new(node))
+    }
+
+    pub fn setup_toolchain(node: SetupToolchainNode) -> Self {
+        Self::SetupToolchain(Box::new(node))
     }
 
     pub fn sync_project(node: SyncProjectNode) -> Self {
@@ -149,15 +180,15 @@ impl ActionNode {
         match self {
             Self::InstallWorkspaceDeps(inner) => &inner.runtime,
             Self::InstallProjectDeps(inner) => &inner.runtime,
+            Self::SetupToolchainLegacy(inner) => &inner.runtime,
             Self::RunTask(inner) => &inner.runtime,
-            Self::SetupToolchain(inner) => &inner.runtime,
             _ => unreachable!(),
         }
     }
 
     pub fn get_spec(&self) -> Option<&ToolchainSpec> {
         match self {
-            Self::SetupToolchainPlugin(inner) => Some(&inner.spec),
+            Self::SetupToolchain(inner) => Some(&inner.spec),
             _ => None,
         }
     }
@@ -192,6 +223,16 @@ impl ActionNode {
 
     pub fn label(&self) -> String {
         match self {
+            Self::InstallDependencies(inner) => {
+                if inner.root.as_str().is_empty() {
+                    format!("InstallDependencies({})", inner.toolchain_id)
+                } else {
+                    format!(
+                        "InstallDependencies({}, {})",
+                        inner.toolchain_id, inner.root
+                    )
+                }
+            }
             Self::InstallWorkspaceDeps(inner) => {
                 if inner.root.as_str().is_empty() {
                     format!("InstallWorkspaceDeps({})", inner.runtime.target())
@@ -223,14 +264,21 @@ impl ActionNode {
                     inner.target
                 )
             }
-            Self::SetupToolchain(inner) => {
+            Self::SetupEnvironment(inner) => {
+                if inner.root.as_str().is_empty() {
+                    format!("SetupEnvironment({})", inner.toolchain_id)
+                } else {
+                    format!("SetupEnvironment({}, {})", inner.toolchain_id, inner.root)
+                }
+            }
+            Self::SetupToolchainLegacy(inner) => {
                 if inner.runtime.is_system() {
                     "SetupToolchain(system)".into()
                 } else {
                     format!("SetupToolchain({})", inner.runtime.target())
                 }
             }
-            Self::SetupToolchainPlugin(inner) => {
+            Self::SetupToolchain(inner) => {
                 format!("SetupToolchain({})", inner.spec.target())
             }
             Self::SyncProject(inner) => {
@@ -246,17 +294,28 @@ impl Hash for ActionNode {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write(self.label().as_bytes());
 
-        // For tasks with passthrough arguments and environment variables,
-        // we need to ensure the hash is more unique in the graph
-        if let Self::RunTask(node) = self {
-            for arg in &node.args {
-                state.write(arg.as_bytes());
-            }
+        match self {
+            Self::InstallDependencies(inner) => inner.hash(state),
+            Self::InstallProjectDeps(inner) => inner.hash(state),
+            Self::InstallWorkspaceDeps(inner) => inner.hash(state),
+            Self::SetupEnvironment(inner) => inner.hash(state),
+            Self::SetupToolchainLegacy(inner) => inner.hash(state),
+            Self::SetupToolchain(inner) => inner.hash(state),
+            Self::SyncProject(inner) => inner.hash(state),
 
-            for (key, value) in &node.env {
-                state.write(key.as_bytes());
-                state.write(value.as_bytes());
+            // For tasks with passthrough arguments and environment variables,
+            // we need to ensure the hash is more unique in the graph
+            Self::RunTask(inner) => {
+                for arg in &inner.args {
+                    state.write(arg.as_bytes());
+                }
+
+                for (key, value) in &inner.env {
+                    state.write(key.as_bytes());
+                    state.write(value.as_bytes());
+                }
             }
-        }
+            _ => {}
+        };
     }
 }

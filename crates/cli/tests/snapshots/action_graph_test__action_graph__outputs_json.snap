@@ -10,11 +10,11 @@ expression: assert.output()
     },
     {
       "id": 3,
-      "label": "SyncProject(basic)"
+      "label": "InstallWorkspaceDeps(node:18.0.0)"
     },
     {
       "id": 1,
-      "label": "SetupToolchain(node:18.0.0)"
+      "label": "SyncProject(basic)"
     },
     {
       "id": 4,
@@ -22,7 +22,7 @@ expression: assert.output()
     },
     {
       "id": 2,
-      "label": "InstallWorkspaceDeps(node:18.0.0)"
+      "label": "SetupToolchain(node:18.0.0)"
     }
   ],
   "edges": [
@@ -33,22 +33,22 @@ expression: assert.output()
       "target": 0
     },
     {
-      "id": "2 -> 1",
+      "id": "2 -> 0",
       "label": "",
       "source": 2,
-      "target": 1
-    },
-    {
-      "id": "3 -> 0",
-      "label": "",
-      "source": 3,
       "target": 0
     },
     {
-      "id": "4 -> 2",
+      "id": "3 -> 2",
+      "label": "",
+      "source": 3,
+      "target": 2
+    },
+    {
+      "id": "4 -> 1",
       "label": "",
       "source": 4,
-      "target": 2
+      "target": 1
     },
     {
       "id": "4 -> 3",

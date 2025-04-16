@@ -1,0 +1,31 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SyncProject(ci)" ]
+    2 [ label="RunTask(ci:ci2-dependency)" ]
+    3 [ label="RunTask(ci:ci3-dependency)" ]
+    4 [ label="RunTask(ci:ci4-dependency)" ]
+    5 [ label="SyncProject(deps-affected)" ]
+    6 [ label="RunTask(deps-affected:a)" ]
+    7 [ label="RunTask(deps-affected:b)" ]
+    8 [ label="RunTask(deps-affected:c)" ]
+    9 [ label="SyncProject(deps)" ]
+    10 [ label="RunTask(deps:a)" ]
+    11 [ label="RunTask(deps:c)" ]
+    1 -> 0 [ ]
+    2 -> 1 [ ]
+    3 -> 1 [ ]
+    4 -> 1 [ ]
+    5 -> 0 [ ]
+    8 -> 5 [ ]
+    7 -> 5 [ ]
+    7 -> 8 [ ]
+    6 -> 5 [ ]
+    6 -> 7 [ ]
+    9 -> 0 [ ]
+    10 -> 9 [ ]
+    11 -> 9 [ ]
+}

@@ -4,13 +4,13 @@ expression: assert.output()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupToolchain(node:18.0.0)" ]
-    2 [ label="InstallWorkspaceDeps(node:18.0.0)" ]
-    3 [ label="SyncProject(basic)" ]
+    1 [ label="SyncProject(basic)" ]
+    2 [ label="SetupToolchain(node:18.0.0)" ]
+    3 [ label="InstallWorkspaceDeps(node:18.0.0)" ]
     4 [ label="RunTask(basic:build)" ]
     1 -> 0 [ ]
-    2 -> 1 [ ]
-    3 -> 0 [ ]
-    4 -> 2 [ ]
+    2 -> 0 [ ]
+    3 -> 2 [ ]
+    4 -> 1 [ ]
     4 -> 3 [ ]
 }

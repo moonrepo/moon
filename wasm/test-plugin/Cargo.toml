@@ -5,16 +5,9 @@ edition = "2024"
 publish = false
 
 [lib]
-crate-type = ['cdylib']
-
-[profile.release]
-codegen-units = 1
-debug = false
-lto = true
-opt-level = "s"
-panic = "abort"
+crate-type = ["cdylib"]
 
 [dependencies]
-moon_common = { path = "../../crates/common" }
-moon_config = { path = "../../crates/config" }
-moon_target = { path = "../../crates/target" }
+moon_common = { workspace = true }
+moon_config = { workspace = true }
+moon_target = { workspace = true }

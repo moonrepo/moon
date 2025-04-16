@@ -216,7 +216,7 @@ async fn generate_action_graph(
         ci: true,
         ci_check: true,
         dependents: true,
-        interactive: true,
+        interactive: false,
     };
 
     for locator in targets {

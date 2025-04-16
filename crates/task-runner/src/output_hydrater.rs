@@ -114,7 +114,20 @@ impl OutputHydrater<'_> {
         state: &mut ActionState<'_>,
     ) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
-            return remote.restore_action_result(state).await;
+            match remote.restore_action_result(state).await {
+                Ok(restored) => {
+                    return Ok(restored);
+                }
+                Err(error) => {
+                    // If the download fails, we don't want to mark
+                    // the task as cached and to re-run instead, so
+                    // don't bubble up the error
+                    warn!(
+                        "Failed to download from remote service: {}",
+                        color::muted_light(error.to_string())
+                    );
+                }
+            }
         }
 
         Ok(false)

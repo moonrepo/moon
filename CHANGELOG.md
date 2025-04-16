@@ -42,6 +42,10 @@
   - `setup_toolchain` - Runs operations after the tool has been installed.
   - `teardown_toolchain` - Runs operations before the tool will be uninstalled.
 
+#### 🐞 Fixes
+
+- Fixed the error handling of remote service uploads and downloads.
+
 #### ⚙️ Internal
 
 - Rewrote our testing utilities and updated all tests.

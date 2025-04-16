@@ -229,17 +229,6 @@ impl RemoteService {
             return Ok(false);
         };
 
-        // If no blobs, upload in the current thread
-        if blobs.is_empty() {
-            let value = self
-                .client
-                .update_action_result(&state.digest, result)
-                .await?;
-
-            return Ok(value.is_some());
-        }
-
-        // Otherwise upload in the background
         let client = Arc::clone(&self.client);
         let digest = state.digest.clone();
         let max_size = self.get_max_batch_size();

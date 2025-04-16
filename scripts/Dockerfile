@@ -5,7 +5,7 @@
 
 # glibc
 
-FROM ubuntu:20.04 AS base-gnu
+FROM ubuntu:22.04 AS base-gnu
 RUN apt-get update
 RUN apt install --no-install-recommends -y ca-certificates curl file build-essential autoconf automake autotools-dev libtool xutils-dev libssl-dev pkg-config
 

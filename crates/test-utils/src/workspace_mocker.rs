@@ -152,15 +152,14 @@ impl WorkspaceMocker {
                 let mut current_dir = Some(start_dir.as_path());
 
                 while let Some(dir) = current_dir {
-                    // Avoids our target crate
-                    if dir.join("target").join("CACHEDIR.TAG").exists() {
+                    if dir.join("Cargo.lock").exists() {
                         break;
                     }
 
                     match dir.parent() {
                         Some(parent) => current_dir = Some(parent),
                         None => {
-                            panic!("Unable to find the Cargo target directory!");
+                            panic!("Unable to find the Cargo workspace root!");
                         }
                     }
                 }

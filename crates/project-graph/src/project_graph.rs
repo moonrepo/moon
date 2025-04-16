@@ -233,7 +233,7 @@ impl ProjectGraph {
         Ok(id)
     }
 
-    fn resolve_id(&self, id_or_alias: &str) -> Id {
+    pub fn resolve_id(&self, id_or_alias: &str) -> Id {
         Id::raw(if self.metadata.contains_key(id_or_alias) {
             id_or_alias
         } else {

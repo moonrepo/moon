@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added locks are workspace graph building to avoid duplicate graphs.
+- Tweaked the remote cache file size threshold.
 
 ## 1.35.0
 

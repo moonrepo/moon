@@ -156,8 +156,7 @@ impl RemoteService {
     }
 
     pub fn get_max_batch_size(&self) -> i64 {
-        let max = self
-            .capabilities
+        self.capabilities
             .cache_capabilities
             .as_ref()
             .and_then(|cap| {
@@ -168,15 +167,7 @@ impl RemoteService {
                 }
             })
             // grpc limit: 4mb
-            .unwrap_or(4194304);
-
-        // Subtract a chunk from the max size, because when down/uploading blobs,
-        // we need to account for the non-blob data in the request/response, like the
-        // compression level, digest strings, etc. All of these "add up" and can
-        // bump the total body size larger than the actual limit. Is there a better
-        // way to handle this? Probably, but for now, just reduce the size by 1%,
-        // which is about 42k bytes.
-        max - (max as f64 * 0.0125) as i64
+            .unwrap_or(4194304)
     }
 
     #[instrument(skip(self, state))]
@@ -545,18 +536,13 @@ fn partition_into_groups<T>(
 ) -> BTreeMap<i32, Partition<T>> {
     let mut groups = BTreeMap::<i32, Partition<T>>::default();
 
-    // If the max size is larger than 2mb, we reduce the
-    // group overall size by half, so that we divide blobs
-    // across multiple groups, allowing them to be parallelized
-    // better. Waiting for a 2mb up/download is much slower
-    // than waiting for multiple parallel 500kb up/downloads.
-    let max_group_size = if max_size >= 4194304 {
-        2097144
-    } else if max_size > 2097144 {
-        max_size / 2
-    } else {
-        max_size
-    };
+    // Subtract a chunk from the max size, because when down/uploading blobs,
+    // we need to account for the non-blob data in the request/response, like the
+    // compression level, digest strings, etc. All of these "add up" and can
+    // bump the total body size larger than the actual limit. Is there a better
+    // way to handle this? Probably, but for now, just reduce the size by 1%,
+    // which is about 42k bytes.
+    let max_group_size = (max_size as f64 * 0.75) as usize;
 
     for item in items {
         let item_size = get_size(&item);

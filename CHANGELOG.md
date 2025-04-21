@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added locks are workspace graph building to avoid duplicate graphs.
+- Added TCP keep alive to remote service connections.
 - Tweaked the remote cache file size threshold.
 
 ## 1.35.0

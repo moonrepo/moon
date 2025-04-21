@@ -11,7 +11,7 @@ pub use moon_graph_utils::*;
 pub use moon_project_graph as projects;
 pub use moon_task_graph as tasks;
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct WorkspaceGraph {
     pub projects: Arc<ProjectGraph>,
     pub tasks: Arc<TaskGraph>,

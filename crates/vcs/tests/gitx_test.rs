@@ -281,7 +281,7 @@ mod gitx {
 
             assert_eq!(git.repository_root, sandbox.path());
             assert_eq!(git.workspace_root, sandbox.path().join("worktrees/one"));
-            assert!(git.worktree.git_dir.ends_with(".git/worktrees/one"),);
+            assert!(git.worktree.git_dir.ends_with(".git/worktrees/one"));
             assert_eq!(git.worktree.work_dir, sandbox.path().join("worktrees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
             assert_eq!(git.worktree.type_of, GitTreeType::Worktree);

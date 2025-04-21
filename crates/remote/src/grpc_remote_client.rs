@@ -149,7 +149,8 @@ impl RemoteClient for GrpcRemoteClient {
             .map_err(|error| self.map_transport_error("host", error))?
             .user_agent("moon")
             .map_err(|error| self.map_transport_error("user_agent", error))?
-            .keep_alive_while_idle(true);
+            .keep_alive_while_idle(true)
+            .tcp_keepalive(Some(Duration::from_secs(60)));
 
         if let Some(mtls) = &config.mtls {
             endpoint = endpoint

@@ -8,6 +8,10 @@
 - Enabled TCP keep alive for remote service connections.
 - Tweaked the remote cache file size threshold.
 
+#### 🐞 Fixes
+
+- Fixed a scenario where task outputs would be partially hydrated from remote cache.
+
 ## 1.35.0
 
 #### 🚀 Updates

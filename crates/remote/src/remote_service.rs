@@ -396,19 +396,6 @@ async fn batch_upload_blobs(
         let client = Arc::clone(&client);
         let action_digest = action_digest.to_owned();
 
-        // Streaming
-        if group.stream {
-            set.spawn(async move {
-                client
-                    .stream_update_blob(&action_digest, group.items.remove(0))
-                    .await
-                    .map(|res| vec![Some(res)])
-            });
-
-            continue;
-        }
-
-        // Not streaming
         if group_total > 1 {
             trace!(
                 hash = &action_digest.hash,
@@ -420,17 +407,33 @@ async fn batch_upload_blobs(
             );
         }
 
-        set.spawn(async move { client.batch_update_blobs(&action_digest, group.items).await });
+        if group.stream {
+            set.spawn(async move {
+                client
+                    .stream_update_blob(&action_digest, group.items.remove(0))
+                    .await
+                    .map(|res| vec![Some(res)])
+            });
+        } else {
+            set.spawn(async move { client.batch_update_blobs(&action_digest, group.items).await });
+        }
     }
 
-    while let Some(res) = set.join_next().await {
+    let mut abort = false;
+
+    'outer: while let Some(res) = set.join_next().await {
         for maybe_digest in res.into_diagnostic()?? {
             if maybe_digest.is_none() {
-                set.abort_all();
-
-                return Ok(false);
+                abort = true;
+                break 'outer;
             }
         }
+    }
+
+    if abort {
+        set.shutdown().await;
+
+        return Ok(false);
     }
 
     Ok(true)
@@ -468,19 +471,6 @@ async fn batch_download_blobs(
         let client = Arc::clone(&client);
         let action_digest = action_digest.to_owned();
 
-        // Streaming
-        if group.stream {
-            set.spawn(async move {
-                client
-                    .stream_read_blob(&action_digest, group.items.remove(0))
-                    .await
-                    .map(|res| vec![res])
-            });
-
-            continue;
-        }
-
-        // Not streaming
         if group_total > 1 {
             trace!(
                 hash = &action_digest.hash,
@@ -493,24 +483,59 @@ async fn batch_download_blobs(
             );
         }
 
-        set.spawn(async move { client.batch_read_blobs(&action_digest, group.items).await });
+        if group.stream {
+            set.spawn(async move {
+                client
+                    .stream_read_blob(&action_digest, group.items.remove(0))
+                    .await
+                    .map(|res| vec![res])
+            });
+        } else {
+            set.spawn(async move { client.batch_read_blobs(&action_digest, group.items).await });
+        }
     }
 
-    while let Some(res) = set.join_next().await {
+    let mut output_files = FxHashMap::default();
+    let mut abort = false;
+
+    'outer: while let Some(res) = set.join_next().await {
         for blob in res.into_diagnostic()?? {
             let Some(blob) = blob else {
-                set.abort_all();
-
-                return Ok(false);
+                abort = true;
+                break 'outer;
             };
 
             if let Some(file) = file_map.get(&blob.digest.hash) {
-                write_output_file(workspace_root.join(&file.path), blob.bytes, file)?;
+                output_files.insert(workspace_root.join(&file.path), blob);
+            } else {
+                trace!(
+                    hash = &action_digest.hash,
+                    blob_hash = &blob.digest.hash,
+                    "Missing file metadata for blob hash, unable to write output file",
+                );
+
+                abort = true;
+                break 'outer;
             }
         }
     }
 
-    // Create symlinks after blob files have been written,
+    if abort {
+        set.shutdown().await;
+
+        return Ok(false);
+    }
+
+    // Create outputs after everything has been downloaded,
+    // so that we can ensure every request has been completed
+    // and we don't partially hydrate
+    for (path, blob) in output_files {
+        if let Some(file) = file_map.get(&blob.digest.hash) {
+            write_output_file(path, blob.bytes, file)?;
+        }
+    }
+
+    // Create symlinks after output files have been written,
     // as the link target may reference one of these outputs
     for link in &result.output_symlinks {
         link_output_file(

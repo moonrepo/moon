@@ -713,7 +713,7 @@ node:
                     },
                 );
 
-                assert!(config.node.unwrap().pnpm.unwrap().plugin.is_some(),);
+                assert!(config.node.unwrap().pnpm.unwrap().plugin.is_some());
             }
 
             #[test]
@@ -732,7 +732,7 @@ node:
                     },
                 );
 
-                assert!(config.node.unwrap().pnpm.unwrap().plugin.is_some(),);
+                assert!(config.node.unwrap().pnpm.unwrap().plugin.is_some());
             }
 
             #[test]
@@ -829,7 +829,7 @@ node:
                     },
                 );
 
-                assert!(config.node.unwrap().yarn.unwrap().plugin.is_some(),);
+                assert!(config.node.unwrap().yarn.unwrap().plugin.is_some());
             }
 
             #[test]
@@ -848,7 +848,7 @@ node:
                     },
                 );
 
-                assert!(config.node.unwrap().yarn.unwrap().plugin.is_some(),);
+                assert!(config.node.unwrap().yarn.unwrap().plugin.is_some());
             }
 
             #[test]
@@ -945,7 +945,7 @@ node:
                     },
                 );
 
-                assert!(config.node.unwrap().bun.unwrap().plugin.is_some(),);
+                assert!(config.node.unwrap().bun.unwrap().plugin.is_some());
             }
 
             #[test]
@@ -964,7 +964,7 @@ node:
                     },
                 );
 
-                assert!(config.node.unwrap().bun.unwrap().plugin.is_some(),);
+                assert!(config.node.unwrap().bun.unwrap().plugin.is_some());
             }
 
             #[test]
@@ -1124,7 +1124,7 @@ node:
                 load_config_from_root(path, &tools)
             });
 
-            assert!(config.python.unwrap().plugin.is_some(),);
+            assert!(config.python.unwrap().plugin.is_some());
         }
 
         #[test]
@@ -1284,7 +1284,7 @@ rust:
                 load_config_from_root(path, &tools)
             });
 
-            assert!(config.rust.unwrap().plugin.is_some(),);
+            assert!(config.rust.unwrap().plugin.is_some());
         }
 
         #[test]

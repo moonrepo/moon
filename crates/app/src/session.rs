@@ -29,6 +29,7 @@ use std::env;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
+use tokio::sync::Mutex;
 use tokio::try_join;
 use tracing::debug;
 
@@ -51,6 +52,7 @@ pub struct MoonSession {
     toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceLock<Arc<BoxedVcs>>,
     workspace_graph: OnceLock<Arc<WorkspaceGraph>>,
+    workspace_lock: Arc<Mutex<()>>,
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -82,6 +84,7 @@ impl MoonSession {
             working_dir: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
             workspace_graph: OnceLock::new(),
+            workspace_lock: Arc::new(Mutex::new(())),
             workspace_root: PathBuf::new(),
             vcs_adapter: OnceLock::new(),
             cli,
@@ -244,6 +247,13 @@ impl MoonSession {
     }
 
     async fn load_workspace_graph(&self) -> miette::Result<()> {
+        let _lock = self.workspace_lock.lock().await;
+
+        // Was initialized in another thread
+        if self.workspace_graph.get().is_some() {
+            return Ok(());
+        }
+
         let cache_engine = self.get_cache_engine()?;
         let context = create_workspace_graph_context(self).await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added locks are workspace graph building to avoid duplicate graphs.
+
 ## 1.35.0
 
 #### 🚀 Updates

@@ -3978,7 +3978,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "compact_str 0.9.0",
  "dirs 6.0.0",
@@ -3994,7 +3994,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "httpmock",
  "indexmap",
@@ -4152,14 +4152,14 @@ dependencies = [
 
 [[package]]
 name = "moon_feature_flags"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "starbase_utils",
 ]
 
 [[package]]
 name = "moon_file_group"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "common-path",
  "miette 7.5.0",
@@ -4321,7 +4321,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -4336,7 +4336,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "moon_common",
  "moon_config",
@@ -4352,7 +4352,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "extism",
  "moon_pdk_api",
@@ -4430,7 +4430,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "miette 7.5.0",
  "moon_common",
@@ -4714,7 +4714,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "compact_str 0.9.0",
  "miette 7.5.0",
@@ -4728,7 +4728,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "miette 7.5.0",
  "moon_common",

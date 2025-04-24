@@ -112,6 +112,9 @@ api_struct!(
     pub struct SyncWorkspaceInput {
         /// Current moon context.
         pub context: MoonContext,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -127,7 +130,8 @@ api_struct!(
         /// Fragment of the project being synced.
         pub project: ProjectFragment,
 
-        /// Merged toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -155,16 +159,17 @@ api_struct!(
 api_struct!(
     /// Input passed to the `setup_toolchain` function.
     pub struct SetupToolchainInput {
-        /// The unresolved version specification that this toolchain was configured with.
-        pub configured_version: UnresolvedVersionSpec,
+        /// The unresolved version specification that the toolchain was
+        /// configured with via the `version` setting.
+        pub configured_version: Option<UnresolvedVersionSpec>,
 
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Merged toolchain configuration.
+        /// Workspace toolchain configuration.
         pub toolchain_config: serde_json::Value,
 
-        /// The resolved version specification that was setup.
+        /// The resolved version specification.
         pub version: Option<VersionSpec>,
     }
 );
@@ -177,7 +182,7 @@ api_struct!(
         pub changed_files: Vec<VirtualPath>,
 
         /// Whether the tool was installed or not. This field is ignored
-        /// if set, and is defined on moon's side.
+        /// if set, and is defined on the host side.
         pub installed: bool,
     }
 );
@@ -185,14 +190,18 @@ api_struct!(
 api_struct!(
     /// Input passed to the `teardown_toolchain` function.
     pub struct TeardownToolchainInput {
-        /// The unresolved version specification that this toolchain was configured with.
+        /// The unresolved version specification that the toolchain was
+        /// configured with via the `version` setting.
         pub configured_version: Option<UnresolvedVersionSpec>,
 
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Merged toolchain configuration.
+        /// Workspace toolchain configuration.
         pub toolchain_config: serde_json::Value,
+
+        /// The resolved version specification.
+        pub version: Option<VersionSpec>,
     }
 );
 
@@ -244,8 +253,14 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        // Virtual path to the dependencies root. This is where
-        // the lockfile and root manifest should exist.
+        /// List of dependencies (packages, crates, etc) to only install.
+        pub dependency_names: Option<Vec<String>>,
+
+        /// Only install production dependencies.
+        pub production_only: bool,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
     }
 );
@@ -277,7 +292,8 @@ api_struct!(
         /// Fragment of the task being hashed.
         pub task: TaskFragment,
 
-        /// Merged toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -298,7 +314,8 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Merged toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -348,8 +365,7 @@ api_struct!(
         pub phase: ScaffoldDockerPhase,
 
         /// The project being scaffolding.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub project: Option<ProjectFragment>,
+        pub project: ProjectFragment,
     }
 );
 
@@ -370,5 +386,22 @@ api_struct!(
 
         /// Docker prune configuration.
         pub docker_config: DockerPruneConfig,
+
+        /// The focused projects within the current
+        /// dependencies root.
+        pub projects: Vec<ProjectFragment>,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
+        pub root: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `prune_docker` function.
+    pub struct PruneDockerOutput {
+        /// List of files that were modified during prune.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub modified_files: Vec<VirtualPath>,
     }
 );

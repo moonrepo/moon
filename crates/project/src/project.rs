@@ -106,6 +106,7 @@ impl Project {
     /// Convert the project into a fragment.
     pub fn to_fragment(&self) -> ProjectFragment {
         ProjectFragment {
+            alias: None,
             dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),
@@ -139,6 +140,10 @@ cacheable!(
     /// Fragment of a project including important fields.
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct ProjectFragment {
+        /// Alias of the project.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub alias: Option<String>,
+
         /// When treated as a dependency for another project,
         /// the scope of that dependency relationship.
         #[serde(default, skip_serializing_if = "Option::is_none")]

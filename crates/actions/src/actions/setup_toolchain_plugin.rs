@@ -20,7 +20,7 @@ pub async fn setup_toolchain_plugin(
     app_context: Arc<AppContext>,
     node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
-    // No version configured, use globals on PATH
+    // No version configured, uses globals on PATH
     if node.spec.is_global() {
         return Ok(ActionStatus::Skipped);
     }
@@ -63,32 +63,31 @@ pub async fn setup_toolchain_plugin(
     ))?;
 
     // Run the install and setup flows
-    let mut installed = false;
+    let installed = if node.spec.req != state.data.requirement {
+        let registry = &app_context.toolchain_registry;
 
-    if node.spec.req != state.data.requirement {
-        if let Some(req) = &node.spec.req {
-            let registry = &app_context.toolchain_registry;
+        // TODO changed files
+        let output = toolchain
+            .setup_toolchain(
+                SetupToolchainInput {
+                    configured_version: node.spec.req.clone(),
+                    context: registry.create_context(),
+                    toolchain_config: registry
+                        .create_config(&toolchain.id, &app_context.toolchain_config),
+                    version: None,
+                },
+                || {
+                    app_context
+                        .console
+                        .print_checkpoint(Checkpoint::Setup, format!("installing {log_label}"))
+                },
+            )
+            .await?;
 
-            let output = toolchain
-                .setup_toolchain(
-                    SetupToolchainInput {
-                        configured_version: req.to_owned(),
-                        context: registry.create_context(),
-                        toolchain_config: registry
-                            .create_config(&toolchain.id, &app_context.toolchain_config),
-                        ..Default::default()
-                    },
-                    || {
-                        app_context
-                            .console
-                            .print_checkpoint(Checkpoint::Setup, format!("installing {log_label}"))
-                    },
-                )
-                .await?;
-
-            installed = output.installed;
-        }
-    }
+        output.installed
+    } else {
+        false
+    };
 
     // Update the cache with the timestamp
     state.data.last_version_check_time = now_millis();

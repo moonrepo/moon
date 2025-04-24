@@ -3,8 +3,9 @@ use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
-    ExtendProjectOutput, HashTaskContentsInput, ScaffoldDockerInput, ScaffoldDockerOutput,
-    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    ExtendProjectOutput, HashTaskContentsInput, LocateDependenciesRootInput,
+    LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput,
+    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
@@ -132,6 +133,26 @@ impl ToolchainRegistry {
             .into_iter()
             .flat_map(|result| result.output.contents)
             .collect())
+    }
+
+    pub async fn locate_dependencies_root_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<CallResult<LocateDependenciesRootOutput>>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> LocateDependenciesRootInput,
+    {
+        let results = self
+            .call_func_all(
+                "locate_dependencies_root",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.locate_dependencies_root(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().collect())
     }
 
     pub async fn scaffold_docker_many<InFn>(

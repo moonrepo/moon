@@ -8,6 +8,15 @@
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.
 
+#### 🧩 Plugins
+
+- WASM APIs
+  - Added `InstallDependenciesInput.packages` and `production` fields.
+  - Added `PruneDockerInput.projects` and `root` fields.
+  - Added `PruneDockerOutput`.
+  - Added `SyncWorkspaceInput.toolchain_config` field.
+  - Added `TeardownToolchainInput.version` field.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.48.1](https://github.com/moonrepo/proto/releases/tag/v0.48.1) (from 0.47.11).

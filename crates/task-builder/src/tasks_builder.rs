@@ -399,7 +399,7 @@ impl<'proj> TasksBuilder<'proj> {
             // Backwards compat
             #[allow(deprecated)]
             if !config.platform.is_unknown() {
-                task.platform = config.platform;
+                task.platform = config.platform.to_owned();
             }
 
             if !config.toolchain.is_empty() {

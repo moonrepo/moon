@@ -142,6 +142,18 @@ pub async fn register_platforms(
     // Primarily for testing
     registry.reset();
 
+    for p in toolchain_config.get_enabled_platforms() {
+        registry.register(
+            p.get_toolchain_id(),
+            // TODO: Implement proper platform manager
+            Box::new(SystemPlatform::new(
+                workspace_root,
+                Arc::clone(proto_env),
+                Arc::clone(&console),
+            )),
+        );
+    }
+
     if let Some(bun_config) = &toolchain_config.bun {
         registry.register(
             PlatformType::Bun.get_toolchain_id(),

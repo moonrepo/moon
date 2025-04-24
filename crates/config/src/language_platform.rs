@@ -76,7 +76,7 @@ impl Serialize for LanguageType {
 // TODO: Remove in 2.0
 derive_enum!(
     /// Platforms that each programming language can belong to.
-    #[derive(ConfigEnum, Copy, Default, Hash)]
+    #[derive(ConfigEnum, Default, Hash)]
     pub enum PlatformType {
         Bun,
         Deno,
@@ -86,6 +86,10 @@ derive_enum!(
         System,
         #[default]
         Unknown,
+
+        /// An unsupported platform.
+        #[variant(fallback)]
+        Dynamic(Id),
     }
 );
 
@@ -113,6 +117,7 @@ impl PlatformType {
             PlatformType::Python => Id::raw("python"),
             PlatformType::Rust => Id::raw("rust"),
             PlatformType::System | PlatformType::Unknown => Id::raw("system"),
+            PlatformType::Dynamic(id) => Id::raw(id.to_string().to_lowercase()),
         }
     }
 }

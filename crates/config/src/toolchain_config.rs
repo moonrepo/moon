@@ -90,7 +90,12 @@ impl ToolchainConfig {
     }
 
     pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
-        let mut tools = vec![];
+        let mut tools = self
+            .plugins
+            .keys()
+            .cloned()
+            .map(PlatformType::Dynamic)
+            .collect::<Vec<_>>();
 
         if self.bun.is_some() {
             tools.push(PlatformType::Bun);

@@ -77,9 +77,7 @@ macro_rules! json_config {
                 let mut data: json::JsonValue = json::read_file(self.path.any_path())?;
 
                 for field in &self.dirty {
-                    if let Some(root) = data.as_object_mut() {
-                        self.save_field(field, root)?;
-                    }
+                    self.save_field(field, &mut data)?;
                 }
 
                 #[cfg(feature = "wasm")]
@@ -144,9 +142,7 @@ macro_rules! toml_config {
                 let mut data: toml::TomlValue = toml::read_file(self.path.any_path())?;
 
                 for field in &self.dirty {
-                    if let Some(root) = data.as_table_mut() {
-                        self.save_field(field, root)?;
-                    }
+                    self.save_field(field, &mut data)?;
                 }
 
                 #[cfg(feature = "wasm")]

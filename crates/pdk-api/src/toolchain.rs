@@ -1,9 +1,9 @@
 use crate::context::*;
+use crate::host::*;
 use crate::prompts::*;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, VersionSpec};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
-use proto_pdk_api::ExecCommandInput;
 use rustc_hash::FxHashMap;
 use schematic::Schema;
 use serde_json::Value;
@@ -210,13 +210,32 @@ api_struct!(
     pub struct SetupEnvironmentInput {
         /// Current moon context.
         pub context: MoonContext,
-        // TODO
+
+        /// The project if the dependencies and environment root
+        /// are the project root (non-workspace).
+        pub project: Option<ProjectFragment>,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
+        pub root: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
 api_struct!(
     /// Output returned from the `setup_environment` function.
-    pub struct SetupEnvironmentOutput {}
+    pub struct SetupEnvironmentOutput {
+        /// List of files that have been changed because of this action.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub changed_files: Vec<VirtualPath>,
+
+        /// List of commands to execute during setup.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub commands: Vec<ExecCommand>,
+    }
 );
 
 // DEPENDENCIES
@@ -253,15 +272,23 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// List of dependencies (packages, crates, etc) to only install.
-        pub dependency_names: Option<Vec<String>>,
+        /// List of packages to only install dependencies for.
+        pub packages: Option<Vec<String>>,
 
         /// Only install production dependencies.
-        pub production_only: bool,
+        pub production: bool,
+
+        /// The project if the dependencies and environment root
+        /// are the project root (non-workspace).
+        pub project: Option<ProjectFragment>,
 
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -270,11 +297,11 @@ api_struct!(
     pub struct InstallDependenciesOutput {
         /// The command to run in the dependencies root to dedupe
         /// dependencies. If not defined, will not dedupe.
-        pub dedupe_command: Option<ExecCommandInput>,
+        pub dedupe_command: Option<ExecCommand>,
 
         /// The command to run in the dependencies root to install
         /// dependencies. If not defined, will not install.
-        pub install_command: Option<ExecCommandInput>,
+        pub install_command: Option<ExecCommand>,
     }
 );
 
@@ -400,8 +427,8 @@ api_struct!(
 api_struct!(
     /// Output returned from the `prune_docker` function.
     pub struct PruneDockerOutput {
-        /// List of files that were modified during prune.
+        /// List of files that were changed during prune.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub modified_files: Vec<VirtualPath>,
+        pub changed_files: Vec<VirtualPath>,
     }
 );

@@ -280,7 +280,7 @@ impl ToolchainPlugin {
         let mut output: PruneDockerOutput =
             self.plugin.call_func_with("prune_docker", input).await?;
 
-        self.handle_output_files(&mut output.modified_files);
+        self.handle_output_files(&mut output.changed_files);
 
         Ok(output)
     }

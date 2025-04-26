@@ -118,29 +118,32 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                 let output = toolchain
                     .install_dependencies(InstallDependenciesInput {
                         context: toolchain_registry.create_context(),
-                        dependency_names: Some(
+                        packages: Some(
                             instance
                                 .projects
                                 .iter()
                                 .flat_map(|project| project.alias.clone())
                                 .collect(),
                         ),
-                        production_only: true,
+                        production: true,
+                        project: None, // TODO
                         root: toolchain.to_virtual_path(&instance.deps_root),
+                        toolchain_config: Default::default(), // TODO
                     })
                     .await?;
 
                 if let Some(mut install_command) = output.install_command {
                     // Always stream output to the console
-                    install_command.stream = true;
+                    install_command.input.stream = true;
 
                     // Ensure it runs in the dependency root
-                    if install_command.working_dir.is_none() {
-                        install_command.working_dir =
+                    if install_command.input.working_dir.is_none() {
+                        install_command.input.working_dir =
                             Some(toolchain.to_virtual_path(&instance.deps_root));
                     }
 
-                    exec_plugin_command(&install_command).await?;
+                    // TODO
+                    // exec_plugin_command(&install_command).await?;
                 }
             }
 

@@ -106,7 +106,7 @@ impl Project {
     /// Convert the project into a fragment.
     pub fn to_fragment(&self) -> ProjectFragment {
         ProjectFragment {
-            alias: None,
+            alias: self.alias.clone(),
             dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),

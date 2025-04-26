@@ -268,6 +268,7 @@ api_struct!(
 
 api_struct!(
     /// Input passed to the `install_dependencies` function.
+    /// Requires `locate_dependencies_root`.
     pub struct InstallDependenciesInput {
         /// Current moon context.
         pub context: MoonContext,
@@ -407,6 +408,7 @@ api_struct!(
 
 api_struct!(
     /// Input passed to the `prune_docker` function.
+    /// Requires `locate_dependencies_root`.
     pub struct PruneDockerInput {
         /// Current moon context.
         pub context: MoonContext,

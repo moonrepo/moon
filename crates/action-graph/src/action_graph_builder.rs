@@ -351,19 +351,14 @@ impl<'query> ActionGraphBuilder<'query> {
             .await?;
 
         // Only insert this action if a root was located
-        if let Some(root) = &output.root {
-            let abs_root = toolchain.from_virtual_path(root.any_path());
+        if let Some(abs_root) = output.root.as_ref().and_then(|root| root.real_path()) {
             let rel_root = abs_root
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
             // Determine if we're in the dependencies workspace
             let in_project = project.root == abs_root;
-            let in_workspace = if in_project {
-                true // Root always in the workspace
-            } else {
-                toolchain.in_dependencies_workspace(&output, project.source.as_str())?
-            };
+            let in_workspace = toolchain.in_dependencies_workspace(&output, &project.root)?;
 
             // If not in the dependencies workspace (if there is one),
             // or is a stand-alone project with its own lockfile,

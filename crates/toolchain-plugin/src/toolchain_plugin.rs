@@ -84,13 +84,26 @@ impl ToolchainPlugin {
     pub fn in_dependencies_workspace(
         &self,
         output: &LocateDependenciesRootOutput,
-        path: &str,
+        path: &Path,
     ) -> miette::Result<bool> {
-        Ok(if let Some(globs) = &output.members {
-            GlobSet::new(globs)?.matches(path)
-        } else {
-            true
-        })
+        let Some(root) = output.root.as_ref().and_then(|root| root.real_path()) else {
+            return Ok(false);
+        };
+
+        Ok(
+            // Root always in the workspace
+            if path == root {
+                true
+            }
+            // Match against the provided member globs
+            else if let Some(globs) = &output.members {
+                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(&path))
+            }
+            // Otherwise a stand alone project?
+            else {
+                true
+            },
+        )
     }
 
     // Detection
@@ -267,10 +280,14 @@ impl ToolchainPlugin {
         &self,
         input: LocateDependenciesRootInput,
     ) -> miette::Result<LocateDependenciesRootOutput> {
-        let output: LocateDependenciesRootOutput = self
+        let mut output: LocateDependenciesRootOutput = self
             .plugin
             .cache_func_with("locate_dependencies_root", input)
             .await?;
+
+        if let Some(root) = &mut output.root {
+            self.handle_output_file(root);
+        }
 
         Ok(output)
     }
@@ -279,6 +296,34 @@ impl ToolchainPlugin {
     pub async fn prune_docker(&self, input: PruneDockerInput) -> miette::Result<PruneDockerOutput> {
         let mut output: PruneDockerOutput =
             self.plugin.call_func_with("prune_docker", input).await?;
+
+        self.handle_output_files(&mut output.changed_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn scaffold_docker(
+        &self,
+        input: ScaffoldDockerInput,
+    ) -> miette::Result<ScaffoldDockerOutput> {
+        let mut output: ScaffoldDockerOutput =
+            self.plugin.call_func_with("scaffold_docker", input).await?;
+
+        self.handle_output_files(&mut output.copied_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn setup_environment(
+        &self,
+        input: SetupEnvironmentInput,
+    ) -> miette::Result<SetupEnvironmentOutput> {
+        let mut output: SetupEnvironmentOutput = self
+            .plugin
+            .call_func_with("setup_environment", input)
+            .await?;
 
         self.handle_output_files(&mut output.changed_files);
 
@@ -323,7 +368,7 @@ impl ToolchainPlugin {
             tool.locate_globals_dirs().await?;
         }
 
-        // This should always run, regardless if the install outcome
+        // This should always run, regardless of the install outcome
         if self.has_func("setup_toolchain").await {
             let mut post_output: SetupToolchainOutput =
                 self.plugin.call_func_with("setup_toolchain", input).await?;
@@ -332,19 +377,6 @@ impl ToolchainPlugin {
 
             output.changed_files.extend(post_output.changed_files);
         }
-
-        Ok(output)
-    }
-
-    #[instrument(skip(self))]
-    pub async fn scaffold_docker(
-        &self,
-        input: ScaffoldDockerInput,
-    ) -> miette::Result<ScaffoldDockerOutput> {
-        let mut output: ScaffoldDockerOutput =
-            self.plugin.call_func_with("scaffold_docker", input).await?;
-
-        self.handle_output_files(&mut output.copied_files);
 
         Ok(output)
     }

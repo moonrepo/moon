@@ -56,10 +56,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
             {
                 let toolchain = toolchain_registry.load(&locate_result.id).await?;
 
-                if project.root != root
-                    && !toolchain
-                        .in_dependencies_workspace(&locate_result.output, project.source.as_str())?
-                {
+                if !toolchain.in_dependencies_workspace(&locate_result.output, &project.root)? {
                     continue;
                 }
 

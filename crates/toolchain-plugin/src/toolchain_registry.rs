@@ -213,7 +213,7 @@ impl ToolchainRegistry {
                     let mut operation = Operation::new(format!("{toolchain_id}:{func_name}"));
                     let id = toolchain.id.clone();
                     let input = input_factory(self, &toolchain);
-                    let future = output_factory(toolchain, input);
+                    let future = output_factory(toolchain.clone(), input);
 
                     futures.push_back(tokio::spawn(async move {
                         let result = future.await;
@@ -223,6 +223,7 @@ impl ToolchainRegistry {
                             id,
                             operation,
                             output: result?,
+                            toolchain,
                         })
                     }));
                 }
@@ -249,4 +250,5 @@ pub struct CallResult<T> {
     pub id: PluginId,
     pub operation: Operation,
     pub output: T,
+    pub toolchain: Arc<ToolchainPlugin>,
 }

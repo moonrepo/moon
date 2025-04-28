@@ -6,6 +6,11 @@
 
 - Updated `moon ci` to support passing touched files via stdin.
 
+#### 🐞 Fixes
+
+- Fixed the faster/new glob implementation not filtering out hidden directories. This should now
+  work like the old implementation.
+
 ## 1.35.1
 
 #### 🚀 Updates

@@ -22,7 +22,7 @@ cached = "0.55.1"
 chrono = { version = "0.4.40", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.36", default-features = false, features = [
+clap = { version = "4.5.37", default-features = false, features = [
     "derive",
     "std",
     "error-context",
@@ -36,9 +36,9 @@ convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.9.0"
-iocraft = "0.7.5"
+iocraft = "0.7.7"
 md5 = "0.7.0"
-miette = "7.5.0"
+miette = "7.6.0"
 pathdiff = "0.2.3"
 petgraph = { version = "0.7.1", default-features = false, features = [
     "serde-1",
@@ -54,7 +54,7 @@ reqwest = { version = "0.12.15", default-features = false, features = [
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "2.3.3"
+scc = "2.3.4"
 schematic = { version = "0.18.4", default-features = false, features = [
     "schema",
 ] }
@@ -64,17 +64,17 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 serde_yml = "0.0.12"
 sha2 = "0.10.8"
-starbase = { version = "0.10.2" }
-starbase_archive = { version = "0.10.3", default-features = false, features = [
+starbase = { version = "0.10.3" }
+starbase_archive = { version = "0.10.4", default-features = false, features = [
     "miette",
     "tar-gz",
 ] }
-starbase_console = { version = "0.6.7", features = ["miette"] }
-starbase_events = "0.7.1"
-starbase_sandbox = "0.9.1"
-starbase_shell = "0.7.3"
+starbase_console = { version = "0.6.8", features = ["miette"] }
+starbase_events = "0.7.2"
+starbase_sandbox = "0.9.2"
+starbase_shell = "0.7.4"
 starbase_styles = { version = "0.6.0", features = ["relative-path"] }
-starbase_utils = { version = "0.11.6", default-features = false, features = [
+starbase_utils = { version = "0.11.7", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
@@ -90,7 +90,7 @@ tokio = { version = "1.44.2", default-features = false, features = [
     "time",
     "tracing",
 ] }
-tokio-util = "0.7.14"
+tokio-util = "0.7.15"
 typescript_tsconfig_json = { version = "0.4.3", features = ["serialize"] }
 tracing = "0.1.41"
 uuid = { version = "1.16.0", features = ["v4"] }

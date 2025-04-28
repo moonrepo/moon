@@ -65,6 +65,10 @@ pub trait Vcs: Debug {
     /// Get the version of the current VCS binary
     async fn get_version(&self) -> miette::Result<Version>;
 
+    /// Return an absolute path to the working directory. This may be different
+    /// than the repository root or moon workspace root (e.g., git worktrees).
+    async fn get_working_root(&self) -> miette::Result<PathBuf>;
+
     /// Return true if the provided branch matches the default branch.
     fn is_default_branch(&self, branch: &str) -> bool;
 

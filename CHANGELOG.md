@@ -10,6 +10,7 @@
 
 - Fixed the faster/new glob implementation not filtering out hidden directories. This should now
   work like the old implementation.
+- Fixed the new Git implementation not working correctly for synced hooks and worktrees.
 
 ## 1.35.1
 

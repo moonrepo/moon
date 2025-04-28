@@ -450,6 +450,10 @@ impl Vcs for Gitx {
         )
     }
 
+    async fn get_working_root(&self) -> miette::Result<PathBuf> {
+        Ok(self.worktree.work_dir.clone())
+    }
+
     fn is_default_branch(&self, branch: &str) -> bool {
         let default_branch = &self.default_branch;
 

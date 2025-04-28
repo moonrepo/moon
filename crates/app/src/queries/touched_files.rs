@@ -187,7 +187,7 @@ pub async fn query_touched_files_with_stdin(
         }
     }
 
-    query_touched_files(vcs, &options).await
+    query_touched_files(vcs, options).await
 }
 
 pub async fn load_touched_files(

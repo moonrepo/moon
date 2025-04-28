@@ -17,6 +17,9 @@ use tracing::debug;
 
 #[derive(Debug)]
 pub struct Gitx {
+    /// Is this a bare repository.
+    pub bare: bool,
+
     /// Default branch name.
     pub default_branch: Arc<String>,
 
@@ -59,6 +62,7 @@ impl Gitx {
         );
 
         // Find the repository root and work tree
+        let mut bare = false;
         let mut current_dir = workspace_root;
         let mut worktree_root = None;
         let repository_root;
@@ -85,6 +89,17 @@ impl Gitx {
                     break;
                 }
             }
+            // Possible bare repository
+            else if current_dir.join("HEAD").exists() {
+                debug!(
+                    root = ?current_dir,
+                    "Found a potential bare repository root"
+                );
+
+                bare = true;
+                repository_root = current_dir.to_path_buf();
+                break;
+            }
 
             match current_dir.parent() {
                 Some(parent) => current_dir = parent,
@@ -100,13 +115,14 @@ impl Gitx {
         // Load the main worktree and submodule trees
         let worktree = match worktree_root {
             Some(root) => GitTree::load_worktree(&root)?,
-            None => GitTree::load(&repository_root)?,
+            None => GitTree::load(&repository_root, bare)?,
         };
 
-        let submodules = GitTree::load_submodules(&repository_root, &worktree.work_dir)?;
+        let submodules = GitTree::load_submodules(&worktree.work_dir)?;
 
         // Create the instance and load ignore files
         let mut git = Gitx {
+            bare,
             default_branch: Arc::new(default_branch.as_ref().to_owned()),
             remote_candidates: remote_candidates.to_owned(),
             repository_root,
@@ -117,7 +133,7 @@ impl Gitx {
 
         let process = Arc::new(process);
 
-        for tree in git.submodules.iter_mut() {
+        for tree in &mut git.submodules {
             tree.process = Some(Arc::clone(&process));
             tree.load_ignore()?;
         }
@@ -307,7 +323,9 @@ impl Vcs for Gitx {
 
         // Worktrees do not support a hooks folder at `.git/worktrees/<name>/hooks`,
         // so we need to use the hooks folder at `.git/hooks` instead
-        Ok(self.repository_root.join(".git/hooks"))
+        Ok(self
+            .repository_root
+            .join(if self.bare { "hooks" } else { ".git/hooks" }))
     }
 
     async fn get_repository_root(&self) -> miette::Result<PathBuf> {

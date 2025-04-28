@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon ci` to support passing touched files via stdin.
+
 ## 1.35.1
 
 #### 🚀 Updates

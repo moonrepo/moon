@@ -169,8 +169,7 @@ pub async fn query_touched_files_with_stdin(
     if !buffer.is_empty() {
         // As JSON
         if buffer.starts_with('{') {
-            let mut result: QueryTouchedFilesResult = json::parse(&buffer)?;
-            result.options = options.to_owned();
+            let result: QueryTouchedFilesResult = json::parse(&buffer)?;
 
             return Ok(result);
         }
@@ -181,8 +180,7 @@ pub async fn query_touched_files_with_stdin(
 
             return Ok(QueryTouchedFilesResult {
                 files,
-                options: options.to_owned(),
-                shallow: false,
+                ..Default::default()
             });
         }
     }

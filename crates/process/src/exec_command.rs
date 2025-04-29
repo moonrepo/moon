@@ -1,7 +1,7 @@
 use crate::command::Command;
 use crate::command_line::CommandLine;
 // use crate::output_stream::capture_stream;
-use crate::output_to_error;
+use crate::output::Output;
 use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
-use std::process::{Output, Stdio};
+use std::process::Stdio;
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -152,12 +152,12 @@ impl Command {
 
         registry.remove_running(shared_child).await;
 
-        let status = result?;
+        let exit = result?;
 
         stdin_handle.await.into_diagnostic()??;
 
         let output = Output {
-            status,
+            exit,
             stdout: stdout_handle
                 .await
                 .into_diagnostic()??
@@ -213,9 +213,9 @@ impl Command {
 
         registry.remove_running(shared_child).await;
 
-        let status = result?;
+        let exit = result?;
         let output = Output {
-            status,
+            exit,
             stderr: vec![],
             stdout: vec![],
         };
@@ -336,9 +336,9 @@ impl Command {
 
         registry.remove_running(shared_child).await;
 
-        let status = result?;
+        let exit = result?;
         let output = Output {
-            status,
+            exit,
             stdout: captured_stdout.read().unwrap().join("\n").into_bytes(),
             stderr: captured_stderr.read().unwrap().join("\n").into_bytes(),
         };
@@ -496,8 +496,8 @@ impl Command {
     }
 
     fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {
-        if self.should_error_nonzero() && !output.status.success() {
-            return Err(output_to_error(self.get_bin_name(), output, with_message).into());
+        if self.should_error_nonzero() && !output.success() {
+            return Err(output.to_error(self.get_bin_name(), with_message).into());
         }
 
         Ok(())

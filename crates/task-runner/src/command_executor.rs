@@ -4,10 +4,9 @@ use moon_app_context::AppContext;
 use moon_common::{is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, CommandLine, args::join_args};
+use moon_process::{Command, CommandLine, Output, args::join_args};
 use moon_project::Project;
 use moon_task::Task;
-use std::process::Output;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::{sleep, timeout};
@@ -151,16 +150,16 @@ impl<'task> CommandExecutor<'task> {
                     let mut is_success = false;
 
                     if let Some(output) = maybe_output {
-                        is_success = output.status.success();
+                        is_success = output.success();
 
                         debug!(
                             task_target = self.task.target.as_str(),
                             command = self.command.bin.to_str(),
-                            exit_code = output.status.code(),
+                            exit_code = output.code(),
                             "Ran task, checking conditions",
                         );
 
-                        attempt.finish_from_output(output);
+                        attempt.finish_from_output(output.status(), output.stdout, output.stderr);
                     } else {
                         debug!(
                             task_target = self.task.target.as_str(),

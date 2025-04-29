@@ -5,7 +5,7 @@ use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::path::PathBuf;
-use std::process::Output;
+use std::process::ExitStatus;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -131,15 +131,26 @@ impl Operation {
         }
     }
 
-    pub fn finish_from_output(&mut self, process_output: Output) {
+    pub fn finish_from_output(
+        &mut self,
+        status: Option<ExitStatus>,
+        stdout: Vec<u8>,
+        stderr: Vec<u8>,
+    ) {
+        let mut success = false;
+
         if let Some(output) = self.get_exec_output_mut() {
-            output.exit_code = process_output.status.code();
-            output.exit_status = Some(process_output.status);
-            output.set_stderr(String::from_utf8(process_output.stderr).unwrap_or_default());
-            output.set_stdout(String::from_utf8(process_output.stdout).unwrap_or_default());
+            if let Some(status) = status {
+                success = status.success();
+                output.exit_code = status.code();
+                output.exit_status = Some(status);
+            }
+
+            output.set_stderr(String::from_utf8(stderr).unwrap_or_default());
+            output.set_stdout(String::from_utf8(stdout).unwrap_or_default());
         }
 
-        self.finish(if process_output.status.success() {
+        self.finish(if success {
             ActionStatus::Passed
         } else {
             ActionStatus::Failed

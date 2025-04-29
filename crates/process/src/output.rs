@@ -23,7 +23,7 @@ impl Output {
     }
 
     pub fn success(&self) -> bool {
-        self.status().map_or(false, |status| status.success())
+        self.status().is_some_and(|status| status.success())
     }
 
     pub fn to_error(&self, bin: impl AsRef<str>, with_message: bool) -> ProcessError {

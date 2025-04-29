@@ -49,7 +49,7 @@ impl Job {
         }
         // Cancel if we receive a shutdown signal
         else if self.context.cancel_token.is_cancelled() {
-            trace!(index = self.node_index, "Job cancelled (via signal)");
+            trace!(index = self.node_index, "Job cancelled (because a signal)");
 
             action.finish(ActionStatus::Skipped);
         }

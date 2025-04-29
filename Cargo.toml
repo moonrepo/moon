@@ -19,7 +19,7 @@ default-members = ["crates/cli"]
 async-recursion = "1.1.1"
 async-trait = "0.1.88"
 cached = "0.55.1"
-chrono = { version = "0.4.40", features = ["serde"] }
+chrono = { version = "0.4.41", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
 clap = { version = "4.5.37", default-features = false, features = [
@@ -36,7 +36,7 @@ convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.9.0"
-iocraft = "0.7.7"
+iocraft = "0.7.8"
 md5 = "0.7.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"

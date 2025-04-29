@@ -3,7 +3,7 @@ use crate::shared_child::ChildExit;
 use std::process::ExitStatus;
 pub use std::process::Output as NativeOutput;
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Output {
     pub exit: ChildExit,
     pub stdout: Vec<u8>,

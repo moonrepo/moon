@@ -174,9 +174,9 @@ dependencies = [
 
 [[package]]
 name = "assert_cmd"
-version = "2.0.16"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc1835b7f27878de8525dc71410b5a31cdcc5f230aed5ba5df968e09c201b23d"
+checksum = "2bd389a4b2970a01282ee455294913c0a43724daedcd1a24c3eb0ec1c1320b66"
 dependencies = [
  "anstyle",
  "bstr",
@@ -330,7 +330,7 @@ checksum = "3b43422f69d8ff38f95f1b2bb76517c91589a924d1559a0e935d7c8ce0274c11"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -398,7 +398,7 @@ checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -415,7 +415,7 @@ checksum = "e539d3fca749fcee5236ab05e93a52867dd549cc157c8cb7f99595f3cedffdb5"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -586,7 +586,7 @@ dependencies = [
  "regex",
  "rustc-hash 1.1.0",
  "shlex",
- "syn 2.0.100",
+ "syn 2.0.101",
  "which",
 ]
 
@@ -693,12 +693,11 @@ checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
 name = "bzip2"
-version = "0.4.4"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdb116a6ef3f6c3698828873ad02c3014b3c85cadb88496095628e3ef1e347f8"
+checksum = "49ecfb22d906f800d4fe833b6282cf4dc1c298f5057ca0b5445e5c209735ca47"
 dependencies = [
  "bzip2-sys",
- "libc",
 ]
 
 [[package]]
@@ -762,7 +761,7 @@ dependencies = [
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -855,7 +854,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b4a6cae9efc04cc6cbb8faf338d2c497c165c83e74509cf4dbedea948bbf6e5"
 dependencies = [
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -902,7 +901,7 @@ dependencies = [
  "quote",
  "serde",
  "serde_json",
- "syn 2.0.100",
+ "syn 2.0.101",
  "tempfile",
  "toml",
 ]
@@ -1019,9 +1018,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.36"
+version = "4.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2df961d8c8a0d08aa9945718ccf584145eee3f3aa06cddbeac12933781102e04"
+checksum = "eccb054f56cbd38340b380d4a8e69ef1f02f1af43db2f0cc817a4774d80ae071"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1029,9 +1028,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.36"
+version = "4.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "132dbda40fb6753878316a489d5a1242a8ef2f0d9e47ba01c951ea8aa7d013a5"
+checksum = "efd9466fac8543255d3b1fcad4762c5e116ffe808c8a3043d4263cd4fd4862a2"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1042,9 +1041,9 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.5.47"
+version = "4.5.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06f5378ea264ad4f82bbc826628b5aad714a75abf6ece087e923010eb937fb6"
+checksum = "be8c97f3a6f02b9e24cadc12aaba75201d18754b53ea0a9d99642f806ccdb4c9"
 dependencies = [
  "clap",
 ]
@@ -1068,7 +1067,7 @@ dependencies = [
  "heck 0.5.0",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1487,7 +1486,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "strsim",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1498,7 +1497,7 @@ checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
 dependencies = [
  "darling_core",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1537,7 +1536,7 @@ checksum = "5abb2556e91848b66f562451fcbcdee2a3b7c88281828908dcf7cca355f5d997"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1586,7 +1585,7 @@ checksum = "30542c1ad912e0e3d22a1935c290e12e8a29d704a420177a31faad4a601a0800"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1697,7 +1696,7 @@ checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1726,9 +1725,9 @@ checksum = "1c7a8fb8a9fbf66c1f703fe16184d10ca0ee9d23be5b4436400408ba54a95005"
 
 [[package]]
 name = "ec4rs"
-version = "1.1.1"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acf65d056c7da9c971c2847ce250fd1f0f9659d5718845c3ec0ad95f5668352c"
+checksum = "3b31a881d38439026e3d5dd938ab20328d36e23caca8fd5981c42e4b677f5842"
 
 [[package]]
 name = "ecow"
@@ -1876,7 +1875,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -1913,7 +1912,7 @@ checksum = "96183aea58f51ac883fe7f626c31362561564591d7bfb79d00b0a51211a0cf03"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2114,7 +2113,7 @@ checksum = "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2192,7 +2191,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "regex",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2846,7 +2845,7 @@ checksum = "1ec89e9337638ecdc08744df490b221a7399bf8d164eb52a665454e60e075ad6"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2911,14 +2910,12 @@ dependencies = [
 
 [[package]]
 name = "insta"
-version = "1.42.2"
+version = "1.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50259abbaa67d11d2bcafc7ba1d094ed7a0c70e3ce893f0d0997f73558cb3084"
+checksum = "ab2d11b2f17a45095b8c3603928ba29d7d918d7129d0d0641a36ba73cf07daa6"
 dependencies = [
  "console",
- "linked-hash-map",
  "once_cell",
- "pin-project",
  "similar",
 ]
 
@@ -2940,9 +2937,9 @@ checksum = "06432fb54d3be7964ecd3649233cddf80db2832f47fec34c01f65b3d9d774983"
 
 [[package]]
 name = "iocraft"
-version = "0.7.6"
+version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "185f4f41d92340cdd202bcdd1a7e8c3b4ea06880114db642ed1a96a0d84b4ec1"
+checksum = "b43b8702c8ed79da475dd3b42593658863023eb885e2e7b53b35b3ab268020c3"
 dependencies = [
  "any_key",
  "bitflags",
@@ -2951,7 +2948,6 @@ dependencies = [
  "generational-box",
  "iocraft-macros",
  "taffy",
- "textwrap",
  "unicode-width 0.1.14",
 ]
 
@@ -2963,7 +2959,7 @@ checksum = "d2a8b12929295d5fea225570fd69a41084e2949d56ce0c20ff22494ef13e0d56"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "uuid",
 ]
 
@@ -3251,12 +3247,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "linked-hash-map"
-version = "0.5.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
-
-[[package]]
 name = "linux-raw-sys"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3341,7 +3331,7 @@ dependencies = [
  "manyhow-macros",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -3429,21 +3419,20 @@ dependencies = [
 
 [[package]]
 name = "miette"
-version = "7.5.0"
+version = "7.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a955165f87b37fd1862df2a59547ac542c77ef6d17c666f619d1ad22dd89484"
+checksum = "5f98efec8807c63c752b5bd61f862c165c115b0a35685bdcfd9238c7aeb592b7"
 dependencies = [
  "backtrace",
  "backtrace-ext",
  "cfg-if",
- "miette-derive 7.5.0",
+ "miette-derive 7.6.0",
  "owo-colors",
  "supports-color",
  "supports-hyperlinks",
  "supports-unicode",
  "terminal_size",
  "textwrap",
- "thiserror 1.0.69",
  "unicode-width 0.1.14",
 ]
 
@@ -3455,18 +3444,18 @@ checksum = "49e7bc1560b95a3c4a25d03de42fe76ca718ab92d1a22a55b9b4cf67b3ae635c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
 name = "miette-derive"
-version = "7.5.0"
+version = "7.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf45bf44ab49be92fd1227a3be6fc6f617f1a337c06af54981048574d8783147"
+checksum = "db5b29714e950dbb20d5e6f74f9dcec4edbcc1067bb7f8ed198c097b8c1a818b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -3537,7 +3526,7 @@ checksum = "b52c1b33ff98142aecea13138bd399b68aa7ab5d9546c300988c345004001eea"
 name = "moon_action"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_target",
  "moon_time",
@@ -3565,7 +3554,7 @@ name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [
  "graph-cycles",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_affected",
@@ -3594,7 +3583,7 @@ name = "moon_action_pipeline"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
@@ -3626,7 +3615,7 @@ name = "moon_actions"
 version = "0.0.1"
 dependencies = [
  "convert_case",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_app_context",
@@ -3662,7 +3651,7 @@ name = "moon_affected"
 version = "0.0.1"
 dependencies = [
  "clap",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_env_var",
  "moon_project",
@@ -3684,7 +3673,7 @@ dependencies = [
  "cd_env",
  "ci_env",
  "md5",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_cache",
  "moon_common",
  "moon_env",
@@ -3714,7 +3703,7 @@ dependencies = [
  "convert_case",
  "diff",
  "iocraft",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
@@ -3803,7 +3792,7 @@ dependencies = [
 name = "moon_args"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "shell-words",
  "thiserror 2.0.12",
 ]
@@ -3813,7 +3802,7 @@ name = "moon_bun_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_lang",
  "rustc-hash 2.1.1",
  "serde",
@@ -3827,7 +3816,7 @@ dependencies = [
 name = "moon_bun_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_bun_tool",
@@ -3858,7 +3847,7 @@ dependencies = [
 name = "moon_bun_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_bun_lang",
  "moon_config",
  "moon_console",
@@ -3878,7 +3867,7 @@ dependencies = [
 name = "moon_cache"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_cache_item",
  "moon_common",
  "moon_env_var",
@@ -3895,7 +3884,7 @@ dependencies = [
 name = "moon_cache_item"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_env_var",
  "serde",
  "serial_test",
@@ -3945,7 +3934,7 @@ version = "0.0.1"
 dependencies = [
  "content_inspector",
  "convert_case",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_env",
@@ -3967,7 +3956,7 @@ dependencies = [
 name = "moon_codeowners"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_config",
  "moon_hash",
  "serde",
@@ -3982,7 +3971,7 @@ version = "0.1.1"
 dependencies = [
  "compact_str 0.9.0",
  "dirs 6.0.0",
- "miette 7.5.0",
+ "miette 7.6.0",
  "regex",
  "relative-path",
  "rustc-hash 2.1.1",
@@ -3998,7 +3987,7 @@ version = "0.1.3"
 dependencies = [
  "httpmock",
  "indexmap",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -4022,7 +4011,7 @@ dependencies = [
 name = "moon_config_schema"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_config",
  "rustc-hash 2.1.1",
  "schematic",
@@ -4032,7 +4021,7 @@ dependencies = [
 name = "moon_console"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_common",
  "moon_config",
@@ -4049,7 +4038,7 @@ version = "0.0.1"
 dependencies = [
  "cached",
  "deno_lockfile",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_lang",
  "moon_logger",
  "rustc-hash 2.1.1",
@@ -4063,7 +4052,7 @@ dependencies = [
 name = "moon_deno_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4090,7 +4079,7 @@ dependencies = [
 name = "moon_deno_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -4109,7 +4098,7 @@ dependencies = [
 name = "moon_docker"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_target",
  "starbase_sandbox",
@@ -4121,7 +4110,7 @@ dependencies = [
 name = "moon_env"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "starbase_utils",
  "tracing",
@@ -4141,7 +4130,7 @@ name = "moon_extension_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_pdk_api",
@@ -4162,7 +4151,7 @@ name = "moon_file_group"
 version = "0.1.1"
 dependencies = [
  "common-path",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_feature_flags",
@@ -4176,7 +4165,7 @@ dependencies = [
 name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "petgraph 0.7.1",
  "rustc-hash 2.1.1",
  "serde",
@@ -4187,7 +4176,7 @@ dependencies = [
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "serde",
  "sha2",
  "starbase_utils",
@@ -4198,7 +4187,7 @@ dependencies = [
 name = "moon_javascript_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_args",
  "moon_common",
  "moon_config",
@@ -4216,7 +4205,7 @@ dependencies = [
 name = "moon_lang"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "rustc-hash 2.1.1",
 ]
 
@@ -4232,7 +4221,7 @@ name = "moon_node_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_bun_lang",
  "moon_lang",
  "moon_logger",
@@ -4255,7 +4244,7 @@ dependencies = [
 name = "moon_node_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4286,7 +4275,7 @@ dependencies = [
 name = "moon_node_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_config",
  "moon_console",
  "moon_logger",
@@ -4308,7 +4297,7 @@ name = "moon_notifier"
 version = "0.0.1"
 dependencies = [
  "ci_env",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_time",
  "reqwest",
@@ -4367,7 +4356,7 @@ name = "moon_platform"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4388,7 +4377,7 @@ dependencies = [
  "async-trait",
  "convert_case",
  "extism",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_env",
  "moon_pdk_api",
@@ -4414,7 +4403,7 @@ version = "0.0.1"
 dependencies = [
  "cached",
  "libc",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_args",
  "moon_common",
  "moon_console",
@@ -4432,7 +4421,7 @@ dependencies = [
 name = "moon_project"
 version = "0.1.2"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_file_group",
@@ -4445,7 +4434,7 @@ dependencies = [
 name = "moon_project_builder"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_file_group",
@@ -4465,7 +4454,7 @@ dependencies = [
 name = "moon_project_constraints"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_project",
@@ -4476,7 +4465,7 @@ dependencies = [
 name = "moon_project_expander"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_project",
@@ -4491,7 +4480,7 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_cache",
  "moon_common",
  "moon_config",
@@ -4518,7 +4507,7 @@ name = "moon_python_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -4534,7 +4523,7 @@ dependencies = [
 name = "moon_python_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4564,7 +4553,7 @@ dependencies = [
 name = "moon_python_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -4585,7 +4574,7 @@ dependencies = [
 name = "moon_query"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "pest",
@@ -4604,7 +4593,7 @@ dependencies = [
  "bazel-remote-apis",
  "chrono",
  "http 1.3.1",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_common",
  "moon_config",
@@ -4634,7 +4623,7 @@ dependencies = [
  "cached",
  "cargo-lock",
  "cargo_toml",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -4648,7 +4637,7 @@ dependencies = [
 name = "moon_rust_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4678,7 +4667,7 @@ dependencies = [
 name = "moon_rust_tool"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_console",
@@ -4696,7 +4685,7 @@ dependencies = [
 name = "moon_system_platform"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action_context",
  "moon_config",
  "moon_console",
@@ -4717,7 +4706,7 @@ name = "moon_target"
 version = "0.1.1"
 dependencies = [
  "compact_str 0.9.0",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "regex",
  "schematic",
@@ -4730,7 +4719,7 @@ dependencies = [
 name = "moon_task"
 version = "0.1.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_feature_flags",
@@ -4745,7 +4734,7 @@ dependencies = [
 name = "moon_task_args"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_args",
  "moon_config",
 ]
@@ -4754,7 +4743,7 @@ dependencies = [
 name = "moon_task_builder"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_project",
@@ -4778,7 +4767,7 @@ dependencies = [
  "cd_env",
  "ci_env",
  "dotenvy",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_args",
  "moon_common",
  "moon_config",
@@ -4801,7 +4790,7 @@ dependencies = [
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_graph_utils",
@@ -4819,7 +4808,7 @@ dependencies = [
 name = "moon_task_hasher"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_env_var",
@@ -4841,7 +4830,7 @@ dependencies = [
 name = "moon_task_runner"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_action",
  "moon_action_context",
  "moon_affected",
@@ -4935,7 +4924,7 @@ name = "moon_tool"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_lang",
  "moon_process",
@@ -4964,7 +4953,7 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "futures",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_feature_flags",
@@ -4988,7 +4977,7 @@ dependencies = [
  "dunce",
  "humantime",
  "md5",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "pathdiff",
  "regex",
@@ -5005,7 +4994,7 @@ dependencies = [
  "futures",
  "git-url-parse",
  "ignore",
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_env_var",
  "moon_process",
@@ -5025,7 +5014,7 @@ dependencies = [
 name = "moon_vcs_hooks"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -5043,7 +5032,7 @@ dependencies = [
 name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_cache",
  "moon_common",
  "moon_config",
@@ -5074,7 +5063,7 @@ dependencies = [
 name = "moon_workspace_graph"
 version = "0.0.1"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "moon_common",
  "moon_graph_utils",
  "moon_project_graph",
@@ -5272,7 +5261,7 @@ checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -5501,7 +5490,7 @@ dependencies = [
  "pest_meta",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -5598,7 +5587,7 @@ checksum = "6e918e4ff8c4549eb882f14b3a4bc8c8bc93de829416eacf579f1207a8fbf861"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -5734,7 +5723,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "664ec5419c51e34154eec046ebcba56312d5a2fc3b09a06da188e1ad21afadf6"
 dependencies = [
  "proc-macro2",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -5792,7 +5781,7 @@ dependencies = [
  "prost",
  "prost-types",
  "regex",
- "syn 2.0.100",
+ "syn 2.0.101",
  "tempfile",
 ]
 
@@ -5806,7 +5795,7 @@ dependencies = [
  "itertools 0.14.0",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -5828,7 +5817,7 @@ dependencies = [
  "dotenvy",
  "indexmap",
  "iocraft",
- "miette 7.5.0",
+ "miette 7.6.0",
  "minisign-verify",
  "once_cell",
  "proto_pdk_api",
@@ -5863,7 +5852,7 @@ version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f5171b8f82c6db132e4a6912e818edc89cfd8bf45cf1bd4c0ab0a8dd284a876"
 dependencies = [
- "miette 7.5.0",
+ "miette 7.6.0",
  "reqwest",
  "starbase_archive",
  "starbase_styles",
@@ -6494,9 +6483,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "2.3.3"
+version = "2.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea091f6cac2595aa38993f04f4ee692ed43757035c36e67c180b6828356385b1"
+checksum = "22b2d775fb28f245817589471dd49c5edf64237f4a19d10ce9a92ff4651a27f4"
 dependencies = [
  "sdd",
  "serde",
@@ -6531,7 +6520,7 @@ dependencies = [
  "garde",
  "indexmap",
  "markdown",
- "miette 7.5.0",
+ "miette 7.6.0",
  "reqwest",
  "rpkl",
  "schemars",
@@ -6557,7 +6546,7 @@ dependencies = [
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -6665,7 +6654,7 @@ checksum = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -6759,7 +6748,7 @@ checksum = "5d69265a08751de7844521fd15003ae0a888e035773ba05695c5c759a6f89eef"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -6931,12 +6920,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "smawk"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
-
-[[package]]
 name = "socket2"
 version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6977,13 +6960,13 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3e88836ebb24bde8f9e63fe6b955ca3e324325de3ee936cca0b4b089bcbf287"
+checksum = "9baa4344fdcd13641a2759524366b1391017ab687af4d75b3f6227c475b1ad2c"
 dependencies = [
  "async-trait",
  "chrono",
- "miette 7.5.0",
+ "miette 7.6.0",
  "starbase_styles",
  "tokio",
  "tracing",
@@ -6994,14 +6977,14 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.10.3"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1556978037d67428ba5003433729e4f32cb41eb260d6e1ee99724f1d74267739"
+checksum = "e823b2cad7f9a3c1961509def9467fb60be8f888543e43bfb0639684e73cfdb3"
 dependencies = [
  "binstall-tar",
  "bzip2",
  "flate2",
- "miette 7.5.0",
+ "miette 7.6.0",
  "rustc-hash 2.1.1",
  "starbase_styles",
  "starbase_utils",
@@ -7014,13 +6997,13 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.7"
+version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f96a428bb014a9f2320b001da5f75ce2ef45d336d333411431d581c009c74fb"
+checksum = "44f588690467402e638e7fe40df8e1ddbf67408ec501df1e181daff7bfb0fd0d"
 dependencies = [
  "crossterm",
  "iocraft",
- "miette 7.5.0",
+ "miette 7.6.0",
  "parking_lot",
  "starbase_styles",
  "thiserror 2.0.12",
@@ -7030,33 +7013,33 @@ dependencies = [
 
 [[package]]
 name = "starbase_events"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d2043f6539d899e75dfd55bb1626ad5ff7d53d5f5355d12558b8d237dba2b60"
+checksum = "013c1f488d498b99ed51cb0d638c199b24e20d58f3c9ffdd34608af18cabda83"
 dependencies = [
  "async-trait",
- "miette 7.5.0",
+ "miette 7.6.0",
  "starbase_macros",
  "tokio",
 ]
 
 [[package]]
 name = "starbase_macros"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de58d45dc84daf6db28924a879eb6567ce317689479ee60379badfdedf86f70d"
+checksum = "8a27c0b65af062839903009b5df65cd26de628a4584f7b33e292f37a14eabb1e"
 dependencies = [
  "darling",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07d5d0b317e6e9370c675acf5273a1af884c86b8310a1ea50d52aebef62ddd94"
+checksum = "23540641386a29737c8516b042c3d00706c182e5179297bf0c01315009b3ea40"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -7069,9 +7052,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55eea0c752835b845e203e18b82933d2f38b0af059188a378fd3184ca82437dd"
+checksum = "b33055ec1687a6128bc7d72dc7f64a201184596f79e93734917e07f7f2ea41a2"
 dependencies = [
  "regex",
  "sysinfo",
@@ -7081,12 +7064,12 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd1333c654161a61bb2a89aa474aad3d1f393e9ac442d5c48f6924b4062e8c50"
+checksum = "2b99f52ded6436b764ba37723d366029d4ff640e21e51b2f5b72c6e73b851e07"
 dependencies = [
  "dirs 6.0.0",
- "miette 7.5.0",
+ "miette 7.6.0",
  "owo-colors",
  "relative-path",
  "supports-color",
@@ -7094,9 +7077,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.11.6"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae2263828399f7637ec390eed434e0d0dd09cab3f4cd38622db87d496fc462c5"
+checksum = "df4c7412c9f9354e313530cba288b990f9a85138a62ae0d6d11beb7b296858a7"
 dependencies = [
  "async-trait",
  "dirs 6.0.0",
@@ -7104,7 +7087,7 @@ dependencies = [
  "fs4",
  "json-strip-comments",
  "jwalk",
- "miette 7.5.0",
+ "miette 7.6.0",
  "regex",
  "reqwest",
  "scc",
@@ -7162,7 +7145,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustversion",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7205,9 +7188,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.100"
+version = "2.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b09a44accad81e1ba1cd74a32461ba89dee89095ba17b32f5d03683b1b1fc2a0"
+checksum = "8ce2b7fc941b3a24138a0a7cf8e858bfc6a992e7978a068a5c760deb0ed43caf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7231,7 +7214,7 @@ checksum = "c8af7666ab7b6390ab78131fb5b0fce11d6b7a6951602017c35fa82800708971"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7394,7 +7377,6 @@ version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c13547615a44dc9c452a8a534638acdf07120d4b6847c8178705da06306a3057"
 dependencies = [
- "smawk",
  "unicode-linebreak",
  "unicode-width 0.2.0",
 ]
@@ -7425,7 +7407,7 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7436,7 +7418,7 @@ checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7553,7 +7535,7 @@ checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7589,9 +7571,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.14"
+version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b9590b93e6fcc1739458317cccd391ad3955e2bde8913edf6f95f9e65a8f034"
+checksum = "66a539a9ad6d5d281510d5bd368c973d636c02dbf8a67300bfb6b950696ad7df"
 dependencies = [
  "bytes",
  "futures-core",
@@ -7602,9 +7584,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.20"
+version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd87a5cdd6ffab733b2f74bc4fd7ee5fff6634124999ac278c35fc78c6120148"
+checksum = "900f6c86a685850b1bc9f6223b20125115ee3f31e01207d81655bbcc0aea9231"
 dependencies = [
  "serde",
  "serde_spanned",
@@ -7614,25 +7596,32 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.6.8"
+version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
+checksum = "3da5db5a963e24bc68be8b17b6fa82814bb22ee8660f192bb182771d498f09a3"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "toml_edit"
-version = "0.22.24"
+version = "0.22.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17b4795ff5edd201c7cd6dca065ae59972ce77d1b80fa0a84d94950ece7d1474"
+checksum = "10558ed0bd2a1562e630926a2d1f0b98c827da99fabd3fe20920a59642504485"
 dependencies = [
  "indexmap",
  "serde",
  "serde_spanned",
  "toml_datetime",
+ "toml_write",
  "winnow",
 ]
+
+[[package]]
+name = "toml_write"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28391a4201ba7eb1984cfeb6862c0b3ea2cfe23332298967c749dddc0d6cd976"
 
 [[package]]
 name = "tonic"
@@ -7717,7 +7706,7 @@ checksum = "395ae124c09f9e6918a2310af6038fba074bcf474ac352496d5910dd59a2226d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7778,7 +7767,7 @@ checksum = "70977707304198400eb4835a78f6a9f928bf41bba420deb8fdb175cd965d77a7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8098,7 +8087,7 @@ dependencies = [
  "compact_str 0.9.0",
  "extism",
  "http-cache-reqwest",
- "miette 7.5.0",
+ "miette 7.6.0",
  "once_cell",
  "regex",
  "reqwest",
@@ -8208,7 +8197,7 @@ dependencies = [
  "log",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "wasm-bindgen-shared",
 ]
 
@@ -8243,7 +8232,7 @@ checksum = "8ae87ea40c9f689fc23f209965b6fb8a99ad69aeeb0231408be24920604395de"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -8421,7 +8410,7 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "wasmtime-component-util",
  "wasmtime-wit-bindgen",
  "wit-parser",
@@ -8546,7 +8535,7 @@ checksum = "86ff86db216dc0240462de40c8290887a613dddf9685508eb39479037ba97b5b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8701,7 +8690,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "shellexpand 2.1.2",
- "syn 2.0.100",
+ "syn 2.0.101",
  "witx",
 ]
 
@@ -8713,7 +8702,7 @@ checksum = "08c5c473d4198e6c2d377f3809f713ff0c110cab88a0805ae099a82119ee250c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "wiggle-generate",
 ]
 
@@ -8864,7 +8853,7 @@ checksum = "9107ddc059d5b6fbfbffdfa7a7fe3e22a226def0b2608f72e9d552763d3e1ad7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8875,7 +8864,7 @@ checksum = "2bbd5b46c938e506ecbce286b6628a02171d56153ba733b6c741fc627ec9579b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8886,7 +8875,7 @@ checksum = "a47fddd13af08290e67f4acabf4b459f647552718f683a7b415d290ac744a836"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8897,7 +8886,7 @@ checksum = "29bee4b38ea3cde66011baa44dba677c432a78593e202392d1e9070cf2a7fca7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8908,7 +8897,7 @@ checksum = "053c4c462dc91d3b1504c6fe5a726dd15e216ba718e84a0e46a88fbe5ded3515"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -8919,7 +8908,7 @@ checksum = "bd9211b69f8dcdfa817bfd14bf1c97c9188afa36f4750130fcdf3f400eca9fa8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -9348,7 +9337,7 @@ checksum = "2380878cad4ac9aac1e2435f3eb4020e8374b5f13c296cb75b4620ff8e229154"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "synstructure",
 ]
 
@@ -9378,7 +9367,7 @@ checksum = "fa4f8080344d4671fb4e831a13ad1e68092748387dfc4f55e356242fae12ce3e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -9389,7 +9378,7 @@ checksum = "a996a8f63c5c4448cd959ac1bab0aaa3306ccfd060472f85943ee0750f0169be"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -9409,7 +9398,7 @@ checksum = "d71e5d6e06ab090c67b5e44993ec16b72dcbaabc526db883a360057678b48502"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
  "synstructure",
 ]
 
@@ -9438,7 +9427,7 @@ checksum = "6eafa6dfb17584ea3e2bd6e76e0cc15ad7af12b09abdd1ca55961bed9b1063c6"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.101",
 ]
 
 [[package]]

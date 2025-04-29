@@ -22,6 +22,7 @@ pub struct QueryTouchedFilesOptions {
 }
 
 #[derive(Default, Deserialize, Serialize)]
+#[serde(default)]
 pub struct QueryTouchedFilesResult {
     pub files: FxHashSet<WorkspaceRelativePathBuf>,
     pub options: QueryTouchedFilesOptions,
@@ -152,9 +153,10 @@ pub async fn query_touched_files(
     })
 }
 
-pub async fn load_touched_files(
+pub async fn query_touched_files_with_stdin(
     vcs: &BoxedVcs,
-) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
+    options: &QueryTouchedFilesOptions,
+) -> miette::Result<QueryTouchedFilesResult> {
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,
@@ -169,19 +171,29 @@ pub async fn load_touched_files(
         if buffer.starts_with('{') {
             let result: QueryTouchedFilesResult = json::parse(&buffer)?;
 
-            return Ok(result.files);
+            return Ok(result);
         }
         // As lines
         else {
             let files =
                 FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
 
-            return Ok(files);
+            return Ok(QueryTouchedFilesResult {
+                files,
+                ..Default::default()
+            });
         }
     }
 
+    query_touched_files(vcs, options).await
+}
+
+pub async fn load_touched_files(
+    vcs: &BoxedVcs,
+) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     let ci = is_ci();
-    let result = query_touched_files(
+
+    query_touched_files_with_stdin(
         vcs,
         &QueryTouchedFilesOptions {
             default_branch: ci,
@@ -189,7 +201,6 @@ pub async fn load_touched_files(
             ..QueryTouchedFilesOptions::default()
         },
     )
-    .await?;
-
-    Ok(result.files)
+    .await
+    .map(|result| result.files)
 }

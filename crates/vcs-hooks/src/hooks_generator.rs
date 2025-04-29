@@ -140,12 +140,12 @@ impl<'app> HooksGenerator<'app> {
 
     async fn sync_to_vcs(&self, hooks: FxHashMap<&'app String, PathBuf>) -> miette::Result<()> {
         let hooks_dir = self.vcs.get_hooks_dir().await?;
-        let repo_root = self.vcs.get_repository_root().await?;
+        let work_root = self.vcs.get_working_root().await?;
 
         for (hook_name, internal_path) in hooks {
             let external_path = hooks_dir.join(hook_name);
 
-            let external_command = match internal_path.strip_prefix(&repo_root) {
+            let external_command = match internal_path.strip_prefix(&work_root) {
                 Ok(rel) => PathBuf::from(".").join(rel),
                 _ => internal_path.clone(),
             };

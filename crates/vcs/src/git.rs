@@ -802,6 +802,14 @@ impl Vcs for Git {
         )
     }
 
+    async fn get_working_root(&self) -> miette::Result<PathBuf> {
+        Ok(self
+            .worktree
+            .as_ref()
+            .map(|tree| tree.checkout_dir.clone())
+            .unwrap_or_else(|| self.repository_root.clone()))
+    }
+
     fn is_default_branch(&self, branch: &str) -> bool {
         let default_branch = &self.default_branch;
 

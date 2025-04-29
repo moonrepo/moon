@@ -5,7 +5,7 @@ use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
 
-fn create_root_sandbox() -> (Sandbox, Gitx) {
+fn create_root_sandbox(bare: bool) -> (Sandbox, Gitx) {
     let sandbox = create_empty_sandbox();
 
     sandbox.run_git(|cmd| {
@@ -15,6 +15,10 @@ fn create_root_sandbox() -> (Sandbox, Gitx) {
             ".",
             "--recurse-submodules",
         ]);
+
+        if bare {
+            cmd.arg("--bare");
+        }
     });
 
     let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
@@ -22,7 +26,7 @@ fn create_root_sandbox() -> (Sandbox, Gitx) {
     (sandbox, git)
 }
 
-fn create_worktree_sandbox() -> (Sandbox, Gitx) {
+fn create_worktree_sandbox(bare: bool) -> (Sandbox, Gitx) {
     let sandbox = create_empty_sandbox();
 
     sandbox.run_git(|cmd| {
@@ -32,19 +36,23 @@ fn create_worktree_sandbox() -> (Sandbox, Gitx) {
             ".",
             "--recurse-submodules",
         ]);
+
+        if bare {
+            cmd.arg("--bare");
+        }
     });
 
     sandbox.run_git(|cmd| {
-        cmd.args(["worktree", "add", "worktrees/one", "-b", "one"]);
+        cmd.args(["worktree", "add", "trees/one", "-b", "one"]);
     });
 
     sandbox.run_git(|cmd| {
         cmd.args(["submodule", "update"])
-            .current_dir(sandbox.path().join("worktrees/one"));
+            .current_dir(sandbox.path().join("trees/one"));
     });
 
     let git = Gitx::load(
-        sandbox.path().join("worktrees/one"),
+        sandbox.path().join("trees/one"),
         "master",
         &["origin".into()],
     )
@@ -111,7 +119,7 @@ mod gitx {
 
         #[test]
         fn loads_trees() {
-            let (sandbox, git) = create_root_sandbox();
+            let (sandbox, git) = create_root_sandbox(false);
 
             assert_eq!(git.repository_root, sandbox.path());
             assert_eq!(git.workspace_root, sandbox.path());
@@ -123,14 +131,22 @@ mod gitx {
                 git.submodules,
                 vec![
                     GitTree {
-                        git_dir: sandbox.path().join(".git/modules/submodules/mono"),
+                        git_dir: sandbox
+                            .path()
+                            .join(".git/modules/submodules/mono")
+                            .canonicalize()
+                            .unwrap(),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/mono"),
                         ..Default::default()
                     },
                     GitTree {
-                        git_dir: sandbox.path().join(".git/modules/submodules/poly"),
+                        git_dir: sandbox
+                            .path()
+                            .join(".git/modules/submodules/poly")
+                            .canonicalize()
+                            .unwrap(),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/poly"),
@@ -140,9 +156,22 @@ mod gitx {
             )
         }
 
+        #[test]
+        fn loads_trees_when_bare() {
+            let (sandbox, git) = create_root_sandbox(true);
+
+            assert_eq!(git.repository_root, sandbox.path());
+            assert_eq!(git.workspace_root, sandbox.path());
+            assert_eq!(git.worktree.git_dir, sandbox.path());
+            assert_eq!(git.worktree.work_dir, sandbox.path());
+            assert_eq!(git.worktree.path.as_str(), "");
+            assert_eq!(git.worktree.type_of, GitTreeType::Root);
+            assert_eq!(git.submodules, vec![])
+        }
+
         #[tokio::test]
         async fn returns_correct_values() {
-            let (sandbox, git) = create_root_sandbox();
+            let (sandbox, git) = create_root_sandbox(false);
 
             assert_eq!(git.get_local_branch().await.unwrap().as_str(), "master");
             assert_eq!(
@@ -159,6 +188,7 @@ mod gitx {
                 "moonrepo/git-test"
             );
             assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
+            assert_eq!(git.get_working_root().await.unwrap(), sandbox.path());
             assert_eq!(
                 git.get_hooks_dir().await.unwrap(),
                 sandbox.path().join(".git/hooks")
@@ -173,8 +203,20 @@ mod gitx {
         }
 
         #[tokio::test]
+        async fn returns_correct_values_when_bare() {
+            let (sandbox, git) = create_root_sandbox(true);
+
+            assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
+            assert_eq!(git.get_working_root().await.unwrap(), sandbox.path());
+            assert_eq!(
+                git.get_hooks_dir().await.unwrap(),
+                sandbox.path().join("hooks")
+            );
+        }
+
+        #[tokio::test]
         async fn get_file_hashes() {
-            let (_sandbox, git) = create_root_sandbox();
+            let (_sandbox, git) = create_root_sandbox(false);
 
             let map = git
                 .get_file_hashes(
@@ -212,7 +254,7 @@ mod gitx {
 
         #[tokio::test]
         async fn get_file_tree() {
-            let (_sandbox, git) = create_root_sandbox();
+            let (_sandbox, git) = create_root_sandbox(false);
 
             // Returns all
             let list = git.get_file_tree(RelativePath::new(".")).await.unwrap();
@@ -246,7 +288,7 @@ mod gitx {
 
         #[tokio::test]
         async fn get_touched_files() {
-            let (sandbox, git) = create_root_sandbox();
+            let (sandbox, git) = create_root_sandbox(false);
 
             // Returns nothing
             let files = git.get_touched_files().await.unwrap();
@@ -277,29 +319,88 @@ mod gitx {
 
         #[test]
         fn loads_trees() {
-            let (sandbox, git) = create_worktree_sandbox();
+            let (sandbox, git) = create_worktree_sandbox(false);
 
             assert_eq!(git.repository_root, sandbox.path());
-            assert_eq!(git.workspace_root, sandbox.path().join("worktrees/one"));
-            assert!(git.worktree.git_dir.ends_with(".git/worktrees/one"));
-            assert_eq!(git.worktree.work_dir, sandbox.path().join("worktrees/one"));
+            assert_eq!(git.workspace_root, sandbox.path().join("trees/one"));
+            assert_eq!(
+                git.worktree.git_dir,
+                sandbox
+                    .path()
+                    .join(".git/worktrees/one")
+                    .canonicalize()
+                    .unwrap()
+            );
+            assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
             assert_eq!(git.worktree.type_of, GitTreeType::Worktree);
             assert_eq!(
                 git.submodules,
                 vec![
                     GitTree {
-                        git_dir: sandbox.path().join(".git/modules/submodules/mono"),
+                        git_dir: sandbox
+                            .path()
+                            .join(".git/worktrees/one/modules/submodules/mono")
+                            .canonicalize()
+                            .unwrap(),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
-                        work_dir: sandbox.path().join("worktrees/one/submodules/mono"),
+                        work_dir: sandbox.path().join("trees/one/submodules/mono"),
                         ..Default::default()
                     },
                     GitTree {
-                        git_dir: sandbox.path().join(".git/modules/submodules/poly"),
+                        git_dir: sandbox
+                            .path()
+                            .join(".git/worktrees/one/modules/submodules/poly")
+                            .canonicalize()
+                            .unwrap(),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
-                        work_dir: sandbox.path().join("worktrees/one/submodules/poly"),
+                        work_dir: sandbox.path().join("trees/one/submodules/poly"),
+                        ..Default::default()
+                    }
+                ]
+            )
+        }
+
+        #[test]
+        fn loads_trees_when_bare() {
+            let (sandbox, git) = create_worktree_sandbox(true);
+
+            dbg!(&git);
+
+            assert_eq!(git.repository_root, sandbox.path());
+            assert_eq!(git.workspace_root, sandbox.path().join("trees/one"));
+            assert_eq!(
+                git.worktree.git_dir,
+                sandbox.path().join("worktrees/one").canonicalize().unwrap()
+            );
+            assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
+            assert_eq!(git.worktree.path.as_str(), "");
+            assert_eq!(git.worktree.type_of, GitTreeType::Worktree);
+            assert_eq!(
+                git.submodules,
+                vec![
+                    GitTree {
+                        git_dir: sandbox
+                            .path()
+                            .join("worktrees/one/modules/submodules/mono")
+                            .canonicalize()
+                            .unwrap(),
+                        path: "submodules/mono".into(),
+                        type_of: GitTreeType::Submodule,
+                        work_dir: sandbox.path().join("trees/one/submodules/mono"),
+                        ..Default::default()
+                    },
+                    GitTree {
+                        git_dir: sandbox
+                            .path()
+                            .join("worktrees/one/modules/submodules/poly")
+                            .canonicalize()
+                            .unwrap(),
+                        path: "submodules/poly".into(),
+                        type_of: GitTreeType::Submodule,
+                        work_dir: sandbox.path().join("trees/one/submodules/poly"),
                         ..Default::default()
                     }
                 ]
@@ -308,7 +409,7 @@ mod gitx {
 
         #[tokio::test]
         async fn returns_correct_values() {
-            let (sandbox, git) = create_worktree_sandbox();
+            let (sandbox, git) = create_worktree_sandbox(false);
 
             assert_eq!(git.get_local_branch().await.unwrap().as_str(), "one");
             assert_eq!(
@@ -326,6 +427,10 @@ mod gitx {
             );
             assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
             assert_eq!(
+                git.get_working_root().await.unwrap(),
+                sandbox.path().join("trees/one")
+            );
+            assert_eq!(
                 git.get_hooks_dir().await.unwrap(),
                 sandbox.path().join(".git/hooks")
             );
@@ -333,7 +438,7 @@ mod gitx {
             // Change branches
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "feature"])
-                    .current_dir(sandbox.path().join("worktrees/one"));
+                    .current_dir(sandbox.path().join("trees/one"));
             });
 
             assert_eq!(git.get_local_branch().await.unwrap().as_str(), "feature");
@@ -341,7 +446,7 @@ mod gitx {
 
         #[tokio::test]
         async fn get_file_hashes() {
-            let (_sandbox, git) = create_worktree_sandbox();
+            let (_sandbox, git) = create_worktree_sandbox(false);
 
             let map = git
                 .get_file_hashes(
@@ -379,7 +484,7 @@ mod gitx {
 
         #[tokio::test]
         async fn get_file_tree() {
-            let (_sandbox, git) = create_worktree_sandbox();
+            let (_sandbox, git) = create_worktree_sandbox(false);
 
             // Returns all
             let list = git.get_file_tree(RelativePath::new(".")).await.unwrap();
@@ -413,7 +518,7 @@ mod gitx {
 
         #[tokio::test]
         async fn get_touched_files() {
-            let (sandbox, git) = create_worktree_sandbox();
+            let (sandbox, git) = create_worktree_sandbox(false);
 
             // Returns nothing
             let files = git.get_touched_files().await.unwrap();
@@ -422,8 +527,8 @@ mod gitx {
 
             // Returns all
             sandbox.create_file("root.txt", "");
-            sandbox.create_file("worktrees/one/tree.txt", "");
-            sandbox.create_file("worktrees/one/submodules/mono/packages/a/sub.txt", "");
+            sandbox.create_file("trees/one/tree.txt", "");
+            sandbox.create_file("trees/one/submodules/mono/packages/a/sub.txt", "");
 
             let files = git.get_touched_files().await.unwrap();
 

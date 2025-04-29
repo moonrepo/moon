@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Improved bare repository support for Git v2.
+- Updated `moon ci` to support passing touched files via stdin.
+
+#### 🐞 Fixes
+
+- Fixed the faster/new glob implementation not filtering out hidden directories. This should now
+  work like the old implementation.
+- Fixed the new Git v2 not working correctly for synced hooks and worktrees.
+
 ## 1.35.1
 
 #### 🚀 Updates

@@ -323,7 +323,14 @@ mod gitx {
 
             assert_eq!(git.repository_root, sandbox.path());
             assert_eq!(git.workspace_root, sandbox.path().join("trees/one"));
-            assert!(git.worktree.git_dir.ends_with(".git/trees/one"));
+            assert_eq!(
+                git.worktree.git_dir,
+                sandbox
+                    .path()
+                    .join(".git/worktrees/one")
+                    .canonicalize()
+                    .unwrap()
+            );
             assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
             assert_eq!(git.worktree.type_of, GitTreeType::Worktree);
@@ -333,7 +340,7 @@ mod gitx {
                     GitTree {
                         git_dir: sandbox
                             .path()
-                            .join(".git/trees/one/modules/submodules/mono")
+                            .join(".git/worktrees/one/modules/submodules/mono")
                             .canonicalize()
                             .unwrap(),
                         path: "submodules/mono".into(),
@@ -344,7 +351,7 @@ mod gitx {
                     GitTree {
                         git_dir: sandbox
                             .path()
-                            .join(".git/trees/one/modules/submodules/poly")
+                            .join(".git/worktrees/one/modules/submodules/poly")
                             .canonicalize()
                             .unwrap(),
                         path: "submodules/poly".into(),

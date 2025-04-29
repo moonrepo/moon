@@ -25,12 +25,12 @@ pub enum GitError {
     ExtractRepoSlugFailed,
 
     #[diagnostic(code(git::file::parse_failed))]
-    #[error("Failed to parse .git file {}.", .path.style(Style::Path))]
+    #[error("Failed to parse .git file {} and extract Git directory.", .path.style(Style::Path))]
     ParseGitFileFailed { path: PathBuf },
 
-    #[diagnostic(code(git::file::load_failed))]
-    #[error("Failed to load .git file {}.", .path.style(Style::Path))]
-    LoadGitFileFailed {
+    #[diagnostic(code(git::dir::load_failed))]
+    #[error("Failed to canonicalize Git directory {} to a valid path.", .path.style(Style::Path))]
+    LoadGitDirFailed {
         path: PathBuf,
         #[source]
         error: Box<std::io::Error>,

@@ -76,7 +76,8 @@ const orchestrationFeatures: Feature[] = [
 	{
 		title: 'Advanced Git',
 		icon: 'material-symbols:network-node',
-		description: 'Supports advanced Git features like submodules, subtrees, and worktrees.',
+		description:
+			'Supports advanced Git features like submodules, subtrees, worktrees, and bare repos.',
 	},
 	{
 		title: 'Incremental builds',

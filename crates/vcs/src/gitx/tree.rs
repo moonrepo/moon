@@ -66,19 +66,19 @@ impl GitTree {
         })
     }
 
-    pub fn load_git_file(path: PathBuf, parent_dir: &Path) -> miette::Result<PathBuf> {
-        let contents = fs::read_file(&path)?;
+    pub fn load_git_file(work_dir: &Path) -> miette::Result<PathBuf> {
+        let contents = fs::read_file(work_dir.join(".git"))?;
 
         for line in contents.lines() {
             if let Some(suffix) = line.strip_prefix("gitdir:") {
                 let mut dir = PathBuf::from(suffix.trim());
 
                 if !dir.is_absolute() {
-                    dir = parent_dir.join(dir);
+                    dir = work_dir.join(dir);
                 }
 
                 return dir.canonicalize().map_err(|error| {
-                    GitError::LoadGitFileFailed {
+                    GitError::LoadGitDirFailed {
                         path: dir,
                         error: Box::new(error),
                     }
@@ -87,7 +87,10 @@ impl GitTree {
             }
         }
 
-        Err(GitError::ParseGitFileFailed { path }.into())
+        Err(GitError::ParseGitFileFailed {
+            path: work_dir.join(".git"),
+        }
+        .into())
     }
 
     pub fn load_submodules(worktree_root: &Path) -> miette::Result<Vec<Self>> {
@@ -155,7 +158,7 @@ impl GitTree {
 
         // Extract the git dirs
         for module in &mut modules {
-            module.git_dir = Self::load_git_file(module.work_dir.join(".git"), &module.work_dir)?;
+            module.git_dir = Self::load_git_file(&module.work_dir)?;
         }
 
         Ok(modules)
@@ -168,7 +171,7 @@ impl GitTree {
         );
 
         Ok(Self {
-            git_dir: Self::load_git_file(worktree_root.join(".git"), worktree_root)?,
+            git_dir: Self::load_git_file(worktree_root)?,
             type_of: GitTreeType::Worktree,
             work_dir: worktree_root.to_path_buf(),
             ..Default::default()

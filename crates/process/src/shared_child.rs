@@ -1,13 +1,23 @@
+use crate::output::Output;
 use crate::signal::*;
 use std::io;
-use std::process::{ExitStatus, Output};
-use std::sync::Arc;
+use std::process::ExitStatus;
+use std::sync::{Arc, OnceLock};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
+
+#[derive(Clone, Eq, PartialEq)]
+pub enum ChildExit {
+    Completed(ExitStatus),
+    Interrupted,
+    Killed,
+    Terminated,
+}
 
 #[derive(Clone)]
 pub struct SharedChild {
     inner: Arc<Mutex<Child>>,
+    signal: Arc<OnceLock<SignalType>>,
     pid: u32,
     #[cfg(windows)]
     handle: RawHandle,
@@ -19,6 +29,7 @@ impl SharedChild {
         Self {
             pid: child.id().unwrap(),
             inner: Arc::new(Mutex::new(child)),
+            signal: Arc::new(OnceLock::new()),
         }
     }
 
@@ -28,6 +39,7 @@ impl SharedChild {
             pid: child.id().unwrap(),
             handle: RawHandle(child.raw_handle().unwrap()),
             inner: Arc::new(Mutex::new(child)),
+            signal: Arc::new(OnceLock::new()),
         }
     }
 
@@ -47,15 +59,17 @@ impl SharedChild {
         self.inner.lock().await.stderr.take()
     }
 
-    pub async fn kill(&self) -> io::Result<()> {
+    pub async fn kill(&self) -> io::Result<ChildExit> {
         let mut child = self.inner.lock().await;
 
         child.kill().await?;
 
-        Ok(())
+        Ok(ChildExit::Killed)
     }
 
-    pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<()> {
+    pub async fn kill_with_signal(&self, signal: SignalType) -> io::Result<ChildExit> {
+        self.signal.get_or_init(|| signal);
+
         #[cfg(unix)]
         {
             kill(self.pid, signal)?;
@@ -69,15 +83,14 @@ impl SharedChild {
         // Acquire the child _after_ the kill command, otherwise it waits for
         // the command to finish running before killing, because the lock is
         // currently owned by `wait` or `wait_with_output`!
-        self.wait().await?;
-
-        Ok(())
+        self.wait().await
     }
 
-    pub(crate) async fn wait(&self) -> io::Result<ExitStatus> {
+    pub(crate) async fn wait(&self) -> io::Result<ChildExit> {
         let mut child = self.inner.lock().await;
+        let status = child.wait().await?;
 
-        child.wait().await
+        Ok(convert_exit_status(status, self.signal.clone()))
     }
 
     // This method re-implements the tokio `wait_with_output` method
@@ -109,9 +122,37 @@ impl SharedChild {
         drop(stderr_pipe);
 
         Ok(Output {
-            status,
+            exit: convert_exit_status(status, self.signal.clone()),
             stdout,
             stderr,
         })
     }
+}
+
+fn convert_exit_status(status: ExitStatus, raw_signal: Arc<OnceLock<SignalType>>) -> ChildExit {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::ExitStatusExt;
+
+        if let Some(signal) = status.signal() {
+            return match signal {
+                2 => ChildExit::Interrupted, // SIGINT
+                9 => ChildExit::Killed,      // SIGKILL
+                _ => ChildExit::Terminated,
+            };
+        }
+    }
+
+    // The Unix signal above sometimes doesn't capture the correct
+    // wait status, so to support those edges, and Windows in general,
+    // we'll read the raw signal that we explicitly used
+    if let Some(signal) = raw_signal.get() {
+        return match signal {
+            SignalType::Interrupt => ChildExit::Interrupted,
+            SignalType::Kill => ChildExit::Killed,
+            _ => ChildExit::Terminated,
+        };
+    }
+
+    ChildExit::Completed(status)
 }

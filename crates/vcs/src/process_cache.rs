@@ -1,11 +1,10 @@
 use moon_common::is_test_env;
-use moon_process::{Command, output_to_string};
+use moon_process::{Command, Output, output_to_string};
 use rustc_hash::FxHashMap;
 use scc::HashCache;
 use scc::hash_cache::Entry;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use std::process::Output;
 use std::sync::Arc;
 
 #[derive(Debug)]

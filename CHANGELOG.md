@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where interrupting (ctrl+c) a task that exits with a 0 code would treat is as
+  succesful, resulting in an invalid cache.
+
 ## 1.35.2
 
 #### 🚀 Updates

@@ -23,7 +23,7 @@ tracing = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "signal", "sync"] }
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.170"
+libc = "0.2.172"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59.0", default-features = false, features = [

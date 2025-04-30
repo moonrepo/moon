@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue with priority tasks where dependencies of the task may sometimes not run in the
+  correct order in the pipeline.
+
 ## 1.35.3
 
 #### 🚀 Updates

@@ -40,9 +40,11 @@ impl<'graph> JobDispatcher<'graph> {
                 continue;
             }
 
-            if let Some(next_index) = self.find_next_index(dep_index, completed) {
-                return Some(next_index);
-            }
+            // Traverse to the lowest leaf so the chain is built from the
+            // bottom up, otherwise return the current non-completed index
+            return self
+                .find_next_index(dep_index, completed)
+                .or_else(|| Some(dep_index));
         }
 
         None

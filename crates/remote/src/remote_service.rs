@@ -424,7 +424,7 @@ async fn batch_upload_blobs(
     let mut abort = false;
 
     'outer: while let Some(res) = set.join_next().await {
-        if let Ok(_) = signal_receiver.try_recv() {
+        if signal_receiver.try_recv().is_ok() {
             abort = true;
             break 'outer;
         }
@@ -507,7 +507,7 @@ async fn batch_download_blobs(
     let mut abort = false;
 
     'outer: while let Some(res) = set.join_next().await {
-        if let Ok(_) = signal_receiver.try_recv() {
+        if signal_receiver.try_recv().is_ok() {
             abort = true;
             break 'outer;
         }

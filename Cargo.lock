@@ -4599,6 +4599,7 @@ dependencies = [
  "moon_config",
  "moon_env_var",
  "moon_feature_flags",
+ "moon_process",
  "moon_task",
  "reqwest",
  "rustc-hash 2.1.1",

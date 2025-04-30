@@ -10,6 +10,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 moon_feature_flags = { path = "../feature-flags" }
+moon_process = { path = "../process" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
 bazel-remote-apis = { version = "0.18.0", features = ["serde"] }

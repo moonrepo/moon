@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated remote uploads/downloads to abort when receiving a ctrl+c.
+
 #### 🐞 Fixes
 
 - Fixed an issue where interrupting (ctrl+c) a task that exits with a 0 code would treat is as

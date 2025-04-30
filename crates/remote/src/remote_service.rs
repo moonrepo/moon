@@ -10,6 +10,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use miette::IntoDiagnostic;
 use moon_common::{color, is_ci};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
+use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -419,9 +420,15 @@ async fn batch_upload_blobs(
         }
     }
 
+    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
     let mut abort = false;
 
     'outer: while let Some(res) = set.join_next().await {
+        if let Ok(_) = signal_receiver.try_recv() {
+            abort = true;
+            break 'outer;
+        }
+
         for maybe_digest in res.into_diagnostic()?? {
             if maybe_digest.is_none() {
                 abort = true;
@@ -495,10 +502,16 @@ async fn batch_download_blobs(
         }
     }
 
+    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
     let mut output_files = FxHashMap::default();
     let mut abort = false;
 
     'outer: while let Some(res) = set.join_next().await {
+        if let Ok(_) = signal_receiver.try_recv() {
+            abort = true;
+            break 'outer;
+        }
+
         for blob in res.into_diagnostic()?? {
             let Some(blob) = blob else {
                 abort = true;

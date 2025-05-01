@@ -214,13 +214,15 @@ impl ActionPipeline {
 
         // Abort any running actions in progress
         if !matches!(self.status, ActionPipelineStatus::Completed) {
-            let mut job_handles = queue_handle.await.into_diagnostic()?;
+            queue_handle.abort();
 
-            if !job_handles.is_empty() {
-                debug!("Aborting running actions");
+            // let mut job_handles = queue_handle.await.into_diagnostic()?;
 
-                job_handles.shutdown().await;
-            }
+            // if !job_handles.is_empty() {
+            //     debug!("Aborting running actions");
+
+            //     job_handles.shutdown().await;
+            // }
         }
 
         self.actions = actions;

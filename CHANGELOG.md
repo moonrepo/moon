@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated remote caching to error if an output file is a symlink to a file outside of the workspace.
+
 #### 🐞 Fixes
 
 - Fixed an issue with priority tasks where dependencies of the task may sometimes not run in the

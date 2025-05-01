@@ -243,7 +243,13 @@ impl<'task> CommandBuilder<'task> {
         // Convert to project relative paths
         let rel_files = abs_files
             .into_iter()
-            .filter_map(|abs_file| abs_file.relative_to(self.working_dir).ok())
+            .filter_map(|abs_file| {
+                if abs_file.starts_with(&self.project.root) {
+                    abs_file.relative_to(self.working_dir).ok()
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
         // Set an environment variable

@@ -57,6 +57,17 @@ fn bold(message: &str) -> String {
 pub struct MoonReporter {
     err: ConsoleStream,
     out: ConsoleStream,
+    test_mode: bool,
+}
+
+impl MoonReporter {
+    pub fn new_testing() -> Self {
+        Self {
+            err: ConsoleStream::new_testing(ConsoleStreamType::Stderr),
+            out: ConsoleStream::new_testing(ConsoleStreamType::Stdout),
+            test_mode: true,
+        }
+    }
 }
 
 impl Default for MoonReporter {
@@ -64,14 +75,17 @@ impl Default for MoonReporter {
         Self {
             err: ConsoleStream::empty(ConsoleStreamType::Stderr),
             out: ConsoleStream::empty(ConsoleStreamType::Stdout),
+            test_mode: false,
         }
     }
 }
 
 impl Reporter for MoonReporter {
     fn inherit_streams(&mut self, err: ConsoleStream, out: ConsoleStream) {
-        self.err = err;
-        self.out = out;
+        if !self.test_mode {
+            self.err = err;
+            self.out = out;
+        }
     }
 }
 

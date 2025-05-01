@@ -8,6 +8,7 @@
   correct order in the pipeline.
 - Fixed an issue where task `affectedFiles` and `runFromWorkspaceRoot` would pass invalid relative
   file paths.
+- Fixed an issue where running tasks for custom plugins would trigger a panic.
 
 ## 1.35.3
 

@@ -1,0 +1,28 @@
+tasks:
+  critical:
+    command: echo critical
+    options:
+      priority: critical
+  high:
+    command: echo high
+    options:
+      priority: high
+  normal:
+    command: echo normal
+    options:
+      priority: normal
+  low:
+    command: echo low
+    options:
+      priority: low
+
+  critical-low:
+    command: echo critical-low
+    deps: [low]
+    options:
+      priority: critical
+  high-low:
+    command: echo high-low
+    deps: [low]
+    options:
+      priority: high

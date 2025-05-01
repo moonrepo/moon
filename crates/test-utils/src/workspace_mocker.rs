@@ -1,4 +1,6 @@
 use crate::generate_platform_manager;
+use moon_action_graph::ActionGraphBuilder;
+use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
@@ -317,6 +319,23 @@ impl WorkspaceMocker {
         builder.build().await.unwrap()
     }
 
+    pub async fn create_action_graph(&self) -> ActionGraphBuilder {
+        ActionGraphBuilder::new(
+            self.mock_app_context().into(),
+            self.mock_workspace_graph().await.into(),
+            Default::default(),
+        )
+        .unwrap()
+    }
+
+    pub async fn mock_action_pipeline(&self) -> ActionPipeline {
+        ActionPipeline::new(
+            self.mock_app_context().into(),
+            self.mock_toolchain_registry().into(),
+            self.mock_workspace_graph().await.into(),
+        )
+    }
+
     pub fn mock_app_context(&self) -> AppContext {
         AppContext {
             cli_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
@@ -337,7 +356,7 @@ impl WorkspaceMocker {
 
     pub fn mock_console(&self) -> Console {
         let mut console = Console::new_testing();
-        console.set_reporter(MoonReporter::default());
+        console.set_reporter(MoonReporter::new_testing());
         console
     }
 

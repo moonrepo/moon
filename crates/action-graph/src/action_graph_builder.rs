@@ -823,7 +823,7 @@ impl<'query> ActionGraphBuilder<'query> {
             priority: task.options.priority.get_level(),
             runtime: self
                 .get_runtime(&project, &task.toolchains[0], true)
-                .unwrap(), // TODO
+                .unwrap_or_else(Runtime::system), // TODO
             target: task.target.to_owned(),
             id: None,
         });

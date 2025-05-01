@@ -19,10 +19,10 @@ mod task {
         let files = task.get_input_files(sandbox.path()).unwrap();
 
         assert_eq!(files.len(), 3);
-        assert!(files.contains(&WorkspaceRelativePathBuf::from("a.js")));
-        assert!(files.contains(&WorkspaceRelativePathBuf::from("b.js")));
-        assert!(files.contains(&WorkspaceRelativePathBuf::from("c.jsx")));
-        assert!(!files.contains(&WorkspaceRelativePathBuf::from("d.rs")));
+        assert!(files.contains(&sandbox.path().join("a.js")));
+        assert!(files.contains(&sandbox.path().join("b.js")));
+        assert!(files.contains(&sandbox.path().join("c.jsx")));
+        assert!(!files.contains(&sandbox.path().join("d.rs")));
     }
 
     #[test]

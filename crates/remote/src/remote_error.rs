@@ -1,6 +1,8 @@
 use bazel_remote_apis::build::bazel::remote::execution::v2::Digest;
 use miette::Diagnostic;
+use moon_common::{Style, Stylize};
 use moon_config::RemoteCompression;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -89,4 +91,12 @@ pub enum RemoteError {
     #[diagnostic(code(remote::unsupported_protocol))]
     #[error("Unknown remote host protocol, only gRPC is supported.")]
     UnknownHostProtocol,
+
+    #[diagnostic(code(remote::output::outside_workspace))]
+    #[error(
+        "Unable to cache output, as the file {} is a symlink to {}, which exists outside of the workspace.",
+        .output.style(Style::Path),
+        .target.style(Style::Path),
+    )]
+    OutputSymlinkOutsideOfWorkspace { output: PathBuf, target: PathBuf },
 }

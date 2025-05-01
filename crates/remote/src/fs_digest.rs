@@ -1,12 +1,13 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
 use crate::blob::Blob;
+use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
+use moon_common::path::PathExt;
 use moon_feature_flags::glob_walk_with_options;
 use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::FsError;
@@ -84,18 +85,13 @@ pub struct OutputDigests {
 }
 
 impl OutputDigests {
-    pub fn insert_relative_path(
-        &mut self,
-        rel_path: WorkspaceRelativePathBuf,
-        workspace_root: &Path,
-    ) -> miette::Result<()> {
-        self.insert_path(rel_path.to_path(workspace_root), workspace_root)
-    }
-
     pub fn insert_path(&mut self, abs_path: PathBuf, workspace_root: &Path) -> miette::Result<()> {
         // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L1233
         let path_to_string = |inner_path: &Path| {
-            let outer_path = inner_path.relative_to(workspace_root).unwrap().to_string();
+            let outer_path = inner_path
+                .relative_to(workspace_root)
+                .expect("Output path is outside of the workspace!")
+                .to_string();
 
             if let Some(stripped) = outer_path.strip_prefix('/') {
                 stripped.to_owned()
@@ -113,6 +109,14 @@ impl OutputDigests {
             let link = fs::read_link(&abs_path).map_err(map_read_error)?;
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
+
+            if !abs_path.starts_with(workspace_root) || !link.starts_with(workspace_root) {
+                return Err(RemoteError::OutputSymlinkOutsideOfWorkspace {
+                    output: abs_path,
+                    target: link,
+                }
+                .into());
+            }
 
             self.symlinks.push(OutputSymlink {
                 path: path_to_string(&abs_path),

@@ -30,21 +30,37 @@ impl<'graph> JobDispatcher<'graph> {
         self.visited.len() < self.graph.node_count()
     }
 
-    pub fn find_next_index(
+    pub fn find_applicable_index(
         &self,
+        group: u8,
         index: NodeIndex,
         completed: &FxHashSet<NodeIndex>,
     ) -> Option<NodeIndex> {
-        for dep_index in self.graph.neighbors_directed(index, Direction::Outgoing) {
-            if completed.contains(&dep_index) {
-                continue;
-            }
+        if self.visited.contains(&index) || completed.contains(&index) {
+            return None;
+        }
 
-            if let Some(next_index) = self.find_next_index(dep_index, completed) {
-                return Some(next_index);
+        // Ensure all dependencies of the index have
+        // completed before dispatching
+        if self
+            .graph
+            .neighbors_directed(index, Direction::Outgoing)
+            .all(|dep_index| completed.contains(&dep_index))
+        {
+            return Some(index);
+        }
+
+        // If not all dependencies have completed yet,
+        // attempt to find a dependency to run
+        if group < 2 {
+            for dep_index in self.graph.neighbors_directed(index, Direction::Outgoing) {
+                if let Some(index) = self.find_applicable_index(group, dep_index, completed) {
+                    return Some(index);
+                }
             }
         }
 
+        // Otherwise do nothing
         None
     }
 }
@@ -59,67 +75,47 @@ impl JobDispatcher<'_> {
             for (group, indices) in &self.groups {
                 // Then loop through the indices within the group,
                 // which are topologically sorted
-                for index in indices {
-                    if self.visited.contains(index) || completed.contains(index) {
-                        continue;
-                    }
-
-                    // Ensure all dependencies of the current index have
-                    // completed before dispatching
-                    let index_to_dispatch = if self
-                        .graph
-                        .neighbors_directed(*index, Direction::Outgoing)
-                        .all(|dep_index| completed.contains(&dep_index))
-                    {
-                        Some(*index)
-                    }
-                    // If not all dependencies have completed yet,
-                    // attempt to find a dependency to run
-                    else if *group < 2 {
-                        self.find_next_index(*index, &completed)
-                    }
-                    // Otherwise do nothing
+                for maybe_index in indices {
+                    let Some(index) = self.find_applicable_index(*group, *maybe_index, &completed)
                     else {
-                        None
+                        continue;
                     };
 
-                    if let Some(index) = index_to_dispatch {
-                        if let Some(node) = self.graph.node_weight(index) {
-                            let id = node.get_id();
+                    if let Some(node) = self.graph.node_weight(index) {
+                        let id = node.get_id();
 
-                            // If the same exact action is currently running,
-                            // avoid running another in parallel to avoid weird
-                            // collisions. This is especially true for `RunTask`,
-                            // where different args/env vars run the same task,
-                            // but with slightly different variance.
-                            if id > 0 && node.is_standard() {
-                                if let Some(running_index) = self
-                                    .context
-                                    .running_jobs
-                                    .read()
-                                    .await
-                                    .iter()
-                                    .find(|(_, running_id)| *running_id == &id)
-                                {
-                                    trace!(
-                                        index = index.index(),
-                                        running_index = running_index.0.index(),
-                                        "Another job of a similar type is currently running, deferring dispatch",
-                                    );
+                        // If the same exact action is currently running,
+                        // avoid running another in parallel to avoid weird
+                        // collisions. This is especially true for `RunTask`,
+                        // where different args/env vars run the same task,
+                        // but with slightly different variance.
+                        if id > 0 && node.is_standard() {
+                            if let Some(running_index) = self
+                                .context
+                                .running_jobs
+                                .read()
+                                .await
+                                .iter()
+                                .find(|(_, running_id)| *running_id == &id)
+                            {
+                                trace!(
+                                    index = index.index(),
+                                    running_index = running_index.0.index(),
+                                    "Another job of a similar type is currently running, deferring dispatch",
+                                );
 
-                                    continue;
-                                }
-
-                                self.context.running_jobs.write().await.insert(index, id);
+                                continue;
                             }
+
+                            self.context.running_jobs.write().await.insert(index, id);
                         }
-
-                        trace!(index = index.index(), "Dispatching job");
-
-                        self.visited.insert(index);
-
-                        return Some(index);
                     }
+
+                    trace!(index = index.index(), "Dispatching job");
+
+                    self.visited.insert(index);
+
+                    return Some(index);
                 }
             }
         }

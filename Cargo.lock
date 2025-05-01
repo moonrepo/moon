@@ -3598,6 +3598,7 @@ dependencies = [
  "moon_project",
  "moon_remote",
  "moon_task",
+ "moon_test_utils2",
  "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_workspace_graph",
@@ -3605,6 +3606,7 @@ dependencies = [
  "petgraph 0.7.1",
  "rustc-hash 2.1.1",
  "serde",
+ "starbase_sandbox",
  "tokio",
  "tokio-util",
  "tracing",
@@ -4885,6 +4887,8 @@ name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
  "extism",
+ "moon_action_graph",
+ "moon_action_pipeline",
  "moon_app_context",
  "moon_bun_platform",
  "moon_cache",

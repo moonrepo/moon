@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.48.1](https://github.com/moonrepo/proto/releases/tag/v0.48.1) (from 0.47.11).
+
 ## 1.35.4
 
 #### 🚀 Updates

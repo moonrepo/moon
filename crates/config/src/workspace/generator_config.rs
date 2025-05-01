@@ -16,9 +16,9 @@ config_struct!(
         /// The list of file paths, relative from the workspace root,
         /// in which to locate templates.
         #[setting(
-        validate = validate::not_empty,
-        default = default_templates
-    )]
+            validate = validate::not_empty,
+            default = default_templates
+        )]
         pub templates: Vec<TemplateLocator>,
     }
 );

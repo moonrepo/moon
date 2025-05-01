@@ -63,11 +63,16 @@ semver = "1.0.26"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 serde_yml = "0.0.12"
-sha2 = "0.10.8"
+sha2 = "0.10.9"
 starbase = { version = "0.10.3" }
 starbase_archive = { version = "0.10.4", default-features = false, features = [
     "miette",
+    "tar-bz2",
     "tar-gz",
+    "tar-xz",
+    "tar-zstd",
+    "zip",
+    "zip-deflate",
 ] }
 starbase_console = { version = "0.6.8", features = ["miette"] }
 starbase_events = "0.7.2"
@@ -93,6 +98,7 @@ tokio = { version = "1.44.2", default-features = false, features = [
 tokio-util = "0.7.15"
 typescript_tsconfig_json = { version = "0.4.3", features = ["serialize"] }
 tracing = "0.1.41"
+url = "2.5.4"
 uuid = { version = "1.16.0", features = ["v4"] }
 
 # proto/plugin related

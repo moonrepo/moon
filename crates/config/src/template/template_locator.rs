@@ -19,6 +19,9 @@ static NPM: LazyLock<Regex> = LazyLock::new(|| {
 derive_enum!(
     #[serde(untagged, try_from = "String", into = "String")]
     pub enum TemplateLocator {
+        Archive {
+            url: String,
+        },
         File {
             path: FilePath,
         },
@@ -39,6 +42,7 @@ derive_enum!(
 impl fmt::Display for TemplateLocator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            TemplateLocator::Archive { url } => write!(f, "{url}"),
             TemplateLocator::File { path } => write!(f, "file://{path}"),
             TemplateLocator::Glob { glob } => write!(f, "glob://{glob}"),
             TemplateLocator::Git {
@@ -69,6 +73,11 @@ impl FromStr for TemplateLocator {
             }
 
             match protocol {
+                "http" | "https" => {
+                    return Ok(TemplateLocator::Archive {
+                        url: value.to_owned(),
+                    });
+                }
                 "git" | "git+http" | "git+https" => {
                     if let Some(result) = GIT.captures(inner_value) {
                         return Ok(TemplateLocator::Git {

@@ -6,6 +6,8 @@
 
 - Fixed an issue with priority tasks where dependencies of the task may sometimes not run in the
   correct order in the pipeline.
+- Fixed an issue where task `affectedFiles` and `runFromWorkspaceRoot` would pass invalid relative
+  file paths.
 
 ## 1.35.3
 

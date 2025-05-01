@@ -2,6 +2,7 @@ use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::consts::PROTO_CLI_VERSION;
+use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
@@ -222,28 +223,28 @@ impl<'task> CommandBuilder<'task> {
         };
 
         // Only get files when `--affected` is passed
-        let mut files = if context.affected.is_some() {
-            self.task
-                .get_affected_files(&context.touched_files, &self.project.source)?
+        let mut abs_files = if context.affected.is_some() {
+            self.task.get_affected_files(
+                &self.app.workspace_root,
+                &context.touched_files,
+                &self.project.source,
+            )?
         } else {
             Vec::with_capacity(0)
         };
 
         // If we have no files, use the task's inputs instead
-        if files.is_empty() && self.task.options.affected_pass_inputs {
-            files = self
-                .task
-                .get_input_files(&self.app.workspace_root)?
-                .into_iter()
-                .filter_map(|file| {
-                    file.strip_prefix(&self.project.source)
-                        .ok()
-                        .map(|file| file.to_owned())
-                })
-                .collect();
+        if abs_files.is_empty() && self.task.options.affected_pass_inputs {
+            abs_files = self.task.get_input_files(&self.app.workspace_root)?;
         }
 
-        files.sort();
+        abs_files.sort();
+
+        // Convert to project relative paths
+        let rel_files = abs_files
+            .into_iter()
+            .filter_map(|abs_file| abs_file.relative_to(self.working_dir).ok())
+            .collect::<Vec<_>>();
 
         // Set an environment variable
         if matches!(
@@ -252,10 +253,10 @@ impl<'task> CommandBuilder<'task> {
         ) {
             self.command.env(
                 "MOON_AFFECTED_FILES",
-                if files.is_empty() {
+                if rel_files.is_empty() {
                     ".".into()
                 } else {
-                    files
+                    rel_files
                         .iter()
                         .map(|file| file.as_str())
                         .collect::<Vec<_>>()
@@ -269,11 +270,11 @@ impl<'task> CommandBuilder<'task> {
             check_affected,
             TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
         ) {
-            if files.is_empty() {
+            if rel_files.is_empty() {
                 self.command.arg_if_missing(".");
             } else {
                 // Mimic relative from ("./")
-                self.command.args(files.iter().map(|file| {
+                self.command.args(rel_files.iter().map(|file| {
                     let arg = format!("./{file}");
 
                     // Escape files with special characters

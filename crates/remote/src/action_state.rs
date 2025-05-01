@@ -121,16 +121,17 @@ impl ActionState<'_> {
     }
 
     pub fn compute_outputs(&mut self, workspace_root: &Path) -> miette::Result<()> {
-        let mut outputs = OutputDigests::default();
-
-        for path in self.task.get_output_files(workspace_root, true)? {
-            outputs.insert_relative_path(path, workspace_root)?;
-        }
-
         if let Some(result) = &mut self.action_result {
+            let mut outputs = OutputDigests::default();
+
+            for path in self.task.get_output_files(workspace_root, true)? {
+                outputs.insert_path(path, workspace_root)?;
+            }
+
             result.output_files = outputs.files;
             result.output_symlinks = outputs.symlinks;
             result.output_directories = outputs.dirs;
+
             self.blobs.extend(outputs.blobs);
         }
 

@@ -1,8 +1,5 @@
 use crate::task_options::TaskOptions;
-use moon_common::{
-    Id, cacheable,
-    path::{PathExt, ProjectRelativePathBuf, WorkspaceRelativePathBuf},
-};
+use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
     InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType,
 };
@@ -11,7 +8,7 @@ use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::{self, GlobWalkOptions, split_patterns};
 use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -114,19 +111,20 @@ impl Task {
     /// the provided touched files list.
     pub fn get_affected_files<S: AsRef<str>>(
         &self,
+        workspace_root: &Path,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
         project_source: S,
-    ) -> miette::Result<Vec<ProjectRelativePathBuf>> {
+    ) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
         let globset = self.create_globset()?;
         let project_source = project_source.as_ref();
 
         for file in touched_files {
             // Don't run on files outside of the project
-            if let Ok(project_file) = file.strip_prefix(project_source) {
-                if self.input_files.contains(file) || globset.matches(file.as_str()) {
-                    files.push(project_file.to_owned());
-                }
+            if file.starts_with(project_source)
+                && (self.input_files.contains(file) || globset.matches(file.as_str()))
+            {
+                files.push(file.to_logical_path(workspace_root));
             }
         }
 
@@ -142,28 +140,24 @@ impl Task {
     }
 
     /// Return a list of all workspace-relative input files.
-    pub fn get_input_files(
-        &self,
-        workspace_root: &Path,
-    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+    pub fn get_input_files(&self, workspace_root: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut list = FxHashSet::default();
 
         for path in &self.input_files {
+            let file = path.to_logical_path(workspace_root);
+
             // Detect if file actually exists
-            if path.to_path(workspace_root).is_file() {
-                list.insert(path.to_owned());
+            if file.is_file() {
+                list.insert(file);
             }
         }
 
         if !self.input_globs.is_empty() {
-            for file in glob_walk_with_options(
+            list.extend(glob_walk_with_options(
                 workspace_root,
                 &self.input_globs,
                 GlobWalkOptions::default().cache().files(),
-            )? {
-                // Glob results are absolute paths!
-                list.insert(file.relative_to(workspace_root).unwrap());
-            }
+            )?);
         }
 
         Ok(list.into_iter().collect())
@@ -174,22 +168,21 @@ impl Task {
         &self,
         workspace_root: &Path,
         include_non_globs: bool,
-    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+    ) -> miette::Result<Vec<PathBuf>> {
         let mut list = FxHashSet::default();
 
         if include_non_globs {
-            list.extend(self.output_files.clone());
+            for file in &self.output_files {
+                list.insert(file.to_logical_path(workspace_root));
+            }
         }
 
         if !self.output_globs.is_empty() {
-            for file in glob_walk_with_options(
+            list.extend(glob_walk_with_options(
                 workspace_root,
                 &self.output_globs,
                 GlobWalkOptions::default().cache().files(),
-            )? {
-                // Glob results are absolute paths!
-                list.insert(file.relative_to(workspace_root).unwrap());
-            }
+            )?);
         }
 
         Ok(list.into_iter().collect())

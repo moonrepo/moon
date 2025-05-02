@@ -74,9 +74,21 @@ impl FromStr for TemplateLocator {
 
             match protocol {
                 "http" | "https" => {
-                    return Ok(TemplateLocator::Archive {
-                        url: value.to_owned(),
-                    });
+                    // Keep in sync with starbase_archive
+                    for ext in [
+                        ".tar.gz", ".tar.xz", ".tar.bz2", ".tar", ".tgz", ".txz", ".tbz", ".tbz2",
+                        ".tz2", ".zstd", ".zst", ".zip", ".gz",
+                    ] {
+                        if value.ends_with(ext) {
+                            return Ok(TemplateLocator::Archive {
+                                url: value.to_owned(),
+                            });
+                        }
+                    }
+
+                    return Err(ParseError::new(
+                        "Invalid URL template locator, must contain a trailing file name with a supported archive extension".into()
+                    ));
                 }
                 "git" | "git+http" | "git+https" => {
                     if let Some(result) = GIT.captures(inner_value) {

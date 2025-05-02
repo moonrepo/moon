@@ -262,6 +262,18 @@ generator:
 
 When using literal file paths, all paths are relative from the workspace root.
 
+#### Archive URLs<VersionLabel version="1.36.0" />
+
+Template locations can reference archives (zip, tar, etc) through a https URLs. These archives
+should contain templates and will be downloaded and unpacked. The list of
+[available archive formats can be found here](https://github.com/moonrepo/starbase/blob/master/crates/archive/src/lib.rs#L76).
+
+```yaml title=".moon/workspace.yml"
+generator:
+  templates:
+    - 'https://domain.com/some/path/to/archive.zip'
+```
+
 #### Globs<VersionLabel version="1.31.0" />
 
 If you'd prefer more control over literal file paths (above), you can instead use glob paths or the

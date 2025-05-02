@@ -223,14 +223,15 @@ impl<'app> CodeGenerator<'app> {
                     let url = Url::parse(base_url).into_diagnostic()?;
                     let file_name = url
                         .path_segments()
-                        .and_then(|segs| segs.last())
+                        .and_then(|mut segs| segs.next_back())
                         .map(|seg| seg.to_string())
                         .expect("Template archive URL requires a file name!");
 
                     let template_location = self
                         .moon_env
                         .templates_dir
-                        .join(url.domain().or_else(|| url.host_str()).unwrap_or("unknown"));
+                        .join(url.domain().or_else(|| url.host_str()).unwrap_or("unknown"))
+                        .join("archive");
                     let temp_file = self.moon_env.temp_dir.join(file_name);
 
                     futures.push(spawn(download_and_unpack_archive(
@@ -246,11 +247,10 @@ impl<'app> CodeGenerator<'app> {
                     revision,
                 } => {
                     let base_url = remote_url.trim_start_matches('/');
-                    let url = format!("https://{base_url}");
                     let template_location = self.moon_env.templates_dir.join(base_url);
 
                     futures.push(spawn(clone_and_checkout_git_repository(
-                        url,
+                        format!("https://{base_url}"),
                         revision.to_owned(),
                         template_location.clone(),
                     )));

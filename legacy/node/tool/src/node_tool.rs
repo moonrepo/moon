@@ -257,7 +257,12 @@ impl Tool for NodeTool {
                         format!("installing node {version}"),
                     )?;
 
-                    if self.tool.setup(version, InstallOptions::default()).await? {
+                    if self
+                        .tool
+                        .setup(version, InstallOptions::default())
+                        .await?
+                        .is_some()
+                    {
                         last_versions.insert("node".into(), version.to_owned());
                         installed += 1;
                     }

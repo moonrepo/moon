@@ -279,7 +279,8 @@ impl ToolchainPlugin {
                             ..Default::default()
                         },
                     )
-                    .await?;
+                    .await?
+                    .is_some();
             }
 
             // Locate pieces that we'll need

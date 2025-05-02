@@ -100,7 +100,12 @@ impl Tool for NpmTool {
         self.console
             .print_checkpoint(Checkpoint::Setup, format!("installing npm {version}"))?;
 
-        if self.tool.setup(version, InstallOptions::default()).await? {
+        if self
+            .tool
+            .setup(version, InstallOptions::default())
+            .await?
+            .is_some()
+        {
             last_versions.insert("npm".into(), version.to_owned());
             count += 1;
         }

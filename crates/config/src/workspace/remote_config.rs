@@ -62,20 +62,27 @@ impl RemoteCompression {
 config_struct!(
     /// Configures the action cache (AC) and content addressable cache (CAS).
     #[derive(Config)]
+    #[config(env_prefix = "MOON_REMOTE_CACHE_")]
     pub struct RemoteCacheConfig {
         /// The compression format to use when uploading/downloading blobs.
-        #[setting(env = "MOON_REMOTE_CACHE_COMPRESSION")]
         pub compression: RemoteCompression,
 
         /// Unique instance name for blobs. Will be used as a folder name.
-        #[setting(default = "moon-outputs", env = "MOON_REMOTE_CACHE_INSTANCE_NAME")]
+        #[setting(default = "moon-outputs")]
         pub instance_name: String,
+
+        /// When downloading blobs, verify the digests/hashes in the response
+        /// match the associated blob contents. This will reduce performance
+        /// but ensure partial or corrupted blobs won't cause failures.
+        #[setting(parse_env = env::parse_bool)]
+        pub verify_integrity: bool,
     }
 );
 
 config_struct!(
     /// Configures for server-only authentication with TLS.
     #[derive(Config)]
+    #[config(env_prefix = "MOON_REMOTE_TLS_")]
     pub struct RemoteTlsConfig {
         /// If true, assume that the server supports HTTP/2,
         /// even if it doesn't provide protocol negotiation via ALPN.
@@ -84,11 +91,10 @@ config_struct!(
 
         /// A file path, relative from the workspace root, to the
         /// certificate authority PEM encoded X509 certificate.
-        #[setting(env = "MOON_REMOTE_TLS_CERT", validate = path_is_required)]
+        #[setting(validate = path_is_required)]
         pub cert: FilePath,
 
         /// The domain name in which to verify the TLS certificate.
-        #[setting(env = "MOON_REMOTE_TLS_DOMAIN")]
         pub domain: Option<String>,
     }
 );
@@ -96,6 +102,7 @@ config_struct!(
 config_struct!(
     /// Configures for both server and client authentication with mTLS.
     #[derive(Config)]
+    #[config(env_prefix = "MOON_REMOTE_MTLS_")]
     pub struct RemoteMtlsConfig {
         /// If true, assume that the server supports HTTP/2,
         /// even if it doesn't provide protocol negotiation via ALPN.
@@ -104,21 +111,20 @@ config_struct!(
 
         /// A file path, relative from the workspace root, to the
         /// certificate authority PEM encoded X509 certificate.
-        #[setting(env = "MOON_REMOTE_MTLS_CA_CERT", validate = path_is_required)]
+        #[setting(validate = path_is_required)]
         pub ca_cert: FilePath,
 
         /// A file path, relative from the workspace root, to the
         /// client's PEM encoded X509 certificate.
-        #[setting(env = "MOON_REMOTE_MTLS_CLIENT_CERT", validate = path_is_required)]
+        #[setting(validate = path_is_required)]
         pub client_cert: FilePath,
 
         /// A file path, relative from the workspace root, to the
         /// client's PEM encoded X509 private key.
-        #[setting(env = "MOON_REMOTE_MTLS_CLIENT_KEY", validate = path_is_required)]
+        #[setting(validate = path_is_required)]
         pub client_key: FilePath,
 
         /// The domain name in which to verify the TLS certificate.
-        #[setting(env = "MOON_REMOTE_MTLS_DOMAIN")]
         pub domain: Option<String>,
     }
 );

@@ -227,11 +227,22 @@ impl<'app> CodeGenerator<'app> {
                         .map(|seg| seg.to_string())
                         .expect("Template archive URL requires a file name!");
 
+                    // Extract the file prefix so that we can determine a "unique"
+                    // storage location when coupled with the domain. For example,
+                    // a domain of example.com and a file of moon-templates.tar.gz
+                    // would be stored at `templates/archive/example.com/moon-templates`.
+                    let file_prefix = if let Some(index) = file_name.find('.') {
+                        &file_name[0..index]
+                    } else {
+                        &file_name
+                    };
+
                     let template_location = self
                         .moon_env
                         .templates_dir
+                        .join("archive")
                         .join(url.domain().or_else(|| url.host_str()).unwrap_or("unknown"))
-                        .join("archive");
+                        .join(file_prefix);
                     let temp_file = self.moon_env.temp_dir.join(file_name);
 
                     futures.push(spawn(download_and_unpack_archive(
@@ -247,7 +258,7 @@ impl<'app> CodeGenerator<'app> {
                     revision,
                 } => {
                     let base_url = remote_url.trim_start_matches('/');
-                    let template_location = self.moon_env.templates_dir.join(base_url);
+                    let template_location = self.moon_env.templates_dir.join("git").join(base_url);
 
                     futures.push(spawn(clone_and_checkout_git_repository(
                         format!("https://{base_url}"),

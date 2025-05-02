@@ -87,7 +87,7 @@ impl FromStr for TemplateLocator {
                     }
 
                     return Err(ParseError::new(
-                        "Invalid URL template locator, must contain a trailing file name with a supported archive extension".into()
+                        "Invalid URL template locator, must contain a trailing file name with a supported archive extension".to_string()
                     ));
                 }
                 "git" | "git+http" | "git+https" => {

@@ -287,6 +287,7 @@ impl RemoteService {
             result,
             &self.workspace_root,
             self.get_max_batch_size() as usize,
+            self.config.cache.verify_integrity,
         )
         .await
         {
@@ -452,6 +453,7 @@ async fn batch_download_blobs(
     result: &ActionResult,
     workspace_root: &Path,
     max_size: usize,
+    verify_integrity: bool,
 ) -> miette::Result<bool> {
     let mut file_map = FxHashMap::default();
     let mut blob_digests = vec![];
@@ -517,6 +519,22 @@ async fn batch_download_blobs(
                 abort = true;
                 break 'outer;
             };
+
+            if verify_integrity {
+                let actual_digest = create_digest(&blob.bytes);
+
+                if actual_digest != blob.digest {
+                    trace!(
+                        hash = &action_digest.hash,
+                        expected_hash = &blob.digest.hash,
+                        actual_hash = &actual_digest.hash,
+                        "Integrity failure, mismatched digests, unable to write output file",
+                    );
+
+                    abort = true;
+                    break 'outer;
+                }
+            }
 
             if let Some(file) = file_map.get(&blob.digest.hash) {
                 output_files.insert(workspace_root.join(&file.path), blob);

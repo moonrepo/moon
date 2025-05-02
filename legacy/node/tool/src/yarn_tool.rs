@@ -145,7 +145,12 @@ impl Tool for YarnTool {
         self.console
             .print_checkpoint(Checkpoint::Setup, format!("installing yarn {version}"))?;
 
-        if self.tool.setup(version, InstallOptions::default()).await? {
+        if self
+            .tool
+            .setup(version, InstallOptions::default())
+            .await?
+            .is_some()
+        {
             last_versions.insert("yarn".into(), version.to_owned());
             count += 1;
         }

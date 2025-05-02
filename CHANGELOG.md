@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `generator.templates` to support `https://` URLs that point to an archive that can be
+  unpacked.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.48.1](https://github.com/moonrepo/proto/releases/tag/v0.48.1) (from 0.47.11).

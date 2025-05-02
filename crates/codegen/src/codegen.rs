@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn;
 use tracing::{debug, instrument};
+use url::Url;
 
 #[derive(Debug)]
 pub struct CodeGenerator<'app> {
@@ -218,16 +219,49 @@ impl<'app> CodeGenerator<'app> {
                         }
                     }
                 }
+                TemplateLocator::Archive { url: base_url } => {
+                    let url = Url::parse(base_url).into_diagnostic()?;
+                    let file_name = url
+                        .path_segments()
+                        .and_then(|mut segs| segs.next_back())
+                        .map(|seg| seg.to_string())
+                        .expect("Template archive URL requires a file name!");
+
+                    // Extract the file prefix so that we can determine a "unique"
+                    // storage location when coupled with the domain. For example,
+                    // a domain of example.com and a file of moon-templates.tar.gz
+                    // would be stored at `templates/archive/example.com/moon-templates`.
+                    let file_prefix = if let Some(index) = file_name.find('.') {
+                        &file_name[0..index]
+                    } else {
+                        &file_name
+                    };
+
+                    let template_location = self
+                        .moon_env
+                        .templates_dir
+                        .join("archive")
+                        .join(url.domain().or_else(|| url.host_str()).unwrap_or("unknown"))
+                        .join(file_prefix);
+                    let temp_file = self.moon_env.temp_dir.join(file_name);
+
+                    futures.push(spawn(download_and_unpack_archive(
+                        base_url.to_owned(),
+                        template_location.clone(),
+                        temp_file,
+                    )));
+
+                    locations.push(template_location);
+                }
                 TemplateLocator::Git {
                     remote_url,
                     revision,
                 } => {
                     let base_url = remote_url.trim_start_matches('/');
-                    let url = format!("https://{base_url}");
-                    let template_location = self.moon_env.templates_dir.join(base_url);
+                    let template_location = self.moon_env.templates_dir.join("git").join(base_url);
 
                     futures.push(spawn(clone_and_checkout_git_repository(
-                        url,
+                        format!("https://{base_url}"),
                         revision.to_owned(),
                         template_location.clone(),
                     )));
@@ -311,7 +345,7 @@ async fn clone_and_checkout_git_repository(
         );
 
         fs::create_dir_all(&template_location)?;
-        run_git(&["clone", &url, "."], &template_location).await?;
+        run_git(&["clone", &url, ".", "--depth", "1"], &template_location).await?;
     }
 
     // Checkout the revision
@@ -329,7 +363,38 @@ async fn clone_and_checkout_git_repository(
     run_git(&["pull", "--rebase", "--prune"], &template_location).await?;
 
     fs::write_file(
-        template_location.parent().unwrap().join(".installed-at"),
+        template_location.join(".installed-at"),
+        now_millis().to_string(),
+    )?;
+
+    Ok(())
+}
+
+#[instrument]
+async fn download_and_unpack_archive(
+    archive_url: String,
+    template_location: PathBuf,
+    temp_file: PathBuf,
+) -> miette::Result<()> {
+    debug!(
+        url = &archive_url,
+        "Resolving template location for remote archive"
+    );
+
+    if template_location.exists() {
+        debug!(location = ?template_location, "Template location already exists locally");
+
+        return Ok(());
+    }
+
+    net::download_from_url(&archive_url, &temp_file).await?;
+
+    Archiver::new(&template_location, &temp_file).unpack_from_ext()?;
+
+    fs::remove_file(temp_file)?;
+
+    fs::write_file(
+        template_location.join(".installed-at"),
         now_millis().to_string(),
     )?;
 
@@ -365,17 +430,7 @@ async fn download_and_unpack_npm_archive(
         format!("https://registry.npmjs.org/{package}/-/{package}-{version}.tgz")
     };
 
-    // Download tarball
-    debug!(tarball_url = &tarball_url, temp_file = ?temp_file, "Downloading npm tarball");
-
     net::download_from_url(&tarball_url, &temp_file).await?;
-
-    // Unpack tarball
-    debug!(
-        temp_file = ?temp_file,
-        location = ?template_location,
-        "Unpacking npm tarball into template location",
-    );
 
     Archiver::new(&template_location, &temp_file)
         .set_prefix("package")

@@ -776,6 +776,20 @@ unstable_remote:
 
 > We suggest changing the instance name to the name of your repository!
 
+#### `verifyIntegrity`<VersionLabel version="1.36.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteCacheConfig#verifyIntegrity" />
+
+When downloading blobs, verify the digests/hashes in the response match the associated blob
+contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures.
+Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {3}
+unstable_remote:
+  cache:
+    verifyIntegrity: true
+```
+
 ### `host`
 
 <HeadingApiLink to="/api/types/interface/RemoteConfig#host" />

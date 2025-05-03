@@ -4,12 +4,11 @@ use moon_common::path::{PathExt, WorkspaceRelativePathBuf, encode_component};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
-use moon_process::Command;
+use moon_process::{Command, Output};
 use moon_time::to_millis;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::process::Output;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::warn;
@@ -63,7 +62,7 @@ pub async fn exec_plugin_command_with_cache(
     let Some(key) = &command.cache else {
         return exec_plugin_command(app_context, command, options)
             .await
-            .map(|output| Some(output));
+            .map(Some);
     };
 
     let mut hash_item = ExecCommandHash {

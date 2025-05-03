@@ -7,6 +7,7 @@
 - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.
+- Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
 
 #### 🧩 Plugins
 

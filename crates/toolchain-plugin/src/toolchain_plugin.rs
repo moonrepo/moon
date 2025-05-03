@@ -97,7 +97,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(globs) = &output.members {
-                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(&path))
+                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(path))
             }
             // Otherwise a stand alone project?
             else {

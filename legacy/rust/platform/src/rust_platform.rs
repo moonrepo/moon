@@ -340,132 +340,132 @@ impl Platform for RustPlatform {
         let tool = self.toolchain.get_for_version(&runtime.requirement)?;
         let mut operations = vec![];
 
-        // if !self.config.components.is_empty() {
-        //     debug!(
-        //         target: LOG_TARGET,
-        //         "Installing rustup components: {}",
-        //         map_list(&self.config.components, |c| color::label(c))
-        //     );
+        if !self.config.components.is_empty() {
+            debug!(
+                target: LOG_TARGET,
+                "Installing rustup components: {}",
+                map_list(&self.config.components, |c| color::label(c))
+            );
 
-        //     let mut args = vec!["component", "add"];
-        //     args.extend(self.config.components.iter().map(|c| c.as_str()));
+            let mut args = vec!["component", "add"];
+            args.extend(self.config.components.iter().map(|c| c.as_str()));
 
-        //     operations.push(
-        //         Operation::task_execution(format!("rustup {}", args.join(" ")))
-        //             .track_async(|| async {
-        //                 self.console
-        //                     .print_checkpoint(Checkpoint::Setup, "rustup component")?;
+            operations.push(
+                Operation::task_execution(format!("rustup {}", args.join(" ")))
+                    .track_async(|| async {
+                        self.console
+                            .print_checkpoint(Checkpoint::Setup, "rustup component")?;
 
-        //                 tool.exec_rustup(args, working_dir).await
-        //             })
-        //             .await?,
-        //     );
-        // }
+                        tool.exec_rustup(args, working_dir).await
+                    })
+                    .await?,
+            );
+        }
 
-        // if !self.config.targets.is_empty() {
-        //     debug!(
-        //         target: LOG_TARGET,
-        //         "Installing rustup targets: {}",
-        //         map_list(&self.config.targets, |c| color::label(c))
-        //     );
+        if !self.config.targets.is_empty() {
+            debug!(
+                target: LOG_TARGET,
+                "Installing rustup targets: {}",
+                map_list(&self.config.targets, |c| color::label(c))
+            );
 
-        //     let mut args = vec!["target", "add"];
-        //     args.extend(self.config.targets.iter().map(|c| c.as_str()));
+            let mut args = vec!["target", "add"];
+            args.extend(self.config.targets.iter().map(|c| c.as_str()));
 
-        //     operations.push(
-        //         Operation::task_execution(format!("rustup {}", args.join(" ")))
-        //             .track_async(|| async {
-        //                 self.console
-        //                     .print_checkpoint(Checkpoint::Setup, "rustup target")?;
+            operations.push(
+                Operation::task_execution(format!("rustup {}", args.join(" ")))
+                    .track_async(|| async {
+                        self.console
+                            .print_checkpoint(Checkpoint::Setup, "rustup target")?;
 
-        //                 tool.exec_rustup(args, working_dir).await
-        //             })
-        //             .await?,
-        //     );
-        // }
+                        tool.exec_rustup(args, working_dir).await
+                    })
+                    .await?,
+            );
+        }
 
-        // if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
-        //     operations.push(
-        //         Operation::task_execution("cargo generate-lockfile")
-        //             .track_async(|| async {
-        //                 self.console
-        //                     .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
+        if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
+            operations.push(
+                Operation::task_execution("cargo generate-lockfile")
+                    .track_async(|| async {
+                        self.console
+                            .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
 
-        //                 tool.exec_cargo(["generate-lockfile"], working_dir).await
-        //             })
-        //             .await?,
-        //     );
-        // }
+                        tool.exec_cargo(["generate-lockfile"], working_dir).await
+                    })
+                    .await?,
+            );
+        }
 
-        // let globals_dir = self.get_globals_dir(Some(tool));
+        let globals_dir = self.get_globals_dir(Some(tool));
 
-        // if !self.config.bins.is_empty() {
-        //     // Install cargo-binstall if it does not exist
-        //     // if !globals_dir.join(exe_name("cargo-binstall")).exists() {
-        //     //     debug!(
-        //     //         target: LOG_TARGET,
-        //     //         "{} does not exist, installing",
-        //     //         color::shell("cargo-binstall")
-        //     //     );
+        if !self.config.bins.is_empty() {
+            // Install cargo-binstall if it does not exist
+            if !globals_dir.join(exe_name("cargo-binstall")).exists() {
+                debug!(
+                    target: LOG_TARGET,
+                    "{} does not exist, installing",
+                    color::shell("cargo-binstall")
+                );
 
-        //     //     // let package = if let Some(version) = &self.config.binstall_version {
-        //     //     //     format!("cargo-binstall@{version}")
-        //     //     // } else {
-        //     //     //     "cargo-binstall".into()
-        //     //     // };
+                let package = if let Some(version) = &self.config.binstall_version {
+                    format!("cargo-binstall@{version}")
+                } else {
+                    "cargo-binstall".into()
+                };
 
-        //     //     // operations.push(
-        //     //     //     Operation::task_execution("cargo install cargo-binstall --force")
-        //     //     //         .track_async(|| {
-        //     //     //             tool.exec_cargo(["install", &package, "--force"], working_dir)
-        //     //     //         })
-        //     //     //         .await?,
-        //     //     // );
-        //     // }
+                operations.push(
+                    Operation::task_execution("cargo install cargo-binstall --force")
+                        .track_async(|| {
+                            tool.exec_cargo(["install", &package, "--force"], working_dir)
+                        })
+                        .await?,
+                );
+            }
 
-        //     // Then attempt to install binaries
-        //     debug!(
-        //         target: LOG_TARGET,
-        //         "Installing Cargo binaries: {}",
-        //         map_list(&self.config.bins, |b| color::label(b.get_name()))
-        //     );
+            // Then attempt to install binaries
+            debug!(
+                target: LOG_TARGET,
+                "Installing Cargo binaries: {}",
+                map_list(&self.config.bins, |b| color::label(b.get_name()))
+            );
 
-        //     for bin in &self.config.bins {
-        //         let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
-        //         let name = match bin {
-        //             BinEntry::Name(inner) => {
-        //                 args.push(inner);
-        //                 inner
-        //             }
-        //             BinEntry::Config(cfg) => {
-        //                 if cfg.local && is_ci() {
-        //                     continue;
-        //                 }
+            for bin in &self.config.bins {
+                let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
+                let name = match bin {
+                    BinEntry::Name(inner) => {
+                        args.push(inner);
+                        inner
+                    }
+                    BinEntry::Config(cfg) => {
+                        if cfg.local && is_ci() {
+                            continue;
+                        }
 
-        //                 if cfg.force {
-        //                     args.push("--force");
-        //                     // force = cfg.force;
-        //                 }
+                        if cfg.force {
+                            args.push("--force");
+                            // force = cfg.force;
+                        }
 
-        //                 args.push(&cfg.bin);
-        //                 &cfg.bin
-        //             }
-        //         };
+                        args.push(&cfg.bin);
+                        &cfg.bin
+                    }
+                };
 
-        //         operations.push(
-        //             Operation::task_execution(format!("cargo {}", args.join(" ")))
-        //                 .track_async(|| async {
-        //                     self.console.print_checkpoint(
-        //                         Checkpoint::Setup,
-        //                         format!("cargo binstall {name}"),
-        //                     )?;
+                operations.push(
+                    Operation::task_execution(format!("cargo {}", args.join(" ")))
+                        .track_async(|| async {
+                            self.console.print_checkpoint(
+                                Checkpoint::Setup,
+                                format!("cargo binstall {name}"),
+                            )?;
 
-        //                     tool.exec_cargo(args, working_dir).await
-        //                 })
-        //                 .await?,
-        //         );
-        //     }
-        // }
+                            tool.exec_cargo(args, working_dir).await
+                        })
+                        .await?,
+                );
+            }
+        }
 
         Ok(operations)
     }
@@ -488,68 +488,68 @@ impl Platform for RustPlatform {
         let legacy_toolchain_path = cargo_root.join("rust-toolchain");
         let toolchain_path = cargo_root.join("rust-toolchain.toml");
 
-        // // Convert rust-toolchain to rust-toolchain.toml
-        // if legacy_toolchain_path.exists() {
-        //     debug!(
-        //         target: LOG_TARGET,
-        //         "Found legacy {} configuration file, converting to {}",
-        //         color::file("rust-toolchain"),
-        //         color::file("rust-toolchain.toml"),
-        //     );
+        // Convert rust-toolchain to rust-toolchain.toml
+        if legacy_toolchain_path.exists() {
+            debug!(
+                target: LOG_TARGET,
+                "Found legacy {} configuration file, converting to {}",
+                color::file("rust-toolchain"),
+                color::file("rust-toolchain.toml"),
+            );
 
-        //     let legacy_contents = fs::read_file(&legacy_toolchain_path)?;
+            let legacy_contents = fs::read_file(&legacy_toolchain_path)?;
 
-        //     if legacy_contents.contains("[toolchain]") {
-        //         fs::rename(&legacy_toolchain_path, &toolchain_path)?;
-        //     } else {
-        //         fs::remove_file(&legacy_toolchain_path)?;
+            if legacy_contents.contains("[toolchain]") {
+                fs::rename(&legacy_toolchain_path, &toolchain_path)?;
+            } else {
+                fs::remove_file(&legacy_toolchain_path)?;
 
-        //         ToolchainTomlCache::write(
-        //             &toolchain_path,
-        //             ToolchainToml::new_with_channel(&legacy_contents),
-        //         )?;
-        //     }
+                ToolchainTomlCache::write(
+                    &toolchain_path,
+                    ToolchainToml::new_with_channel(&legacy_contents),
+                )?;
+            }
 
-        //     mutated_files = true;
-        // }
+            mutated_files = true;
+        }
 
         // Sync version into `toolchain.channel`
-        // if self.config.sync_toolchain_config && self.config.version.is_some() {
-        //     let version = self.config.version.as_ref().map(|v| v.to_string()).unwrap();
+        if self.config.sync_toolchain_config && self.config.version.is_some() {
+            let version = self.config.version.as_ref().map(|v| v.to_string()).unwrap();
 
-        //     if toolchain_path.exists() {
-        //         ToolchainTomlCache::sync(toolchain_path, |cfg| {
-        //             if cfg.toolchain.channel.as_ref() != Some(&version) {
-        //                 debug!(
-        //                     target: LOG_TARGET,
-        //                     "Syncing {} configuration file with version {}",
-        //                     color::file("rust-toolchain.toml"),
-        //                     color::hash(&version),
-        //                 );
+            if toolchain_path.exists() {
+                ToolchainTomlCache::sync(toolchain_path, |cfg| {
+                    if cfg.toolchain.channel.as_ref() != Some(&version) {
+                        debug!(
+                            target: LOG_TARGET,
+                            "Syncing {} configuration file with version {}",
+                            color::file("rust-toolchain.toml"),
+                            color::hash(&version),
+                        );
 
-        //                 cfg.toolchain.channel = Some(version);
-        //                 mutated_files = true;
+                        cfg.toolchain.channel = Some(version);
+                        mutated_files = true;
 
-        //                 return Ok(true);
-        //             }
+                        return Ok(true);
+                    }
 
-        //             Ok(false)
-        //         })?;
-        //     } else {
-        //         debug!(
-        //             target: LOG_TARGET,
-        //             "Creating {} configuration file",
-        //             color::file("rust-toolchain.toml"),
-        //         );
+                    Ok(false)
+                })?;
+            } else {
+                debug!(
+                    target: LOG_TARGET,
+                    "Creating {} configuration file",
+                    color::file("rust-toolchain.toml"),
+                );
 
-        //         ToolchainTomlCache::write(
-        //             toolchain_path,
-        //             ToolchainToml::new_with_channel(&version),
-        //         )?;
+                ToolchainTomlCache::write(
+                    toolchain_path,
+                    ToolchainToml::new_with_channel(&version),
+                )?;
 
-        //         mutated_files = true;
-        //     }
-        // }
+                mutated_files = true;
+            }
+        }
 
         Ok(mutated_files)
     }

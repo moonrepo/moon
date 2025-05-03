@@ -1,11 +1,9 @@
-use crate::operations::{ExecCommandOptions, exec_plugin_commands};
+use crate::operations::{ExecCommandOptions, exec_plugin_commands, handle_on_exec};
 use crate::utils::should_skip_action_matching;
 use moon_action::{Action, ActionStatus, SetupEnvironmentNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
-use moon_args::join_args;
 use moon_common::color;
-use moon_console::Checkpoint;
 use moon_pdk_api::SetupEnvironmentInput;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
@@ -53,7 +51,7 @@ pub async fn setup_environment(
 
     debug!("Setting up {log_label} environment");
 
-    // Extract setup commands
+    // Build input params
     let mut input = SetupEnvironmentInput {
         context: app_context.toolchain_registry.create_context(),
         project: None,
@@ -64,10 +62,22 @@ pub async fn setup_environment(
     };
 
     if let Some(project_id) = &node.project_id {
-        input.project = Some(workspace_graph.get_project(project_id)?.to_fragment());
+        let project = workspace_graph.get_project(project_id)?;
+
+        input.project = Some(project.to_fragment());
+        input.toolchain_config = app_context.toolchain_registry.create_merged_config(
+            &toolchain.id,
+            &app_context.toolchain_config,
+            &project.config,
+        );
     }
 
+    // Extract commands from output
     let output = toolchain.setup_environment(input).await?;
+
+    if output.commands.is_empty() {
+        return Ok(ActionStatus::Skipped);
+    }
 
     // Execute all commands
     action.operations.extend(
@@ -75,13 +85,11 @@ pub async fn setup_environment(
             app_context.clone(),
             output.commands,
             ExecCommandOptions {
-                on_exec: Some(Arc::new(move |cmd| {
-                    app_context.console.print_checkpoint(
-                        Checkpoint::Setup,
-                        format!("{} {}", cmd.command, join_args(&cmd.args)),
-                    )
-                })),
                 prefix: "setup-environment".into(),
+                working_dir: node.root.to_logical_path(&app_context.workspace_root),
+                on_exec: Some(Arc::new(move |cmd, attempts| {
+                    handle_on_exec(&app_context.console, cmd, attempts)
+                })),
             },
         )
         .await?,

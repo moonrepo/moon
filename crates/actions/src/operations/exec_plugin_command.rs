@@ -1,18 +1,23 @@
 use miette::IntoDiagnostic;
 use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf, encode_component};
+use moon_args::join_args;
+use moon_common::{
+    color,
+    path::{PathExt, WorkspaceRelativePathBuf, encode_component},
+};
+use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
-use moon_process::Command;
+use moon_process::{Command, Output};
 use moon_time::to_millis;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::warn;
+use tracing::{debug, warn};
 
 hash_content!(
     struct ExecCommandHash<'data> {
@@ -26,36 +31,118 @@ hash_content!(
     }
 );
 
-pub type OnExecFn = Arc<dyn Fn(&ExecCommandInput) -> miette::Result<()> + Send + Sync>;
+pub type OnExecFn = Arc<dyn Fn(&ExecCommand, (u8, u8)) -> miette::Result<()> + Send + Sync>;
+
+pub fn handle_on_exec(
+    console: &Console,
+    command: &ExecCommand,
+    attempts: (u8, u8),
+) -> miette::Result<()> {
+    let input = &command.command;
+    let label = command
+        .label
+        .clone()
+        .unwrap_or_else(|| format!("{} {}", input.command, join_args(&input.args)));
+
+    if attempts.0 > 1 {
+        console.print_checkpoint_with_comments(
+            Checkpoint::Setup,
+            label,
+            [format!("attempt {} of {}", attempts.0, attempts.1)],
+        )
+    } else {
+        console.print_checkpoint(Checkpoint::Setup, label)
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct ExecCommandOptions {
     pub on_exec: Option<OnExecFn>,
     pub prefix: String,
+    pub working_dir: PathBuf,
 }
 
-pub async fn exec_plugin_command(
+async fn internal_exec_plugin_command(
     app_context: Arc<AppContext>,
     command: &ExecCommand,
     options: &ExecCommandOptions,
-) -> miette::Result<Operation> {
-    let mut op = Operation::process_execution(&command.command.command); // hah
+    attempts: (u8, u8),
+) -> miette::Result<Output> {
+    let input = &command.command;
 
-    let mut cmd = create_process_command_from_plugin(&command.command);
-    cmd.with_console(app_context.console.clone());
-    cmd.error_on_nonzero = !command.allow_failure;
+    let mut cmd = Command::new(&input.command);
+    cmd.args(&input.args);
+    cmd.envs(&input.env);
 
-    if let Some(on_exec) = &options.on_exec {
-        on_exec(&command.command)?;
+    if let Some(cwd) = input.working_dir.as_ref().and_then(|dir| dir.real_path()) {
+        cmd.cwd(cwd);
+    } else {
+        cmd.cwd(&options.working_dir);
     }
 
-    match if command.command.stream {
+    cmd.with_console(app_context.console.clone());
+    cmd.set_error_on_nonzero(!command.allow_failure);
+    cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
+
+    if let Some(on_exec) = &options.on_exec {
+        on_exec(command, attempts)?;
+    }
+
+    if command.command.stream {
         cmd.exec_stream_output().await
     } else {
         cmd.exec_capture_output().await
-    } {
-        Ok(output) => {
-            op.finish_from_output(output.status(), output.stdout, output.stderr);
+    }
+}
+
+async fn internal_exec_plugin_command_as_operation(
+    app_context: Arc<AppContext>,
+    command: &ExecCommand,
+    options: &ExecCommandOptions,
+    attempts: (u8, u8),
+) -> miette::Result<Operation> {
+    let mut op = Operation::process_execution(&command.command.command); // hah
+
+    let result = match &command.cache {
+        Some(key) => {
+            let mut hash_item = ExecCommandHash {
+                command: &command.command,
+                input_env: BTreeMap::new(),
+                input_files: BTreeMap::new(),
+            };
+
+            if !command.inputs.is_empty() {
+                gather_cache_inputs(&app_context, &command.inputs, &mut hash_item).await?;
+            }
+
+            app_context
+                .clone()
+                .cache_engine
+                .execute_if_changed(
+                    format!(
+                        "{}:{}",
+                        options.prefix,
+                        encode_component(key).to_lowercase()
+                    ),
+                    hash_item,
+                    async move || {
+                        internal_exec_plugin_command(app_context, command, options, attempts).await
+                    },
+                )
+                .await
+        }
+        None => internal_exec_plugin_command(app_context, command, options, attempts)
+            .await
+            .map(Some),
+    };
+
+    match result {
+        Ok(maybe_output) => {
+            if let Some(output) = maybe_output {
+                op.finish_from_output(output.status(), output.stdout, output.stderr);
+            } else {
+                op.finish(ActionStatus::Skipped);
+            }
 
             Ok(op)
         }
@@ -67,40 +154,48 @@ pub async fn exec_plugin_command(
     }
 }
 
-pub async fn exec_plugin_command_with_cache(
+pub async fn exec_plugin_command(
     app_context: Arc<AppContext>,
     command: &ExecCommand,
     options: &ExecCommandOptions,
-) -> miette::Result<Option<Operation>> {
-    let Some(key) = &command.cache else {
-        return exec_plugin_command(app_context, command, options)
-            .await
-            .map(Some);
-    };
+) -> miette::Result<Vec<Operation>> {
+    let mut ops = vec![];
+    let attempt_count = 1 + command.retry_count;
 
-    let mut hash_item = ExecCommandHash {
-        command: &command.command,
-        input_env: BTreeMap::new(),
-        input_files: BTreeMap::new(),
-    };
-
-    if !command.inputs.is_empty() {
-        gather_cache_inputs(&app_context, &command.inputs, &mut hash_item).await?;
-    }
-
-    app_context
-        .clone()
-        .cache_engine
-        .execute_if_changed(
-            format!(
-                "{}:{}",
-                options.prefix,
-                encode_component(key).to_lowercase()
-            ),
-            hash_item,
-            async move || exec_plugin_command(app_context, command, options).await,
+    for attempt in 1..=attempt_count {
+        match internal_exec_plugin_command_as_operation(
+            app_context.clone(),
+            command,
+            options,
+            (attempt, attempt_count),
         )
         .await
+        {
+            Ok(op) => {
+                let success = op
+                    .get_exec_output()
+                    .is_some_and(|exec| exec.get_exit_code() == 0);
+
+                ops.push(op);
+
+                if success {
+                    break;
+                }
+            }
+            Err(error) => {
+                if attempt == attempt_count {
+                    return Err(error);
+                }
+            }
+        };
+
+        debug!(
+            "Failed to execute {} command, retrying...",
+            color::shell(command.label.as_ref().unwrap_or(&command.command.command)),
+        );
+    }
+
+    Ok(ops)
 }
 
 pub async fn exec_plugin_commands(
@@ -123,11 +218,7 @@ pub async fn exec_plugin_commands(
     // Execute serial first, as a parallel command may
     // depend on a serial command having been executed
     for command in serial {
-        if let Some(op) =
-            exec_plugin_command_with_cache(app_context.clone(), &command, &options).await?
-        {
-            ops.push(op);
-        }
+        ops.extend(exec_plugin_command(app_context.clone(), &command, &options).await?);
     }
 
     // Then execute the parallel commands
@@ -137,30 +228,14 @@ pub async fn exec_plugin_commands(
         let app_context = app_context.clone();
         let options = options.clone();
 
-        set.spawn(
-            async move { exec_plugin_command_with_cache(app_context, &command, &options).await },
-        );
+        set.spawn(async move { exec_plugin_command(app_context, &command, &options).await });
     }
 
     while let Some(result) = set.join_next().await {
-        if let Some(op) = result.into_diagnostic()?? {
-            ops.push(op);
-        }
+        ops.extend(result.into_diagnostic()??);
     }
 
     Ok(ops)
-}
-
-fn create_process_command_from_plugin(input: &ExecCommandInput) -> Command {
-    let mut command = Command::new(&input.command);
-    command.args(&input.args);
-    command.envs(&input.env);
-
-    if let Some(cwd) = input.working_dir.as_ref().and_then(|dir| dir.real_path()) {
-        command.cwd(cwd);
-    }
-
-    command
 }
 
 async fn gather_cache_inputs(

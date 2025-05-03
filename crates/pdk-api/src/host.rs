@@ -3,6 +3,11 @@ use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct};
 api_struct!(
     #[serde(default)]
     pub struct ExecCommand {
+        /// When enabled, failed command executions will
+        /// not abort the moon process, and allow it to
+        /// continue running.
+        pub allow_failure: bool,
+
         /// Cache the command based on its input/params and
         /// avoid re-executing until they change. Enabling
         /// this cache requires a label for debug purposes.
@@ -26,6 +31,7 @@ impl ExecCommand {
     /// Create a new command with the provided input.
     pub fn new(command: ExecCommandInput) -> Self {
         Self {
+            allow_failure: false,
             cache: None,
             command,
             inputs: vec![],
@@ -33,9 +39,21 @@ impl ExecCommand {
         }
     }
 
+    /// Allow failures to not abort the moon process.
+    pub fn allow_failure(mut self) -> Self {
+        self.allow_failure = true;
+        self
+    }
+
     /// Enable caching.
     pub fn cache(mut self, label: impl AsRef<str>) -> Self {
         self.cache = Some(label.as_ref().into());
+        self
+    }
+
+    /// Disallow failures and abort the moon process.
+    pub fn disallow_failure(mut self) -> Self {
+        self.allow_failure = false;
         self
     }
 

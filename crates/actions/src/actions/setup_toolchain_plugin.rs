@@ -49,7 +49,7 @@ pub async fn setup_toolchain_plugin(
 
     if !toolchain.supports_tier_3().await {
         debug!(
-            "Skipping {log_label} toolchain setup as it does not support tier 3 (downloading and installing tools)"
+            "Skipping {log_label} toolchain setup as the toolchain does not support tier 3 (downloading and installing tools)"
         );
 
         return Ok(ActionStatus::Skipped);

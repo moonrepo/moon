@@ -82,6 +82,28 @@ pub async fn run_action(
             result
         }
 
+        ActionNode::SetupEnvironment(inner) => {
+            // emitter
+            //     .emit(Event::ToolchainInstalling { spec: &inner.spec })
+            //     .await?;
+
+            setup_environment(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await
+
+            // emitter
+            //     .emit(Event::ToolchainInstalled {
+            //         error: extract_error(&result),
+            //         spec: &inner.spec,
+            //     })
+            //     .await?;
+        }
+
         ActionNode::SetupToolchainLegacy(inner) => {
             emitter
                 .emit(Event::ToolInstalling {

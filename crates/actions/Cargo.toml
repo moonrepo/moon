@@ -8,6 +8,7 @@ publish = false
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_app_context = { path = "../app-context" }
+moon_args = { path = "../args" }
 moon_cache = { path = "../cache" }
 moon_cache_item = { path = "../cache-item" }
 moon_codeowners = { path = "../codeowners" }

@@ -1,10 +1,11 @@
 use miette::IntoDiagnostic;
+use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, encode_component};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
-use moon_process::{Command, Output};
+use moon_process::Command;
 use moon_time::to_millis;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
@@ -25,7 +26,7 @@ hash_content!(
     }
 );
 
-pub type OnExecFn = Arc<dyn Fn(&ExecCommandInput) + Send + Sync>;
+pub type OnExecFn = Arc<dyn Fn(&ExecCommandInput) -> miette::Result<()> + Send + Sync>;
 
 #[derive(Clone, Default)]
 pub struct ExecCommandOptions {
@@ -37,28 +38,40 @@ pub async fn exec_plugin_command(
     app_context: Arc<AppContext>,
     command: &ExecCommand,
     options: &ExecCommandOptions,
-) -> miette::Result<Output> {
+) -> miette::Result<Operation> {
+    let mut op = Operation::process_execution(&command.command.command); // hah
+
     let mut cmd = create_process_command_from_plugin(&command.command);
     cmd.with_console(app_context.console.clone());
+    cmd.error_on_nonzero = !command.allow_failure;
 
-    options.on_exec.as_ref().inspect(|on_exec| {
-        on_exec(&command.command);
-    });
+    if let Some(on_exec) = &options.on_exec {
+        on_exec(&command.command)?;
+    }
 
-    let output = if command.command.stream {
-        cmd.exec_stream_output().await?
+    match if command.command.stream {
+        cmd.exec_stream_output().await
     } else {
-        cmd.exec_capture_output().await?
-    };
+        cmd.exec_capture_output().await
+    } {
+        Ok(output) => {
+            op.finish_from_output(output.status(), output.stdout, output.stderr);
 
-    Ok(output)
+            Ok(op)
+        }
+        Err(error) => {
+            op.finish(ActionStatus::Failed);
+
+            Err(error)
+        }
+    }
 }
 
 pub async fn exec_plugin_command_with_cache(
     app_context: Arc<AppContext>,
     command: &ExecCommand,
     options: &ExecCommandOptions,
-) -> miette::Result<Option<Output>> {
+) -> miette::Result<Option<Operation>> {
     let Some(key) = &command.cache else {
         return exec_plugin_command(app_context, command, options)
             .await
@@ -79,7 +92,11 @@ pub async fn exec_plugin_command_with_cache(
         .clone()
         .cache_engine
         .execute_if_changed(
-            format!("{}:{}", options.prefix, encode_component(key)),
+            format!(
+                "{}:{}",
+                options.prefix,
+                encode_component(key).to_lowercase()
+            ),
             hash_item,
             async move || exec_plugin_command(app_context, command, options).await,
         )
@@ -90,10 +107,10 @@ pub async fn exec_plugin_commands(
     app_context: Arc<AppContext>,
     commands: Vec<ExecCommand>,
     options: ExecCommandOptions,
-) -> miette::Result<Vec<Output>> {
+) -> miette::Result<Vec<Operation>> {
     let mut serial = vec![];
     let mut parallel = vec![];
-    let mut outputs = vec![];
+    let mut ops = vec![];
 
     for command in commands {
         if command.parallel {
@@ -106,10 +123,10 @@ pub async fn exec_plugin_commands(
     // Execute serial first, as a parallel command may
     // depend on a serial command having been executed
     for command in serial {
-        if let Some(output) =
+        if let Some(op) =
             exec_plugin_command_with_cache(app_context.clone(), &command, &options).await?
         {
-            outputs.push(output);
+            ops.push(op);
         }
     }
 
@@ -126,12 +143,12 @@ pub async fn exec_plugin_commands(
     }
 
     while let Some(result) = set.join_next().await {
-        if let Some(output) = result.into_diagnostic()?? {
-            outputs.push(output);
+        if let Some(op) = result.into_diagnostic()?? {
+            ops.push(op);
         }
     }
 
-    Ok(outputs)
+    Ok(ops)
 }
 
 fn create_process_command_from_plugin(input: &ExecCommandInput) -> Command {

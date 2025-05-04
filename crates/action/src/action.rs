@@ -136,6 +136,22 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
+    pub fn get_prefix(&self) -> &str {
+        match &*self.node {
+            ActionNode::None => "unknown",
+            ActionNode::InstallDependencies(_)
+            | ActionNode::InstallProjectDeps(_)
+            | ActionNode::InstallWorkspaceDeps(_) => "install-dependencies",
+            ActionNode::RunTask(_) => "run-task",
+            ActionNode::SetupEnvironment(_) => "setup-environment",
+            ActionNode::SetupToolchainLegacy(_) | ActionNode::SetupToolchain(_) => {
+                "setup-toolchain"
+            }
+            ActionNode::SyncProject(_) => "sync-project",
+            ActionNode::SyncWorkspace => "sync-workspace",
+        }
+    }
+
     pub fn should_abort(&self) -> bool {
         matches!(self.status, ActionStatus::Aborted)
     }

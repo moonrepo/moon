@@ -9,7 +9,7 @@ use moon_plugin::{
 };
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
-use starbase_utils::json;
+use starbase_utils::json::{self, JsonValue};
 use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -49,14 +49,12 @@ impl ToolchainRegistry {
         }
     }
 
-    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> json::JsonValue {
-        let mut data = json::JsonValue::default();
-
+    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> JsonValue {
         if let Some(config) = toolchain_config.plugins.get(id) {
-            data = json::JsonValue::Object(config.config.clone().into_iter().collect());
+            return config.to_json();
         }
 
-        data
+        JsonValue::default()
     }
 
     pub fn create_merged_config(
@@ -64,13 +62,13 @@ impl ToolchainRegistry {
         id: &str,
         toolchain_config: &ToolchainConfig,
         project_config: &ProjectConfig,
-    ) -> json::JsonValue {
+    ) -> JsonValue {
         let mut data = self.create_config(id, toolchain_config);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
             project_config.toolchain.plugins.get(id)
         {
-            let next = json::JsonValue::Object(leaf_config.config.clone().into_iter().collect());
+            let next = leaf_config.to_json();
 
             data = json::merge(&data, &next);
         }
@@ -213,7 +211,7 @@ impl ToolchainRegistry {
                     let mut operation = Operation::new(format!("{toolchain_id}:{func_name}"));
                     let id = toolchain.id.clone();
                     let input = input_factory(self, &toolchain);
-                    let future = output_factory(toolchain, input);
+                    let future = output_factory(toolchain.clone(), input);
 
                     futures.push_back(tokio::spawn(async move {
                         let result = future.await;
@@ -223,6 +221,7 @@ impl ToolchainRegistry {
                             id,
                             operation,
                             output: result?,
+                            toolchain,
                         })
                     }));
                 }
@@ -249,4 +248,5 @@ pub struct CallResult<T> {
     pub id: PluginId,
     pub operation: Operation,
     pub output: T,
+    pub toolchain: Arc<ToolchainPlugin>,
 }

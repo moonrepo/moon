@@ -1,4 +1,5 @@
 use crate::operations::*;
+use crate::plugins::*;
 use crate::utils::should_skip_action;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};

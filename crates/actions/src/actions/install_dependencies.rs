@@ -1,4 +1,4 @@
-use crate::operations::{ExecCommandOptions, exec_plugin_command, handle_on_exec};
+use crate::plugins::{ExecCommandOptions, exec_plugin_command, handle_on_exec};
 use crate::utils::should_skip_action_matching;
 use moon_action::{Action, ActionStatus, InstallDependenciesNode};
 use moon_action_context::ActionContext;

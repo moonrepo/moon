@@ -1,4 +1,4 @@
-use crate::operations::convert_plugin_sync_operation_with_output;
+use crate::plugins::convert_plugin_sync_operation_with_output;
 use crate::utils::should_skip_action_matching;
 use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;

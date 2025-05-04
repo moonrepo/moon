@@ -1,71 +1,178 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::MoonSession;
+use moon_actions::operations::{ExecCommandOptions, exec_plugin_command};
 use moon_bun_tool::BunTool;
 use moon_common::Id;
 use moon_config::PlatformType;
 use moon_deno_tool::DenoTool;
 use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
-use moon_pdk_api::PruneDockerInput;
+use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
 use moon_platform::PlatformManager;
+use moon_project::Project;
 use moon_rust_tool::RustTool;
 use moon_tool::DependencyManager;
-use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
+use moon_toolchain_plugin::ToolchainPlugin;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_utils::{fs, json};
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
+struct PruneToolchainInstance {
+    deps_root: PathBuf,
+    projects: Vec<Arc<Project>>,
+    toolchain: Arc<ToolchainPlugin>,
+}
+
 #[instrument(skip_all)]
-pub async fn prune_toolchain(
-    session: &MoonSession,
-    toolchain_registry: &ToolchainRegistry,
-    toolchain: &ToolchainPlugin,
-) -> AppResult {
+pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) -> AppResult {
     let project_graph = session.get_project_graph().await?;
+    let toolchain_registry = session.get_toolchain_registry().await?;
 
-    if session
-        .workspace_config
-        .docker
-        .prune
-        .delete_vendor_directories
-    {
-        if let (Some(vendor_name), Some(manifest_name)) = (
-            &toolchain.metadata.vendor_dir_name,
-            &toolchain.metadata.manifest_file_name,
-        ) {
-            debug!(
-                "Removing {} vendor directories ({})",
-                toolchain.metadata.name, vendor_name
-            );
+    // Collect all dependency roots and which projects belong to it
+    let mut deps_roots: Vec<PruneToolchainInstance> = vec![];
 
-            fs::remove_dir_all(session.workspace_root.join(vendor_name))?;
+    for project_id in &manifest.focused_projects {
+        let project = project_graph.get(project_id)?;
 
-            for source in project_graph.sources().values() {
-                let project_root = source.to_logical_path(&session.workspace_root);
+        for locate_result in toolchain_registry
+            .locate_dependencies_root_many(
+                project.get_enabled_toolchains(),
+                |registry, toolchain| LocateDependenciesRootInput {
+                    context: registry.create_context(),
+                    starting_dir: toolchain.to_virtual_path(&project.root),
+                },
+            )
+            .await?
+        {
+            if let Some(root) = locate_result
+                .output
+                .root
+                .as_ref()
+                .and_then(|root| root.real_path())
+            {
+                let toolchain = locate_result.toolchain;
 
-                // Only remove if there's a sibling manifest
-                if project_root.join(manifest_name).exists() {
-                    fs::remove_dir_all(project_root.join(vendor_name))?;
+                if !toolchain.in_dependencies_workspace(&locate_result.output, &project.root)? {
+                    continue;
                 }
+
+                match deps_roots.iter_mut().find(|instance| {
+                    instance.deps_root == root && instance.toolchain.id == toolchain.id
+                }) {
+                    Some(entry) => {
+                        entry.projects.push(project.clone());
+                    }
+                    None => {
+                        deps_roots.push(PruneToolchainInstance {
+                            deps_root: root,
+                            projects: vec![project.clone()],
+                            toolchain,
+                        });
+                    }
+                };
             }
         }
     }
 
-    if session.workspace_config.docker.prune.install_toolchain_deps {
-        // TODO
+    if deps_roots.is_empty() {
+        return Ok(None);
     }
 
-    if toolchain.has_func("prune_docker").await {
-        toolchain
-            .call_func_without_output(
-                "prune_docker",
-                PruneDockerInput {
-                    context: toolchain_registry.create_context(),
-                    docker_config: session.workspace_config.docker.prune.clone(),
-                },
-            )
-            .await?;
+    // Then prune and install dependencies for each root (and its projects)
+    let mut set = JoinSet::new();
+
+    for instance in deps_roots {
+        let toolchain_registry = Arc::clone(&toolchain_registry);
+        let toolchain = Arc::clone(&instance.toolchain);
+        let docker_config = session.workspace_config.docker.prune.clone();
+        let app_context = session.get_app_context().await?;
+
+        set.spawn(async move {
+            // Run prune first, so this can remove all development artifacts
+            if toolchain.has_func("prune_docker").await {
+                let _output = toolchain
+                    .prune_docker(PruneDockerInput {
+                        context: toolchain_registry.create_context(),
+                        docker_config: docker_config.clone(),
+                        projects: instance
+                            .projects
+                            .iter()
+                            .map(|project| project.to_fragment())
+                            .collect(),
+                        root: toolchain.to_virtual_path(&instance.deps_root),
+                    })
+                    .await?;
+            }
+
+            // Then run install, so this can only install production dependencies
+            if toolchain.has_func("install_dependencies").await
+                && docker_config.install_toolchain_deps
+            {
+                let in_project = if instance.projects.len() == 1
+                    && instance
+                        .projects
+                        .first()
+                        .is_some_and(|project| project.root == instance.deps_root)
+                {
+                    instance.projects.first().cloned()
+                } else {
+                    None
+                };
+
+                let output = toolchain
+                    .install_dependencies(InstallDependenciesInput {
+                        context: toolchain_registry.create_context(),
+                        packages: Some(
+                            instance
+                                .projects
+                                .iter()
+                                .flat_map(|project| project.alias.clone())
+                                .collect(),
+                        ),
+                        production: true,
+                        project: in_project.as_ref().map(|project| project.to_fragment()),
+                        root: toolchain.to_virtual_path(&instance.deps_root),
+                        toolchain_config: match in_project {
+                            Some(project) => toolchain_registry.create_merged_config(
+                                &toolchain.id,
+                                &app_context.toolchain_config,
+                                &project.config,
+                            ),
+                            None => toolchain_registry
+                                .create_config(&toolchain.id, &app_context.toolchain_config),
+                        },
+                    })
+                    .await?;
+
+                if let Some(mut install) = output.install_command {
+                    // Always stream output to the console
+                    install.command.stream = true;
+
+                    // Ensure it runs in the dependency root
+                    if install.command.working_dir.is_none() {
+                        install.command.working_dir =
+                            Some(toolchain.to_virtual_path(&instance.deps_root));
+                    }
+
+                    // Always execute without cache
+                    exec_plugin_command(
+                        app_context,
+                        &install,
+                        &ExecCommandOptions {
+                            prefix: "prune-docker".into(),
+                            ..Default::default()
+                        },
+                    )
+                    .await?;
+                }
+            }
+
+            Ok::<_, miette::Report>(())
+        });
     }
 
     Ok(None)
@@ -238,8 +345,6 @@ pub async fn prune(session: MoonSession) -> AppResult {
     }
 
     // Do this later so we only run once for each platform instead of per project
-    let toolchain_registry = session.get_toolchain_registry().await?;
-
     for toolchain_id in toolchains {
         if toolchain_id == "unknown" {
             // Will crash with "Platform unknown has not been enabled"
@@ -298,11 +403,9 @@ pub async fn prune(session: MoonSession) -> AppResult {
                 _ => {}
             };
         }
-
-        if let Ok(toolchain) = toolchain_registry.load(toolchain_id).await {
-            prune_toolchain(&session, &toolchain_registry, &toolchain).await?;
-        }
     }
+
+    prune_toolchains(&session, &manifest).await?;
 
     Ok(None)
 }

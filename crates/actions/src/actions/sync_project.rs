@@ -37,9 +37,10 @@ pub async fn sync_project(
     let project = workspace_graph.get_project_with_tasks(project_id)?;
 
     // Lock the project to avoid collisions
-    let _lock = app_context
-        .cache_engine
-        .create_lock(format!("syncProject-{}", project_id))?;
+    let _lock =
+        app_context
+            .cache_engine
+            .create_lock(format!("{}-{}", action.get_prefix(), project_id))?;
 
     debug!("Syncing project {}", color::id(project_id));
 

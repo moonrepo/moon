@@ -20,7 +20,6 @@ use moon_task_args::parse_task_args;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::GlobSet;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -352,23 +351,14 @@ impl<'query> ActionGraphBuilder<'query> {
             .await?;
 
         // Only insert this action if a root was located
-        if let Some(root) = output.root {
-            let abs_root = toolchain.from_virtual_path(root.any_path());
+        if let Some(abs_root) = output.root.as_ref().and_then(|root| root.real_path()) {
             let rel_root = abs_root
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
             // Determine if we're in the dependencies workspace
             let in_project = project.root == abs_root;
-            let in_workspace = if let Some(globs) = output.members {
-                if in_project {
-                    true // Root always in the workspace
-                } else {
-                    GlobSet::new(&globs)?.matches(project.source.as_str())
-                }
-            } else {
-                true
-            };
+            let in_workspace = toolchain.in_dependencies_workspace(&output, &project.root)?;
 
             // If not in the dependencies workspace (if there is one),
             // or is a stand-alone project with its own lockfile,
@@ -389,6 +379,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let index = insert_node_or_exit!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: if in_workspace { output.members } else { None },
                         project_id,
                         root,
                         toolchain_id: spec.id.clone(),

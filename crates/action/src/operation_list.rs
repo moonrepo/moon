@@ -1,5 +1,6 @@
-use crate::OperationMeta;
-use crate::{action::ActionStatus, operation::*};
+use crate::action::ActionStatus;
+use crate::operation::*;
+use crate::operation_meta::OperationMeta;
 use serde::{Deserialize, Serialize};
 use std::mem;
 use std::ops::{Deref, DerefMut};

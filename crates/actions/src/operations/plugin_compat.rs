@@ -10,7 +10,7 @@ pub fn convert_plugin_sync_operation(base: PluginOperation) -> Operation {
         .map(|part| part.to_case(Case::Kebab))
         .collect::<Vec<_>>();
 
-    let mut op = Operation::sync_operation(id_parts.join(":"));
+    let mut op = Operation::sync_operation(id_parts.join(":")).unwrap(); // TODO
 
     op.started_at = base
         .started_at

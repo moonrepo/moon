@@ -51,7 +51,7 @@ pub async fn sync_workspace(
 
         operation_futures.push(task::spawn(async move {
             Ok(vec![
-                Operation::sync_operation("system:configSchemas")
+                Operation::sync_operation("config-schemas")?
                     .track_async_with_check(
                         || sync_config_schemas(&app_context, false),
                         |result| result,
@@ -71,7 +71,7 @@ pub async fn sync_workspace(
 
         operation_futures.push(task::spawn(async move {
             Ok(vec![
-                Operation::sync_operation("system:codeowners")
+                Operation::sync_operation("codeowners")?
                     .track_async_with_check(
                         || sync_codeowners(&app_context, &workspace_graph, false),
                         |result| result.is_some(),
@@ -92,7 +92,7 @@ pub async fn sync_workspace(
 
         operation_futures.push(task::spawn(async move {
             Ok(vec![
-                Operation::sync_operation("system:vcsHooks")
+                Operation::sync_operation("vcs-hooks")?
                     .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
                     .await?,
             ])

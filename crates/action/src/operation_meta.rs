@@ -1,3 +1,4 @@
+use moon_common::Id;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::ExitStatus;
@@ -16,7 +17,7 @@ pub struct OperationMetaSync {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub changed_files: Vec<PathBuf>,
 
-    pub label: String,
+    pub id: Id,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]

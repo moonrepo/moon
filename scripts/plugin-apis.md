@@ -19,9 +19,10 @@
 - [ ] `hash_manifest_contents`
 - [x] `hash_task_contents`
 - [x] `install_dependencies`
-- [x] `locate_dependencies_root`
+- [x] `locate_dependencies_root` \*
 - [ ] `parse_lockfile`
 - [ ] `parse_manifest`
+- [x] `setup_environment`
 - [x] `sync_workspace`
 - [x] `sync_project`
 

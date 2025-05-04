@@ -3630,6 +3630,7 @@ dependencies = [
  "moon_config_schema",
  "moon_console",
  "moon_env_var",
+ "moon_feature_flags",
  "moon_hash",
  "moon_pdk_api",
  "moon_platform",

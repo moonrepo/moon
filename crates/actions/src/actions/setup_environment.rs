@@ -28,29 +28,33 @@ pub async fn setup_environment(
     workspace_graph: Arc<WorkspaceGraph>,
     node: &SetupEnvironmentNode,
 ) -> miette::Result<ActionStatus> {
-    let log_label = node.toolchain_id.as_str();
-
     // Skip this action if requested by the user
     if let Some(value) =
         should_skip_action_matching("MOON_SKIP_SETUP_ENVIRONMENT", &node.toolchain_id)
     {
         debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
             env = value,
-            "Skipping {log_label} environment setup because {} is set and matches",
+            "Skipping environment setup because {} is set and matches",
             color::symbol("MOON_SKIP_SETUP_ENVIRONMENT")
         );
 
         return Ok(ActionStatus::Skipped);
     }
 
-    // Load the toolchain and create hashable
+    // Load the toolchain
     let toolchain = app_context
         .toolchain_registry
         .load(&node.toolchain_id)
         .await?;
 
     if !toolchain.has_func("setup_environment").await {
-        debug!("Skipping {log_label} environment setup as the toolchain does not support it");
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Skipping environment setup as the toolchain does not support it"
+        );
 
         return Ok(ActionStatus::Skipped);
     }
@@ -100,8 +104,14 @@ pub async fn setup_environment(
     }
 
     // Execute all commands
-    debug!("Setting up {log_label} environment");
+    debug!(
+        root = node.root.as_str(),
+        toolchain_id = node.toolchain_id.as_str(),
+        "Setting up {} environment",
+        toolchain.metadata.name
+    );
 
+    // TODO changed files, operations
     let operations = exec_plugin_commands(
         app_context.clone(),
         output.commands,

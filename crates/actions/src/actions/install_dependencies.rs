@@ -5,14 +5,28 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
 use moon_env_var::GlobalEnvBag;
+use moon_feature_flags::glob_walk_with_options;
+use moon_hash::hash_content;
 use moon_pdk_api::InstallDependenciesInput;
+use moon_project::ProjectFragment;
+use moon_time::to_millis;
+use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
+use starbase_utils::glob::GlobWalkOptions;
+use starbase_utils::{fs, json::JsonValue};
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-// Temporarily match this with the legacy action!
-use super::install_deps::DependenciesCacheState;
+hash_content!(
+    struct InstallDependenciesHash<'action> {
+        action_node: &'action InstallDependenciesNode,
+        lockfile_timestamp: Option<u128>,
+        project: Option<&'action ProjectFragment>,
+        toolchain_config: &'action JsonValue,
+        vendor_dir_exists: bool,
+    }
+);
 
 #[instrument(skip(action, action_context, app_context, workspace_graph))]
 pub async fn install_dependencies(
@@ -22,18 +36,15 @@ pub async fn install_dependencies(
     workspace_graph: Arc<WorkspaceGraph>,
     node: &InstallDependenciesNode,
 ) -> miette::Result<ActionStatus> {
-    let log_label = node.toolchain_id.as_str();
-    let cache_engine = &app_context.cache_engine;
-
-    // Create a file lock by toolchain ID, as this avoids colliding
-    // setup's in this process and other parallel processes
-    let _lock = cache_engine.create_lock(format!("installDependencies-{}", node.toolchain_id))?;
+    let deps_root = node.root.to_logical_path(&app_context.workspace_root);
 
     // Skip this action if requested by the user
     if let Some(value) = should_skip_action_matching("MOON_SKIP_INSTALL_DEPS", &node.toolchain_id) {
         debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
             env = value,
-            "Skipping {log_label} dependency install because {} is set",
+            "Skipping dependency install because {} is set",
             color::symbol("MOON_SKIP_INSTALL_DEPS")
         );
 
@@ -42,14 +53,22 @@ pub async fn install_dependencies(
 
     // Installing dependencies requires an internet connection
     if proto_core::is_offline() {
-        debug!("No internet connection, skipping dependency install");
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "No internet connection, skipping dependency install"
+        );
 
         return Ok(ActionStatus::Skipped);
     }
 
     // When cache is write only, avoid install as user is typically force updating cache
     if app_context.cache_engine.is_write_only() {
-        debug!("Force updating cache, skipping dependency install");
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Force updating cache, skipping dependency install"
+        );
 
         return Ok(ActionStatus::Skipped);
     }
@@ -57,7 +76,11 @@ pub async fn install_dependencies(
     // When running against affected files, avoid install as it interrupts the workflow,
     // especially when used with VSC hooks
     if action_context.affected.is_some() && !is_ci() {
-        debug!("Running against affected files, skipping dependency install");
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Running against affected files, skipping dependency install"
+        );
 
         return Ok(ActionStatus::Skipped);
     }
@@ -69,27 +92,28 @@ pub async fn install_dependencies(
         .await?;
 
     if !toolchain.has_func("install_dependencies").await {
-        debug!("Skipping {log_label} dependency install as the toolchain does not support it");
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Skipping dependency install as the toolchain does not support it"
+        );
 
         return Ok(ActionStatus::Skipped);
     }
-
-    let deps_root = node.root.to_logical_path(&app_context.workspace_root);
 
     // When in CI, we can avoid installing dependencies if the vendor directory exists
     // because we can assume they've already been installed before moon runs!
-    if is_ci()
-        && has_vendor_installed_dependencies(
-            &deps_root,
-            toolchain.metadata.vendor_dir_name.as_deref(),
-        )
-    {
-        debug!("In a CI environment and dependencies already exist, skipping dependency install");
+    if is_ci() && has_vendor_installed_dependencies(&toolchain, &deps_root) {
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "In a CI environment and dependencies already exist, skipping dependency install"
+        );
 
         return Ok(ActionStatus::Skipped);
     }
 
-    // Build input params
+    // Build the input
     let mut input = InstallDependenciesInput {
         context: app_context.toolchain_registry.create_context(),
         project: None,
@@ -111,7 +135,19 @@ pub async fn install_dependencies(
         );
     }
 
-    // Extract commands from output
+    // Create a lock if we haven't run before
+    let Some(_lock) = app_context
+        .cache_engine
+        .create_hash_lock(
+            action.get_prefix(),
+            create_hash_content(&toolchain, &deps_root, node, &input)?,
+        )
+        .await?
+    else {
+        return Ok(ActionStatus::Skipped);
+    };
+
+    // Extract from output
     let output = toolchain.install_dependencies(input).await?;
 
     if output.install_command.is_none() && output.dedupe_command.is_none() {
@@ -123,7 +159,7 @@ pub async fn install_dependencies(
     let console = app_context.console.clone();
 
     let options = ExecCommandOptions {
-        prefix: "install-dependencies".into(),
+        prefix: action.get_prefix().into(),
         working_dir: deps_root,
         on_exec: Some(Arc::new(move |cmd, attempts| {
             handle_on_exec(&console, cmd, attempts)
@@ -135,7 +171,12 @@ pub async fn install_dependencies(
         .is_some();
 
     if let Some(mut install) = output.install_command {
-        debug!("Installing {log_label} dependencies");
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Installing {} dependencies",
+            toolchain.metadata.name
+        );
 
         install.cache = None; // Disable
         install.command.stream = !hide_output;
@@ -146,7 +187,12 @@ pub async fn install_dependencies(
 
     if !is_ci() {
         if let Some(mut dedupe) = output.dedupe_command {
-            debug!("Deduping {log_label} dependencies");
+            debug!(
+                root = node.root.as_str(),
+                toolchain_id = node.toolchain_id.as_str(),
+                "Deduping {} dependencies",
+                toolchain.metadata.name
+            );
 
             dedupe.cache = None; // Disable
             dedupe.command.stream = !hide_output;
@@ -159,8 +205,65 @@ pub async fn install_dependencies(
     Ok(ActionStatus::Passed)
 }
 
-fn has_vendor_installed_dependencies(deps_root: &Path, vendor_dir_name: Option<&str>) -> bool {
-    let Some(vendor_dir_name) = vendor_dir_name else {
+fn create_hash_content<'action>(
+    toolchain: &ToolchainPlugin,
+    deps_root: &Path,
+    node: &'action InstallDependenciesNode,
+    input: &'action InstallDependenciesInput,
+) -> miette::Result<InstallDependenciesHash<'action>> {
+    let mut content = InstallDependenciesHash {
+        action_node: node,
+        lockfile_timestamp: None,
+        project: input.project.as_ref(),
+        toolchain_config: &input.toolchain_config,
+        vendor_dir_exists: false,
+    };
+
+    // Extract lockfile last modification
+    if let Some(lock_file_name) = &toolchain.metadata.lock_file_name {
+        let lock_path = deps_root.join(lock_file_name);
+
+        if lock_path.exists() {
+            let meta = fs::metadata(&lock_path)?;
+
+            if let Ok(timestamp) = meta.modified().or_else(|_| meta.created()) {
+                content.lockfile_timestamp = Some(to_millis(timestamp));
+            }
+        }
+    }
+
+    // Extract dependencies from all applicable manifests
+    if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
+        let mut deps_members = node.members.clone().unwrap_or_default();
+        deps_members.push(".".into());
+
+        let _manifest_paths =
+            glob_walk_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
+                .into_iter()
+                .filter_map(|path| {
+                    if path.ends_with(manifest_file_name) {
+                        Some(path)
+                    } else if path.join(manifest_file_name).exists() {
+                        Some(path.join(manifest_file_name))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+        // TODO
+    }
+
+    // Check if vendored already
+    if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
+        content.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
+    }
+
+    Ok(content)
+}
+
+fn has_vendor_installed_dependencies(toolchain: &ToolchainPlugin, deps_root: &Path) -> bool {
+    let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name else {
         return false;
     };
 

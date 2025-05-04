@@ -379,6 +379,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let index = insert_node_or_exit!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: if in_workspace { output.members } else { None },
                         project_id,
                         root,
                         toolchain_id: spec.id.clone(),

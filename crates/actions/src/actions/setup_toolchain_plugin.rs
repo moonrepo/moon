@@ -3,98 +3,104 @@ use moon_action::{Action, ActionStatus, SetupToolchainNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_common::path::encode_component;
 use moon_console::Checkpoint;
+use moon_hash::hash_content;
 use moon_pdk_api::SetupToolchainInput;
-use moon_time::now_millis;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-// Temporarily match this with the legacy action!
-use super::setup_toolchain::ToolCacheState;
+hash_content!(
+    struct SetupToolchainHash<'action> {
+        action_node: &'action SetupToolchainNode,
+    }
+);
 
-#[instrument(skip(_action, _action_context, app_context))]
+#[instrument(skip(action, _action_context, app_context))]
 pub async fn setup_toolchain_plugin(
-    _action: &mut Action,
+    action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
-    // No version configured, uses globals on PATH
+    // No version configured, use globals on PATH
     if node.spec.is_global() {
+        debug!(
+            toolchain_id = node.spec.id.as_str(),
+            "Skipping toolchain setup because we'll be using global commands on PATH instead",
+        );
+
         return Ok(ActionStatus::Skipped);
     }
 
-    let log_label = node.spec.label();
-    let action_key = node.spec.target();
-    let cache_engine = &app_context.cache_engine;
-
-    // Create a file lock by toolchain ID, as this avoids colliding
-    // setup's in this process and other parallel processes
-    let _lock = cache_engine.create_lock(format!("setupToolchain-{}", node.spec.id))?;
-
     // Skip this action if requested by the user
-    if let Some(value) = should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", &action_key) {
+    if let Some(value) =
+        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.spec.target())
+    {
         debug!(
+            toolchain_id = node.spec.id.as_str(),
+            version = node.spec.req.as_ref().map(|v| v.to_string()),
             env = value,
-            "Skipping {log_label} toolchain setup because {} is set and matches",
+            "Skipping toolchain setup because {} is set and matches",
             color::symbol("MOON_SKIP_SETUP_TOOLCHAIN")
         );
 
         return Ok(ActionStatus::Skipped);
     }
 
-    // Load the toolchain and its state
+    // Load the toolchain
     let toolchain = app_context.toolchain_registry.load(&node.spec.id).await?;
 
     if !toolchain.supports_tier_3().await {
         debug!(
-            "Skipping {log_label} toolchain setup as the toolchain does not support tier 3 (downloading and installing tools)"
+            toolchain_id = node.spec.id.as_str(),
+            version = node.spec.req.as_ref().map(|v| v.to_string()),
+            "Skipping toolchain setup as the toolchain does not support tier 3 (downloading and installing tools)"
         );
 
         return Ok(ActionStatus::Skipped);
     }
 
-    debug!("Setting up {log_label} toolchain");
-
-    let mut state = cache_engine.state.load_state::<ToolCacheState>(format!(
-        "setupToolchain-{}.json",
-        encode_component(action_key),
-    ))?;
-
-    // Run the install and setup flows
-    let installed = if node.spec.req != state.data.requirement {
-        let registry = &app_context.toolchain_registry;
-
-        // TODO changed files
-        let output = toolchain
-            .setup_toolchain(
-                SetupToolchainInput {
-                    configured_version: node.spec.req.clone(),
-                    context: registry.create_context(),
-                    toolchain_config: registry
-                        .create_config(&toolchain.id, &app_context.toolchain_config),
-                    version: None,
-                },
-                || {
-                    app_context
-                        .console
-                        .print_checkpoint(Checkpoint::Setup, format!("installing {log_label}"))
-                },
-            )
-            .await?;
-
-        output.installed
-    } else {
-        false
+    // Create a lock if we haven't run before
+    let Some(_lock) = app_context
+        .cache_engine
+        .create_hash_lock(
+            action.get_prefix(),
+            SetupToolchainHash { action_node: node },
+        )
+        .await?
+    else {
+        return Ok(ActionStatus::Skipped);
     };
 
-    // Update the cache with the timestamp
-    state.data.last_version_check_time = now_millis();
-    state.data.requirement = node.spec.req.clone();
-    state.save()?;
+    // Run the install and setup flows
+    debug!(
+        toolchain_id = node.spec.id.as_str(),
+        version = node.spec.req.as_ref().map(|v| v.to_string()),
+        "Setting up {} toolchain",
+        toolchain.metadata.name
+    );
 
-    Ok(if installed {
+    // TODO changed files, operations
+    let output = toolchain
+        .setup_toolchain(
+            SetupToolchainInput {
+                configured_version: node.spec.req.clone(),
+                context: app_context.toolchain_registry.create_context(),
+                toolchain_config: app_context
+                    .toolchain_registry
+                    .create_config(&toolchain.id, &app_context.toolchain_config),
+                version: None,
+            },
+            || {
+                app_context.console.print_checkpoint(
+                    Checkpoint::Setup,
+                    format!("installing {}", node.spec.label()),
+                )
+            },
+        )
+        .await?;
+
+    Ok(if output.installed {
         ActionStatus::Passed
     } else {
         ActionStatus::Skipped

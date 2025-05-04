@@ -1,4 +1,4 @@
-use crate::plugins::convert_plugin_sync_operation_with_output;
+use crate::plugins::*;
 use crate::utils::should_skip_action_matching;
 use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;
@@ -102,12 +102,19 @@ pub async fn sync_project(
             mutated_files = true;
         }
 
-        action
-            .operations
-            .push(convert_plugin_sync_operation_with_output(
-                sync_result.operation,
-                sync_result.output,
-            ));
+        // Add an operation for the overall sync
+        let mut op = convert_plugin_operation(&sync_result.toolchain, sync_result.operation)?;
+
+        // Inherit plugin operations
+        op.operations.extend(convert_plugin_operations(
+            &sync_result.toolchain,
+            sync_result.output.operations,
+        )?);
+
+        // Inherit changed files
+        inherit_changed_files(&mut op, sync_result.output.changed_files);
+
+        action.operations.push(op);
     }
 
     // TODO track changed files and print them

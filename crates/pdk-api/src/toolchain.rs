@@ -147,7 +147,7 @@ api_struct!(
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub operations_performed: Vec<Operation>,
+        pub operations: Vec<Operation>,
 
         /// Whether the action was skipped or not.
         pub skipped: bool,

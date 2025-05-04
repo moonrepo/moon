@@ -1,16 +1,17 @@
 use convert_case::{Case, Casing};
 use moon_action::{ActionStatus, Operation};
-use moon_pdk_api::{Operation as PluginOperation, OperationStatus, SyncOutput};
+use moon_common::Id;
+use moon_pdk_api::{Operation as PluginOperation, OperationStatus, VirtualPath};
 use moon_time::chrono::{DateTime, Local};
+use moon_toolchain_plugin::ToolchainPlugin;
 
-pub fn convert_plugin_sync_operation(base: PluginOperation) -> Operation {
-    let id_parts = base
-        .id
-        .split(':')
-        .map(|part| part.to_case(Case::Kebab))
-        .collect::<Vec<_>>();
+pub fn convert_plugin_operation(
+    toolchain: &ToolchainPlugin,
+    base: PluginOperation,
+) -> miette::Result<Operation> {
+    let mut op = Operation::sync_operation(base.id.to_case(Case::Kebab))?;
 
-    let mut op = Operation::sync_operation(id_parts.join(":")).unwrap(); // TODO
+    op.plugin = Some(Id::new(&toolchain.id)?);
 
     op.started_at = base
         .started_at
@@ -29,28 +30,28 @@ pub fn convert_plugin_sync_operation(base: PluginOperation) -> Operation {
         OperationStatus::Passed => ActionStatus::Passed,
     };
 
-    op
+    Ok(op)
 }
 
-pub fn convert_plugin_sync_operation_with_output(
-    op: PluginOperation,
-    output: SyncOutput,
-) -> Operation {
-    let mut op = convert_plugin_sync_operation(op);
+pub fn convert_plugin_operations(
+    toolchain: &ToolchainPlugin,
+    base: Vec<PluginOperation>,
+) -> miette::Result<Vec<Operation>> {
+    let mut ops = vec![];
 
-    op.operations = output
-        .operations_performed
-        .into_iter()
-        .map(convert_plugin_sync_operation)
-        .collect();
+    for item in base {
+        ops.push(convert_plugin_operation(toolchain, item)?);
+    }
 
+    Ok(ops)
+}
+
+pub fn inherit_changed_files(op: &mut Operation, files: Vec<VirtualPath>) {
     if let Some(meta) = op.get_sync_result_mut() {
-        for file in output.changed_files {
+        for file in files {
             if let Some(file) = file.real_path() {
                 meta.changed_files.push(file);
             }
         }
     }
-
-    op
 }

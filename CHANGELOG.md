@@ -4,9 +4,22 @@
 
 #### 🚀 Updates
 
+- Added unstable support for toolchain plugins in the action pipeline.
+  - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
+  - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
 - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.
+- Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
+
+#### 🧩 Plugins
+
+- WASM APIs
+  - Added `InstallDependenciesInput.packages` and `production` fields.
+  - Added `PruneDockerInput.projects` and `root` fields.
+  - Added `PruneDockerOutput`.
+  - Added `SyncWorkspaceInput.toolchain_config` field.
+  - Added `TeardownToolchainInput.version` field.
 
 #### ⚙️ Internal
 

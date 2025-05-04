@@ -9,6 +9,7 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallDependenciesNode {
+    pub members: Option<Vec<String>>,
     pub project_id: Option<Id>,
     pub root: WorkspaceRelativePathBuf,
     pub toolchain_id: Id,

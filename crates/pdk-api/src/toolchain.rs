@@ -181,6 +181,11 @@ api_struct!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
 
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
+
         /// Whether the tool was installed or not. This field is ignored
         /// if set, and is defined on the host side.
         pub installed: bool,

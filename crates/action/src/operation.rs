@@ -63,7 +63,7 @@ impl Operation {
         }
     }
 
-    pub fn get_exec_output(&self) -> Option<&OperationMetaOutput> {
+    pub fn get_exec_output(&self) -> Option<&OperationMetaProcessOutput> {
         match &self.meta {
             OperationMeta::OutputHydration(output)
             | OperationMeta::ProcessExecution(output)
@@ -72,7 +72,7 @@ impl Operation {
         }
     }
 
-    pub fn get_exec_output_mut(&mut self) -> Option<&mut OperationMetaOutput> {
+    pub fn get_exec_output_mut(&mut self) -> Option<&mut OperationMetaProcessOutput> {
         match &mut self.meta {
             OperationMeta::OutputHydration(output)
             | OperationMeta::ProcessExecution(output)
@@ -101,16 +101,20 @@ impl Operation {
             })
     }
 
-    pub fn get_sync_result(&self) -> Option<&OperationMetaSync> {
+    pub fn get_file_state(&self) -> Option<&OperationMetaFileChange> {
         match &self.meta {
-            OperationMeta::SyncOperation(output) => Some(output),
+            OperationMeta::SetupOperation(output) | OperationMeta::SyncOperation(output) => {
+                Some(output)
+            }
             _ => None,
         }
     }
 
-    pub fn get_sync_result_mut(&mut self) -> Option<&mut OperationMetaSync> {
+    pub fn get_file_state_mut(&mut self) -> Option<&mut OperationMetaFileChange> {
         match &mut self.meta {
-            OperationMeta::SyncOperation(output) => Some(output),
+            OperationMeta::SetupOperation(output) | OperationMeta::SyncOperation(output) => {
+                Some(output)
+            }
             _ => None,
         }
     }
@@ -209,7 +213,7 @@ impl Operation {
         let result = func().await;
 
         if let Ok(files) = &result {
-            if let Some(sync) = self.get_sync_result_mut() {
+            if let Some(sync) = self.get_file_state_mut() {
                 sync.changed_files.extend(files.clone());
             }
         }
@@ -279,18 +283,29 @@ impl Operation {
 
     pub fn process_execution(command: impl AsRef<str>) -> Self {
         Self::new(OperationMeta::ProcessExecution(Box::new(
-            OperationMetaOutput {
+            OperationMetaProcessOutput {
                 command: Some(command.as_ref().to_owned()),
                 ..Default::default()
             },
         )))
     }
 
+    pub fn setup_operation(id: impl AsRef<str>) -> miette::Result<Self> {
+        let id = Id::new(id.as_ref())?;
+
+        Ok(Self::new(OperationMeta::SetupOperation(Box::new(
+            OperationMetaFileChange {
+                changed_files: vec![],
+                id,
+            },
+        ))))
+    }
+
     pub fn sync_operation(id: impl AsRef<str>) -> miette::Result<Self> {
         let id = Id::new(id.as_ref())?;
 
         Ok(Self::new(OperationMeta::SyncOperation(Box::new(
-            OperationMetaSync {
+            OperationMetaFileChange {
                 changed_files: vec![],
                 id,
             },
@@ -299,7 +314,7 @@ impl Operation {
 
     pub fn task_execution(command: impl AsRef<str>) -> Self {
         Self::new(OperationMeta::TaskExecution(Box::new(
-            OperationMetaOutput {
+            OperationMetaProcessOutput {
                 command: Some(command.as_ref().to_owned()),
                 ..Default::default()
             },

@@ -1,5 +1,6 @@
+use crate::plugins::*;
 use crate::utils::should_skip_action_matching;
-use moon_action::{Action, ActionStatus, SetupToolchainNode};
+use moon_action::{Action, ActionStatus, Operation, SetupToolchainNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
@@ -80,7 +81,7 @@ pub async fn setup_toolchain_plugin(
         toolchain.metadata.name
     );
 
-    // TODO changed files, operations
+    let setup_op = Operation::setup_operation(action.get_prefix())?;
     let output = toolchain
         .setup_toolchain(
             SetupToolchainInput {
@@ -99,6 +100,14 @@ pub async fn setup_toolchain_plugin(
             },
         )
         .await?;
+
+    finalize_action_operation(
+        action,
+        &toolchain,
+        setup_op,
+        output.operations,
+        output.changed_files,
+    )?;
 
     Ok(if output.installed {
         ActionStatus::Passed

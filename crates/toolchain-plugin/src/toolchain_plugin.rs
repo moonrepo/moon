@@ -375,6 +375,7 @@ impl ToolchainPlugin {
 
             self.handle_output_files(&mut post_output.changed_files);
 
+            output.operations.extend(post_output.operations);
             output.changed_files.extend(post_output.changed_files);
         }
 

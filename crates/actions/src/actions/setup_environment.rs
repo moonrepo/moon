@@ -4,10 +4,21 @@ use moon_action::{Action, ActionStatus, SetupEnvironmentNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_hash::hash_content;
 use moon_pdk_api::SetupEnvironmentInput;
+use moon_project::ProjectFragment;
 use moon_workspace_graph::WorkspaceGraph;
+use starbase_utils::json::JsonValue;
 use std::sync::Arc;
 use tracing::{debug, instrument};
+
+hash_content!(
+    struct SetupEnvironmentHash<'action> {
+        action_node: &'action SetupEnvironmentNode,
+        project: Option<&'action ProjectFragment>,
+        toolchain_config: &'action JsonValue,
+    }
+);
 
 #[instrument(skip(action, _action_context, app_context, workspace_graph))]
 pub async fn setup_environment(
@@ -18,11 +29,6 @@ pub async fn setup_environment(
     node: &SetupEnvironmentNode,
 ) -> miette::Result<ActionStatus> {
     let log_label = node.toolchain_id.as_str();
-    let cache_engine = &app_context.cache_engine;
-
-    // Create a file lock by toolchain ID, as this avoids colliding
-    // setup's in this process and other parallel processes
-    let _lock = cache_engine.create_lock(format!("setupEnvironment-{}", node.toolchain_id))?;
 
     // Skip this action if requested by the user
     if let Some(value) =
@@ -37,7 +43,7 @@ pub async fn setup_environment(
         return Ok(ActionStatus::Skipped);
     }
 
-    // Load the toolchain and its state
+    // Load the toolchain and create hashable
     let toolchain = app_context
         .toolchain_registry
         .load(&node.toolchain_id)
@@ -49,9 +55,7 @@ pub async fn setup_environment(
         return Ok(ActionStatus::Skipped);
     }
 
-    debug!("Setting up {log_label} environment");
-
-    // Build input params
+    // Build the input
     let mut input = SetupEnvironmentInput {
         context: app_context.toolchain_registry.create_context(),
         project: None,
@@ -72,7 +76,23 @@ pub async fn setup_environment(
         );
     }
 
-    // Extract commands from output
+    // Create a lock if we haven't run before
+    let Some(_lock) = app_context
+        .cache_engine
+        .create_hash_lock(
+            action.get_prefix(),
+            SetupEnvironmentHash {
+                action_node: node,
+                project: input.project.as_ref(),
+                toolchain_config: &input.toolchain_config,
+            },
+        )
+        .await?
+    else {
+        return Ok(ActionStatus::Skipped);
+    };
+
+    // Extract from output
     let output = toolchain.setup_environment(input).await?;
 
     if output.commands.is_empty() {
@@ -80,20 +100,22 @@ pub async fn setup_environment(
     }
 
     // Execute all commands
-    action.operations.extend(
-        exec_plugin_commands(
-            app_context.clone(),
-            output.commands,
-            ExecCommandOptions {
-                prefix: "setup-environment".into(),
-                working_dir: node.root.to_logical_path(&app_context.workspace_root),
-                on_exec: Some(Arc::new(move |cmd, attempts| {
-                    handle_on_exec(&app_context.console, cmd, attempts)
-                })),
-            },
-        )
-        .await?,
-    );
+    debug!("Setting up {log_label} environment");
+
+    let operations = exec_plugin_commands(
+        app_context.clone(),
+        output.commands,
+        ExecCommandOptions {
+            prefix: action.get_prefix().into(),
+            working_dir: node.root.to_logical_path(&app_context.workspace_root),
+            on_exec: Some(Arc::new(move |cmd, attempts| {
+                handle_on_exec(&app_context.console, cmd, attempts)
+            })),
+        },
+    )
+    .await?;
+
+    action.operations.extend(operations);
 
     Ok(ActionStatus::Passed)
 }

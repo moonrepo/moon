@@ -63,7 +63,9 @@ pub async fn sync_codeowners(
     // Only generate if the hash has changed
     if app_context
         .cache_engine
-        .execute_if_changed("codeowners", codeowners_hash, async || generator.generate())
+        .execute_if_changed("codeowners", codeowners_hash, async |_| {
+            generator.generate()
+        })
         .await?
         .unwrap_or_default()
     {

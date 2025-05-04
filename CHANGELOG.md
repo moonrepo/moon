@@ -4,6 +4,9 @@
 
 #### 🚀 Updates
 
+- Added unstable support for toolchain plugins in the action pipeline.
+  - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
+  - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
 - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.

@@ -125,7 +125,7 @@ async fn internal_exec_plugin_command_as_operation(
                         encode_component(key).to_lowercase()
                     ),
                     hash_item,
-                    async move || {
+                    async move |_| {
                         internal_exec_plugin_command(app_context, command, options, attempts).await
                     },
                 )

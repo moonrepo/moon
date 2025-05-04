@@ -123,6 +123,19 @@ impl CacheEngine {
         Ok(guard)
     }
 
+    pub async fn create_hash_lock<T: AsRef<str>, D: Serialize>(
+        &self,
+        name: T,
+        data: D,
+    ) -> miette::Result<Option<FileLock>> {
+        let name = name.as_ref();
+
+        self.execute_if_changed(name, data, async |hash| {
+            self.create_lock(format!("{name}-{hash}"))
+        })
+        .await
+    }
+
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
     where
         K: AsRef<OsStr>,
@@ -147,7 +160,7 @@ impl CacheEngine {
     where
         K: AsRef<str>,
         T: Serialize,
-        F: AsyncFnOnce() -> miette::Result<R>,
+        F: AsyncFnOnce(&str) -> miette::Result<R>,
     {
         let mut hasher = self.hash.create_hasher(label.as_ref());
         hasher.hash_content(data)?;
@@ -157,7 +170,7 @@ impl CacheEngine {
         // If the hash manifest exists, then it has ran before,
         // otherwise run and write the manifest
         if !self.hash.get_manifest_path(&hash).exists() {
-            let result = op().await?;
+            let result = op(&hash).await?;
 
             self.hash.save_manifest(&mut hasher)?;
 

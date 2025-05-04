@@ -43,7 +43,7 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
                     files_exist: files.into_iter().all(|file| file.exists()),
                     moon_version: &app_context.cli_version,
                 },
-                async || {
+                async |_| {
                     generate_json_schemas(
                         out_dir,
                         app_context

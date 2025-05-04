@@ -4,6 +4,7 @@ use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
+use starbase_utils::glob::GlobSet;
 use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::ops::Deref;
@@ -78,6 +79,31 @@ impl ToolchainPlugin {
         for file in files {
             self.handle_output_file(file);
         }
+    }
+
+    pub fn in_dependencies_workspace(
+        &self,
+        output: &LocateDependenciesRootOutput,
+        path: &Path,
+    ) -> miette::Result<bool> {
+        let Some(root) = output.root.as_ref().and_then(|root| root.real_path()) else {
+            return Ok(false);
+        };
+
+        Ok(
+            // Root always in the workspace
+            if path == root {
+                true
+            }
+            // Match against the provided member globs
+            else if let Some(globs) = &output.members {
+                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(path))
+            }
+            // Otherwise a stand alone project?
+            else {
+                true
+            },
+        )
     }
 
     // Detection
@@ -237,14 +263,69 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn install_dependencies(
+        &self,
+        input: InstallDependenciesInput,
+    ) -> miette::Result<InstallDependenciesOutput> {
+        let output: InstallDependenciesOutput = self
+            .plugin
+            .call_func_with("install_dependencies", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
     pub async fn locate_dependencies_root(
         &self,
         input: LocateDependenciesRootInput,
     ) -> miette::Result<LocateDependenciesRootOutput> {
-        let output: LocateDependenciesRootOutput = self
+        let mut output: LocateDependenciesRootOutput = self
             .plugin
             .cache_func_with("locate_dependencies_root", input)
             .await?;
+
+        if let Some(root) = &mut output.root {
+            self.handle_output_file(root);
+        }
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn prune_docker(&self, input: PruneDockerInput) -> miette::Result<PruneDockerOutput> {
+        let mut output: PruneDockerOutput =
+            self.plugin.call_func_with("prune_docker", input).await?;
+
+        self.handle_output_files(&mut output.changed_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn scaffold_docker(
+        &self,
+        input: ScaffoldDockerInput,
+    ) -> miette::Result<ScaffoldDockerOutput> {
+        let mut output: ScaffoldDockerOutput =
+            self.plugin.call_func_with("scaffold_docker", input).await?;
+
+        self.handle_output_files(&mut output.copied_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn setup_environment(
+        &self,
+        input: SetupEnvironmentInput,
+    ) -> miette::Result<SetupEnvironmentOutput> {
+        let mut output: SetupEnvironmentOutput = self
+            .plugin
+            .call_func_with("setup_environment", input)
+            .await?;
+
+        self.handle_output_files(&mut output.changed_files);
 
         Ok(output)
     }
@@ -257,22 +338,21 @@ impl ToolchainPlugin {
     ) -> miette::Result<SetupToolchainOutput> {
         let mut output = SetupToolchainOutput::default();
 
-        if let Some(tool) = &self.tool {
+        // Only install if a version has been configured,
+        // and the plugin provides the required APIs
+        if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
             let mut tool = tool.write().await;
 
             // Resolve the version first so that it is available
-            input.version = Some(
-                tool.resolve_version(&input.configured_version, false)
-                    .await?,
-            );
+            input.version = Some(tool.resolve_version(spec, false).await?);
 
             // Only setup if not already been
-            if !tool.is_setup(&input.configured_version).await? {
+            if !tool.is_setup(spec).await? {
                 on_setup()?;
 
                 output.installed = tool
                     .setup(
-                        &input.configured_version,
+                        spec,
                         InstallOptions {
                             skip_prompts: true,
                             skip_ui: true,
@@ -288,6 +368,7 @@ impl ToolchainPlugin {
             tool.locate_globals_dirs().await?;
         }
 
+        // This should always run, regardless of the install outcome
         if self.has_func("setup_toolchain").await {
             let mut post_output: SetupToolchainOutput =
                 self.plugin.call_func_with("setup_toolchain", input).await?;
@@ -296,19 +377,6 @@ impl ToolchainPlugin {
 
             output.changed_files.extend(post_output.changed_files);
         }
-
-        Ok(output)
-    }
-
-    #[instrument(skip(self))]
-    pub async fn scaffold_docker(
-        &self,
-        input: ScaffoldDockerInput,
-    ) -> miette::Result<ScaffoldDockerOutput> {
-        let mut output: ScaffoldDockerOutput =
-            self.plugin.call_func_with("scaffold_docker", input).await?;
-
-        self.handle_output_files(&mut output.copied_files);
 
         Ok(output)
     }
@@ -332,18 +400,21 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn teardown_toolchain(&self, input: TeardownToolchainInput) -> miette::Result<()> {
-        let spec = input.configured_version.clone();
+    pub async fn teardown_toolchain(
+        &self,
+        mut input: TeardownToolchainInput,
+    ) -> miette::Result<()> {
+        if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
+            let mut tool = tool.write().await;
+
+            input.version = Some(tool.resolve_version(spec, false).await?);
+
+            tool.teardown().await?;
+        }
 
         self.plugin
             .call_func_without_output("teardown_toolchain", input)
             .await?;
-
-        if let (Some(tool), Some(spec)) = (&self.tool, &spec) {
-            let mut tool = tool.write().await;
-            tool.resolve_version(spec, true).await?;
-            tool.teardown().await?;
-        }
 
         Ok(())
     }

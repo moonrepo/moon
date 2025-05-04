@@ -440,6 +440,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -470,6 +471,7 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::setup_toolchain(SetupToolchainNode { spec: spec.clone() }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -504,6 +506,7 @@ mod action_graph_builder {
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -595,6 +598,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -625,6 +629,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
                         project_id: Some(Id::raw("isolated")),
                         root: WorkspaceRelativePathBuf::from("isolated"),
                         toolchain_id: spec.id,
@@ -655,6 +660,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
                         project_id: Some(Id::raw("out")),
                         root: WorkspaceRelativePathBuf::from("out"),
                         toolchain_id: spec.id,
@@ -685,6 +691,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: Some(vec!["in".into()]),
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,
@@ -715,6 +722,7 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: Some(vec!["in".into()]),
                         project_id: None,
                         root: WorkspaceRelativePathBuf::new(),
                         toolchain_id: spec.id,

@@ -9,7 +9,6 @@ use serde::de::DeserializeOwned;
 use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
 use std::ffi::OsStr;
-use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::Duration;
@@ -124,6 +123,19 @@ impl CacheEngine {
         Ok(guard)
     }
 
+    pub async fn create_hash_lock<T: AsRef<str>, D: Serialize>(
+        &self,
+        name: T,
+        data: D,
+    ) -> miette::Result<Option<FileLock>> {
+        let name = name.as_ref();
+
+        self.execute_if_changed(name, data, async |hash| {
+            self.create_lock(format!("{name}-{hash}"))
+        })
+        .await
+    }
+
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
     where
         K: AsRef<OsStr>,
@@ -139,34 +151,33 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn execute_if_changed<K, T, F, Fut>(
+    pub async fn execute_if_changed<K, T, F, R>(
         &self,
-        path: K,
+        label: K,
         data: T,
         op: F,
-    ) -> miette::Result<bool>
+    ) -> miette::Result<Option<R>>
     where
-        K: AsRef<OsStr>,
+        K: AsRef<str>,
         T: Serialize,
-        F: FnOnce() -> Fut,
-        Fut: Future<Output = miette::Result<bool>> + Send,
+        F: AsyncFnOnce(&str) -> miette::Result<R>,
     {
-        let path = self.resolve_path(path);
-        let name = fs::file_name(&path);
+        let mut hasher = self.hash.create_hasher(label.as_ref());
+        hasher.hash_content(data)?;
 
-        let mut state = self.state.load_state::<CommonCacheState>(&name)?;
-        let hash = self.hash.save_manifest_without_hasher(&name, data)?;
+        let hash = hasher.generate_hash()?;
 
-        if hash != state.data.last_hash {
-            let result = op().await?;
+        // If the hash manifest exists, then it has ran before,
+        // otherwise run and write the manifest
+        if !self.hash.get_manifest_path(&hash).exists() {
+            let result = op(&hash).await?;
 
-            state.data.last_hash = hash;
-            state.save()?;
+            self.hash.save_manifest(&mut hasher)?;
 
-            return Ok(result);
+            return Ok(Some(result));
         }
 
-        Ok(false)
+        Ok(None)
     }
 
     pub fn parse_lifetime(&self, lifetime: &str) -> miette::Result<Duration> {

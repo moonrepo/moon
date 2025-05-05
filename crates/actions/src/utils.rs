@@ -1,4 +1,44 @@
+use moon_action::{Action, ActionStatus, Operation, OperationMeta};
+use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
+use serde::Serialize;
+use starbase_utils::fs::FileLock;
+
+pub async fn create_hash_and_return_lock_if_changed(
+    action: &mut Action,
+    app_context: &AppContext,
+    data: impl Serialize,
+) -> miette::Result<Option<FileLock>> {
+    let cache_engine = &app_context.cache_engine;
+
+    // Generate the hash and track the timings
+    let mut hash_op = Operation::hash_generation();
+
+    let mut hasher = cache_engine.hash.create_hasher(action.get_prefix());
+    hasher.hash_content(data)?;
+
+    let hash = hasher.generate_hash()?;
+
+    if let OperationMeta::HashGeneration(inner) = &mut hash_op.meta {
+        inner.hash = Some(hash.clone());
+    }
+
+    hash_op.finish(ActionStatus::Passed);
+
+    action.operations.push(hash_op);
+
+    // If the hash manifest exists, then it has ran before
+    if cache_engine.hash.get_manifest_path(&hash).exists() {
+        return Ok(None);
+    }
+
+    // Otherwise save the manifest and return a lock
+    cache_engine.hash.save_manifest(&mut hasher)?;
+
+    let lock = cache_engine.create_lock(format!("{}-{hash}", action.get_prefix()))?;
+
+    Ok(Some(lock))
+}
 
 pub fn should_skip_action(key: &str) -> Option<String> {
     should_skip_action_matching(key, "true")

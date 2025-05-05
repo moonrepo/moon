@@ -147,7 +147,7 @@ api_struct!(
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub operations_performed: Vec<Operation>,
+        pub operations: Vec<Operation>,
 
         /// Whether the action was skipped or not.
         pub skipped: bool,
@@ -176,10 +176,16 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `setup_toolchain` function.
+    #[serde(default)]
     pub struct SetupToolchainOutput {
         /// List of files that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
 
         /// Whether the tool was installed or not. This field is ignored
         /// if set, and is defined on the host side.
@@ -227,14 +233,20 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `setup_environment` function.
+    #[serde(default)]
     pub struct SetupEnvironmentOutput {
         /// List of files that have been changed because of this action.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
 
         /// List of commands to execute during setup.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub commands: Vec<ExecCommand>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
     }
 );
 
@@ -295,14 +307,22 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `install_dependencies` function.
+    #[serde(default)]
     pub struct InstallDependenciesOutput {
         /// The command to run in the dependencies root to dedupe
         /// dependencies. If not defined, will not dedupe.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub dedupe_command: Option<ExecCommand>,
 
         /// The command to run in the dependencies root to install
         /// dependencies. If not defined, will not install.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub install_command: Option<ExecCommand>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
     }
 );
 
@@ -350,15 +370,16 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `define_docker_metadata` function.
+    #[serde(default)]
     pub struct DefineDockerMetadataOutput {
         /// Default image to use when generating a `Dockerfile`.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub default_image: Option<String>,
 
         /// List of files as globs to copy over during
         /// the scaffolding process. Applies to both project
         /// and workspace level scaffolding.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub scaffold_globs: Vec<String>,
     }
 );
@@ -399,9 +420,10 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `scaffold_docker` function.
+    #[serde(default)]
     pub struct ScaffoldDockerOutput {
         /// List of files that were copied into the scaffold.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub copied_files: Vec<VirtualPath>,
     }
 );
@@ -428,9 +450,10 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `prune_docker` function.
+    #[serde(default)]
     pub struct PruneDockerOutput {
         /// List of files that were changed during prune.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
     }
 );

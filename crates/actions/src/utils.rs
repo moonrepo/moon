@@ -1,4 +1,25 @@
+use moon_action::Action;
+use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
+use serde::Serialize;
+use starbase_utils::fs::FileLock;
+
+pub async fn create_hash_and_return_lock_if_changed(
+    action: &Action,
+    app_context: &AppContext,
+    data: impl Serialize,
+) -> miette::Result<Option<FileLock>> {
+    let prefix = action.get_prefix();
+
+    app_context
+        .cache_engine
+        .execute_if_changed(prefix, data, async |hash| {
+            app_context
+                .cache_engine
+                .create_lock(format!("{prefix}-{hash}"))
+        })
+        .await
+}
 
 pub fn should_skip_action(key: &str) -> Option<String> {
     should_skip_action_matching(key, "true")

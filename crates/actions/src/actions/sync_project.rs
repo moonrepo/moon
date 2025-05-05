@@ -68,6 +68,7 @@ pub async fn sync_project(
 
     // Sync the projects and return true if any files have been mutated
     let mut mutated_files = false;
+    let mut changed_files = vec![];
 
     // Loop through legacy platforms
     for toolchain_id in project.get_enabled_toolchains() {
@@ -102,9 +103,13 @@ pub async fn sync_project(
             mutated_files = true;
         }
 
-        action
-            .operations
-            .push(finalize_sync_operation(sync_result)?);
+        let op = finalize_sync_operation(sync_result)?;
+
+        if let Some(state) = op.get_file_state() {
+            changed_files.extend(state.changed_files.clone());
+        }
+
+        action.operations.push(op);
     }
 
     // If files have been modified in CI, we should update the status to warning,
@@ -112,6 +117,7 @@ pub async fn sync_project(
     if mutated_files && is_ci() {
         warn!(
             project_id = project.id.as_str(),
+            files = ?changed_files,
             "Files were modified during project sync that should be committed to the repository"
         );
 

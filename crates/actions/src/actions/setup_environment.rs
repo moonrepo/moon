@@ -1,5 +1,5 @@
 use crate::plugins::*;
-use crate::utils::should_skip_action_matching;
+use crate::utils::{create_hash_and_return_lock_if_changed, should_skip_action_matching};
 use moon_action::{Action, ActionStatus, Operation, SetupEnvironmentNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
@@ -81,17 +81,16 @@ pub async fn setup_environment(
     }
 
     // Create a lock if we haven't run before
-    let Some(_lock) = app_context
-        .cache_engine
-        .create_hash_lock(
-            action.get_prefix(),
-            SetupEnvironmentHash {
-                action_node: node,
-                project: input.project.as_ref(),
-                toolchain_config: &input.toolchain_config,
-            },
-        )
-        .await?
+    let Some(_lock) = create_hash_and_return_lock_if_changed(
+        action,
+        &app_context,
+        SetupEnvironmentHash {
+            action_node: node,
+            project: input.project.as_ref(),
+            toolchain_config: &input.toolchain_config,
+        },
+    )
+    .await?
     else {
         return Ok(ActionStatus::Skipped);
     };

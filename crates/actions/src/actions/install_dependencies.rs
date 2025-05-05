@@ -1,9 +1,9 @@
 use crate::plugins::*;
-use crate::utils::should_skip_action_matching;
+use crate::utils::{create_hash_and_return_lock_if_changed, should_skip_action_matching};
 use moon_action::{Action, ActionStatus, InstallDependenciesNode, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
-use moon_common::{color, is_ci};
+use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::glob_walk_with_options;
 use moon_hash::hash_content;
@@ -14,6 +14,7 @@ use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::glob::GlobWalkOptions;
 use starbase_utils::{fs, json::JsonValue};
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -22,6 +23,7 @@ hash_content!(
     struct InstallDependenciesHash<'action> {
         action_node: &'action InstallDependenciesNode,
         lockfile_timestamp: Option<u128>,
+        manifest_dependencies: BTreeMap<WorkspaceRelativePathBuf, BTreeMap<String, String>>,
         project: Option<&'action ProjectFragment>,
         toolchain_config: &'action JsonValue,
         vendor_dir_exists: bool,
@@ -136,13 +138,12 @@ pub async fn install_dependencies(
     }
 
     // Create a lock if we haven't run before
-    let Some(_lock) = app_context
-        .cache_engine
-        .create_hash_lock(
-            action.get_prefix(),
-            create_hash_content(&toolchain, &deps_root, node, &input)?,
-        )
-        .await?
+    let Some(_lock) = create_hash_and_return_lock_if_changed(
+        action,
+        &app_context,
+        create_hash_content(&toolchain, &deps_root, node, &input)?,
+    )
+    .await?
     else {
         return Ok(ActionStatus::Skipped);
     };
@@ -219,6 +220,7 @@ fn create_hash_content<'action>(
     let mut content = InstallDependenciesHash {
         action_node: node,
         lockfile_timestamp: None,
+        manifest_dependencies: BTreeMap::default(),
         project: input.project.as_ref(),
         toolchain_config: &input.toolchain_config,
         vendor_dir_exists: false,

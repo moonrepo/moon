@@ -123,19 +123,6 @@ impl CacheEngine {
         Ok(guard)
     }
 
-    pub async fn create_hash_lock<T: AsRef<str>, D: Serialize>(
-        &self,
-        name: T,
-        data: D,
-    ) -> miette::Result<Option<FileLock>> {
-        let name = name.as_ref();
-
-        self.execute_if_changed(name, data, async |hash| {
-            self.create_lock(format!("{name}-{hash}"))
-        })
-        .await
-    }
-
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
     where
         K: AsRef<OsStr>,

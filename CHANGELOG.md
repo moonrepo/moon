@@ -18,6 +18,8 @@
   - Added `InstallDependenciesInput.packages` and `production` fields.
   - Added `PruneDockerInput.projects` and `root` fields.
   - Added `PruneDockerOutput`.
+  - Added `SetupEnvironmentOutput.operations` field.
+  - Added `SetupToolchainOutput.operations` field.
   - Added `SyncWorkspaceInput.toolchain_config` field.
   - Added `TeardownToolchainInput.version` field.
 

@@ -101,7 +101,7 @@ pub async fn setup_toolchain_plugin(
         )
         .await?;
 
-    finalize_action_operation(
+    finalize_action_operations(
         action,
         &toolchain,
         setup_op,

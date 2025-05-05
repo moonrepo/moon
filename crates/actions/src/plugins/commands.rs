@@ -3,7 +3,7 @@ use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_args::join_args;
 use moon_common::{
-    color,
+    Id, color,
     path::{PathExt, WorkspaceRelativePathBuf, encode_component},
 };
 use moon_console::{Checkpoint, Console};
@@ -12,6 +12,7 @@ use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::{Command, Output};
 use moon_time::to_millis;
+use moon_toolchain_plugin::ToolchainPlugin;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -199,6 +200,7 @@ pub async fn exec_plugin_command(
 }
 
 pub async fn exec_plugin_commands(
+    toolchain: &ToolchainPlugin,
     app_context: Arc<AppContext>,
     commands: Vec<ExecCommand>,
     options: ExecCommandOptions,
@@ -233,6 +235,11 @@ pub async fn exec_plugin_commands(
 
     while let Some(result) = set.join_next().await {
         ops.extend(result.into_diagnostic()??);
+    }
+
+    // Inherit toolchain ID
+    for op in &mut ops {
+        op.plugin = Some(Id::new(&toolchain.id)?);
     }
 
     Ok(ops)

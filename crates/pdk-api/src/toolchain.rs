@@ -240,6 +240,11 @@ api_struct!(
         /// List of commands to execute during setup.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub commands: Vec<ExecCommand>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
     }
 );
 

@@ -116,20 +116,7 @@ pub async fn sync_workspace(
                 })
                 .await?
             {
-                // Add an operation for the overall sync
-                let mut op =
-                    convert_plugin_operation(&sync_result.toolchain, sync_result.operation)?;
-
-                // Inherit plugin operations
-                op.operations.extend(convert_plugin_operations(
-                    &sync_result.toolchain,
-                    sync_result.output.operations,
-                )?);
-
-                // Inherit changed files
-                inherit_changed_files(&mut op, sync_result.output.changed_files);
-
-                ops.push(op);
+                ops.push(finalize_sync_operation(sync_result)?);
             }
 
             Ok(ops)

@@ -1,6 +1,6 @@
-use crate::plugins::{ExecCommandOptions, exec_plugin_commands, handle_on_exec};
+use crate::plugins::*;
 use crate::utils::should_skip_action_matching;
-use moon_action::{Action, ActionStatus, SetupEnvironmentNode};
+use moon_action::{Action, ActionStatus, Operation, SetupEnvironmentNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
@@ -97,11 +97,9 @@ pub async fn setup_environment(
     };
 
     // Extract from output
+    let setup_op = Operation::setup_operation(action.get_prefix())?;
     let output = toolchain.setup_environment(input).await?;
-
-    if output.commands.is_empty() {
-        return Ok(ActionStatus::Skipped);
-    }
+    let skipped = output.commands.is_empty() && output.operations.is_empty();
 
     // Execute all commands
     debug!(
@@ -111,21 +109,35 @@ pub async fn setup_environment(
         toolchain.metadata.name
     );
 
-    // TODO changed files, operations
-    let operations = exec_plugin_commands(
-        app_context.clone(),
-        output.commands,
-        ExecCommandOptions {
-            prefix: action.get_prefix().into(),
-            working_dir: node.root.to_logical_path(&app_context.workspace_root),
-            on_exec: Some(Arc::new(move |cmd, attempts| {
-                handle_on_exec(&app_context.console, cmd, attempts)
-            })),
-        },
-    )
-    .await?;
+    if !output.commands.is_empty() {
+        let operations = exec_plugin_commands(
+            &toolchain,
+            app_context.clone(),
+            output.commands,
+            ExecCommandOptions {
+                prefix: action.get_prefix().into(),
+                working_dir: node.root.to_logical_path(&app_context.workspace_root),
+                on_exec: Some(Arc::new(move |cmd, attempts| {
+                    handle_on_exec(&app_context.console, cmd, attempts)
+                })),
+            },
+        )
+        .await?;
 
-    action.operations.extend(operations);
+        action.operations.extend(operations);
+    }
 
-    Ok(ActionStatus::Passed)
+    finalize_action_operations(
+        action,
+        &toolchain,
+        setup_op,
+        output.operations,
+        output.changed_files,
+    )?;
+
+    Ok(if skipped {
+        ActionStatus::Skipped
+    } else {
+        ActionStatus::Passed
+    })
 }

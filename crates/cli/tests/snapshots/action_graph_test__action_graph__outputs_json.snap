@@ -39,6 +39,12 @@ expression: assert.output()
       "target": 0
     },
     {
+      "id": "3 -> 0",
+      "label": "",
+      "source": 3,
+      "target": 0
+    },
+    {
       "id": "3 -> 2",
       "label": "",
       "source": 3,

@@ -283,11 +283,13 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: bun }),
+                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
+                        runtime: node.clone()
+                    }),
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                        runtime: node.clone(),
+                        runtime: node,
                         root: WorkspaceRelativePathBuf::new(),
                     }),
-                    ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
         }

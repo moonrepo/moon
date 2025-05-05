@@ -270,8 +270,10 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         };
 
-        let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain_legacy(runtime).await?;
+        let mut edges = vec![
+            self.sync_workspace().await?,
+            self.setup_toolchain_legacy(runtime).await?,
+        ];
 
         let platform_manager = match &self.platform_manager {
             Some(manager) => manager,
@@ -291,10 +293,10 @@ impl<'query> ActionGraphBuilder<'query> {
             );
 
             self.get_runtime(project, &Id::raw("node"), true)
-                .unwrap_or_else(|| runtime.to_owned())
         } else {
-            runtime.to_owned()
-        };
+            None
+        }
+        .unwrap_or_else(|| runtime.to_owned());
 
         let platform = platform_manager.get_by_toolchain(&new_runtime.toolchain)?;
         let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
@@ -311,6 +313,8 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
+        edges.push(self.setup_toolchain_legacy(&new_runtime).await?);
+
         let index = insert_node_or_exit!(
             self,
             if in_project {
@@ -326,7 +330,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         );
 
-        self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index]);
+        self.link_optional_requirements(index, edges);
 
         Ok(Some(index))
     }

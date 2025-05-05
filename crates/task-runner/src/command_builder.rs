@@ -53,27 +53,7 @@ impl<'task> CommandBuilder<'task> {
 
     #[instrument(name = "build_command", skip_all)]
     pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
-        self.command = self
-            .platform_manager
-            .get_by_toolchains(&self.task.toolchains)?
-            .create_run_target_command(
-                context,
-                self.project,
-                self.task,
-                self.node.get_runtime(),
-                self.working_dir,
-            )
-            .await?;
-
-        // If a script, overwrite the binary (command) with the script and reset args,
-        // but also inherit all environment variables and paths from the platform.
-        if let Some(script) = &self.task.script {
-            self.command.bin = script.into();
-            self.command.args.clear();
-
-            // Scripts should be used as-is
-            self.command.escape_args = false;
-        }
+        self.command = self.build_command(context).await?;
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -95,6 +75,43 @@ impl<'task> CommandBuilder<'task> {
         self.inherit_config();
 
         Ok(self.command)
+    }
+
+    async fn build_command(&self, context: &ActionContext) -> miette::Result<Command> {
+        let mut command = match self
+            .platform_manager
+            .get_by_toolchains(&self.task.toolchains)
+        {
+            Ok(platform) => {
+                platform
+                    .create_run_target_command(
+                        context,
+                        self.project,
+                        self.task,
+                        self.node.get_runtime(),
+                        self.working_dir,
+                    )
+                    .await?
+            }
+            Err(_) => {
+                // No platform so create a custom command
+                let mut cmd = Command::new(&self.task.command);
+                cmd.args(&self.task.args);
+                cmd
+            }
+        };
+
+        // If a script, overwrite the binary (command) with the script and reset args,
+        // but also inherit all environment variables and paths from the platform.
+        if let Some(script) = &self.task.script {
+            command.bin = script.into();
+            command.args.clear();
+
+            // Scripts should be used as-is
+            command.escape_args = false;
+        }
+
+        Ok(command)
     }
 
     #[instrument(skip_all)]

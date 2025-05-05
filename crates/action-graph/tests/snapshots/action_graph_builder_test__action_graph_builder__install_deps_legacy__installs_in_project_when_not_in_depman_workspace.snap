@@ -8,6 +8,8 @@ digraph {
     2 [ label="InstallWorkspaceDeps(node:20.0.0)" ]
     3 [ label="InstallProjectDeps(node:20.0.0, out)" ]
     1 -> 0 [ ]
+    2 -> 0 [ ]
     2 -> 1 [ ]
+    3 -> 0 [ ]
     3 -> 1 [ ]
 }

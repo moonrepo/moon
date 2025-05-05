@@ -10,6 +10,7 @@ digraph {
     4 [ label="RunTask(basic:build)" ]
     1 -> 0 [ ]
     2 -> 0 [ ]
+    3 -> 0 [ ]
     3 -> 2 [ ]
     4 -> 1 [ ]
     4 -> 3 [ ]

@@ -111,7 +111,7 @@ mod action_graph_builder {
 
             let project = wg.get_project("bar").unwrap();
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
 
@@ -145,15 +145,15 @@ mod action_graph_builder {
 
             let project = wg.get_project("bar").unwrap();
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
 
@@ -186,13 +186,13 @@ mod action_graph_builder {
 
             let inside = wg.get_project("in").unwrap();
             builder
-                .install_dependencies_legacy(&runtime, &inside, false)
+                .install_dependencies_legacy(&runtime, &inside)
                 .await
                 .unwrap();
 
             let outside = wg.get_project("out").unwrap();
             builder
-                .install_dependencies_legacy(&runtime, &outside, false)
+                .install_dependencies_legacy(&runtime, &outside)
                 .await
                 .unwrap();
 
@@ -233,14 +233,14 @@ mod action_graph_builder {
                 Id::raw("bun"),
                 create_runtime_with_version(Version::new(1, 0, 0)),
             );
-            let node = create_node_runtime();
+            let node = create_node_runtime_global();
 
             builder
-                .install_dependencies_legacy(&node, &project, true)
+                .install_dependencies_legacy(&node, &project)
                 .await
                 .unwrap();
             builder
-                .install_dependencies_legacy(&bun, &project, true)
+                .install_dependencies_legacy(&bun, &project)
                 .await
                 .unwrap();
 
@@ -268,11 +268,11 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
 
             builder
-                .install_dependencies_legacy(&bun, &project, true)
+                .install_dependencies_legacy(&bun, &project)
                 .await
                 .unwrap();
             builder
-                .install_dependencies_legacy(&node, &project, true)
+                .install_dependencies_legacy(&node, &project)
                 .await
                 .unwrap();
 
@@ -289,7 +289,7 @@ mod action_graph_builder {
                     ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: node,
                         root: WorkspaceRelativePathBuf::new(),
-                    })
+                    }),
                 ]
             );
         }
@@ -314,7 +314,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
 
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
 
@@ -344,7 +344,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
 
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
 
@@ -374,7 +374,7 @@ mod action_graph_builder {
             let project = wg.get_project("bar").unwrap();
 
             builder
-                .install_dependencies_legacy(&runtime, &project, false)
+                .install_dependencies_legacy(&runtime, &project)
                 .await
                 .unwrap();
 

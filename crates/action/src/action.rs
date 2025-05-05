@@ -41,13 +41,16 @@ pub struct Action {
 
     pub created_at: NaiveDateTime,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Duration>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 
     #[serde(skip)]
     pub error_report: Option<miette::Report>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<NaiveDateTime>,
 
     pub flaky: bool,
@@ -60,6 +63,7 @@ pub struct Action {
 
     pub operations: OperationList,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub started_at: Option<NaiveDateTime>,
 
     #[serde(skip)]

@@ -1,4 +1,5 @@
 use crate::operations::*;
+use crate::plugins::*;
 use crate::utils::should_skip_action;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
@@ -51,7 +52,7 @@ pub async fn sync_workspace(
 
         operation_futures.push(task::spawn(async move {
             Ok(vec![
-                Operation::sync_operation("system:configSchemas")
+                Operation::sync_operation("config-schemas")?
                     .track_async_with_check(
                         || sync_config_schemas(&app_context, false),
                         |result| result,
@@ -71,7 +72,7 @@ pub async fn sync_workspace(
 
         operation_futures.push(task::spawn(async move {
             Ok(vec![
-                Operation::sync_operation("system:codeowners")
+                Operation::sync_operation("codeowners")?
                     .track_async_with_check(
                         || sync_codeowners(&app_context, &workspace_graph, false),
                         |result| result.is_some(),
@@ -92,7 +93,7 @@ pub async fn sync_workspace(
 
         operation_futures.push(task::spawn(async move {
             Ok(vec![
-                Operation::sync_operation("system:vcsHooks")
+                Operation::sync_operation("vcs-hooks")?
                     .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
                     .await?,
             ])
@@ -115,10 +116,7 @@ pub async fn sync_workspace(
                 })
                 .await?
             {
-                ops.push(convert_plugin_sync_operation_with_output(
-                    sync_result.operation,
-                    sync_result.output,
-                ));
+                ops.push(finalize_sync_operation(sync_result)?);
             }
 
             Ok(ops)

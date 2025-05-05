@@ -9,9 +9,14 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallDependenciesNode {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub members: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<Id>,
+
     pub root: WorkspaceRelativePathBuf,
+
     pub toolchain_id: Id,
 }
 
@@ -33,8 +38,11 @@ pub struct InstallProjectDepsNode {
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetupEnvironmentNode {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<Id>,
+
     pub root: WorkspaceRelativePathBuf,
+
     pub toolchain_id: Id,
 }
 

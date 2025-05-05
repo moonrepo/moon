@@ -1,6 +1,6 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::MoonSession;
-use moon_actions::operations::{ExecCommandOptions, exec_plugin_command};
+use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
 use moon_bun_tool::BunTool;
 use moon_common::Id;
 use moon_config::PlatformType;
@@ -149,21 +149,18 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                     .await?;
 
                 if let Some(mut install) = output.install_command {
+                    // Always execute without cache
+                    install.cache = None;
+
                     // Always stream output to the console
                     install.command.stream = true;
 
-                    // Ensure it runs in the dependency root
-                    if install.command.working_dir.is_none() {
-                        install.command.working_dir =
-                            Some(toolchain.to_virtual_path(&instance.deps_root));
-                    }
-
-                    // Always execute without cache
                     exec_plugin_command(
                         app_context,
                         &install,
                         &ExecCommandOptions {
                             prefix: "prune-docker".into(),
+                            working_dir: instance.deps_root,
                             ..Default::default()
                         },
                     )

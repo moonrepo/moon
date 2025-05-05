@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant, SystemTime};
-use warpgate_api::{VirtualPath, api_enum, api_struct};
+use warpgate_api::{AnyResult, VirtualPath, api_enum, api_struct};
 
 api_struct!(
     /// Information about the current moon workspace.
@@ -98,6 +98,49 @@ impl Operation {
             Err(error) => {
                 self.finish(OperationStatus::Failed);
                 self.error = Some(error.to_string());
+            }
+        }
+    }
+
+    /// Create a new operation and track its state when executing
+    /// the provided callback.
+    pub fn track<I, F, R>(id: I, func: F) -> AnyResult<(Self, R)>
+    where
+        I: AsRef<str>,
+        F: FnOnce() -> AnyResult<R>,
+    {
+        let mut op = Self::new(id);
+
+        match func() {
+            Ok(res) => {
+                op.finish(OperationStatus::Passed);
+
+                Ok((op, res))
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Create a new operation and track its state when executing
+    /// the provided callback, but do not bubble up a result error.
+    pub fn track_with_error<I, F, R>(id: I, func: F) -> (Self, Option<R>)
+    where
+        I: AsRef<str>,
+        F: FnOnce() -> AnyResult<R>,
+    {
+        let mut op = Self::new(id);
+
+        match func() {
+            Ok(res) => {
+                op.finish(OperationStatus::Passed);
+
+                (op, Some(res))
+            }
+            Err(error) => {
+                op.finish(OperationStatus::Failed);
+                op.error = Some(error.to_string());
+
+                (op, None)
             }
         }
     }

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where downloading an invalid remote cache would not abort the hydrate process.
+
 ## 1.35.4
 
 #### 🚀 Updates

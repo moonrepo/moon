@@ -518,6 +518,18 @@ async fn batch_download_blobs(
                 break 'outer;
             };
 
+            if blob.bytes.len() != blob.digest.size_bytes as usize {
+                trace!(
+                    hash = &action_digest.hash,
+                    expected_size = blob.digest.size_bytes,
+                    actual_size = blob.bytes.len(),
+                    "Integrity failure, mismatched file sizes, unable to write output file",
+                );
+
+                abort = true;
+                break 'outer;
+            }
+
             if let Some(file) = file_map.get(&blob.digest.hash) {
                 output_files.insert(workspace_root.join(&file.path), blob);
             } else {

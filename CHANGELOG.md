@@ -16,6 +16,7 @@
 
 - WASM APIs
   - Added `InstallDependenciesInput.packages` and `production` fields.
+  - Added `InstallDependenciesOutput.operations` field.
   - Added `PruneDockerInput.projects` and `root` fields.
   - Added `PruneDockerOutput`.
   - Added `SetupEnvironmentOutput.operations` field.

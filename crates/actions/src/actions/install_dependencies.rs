@@ -1,6 +1,6 @@
-use crate::plugins::{ExecCommandOptions, exec_plugin_command, handle_on_exec};
+use crate::plugins::*;
 use crate::utils::should_skip_action_matching;
-use moon_action::{Action, ActionStatus, InstallDependenciesNode};
+use moon_action::{Action, ActionStatus, InstallDependenciesNode, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
@@ -148,14 +148,13 @@ pub async fn install_dependencies(
     };
 
     // Extract from output
+    let setup_op = Operation::setup_operation(action.get_prefix())?;
     let output = toolchain.install_dependencies(input).await?;
+    let skipped = output.install_command.is_none()
+        && output.dedupe_command.is_none()
+        && output.operations.is_empty();
 
-    if output.install_command.is_none() && output.dedupe_command.is_none() {
-        return Ok(ActionStatus::Skipped);
-    }
-
-    // TODO caching
-
+    // Execute commands
     let console = app_context.console.clone();
 
     let options = ExecCommandOptions {
@@ -202,7 +201,13 @@ pub async fn install_dependencies(
         }
     }
 
-    Ok(ActionStatus::Passed)
+    finalize_action_operations(action, &toolchain, setup_op, output.operations, vec![])?;
+
+    Ok(if skipped {
+        ActionStatus::Skipped
+    } else {
+        ActionStatus::Passed
+    })
 }
 
 fn create_hash_content<'action>(

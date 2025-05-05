@@ -40,10 +40,11 @@ macro_rules! insert_node_or_exit {
 
 #[derive(Default)]
 pub struct RunRequirements {
-    pub ci: bool,          // Are we in a CI environment
-    pub ci_check: bool,    // Check the `runInCI` option
-    pub dependents: bool,  // Run dependent tasks as well
-    pub interactive: bool, // Entire pipeline is interactive
+    pub ci: bool,            // Are we in a CI environment
+    pub ci_check: bool,      // Check the `runInCI` option
+    pub dependents: bool,    // Run dependent tasks as well
+    pub interactive: bool,   // Entire pipeline is interactive
+    pub skip_affected: bool, // Skip all affected checks
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -259,7 +260,6 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         runtime: &Runtime,
         project: &Project,
-        has_bun_and_node: bool,
     ) -> miette::Result<Option<NodeIndex>> {
         if !self
             .options
@@ -273,23 +273,30 @@ impl<'query> ActionGraphBuilder<'query> {
         let sync_workspace_index = self.sync_workspace().await?;
         let setup_toolchain_index = self.setup_toolchain_legacy(runtime).await?;
 
+        let platform_manager = match &self.platform_manager {
+            Some(manager) => manager,
+            None => PlatformManager::read(),
+        };
+
         // If Bun and Node.js are enabled, they will both attempt to install
         // dependencies in the target root. We need to avoid this problem,
         // so always prefer Node.js instead. Revisit in the future.
-        if has_bun_and_node && runtime.toolchain == "bun" {
+        let new_runtime = if runtime.toolchain == "bun"
+            && platform_manager
+                .enabled()
+                .any(|enabled_platform| enabled_platform == "node")
+        {
             debug!(
                 "Already installing dependencies with node, skipping a conflicting install from bun"
             );
 
-            return Ok(setup_toolchain_index);
-        }
+            self.get_runtime(project, &Id::raw("node"), true)
+                .unwrap_or_else(|| runtime.to_owned())
+        } else {
+            runtime.to_owned()
+        };
 
-        let platform = match &self.platform_manager {
-            Some(manager) => manager,
-            None => PlatformManager::read(),
-        }
-        .get_by_toolchain(&runtime.toolchain)?;
-
+        let platform = platform_manager.get_by_toolchain(&new_runtime.toolchain)?;
         let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
         let mut in_project = false;
 
@@ -309,11 +316,11 @@ impl<'query> ActionGraphBuilder<'query> {
             if in_project {
                 ActionNode::install_project_deps(InstallProjectDepsNode {
                     project_id: project.id.to_owned(),
-                    runtime: runtime.to_owned(),
+                    runtime: new_runtime,
                 })
             } else {
                 ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                    runtime: runtime.to_owned(),
+                    runtime: new_runtime,
                     root: packages_root,
                 })
             }
@@ -429,8 +436,6 @@ impl<'query> ActionGraphBuilder<'query> {
         toolchains: &[Id],
     ) -> miette::Result<Vec<Option<NodeIndex>>> {
         let mut indexes = vec![];
-        let has_bun_and_node =
-            toolchains.iter().any(|tc| tc == "node") && toolchains.iter().any(|tc| tc == "bun");
 
         for toolchain_id in toolchains {
             #[allow(clippy::collapsible_else_if)]
@@ -440,10 +445,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 }
             } else {
                 if let Some(runtime) = self.get_runtime(project, toolchain_id, true) {
-                    indexes.push(
-                        self.install_dependencies_legacy(&runtime, project, has_bun_and_node)
-                            .await?,
-                    );
+                    indexes.push(self.install_dependencies_legacy(&runtime, project).await?);
                 }
             }
         }
@@ -760,16 +762,17 @@ impl<'query> ActionGraphBuilder<'query> {
             .workspace_graph
             .get_project(task.target.get_project_id().unwrap())?;
 
-        let child_reqs = RunRequirements {
+        let mut child_reqs = RunRequirements {
             ci: reqs.ci,
             ci_check: reqs.ci_check,
             dependents: false,
             interactive: reqs.interactive,
+            skip_affected: false,
         };
 
         // Abort early if not affected
         if let Some(affected) = &mut self.affected {
-            if !affected.is_task_marked(task) {
+            if !reqs.skip_affected && !affected.is_task_marked(task) {
                 return Ok(None);
             }
         }
@@ -823,7 +826,7 @@ impl<'query> ActionGraphBuilder<'query> {
             priority: task.options.priority.get_level(),
             runtime: self
                 .get_runtime(&project, &task.toolchains[0], true)
-                .unwrap_or_else(Runtime::system), // TODO
+                .unwrap_or_else(Runtime::system),
             target: task.target.to_owned(),
             id: None,
         });
@@ -850,6 +853,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let index = self.insert_node(node);
 
         if !task.deps.is_empty() {
+            child_reqs.skip_affected = true;
             edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs)).await?);
         }
 
@@ -857,6 +861,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // And possibly dependents
         if reqs.dependents {
+            child_reqs.skip_affected = false;
             Box::pin(self.run_task_dependents(task, &child_reqs)).await?;
         }
 

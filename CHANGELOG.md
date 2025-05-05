@@ -4,6 +4,10 @@
 
 #### 🐞 Fixes
 
+- Potential fix for affected dependencies in the action pipeline not running and failing with a
+  "missing hash" error.
+- Potential fix for "Bun" and "Node with Bun as a package manager" both installing dependencies in
+  parallel and colliding.
 - Fixed an issue where downloading an invalid remote cache would not abort the hydrate process.
 
 ## 1.35.4

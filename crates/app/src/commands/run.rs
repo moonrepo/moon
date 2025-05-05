@@ -179,6 +179,7 @@ pub async fn run_target(
         ci_check: false,
         dependents: args.dependents,
         interactive: args.interactive,
+        skip_affected: false,
     };
     let mut inserted_nodes = FxHashSet::default();
 

@@ -1,12 +1,18 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
+use moon_common::consts::PROTO_CLI_VERSION;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
     ExtendProjectOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput, ExtendTaskScriptInput,
     ExtendTaskScriptOutput, HashTaskContentsInput, LocateDependenciesRootInput,
     LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput,
     SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+};
+use moon_process::Command;
+use moon_toolchain::{
+    get_version_env_key, get_version_env_value, is_using_global_toolchain,
+    is_using_global_toolchains,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
@@ -194,6 +200,49 @@ impl ToolchainRegistry {
             .await?;
 
         Ok(results.into_iter().collect())
+    }
+
+    pub fn prepare_process_command(&self, command: &mut Command) {
+        let moon = &self.host_data.moon_env;
+        let proto = &self.host_data.proto_env;
+
+        // Inherit env vars
+        command.env("PROTO_AUTO_INSTALL", "false");
+        command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
+        command.env("PROTO_NO_PROGRESS", "true");
+        command.env("PROTO_VERSION", PROTO_CLI_VERSION);
+        command.env("STARBASE_FORCE_TTY", "true");
+
+        // Abort early if using globals
+        if is_using_global_toolchains() {
+            return;
+        }
+
+        // Inherit lookup paths
+        command.prepend_paths([
+            // Always use a versioned proto first
+            proto
+                .store
+                .inventory_dir
+                .join("proto")
+                .join(PROTO_CLI_VERSION),
+            // Then fallback to shims/bins
+            proto.store.shims_dir.clone(),
+            proto.store.bin_dir.clone(),
+            // And ensure non-proto managed moon comes last
+            moon.store_root.join("bin"),
+        ]);
+
+        // Inherit versions for each toolchain
+        for (id, config) in &self.configs {
+            if is_using_global_toolchain(id) {
+                continue;
+            }
+
+            if let Some(version) = &config.version {
+                command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
+            }
+        }
     }
 
     pub async fn scaffold_docker_many<InFn>(

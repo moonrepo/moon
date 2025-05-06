@@ -1,4 +1,3 @@
-use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
@@ -10,9 +9,8 @@ use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
+use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchain};
 use rustc_hash::FxHashMap;
-use std::collections::VecDeque;
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
 
@@ -26,6 +24,7 @@ pub struct CommandBuilder<'task> {
 
     // To be built
     command: Command,
+    using_platform: bool,
 }
 
 impl<'task> CommandBuilder<'task> {
@@ -49,6 +48,7 @@ impl<'task> CommandBuilder<'task> {
             working_dir,
             platform_manager: PlatformManager::read(),
             command: Command::new("noop"),
+            using_platform: false,
         }
     }
 
@@ -77,18 +77,22 @@ impl<'task> CommandBuilder<'task> {
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
+        self.inherit_proto()?;
 
         Ok(self.command)
     }
 
-    async fn build_command(&self, context: &ActionContext) -> miette::Result<Command> {
+    async fn build_command(&mut self, context: &ActionContext) -> miette::Result<Command> {
         let task = self.task;
+        let toolchain_ids = self.project.get_enabled_toolchains_for_task(task);
 
         let mut command = match self
             .platform_manager
             .get_by_toolchains(&self.task.toolchains)
         {
             Ok(platform) => {
+                self.using_platform = true;
+
                 platform
                     .create_run_target_command(
                         context,
@@ -120,13 +124,11 @@ impl<'task> CommandBuilder<'task> {
                 for params in self
                     .app
                     .toolchain_registry
-                    .extend_task_script_many(task.toolchains.iter().collect(), |registry, _| {
-                        ExtendTaskScriptInput {
-                            context: registry.create_context(),
-                            script: script.clone(),
-                            task: task.to_fragment(),
-                            ..Default::default()
-                        }
+                    .extend_task_script_many(toolchain_ids, |registry, _| ExtendTaskScriptInput {
+                        context: registry.create_context(),
+                        script: script.clone(),
+                        task: task.to_fragment(),
+                        ..Default::default()
                     })
                     .await?
                 {
@@ -138,14 +140,12 @@ impl<'task> CommandBuilder<'task> {
                 for params in self
                     .app
                     .toolchain_registry
-                    .extend_task_command_many(task.toolchains.iter().collect(), |registry, _| {
-                        ExtendTaskCommandInput {
-                            context: registry.create_context(),
-                            command: task.command.clone(),
-                            args: task.args.clone(),
-                            task: task.to_fragment(),
-                            ..Default::default()
-                        }
+                    .extend_task_command_many(toolchain_ids, |registry, _| ExtendTaskCommandInput {
+                        context: registry.create_context(),
+                        command: task.command.clone(),
+                        args: task.args.clone(),
+                        task: task.to_fragment(),
+                        ..Default::default()
                     })
                     .await?
                 {
@@ -377,6 +377,32 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
+    fn inherit_proto(&mut self) -> miette::Result<()> {
+        // The values below were inherited by the platform already
+        if self.using_platform {
+            return Ok(());
+        }
+
+        // Inherit common parameters
+        self.app
+            .toolchain_registry
+            .prepare_process_command(&mut self.command);
+
+        // Inherit project overrides
+        for (id, config) in &self.project.config.toolchain.plugins {
+            if is_using_global_toolchain(id) {
+                continue;
+            }
+
+            if let Some(version) = config.get_version() {
+                self.command
+                    .env(get_version_env_key(id), get_version_env_value(version));
+            }
+        }
+
+        Ok(())
+    }
+
     fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {
         match args {
             Extend::Empty => {
@@ -415,31 +441,24 @@ impl<'task> CommandBuilder<'task> {
         command: &mut Command,
         next_paths: Vec<PathBuf>,
     ) -> miette::Result<()> {
-        use std::env;
-
         if next_paths.is_empty() {
             return Ok(());
         }
 
-        let Some(paths_string) = command
-            .env
-            .get(&OsString::from("PATH"))
-            .cloned()
-            .and_then(|var| var)
-            .or_else(|| env::var_os("PATH"))
-        else {
-            return Ok(());
-        };
-
-        let mut paths = env::split_paths(&paths_string).collect::<VecDeque<_>>();
-
-        for path in next_paths {
-            if path.is_absolute() {
-                paths.push_front(path);
-            }
+        // Normalize separators since WASM is always forward slashes
+        #[cfg(windows)]
+        {
+            command.prepend_paths(next_paths.into_iter().map(|path| {
+                PathBuf::from(moon_common::path::normalize_separators(
+                    path.to_string_lossy(),
+                ))
+            }));
         }
 
-        command.env("PATH", env::join_paths(paths).into_diagnostic()?);
+        #[cfg(unix)]
+        {
+            command.prepend_paths(next_paths);
+        }
 
         Ok(())
     }

@@ -1,14 +1,19 @@
+use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
+use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
 use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
-use std::path::Path;
+use rustc_hash::FxHashMap;
+use std::collections::VecDeque;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
@@ -53,14 +58,13 @@ impl<'task> CommandBuilder<'task> {
 
     #[instrument(name = "build_command", skip_all)]
     pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
-        self.command = self.build_command(context).await?;
-
         debug!(
             task_target = self.task.target.as_str(),
-            command = self.command.bin.to_str(),
             working_dir = ?self.working_dir,
-            "Creating task command to execute",
+            "Creating task process command to execute",
         );
+
+        self.command = self.build_command(context).await?;
 
         // We need to handle non-zero exit code's manually
         self.command
@@ -78,6 +82,8 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn build_command(&self, context: &ActionContext) -> miette::Result<Command> {
+        let task = self.task;
+
         let mut command = match self
             .platform_manager
             .get_by_toolchains(&self.task.toolchains)
@@ -95,21 +101,67 @@ impl<'task> CommandBuilder<'task> {
             }
             Err(_) => {
                 // No platform so create a custom command
-                let mut cmd = Command::new(&self.task.command);
-                cmd.args(&self.task.args);
+                let mut cmd = Command::new(&task.command);
+                cmd.args(&task.args);
                 cmd
             }
         };
 
-        // If a script, overwrite the binary (command) with the script and reset args,
-        // but also inherit all environment variables and paths from the platform.
-        if let Some(script) = &self.task.script {
-            command.bin = script.into();
-            command.args.clear();
+        match &task.script {
+            // If a script, overwrite the binary (command) with the script and reset args,
+            // but also inherit all environment variables and paths from the platform
+            Some(script) => {
+                command.bin = script.into();
+                command.args.clear();
 
-            // Scripts should be used as-is
-            command.escape_args = false;
-        }
+                // Scripts should be used as-is
+                command.escape_args = false;
+
+                for params in self
+                    .app
+                    .toolchain_registry
+                    .extend_task_script_many(task.toolchains.iter().collect(), |registry, _| {
+                        ExtendTaskScriptInput {
+                            context: registry.create_context(),
+                            script: script.clone(),
+                            task: task.to_fragment(),
+                            ..Default::default()
+                        }
+                    })
+                    .await?
+                {
+                    self.extend_with_env(&mut command, params.env, params.env_remove);
+                    self.extend_with_paths(&mut command, params.paths)?;
+                }
+            }
+            None => {
+                for params in self
+                    .app
+                    .toolchain_registry
+                    .extend_task_command_many(task.toolchains.iter().collect(), |registry, _| {
+                        ExtendTaskCommandInput {
+                            context: registry.create_context(),
+                            command: task.command.clone(),
+                            args: task.args.clone(),
+                            task: task.to_fragment(),
+                            ..Default::default()
+                        }
+                    })
+                    .await?
+                {
+                    if let Some(new_bin) = params.command {
+                        command.bin = new_bin.into();
+                    }
+
+                    if let Some(new_args) = params.args {
+                        self.extend_with_args(&mut command, new_args);
+                    }
+
+                    self.extend_with_env(&mut command, params.env, params.env_remove);
+                    self.extend_with_paths(&mut command, params.paths)?;
+                }
+            }
+        };
 
         Ok(command)
     }
@@ -323,5 +375,72 @@ impl<'task> CommandBuilder<'task> {
         {
             self.command.inherit_colors();
         }
+    }
+
+    fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {
+        match args {
+            Extend::Empty => {
+                command.args.clear();
+            }
+            Extend::Append(next) => {
+                command.args(next);
+            }
+            Extend::Prepend(next) => {
+                let prev = std::mem::take(&mut command.args);
+                command.args(next);
+                command.args(prev);
+            }
+            Extend::Replace(next) => {
+                command.args.clear();
+                command.args(next);
+            }
+        }
+    }
+
+    fn extend_with_env(
+        &self,
+        command: &mut Command,
+        env: FxHashMap<String, String>,
+        env_remove: Vec<String>,
+    ) {
+        command.envs(env);
+
+        for key in env_remove {
+            command.env_remove(key);
+        }
+    }
+
+    fn extend_with_paths(
+        &self,
+        command: &mut Command,
+        next_paths: Vec<PathBuf>,
+    ) -> miette::Result<()> {
+        use std::env;
+
+        if next_paths.is_empty() {
+            return Ok(());
+        }
+
+        let Some(paths_string) = command
+            .env
+            .get(&OsString::from("PATH"))
+            .cloned()
+            .and_then(|var| var)
+            .or_else(|| env::var_os("PATH"))
+        else {
+            return Ok(());
+        };
+
+        let mut paths = env::split_paths(&paths_string).collect::<VecDeque<_>>();
+
+        for path in next_paths {
+            if path.is_absolute() {
+                paths.push_front(path);
+            }
+        }
+
+        command.env("PATH", env::join_paths(paths).into_diagnostic()?);
+
+        Ok(())
     }
 }

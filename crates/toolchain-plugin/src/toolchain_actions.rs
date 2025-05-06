@@ -3,7 +3,8 @@ use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
-    ExtendProjectOutput, HashTaskContentsInput, LocateDependenciesRootInput,
+    ExtendProjectOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput, ExtendTaskScriptInput,
+    ExtendTaskScriptOutput, HashTaskContentsInput, LocateDependenciesRootInput,
     LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput,
     SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
@@ -106,6 +107,46 @@ impl ToolchainRegistry {
                 ids,
                 input_factory,
                 |toolchain, input| async move { toolchain.extend_project(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn extend_task_command_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendTaskCommandOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskCommandInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_task_command",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_task_command(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn extend_task_script_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendTaskScriptOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskScriptInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_task_script",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_task_script(input).await },
             )
             .await?;
 

@@ -28,6 +28,7 @@ moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_utils = { workspace = true }

@@ -230,6 +230,48 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn extend_task_command(
+        &self,
+        mut input: ExtendTaskCommandInput,
+    ) -> miette::Result<ExtendTaskCommandOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .read()
+                .await
+                .get_globals_dir()
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
+        let output: ExtendTaskCommandOutput = self
+            .plugin
+            .cache_func_with("extend_task_command", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_script(
+        &self,
+        mut input: ExtendTaskScriptInput,
+    ) -> miette::Result<ExtendTaskScriptOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .read()
+                .await
+                .get_globals_dir()
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
+        let output: ExtendTaskScriptOutput = self
+            .plugin
+            .cache_func_with("extend_task_script", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
     pub async fn hash_task_contents(
         &self,
         input: HashTaskContentsInput,

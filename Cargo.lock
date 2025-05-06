@@ -4857,6 +4857,7 @@ dependencies = [
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_archive",
  "starbase_sandbox",

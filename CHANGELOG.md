@@ -14,6 +14,9 @@
 
 #### 🧩 Plugins
 
+- Added new toolchain WASM APIs.
+  - `extend_task_command` - Extend the process command with task parameters.
+  - `extend_task_script` - Extend the process script with task parameters.
 - WASM APIs
   - Added `InstallDependenciesInput.packages` and `production` fields.
   - Added `InstallDependenciesOutput.operations` field.

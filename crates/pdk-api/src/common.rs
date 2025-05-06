@@ -5,6 +5,7 @@ use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 use warpgate_api::*;
 
 // EXTENDING
@@ -65,9 +66,16 @@ api_enum!(
     /// Type of extend/merge strategy.
     #[serde(tag = "strategy", content = "value")]
     pub enum Extend<T> {
+        /// Empty the data.
         Empty,
+
+        /// Append to the data.
         Append(T),
+
+        /// Prepend to the data.
         Prepend(T),
+
+        /// Replace the data.
         Replace(T),
     }
 );
@@ -83,6 +91,10 @@ api_struct!(
 
         /// The current command (binary/program).
         pub command: String,
+
+        /// Virtual path to a global executables directory
+        /// for the current toolchain.
+        pub globals_dir: Option<VirtualPath>,
 
         /// Fragment of the owning task.
         pub task: TaskFragment,
@@ -111,6 +123,11 @@ api_struct!(
         /// Can be overwritten by subsequent extend calls.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub env_remove: Vec<String>,
+
+        /// List of absolute paths to prepend into the `PATH` environment
+        /// variable, but after the proto prepended paths.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub paths: Vec<PathBuf>,
     }
 );
 
@@ -119,6 +136,13 @@ api_struct!(
     pub struct ExtendTaskScriptInput {
         /// Current moon context.
         pub context: MoonContext,
+
+        /// Virtual path to a global executables directory
+        /// for the current toolchain.
+        pub globals_dir: Option<VirtualPath>,
+
+        /// The current script.
+        pub script: String,
 
         /// Fragment of the owning task.
         pub task: TaskFragment,
@@ -137,5 +161,10 @@ api_struct!(
         /// Can be overwritten by subsequent extend calls.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub env_remove: Vec<String>,
+
+        /// List of absolute paths to prepend into the `PATH` environment
+        /// variable, but after the proto prepended paths.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub paths: Vec<PathBuf>,
     }
 );

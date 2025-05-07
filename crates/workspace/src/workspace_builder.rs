@@ -730,7 +730,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Load projects and configs first
         self.load_project_build_data(sources)?;
 
-        // Then load and extend projects
+        // Then extend projects from toolchains
         self.extend_project_build_data().await?;
 
         Ok(())

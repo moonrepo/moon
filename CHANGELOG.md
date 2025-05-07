@@ -4,7 +4,7 @@
 
 #### 🚀 Updates
 
-- Added unstable support for toolchain plugins.
+- Added more unstable support for toolchain plugins.
   - In the project graph:
     - Extend projects with dependencies, tasks, and an alias.
   - In the action pipeline:

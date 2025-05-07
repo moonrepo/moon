@@ -4848,6 +4848,7 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_env_var",
+ "moon_hash",
  "moon_pdk_api",
  "moon_platform",
  "moon_process",

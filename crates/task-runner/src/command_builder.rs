@@ -69,7 +69,8 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command
             .cwd(self.working_dir)
-            .set_error_on_nonzero(false);
+            .set_error_on_nonzero(false)
+            .set_print_command(self.app.workspace_config.pipeline.log_running_command);
 
         // Order is important!
         self.inject_args(context);

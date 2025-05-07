@@ -99,10 +99,7 @@ impl OutputHydrater<'_> {
                 color::muted_light(error.to_string()),
             );
 
-            // Delete target outputs to ensure a clean slate
-            for output in &self.task.output_files {
-                fs::remove_file(output.to_logical_path(&self.app.workspace_root))?;
-            }
+            self.delete_existing_outputs()?;
         }
 
         Ok(true)
@@ -114,6 +111,8 @@ impl OutputHydrater<'_> {
         state: &mut ActionState<'_>,
     ) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
+            self.delete_existing_outputs()?;
+
             match remote.restore_action_result(state).await {
                 Ok(restored) => {
                     return Ok(restored);
@@ -131,5 +130,13 @@ impl OutputHydrater<'_> {
         }
 
         Ok(false)
+    }
+
+    fn delete_existing_outputs(&self) -> miette::Result<()> {
+        for output in self.task.get_output_files(&self.app.workspace_root, true)? {
+            fs::remove_file(output)?;
+        }
+
+        Ok(())
     }
 }

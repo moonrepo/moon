@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where Git v2 would error loading submodules that haven't been checked out yet.
+- Fixed an issue with remote cache hydration that would leave around stale artifacts.
 
 ## 1.35.5
 

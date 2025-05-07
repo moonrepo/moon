@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use moon_toolchain::is_using_global_toolchain;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
 use starbase_utils::glob::GlobSet;
@@ -219,12 +220,58 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn extend_project(
+    pub async fn extend_project_graph(
         &self,
-        input: ExtendProjectInput,
-    ) -> miette::Result<ExtendProjectOutput> {
-        let output: ExtendProjectOutput =
-            self.plugin.cache_func_with("extend_project", input).await?;
+        input: ExtendProjectGraphInput,
+    ) -> miette::Result<ExtendProjectGraphOutput> {
+        let mut output: ExtendProjectGraphOutput = self
+            .plugin
+            .cache_func_with("extend_project_graph", input)
+            .await?;
+
+        self.handle_output_files(&mut output.input_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_command(
+        &self,
+        mut input: ExtendTaskCommandInput,
+    ) -> miette::Result<ExtendTaskCommandOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .read()
+                .await
+                .get_globals_dir()
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
+        let output: ExtendTaskCommandOutput = self
+            .plugin
+            .cache_func_with("extend_task_command", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_script(
+        &self,
+        mut input: ExtendTaskScriptInput,
+    ) -> miette::Result<ExtendTaskScriptOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .read()
+                .await
+                .get_globals_dir()
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
+        let output: ExtendTaskScriptOutput = self
+            .plugin
+            .cache_func_with("extend_task_script", input)
+            .await?;
 
         Ok(output)
     }
@@ -340,32 +387,34 @@ impl ToolchainPlugin {
 
         // Only install if a version has been configured,
         // and the plugin provides the required APIs
-        if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
-            let mut tool = tool.write().await;
+        if !is_using_global_toolchain(&self.id) {
+            if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
+                let mut tool = tool.write().await;
 
-            // Resolve the version first so that it is available
-            input.version = Some(tool.resolve_version(spec, false).await?);
+                // Resolve the version first so that it is available
+                input.version = Some(tool.resolve_version(spec, false).await?);
 
-            // Only setup if not already been
-            if !tool.is_setup(spec).await? {
-                on_setup()?;
+                // Only setup if not already been
+                if !tool.is_setup(spec).await? {
+                    on_setup()?;
 
-                output.installed = tool
-                    .setup(
-                        spec,
-                        InstallOptions {
-                            skip_prompts: true,
-                            skip_ui: true,
-                            ..Default::default()
-                        },
-                    )
-                    .await?
-                    .is_some();
+                    output.installed = tool
+                        .setup(
+                            spec,
+                            InstallOptions {
+                                skip_prompts: true,
+                                skip_ui: true,
+                                ..Default::default()
+                            },
+                        )
+                        .await?
+                        .is_some();
+                }
+
+                // Locate pieces that we'll need
+                tool.locate_exes_dirs().await?;
+                tool.locate_globals_dirs().await?;
             }
-
-            // Locate pieces that we'll need
-            tool.locate_exes_dirs().await?;
-            tool.locate_globals_dirs().await?;
         }
 
         // This should always run, regardless of the install outcome

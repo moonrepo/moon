@@ -92,6 +92,18 @@ impl Project {
             .collect()
     }
 
+    /// Return a list of all task specific toolchains that are enabled for this project.
+    /// Toolchains can be disabled through config.
+    pub fn get_enabled_toolchains_for_task<'task>(&self, task: &'task Task) -> Vec<&'task Id> {
+        task.toolchains
+            .iter()
+            .filter(|id| match self.config.toolchain.plugins.get(*id) {
+                None => true,
+                Some(cfg) => cfg.is_enabled(),
+            })
+            .collect()
+    }
+
     /// Return true if the root-level project.
     pub fn is_root_level(&self) -> bool {
         is_root_level_source(&self.source)

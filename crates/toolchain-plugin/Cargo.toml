@@ -14,6 +14,8 @@ moon_config = { path = "../config" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
+moon_process = { path = "../process" }
+moon_toolchain = { path = "../toolchain" }
 async-trait = { workspace = true }
 futures = { workspace = true }
 miette = { workspace = true }

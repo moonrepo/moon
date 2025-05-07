@@ -1,11 +1,18 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
+use moon_common::consts::PROTO_CLI_VERSION;
 use moon_pdk_api::{
-    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
-    ExtendProjectOutput, HashTaskContentsInput, LocateDependenciesRootInput,
-    LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput,
-    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectGraphInput,
+    ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput,
+    ExtendTaskScriptInput, ExtendTaskScriptOutput, HashTaskContentsInput,
+    LocateDependenciesRootInput, LocateDependenciesRootOutput, ScaffoldDockerInput,
+    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+};
+use moon_process::Command;
+use moon_toolchain::{
+    get_version_env_key, get_version_env_value, is_using_global_toolchain,
+    is_using_global_toolchains,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
@@ -92,20 +99,59 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn extend_project_many<InFn>(
+    pub async fn extend_project_graph_all<InFn>(
         &self,
-        ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendProjectOutput>>
+    ) -> miette::Result<Vec<ExtendProjectGraphOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectInput,
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectGraphInput,
     {
         let results = self
             .call_func_all(
-                "extend_project",
+                "extend_project_graph",
+                self.get_plugin_ids(),
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_project_graph(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn extend_task_command_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendTaskCommandOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskCommandInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_task_command",
                 ids,
                 input_factory,
-                |toolchain, input| async move { toolchain.extend_project(input).await },
+                |toolchain, input| async move { toolchain.extend_task_command(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn extend_task_script_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendTaskScriptOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskScriptInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_task_script",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_task_script(input).await },
             )
             .await?;
 
@@ -153,6 +199,49 @@ impl ToolchainRegistry {
             .await?;
 
         Ok(results.into_iter().collect())
+    }
+
+    pub fn prepare_process_command(&self, command: &mut Command) {
+        let moon = &self.host_data.moon_env;
+        let proto = &self.host_data.proto_env;
+
+        // Inherit env vars
+        command.env("PROTO_AUTO_INSTALL", "false");
+        command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
+        command.env("PROTO_NO_PROGRESS", "true");
+        command.env("PROTO_VERSION", PROTO_CLI_VERSION);
+        command.env("STARBASE_FORCE_TTY", "true");
+
+        // Abort early if using globals
+        if is_using_global_toolchains() {
+            return;
+        }
+
+        // Inherit lookup paths
+        command.prepend_paths([
+            // Always use a versioned proto first
+            proto
+                .store
+                .inventory_dir
+                .join("proto")
+                .join(PROTO_CLI_VERSION),
+            // Then fallback to shims/bins
+            proto.store.shims_dir.clone(),
+            proto.store.bin_dir.clone(),
+            // And ensure non-proto managed moon comes last
+            moon.store_root.join("bin"),
+        ]);
+
+        // Inherit versions for each toolchain
+        for (id, config) in &self.configs {
+            if is_using_global_toolchain(id) {
+                continue;
+            }
+
+            if let Some(version) = &config.version {
+                command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
+            }
+        }
     }
 
     pub async fn scaffold_docker_many<InFn>(

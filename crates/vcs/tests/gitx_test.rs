@@ -545,6 +545,28 @@ mod gitx {
         }
     }
 
+    mod submodules {
+        use super::*;
+
+        #[tokio::test]
+        async fn doesnt_error_if_submodules_arent_checked_out() {
+            let sandbox = create_empty_sandbox();
+
+            sandbox.run_git(|cmd| {
+                cmd.args([
+                    "clone",
+                    "https://github.com/moonrepo/git-test.git",
+                    ".",
+                    // No recurse submodules
+                ]);
+            });
+
+            let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
+            assert!(git.submodules.is_empty());
+        }
+    }
+
     mod root_detection {
         use super::*;
 

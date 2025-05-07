@@ -151,7 +151,17 @@ impl GitTree {
                     module.work_dir = worktree_root.join(rel_path);
                     module.type_of = GitTreeType::Submodule;
 
-                    Some(module)
+                    // Ensure the submodule has been checked out
+                    if module.work_dir.join(".git").exists() {
+                        Some(module)
+                    } else {
+                        debug!(
+                            submodule = ?module.work_dir,
+                            "Encountered a submodule that hasn't been checked out, skipping it"
+                        );
+
+                        None
+                    }
                 }
             })
             .collect::<Vec<_>>();

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where Git v2 would error loading submodules that haven't been checked out yet.
+
 ## 1.35.5
 
 #### 🐞 Fixes

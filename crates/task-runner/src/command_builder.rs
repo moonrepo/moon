@@ -4,11 +4,14 @@ use moon_app_context::AppContext;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
+use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
 use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
-use std::path::Path;
+use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchain};
+use rustc_hash::FxHashMap;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
@@ -21,6 +24,7 @@ pub struct CommandBuilder<'task> {
 
     // To be built
     command: Command,
+    using_platform: bool,
 }
 
 impl<'task> CommandBuilder<'task> {
@@ -44,6 +48,7 @@ impl<'task> CommandBuilder<'task> {
             working_dir,
             platform_manager: PlatformManager::read(),
             command: Command::new("noop"),
+            using_platform: false,
         }
     }
 
@@ -53,34 +58,13 @@ impl<'task> CommandBuilder<'task> {
 
     #[instrument(name = "build_command", skip_all)]
     pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
-        self.command = self
-            .platform_manager
-            .get_by_toolchains(&self.task.toolchains)?
-            .create_run_target_command(
-                context,
-                self.project,
-                self.task,
-                self.node.get_runtime(),
-                self.working_dir,
-            )
-            .await?;
-
-        // If a script, overwrite the binary (command) with the script and reset args,
-        // but also inherit all environment variables and paths from the platform.
-        if let Some(script) = &self.task.script {
-            self.command.bin = script.into();
-            self.command.args.clear();
-
-            // Scripts should be used as-is
-            self.command.escape_args = false;
-        }
-
         debug!(
             task_target = self.task.target.as_str(),
-            command = self.command.bin.to_str(),
             working_dir = ?self.working_dir,
-            "Creating task command to execute",
+            "Creating task process command to execute",
         );
+
+        self.command = self.build_command(context).await?;
 
         // We need to handle non-zero exit code's manually
         self.command
@@ -93,8 +77,93 @@ impl<'task> CommandBuilder<'task> {
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
+        self.inherit_proto();
 
         Ok(self.command)
+    }
+
+    async fn build_command(&mut self, context: &ActionContext) -> miette::Result<Command> {
+        let task = self.task;
+        let toolchain_ids = self.project.get_enabled_toolchains_for_task(task);
+
+        let mut command = match self
+            .platform_manager
+            .get_by_toolchains(&self.task.toolchains)
+        {
+            Ok(platform) => {
+                self.using_platform = true;
+
+                platform
+                    .create_run_target_command(
+                        context,
+                        self.project,
+                        self.task,
+                        self.node.get_runtime(),
+                        self.working_dir,
+                    )
+                    .await?
+            }
+            Err(_) => {
+                // No platform so create a custom command
+                let mut cmd = Command::new(&task.command);
+                cmd.args(&task.args);
+                cmd
+            }
+        };
+
+        match &task.script {
+            // If a script, overwrite the binary (command) with the script and reset args,
+            // but also inherit all environment variables and paths from the platform
+            Some(script) => {
+                command.bin = script.into();
+                command.args.clear();
+
+                // Scripts should be used as-is
+                command.escape_args = false;
+
+                for params in self
+                    .app
+                    .toolchain_registry
+                    .extend_task_script_many(toolchain_ids, |registry, _| ExtendTaskScriptInput {
+                        context: registry.create_context(),
+                        script: script.clone(),
+                        task: task.to_fragment(),
+                        ..Default::default()
+                    })
+                    .await?
+                {
+                    self.extend_with_env(&mut command, params.env, params.env_remove);
+                    self.extend_with_paths(&mut command, params.paths);
+                }
+            }
+            None => {
+                for params in self
+                    .app
+                    .toolchain_registry
+                    .extend_task_command_many(toolchain_ids, |registry, _| ExtendTaskCommandInput {
+                        context: registry.create_context(),
+                        command: task.command.clone(),
+                        args: task.args.clone(),
+                        task: task.to_fragment(),
+                        ..Default::default()
+                    })
+                    .await?
+                {
+                    if let Some(new_bin) = params.command {
+                        command.bin = new_bin.into();
+                    }
+
+                    if let Some(new_args) = params.args {
+                        self.extend_with_args(&mut command, new_args);
+                    }
+
+                    self.extend_with_env(&mut command, params.env, params.env_remove);
+                    self.extend_with_paths(&mut command, params.paths);
+                }
+            }
+        };
+
+        Ok(command)
     }
 
     #[instrument(skip_all)]
@@ -305,6 +374,84 @@ impl<'task> CommandBuilder<'task> {
             .inherit_colors_for_piped_tasks
         {
             self.command.inherit_colors();
+        }
+    }
+
+    fn inherit_proto(&mut self) {
+        // The values below were inherited by the platform already
+        if self.using_platform {
+            return;
+        }
+
+        // Inherit common parameters
+        self.app
+            .toolchain_registry
+            .prepare_process_command(&mut self.command);
+
+        // Inherit project overrides
+        for (id, config) in &self.project.config.toolchain.plugins {
+            if is_using_global_toolchain(id) {
+                continue;
+            }
+
+            if let Some(version) = config.get_version() {
+                self.command
+                    .env(get_version_env_key(id), get_version_env_value(version));
+            }
+        }
+    }
+
+    fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {
+        match args {
+            Extend::Empty => {
+                command.args.clear();
+            }
+            Extend::Append(next) => {
+                command.args(next);
+            }
+            Extend::Prepend(next) => {
+                let prev = std::mem::take(&mut command.args);
+                command.args(next);
+                command.args(prev);
+            }
+            Extend::Replace(next) => {
+                command.args.clear();
+                command.args(next);
+            }
+        }
+    }
+
+    fn extend_with_env(
+        &self,
+        command: &mut Command,
+        env: FxHashMap<String, String>,
+        env_remove: Vec<String>,
+    ) {
+        command.envs(env);
+
+        for key in env_remove {
+            command.env_remove(key);
+        }
+    }
+
+    fn extend_with_paths(&self, command: &mut Command, next_paths: Vec<PathBuf>) {
+        if next_paths.is_empty() {
+            return;
+        }
+
+        // Normalize separators since WASM is always forward slashes
+        #[cfg(windows)]
+        {
+            command.prepend_paths(next_paths.into_iter().map(|path| {
+                PathBuf::from(moon_common::path::normalize_separators(
+                    path.to_string_lossy(),
+                ))
+            }));
+        }
+
+        #[cfg(unix)]
+        {
+            command.prepend_paths(next_paths);
         }
     }
 }

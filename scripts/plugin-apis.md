@@ -13,9 +13,9 @@
 
 ## Tier 2 - 3/11
 
-- [ ] `extend_project`
-- [ ] `extend_task`
-- [ ] `extend_task_command`
+- [x] `extend_project_graph`
+- [x] `extend_task_command`
+- [x] `extend_task_script`
 - [ ] `hash_manifest_contents`
 - [x] `hash_task_contents`
 - [x] `install_dependencies`

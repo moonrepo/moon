@@ -10,6 +10,7 @@ pub use common::*;
 pub use context::*;
 pub use extension::*;
 pub use host::*;
+pub use moon_common::Id;
 pub use moon_project::ProjectFragment;
 pub use moon_task::TaskFragment;
 pub use prompts::*;

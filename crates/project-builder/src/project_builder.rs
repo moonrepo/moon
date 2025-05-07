@@ -39,7 +39,7 @@ pub struct ProjectBuilder<'app> {
     // Values to be continually built
     id: &'app Id,
     source: &'app WorkspaceRelativePath,
-    alias: Option<&'app str>,
+    alias: Option<String>,
     root: PathBuf,
 
     pub language: LanguageType,
@@ -240,8 +240,8 @@ impl<'app> ProjectBuilder<'app> {
         self
     }
 
-    pub fn set_alias(&mut self, alias: &'app str) -> &mut Self {
-        self.alias = Some(alias);
+    pub fn set_alias(&mut self, alias: impl AsRef<str>) -> &mut Self {
+        self.alias = Some(alias.as_ref().into());
         self
     }
 
@@ -254,11 +254,11 @@ impl<'app> ProjectBuilder<'app> {
             .collect::<Vec<_>>();
 
         let mut project = Project {
-            alias: self.alias.map(|a| a.to_owned()),
             dependencies: self.build_dependencies(&tasks)?,
             file_groups: self.build_file_groups()?,
             task_targets,
             tasks,
+            alias: self.alias,
             id: self.id.to_owned(),
             language: self.language,
             root: self.root,

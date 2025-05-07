@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionStatus, Operation, OperationMeta};
+use moon_action::{Action, ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
 use serde::Serialize;
@@ -19,10 +19,7 @@ pub async fn create_hash_and_return_lock_if_changed(
 
     let hash = hasher.generate_hash()?;
 
-    if let OperationMeta::HashGeneration(inner) = &mut hash_op.meta {
-        inner.hash = Some(hash.clone());
-    }
-
+    hash_op.meta.set_hash(&hash);
     hash_op.finish(ActionStatus::Passed);
 
     action.operations.push(hash_op);

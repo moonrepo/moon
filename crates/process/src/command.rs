@@ -5,11 +5,12 @@ use crate::shell::Shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use rustc_hash::{FxHashMap, FxHasher};
+use std::collections::VecDeque;
+use std::env;
+use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
-use std::{
-    ffi::{OsStr, OsString},
-    sync::Arc,
-};
+use std::path::Path;
+use std::sync::Arc;
 
 pub struct Command {
     pub args: Vec<OsString>,
@@ -177,6 +178,34 @@ impl Command {
         }
 
         self
+    }
+
+    pub fn prepend_paths<I, V>(&mut self, list: I) -> &mut Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<Path>,
+    {
+        let key = OsString::from("PATH");
+
+        let paths_string = self
+            .env
+            .get(&key)
+            .cloned()
+            .and_then(|value| value)
+            .or_else(|| env::var_os("PATH"))
+            .unwrap_or_default();
+
+        let mut paths = env::split_paths(&paths_string).collect::<VecDeque<_>>();
+
+        for item in list.into_iter() {
+            let path = item.as_ref();
+
+            if path.is_absolute() {
+                paths.push_front(path.to_path_buf());
+            }
+        }
+
+        self.env(key, env::join_paths(paths).unwrap())
     }
 
     pub fn get_bin_name(&self) -> String {

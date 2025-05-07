@@ -33,13 +33,6 @@ impl PlatformManager {
         }
     }
 
-    pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>
-    where
-        P: Fn(&&BoxedPlatform) -> bool,
-    {
-        self.cache.values().find(predicate)
-    }
-
     pub fn get_by_toolchain(&self, id: &Id) -> miette::Result<&BoxedPlatform> {
         self.cache.get(id).ok_or_else(|| {
             ToolError::UnsupportedToolchains {

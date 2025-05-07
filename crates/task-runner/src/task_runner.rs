@@ -440,7 +440,7 @@ impl<'task> TaskRunner<'task> {
             .app
             .toolchain_registry
             .hash_task_contents_many(
-                self.project.get_enabled_toolchains(),
+                self.project.get_enabled_toolchains_for_task(self.task),
                 |registry, toolchain| HashTaskContentsInput {
                     context: registry.create_context(),
                     project: self.project.to_fragment(),

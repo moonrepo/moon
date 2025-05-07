@@ -4,9 +4,14 @@
 
 #### 🚀 Updates
 
-- Added unstable support for toolchain plugins in the action pipeline.
-  - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
-  - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
+- Added more unstable support for toolchain plugins.
+  - In the project graph:
+    - Extend projects with dependencies, tasks, and an alias.
+  - In the action pipeline:
+    - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
+    - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
+  - When running tasks:
+    - Extend the command/script with additional parameters before executing.
 - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.
@@ -14,7 +19,11 @@
 
 #### 🧩 Plugins
 
-- WASM APIs
+- Added new toolchain WASM APIs.
+  - `extend_project_graph` - Extend projects with toolchain specific info.
+  - `extend_task_command` - Extend the command process with parameters.
+  - `extend_task_script` - Extend the script process with parameters.
+- WASM
   - Added `InstallDependenciesInput.packages` and `production` fields.
   - Added `InstallDependenciesOutput.operations` field.
   - Added `PruneDockerInput.projects` and `root` fields.

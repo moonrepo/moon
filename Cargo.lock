@@ -4857,6 +4857,8 @@ dependencies = [
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
+ "moon_toolchain",
+ "rustc-hash 2.1.1",
  "serde",
  "starbase_archive",
  "starbase_sandbox",
@@ -4951,6 +4953,7 @@ version = "0.0.1"
 dependencies = [
  "moon_common",
  "moon_config",
+ "moon_env_var",
  "regex",
  "serde",
 ]
@@ -4967,6 +4970,8 @@ dependencies = [
  "moon_feature_flags",
  "moon_pdk_api",
  "moon_plugin",
+ "moon_process",
+ "moon_toolchain",
  "proto_core",
  "rustc-hash 2.1.1",
  "starbase_utils",

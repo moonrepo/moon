@@ -54,8 +54,6 @@ pub async fn query_touched_files(
     vcs: &BoxedVcs,
     options: &QueryTouchedFilesOptions,
 ) -> miette::Result<QueryTouchedFilesResult> {
-    debug!("Querying for touched files");
-
     let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
@@ -157,6 +155,8 @@ pub async fn query_touched_files_with_stdin(
     vcs: &BoxedVcs,
     options: &QueryTouchedFilesOptions,
 ) -> miette::Result<QueryTouchedFilesResult> {
+    debug!("Querying for touched files");
+
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,
@@ -169,12 +169,16 @@ pub async fn query_touched_files_with_stdin(
     if !buffer.is_empty() {
         // As JSON
         if buffer.starts_with('{') {
+            debug!("Received from stdin as JSON");
+
             let result: QueryTouchedFilesResult = json::parse(&buffer)?;
 
             return Ok(result);
         }
         // As lines
         else {
+            debug!("Received from stdin as separate lines");
+
             let files =
                 FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
 

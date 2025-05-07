@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `moon run` to support passing touched files via stdin.
+
 #### 🐞 Fixes
 
 - Fixed an issue where Git v2 would error loading submodules that haven't been checked out yet.

@@ -220,12 +220,16 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn extend_project(
+    pub async fn extend_project_graph(
         &self,
-        input: ExtendProjectInput,
-    ) -> miette::Result<ExtendProjectOutput> {
-        let output: ExtendProjectOutput =
-            self.plugin.cache_func_with("extend_project", input).await?;
+        input: ExtendProjectGraphInput,
+    ) -> miette::Result<ExtendProjectGraphOutput> {
+        let mut output: ExtendProjectGraphOutput = self
+            .plugin
+            .cache_func_with("extend_project_graph", input)
+            .await?;
+
+        self.handle_output_files(&mut output.input_files);
 
         Ok(output)
     }

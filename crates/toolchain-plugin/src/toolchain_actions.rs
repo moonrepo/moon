@@ -3,11 +3,11 @@ use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_pdk_api::{
-    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectInput,
-    ExtendProjectOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput, ExtendTaskScriptInput,
-    ExtendTaskScriptOutput, HashTaskContentsInput, LocateDependenciesRootInput,
-    LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SyncOutput,
-    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectGraphInput,
+    ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput,
+    ExtendTaskScriptInput, ExtendTaskScriptOutput, HashTaskContentsInput,
+    LocateDependenciesRootInput, LocateDependenciesRootOutput, ScaffoldDockerInput,
+    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_process::Command;
 use moon_toolchain::{
@@ -99,20 +99,19 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn extend_project_many<InFn>(
+    pub async fn extend_project_graph_all<InFn>(
         &self,
-        ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendProjectOutput>>
+    ) -> miette::Result<Vec<ExtendProjectGraphOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectInput,
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectGraphInput,
     {
         let results = self
             .call_func_all(
-                "extend_project",
-                ids,
+                "extend_project_graph",
+                self.get_plugin_ids(),
                 input_factory,
-                |toolchain, input| async move { toolchain.extend_project(input).await },
+                |toolchain, input| async move { toolchain.extend_project_graph(input).await },
             )
             .await?;
 

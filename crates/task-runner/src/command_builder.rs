@@ -77,7 +77,7 @@ impl<'task> CommandBuilder<'task> {
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
-        self.inherit_proto()?;
+        self.inherit_proto();
 
         Ok(self.command)
     }
@@ -133,7 +133,7 @@ impl<'task> CommandBuilder<'task> {
                     .await?
                 {
                     self.extend_with_env(&mut command, params.env, params.env_remove);
-                    self.extend_with_paths(&mut command, params.paths)?;
+                    self.extend_with_paths(&mut command, params.paths);
                 }
             }
             None => {
@@ -158,7 +158,7 @@ impl<'task> CommandBuilder<'task> {
                     }
 
                     self.extend_with_env(&mut command, params.env, params.env_remove);
-                    self.extend_with_paths(&mut command, params.paths)?;
+                    self.extend_with_paths(&mut command, params.paths);
                 }
             }
         };
@@ -377,10 +377,10 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
-    fn inherit_proto(&mut self) -> miette::Result<()> {
+    fn inherit_proto(&mut self) {
         // The values below were inherited by the platform already
         if self.using_platform {
-            return Ok(());
+            return;
         }
 
         // Inherit common parameters
@@ -399,8 +399,6 @@ impl<'task> CommandBuilder<'task> {
                     .env(get_version_env_key(id), get_version_env_value(version));
             }
         }
-
-        Ok(())
     }
 
     fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {
@@ -436,13 +434,9 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
-    fn extend_with_paths(
-        &self,
-        command: &mut Command,
-        next_paths: Vec<PathBuf>,
-    ) -> miette::Result<()> {
+    fn extend_with_paths(&self, command: &mut Command, next_paths: Vec<PathBuf>) {
         if next_paths.is_empty() {
-            return Ok(());
+            return;
         }
 
         // Normalize separators since WASM is always forward slashes
@@ -459,7 +453,5 @@ impl<'task> CommandBuilder<'task> {
         {
             command.prepend_paths(next_paths);
         }
-
-        Ok(())
     }
 }

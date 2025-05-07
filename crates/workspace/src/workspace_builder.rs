@@ -11,10 +11,11 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectsSourcesList,
-    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, DependencyConfig, DependencyScope, DependencyType, InheritedTasksManager,
+    ProjectsSourcesList, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;
+use moon_pdk_api::ExtendProjectGraphInput;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -54,6 +55,9 @@ pub struct WorkspaceBuilderContext<'app> {
 pub struct WorkspaceBuilder<'app> {
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext<'app>>>,
+
+    /// Aliases to their associated project.
+    aliases: FxHashMap<String, Id>,
 
     /// Projects grouped by tag, for use in task dependency resolution.
     projects_by_tag: FxHashMap<Id, Vec<Id>>,
@@ -96,6 +100,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let mut graph = WorkspaceBuilder {
             context: Some(Arc::new(context)),
+            aliases: FxHashMap::default(),
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph: DiGraph::default(),
@@ -140,7 +145,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let hash = cache_engine
             .hash
-            .save_manifest_without_hasher("Workspace graph", &graph_contents)?;
+            .save_manifest_without_hasher("workspace-graph", &graph_contents)?;
 
         debug!(hash, "Generated hash for workspace graph");
 
@@ -402,6 +407,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         builder.inherit_global_config(context.inherited_tasks)?;
 
+        // Inherit from legacy platforms
         let extended_data = context
             .extend_project
             .emit(ExtendProjectEvent {
@@ -411,14 +417,27 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .await?;
 
-        // Inherit implicit dependencies
         for dep_config in extended_data.dependencies {
             builder.extend_with_dependency(dep_config);
         }
 
-        // Inherit inferred tasks
         for (task_id, task_config) in extended_data.tasks {
             builder.extend_with_task(task_id, task_config);
+        }
+
+        // Inherit from build data (toolchains, etc)
+        for extended_data in &build_data.extensions {
+            for dep_config in &extended_data.dependencies {
+                builder.extend_with_dependency(DependencyConfig {
+                    id: ProjectBuildData::resolve_id(&dep_config.id, &self.project_data),
+                    scope: dep_config.scope,
+                    ..Default::default()
+                });
+            }
+
+            for (task_id, task_config) in &extended_data.tasks {
+                builder.extend_with_task(Id::new(task_id)?, finalize_config(task_config.clone())?);
+            }
         }
 
         // Inherit alias before building in case the project
@@ -711,75 +730,8 @@ impl<'app> WorkspaceBuilder<'app> {
         // Load projects and configs first
         self.load_project_build_data(sources)?;
 
-        // Then load aliases and extend projects
-        self.load_project_aliases().await?;
-
-        Ok(())
-    }
-
-    async fn load_project_aliases(&mut self) -> miette::Result<()> {
-        let context = self.context();
-
-        debug!("Extending project graph with aliases");
-
-        let aliases = context
-            .extend_project_graph
-            .emit(ExtendProjectGraphEvent {
-                sources: self
-                    .project_data
-                    .iter()
-                    .map(|(id, build_data)| (id.to_owned(), build_data.source.to_owned()))
-                    .collect(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?
-            .aliases;
-
-        let mut dupe_aliases = FxHashMap::<String, Id>::default();
-
-        for (id, alias) in aliases {
-            let id = self.renamed_project_ids.get(&id).unwrap_or(&id);
-
-            // Skip aliases that match its own ID
-            if id == &alias {
-                continue;
-            }
-
-            // Skip aliases that would override an ID
-            if self.project_data.contains_key(alias.as_str()) {
-                debug!(
-                    "Skipping alias {} for project {} as it conflicts with the existing project {}",
-                    color::label(&alias),
-                    color::id(id),
-                    color::id(&alias),
-                );
-
-                continue;
-            }
-
-            if let Some(existing_id) = dupe_aliases.get(&alias) {
-                // Skip if the existing ID is already for this ID.
-                // This scenario is possible when multiple platforms
-                // extract the same aliases (Bun vs Node, etc).
-                if existing_id == id {
-                    continue;
-                }
-
-                return Err(WorkspaceBuilderError::DuplicateProjectAlias {
-                    alias: alias.clone(),
-                    old_id: existing_id.to_owned(),
-                    new_id: id.clone(),
-                }
-                .into());
-            }
-
-            dupe_aliases.insert(alias.clone(), id.to_owned());
-
-            self.project_data
-                .get_mut(id)
-                .expect("Project build data not found!")
-                .alias = Some(alias);
-        }
+        // Then load and extend projects
+        self.extend_project_build_data().await?;
 
         Ok(())
     }
@@ -864,6 +816,120 @@ impl<'app> WorkspaceBuilder<'app> {
 
         self.project_data.extend(project_data);
         self.renamed_project_ids.extend(renamed_ids);
+
+        Ok(())
+    }
+
+    async fn extend_project_build_data(&mut self) -> miette::Result<()> {
+        let context = self.context();
+
+        debug!("Extending project graph");
+
+        // From platforms
+        let aliases = context
+            .extend_project_graph
+            .emit(ExtendProjectGraphEvent {
+                sources: self
+                    .project_data
+                    .iter()
+                    .map(|(id, build_data)| (id.to_owned(), build_data.source.to_owned()))
+                    .collect(),
+                workspace_root: context.workspace_root.to_owned(),
+            })
+            .await?
+            .aliases;
+
+        for (project_id, alias) in aliases {
+            self.track_alias(project_id, alias)?;
+        }
+
+        // From toolchains
+        for output in context
+            .toolchain_registry
+            .extend_project_graph_all(|registry, _| ExtendProjectGraphInput {
+                context: registry.create_context(),
+                project_sources: self
+                    .project_data
+                    .iter()
+                    .map(|(id, build_data)| (id.to_string(), build_data.source.to_string()))
+                    .collect(),
+            })
+            .await?
+        {
+            for (project_id, mut project_extend) in output.extended_projects {
+                let id = Id::new(project_id)?;
+
+                if !self.project_data.contains_key(&id) {
+                    return Err(ProjectGraphError::UnconfiguredID(id).into());
+                }
+
+                if let Some(alias) = project_extend.alias.take() {
+                    self.track_alias(id.clone(), alias)?;
+                }
+
+                if let Some(build_data) = self.project_data.get_mut(&id) {
+                    build_data.extensions.push(project_extend);
+                }
+            }
+        }
+
+        debug!("Loaded {} project aliases", self.aliases.len());
+
+        Ok(())
+    }
+
+    fn track_alias(&mut self, id: Id, alias: String) -> miette::Result<()> {
+        // Skip aliases that match its own ID
+        if alias == id.as_str() {
+            return Ok(());
+        }
+
+        // Skip aliases that are an invalid ID format
+        if let Err(error) = Id::new(&alias) {
+            debug!(
+                "Skipping alias {} for project {} as its an invalid format: {error}",
+                color::label(&alias),
+                color::id(&id),
+            );
+
+            return Ok(());
+        }
+
+        // Skip aliases that would override an ID
+        if self.project_data.contains_key(alias.as_str()) {
+            debug!(
+                "Skipping alias {} for project {} as it conflicts with the existing project {}",
+                color::label(&alias),
+                color::id(&id),
+                color::id(&alias),
+            );
+
+            return Ok(());
+        }
+
+        // Skip aliases that collide with another alias
+        if let Some(existing_id) = self.aliases.get(&alias) {
+            // Skip if the existing ID is already for this ID.
+            // This scenario is possible when multiple toolchains
+            // extract the same aliases (Bun vs Node, etc).
+            if existing_id == &id {
+                return Ok(());
+            }
+
+            return Err(WorkspaceBuilderError::DuplicateProjectAlias {
+                alias: alias.clone(),
+                old_id: existing_id.to_owned(),
+                new_id: id.clone(),
+            }
+            .into());
+        }
+
+        self.project_data
+            .get_mut(&id)
+            .expect("Project build data not found!")
+            .alias = Some(alias.clone());
+
+        self.aliases.insert(alias, id);
 
         Ok(())
     }

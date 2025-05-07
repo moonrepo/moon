@@ -5,6 +5,8 @@
 #### 🚀 Updates
 
 - Added unstable support for toolchain plugins.
+  - In the project graph:
+    - Extend projects with dependencies, tasks, and an alias.
   - In the action pipeline:
     - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
     - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
@@ -18,6 +20,7 @@
 #### 🧩 Plugins
 
 - Added new toolchain WASM APIs.
+  - `extend_project_graph` - Extend projects with toolchain specific info.
   - `extend_task_command` - Extend the command process with parameters.
   - `extend_task_script` - Extend the script process with parameters.
 - WASM

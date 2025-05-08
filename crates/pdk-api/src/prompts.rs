@@ -1,3 +1,4 @@
+use crate::is_false;
 use serde_json::Value as JsonValue;
 use warpgate_api::{api_enum, api_struct};
 
@@ -37,27 +38,33 @@ api_struct!(
     #[serde(default)]
     pub struct SettingPrompt {
         /// A condition to evaluate on whether to render this prompt.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub condition: Option<SettingCondition>,
 
         /// Description of what the setting will do.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         /// Will be rendered in the minimal initialization flow.
+        #[serde(skip_serializing_if = "is_false")]
         pub minimal: bool,
 
         /// Nested prompts to render if the answer is truthy.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub prompts: Vec<SettingPrompt>,
 
         /// The question to prompt the user.
         pub question: String,
 
         /// Whether this prompt is required or optional.
+        #[serde(skip_serializing_if = "is_false")]
         pub required: bool,
 
         /// Name of the setting to inject. Supports dot notation.
         pub setting: String,
 
         /// Skip injecting this setting if the answer is falsy.
+        #[serde(skip_serializing_if = "is_false")]
         pub skip_if_falsy: bool,
 
         /// Type of prompt to render.

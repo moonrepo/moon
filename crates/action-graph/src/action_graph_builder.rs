@@ -325,6 +325,8 @@ impl<'app> ActionGraphBuilder<'app> {
             runtime: self.get_runtime(project, &task.toolchains[0], true),
             target: task.target.to_owned(),
             id: None,
+            skip_affected: reqs.skip_affected,
+            skip_dependents: !reqs.dependents,
         });
 
         if let Some(index) = self.get_index_from_node(&node) {

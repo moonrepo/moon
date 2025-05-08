@@ -35,6 +35,8 @@ pub struct RunTaskNode {
     pub runtime: Runtime,
     pub target: Target,
     pub id: Option<u64>, // For action graph states
+    pub skip_affected: bool,
+    pub skip_dependents: bool,
 }
 
 impl RunTaskNode {
@@ -47,6 +49,8 @@ impl RunTaskNode {
             runtime,
             target,
             id: None,
+            skip_affected: false,
+            skip_dependents: false,
         }
     }
 

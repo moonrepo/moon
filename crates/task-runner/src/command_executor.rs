@@ -290,12 +290,13 @@ impl<'task> CommandExecutor<'task> {
     }
 
     fn prepare_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
-        let is_primary = context.is_primary_target(&self.task.target);
         let is_ci = is_ci_env();
+        let is_primary = context.is_primary_target(&self.task.target);
+        let is_only_primary = is_primary && context.primary_targets.len() == 1;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        if !self.task.options.cache && context.primary_targets.len() == 1 && !is_ci {
+        if !self.task.options.cache && is_only_primary && !is_ci {
             self.interactive = true;
         }
 
@@ -308,10 +309,7 @@ impl<'task> CommandExecutor<'task> {
         };
 
         // If only a single persistent task is being ran, we should not prefix the output.
-        if context.primary_targets.len() == 1
-            && is_primary
-            && (self.task.is_persistent() || self.task.deps.is_empty())
-        {
+        if is_only_primary && (self.task.is_persistent() || self.task.deps.is_empty()) {
             report_item.output_prefix = None;
         }
 

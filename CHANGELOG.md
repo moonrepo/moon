@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon run` to support passing touched files via stdin.
+- Updated commands that wait for stdin to continue after 10 seconds if nothing was received.
+
+#### 🐞 Fixes
+
+- Fixed an issue where Git v2 would error loading submodules that haven't been checked out yet.
+- Fixed an issue with remote cache hydration that would leave around stale artifacts.
+- Fixed an issue where parallel persistent tasks wouldn't prefix output.
+
 ## 1.35.5
 
 #### 🐞 Fixes

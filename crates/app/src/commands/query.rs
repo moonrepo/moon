@@ -14,7 +14,7 @@ use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
 use std::collections::BTreeMap;
-use tracing::{instrument, warn};
+use tracing::{debug, instrument, warn};
 
 const HEADING_AFFECTED: &str = "Affected by";
 const HEADING_FILTERS: &str = "Filters";
@@ -573,6 +573,8 @@ pub async fn touched_files(session: MoonSession, args: QueryTouchedFilesArgs) ->
         local: args.local,
         status: args.status,
     };
+
+    debug!("Querying for touched files");
 
     let result = query_touched_files(&vcs, &options).await?;
 

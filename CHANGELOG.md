@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Updated `moon run` to support passing touched files via stdin.
+- Updated commands that wait for stdin to continue after 10 seconds if nothing was received.
 
 #### 🐞 Fixes
 

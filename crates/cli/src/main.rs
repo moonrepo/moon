@@ -149,6 +149,7 @@ async fn main() -> MainResult {
                     commands::completions::completions(session, args).await
                 }
                 Commands::Debug { command } => match command {
+                    DebugCommands::Config => commands::debug::config::debug_config(session).await,
                     DebugCommands::Vcs => commands::debug::vcs::debug_vcs(session).await,
                 },
                 Commands::Docker { command } => match command {

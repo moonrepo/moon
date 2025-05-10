@@ -61,7 +61,7 @@ impl<'task> CommandBuilder<'task> {
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
-            "Creating task process command to execute",
+            "Creating task child process to execute",
         );
 
         self.command = self.build_command(context).await?;
@@ -69,8 +69,7 @@ impl<'task> CommandBuilder<'task> {
         // We need to handle non-zero exit code's manually
         self.command
             .cwd(self.working_dir)
-            .set_error_on_nonzero(false)
-            .set_print_command(self.app.workspace_config.pipeline.log_running_command);
+            .set_error_on_nonzero(false);
 
         // Order is important!
         self.inject_args(context);

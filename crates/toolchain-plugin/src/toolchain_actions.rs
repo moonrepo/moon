@@ -212,6 +212,17 @@ impl ToolchainRegistry {
         command.env("PROTO_VERSION", PROTO_CLI_VERSION);
         command.env("STARBASE_FORCE_TTY", "true");
 
+        // Inherit versions for each toolchain
+        for (id, config) in &self.configs {
+            if is_using_global_toolchain(id) {
+                continue;
+            }
+
+            if let Some(version) = &config.version {
+                command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
+            }
+        }
+
         // Abort early if using globals
         if is_using_global_toolchains() {
             return;
@@ -231,17 +242,6 @@ impl ToolchainRegistry {
             // And ensure non-proto managed moon comes last
             moon.store_root.join("bin"),
         ]);
-
-        // Inherit versions for each toolchain
-        for (id, config) in &self.configs {
-            if is_using_global_toolchain(id) {
-                continue;
-            }
-
-            if let Some(version) = &config.version {
-                command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
-            }
-        }
     }
 
     pub async fn scaffold_docker_many<InFn>(

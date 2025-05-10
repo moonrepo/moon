@@ -1,3 +1,4 @@
+use moon_common::Id;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::ExitStatus;
@@ -12,16 +13,16 @@ pub struct OperationMetaHash {
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct OperationMetaSync {
+pub struct OperationMetaFileChange {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub changed_files: Vec<PathBuf>,
 
-    pub label: String,
+    pub id: Id,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct OperationMetaOutput {
+pub struct OperationMetaProcessOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<String>,
 
@@ -38,7 +39,7 @@ pub struct OperationMetaOutput {
     pub stdout: Option<Arc<String>>,
 }
 
-impl OperationMetaOutput {
+impl OperationMetaProcessOutput {
     pub fn get_exit_code(&self) -> i32 {
         self.exit_code.unwrap_or(-1)
     }
@@ -62,10 +63,11 @@ pub enum OperationMeta {
     // Processes
     #[default]
     NoOperation,
-    OutputHydration(Box<OperationMetaOutput>),
-    ProcessExecution(Box<OperationMetaOutput>),
-    SyncOperation(Box<OperationMetaSync>),
-    TaskExecution(Box<OperationMetaOutput>),
+    OutputHydration(Box<OperationMetaProcessOutput>),
+    ProcessExecution(Box<OperationMetaProcessOutput>),
+    SetupOperation(Box<OperationMetaFileChange>),
+    SyncOperation(Box<OperationMetaFileChange>),
+    TaskExecution(Box<OperationMetaProcessOutput>),
 
     // Metrics
     ArchiveCreation,
@@ -96,6 +98,10 @@ impl OperationMeta {
 
     pub fn is_process_execution(&self) -> bool {
         matches!(self, Self::ProcessExecution(_))
+    }
+
+    pub fn is_setup_operation(&self) -> bool {
+        matches!(self, Self::SetupOperation(_))
     }
 
     pub fn is_sync_operation(&self) -> bool {

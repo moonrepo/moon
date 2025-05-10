@@ -160,7 +160,12 @@ impl Tool for BunTool {
         self.console
             .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
-        if self.tool.setup(version, InstallOptions::default()).await? {
+        if self
+            .tool
+            .setup(version, InstallOptions::default())
+            .await?
+            .is_some()
+        {
             last_versions.insert("bun".into(), version.to_owned());
             count += 1;
         }

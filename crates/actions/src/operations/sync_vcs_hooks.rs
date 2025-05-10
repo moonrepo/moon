@@ -29,10 +29,11 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
     // Only generate if the hash has changed
     app_context
         .cache_engine
-        .execute_if_changed("vcsHooks.json", hooks_hash, || async {
+        .execute_if_changed("vcs-hooks", hooks_hash, async |_| {
             generator.generate().await
         })
         .await
+        .map(|result| result.unwrap_or_default())
 }
 
 #[instrument(skip_all)]

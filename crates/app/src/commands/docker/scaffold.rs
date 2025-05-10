@@ -208,7 +208,7 @@ async fn scaffold_workspace_project(
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Configs,
-                project: Some(project.to_fragment()),
+                project: project.to_fragment(),
             })
             .await?;
     }
@@ -355,7 +355,7 @@ async fn scaffold_sources_project(
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Sources,
-                project: Some(project.to_fragment()),
+                project: project.to_fragment(),
             })
             .await?;
     }

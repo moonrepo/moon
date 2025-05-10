@@ -1,4 +1,4 @@
-use crate::operations::convert_plugin_sync_operation_with_output;
+use crate::plugins::*;
 use crate::utils::should_skip_action_matching;
 use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;
@@ -37,9 +37,10 @@ pub async fn sync_project(
     let project = workspace_graph.get_project_with_tasks(project_id)?;
 
     // Lock the project to avoid collisions
-    let _lock = app_context
-        .cache_engine
-        .create_lock(format!("syncProject-{}", project_id))?;
+    let _lock =
+        app_context
+            .cache_engine
+            .create_lock(format!("{}-{}", action.get_prefix(), project_id))?;
 
     debug!("Syncing project {}", color::id(project_id));
 
@@ -67,6 +68,7 @@ pub async fn sync_project(
 
     // Sync the projects and return true if any files have been mutated
     let mut mutated_files = false;
+    let mut changed_files = vec![];
 
     // Loop through legacy platforms
     for toolchain_id in project.get_enabled_toolchains() {
@@ -101,21 +103,21 @@ pub async fn sync_project(
             mutated_files = true;
         }
 
-        action
-            .operations
-            .push(convert_plugin_sync_operation_with_output(
-                sync_result.operation,
-                sync_result.output,
-            ));
-    }
+        let op = finalize_sync_operation(sync_result)?;
 
-    // TODO track changed files and print them
+        if let Some(state) = op.get_file_state() {
+            changed_files.extend(state.changed_files.clone());
+        }
+
+        action.operations.push(op);
+    }
 
     // If files have been modified in CI, we should update the status to warning,
     // as these modifications should be committed to the repo!
     if mutated_files && is_ci() {
         warn!(
             project_id = project.id.as_str(),
+            files = ?changed_files,
             "Files were modified during project sync that should be committed to the repository"
         );
 

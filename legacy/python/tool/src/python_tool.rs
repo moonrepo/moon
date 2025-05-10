@@ -257,7 +257,12 @@ impl Tool for PythonTool {
                 self.console
                     .print_checkpoint(Checkpoint::Setup, format!("installing python {version}"))?;
 
-                if self.tool.setup(version, InstallOptions::default()).await? {
+                if self
+                    .tool
+                    .setup(version, InstallOptions::default())
+                    .await?
+                    .is_some()
+                {
                     last_versions.insert("python".into(), version.to_owned());
                     installed += 1;
                 }

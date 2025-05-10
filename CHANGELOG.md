@@ -1,5 +1,45 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added more unstable support for toolchain plugins.
+  - In the project graph:
+    - Extend projects with dependencies, tasks, and an alias.
+  - In the action pipeline:
+    - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
+    - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
+  - When running tasks:
+    - Extend the command/script with additional parameters before executing.
+    - Inject dependency and lock information into the hash.
+- Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
+  downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
+  ensure reliability.
+- Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
+
+#### 🧩 Plugins
+
+- Added new toolchain WASM APIs.
+  - `extend_project_graph` - Extend projects with toolchain specific info.
+  - `extend_task_command` - Extend the command process with parameters.
+  - `extend_task_script` - Extend the script process with parameters.
+  - `parse_manifest` - Parse a manifest file to extract dependencies.
+  - `parse_lock` - Parse a lock file to extract resolved dependencies.
+- WASM
+  - Added `InstallDependenciesInput.packages` and `production` fields.
+  - Added `InstallDependenciesOutput.operations` field.
+  - Added `PruneDockerInput.projects` and `root` fields.
+  - Added `PruneDockerOutput`.
+  - Added `SetupEnvironmentOutput.operations` field.
+  - Added `SetupToolchainOutput.operations` field.
+  - Added `SyncWorkspaceInput.toolchain_config` field.
+  - Added `TeardownToolchainInput.version` field.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.48.1](https://github.com/moonrepo/proto/releases/tag/v0.48.1) (from 0.47.11).
+
 ## 1.35.6
 
 #### 🚀 Updates

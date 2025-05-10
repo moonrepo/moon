@@ -45,6 +45,8 @@ unstable_remote:
     headers:
       'X-Depot-Org': '1xtpjd084j'
       'X-Depot-Project': '90xxfkst9n'
+  cache:
+    verifyIntegrity: true
   # BAZEL-REMOTE
   # host: 'grpc://0.0.0.0:9092'
   # cache:

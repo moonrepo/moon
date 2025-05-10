@@ -134,7 +134,12 @@ impl Tool for DenoTool {
         self.console
             .print_checkpoint(Checkpoint::Setup, format!("installing deno {version}"))?;
 
-        if self.tool.setup(version, InstallOptions::default()).await? {
+        if self
+            .tool
+            .setup(version, InstallOptions::default())
+            .await?
+            .is_some()
+        {
             last_versions.insert("deno".into(), version.to_owned());
             count += 1;
         }

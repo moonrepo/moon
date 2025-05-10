@@ -8,6 +8,8 @@ publish = false
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_app_context = { path = "../app-context" }
+moon_args = { path = "../args" }
+moon_cache = { path = "../cache" }
 moon_cache_item = { path = "../cache-item" }
 moon_codeowners = { path = "../codeowners" }
 moon_common = { path = "../common" }
@@ -15,6 +17,7 @@ moon_config = { path = "../config" }
 moon_config_schema = { path = "../config-schema" }
 moon_console = { path = "../console" }
 moon_env_var = { path = "../env-var" }
+moon_feature_flags = { path = "../feature-flags" }
 moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_process = { path = "../process" }

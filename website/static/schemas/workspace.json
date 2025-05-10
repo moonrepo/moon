@@ -688,6 +688,11 @@
           "description": "Unique instance name for blobs. Will be used as a folder name.",
           "default": "moon-outputs",
           "type": "string"
+        },
+        "verifyIntegrity": {
+          "title": "verifyIntegrity",
+          "description": "When downloading blobs, verify the digests/hashes in the response match the associated blob contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false

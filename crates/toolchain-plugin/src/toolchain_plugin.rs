@@ -2,9 +2,10 @@ use async_trait::async_trait;
 use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use moon_toolchain::is_using_global_toolchain;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
-use starbase_utils::json::JsonValue;
+use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
@@ -78,6 +79,31 @@ impl ToolchainPlugin {
         for file in files {
             self.handle_output_file(file);
         }
+    }
+
+    pub fn in_dependencies_workspace(
+        &self,
+        output: &LocateDependenciesRootOutput,
+        path: &Path,
+    ) -> miette::Result<bool> {
+        let Some(root) = output.root.as_ref().and_then(|root| root.real_path()) else {
+            return Ok(false);
+        };
+
+        Ok(
+            // Root always in the workspace
+            if path == root {
+                true
+            }
+            // Match against the provided member globs
+            else if let Some(globs) = &output.members {
+                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(path))
+            }
+            // Otherwise a stand alone project?
+            else {
+                true
+            },
+        )
     }
 
     // Detection
@@ -193,12 +219,58 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn extend_project(
+    pub async fn extend_project_graph(
         &self,
-        input: ExtendProjectInput,
-    ) -> miette::Result<ExtendProjectOutput> {
-        let output: ExtendProjectOutput =
-            self.plugin.cache_func_with("extend_project", input).await?;
+        input: ExtendProjectGraphInput,
+    ) -> miette::Result<ExtendProjectGraphOutput> {
+        let mut output: ExtendProjectGraphOutput = self
+            .plugin
+            .cache_func_with("extend_project_graph", input)
+            .await?;
+
+        self.handle_output_files(&mut output.input_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_command(
+        &self,
+        mut input: ExtendTaskCommandInput,
+    ) -> miette::Result<ExtendTaskCommandOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .read()
+                .await
+                .get_globals_dir()
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
+        let output: ExtendTaskCommandOutput = self
+            .plugin
+            .cache_func_with("extend_task_command", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_script(
+        &self,
+        mut input: ExtendTaskScriptInput,
+    ) -> miette::Result<ExtendTaskScriptOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .read()
+                .await
+                .get_globals_dir()
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
+        let output: ExtendTaskScriptOutput = self
+            .plugin
+            .cache_func_with("extend_task_script", input)
+            .await?;
 
         Ok(output)
     }
@@ -208,17 +280,10 @@ impl ToolchainPlugin {
         &self,
         input: HashTaskContentsInput,
     ) -> miette::Result<HashTaskContentsOutput> {
-        let mut output: HashTaskContentsOutput = self
+        let output: HashTaskContentsOutput = self
             .plugin
             .call_func_with("hash_task_contents", input)
             .await?;
-
-        // Include the ID for easier debugging
-        for content in &mut output.contents {
-            if let Some(obj) = content.as_object_mut() {
-                obj.insert("@toolchain".into(), JsonValue::String(self.id.to_string()));
-            }
-        }
 
         Ok(output)
     }
@@ -237,64 +302,59 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn locate_dependencies_root(
+    pub async fn install_dependencies(
         &self,
-        input: LocateDependenciesRootInput,
-    ) -> miette::Result<LocateDependenciesRootOutput> {
-        let output: LocateDependenciesRootOutput = self
+        input: InstallDependenciesInput,
+    ) -> miette::Result<InstallDependenciesOutput> {
+        let output: InstallDependenciesOutput = self
             .plugin
-            .cache_func_with("locate_dependencies_root", input)
+            .call_func_with("install_dependencies", input)
             .await?;
 
         Ok(output)
     }
 
-    #[instrument(skip(self, on_setup))]
-    pub async fn setup_toolchain(
+    #[instrument(skip(self))]
+    pub async fn locate_dependencies_root(
         &self,
-        mut input: SetupToolchainInput,
-        on_setup: impl FnOnce() -> miette::Result<()>,
-    ) -> miette::Result<SetupToolchainOutput> {
-        let mut output = SetupToolchainOutput::default();
+        input: LocateDependenciesRootInput,
+    ) -> miette::Result<LocateDependenciesRootOutput> {
+        let mut output: LocateDependenciesRootOutput = self
+            .plugin
+            .cache_func_with("locate_dependencies_root", input)
+            .await?;
 
-        if let Some(tool) = &self.tool {
-            let mut tool = tool.write().await;
-
-            // Resolve the version first so that it is available
-            input.version = Some(
-                tool.resolve_version(&input.configured_version, false)
-                    .await?,
-            );
-
-            // Only setup if not already been
-            if !tool.is_setup(&input.configured_version).await? {
-                on_setup()?;
-
-                output.installed = tool
-                    .setup(
-                        &input.configured_version,
-                        InstallOptions {
-                            skip_prompts: true,
-                            skip_ui: true,
-                            ..Default::default()
-                        },
-                    )
-                    .await?;
-            }
-
-            // Locate pieces that we'll need
-            tool.locate_exes_dirs().await?;
-            tool.locate_globals_dirs().await?;
+        if let Some(root) = &mut output.root {
+            self.handle_output_file(root);
         }
 
-        if self.has_func("setup_toolchain").await {
-            let mut post_output: SetupToolchainOutput =
-                self.plugin.call_func_with("setup_toolchain", input).await?;
+        Ok(output)
+    }
 
-            self.handle_output_files(&mut post_output.changed_files);
+    #[instrument(skip(self))]
+    pub async fn parse_lock(&self, input: ParseLockInput) -> miette::Result<ParseLockOutput> {
+        let output: ParseLockOutput = self.plugin.call_func_with("parse_lock", input).await?;
 
-            output.changed_files.extend(post_output.changed_files);
-        }
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn parse_manifest(
+        &self,
+        input: ParseManifestInput,
+    ) -> miette::Result<ParseManifestOutput> {
+        let output: ParseManifestOutput =
+            self.plugin.call_func_with("parse_manifest", input).await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn prune_docker(&self, input: PruneDockerInput) -> miette::Result<PruneDockerOutput> {
+        let mut output: PruneDockerOutput =
+            self.plugin.call_func_with("prune_docker", input).await?;
+
+        self.handle_output_files(&mut output.changed_files);
 
         Ok(output)
     }
@@ -308,6 +368,75 @@ impl ToolchainPlugin {
             self.plugin.call_func_with("scaffold_docker", input).await?;
 
         self.handle_output_files(&mut output.copied_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn setup_environment(
+        &self,
+        input: SetupEnvironmentInput,
+    ) -> miette::Result<SetupEnvironmentOutput> {
+        let mut output: SetupEnvironmentOutput = self
+            .plugin
+            .call_func_with("setup_environment", input)
+            .await?;
+
+        self.handle_output_files(&mut output.changed_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self, on_setup))]
+    pub async fn setup_toolchain(
+        &self,
+        mut input: SetupToolchainInput,
+        on_setup: impl FnOnce() -> miette::Result<()>,
+    ) -> miette::Result<SetupToolchainOutput> {
+        let mut output = SetupToolchainOutput::default();
+
+        // Only install if a version has been configured,
+        // and the plugin provides the required APIs
+        if !is_using_global_toolchain(&self.id) {
+            if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
+                let mut tool = tool.write().await;
+
+                // Resolve the version first so that it is available
+                input.version = Some(tool.resolve_version(spec, false).await?);
+
+                // Only setup if not already been
+                if !tool.is_setup(spec).await? {
+                    on_setup()?;
+
+                    output.installed = tool
+                        .setup(
+                            spec,
+                            InstallOptions {
+                                skip_prompts: true,
+                                skip_ui: true,
+                                ..Default::default()
+                            },
+                        )
+                        .await?
+                        .is_some();
+                }
+
+                // Locate pieces that we'll need
+                tool.locate_exes_dirs().await?;
+                tool.locate_globals_dirs().await?;
+            }
+        }
+
+        // This should always run, regardless of the install outcome
+        if self.has_func("setup_toolchain").await {
+            let mut post_output: SetupToolchainOutput =
+                self.plugin.call_func_with("setup_toolchain", input).await?;
+
+            self.handle_output_files(&mut post_output.changed_files);
+
+            output.operations.extend(post_output.operations);
+            output.changed_files.extend(post_output.changed_files);
+        }
 
         Ok(output)
     }
@@ -331,18 +460,21 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn teardown_toolchain(&self, input: TeardownToolchainInput) -> miette::Result<()> {
-        let spec = input.configured_version.clone();
+    pub async fn teardown_toolchain(
+        &self,
+        mut input: TeardownToolchainInput,
+    ) -> miette::Result<()> {
+        if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
+            let mut tool = tool.write().await;
+
+            input.version = Some(tool.resolve_version(spec, false).await?);
+
+            tool.teardown().await?;
+        }
 
         self.plugin
             .call_func_without_output("teardown_toolchain", input)
             .await?;
-
-        if let (Some(tool), Some(spec)) = (&self.tool, &spec) {
-            let mut tool = tool.write().await;
-            tool.resolve_version(spec, true).await?;
-            tool.teardown().await?;
-        }
 
         Ok(())
     }

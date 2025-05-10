@@ -1,9 +1,12 @@
 use crate::context::*;
+use crate::host::*;
+use crate::is_false;
 use crate::prompts::*;
-use moon_config::{DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, VersionSpec};
+use moon_config::{
+    DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, Version, VersionSpec,
+};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
-use proto_pdk_api::ExecCommandInput;
 use rustc_hash::FxHashMap;
 use schematic::Schema;
 use serde_json::Value;
@@ -112,6 +115,9 @@ api_struct!(
     pub struct SyncWorkspaceInput {
         /// Current moon context.
         pub context: MoonContext,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -127,7 +133,8 @@ api_struct!(
         /// Fragment of the project being synced.
         pub project: ProjectFragment,
 
-        /// Merged toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -143,9 +150,10 @@ api_struct!(
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub operations_performed: Vec<Operation>,
+        pub operations: Vec<Operation>,
 
         /// Whether the action was skipped or not.
+        #[serde(skip_serializing_if = "is_false")]
         pub skipped: bool,
     }
 );
@@ -155,29 +163,37 @@ api_struct!(
 api_struct!(
     /// Input passed to the `setup_toolchain` function.
     pub struct SetupToolchainInput {
-        /// The unresolved version specification that this toolchain was configured with.
-        pub configured_version: UnresolvedVersionSpec,
+        /// The unresolved version specification that the toolchain was
+        /// configured with via the `version` setting.
+        pub configured_version: Option<UnresolvedVersionSpec>,
 
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Merged toolchain configuration.
+        /// Workspace toolchain configuration.
         pub toolchain_config: serde_json::Value,
 
-        /// The resolved version specification that was setup.
+        /// The resolved version specification.
         pub version: Option<VersionSpec>,
     }
 );
 
 api_struct!(
     /// Output returned from the `setup_toolchain` function.
+    #[serde(default)]
     pub struct SetupToolchainOutput {
         /// List of files that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
 
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
+
         /// Whether the tool was installed or not. This field is ignored
-        /// if set, and is defined on moon's side.
+        /// if set, and is defined on the host side.
+        #[serde(skip_serializing_if = "is_false")]
         pub installed: bool,
     }
 );
@@ -185,14 +201,18 @@ api_struct!(
 api_struct!(
     /// Input passed to the `teardown_toolchain` function.
     pub struct TeardownToolchainInput {
-        /// The unresolved version specification that this toolchain was configured with.
+        /// The unresolved version specification that the toolchain was
+        /// configured with via the `version` setting.
         pub configured_version: Option<UnresolvedVersionSpec>,
 
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Merged toolchain configuration.
+        /// Workspace toolchain configuration.
         pub toolchain_config: serde_json::Value,
+
+        /// The resolved version specification.
+        pub version: Option<VersionSpec>,
     }
 );
 
@@ -201,13 +221,38 @@ api_struct!(
     pub struct SetupEnvironmentInput {
         /// Current moon context.
         pub context: MoonContext,
-        // TODO
+
+        /// The project if the dependencies and environment root
+        /// are the project root (non-workspace).
+        pub project: Option<ProjectFragment>,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
+        pub root: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
 api_struct!(
     /// Output returned from the `setup_environment` function.
-    pub struct SetupEnvironmentOutput {}
+    #[serde(default)]
+    pub struct SetupEnvironmentOutput {
+        /// List of files that have been changed because of this action.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub changed_files: Vec<VirtualPath>,
+
+        /// List of commands to execute during setup.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub commands: Vec<ExecCommand>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
+    }
 );
 
 // DEPENDENCIES
@@ -240,30 +285,177 @@ api_struct!(
 
 api_struct!(
     /// Input passed to the `install_dependencies` function.
+    /// Requires `locate_dependencies_root`.
     pub struct InstallDependenciesInput {
         /// Current moon context.
         pub context: MoonContext,
 
-        // Virtual path to the dependencies root. This is where
-        // the lockfile and root manifest should exist.
+        /// List of packages to only install dependencies for.
+        pub packages: Option<Vec<String>>,
+
+        /// Only install production dependencies.
+        pub production: bool,
+
+        /// The project if the dependencies and environment root
+        /// are the project root (non-workspace).
+        pub project: Option<ProjectFragment>,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
 api_struct!(
     /// Output returned from the `install_dependencies` function.
+    #[serde(default)]
     pub struct InstallDependenciesOutput {
         /// The command to run in the dependencies root to dedupe
         /// dependencies. If not defined, will not dedupe.
-        pub dedupe_command: Option<ExecCommandInput>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub dedupe_command: Option<ExecCommand>,
 
         /// The command to run in the dependencies root to install
         /// dependencies. If not defined, will not install.
-        pub install_command: Option<ExecCommandInput>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub install_command: Option<ExecCommand>,
+
+        /// Operations that were performed. This can be used to track
+        /// metadata like time taken, result status, and more.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub operations: Vec<Operation>,
     }
 );
 
 // RUN TASK
+
+api_struct!(
+    /// Input passed to the `parse_manifest` function.
+    pub struct ParseManifestInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Virtual path to the manifest file.
+        pub path: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `parse_manifest` function.
+    #[serde(default)]
+    pub struct ParseManifestOutput {
+        /// Build dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub build_dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Development dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dev_dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Production dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Peer dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub peer_dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Can the package be published or not.
+        #[serde(skip_serializing_if = "is_false")]
+        pub publishable: bool,
+
+        /// Current version of the package.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<Version>,
+    }
+);
+
+api_struct!(
+    /// Represents a dependency definition in a manifest file.
+    #[serde(default)]
+    pub struct ManifestDependency {
+        /// The version is inherited from the workspace.
+        #[serde(skip_serializing_if = "is_false")]
+        pub inherited: bool,
+
+        /// List of features enabled for this dependency.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub features: Vec<String>,
+
+        /// The defined version or requirement.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<UnresolvedVersionSpec>,
+    }
+);
+
+impl ManifestDependency {
+    /// Defines an explicit version or requirement.
+    pub fn new(version: UnresolvedVersionSpec) -> Self {
+        Self {
+            version: Some(version),
+            ..Default::default()
+        }
+    }
+
+    /// Inherits a version from the workspace.
+    pub fn inherited() -> Self {
+        Self {
+            inherited: true,
+            ..Default::default()
+        }
+    }
+}
+
+api_struct!(
+    /// Input passed to the `parse_lock` function.
+    pub struct ParseLockInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Virtual path to the lock file.
+        pub path: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `parse_lock` function.
+    #[serde(default)]
+    pub struct ParseLockOutput {
+        /// Map of all dependencies and their locked versions.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dependencies: FxHashMap<String, Vec<LockDependency>>,
+
+        /// Map of all packages within the current workspace.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub packages: FxHashMap<String, Option<Version>>,
+    }
+);
+
+api_struct!(
+    /// Represents a dependency definition in a lock file.
+    #[serde(default)]
+    pub struct LockDependency {
+        /// A unique hash: checksum, integrity, etc.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub hash: Option<String>,
+
+        /// General metadata.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub meta: Option<String>,
+
+        /// The version requirement.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub req: Option<UnresolvedVersionSpec>,
+
+        /// The resolved version.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<VersionSpec>,
+    }
+);
 
 api_struct!(
     /// Input passed to the `hash_task_contents` function.
@@ -277,7 +469,8 @@ api_struct!(
         /// Fragment of the task being hashed.
         pub task: TaskFragment,
 
-        /// Merged toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -298,22 +491,24 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Merged toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
 
 api_struct!(
     /// Output returned from the `define_docker_metadata` function.
+    #[serde(default)]
     pub struct DefineDockerMetadataOutput {
         /// Default image to use when generating a `Dockerfile`.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub default_image: Option<String>,
 
         /// List of files as globs to copy over during
         /// the scaffolding process. Applies to both project
         /// and workspace level scaffolding.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub scaffold_globs: Vec<String>,
     }
 );
@@ -348,27 +543,46 @@ api_struct!(
         pub phase: ScaffoldDockerPhase,
 
         /// The project being scaffolding.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub project: Option<ProjectFragment>,
+        pub project: ProjectFragment,
     }
 );
 
 api_struct!(
     /// Output returned from the `scaffold_docker` function.
+    #[serde(default)]
     pub struct ScaffoldDockerOutput {
         /// List of files that were copied into the scaffold.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub copied_files: Vec<VirtualPath>,
     }
 );
 
 api_struct!(
     /// Input passed to the `prune_docker` function.
+    /// Requires `locate_dependencies_root`.
     pub struct PruneDockerInput {
         /// Current moon context.
         pub context: MoonContext,
 
         /// Docker prune configuration.
         pub docker_config: DockerPruneConfig,
+
+        /// The focused projects within the current
+        /// dependencies root.
+        pub projects: Vec<ProjectFragment>,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
+        pub root: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `prune_docker` function.
+    #[serde(default)]
+    pub struct PruneDockerOutput {
+        /// List of files that were changed during prune.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub changed_files: Vec<VirtualPath>,
     }
 );

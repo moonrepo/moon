@@ -3,6 +3,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     DependencyConfig, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
 };
+use moon_pdk_api::ExtendProjectOutput;
 use moon_task::{Target, TaskOptions};
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
@@ -18,6 +19,9 @@ pub struct ProjectBuildData {
 
     #[serde(skip)]
     pub config: Option<ProjectConfig>,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<ExtendProjectOutput>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_index: Option<NodeIndex>,

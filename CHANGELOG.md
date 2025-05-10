@@ -18,6 +18,7 @@
   ensure reliability.
 - Added a rollback mechanic to remote cache that will be triggered when hydration fails part way and
   written files need to be removed.
+- Updated remote cache blob existing checks to be batched and parallelized.
 - Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
 
 #### 🐞 Fixes

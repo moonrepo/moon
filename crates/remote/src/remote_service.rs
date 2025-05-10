@@ -455,13 +455,12 @@ async fn batch_download_blobs(
     max_size: usize,
     verify_integrity: bool,
 ) -> miette::Result<bool> {
-    let mut file_map = FxHashMap::default();
+    let mut blob_map = FxHashMap::default();
     let mut blob_digests = vec![];
 
-    // TODO support directories
+    // // TODO support directories
     for file in &result.output_files {
         if let Some(digest) = &file.digest {
-            file_map.insert(&digest.hash, file);
             blob_digests.push(digest.to_owned());
         }
     }
@@ -505,7 +504,6 @@ async fn batch_download_blobs(
     }
 
     let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-    let mut output_files = FxHashMap::default();
     let mut abort = false;
 
     'outer: while let Some(res) = set.join_next().await {
@@ -546,18 +544,7 @@ async fn batch_download_blobs(
                 }
             }
 
-            if let Some(file) = file_map.get(&blob.digest.hash) {
-                output_files.insert(workspace_root.join(&file.path), blob);
-            } else {
-                trace!(
-                    hash = &action_digest.hash,
-                    blob_hash = &blob.digest.hash,
-                    "Missing file metadata for blob hash, unable to write output file",
-                );
-
-                abort = true;
-                break 'outer;
-            }
+            blob_map.insert(blob.digest.hash, blob.bytes);
         }
     }
 
@@ -570,9 +557,29 @@ async fn batch_download_blobs(
     // Create outputs after everything has been downloaded,
     // so that we can ensure every request has been completed
     // and we don't partially hydrate
-    for (path, blob) in output_files {
-        if let Some(file) = file_map.get(&blob.digest.hash) {
-            write_output_file(path, blob.bytes, file)?;
+    for file in &result.output_files {
+        let file_path = workspace_root.join(&file.path);
+
+        if !file.contents.is_empty() {
+            write_output_file(&file_path, &file.contents, file)?;
+            continue;
+        }
+
+        let Some(digest) = &file.digest else {
+            continue;
+        };
+
+        if let Some(bytes) = blob_map.get(&digest.hash) {
+            write_output_file(&file_path, bytes, file)?;
+        } else {
+            warn!(
+                hash = &action_digest.hash,
+                blob_hash = &digest.hash,
+                output_file = ?file_path,
+                "Missing file metadata for blob hash, unable to write output file",
+            );
+
+            return Ok(false);
         }
     }
 

@@ -16,7 +16,14 @@
 - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.
+- Added a rollback mechanic to remote cache that will be triggered when hydration fails part way and
+  written files need to be removed.
 - Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
+
+#### 🐞 Fixes
+
+- Fixed an issue with remote cache hydration where multiple files with the same blob hash would fail
+  to write them all.
 
 #### 🧩 Plugins
 

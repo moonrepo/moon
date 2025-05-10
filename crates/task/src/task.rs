@@ -156,7 +156,7 @@ impl Task {
             list.extend(glob_walk_with_options(
                 workspace_root,
                 &self.input_globs,
-                GlobWalkOptions::default().cache().files(),
+                GlobWalkOptions::default().files(),
             )?);
         }
 
@@ -181,7 +181,7 @@ impl Task {
             list.extend(glob_walk_with_options(
                 workspace_root,
                 &self.output_globs,
-                GlobWalkOptions::default().cache().files(),
+                GlobWalkOptions::default().files(),
             )?);
         }
 

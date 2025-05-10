@@ -367,15 +367,74 @@ impl RemoteService {
     }
 }
 
+async fn batch_find_blobs(
+    client: Arc<Box<dyn RemoteClient>>,
+    action_digest: &Digest,
+    blob_digests: Vec<Digest>,
+    max_size: usize,
+) -> miette::Result<Vec<Digest>> {
+    let digest_groups = partition_into_groups(blob_digests, max_size, |digest| {
+        digest.size_bytes.to_string().len() + digest.hash.len()
+    });
+
+    if digest_groups.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let group_total = digest_groups.len();
+    let mut set = JoinSet::default();
+
+    for (group_index, group) in digest_groups.into_iter() {
+        let client = Arc::clone(&client);
+
+        if group_total > 1 {
+            trace!(
+                hash = &action_digest.hash,
+                blobs = group.items.len(),
+                "Batching find blobs (group {} of {})",
+                group_index + 1,
+                group_total
+            );
+        }
+
+        set.spawn(async move { client.find_missing_blobs(group.items).await });
+    }
+
+    let mut missing_digests = vec![];
+    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
+    let mut abort = false;
+
+    while let Some(res) = set.join_next().await {
+        if signal_receiver.try_recv().is_ok() {
+            abort = true;
+            break;
+        }
+
+        missing_digests.extend(res.into_diagnostic()??);
+    }
+
+    if abort {
+        set.shutdown().await;
+
+        return Ok(vec![]);
+    }
+
+    Ok(missing_digests)
+}
+
 async fn batch_upload_blobs(
     client: Arc<Box<dyn RemoteClient>>,
     action_digest: Digest,
     mut blobs: Vec<Blob>,
     max_size: usize,
 ) -> miette::Result<bool> {
-    let missing_digests = client
-        .find_missing_blobs(blobs.iter().map(|blob| blob.digest.clone()).collect())
-        .await?;
+    let missing_digests = batch_find_blobs(
+        Arc::clone(&client),
+        &action_digest,
+        blobs.iter().map(|blob| blob.digest.clone()).collect(),
+        max_size,
+    )
+    .await?;
 
     // All blobs already exist in CAS
     if missing_digests.is_empty() {
@@ -455,24 +514,20 @@ async fn batch_download_blobs(
     max_size: usize,
     verify_integrity: bool,
 ) -> miette::Result<bool> {
-    let mut file_map = FxHashMap::default();
+    let mut blob_map = FxHashMap::default();
     let mut blob_digests = vec![];
 
-    // TODO support directories
+    // // TODO support directories
     for file in &result.output_files {
-        if let Some(digest) = &file.digest {
-            file_map.insert(&digest.hash, file);
-            blob_digests.push(digest.to_owned());
+        if file.contents.is_empty() {
+            if let Some(digest) = &file.digest {
+                blob_digests.push(digest.to_owned());
+            }
         }
     }
 
     let digest_groups =
         partition_into_groups(blob_digests, max_size, |dig| dig.size_bytes as usize);
-
-    if digest_groups.is_empty() {
-        return Ok(true);
-    }
-
     let group_total = digest_groups.len();
     let mut set = JoinSet::<miette::Result<Vec<Option<Blob>>>>::default();
 
@@ -505,7 +560,6 @@ async fn batch_download_blobs(
     }
 
     let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-    let mut output_files = FxHashMap::default();
     let mut abort = false;
 
     'outer: while let Some(res) = set.join_next().await {
@@ -546,18 +600,7 @@ async fn batch_download_blobs(
                 }
             }
 
-            if let Some(file) = file_map.get(&blob.digest.hash) {
-                output_files.insert(workspace_root.join(&file.path), blob);
-            } else {
-                trace!(
-                    hash = &action_digest.hash,
-                    blob_hash = &blob.digest.hash,
-                    "Missing file metadata for blob hash, unable to write output file",
-                );
-
-                abort = true;
-                break 'outer;
-            }
+            blob_map.insert(blob.digest.hash, blob.bytes);
         }
     }
 
@@ -570,9 +613,29 @@ async fn batch_download_blobs(
     // Create outputs after everything has been downloaded,
     // so that we can ensure every request has been completed
     // and we don't partially hydrate
-    for (path, blob) in output_files {
-        if let Some(file) = file_map.get(&blob.digest.hash) {
-            write_output_file(path, blob.bytes, file)?;
+    for file in &result.output_files {
+        let file_path = workspace_root.join(&file.path);
+
+        if !file.contents.is_empty() {
+            write_output_file(&file_path, &file.contents, file)?;
+            continue;
+        }
+
+        let Some(digest) = &file.digest else {
+            continue;
+        };
+
+        if let Some(bytes) = blob_map.get(&digest.hash) {
+            write_output_file(&file_path, bytes, file)?;
+        } else {
+            warn!(
+                hash = &action_digest.hash,
+                blob_hash = &digest.hash,
+                output_file = ?file_path,
+                "Missing file metadata for blob hash, unable to write output file",
+            );
+
+            return Ok(false);
         }
     }
 

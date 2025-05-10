@@ -17,6 +17,7 @@ use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
+use std::sync::Arc;
 use std::time::SystemTime;
 use tracing::{debug, instrument, trace};
 
@@ -28,7 +29,7 @@ pub struct TaskRunResult {
 }
 
 pub struct TaskRunner<'task> {
-    app: &'task AppContext,
+    app: &'task Arc<AppContext>,
     project: &'task Project,
     pub task: &'task Task,
     platform_manager: &'task PlatformManager,
@@ -46,7 +47,7 @@ pub struct TaskRunner<'task> {
 
 impl<'task> TaskRunner<'task> {
     pub fn new(
-        app: &'task AppContext,
+        app: &'task Arc<AppContext>,
         project: &'task Project,
         task: &'task Task,
     ) -> miette::Result<Self> {

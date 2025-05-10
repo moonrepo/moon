@@ -1,18 +1,22 @@
+use miette::IntoDiagnostic;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
-use moon_config::{HasherOptimization, UnresolvedVersionSpec};
+use moon_config::{HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
 use moon_hash::{ContentHasher, hash_content};
 use moon_pdk_api::{
     HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
     ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
 };
-use moon_project::Project;
-use moon_task::Task;
+use moon_project::{Project, ProjectFragment};
+use moon_task::{Task, TaskFragment};
 use moon_task_hasher::TaskHasher;
 use moon_toolchain_plugin::ToolchainPlugin;
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
 use std::collections::BTreeMap;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::task::JoinSet;
 
 pub async fn hash_common_task_contents(
     app_context: &AppContext,
@@ -61,11 +65,11 @@ pub async fn hash_common_task_contents(
 }
 
 hash_content!(
-    struct TaskToolchainHash<'task> {
-        toolchain: &'task str,
+    struct TaskToolchainHash {
+        toolchain: String,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        version: Option<&'task UnresolvedVersionSpec>,
+        version: Option<UnresolvedVersionSpec>,
 
         #[serde(skip_serializing_if = "Vec::is_empty")]
         contents: Vec<JsonValue>,
@@ -76,88 +80,130 @@ hash_content!(
 );
 
 pub async fn hash_toolchain_task_contents(
-    app_context: &AppContext,
+    app_context: &Arc<AppContext>,
     project: &Project,
     task: &Task,
     hasher: &mut ContentHasher,
 ) -> miette::Result<()> {
-    let registry = &app_context.toolchain_registry;
-
     // Load all toolchains
-    let toolchains = registry
+    let toolchains = app_context
+        .toolchain_registry
         .load_many(project.get_enabled_toolchains_for_task(task))
         .await?;
 
-    // Loop through toolchains and extract information
+    // Loop through toolchains and hash information
+    let mut contents = vec![];
+    let mut set = JoinSet::new();
+
     for toolchain in toolchains {
-        let mut inject = false;
-        let mut content = TaskToolchainHash {
-            toolchain: toolchain.id.as_str(),
-            contents: vec![],
-            dependencies: FxHashMap::default(),
-            version: None,
-        };
+        let app_context = Arc::clone(app_context);
+        let project_frag = project.to_fragment();
+        let project_config = project.config.clone();
+        let task_frag = task.to_fragment();
 
-        // Has a version override
-        if let Some(version) = project
-            .config
-            .toolchain
-            .plugins
-            .get(toolchain.id.as_str())
-            .and_then(|config| config.get_version())
-        {
-            content.version = Some(version);
-            inject = true;
-        }
-        // Or an inherited version
-        else if let Some(version) = app_context
-            .toolchain_config
-            .plugins
-            .get(toolchain.id.as_str())
-            .and_then(|config| config.version.as_ref())
-        {
-            content.version = Some(version);
-            inject = true;
-        }
+        set.spawn(async {
+            apply_toolchain(
+                app_context,
+                toolchain,
+                project_frag,
+                project_config,
+                task_frag,
+            )
+            .await
+        });
+    }
 
-        // Hash dependencies from manifest
-        if apply_toolchain_dependencies(app_context, &toolchain, project, &mut content).await? {
-            inject = true;
+    while let Some(result) = set.join_next().await {
+        if let Some(content) = result.into_diagnostic()?? {
+            contents.push(content);
         }
+    }
 
-        // Hash dynamic content
-        let output = toolchain
-            .hash_task_contents(HashTaskContentsInput {
-                context: registry.create_context(),
-                project: project.to_fragment(),
-                task: task.to_fragment(),
-                toolchain_config: registry.create_merged_config(
-                    &toolchain.id,
-                    &app_context.toolchain_config,
-                    &project.config,
-                ),
-            })
-            .await?;
+    // Sort the contents so the hash is deterministic
+    contents.sort_by(|a, d| a.toolchain.cmp(&d.toolchain));
 
-        if !output.contents.is_empty() {
-            content.contents = output.contents;
-            inject = true;
-        }
-
-        // Only hash if we extracted information
-        if inject {
-            hasher.hash_content(content)?;
-        }
+    for content in contents {
+        hasher.hash_content(content)?;
     }
 
     Ok(())
 }
 
+async fn apply_toolchain(
+    app_context: Arc<AppContext>,
+    toolchain: Arc<ToolchainPlugin>,
+    project: ProjectFragment,
+    project_config: ProjectConfig, // Rework?
+    task: TaskFragment,
+) -> miette::Result<Option<TaskToolchainHash>> {
+    let mut inject = false;
+    let mut content = TaskToolchainHash {
+        toolchain: toolchain.id.to_string(),
+        contents: vec![],
+        dependencies: FxHashMap::default(),
+        version: None,
+    };
+
+    // Has a version override
+    if let Some(version) = project_config
+        .toolchain
+        .plugins
+        .get(toolchain.id.as_str())
+        .and_then(|config| config.get_version())
+    {
+        content.version = Some(version.to_owned());
+        inject = true;
+    }
+    // Or an inherited version
+    else if let Some(version) = app_context
+        .toolchain_config
+        .plugins
+        .get(toolchain.id.as_str())
+        .and_then(|config| config.version.as_ref())
+    {
+        content.version = Some(version.to_owned());
+        inject = true;
+    }
+
+    // Hash dependencies from manifest
+    if apply_toolchain_dependencies(
+        &app_context,
+        &toolchain,
+        app_context.workspace_root.join(&project.source),
+        &mut content,
+    )
+    .await?
+    {
+        inject = true;
+    }
+
+    // Hash dynamic content
+    let output = toolchain
+        .hash_task_contents(HashTaskContentsInput {
+            context: app_context.toolchain_registry.create_context(),
+            project,
+            task,
+            toolchain_config: app_context.toolchain_registry.create_merged_config(
+                &toolchain.id,
+                &app_context.toolchain_config,
+                &project_config,
+            ),
+        })
+        .await?;
+
+    if !output.contents.is_empty() {
+        content.contents = output.contents;
+        inject = true;
+    }
+
+    Ok(if inject { Some(content) } else { None })
+}
+
 async fn apply_toolchain_dependencies(
     app_context: &AppContext,
     toolchain: &ToolchainPlugin,
-    project: &Project,
-    hash_content: &mut TaskToolchainHash<'_>,
+    project_root: PathBuf,
+    hash_content: &mut TaskToolchainHash,
 ) -> miette::Result<bool> {
     let mut inject = false;
     let mut locked = ParseLockOutput::default();
@@ -166,7 +212,7 @@ async fn apply_toolchain_dependencies(
 
     // Load the project manifest
     if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
-        let manifest_path = project.root.join(manifest_file_name);
+        let manifest_path = project_root.join(manifest_file_name);
 
         // If the manifest doesn't exist, we can abort early as
         // theres no dependencies to extract!
@@ -186,7 +232,7 @@ async fn apply_toolchain_dependencies(
     let output = toolchain
         .locate_dependencies_root(LocateDependenciesRootInput {
             context: app_context.toolchain_registry.create_context(),
-            starting_dir: toolchain.to_virtual_path(&project.root),
+            starting_dir: toolchain.to_virtual_path(&project_root),
         })
         .await?;
 
@@ -212,7 +258,7 @@ async fn apply_toolchain_dependencies(
         if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
             let manifest_path = deps_root.join(manifest_file_name);
 
-            if manifest_path.exists() {
+            if manifest_path.exists() && deps_root != project_root {
                 workspace_manifest = toolchain
                     .parse_manifest(ParseManifestInput {
                         context: app_context.toolchain_registry.create_context(),
@@ -267,7 +313,7 @@ fn apply_toolchain_dependencies_by_scope(
     project_deps: FxHashMap<String, ManifestDependency>,
     workspace_deps: &FxHashMap<String, ManifestDependency>,
     locked_deps: &FxHashMap<String, Vec<LockDependency>>,
-    hash_content: &mut TaskToolchainHash<'_>,
+    hash_content: &mut TaskToolchainHash,
 ) -> bool {
     let mut inject = false;
 

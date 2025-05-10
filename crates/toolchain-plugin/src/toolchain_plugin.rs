@@ -9,7 +9,7 @@ use starbase_utils::glob::GlobSet;
 use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::ops::Deref;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::instrument;
@@ -339,22 +339,22 @@ impl ToolchainPlugin {
         Ok(output)
     }
 
-    pub fn locate_lock_file(&self, starting_dir: &Path) -> Option<PathBuf> {
-        let Some(name) = &self.metadata.lock_file_name else {
-            return None;
-        };
+    #[instrument(skip(self))]
+    pub async fn parse_lock(&self, input: ParseLockInput) -> miette::Result<ParseLockOutput> {
+        let output: ParseLockOutput = self.plugin.call_func_with("parse_lock", input).await?;
 
-        let mut current_dir = Some(starting_dir);
+        Ok(output)
+    }
 
-        while let Some(dir) = current_dir {
-            if dir.join(name).exists() {
-                return Some(dir.join(name));
-            }
+    #[instrument(skip(self))]
+    pub async fn parse_manifest(
+        &self,
+        input: ParseManifestInput,
+    ) -> miette::Result<ParseManifestOutput> {
+        let output: ParseManifestOutput =
+            self.plugin.call_func_with("parse_manifest", input).await?;
 
-            current_dir = dir.parent();
-        }
-
-        None
+        Ok(output)
     }
 
     #[instrument(skip(self))]

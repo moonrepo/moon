@@ -12,6 +12,7 @@
     - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
   - When running tasks:
     - Extend the command/script with additional parameters before executing.
+    - Inject dependency and lock information into the hash.
 - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
   downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
   ensure reliability.
@@ -23,6 +24,8 @@
   - `extend_project_graph` - Extend projects with toolchain specific info.
   - `extend_task_command` - Extend the command process with parameters.
   - `extend_task_script` - Extend the script process with parameters.
+  - `parse_manifest` - Parse a manifest file to extract dependencies.
+  - `parse_lock` - Parse a lock file to extracted resolved dependencies.
 - WASM
   - Added `InstallDependenciesInput.packages` and `production` fields.
   - Added `InstallDependenciesOutput.operations` field.

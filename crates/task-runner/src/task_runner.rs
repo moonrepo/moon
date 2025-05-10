@@ -387,7 +387,7 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
-        hash_common_task_contents(&self.app, context, self.project, self.task, &mut hasher).await?;
+        hash_common_task_contents(self.app, context, self.project, self.task, &mut hasher).await?;
 
         // Hash platform fields
         self.platform_manager
@@ -401,11 +401,7 @@ impl<'task> TaskRunner<'task> {
             .await?;
 
         // Hash toolchain fields
-        hash_toolchain_task_contents(&self.app, self.project, self.task, &mut hasher).await?;
-
-        // Hash toolchain lockfile dependencies
-        hash_toolchain_resolved_dependencies(&self.app, self.project, self.task, &mut hasher)
-            .await?;
+        hash_toolchain_task_contents(self.app, self.project, self.task, &mut hasher).await?;
 
         // Generate the hash and persist values
         let hash = hash_engine.save_manifest(&mut hasher)?;

@@ -92,13 +92,14 @@ pub async fn hash_toolchain_task_contents(
         .await?;
 
     // Loop through toolchains and hash information
+    let project_config = Arc::new(project.config.clone());
     let mut contents = vec![];
     let mut set = JoinSet::new();
 
     for toolchain in toolchains {
         let app_context = Arc::clone(app_context);
         let project_frag = project.to_fragment();
-        let project_config = project.config.clone();
+        let project_config = Arc::clone(&project_config);
         let task_frag = task.to_fragment();
 
         set.spawn(async {
@@ -133,7 +134,7 @@ async fn apply_toolchain(
     app_context: Arc<AppContext>,
     toolchain: Arc<ToolchainPlugin>,
     project: ProjectFragment,
-    project_config: ProjectConfig, // Rework?
+    project_config: Arc<ProjectConfig>,
     task: TaskFragment,
 ) -> miette::Result<Option<TaskToolchainHash>> {
     let mut inject = false;

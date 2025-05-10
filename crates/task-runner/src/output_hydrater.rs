@@ -115,6 +115,10 @@ impl OutputHydrater<'_> {
 
             match remote.restore_action_result(state).await {
                 Ok(restored) => {
+                    if !restored {
+                        self.delete_existing_outputs()?;
+                    }
+
                     return Ok(restored);
                 }
                 Err(error) => {

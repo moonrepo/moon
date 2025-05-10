@@ -519,18 +519,15 @@ async fn batch_download_blobs(
 
     // // TODO support directories
     for file in &result.output_files {
-        if let Some(digest) = &file.digest {
-            blob_digests.push(digest.to_owned());
+        if file.contents.is_empty() {
+            if let Some(digest) = &file.digest {
+                blob_digests.push(digest.to_owned());
+            }
         }
     }
 
     let digest_groups =
         partition_into_groups(blob_digests, max_size, |dig| dig.size_bytes as usize);
-
-    if digest_groups.is_empty() {
-        return Ok(true);
-    }
-
     let group_total = digest_groups.len();
     let mut set = JoinSet::<miette::Result<Vec<Option<Blob>>>>::default();
 

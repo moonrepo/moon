@@ -186,8 +186,8 @@ fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<
 }
 
 pub fn write_output_file(
-    output_path: PathBuf,
-    bytes: Vec<u8>,
+    output_path: &Path,
+    bytes: &[u8],
     file: &OutputFile,
 ) -> miette::Result<()> {
     if let Some(parent) = output_path.parent() {
@@ -197,13 +197,13 @@ pub fn write_output_file(
         })?;
     }
 
-    fs::write(&output_path, bytes).map_err(|error| FsError::Write {
-        path: output_path.clone(),
+    fs::write(output_path, bytes).map_err(|error| FsError::Write {
+        path: output_path.to_owned(),
         error: Box::new(error),
     })?;
 
     if let Some(props) = &file.node_properties {
-        apply_node_properties(&output_path, props)?;
+        apply_node_properties(output_path, props)?;
     }
 
     Ok(())

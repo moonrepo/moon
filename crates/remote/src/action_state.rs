@@ -41,7 +41,6 @@ impl ActionState<'_> {
         let mut action = Action {
             command_digest: Some(self.digest.clone()),
             do_not_cache: !self.task.options.cache,
-            input_root_digest: None, // TODO?
             ..Default::default()
         };
 
@@ -61,7 +60,6 @@ impl ActionState<'_> {
         // then we can ignore all the working directory logic
         let mut command = Command {
             arguments: vec![self.task.command.clone()],
-            output_paths: vec![], // TODO?
             ..Default::default()
         };
 

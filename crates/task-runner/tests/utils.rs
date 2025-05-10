@@ -28,7 +28,7 @@ pub fn create_node(task: &Task) -> ActionNode {
 
 pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
-    pub app_context: AppContext,
+    pub app_context: Arc<AppContext>,
     pub platform_manager: PlatformManager,
     pub project: Arc<Project>,
     pub project_id: String,
@@ -54,7 +54,7 @@ impl TaskRunnerContainer {
 
         Self {
             sandbox,
-            app_context,
+            app_context: Arc::new(app_context),
             platform_manager,
             workspace_graph,
             project,

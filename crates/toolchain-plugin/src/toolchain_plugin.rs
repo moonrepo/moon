@@ -6,7 +6,6 @@ use moon_toolchain::is_using_global_toolchain;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
 use starbase_utils::glob::GlobSet;
-use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
@@ -281,17 +280,10 @@ impl ToolchainPlugin {
         &self,
         input: HashTaskContentsInput,
     ) -> miette::Result<HashTaskContentsOutput> {
-        let mut output: HashTaskContentsOutput = self
+        let output: HashTaskContentsOutput = self
             .plugin
             .call_func_with("hash_task_contents", input)
             .await?;
-
-        // Include the ID for easier debugging
-        for content in &mut output.contents {
-            if let Some(obj) = content.as_object_mut() {
-                obj.insert("@toolchain".into(), JsonValue::String(self.id.to_string()));
-            }
-        }
 
         Ok(output)
     }
@@ -335,6 +327,24 @@ impl ToolchainPlugin {
         if let Some(root) = &mut output.root {
             self.handle_output_file(root);
         }
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn parse_lock(&self, input: ParseLockInput) -> miette::Result<ParseLockOutput> {
+        let output: ParseLockOutput = self.plugin.call_func_with("parse_lock", input).await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn parse_manifest(
+        &self,
+        input: ParseManifestInput,
+    ) -> miette::Result<ParseManifestOutput> {
+        let output: ParseManifestOutput =
+            self.plugin.call_func_with("parse_manifest", input).await?;
 
         Ok(output)
     }

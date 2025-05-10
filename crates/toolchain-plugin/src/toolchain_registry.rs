@@ -105,9 +105,9 @@ impl ToolchainRegistry {
         self.get_instance(&id).await
     }
 
-    pub async fn load_all(&self) -> miette::Result<()> {
+    pub async fn load_all(&self) -> miette::Result<Vec<Arc<ToolchainPlugin>>> {
         if !self.has_plugins() {
-            return Ok(());
+            return Ok(vec![]);
         }
 
         debug!("Loading all toolchain plugins");
@@ -115,17 +115,19 @@ impl ToolchainRegistry {
         self.load_many(self.get_plugin_ids()).await
     }
 
-    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<()>
+    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
     where
         I: IntoIterator<Item = Id>,
         Id: AsRef<str>,
     {
-        let mut set = JoinSet::new();
+        let mut set = JoinSet::<miette::Result<PluginId>>::new();
+        let mut list = vec![];
 
         for id in ids {
             let id = PluginId::raw(id.as_ref());
 
             if self.registry.is_registered(&id) {
+                list.push(self.get_instance(&id).await?);
                 continue;
             }
 
@@ -155,17 +157,21 @@ impl ToolchainRegistry {
 
                         Ok(())
                     })
-                    .await
+                    .await?;
+
+                Ok(id)
             });
         }
 
         if !set.is_empty() {
             while let Some(result) = set.join_next().await {
-                result.into_diagnostic()??;
+                let id = result.into_diagnostic()??;
+
+                list.push(self.get_instance(&id).await?);
             }
         }
 
-        Ok(())
+        Ok(list)
     }
 
     // This method looks crazy, but it basically loads and executes each requested

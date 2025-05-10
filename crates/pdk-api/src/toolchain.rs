@@ -1,7 +1,10 @@
 use crate::context::*;
 use crate::host::*;
+use crate::is_false;
 use crate::prompts::*;
-use moon_config::{DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, VersionSpec};
+use moon_config::{
+    DockerPruneConfig, DockerScaffoldConfig, UnresolvedVersionSpec, Version, VersionSpec,
+};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
@@ -150,6 +153,7 @@ api_struct!(
         pub operations: Vec<Operation>,
 
         /// Whether the action was skipped or not.
+        #[serde(skip_serializing_if = "is_false")]
         pub skipped: bool,
     }
 );
@@ -189,6 +193,7 @@ api_struct!(
 
         /// Whether the tool was installed or not. This field is ignored
         /// if set, and is defined on the host side.
+        #[serde(skip_serializing_if = "is_false")]
         pub installed: bool,
     }
 );
@@ -327,6 +332,130 @@ api_struct!(
 );
 
 // RUN TASK
+
+api_struct!(
+    /// Input passed to the `parse_manifest` function.
+    pub struct ParseManifestInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Virtual path to the manifest file.
+        pub path: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `parse_manifest` function.
+    #[serde(default)]
+    pub struct ParseManifestOutput {
+        /// Build dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub build_dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Development dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dev_dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Production dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Peer dependencies.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub peer_dependencies: FxHashMap<String, ManifestDependency>,
+
+        /// Can the package be published or not.
+        #[serde(skip_serializing_if = "is_false")]
+        pub publishable: bool,
+
+        /// Current version of the package.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<Version>,
+    }
+);
+
+api_struct!(
+    /// Represents a dependency definition in a manifest file.
+    #[serde(default)]
+    pub struct ManifestDependency {
+        /// The version is inherited from the workspace.
+        #[serde(skip_serializing_if = "is_false")]
+        pub inherited: bool,
+
+        /// List of features enabled for this dependency.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub features: Vec<String>,
+
+        /// The defined version or requirement.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<UnresolvedVersionSpec>,
+    }
+);
+
+impl ManifestDependency {
+    /// Defines an explicit version or requirement.
+    pub fn new(version: UnresolvedVersionSpec) -> Self {
+        Self {
+            version: Some(version),
+            ..Default::default()
+        }
+    }
+
+    /// Inherits a version from the workspace.
+    pub fn inherited() -> Self {
+        Self {
+            inherited: true,
+            ..Default::default()
+        }
+    }
+}
+
+api_struct!(
+    /// Input passed to the `parse_lock` function.
+    pub struct ParseLockInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Virtual path to the lock file.
+        pub path: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `parse_lock` function.
+    #[serde(default)]
+    pub struct ParseLockOutput {
+        /// Map of all dependencies and their locked versions.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub dependencies: FxHashMap<String, Vec<LockDependency>>,
+
+        /// Map of all packages within the current workspace.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub packages: FxHashMap<String, Option<Version>>,
+    }
+);
+
+api_struct!(
+    /// Represents a dependency definition in a lock file.
+    #[serde(default)]
+    pub struct LockDependency {
+        /// A unique hash: checksum, integrity, etc.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub hash: Option<String>,
+
+        /// General metadata.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub meta: Option<String>,
+
+        /// The version requirement.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub req: Option<UnresolvedVersionSpec>,
+
+        /// The resolved version.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<VersionSpec>,
+    }
+);
 
 api_struct!(
     /// Input passed to the `hash_task_contents` function.

@@ -19,3 +19,7 @@ pub use proto_pdk_api::{
 };
 pub use toolchain::*;
 pub use warpgate_api::*;
+
+pub(crate) fn is_false(value: &bool) -> bool {
+    !(*value)
+}

@@ -1,3 +1,4 @@
+use crate::is_false;
 use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct};
 
 api_struct!(
@@ -6,6 +7,7 @@ api_struct!(
         /// When enabled, failed command executions will
         /// not abort the moon process, and allow it to
         /// continue running.
+        #[serde(skip_serializing_if = "is_false")]
         pub allow_failure: bool,
 
         /// Cache the command based on its inputs/params and
@@ -27,6 +29,7 @@ api_struct!(
         pub label: Option<String>,
 
         /// Execute the command in parallel.
+        #[serde(skip_serializing_if = "is_false")]
         pub parallel: bool,
 
         /// A count of how many times to retry the command

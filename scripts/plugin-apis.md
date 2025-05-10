@@ -11,17 +11,16 @@
 - [x] `scaffold_docker`
 - [x] `prune_docker`
 
-## Tier 2 - 3/11
+## Tier 2 - 11/11
 
 - [x] `extend_project_graph`
 - [x] `extend_task_command`
 - [x] `extend_task_script`
-- [ ] `hash_manifest_contents`
 - [x] `hash_task_contents`
 - [x] `install_dependencies`
 - [x] `locate_dependencies_root` \*
-- [ ] `parse_lockfile`
-- [ ] `parse_manifest`
+- [x] `parse_lock`
+- [x] `parse_manifest`
 - [x] `setup_environment`
 - [x] `sync_workspace`
 - [x] `sync_project`

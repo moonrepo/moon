@@ -61,7 +61,7 @@ impl<'task> CommandBuilder<'task> {
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
-            "Creating task process command to execute",
+            "Creating task child process to execute",
         );
 
         self.command = self.build_command(context).await?;

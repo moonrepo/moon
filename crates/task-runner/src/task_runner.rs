@@ -3,22 +3,21 @@ use crate::command_executor::CommandExecutor;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::*;
+use crate::task_hashing::*;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
-use moon_pdk_api::HashTaskContentsInput;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
 use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
-use moon_task_hasher::TaskHasher;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
-use std::collections::BTreeMap;
+use std::sync::Arc;
 use std::time::SystemTime;
 use tracing::{debug, instrument, trace};
 
@@ -30,7 +29,7 @@ pub struct TaskRunResult {
 }
 
 pub struct TaskRunner<'task> {
-    app: &'task AppContext,
+    app: &'task Arc<AppContext>,
     project: &'task Project,
     pub task: &'task Task,
     platform_manager: &'task PlatformManager,
@@ -48,7 +47,7 @@ pub struct TaskRunner<'task> {
 
 impl<'task> TaskRunner<'task> {
     pub fn new(
-        app: &'task AppContext,
+        app: &'task Arc<AppContext>,
         project: &'task Project,
         task: &'task Task,
     ) -> miette::Result<Self> {
@@ -389,43 +388,9 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
-        let mut task_hasher = TaskHasher::new(
-            self.project,
-            self.task,
-            &self.app.vcs,
-            &self.app.workspace_root,
-            &self.app.workspace_config.hasher,
-        );
+        hash_common_task_contents(self.app, context, self.project, self.task, &mut hasher).await?;
 
-        if self.task.script.is_none() && context.should_inherit_args(&self.task.target) {
-            task_hasher.hash_args(&context.passthrough_args);
-        }
-
-        task_hasher.hash_deps({
-            let mut deps = BTreeMap::default();
-
-            for dep in &self.task.deps {
-                if let Some(entry) = context.target_states.get(&dep.target) {
-                    match entry.get() {
-                        TargetState::Passed(hash) => {
-                            deps.insert(&dep.target, hash.clone());
-                        }
-                        TargetState::Passthrough => {
-                            deps.insert(&dep.target, "passthrough".into());
-                        }
-                        _ => {}
-                    };
-                }
-            }
-
-            deps
-        });
-
-        task_hasher.hash_inputs().await?;
-
-        hasher.hash_content(task_hasher.hash())?;
-
-        // Hash toolchain fields
+        // Hash platform fields
         self.platform_manager
             .get_by_toolchains(&self.task.toolchains)?
             .hash_run_target(
@@ -436,26 +401,8 @@ impl<'task> TaskRunner<'task> {
             )
             .await?;
 
-        for content in self
-            .app
-            .toolchain_registry
-            .hash_task_contents_many(
-                self.project.get_enabled_toolchains_for_task(self.task),
-                |registry, toolchain| HashTaskContentsInput {
-                    context: registry.create_context(),
-                    project: self.project.to_fragment(),
-                    task: self.task.to_fragment(),
-                    toolchain_config: registry.create_merged_config(
-                        &toolchain.id,
-                        &self.app.toolchain_config,
-                        &self.project.config,
-                    ),
-                },
-            )
-            .await?
-        {
-            hasher.hash_content(content)?;
-        }
+        // Hash toolchain fields
+        hash_toolchain_task_contents(self.app, self.project, self.task, &mut hasher).await?;
 
         // Generate the hash and persist values
         let hash = hash_engine.save_manifest(&mut hasher)?;
@@ -466,6 +413,7 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
         self.report_item.hash = Some(hash.clone());
 
+        // Store the hash digest for remote caching
         if RemoteService::is_enabled() {
             let bytes = hasher.into_bytes();
             let mut state = ActionState::new(

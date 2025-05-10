@@ -216,7 +216,7 @@ async fn apply_toolchain_dependencies(
 
         // If the manifest doesn't exist, we can abort early as
         // theres no dependencies to extract!
-        if !manifest_path.exists() {
+        if !manifest_path.exists() || !toolchain.has_func("parse_manifest").await {
             return Ok(false);
         }
 
@@ -229,12 +229,16 @@ async fn apply_toolchain_dependencies(
     }
 
     // Try and locate a dependency root
-    let output = toolchain
-        .locate_dependencies_root(LocateDependenciesRootInput {
-            context: app_context.toolchain_registry.create_context(),
-            starting_dir: toolchain.to_virtual_path(&project_root),
-        })
-        .await?;
+    let output = if toolchain.has_func("locate_dependencies_root").await {
+        toolchain
+            .locate_dependencies_root(LocateDependenciesRootInput {
+                context: app_context.toolchain_registry.create_context(),
+                starting_dir: toolchain.to_virtual_path(&project_root),
+            })
+            .await?
+    } else {
+        Default::default()
+    };
 
     // Found a dependency root
     if let Some(deps_root) = output.root.and_then(|root| root.real_path()) {
@@ -244,6 +248,7 @@ async fn apply_toolchain_dependencies(
 
             if lock_path.exists()
                 && app_context.workspace_config.hasher.optimization == HasherOptimization::Accuracy
+                && toolchain.has_func("parse_lock").await
             {
                 locked = toolchain
                     .parse_lock(ParseLockInput {
@@ -258,7 +263,10 @@ async fn apply_toolchain_dependencies(
         if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
             let manifest_path = deps_root.join(manifest_file_name);
 
-            if manifest_path.exists() && deps_root != project_root {
+            if manifest_path.exists()
+                && deps_root != project_root
+                && toolchain.has_func("parse_manifest").await
+            {
                 workspace_manifest = toolchain
                     .parse_manifest(ParseManifestInput {
                         context: app_context.toolchain_registry.create_context(),

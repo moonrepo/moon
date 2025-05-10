@@ -25,7 +25,7 @@
   - `extend_task_command` - Extend the command process with parameters.
   - `extend_task_script` - Extend the script process with parameters.
   - `parse_manifest` - Parse a manifest file to extract dependencies.
-  - `parse_lock` - Parse a lock file to extracted resolved dependencies.
+  - `parse_lock` - Parse a lock file to extract resolved dependencies.
 - WASM
   - Added `InstallDependenciesInput.packages` and `production` fields.
   - Added `InstallDependenciesOutput.operations` field.

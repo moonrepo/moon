@@ -382,6 +382,7 @@ impl ActionPipeline {
     }
 
     async fn setup_subscribers(&mut self) {
+        let receiver: Arc<ProcessRegistry> = ProcessRegistry::instance();
         debug!("Registering event subscribers");
 
         self.emitter
@@ -405,6 +406,7 @@ impl ActionPipeline {
 
         // For security and privacy purposes, only send webhooks from a CI environment
         if is_ci() || is_test_env() {
+            let acknowledge = &self.app_context.workspace_config.notifier.acknowledge;
             if let Some(webhook_url) = &self.app_context.workspace_config.notifier.webhook_url {
                 debug!(
                     url = webhook_url,
@@ -413,7 +415,7 @@ impl ActionPipeline {
                 );
 
                 self.emitter
-                    .subscribe(WebhooksSubscriber::new(webhook_url))
+                    .subscribe(WebhooksSubscriber::new(webhook_url, acknowledge, receiver))
                     .await;
             }
         }

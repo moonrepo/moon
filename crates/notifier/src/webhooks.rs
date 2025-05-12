@@ -4,6 +4,7 @@ use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::Serialize;
 use starbase_utils::json;
+use std::env;
 use tokio::task::JoinHandle;
 use tracing::{debug, trace, warn};
 use uuid::Uuid;
@@ -21,6 +22,8 @@ pub struct WebhookPayload<'data, T: Serialize> {
     pub type_of: &'data str,
 
     pub uuid: &'data str,
+
+    pub trace: &'data str,
 }
 
 pub async fn notify_webhook(
@@ -44,7 +47,8 @@ pub struct WebhooksNotifier {
     requests: Vec<JoinHandle<()>>,
     url: String,
     uuid: String,
-    verified: bool,
+    trace: String,
+    pub verified: bool,
 }
 
 impl WebhooksNotifier {
@@ -60,6 +64,7 @@ impl WebhooksNotifier {
             } else {
                 Uuid::new_v4().to_string()
             },
+            trace: env::var("MOON_TRACE_ID").unwrap_or("".into()),
             url,
             verified: false,
         }
@@ -78,30 +83,18 @@ impl WebhooksNotifier {
             event,
             type_of: name,
             uuid: &self.uuid,
+            trace: &self.trace,
         };
         let body = json::format(&payload, false)?;
         let url = self.url.to_owned();
+        let response = notify_webhook(url, body).await;
 
-        // For the first event, we want to ensure that the webhook URL is valid
-        // by sending the request and checking for a failure. If failed,
-        // we will disable subsequent requests from being called.
-        if !self.verified {
-            let response = notify_webhook(url, body).await;
-
-            if response.is_err() || !response.unwrap().status().is_success() {
-                self.enabled = false;
-
-                warn!("Failed to send webhook event, subsequent webhook requests will be disabled");
-            }
-
+        if response.is_err() || !response.unwrap().status().is_success() {
+            self.enabled = false;
+            self.verified = false;
+            warn!("Failed to send webhook event, subsequent webhook requests will be disabled");
+        } else {
             self.verified = true;
-        }
-        // For every other event, we will make the request and ignore the result.
-        // We will also avoid awaiting the request to not slow down the overall runner.
-        else {
-            self.requests.push(tokio::spawn(async {
-                let _ = notify_webhook(url, body).await;
-            }));
         }
 
         Ok(())

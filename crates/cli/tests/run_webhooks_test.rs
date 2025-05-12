@@ -7,6 +7,7 @@ fn sandbox(uri: String) -> Sandbox {
 
     workspace_config.notifier = Some(PartialNotifierConfig {
         webhook_url: Some(format!("{uri}/webhook")),
+        acknowledge: Some(false),
     });
 
     let sandbox = create_sandbox_with_config(

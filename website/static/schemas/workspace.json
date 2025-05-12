@@ -516,6 +516,12 @@
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
+        "acknowledge": {
+          "title": "acknowledge",
+          "description": "Webhook wait for acknowledge from endpoint with 2xx return code.",
+          "default": false,
+          "type": "boolean"
+        },
         "webhookUrl": {
           "title": "webhookUrl",
           "description": "A secure URL in which to send webhooks to.",

@@ -207,6 +207,12 @@ export interface HasherConfig {
 
 /** Configures how and where notifications are sent. */
 export interface NotifierConfig {
+	/**
+	 * Webhook wait for acknowledge from endpoint with 2xx return code.
+	 *
+	 * @default false
+	 */
+	acknowledge?: boolean;
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl: string | null;
 }
@@ -715,6 +721,12 @@ export interface PartialHasherConfig {
 
 /** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
+	/**
+	 * Webhook wait for acknowledge from endpoint with 2xx return code.
+	 *
+	 * @default false
+	 */
+	acknowledge?: boolean | null;
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl?: string | null;
 }

@@ -883,7 +883,8 @@ extensions:
             assert_eq!(
                 config.notifier,
                 NotifierConfig {
-                    webhook_url: Some("http://localhost".into())
+                    webhook_url: Some("http://localhost".into()),
+                    acknowledge: false,
                 }
             );
             assert_eq!(

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Reverted `moon ci` and `moon run` accepting touched files via stdin, as it's causing issues in CI
+  environments. Will revisit for the next release.
+
 ## 1.35.6
 
 #### 🚀 Updates

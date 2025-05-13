@@ -7,10 +7,10 @@ use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::json;
-use std::io::{IsTerminal, stdin};
-use std::time::Duration;
-use tokio::io::AsyncReadExt;
-use tokio::time::timeout;
+use std::io::{IsTerminal, Read, stdin};
+// use std::time::Duration;
+// use tokio::io::AsyncReadExt;
+// use tokio::time::timeout;
 use tracing::{debug, trace, warn};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
@@ -165,14 +165,16 @@ pub async fn query_touched_files_with_stdin(
     // Only read piped data when stdin is not a TTY,
     // otherwise the process will hang indefinitely waiting for EOF.
     if !stdin().is_terminal() {
-        if let Ok(read_result) = timeout(
-            Duration::from_secs(10),
-            tokio::io::stdin().read_to_string(&mut buffer),
-        )
-        .await
-        {
-            read_result.into_diagnostic()?;
-        }
+        // if let Ok(read_result) = timeout(
+        //     Duration::from_secs(10),
+        //     tokio::io::stdin().read_to_string(&mut buffer),
+        // )
+        // .await
+        // {
+        //     read_result.into_diagnostic()?;
+        // }
+
+        stdin().read_to_string(&mut buffer).into_diagnostic()?;
     }
 
     // If piped via stdin, parse and use it

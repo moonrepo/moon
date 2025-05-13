@@ -1,5 +1,5 @@
 use crate::components::run_action_pipeline;
-use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files_with_stdin};
+use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files};
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -134,7 +134,7 @@ pub async fn run_target(
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if vcs.is_enabled() {
         let local = is_local(args);
-        let result = query_touched_files_with_stdin(
+        let result = query_touched_files(
             &vcs,
             &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),

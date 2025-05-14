@@ -25,17 +25,7 @@ pub struct RenderContext {
     pub js_url: String,
 }
 
-pub async fn setup_server() -> miette::Result<(Arc<Server>, Tera)> {
-    let bag = GlobalEnvBag::instance();
-
-    let port = match bag.get("MOON_PORT") {
-        Some(p) => p.parse::<u16>().unwrap(),
-        None => 0, // Uses an available port
-    };
-    let host = match bag.get("MOON_HOST") {
-        Some(h) => h,
-        None => "127.0.0.1".to_string(),
-    };
+pub async fn setup_server(host: String, port: u16) -> miette::Result<(Arc<Server>, Tera)> {
     let address = format!("{host}:{port}");
     let server = Server::http(address).unwrap();
     let tera = Tera::default();
@@ -151,8 +141,13 @@ pub fn get_js_url() -> String {
     }
 }
 
-pub async fn run_server(title: &str, graph_info: GraphInfoDto) -> miette::Result<()> {
-    let (server, mut tera) = setup_server().await?;
+pub async fn run_server(
+    title: &str,
+    graph_info: GraphInfoDto,
+    host: String,
+    port: u16,
+) -> miette::Result<()> {
+    let (server, mut tera) = setup_server(host, port).await?;
     let url = format!("http://{}", server.server_addr());
     let _ = open::that(&url);
 

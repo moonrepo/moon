@@ -5,10 +5,10 @@ pub use tc_tier1::*;
 
 fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
     let outer = match path {
-        VirtualPath::OnlyReal(inner) => inner,
+        VirtualPath::Real(inner) => inner,
         // Don't use `path` since it gets replaced with the virtual
         // path, which masks the folder we're actually in on the host
-        VirtualPath::WithReal {
+        VirtualPath::Virtual {
             real_prefix: inner, ..
         } => inner,
     };

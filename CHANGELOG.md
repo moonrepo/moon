@@ -17,6 +17,10 @@
     - Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
 - Added `--host` and `--port` options to `moon action-graph`, `moon task-graph`, and
   `moon project-graph`.
+- Added `--stdin` option to `moon ci` and `moon run`, which will allow touched files to be passed
+  via stdin, instead of running VCS commands to determine them.
+  - This is a follow-up fix to the revert in previous versions. This functionality is now opt-in
+    instead of the default, to avoid problematic edge cases.
 - Updated and improved remote caching:
   - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
     downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but

@@ -22,6 +22,7 @@ pub struct QueryTouchedFilesOptions {
     pub json: bool,
     pub local: bool,
     pub status: Vec<TouchedStatus>,
+    pub stdin: bool,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -160,6 +161,10 @@ pub async fn query_touched_files_with_stdin(
 ) -> miette::Result<QueryTouchedFilesResult> {
     debug!("Querying for touched files");
 
+    if !options.stdin {
+        return query_touched_files(vcs, options).await;
+    }
+
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,
@@ -214,6 +219,7 @@ pub async fn load_touched_files(
         &QueryTouchedFilesOptions {
             default_branch: ci,
             local: !ci,
+            stdin: true,
             ..QueryTouchedFilesOptions::default()
         },
     )

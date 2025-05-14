@@ -21,7 +21,7 @@
     ensure reliability.
   - Added a file rollback mechanic to that will be triggered when hydration fails part way and
     written files need to be removed.
-  - Updated blob existing checks to be batched and parallelized.
+  - Updated blob existence checks to be batched and parallelized.
 
 #### 🐞 Fixes
 
@@ -48,7 +48,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.48.1](https://github.com/moonrepo/proto/releases/tag/v0.48.1) (from 0.47.11).
+- Updated proto to [v0.49.0](https://github.com/moonrepo/proto/releases/tag/v0.49.0) (from 0.47.11).
 
 ## 1.35.7
 

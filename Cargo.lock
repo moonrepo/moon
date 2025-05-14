@@ -3981,7 +3981,7 @@ dependencies = [
  "starbase_sandbox",
  "tracing",
  "version_spec",
- "warpgate_api 0.13.5",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -4313,7 +4313,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "warpgate_api 0.13.5",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -5815,9 +5815,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.48.3"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eeb0ba835223a19d79f7cbf13117b31929b1f9bd92dd853d2a1a048caeb171e7"
+checksum = "cd1a37bbc5ddc7ac92327f4b0a38eb4c8e26f8699ed1643d9ac9c6747898aa9c"
 dependencies = [
  "convert_case",
  "dotenvy",
@@ -5882,7 +5882,7 @@ dependencies = [
  "system_env",
  "thiserror 2.0.12",
  "version_spec",
- "warpgate_api 0.14.0",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -8090,9 +8090,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.23.11"
+version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a60adb4810e74a750f8233ec893b68ad885f214ab216b090d6229c5ee293baee"
+checksum = "90ef0fa57cb6d34ff33f5046c65f8aca40b304fa2c9ded85e8ab24484f1240e1"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",
@@ -8117,22 +8117,7 @@ dependencies = [
  "tokio",
  "tracing",
  "ureq",
- "warpgate_api 0.13.5",
-]
-
-[[package]]
-name = "warpgate_api"
-version = "0.13.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "826209120c0dc2cc741203dfd1c61f30fcd0b6b7437fc458964d00d06d008e9d"
-dependencies = [
- "anyhow",
- "rustc-hash 2.1.1",
- "schematic",
- "serde",
- "serde_json",
- "system_env",
- "thiserror 2.0.12",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -8152,13 +8137,13 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.12.3"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3899d1d2bedd40c3334b727cee73f1e95b6ac45814b09dc08ce08aaec6dc87e6"
+checksum = "86238e908b5659986ae24d8114b570acb640c92b97e369548c0ae3db854f9f6f"
 dependencies = [
  "extism-pdk",
  "serde",
- "warpgate_api 0.13.5",
+ "warpgate_api",
 ]
 
 [[package]]

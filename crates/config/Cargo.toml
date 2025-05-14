@@ -17,7 +17,7 @@ moon_target = { version = "0.1.1", path = "../target" }
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
-rpkl = "0.4.1"
+rpkl = "0.4.2"
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",

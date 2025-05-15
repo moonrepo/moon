@@ -243,7 +243,11 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    let (action_context, action_graph) = action_graph_builder.build();
+    let (mut action_context, action_graph) = action_graph_builder.build();
+
+    action_context
+        .initial_targets
+        .extend(target_locators.to_owned());
 
     let results = run_action_pipeline(
         session,

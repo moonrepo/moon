@@ -28,6 +28,7 @@
   - Added a file rollback mechanic to that will be triggered when hydration fails part way and
     written files need to be removed.
   - Updated blob existence checks to be batched and parallelized.
+  - Can now be enabled entirely through environment variables.
 
 #### 🐞 Fixes
 

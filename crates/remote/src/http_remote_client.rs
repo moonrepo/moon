@@ -71,7 +71,8 @@ impl HttpRemoteClient {
     fn get_endpoint(&self, path: &str, hash: &str) -> String {
         format!(
             "{}/{}/{path}/{hash}",
-            self.config.host, self.config.cache.instance_name
+            self.config.get_host(),
+            self.config.cache.instance_name
         )
     }
 }
@@ -86,7 +87,7 @@ impl RemoteClient for HttpRemoteClient {
         debug!(
             instance = &config.cache.instance_name,
             "Connecting to HTTP host {} {}",
-            color::url(&config.host),
+            color::url(config.get_host()),
             if config.mtls.is_some() {
                 "(with mTLS)"
             } else if config.tls.is_some() {
@@ -117,7 +118,7 @@ impl RemoteClient for HttpRemoteClient {
 
         // Ignore errors since this endpoint is non-standard
         if let Ok(response) = client
-            .get(format!("{}/status", self.config.host))
+            .get(format!("{}/status", self.config.get_host()))
             .send()
             .await
         {

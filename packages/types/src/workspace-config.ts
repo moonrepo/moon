@@ -415,7 +415,7 @@ export interface RemoteConfig {
 	 *
 	 * @envvar MOON_REMOTE_HOST
 	 */
-	host: string;
+	host: string | null;
 	/**
 	 * Connect to the host using server and client authentication with mTLS.
 	 * This takes precedence over normal TLS.
@@ -518,7 +518,7 @@ export interface WorkspaceConfig {
 	 */
 	telemetry?: boolean;
 	/** Configures aspects of the remote service. */
-	unstable_remote: RemoteConfig | null;
+	unstable_remote: RemoteConfig;
 	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */

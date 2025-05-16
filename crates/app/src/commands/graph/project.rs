@@ -15,6 +15,22 @@ pub struct ProjectGraphArgs {
     #[arg(long, help = "Include direct dependents of the focused project")]
     dependents: bool,
 
+    #[arg(
+        long,
+        help = "The host address",
+        env = "MOON_HOST",
+        default_value = "127.0.0.1"
+    )]
+    host: String,
+
+    #[arg(
+        long,
+        help = "The port to bind to",
+        env = "MOON_PORT",
+        default_value = "0"
+    )]
+    port: u16,
+
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
 
@@ -45,7 +61,13 @@ pub async fn project_graph(session: MoonSession, args: ProjectGraphArgs) -> AppR
         return Ok(None);
     }
 
-    run_server("Project graph", project_graph_repr(&project_graph).await).await?;
+    run_server(
+        "Project graph",
+        project_graph_repr(&project_graph).await,
+        args.host,
+        args.port,
+    )
+    .await?;
 
     Ok(None)
 }

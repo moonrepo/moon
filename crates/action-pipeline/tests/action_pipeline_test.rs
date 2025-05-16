@@ -84,7 +84,7 @@ mod action_pipeline {
                 [
                     "SyncWorkspace",
                     "SyncProject(priority)",
-                    "RunTask(priority:low)",
+                    "RunTask(priority:critical-low-base)",
                     "RunTask(priority:critical-low)"
                 ]
             );
@@ -115,7 +115,7 @@ mod action_pipeline {
                 [
                     "SyncWorkspace",
                     "SyncProject(priority)",
-                    "RunTask(priority:low)",
+                    "RunTask(priority:high-low-base)",
                     "RunTask(priority:high-low)"
                 ]
             );

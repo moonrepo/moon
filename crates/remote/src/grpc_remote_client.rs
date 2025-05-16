@@ -117,7 +117,7 @@ impl RemoteClient for GrpcRemoteClient {
         debug!(
             instance = &config.cache.instance_name,
             "Connecting to gRPC host {} {}",
-            color::url(&config.host),
+            color::url(config.get_host()),
             if config.mtls.is_some() {
                 "(with mTLS)"
             } else if config.tls.is_some() {
@@ -139,10 +139,10 @@ impl RemoteClient for GrpcRemoteClient {
 
         // Although we use a grpc(s) protocol for the host,
         // tonic only supports http(s), so change it
-        let url = if let Some(suffix) = self.config.host.strip_prefix("grpc") {
+        let url = if let Some(suffix) = config.get_host().strip_prefix("grpc") {
             format!("http{suffix}")
         } else {
-            self.config.host.to_owned()
+            config.get_host().to_owned()
         };
 
         let mut endpoint = Endpoint::from_shared(url)

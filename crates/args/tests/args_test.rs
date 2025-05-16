@@ -166,4 +166,12 @@ mod join_args {
     fn echo_vars() {
         assert_eq!(join_args(vec!["echo", "$VAR_NAME"]), "echo $VAR_NAME");
     }
+
+    #[test]
+    fn quotes_strings_with_dashes() {
+        assert_eq!(
+            join_args(vec!["echo", "some value-with a dash"]),
+            "echo 'some value-with a dash'"
+        );
+    }
 }

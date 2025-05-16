@@ -12,7 +12,7 @@ use moon_tool::{
 };
 use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, ToolSpec};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -231,9 +231,11 @@ impl Tool for NodeTool {
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
+            let spec = ToolSpec::new(version.to_owned());
+
             if self.global {
                 debug!("Using global binary in PATH");
-            } else if self.tool.is_setup(version).await? {
+            } else if self.tool.is_setup(&spec).await? {
                 debug!("Node.js has already been setup");
 
                 // When offline and the tool doesn't exist, fallback to the global binary
@@ -259,7 +261,7 @@ impl Tool for NodeTool {
 
                     if self
                         .tool
-                        .setup(version, InstallOptions::default())
+                        .setup(&spec, InstallOptions::default())
                         .await?
                         .is_some()
                     {

@@ -2,6 +2,8 @@
 title: ci
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `moon ci` command is a special command that should be ran in a continuous integration (CI)
 environment, as it does all the heavy lifting necessary for effectively running tasks.
 
@@ -34,6 +36,7 @@ $ moon ci :build :lint
   ([learn more](../guides/ci#comparing-revisions)).
 - `--job <index>` - Index of the current job.
 - `--jobTotal <total>` Total amount of jobs to run.
+- `--stdin` - Accept touched files from stdin for affected checks. <VersionLabel version="1.36.0" />
 
 ### Configuration
 

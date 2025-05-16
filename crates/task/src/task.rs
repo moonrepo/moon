@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     pub struct TaskState {
+        // Inputs are using defaults `**/*`
+        pub default_inputs: bool,
+
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
@@ -156,7 +159,7 @@ impl Task {
             list.extend(glob_walk_with_options(
                 workspace_root,
                 &self.input_globs,
-                GlobWalkOptions::default().cache().files(),
+                GlobWalkOptions::default().files(),
             )?);
         }
 
@@ -181,7 +184,7 @@ impl Task {
             list.extend(glob_walk_with_options(
                 workspace_root,
                 &self.output_globs,
-                GlobWalkOptions::default().cache().files(),
+                GlobWalkOptions::default().files(),
             )?);
         }
 

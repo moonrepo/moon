@@ -1,6 +1,6 @@
 use crate::app_error::AppError;
 use crate::components::run_action_pipeline;
-use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files};
+use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files_with_stdin};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::Args;
@@ -37,6 +37,9 @@ pub struct CiArgs {
 
     #[arg(long = "jobTotal", help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
     job_total: Option<usize>,
+
+    #[arg(long, help = "Accept touched files from stdin for affected checks")]
+    stdin: bool,
 }
 
 struct CiConsole {
@@ -110,12 +113,13 @@ async fn gather_touched_files(
     }
 
     let vcs = session.get_vcs_adapter()?;
-    let result = query_touched_files(
+    let result = query_touched_files_with_stdin(
         &vcs,
         &QueryTouchedFilesOptions {
             default_branch: true,
             base,
             head,
+            stdin: args.stdin,
             ..QueryTouchedFilesOptions::default()
         },
     )

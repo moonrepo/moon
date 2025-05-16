@@ -314,6 +314,21 @@ mod task_hasher {
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
+
+        #[tokio::test]
+        async fn can_include_moon_project_config() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "moonConfig").unwrap();
+
+            let hasher_config = HasherConfig::default();
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &hasher_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["moon.yml"]);
+        }
     }
 
     mod output_filtering {

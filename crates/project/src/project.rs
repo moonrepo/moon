@@ -92,6 +92,18 @@ impl Project {
             .collect()
     }
 
+    /// Return a list of all task specific toolchains that are enabled for this project.
+    /// Toolchains can be disabled through config.
+    pub fn get_enabled_toolchains_for_task<'task>(&self, task: &'task Task) -> Vec<&'task Id> {
+        task.toolchains
+            .iter()
+            .filter(|id| match self.config.toolchain.plugins.get(*id) {
+                None => true,
+                Some(cfg) => cfg.is_enabled(),
+            })
+            .collect()
+    }
+
     /// Return true if the root-level project.
     pub fn is_root_level(&self) -> bool {
         is_root_level_source(&self.source)
@@ -106,6 +118,7 @@ impl Project {
     /// Convert the project into a fragment.
     pub fn to_fragment(&self) -> ProjectFragment {
         ProjectFragment {
+            alias: self.alias.clone(),
             dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),
@@ -139,6 +152,10 @@ cacheable!(
     /// Fragment of a project including important fields.
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct ProjectFragment {
+        /// Alias of the project.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub alias: Option<String>,
+
         /// When treated as a dependency for another project,
         /// the scope of that dependency relationship.
         #[serde(default, skip_serializing_if = "Option::is_none")]

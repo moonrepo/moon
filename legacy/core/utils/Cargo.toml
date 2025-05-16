@@ -11,7 +11,7 @@ cached = { workspace = true }
 chrono = { workspace = true }
 clean-path = { workspace = true }
 dunce = "1.0.5"
-humantime = "2.1.0"
+humantime = "2.2.0"
 md5 = { workspace = true }
 miette = { workspace = true }
 pathdiff = { workspace = true }

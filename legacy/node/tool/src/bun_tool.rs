@@ -11,7 +11,7 @@ use moon_tool::{
 };
 use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, ToolSpec, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use scc::hash_cache::Entry;
 use starbase_utils::fs;
@@ -132,7 +132,9 @@ impl Tool for BunTool {
         let mutex = get_shared_lock("bun_tool").await;
         let _lock = mutex.lock().await;
 
-        if self.tool.is_setup(version).await? {
+        let spec = ToolSpec::new(version.to_owned());
+
+        if self.tool.is_setup(&spec).await? {
             self.tool.locate_globals_dirs().await?;
 
             debug!("bun has already been setup");
@@ -160,7 +162,12 @@ impl Tool for BunTool {
         self.console
             .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
-        if self.tool.setup(version, InstallOptions::default()).await? {
+        if self
+            .tool
+            .setup(&spec, InstallOptions::default())
+            .await?
+            .is_some()
+        {
             last_versions.insert("bun".into(), version.to_owned());
             count += 1;
         }

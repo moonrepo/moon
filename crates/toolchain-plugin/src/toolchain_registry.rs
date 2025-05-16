@@ -9,7 +9,7 @@ use moon_plugin::{
 };
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
-use starbase_utils::json;
+use starbase_utils::json::{self, JsonValue};
 use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -49,14 +49,12 @@ impl ToolchainRegistry {
         }
     }
 
-    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> json::JsonValue {
-        let mut data = json::JsonValue::default();
-
+    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> JsonValue {
         if let Some(config) = toolchain_config.plugins.get(id) {
-            data = json::JsonValue::Object(config.config.clone().into_iter().collect());
+            return config.to_json();
         }
 
-        data
+        JsonValue::default()
     }
 
     pub fn create_merged_config(
@@ -64,13 +62,13 @@ impl ToolchainRegistry {
         id: &str,
         toolchain_config: &ToolchainConfig,
         project_config: &ProjectConfig,
-    ) -> json::JsonValue {
+    ) -> JsonValue {
         let mut data = self.create_config(id, toolchain_config);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
             project_config.toolchain.plugins.get(id)
         {
-            let next = json::JsonValue::Object(leaf_config.config.clone().into_iter().collect());
+            let next = leaf_config.to_json();
 
             data = json::merge(&data, &next);
         }
@@ -107,9 +105,9 @@ impl ToolchainRegistry {
         self.get_instance(&id).await
     }
 
-    pub async fn load_all(&self) -> miette::Result<()> {
+    pub async fn load_all(&self) -> miette::Result<Vec<Arc<ToolchainPlugin>>> {
         if !self.has_plugins() {
-            return Ok(());
+            return Ok(vec![]);
         }
 
         debug!("Loading all toolchain plugins");
@@ -117,17 +115,19 @@ impl ToolchainRegistry {
         self.load_many(self.get_plugin_ids()).await
     }
 
-    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<()>
+    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
     where
         I: IntoIterator<Item = Id>,
         Id: AsRef<str>,
     {
-        let mut set = JoinSet::new();
+        let mut set = JoinSet::<miette::Result<PluginId>>::new();
+        let mut list = vec![];
 
         for id in ids {
             let id = PluginId::raw(id.as_ref());
 
             if self.registry.is_registered(&id) {
+                list.push(self.get_instance(&id).await?);
                 continue;
             }
 
@@ -157,17 +157,21 @@ impl ToolchainRegistry {
 
                         Ok(())
                     })
-                    .await
+                    .await?;
+
+                Ok(id)
             });
         }
 
         if !set.is_empty() {
             while let Some(result) = set.join_next().await {
-                result.into_diagnostic()??;
+                let id = result.into_diagnostic()??;
+
+                list.push(self.get_instance(&id).await?);
             }
         }
 
-        Ok(())
+        Ok(list)
     }
 
     // This method looks crazy, but it basically loads and executes each requested
@@ -210,10 +214,10 @@ impl ToolchainRegistry {
 
             if let Ok(toolchain) = self.load(toolchain_id).await {
                 if toolchain.has_func(func_name).await {
-                    let mut operation = Operation::new(format!("{toolchain_id}:{func_name}"));
+                    let mut operation = Operation::new(func_name);
                     let id = toolchain.id.clone();
                     let input = input_factory(self, &toolchain);
-                    let future = output_factory(toolchain, input);
+                    let future = output_factory(toolchain.clone(), input);
 
                     futures.push_back(tokio::spawn(async move {
                         let result = future.await;
@@ -223,6 +227,7 @@ impl ToolchainRegistry {
                             id,
                             operation,
                             output: result?,
+                            toolchain,
                         })
                     }));
                 }
@@ -249,4 +254,5 @@ pub struct CallResult<T> {
     pub id: PluginId,
     pub operation: Operation,
     pub output: T,
+    pub toolchain: Arc<ToolchainPlugin>,
 }

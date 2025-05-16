@@ -38,12 +38,12 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
         app_context
             .cache_engine
             .execute_if_changed(
-                "configSchemas.json",
+                "config-schemas",
                 ConfigSchemaHash {
                     files_exist: files.into_iter().all(|file| file.exists()),
                     moon_version: &app_context.cli_version,
                 },
-                || async {
+                async |_| {
                     generate_json_schemas(
                         out_dir,
                         app_context
@@ -54,6 +54,7 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
                 },
             )
             .await
+            .map(|result| result.unwrap_or_default())
     } {
         warn!(
             "Failed to generate schemas for configuration: {}",

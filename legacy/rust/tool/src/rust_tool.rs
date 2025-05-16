@@ -8,7 +8,7 @@ use moon_tool::{
 };
 use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, ToolSpec, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::env::path_var;
 use std::path::PathBuf;
@@ -132,9 +132,11 @@ impl Tool for RustTool {
             return Ok(installed);
         };
 
+        let spec = ToolSpec::new(version.to_owned());
+
         if self.global {
             debug!("Using global binary in PATH");
-        } else if self.tool.is_setup(version).await? {
+        } else if self.tool.is_setup(&spec).await? {
             debug!("Rust has already been setup");
 
             // When offline and the tool doesn't exist, fallback to the global binary
@@ -156,7 +158,12 @@ impl Tool for RustTool {
                 self.console
                     .print_checkpoint(Checkpoint::Setup, format!("installing rust {version}"))?;
 
-                if self.tool.setup(version, InstallOptions::default()).await? {
+                if self
+                    .tool
+                    .setup(&spec, InstallOptions::default())
+                    .await?
+                    .is_some()
+                {
                     last_versions.insert("rust".into(), version.to_owned());
                     installed += 1;
                 }

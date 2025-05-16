@@ -52,3 +52,8 @@ tasks:
     command: noop
     options:
       envFile: ['.env.prod', '.env.local']
+
+  moonConfig:
+    command: noop
+    inputs:
+      - 'moon.yml'

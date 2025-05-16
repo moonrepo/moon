@@ -82,6 +82,29 @@ pub async fn run_action(
             result
         }
 
+        // TODO
+        ActionNode::SetupEnvironment(inner) => {
+            // emitter
+            //     .emit(Event::ToolchainInstalling { spec: &inner.spec })
+            //     .await?;
+
+            setup_environment(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await
+
+            // emitter
+            //     .emit(Event::ToolchainInstalled {
+            //         error: extract_error(&result),
+            //         spec: &inner.spec,
+            //     })
+            //     .await?;
+        }
+
         ActionNode::SetupToolchainLegacy(inner) => {
             emitter
                 .emit(Event::ToolInstalling {
@@ -116,6 +139,37 @@ pub async fn run_action(
                 .await?;
 
             result
+        }
+
+        // TODO
+        ActionNode::InstallDependencies(inner) => {
+            // let project = workspace_graph.get_project(&inner.project_id)?;
+
+            // emitter
+            //     .emit(Event::DependenciesInstalling {
+            //         project: Some(&project),
+            //         runtime: &inner.runtime,
+            //     })
+            //     .await?;
+
+            install_dependencies(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await
+
+            // emitter
+            //     .emit(Event::DependenciesInstalled {
+            //         error: extract_error(&result),
+            //         project: Some(&project),
+            //         runtime: &inner.runtime,
+            //     })
+            //     .await?;
+
+            // result
         }
 
         ActionNode::InstallWorkspaceDeps(inner) => {
@@ -206,11 +260,6 @@ pub async fn run_action(
                 .await?;
 
             result
-        }
-
-        _ => {
-            // TODO
-            Ok(ActionStatus::Skipped)
         }
     };
 

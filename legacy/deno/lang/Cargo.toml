@@ -8,7 +8,7 @@ publish = false
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 cached = { workspace = true }
-deno_lockfile = "0.24.0"
+deno_lockfile = "0.28.0"
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

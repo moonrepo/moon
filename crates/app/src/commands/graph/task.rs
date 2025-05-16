@@ -15,6 +15,22 @@ pub struct TaskGraphArgs {
     #[arg(long, help = "Include direct dependents of the focused target")]
     dependents: bool,
 
+    #[arg(
+        long,
+        help = "The host address",
+        env = "MOON_HOST",
+        default_value = "127.0.0.1"
+    )]
+    host: String,
+
+    #[arg(
+        long,
+        help = "The port to bind to",
+        env = "MOON_PORT",
+        default_value = "0"
+    )]
+    port: u16,
+
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
 
@@ -45,7 +61,13 @@ pub async fn task_graph(session: MoonSession, args: TaskGraphArgs) -> AppResult 
         return Ok(None);
     }
 
-    run_server("Task graph", task_graph_repr(&task_graph).await).await?;
+    run_server(
+        "Task graph",
+        task_graph_repr(&task_graph).await,
+        args.host,
+        args.port,
+    )
+    .await?;
 
     Ok(None)
 }

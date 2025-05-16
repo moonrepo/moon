@@ -118,8 +118,32 @@ mod unix {
                 .arg("--optCamel=value")
                 .arg("foo")
                 .arg("'bar baz'")
+                .arg("baz qux")
                 .arg("--opt-kebab")
                 .arg("123");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn passes_args_through_when_ran_in_project_root() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("passthroughArgs")
+                .arg("--")
+                .arg("-aBc")
+                .arg("--opt")
+                .arg("value")
+                .arg("--optCamel=value")
+                .arg("foo")
+                .arg("'bar baz'")
+                .arg("baz qux")
+                .arg("--opt-kebab")
+                .arg("123")
+                .current_dir(sandbox.path().join("unix"));
         });
 
         assert_snapshot!(assert.output());

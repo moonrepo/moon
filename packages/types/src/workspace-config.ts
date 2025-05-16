@@ -323,6 +323,14 @@ export interface RemoteCacheConfig {
 	 * @envvar MOON_REMOTE_CACHE_INSTANCE_NAME
 	 */
 	instanceName?: string;
+	/**
+	 * When downloading blobs, verify the digests/hashes in the response
+	 * match the associated blob contents. This will reduce performance
+	 * but ensure partial or corrupted blobs won't cause failures.
+	 *
+	 * @envvar MOON_REMOTE_CACHE_VERIFY_INTEGRITY
+	 */
+	verifyIntegrity: boolean;
 }
 
 /** Configures for both server and client authentication with mTLS. */
@@ -407,7 +415,7 @@ export interface RemoteConfig {
 	 *
 	 * @envvar MOON_REMOTE_HOST
 	 */
-	host: string;
+	host: string | null;
 	/**
 	 * Connect to the host using server and client authentication with mTLS.
 	 * This takes precedence over normal TLS.
@@ -510,7 +518,7 @@ export interface WorkspaceConfig {
 	 */
 	telemetry?: boolean;
 	/** Configures aspects of the remote service. */
-	unstable_remote: RemoteConfig | null;
+	unstable_remote: RemoteConfig;
 	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
@@ -819,6 +827,14 @@ export interface PartialRemoteCacheConfig {
 	 * @envvar MOON_REMOTE_CACHE_INSTANCE_NAME
 	 */
 	instanceName?: string | null;
+	/**
+	 * When downloading blobs, verify the digests/hashes in the response
+	 * match the associated blob contents. This will reduce performance
+	 * but ensure partial or corrupted blobs won't cause failures.
+	 *
+	 * @envvar MOON_REMOTE_CACHE_VERIFY_INTEGRITY
+	 */
+	verifyIntegrity?: boolean | null;
 }
 
 /** Configures for both server and client authentication with mTLS. */

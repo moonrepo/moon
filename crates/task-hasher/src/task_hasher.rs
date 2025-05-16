@@ -167,8 +167,9 @@ impl<'task> TaskHasher<'task> {
     ) -> bool {
         // Don't invalidate existing hashes when moon.* changes
         // as we already hash the contents of each task!
-        if workspace_relative_path.ends_with("moon.yml")
-            || workspace_relative_path.ends_with("moon.pkl")
+        if self.task.state.default_inputs
+            && (workspace_relative_path.ends_with("moon.yml")
+                || workspace_relative_path.ends_with("moon.pkl"))
         {
             return false;
         }

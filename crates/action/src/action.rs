@@ -41,13 +41,16 @@ pub struct Action {
 
     pub created_at: NaiveDateTime,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<Duration>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 
     #[serde(skip)]
     pub error_report: Option<miette::Report>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<NaiveDateTime>,
 
     pub flaky: bool,
@@ -60,6 +63,7 @@ pub struct Action {
 
     pub operations: OperationList,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub started_at: Option<NaiveDateTime>,
 
     #[serde(skip)]
@@ -134,6 +138,22 @@ impl Action {
         }
 
         miette::miette!("Unknown error!")
+    }
+
+    pub fn get_prefix(&self) -> &str {
+        match &*self.node {
+            ActionNode::None => "unknown",
+            ActionNode::InstallDependencies(_)
+            | ActionNode::InstallProjectDeps(_)
+            | ActionNode::InstallWorkspaceDeps(_) => "install-dependencies",
+            ActionNode::RunTask(_) => "run-task",
+            ActionNode::SetupEnvironment(_) => "setup-environment",
+            ActionNode::SetupToolchainLegacy(_) | ActionNode::SetupToolchain(_) => {
+                "setup-toolchain"
+            }
+            ActionNode::SyncProject(_) => "sync-project",
+            ActionNode::SyncWorkspace => "sync-workspace",
+        }
     }
 
     pub fn should_abort(&self) -> bool {

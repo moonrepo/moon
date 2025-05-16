@@ -572,6 +572,7 @@ pub async fn touched_files(session: MoonSession, args: QueryTouchedFilesArgs) ->
         json: args.json,
         local: args.local,
         status: args.status,
+        stdin: false,
     };
 
     debug!("Querying for touched files");

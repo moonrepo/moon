@@ -156,7 +156,7 @@ config_struct!(
 
         /// Configures aspects of the remote service.
         #[setting(nested, rename = "unstable_remote")]
-        pub remote: Option<RemoteConfig>,
+        pub remote: RemoteConfig,
 
         /// Collects anonymous usage information, and checks for new moon versions.
         #[setting(default = true)]

@@ -1,5 +1,66 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added more unstable support for toolchain plugins.
+  - In the project graph:
+    - Extend projects with dependencies, tasks, and an alias.
+  - In the action pipeline:
+    - Added `SetupEnvironment` action that executes the `setup_environment` WASM API.
+    - Added `InstallDependencies` action that executes the `install_dependencies` WASM API.
+  - When running tasks:
+    - Extend the command/script with additional parameters before executing.
+    - Inject dependency and lock information into the hash.
+  - With Docker:
+    - Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
+- Added `--host` and `--port` options to `moon action-graph`, `moon task-graph`, and
+  `moon project-graph`.
+- Added `--stdin` option to `moon ci` and `moon run`, which will allow touched files to be passed
+  via stdin, instead of running VCS commands to determine them.
+  - This is a follow-up fix to the revert in a previous version. This functionality is now opt-in
+    instead of the default, to avoid problematic edge cases.
+- Updated and improved remote caching:
+  - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
+    downloaded blobs to ensure they aren't corrupted or incomplete. Will degrade performance but
+    ensure reliability.
+  - Added a file rollback mechanic to that will be triggered when hydration fails part way and
+    written files need to be removed.
+  - Updated blob existence checks to be batched and parallelized.
+  - Can now be enabled entirely through environment variables.
+- Removed the restriction around `moon.{yml,pkl}` not being allowed as a task input. However, will
+  not be included when using `**/*`.
+
+#### 🐞 Fixes
+
+- Fixed an issue with remote cache hydration where multiple files with the same blob hash would fail
+  to write them all.
+- Fixed some task/command argument quoting issues.
+
+#### 🧩 Plugins
+
+- Added new toolchain WASM APIs.
+  - `extend_project_graph` - Extend projects with toolchain specific info.
+  - `extend_task_command` - Extend the command process with parameters.
+  - `extend_task_script` - Extend the script process with parameters.
+  - `parse_manifest` - Parse a manifest file to extract dependencies.
+  - `parse_lock` - Parse a lock file to extract resolved dependencies.
+- WASM
+  - Added `InstallDependenciesInput.packages` and `production` fields.
+  - Added `InstallDependenciesOutput.operations` field.
+  - Added `PruneDockerInput.projects` and `root` fields.
+  - Added `PruneDockerOutput`.
+  - Added `SetupEnvironmentOutput.operations` field.
+  - Added `SetupToolchainOutput.operations` field.
+  - Added `SyncWorkspaceInput.toolchain_config` field.
+  - Added `TeardownToolchainInput.version` field.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.87.0.
+- Updated proto to [v0.49.1](https://github.com/moonrepo/proto/releases/tag/v0.49.0) (from 0.47.11).
+
 ## 1.35.7
 
 #### 🐞 Fixes

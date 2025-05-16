@@ -36,6 +36,7 @@
 
 - Fixed an issue with remote cache hydration where multiple files with the same blob hash would fail
   to write them all.
+- Fixed some task/command argument quoting issues.
 
 #### 🧩 Plugins
 

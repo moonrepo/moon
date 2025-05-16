@@ -27,6 +27,7 @@ pub fn is_windows_script<T: AsRef<OsStr>>(bin: T) -> bool {
         .is_some_and(|bin| bin.ends_with(".cmd") || bin.ends_with(".bat") || bin.ends_with(".ps1"))
 }
 
+#[derive(Debug)]
 pub struct Shell {
     pub bin: PathBuf,
     pub bin_name: String,

@@ -12,6 +12,7 @@ use std::hash::Hasher;
 use std::path::Path;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct Command {
     pub args: Vec<OsString>,
 

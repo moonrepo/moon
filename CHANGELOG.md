@@ -19,7 +19,7 @@
   `moon project-graph`.
 - Added `--stdin` option to `moon ci` and `moon run`, which will allow touched files to be passed
   via stdin, instead of running VCS commands to determine them.
-  - This is a follow-up fix to the revert in previous versions. This functionality is now opt-in
+  - This is a follow-up fix to the revert in a previous version. This functionality is now opt-in
     instead of the default, to avoid problematic edge cases.
 - Updated and improved remote caching:
   - Added an `unstable_remote.cache.verifyIntegrity` setting, that will verify the digest of
@@ -29,6 +29,8 @@
     written files need to be removed.
   - Updated blob existence checks to be batched and parallelized.
   - Can now be enabled entirely through environment variables.
+- Removed the restriction around `moon.{yml,pkl}` not allowed being a task input. However, will not
+  be included when using `**/*`.
 
 #### 🐞 Fixes
 

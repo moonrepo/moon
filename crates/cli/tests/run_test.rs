@@ -1441,6 +1441,59 @@ mod affected {
     }
 
     #[test]
+    fn runs_if_affected_via_stdin() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--stdin")
+                .write_stdin("files/other.txt");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn doesnt_run_affected_if_stdin_is_empty() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--stdin");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+    }
+
+    #[test]
+    fn doesnt_run_affected_if_stdin_arg_is_not_passed() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                // .arg("--stdin")
+                .write_stdin("files/other.txt");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+    }
+
+    #[test]
     fn runs_if_not_affected_but_a_dep_of_an_affected() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();

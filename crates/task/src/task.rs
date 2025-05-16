@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     pub struct TaskState {
+        // Inputs are using defaults `**/*`
+        pub default_inputs: bool,
+
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 

@@ -441,7 +441,15 @@ impl<'proj> TasksBuilder<'proj> {
                 );
 
                 task.inputs.push(InputPath::ProjectGlob("**/*".into()));
+                task.state.default_inputs = true;
             }
+        } else if configured_inputs == 1
+            && task
+                .inputs
+                .get(0)
+                .is_some_and(|first| first == &InputPath::ProjectGlob("**/*".into()))
+        {
+            task.state.default_inputs = true;
         }
 
         // If a script, wipe out inherited arguments, and extract the first command

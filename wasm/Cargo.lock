@@ -37,9 +37,9 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bitflags"
-version = "2.9.0"
+version = "2.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
+checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
 
 [[package]]
 name = "bytemuck"
@@ -874,9 +874,9 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "owo-colors"
-version = "4.2.0"
+version = "4.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1036865bb9422d3300cf723f657c2851d0e9ab12567854b1f4eba3d77decf564"
+checksum = "26995317201fa17f3656c36716aed4a7c81743a9634ac4c99c0eeda495db0cec"
 
 [[package]]
 name = "paste"
@@ -1054,9 +1054,9 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "relative-path"
-version = "1.9.3"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba39f3699c378cd8970968dcbff9c43159ea4cfbd88d43c00b22f2ef10a435d2"
+checksum = "bca40a312222d8ba74837cb474edef44b37f561da5f773981007a10bbaa992b0"
 dependencies = [
  "serde",
 ]
@@ -1143,9 +1143,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.4"
+version = "0.18.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5ef6e8280c23aaea2fd335c7c6add3be31618f80e8a9883d2e77927a9aa3f40"
+checksum = "1bbdefb8813c5c5905cc2af1eebd1f89ec89cd397745b98055a10c0883df92d8"
 dependencies = [
  "garde",
  "indexmap",
@@ -1164,9 +1164,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.18.3"
+version = "0.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37774001c08aa18ec7bb0d2c216f6897d29c5b4773f5dcae9b464a8d1285d1ae"
+checksum = "5b57b72efd10abf9fa6fc064b3a0616f7b588321c914fe7da6e3a94ecc266e36"
 dependencies = [
  "convert_case",
  "darling",
@@ -1282,9 +1282,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase_styles"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b99f52ded6436b764ba37723d366029d4ff640e21e51b2f5b72c6e73b851e07"
+checksum = "4b57759004be52fd4ffd4bbeddaa00a0ba5619dd2452be9a69514151297c9dd6"
 dependencies = [
  "dirs",
  "owo-colors",
@@ -1598,9 +1598,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa2e7b95cce94ced74cf5f52c7bdf2222da6963448a19a8853df4b8e4bfbacdb"
+checksum = "be5ea03c42e18480da17743bd25054e91e62b82d338b4e2e1946e666815e3192"
 dependencies = [
  "anyhow",
  "rustc-hash",
@@ -1613,9 +1613,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86238e908b5659986ae24d8114b570acb640c92b97e369548c0ae3db854f9f6f"
+checksum = "7dbb126efa9cfb47878b9bf6d8f26cb9ec3b3221b206fd73b99f73a61a9d5adb"
 dependencies = [
  "extism-pdk",
  "serde",

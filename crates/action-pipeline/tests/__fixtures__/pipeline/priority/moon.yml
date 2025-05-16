@@ -5,24 +5,35 @@ tasks:
       priority: critical
   high:
     command: echo high
+    deps: [critical]
     options:
       priority: high
   normal:
     command: echo normal
+    deps: [high]
     options:
       priority: normal
   low:
     command: echo low
+    deps: [normal]
     options:
       priority: low
 
   critical-low:
-    command: echo critical-low
-    deps: [low]
+    command: echo critical
+    deps: [critical-low-base]
     options:
       priority: critical
+  critical-low-base:
+    command: echo low
+    options:
+      priority: low
   high-low:
-    command: echo high-low
-    deps: [low]
+    command: echo high
+    deps: [high-low-base]
     options:
       priority: high
+  high-low-base:
+    command: echo low
+    options:
+      priority: low

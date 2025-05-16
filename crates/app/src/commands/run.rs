@@ -1,5 +1,5 @@
 use crate::components::run_action_pipeline;
-use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files};
+use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files_with_stdin};
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -100,6 +100,14 @@ pub struct RunArgs {
     )]
     pub status: Vec<TouchedStatus>,
 
+    #[arg(
+        long,
+        help = "Accept touched files from stdin for affected checks",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    pub stdin: bool,
+
     // Passthrough args (after --)
     #[arg(
         last = true,
@@ -134,12 +142,13 @@ pub async fn run_target(
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if vcs.is_enabled() {
         let local = is_local(args);
-        let result = query_touched_files(
+        let result = query_touched_files_with_stdin(
             &vcs,
             &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,
                 status: args.status.clone(),
+                stdin: args.stdin,
                 ..QueryTouchedFilesOptions::default()
             },
         )
@@ -234,7 +243,11 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    let (action_context, action_graph) = action_graph_builder.build();
+    let (mut action_context, action_graph) = action_graph_builder.build();
+
+    action_context
+        .initial_targets
+        .extend(target_locators.to_owned());
 
     let results = run_action_pipeline(
         session,

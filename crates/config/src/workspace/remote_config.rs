@@ -1,7 +1,7 @@
 use crate::portable_path::FilePath;
 use crate::{config_struct, config_unit_enum};
 use rustc_hash::FxHashMap;
-use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, env, validate};
+use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, env};
 
 fn path_is_required<D, C>(
     value: &FilePath,
@@ -147,8 +147,8 @@ config_struct!(
 
         /// The remote host to connect and send requests to.
         /// Supports gRPC protocols.
-        #[setting(env = "MOON_REMOTE_HOST", validate = validate::not_empty)]
-        pub host: String,
+        #[setting(env = "MOON_REMOTE_HOST")]
+        pub host: Option<String>,
 
         /// Connect to the host using server and client authentication with mTLS.
         /// This takes precedence over normal TLS.
@@ -162,12 +162,22 @@ config_struct!(
 );
 
 impl RemoteConfig {
+    pub fn get_host(&self) -> &str {
+        self.host.as_deref().unwrap()
+    }
+
     pub fn is_bearer_auth(&self) -> bool {
         self.auth.as_ref().is_some_and(|auth| auth.token.is_some())
     }
 
+    pub fn is_enabled(&self) -> bool {
+        self.host.as_ref().is_some_and(|host| !host.is_empty())
+    }
+
     pub fn is_localhost(&self) -> bool {
-        self.host.contains("localhost") || self.host.contains("0.0.0.0")
+        self.host
+            .as_ref()
+            .is_some_and(|host| host.contains("localhost") || host.contains("0.0.0.0"))
     }
 
     pub fn is_secure(&self) -> bool {
@@ -175,6 +185,8 @@ impl RemoteConfig {
     }
 
     pub fn is_secure_protocol(&self) -> bool {
-        self.host.starts_with("https") || self.host.starts_with("grpcs")
+        self.host
+            .as_ref()
+            .is_some_and(|host| host.starts_with("https") || host.starts_with("grpcs"))
     }
 }

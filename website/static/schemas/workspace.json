@@ -132,12 +132,9 @@
     "unstable_remote": {
       "title": "unstable_remote",
       "description": "Configures aspects of the remote service.",
-      "anyOf": [
+      "allOf": [
         {
           "$ref": "#/definitions/RemoteConfig"
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -743,7 +740,14 @@
         "host": {
           "title": "host",
           "description": "The remote host to connect and send requests to. Supports gRPC protocols.",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mtls": {
           "title": "mtls",

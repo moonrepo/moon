@@ -80,8 +80,8 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let single_chars = [b"&", b"|", b";", b"!", b">", b"<", b"-"];
-    let multi_chars = [b"&&", b"|&", b"||", b">>", b"<<", b"--"];
+    let single_chars = [b"&", b"|", b";", b"!", b">", b"<"]; // , b"-"];
+    let multi_chars = [b"&&", b"|&", b"||", b">>", b"<<"]; // , b"--"];
 
     let args = args.into_iter().collect::<Vec<_>>();
     let last_index = args.len() - 1;
@@ -95,12 +95,13 @@ where
         // Better way to do this?
         let has_special_chars =
             // Multi chars
+            multi_chars.iter().any(|c| *c == bytes) ||
             bytes_len > 0 && bytes
                 .windows(bytes_len)
                 .any(|window| multi_chars.iter().any(|c| *c == window))
             ||
             // Single chars
-            single_chars.iter().any(|c| bytes.contains(&c[0]));
+            single_chars.iter().any(|c| *c == bytes);
 
         if has_special_chars
             // env var
@@ -113,6 +114,9 @@ where
             || bytes.contains(&b'[')
             || bytes.contains(&b'{')
             || bytes.contains(&b'?')
+            // options
+            || bytes.starts_with(b"--")
+            || bytes.starts_with(b"-")
         {
             line.push(arg);
         } else {

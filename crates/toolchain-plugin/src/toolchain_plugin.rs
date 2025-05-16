@@ -4,7 +4,7 @@ use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use moon_toolchain::is_using_global_toolchain;
 use proto_core::flow::install::InstallOptions;
-use proto_core::{PluginLocator, Tool, UnresolvedVersionSpec};
+use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
@@ -69,7 +69,7 @@ impl Plugin for ToolchainPlugin {
 
 impl ToolchainPlugin {
     fn handle_output_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::OnlyReal(
+        *file = VirtualPath::Real(
             file.real_path()
                 .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
         );
@@ -398,19 +398,20 @@ impl ToolchainPlugin {
         // Only install if a version has been configured,
         // and the plugin provides the required APIs
         if !is_using_global_toolchain(&self.id) {
-            if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
+            if let (Some(version), Some(tool)) = (&input.configured_version, &self.tool) {
                 let mut tool = tool.write().await;
+                let spec = ToolSpec::new(version.to_owned());
 
                 // Resolve the version first so that it is available
-                input.version = Some(tool.resolve_version(spec, false).await?);
+                input.version = Some(tool.resolve_version(&spec, false).await?);
 
                 // Only setup if not already been
-                if !tool.is_setup(spec).await? {
+                if !tool.is_setup(&spec).await? {
                     on_setup()?;
 
                     output.installed = tool
                         .setup(
-                            spec,
+                            &spec,
                             InstallOptions {
                                 skip_prompts: true,
                                 skip_ui: true,
@@ -464,10 +465,11 @@ impl ToolchainPlugin {
         &self,
         mut input: TeardownToolchainInput,
     ) -> miette::Result<()> {
-        if let (Some(spec), Some(tool)) = (&input.configured_version, &self.tool) {
+        if let (Some(version), Some(tool)) = (&input.configured_version, &self.tool) {
             let mut tool = tool.write().await;
+            let spec = ToolSpec::new(version.to_owned());
 
-            input.version = Some(tool.resolve_version(spec, false).await?);
+            input.version = Some(tool.resolve_version(&spec, false).await?);
 
             tool.teardown().await?;
         }

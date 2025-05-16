@@ -11,7 +11,7 @@ use moon_tool::{
 };
 use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, ToolSpec, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -117,7 +117,9 @@ impl Tool for YarnTool {
             return Ok(count);
         }
 
-        if self.tool.is_setup(version).await? {
+        let spec = ToolSpec::new(version.to_owned());
+
+        if self.tool.is_setup(&spec).await? {
             self.tool.locate_globals_dirs().await?;
 
             debug!("yarn has already been setup");
@@ -147,7 +149,7 @@ impl Tool for YarnTool {
 
         if self
             .tool
-            .setup(version, InstallOptions::default())
+            .setup(&spec, InstallOptions::default())
             .await?
             .is_some()
         {

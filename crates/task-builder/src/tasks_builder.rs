@@ -446,7 +446,7 @@ impl<'proj> TasksBuilder<'proj> {
         } else if configured_inputs == 1
             && task
                 .inputs
-                .get(0)
+                .first()
                 .is_some_and(|first| first == &InputPath::ProjectGlob("**/*".into()))
         {
             task.state.default_inputs = true;

@@ -29,8 +29,8 @@
     written files need to be removed.
   - Updated blob existence checks to be batched and parallelized.
   - Can now be enabled entirely through environment variables.
-- Removed the restriction around `moon.{yml,pkl}` not allowed being a task input. However, will not
-  be included when using `**/*`.
+- Removed the restriction around `moon.{yml,pkl}` not being allowed as a task input. However, will
+  not be included when using `**/*`.
 
 #### 🐞 Fixes
 
@@ -57,6 +57,7 @@
 
 #### ⚙️ Internal
 
+- Updated Rust to v1.87.0.
 - Updated proto to [v0.49.1](https://github.com/moonrepo/proto/releases/tag/v0.49.0) (from 0.47.11).
 
 ## 1.35.7

@@ -106,8 +106,10 @@ variables:
 
 ### `type`<RequiredLabel />
 
-The type of value for the variable. Accepts `boolean`, `string`, `object`, `number`, or `enum`.
-Floats _are not supported_, use strings instead.
+The type of value for the variable. Accepts `array`, `boolean`, `string`, `object`, `number`, or
+`enum`. Floats _are not supported_, use strings instead.
+
+For arrays and objects, the value of each member must be a JSON compatible type.
 
 ### `internal`<VersionLabel version="1.23.0" />
 
@@ -125,13 +127,24 @@ the order they are defined in the `template.yml` file.
 
 ### Primitives & collections
 
-Your basic primitives: boolean, numbers, strings, and collections: objects.
+Your basic primitives: boolean, numbers, strings, and collections: arrays, objects.
 
 <Tabs
   groupId="types"
-  defaultValue="boolean"
-  values={[{ value: 'boolean' }, { value: 'number' }, { value: 'object' }, { value: 'string' }]}
+  defaultValue="array"
+  values={[{ value: 'array' }, { value: 'boolean' }, { value: 'number' }, { value: 'object' }, { value: 'string' }]}
 >
+<TabItem value="array">
+
+```yaml title="template.yml"
+variables:
+  type:
+    type: 'array'
+    prompt: 'Type?'
+    default: ['app', 'lib']
+```
+
+</TabItem>
 <TabItem value="boolean">
 
 ```yaml title="template.yml"
@@ -196,12 +209,14 @@ will be used, otherwise the user will be prompted to enter a custom value.
 When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
 [`default`](#default) will be used.
 
+For arrays and objects, a valid JSON string must be provided as the value.
+
 ### `required`
 
 <HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#required" />
 
-Marks the variable as required during _prompting only_. For strings and objects, will error for
-empty values (`''`). For numbers, will error for zero's (`0`).
+Marks the variable as required during _prompting only_. For arrays, strings, and objects, will error
+for empty values (`''`). For numbers, will error for zero's (`0`).
 
 ### Enums
 

@@ -3,6 +3,14 @@ $schema: 'https://moonrepo.dev/schemas/template.json'
 title: 'Variable testing'
 description: 'A template for testing all variable config combinations.'
 variables:
+  noPrompt:
+    type: 'number'
+    default: 456
+  internal:
+    type: 'string'
+    default: 'original'
+    internal: true
+
   boolTrue:
     type: 'boolean'
     default: true
@@ -11,6 +19,7 @@ variables:
     type: 'boolean'
     default: false
     prompt: 'Bool, false default'
+
   string:
     type: 'string'
     default: ''
@@ -29,6 +38,7 @@ variables:
     default: 'default'
     prompt: 'String, required, with default'
     required: true
+
   number:
     type: 'number'
     default: 0
@@ -47,6 +57,7 @@ variables:
     default: 123
     prompt: 'Number, required, with default'
     required: true
+
   enum:
     type: 'enum'
     values: ['a', 'b', 'c']
@@ -81,13 +92,6 @@ variables:
     default: 'b'
     prompt: 'Multi-enum, with default'
     multiple: true
-  noPrompt:
-    type: 'number'
-    default: 456
-  internal:
-    type: 'string'
-    default: 'original'
-    internal: true
 
   object:
     type: 'object'
@@ -108,4 +112,23 @@ variables:
     default:
       key: 'value'
     prompt: 'Object, required, with default'
+    required: true
+
+  array:
+    type: 'array'
+    default: []
+    prompt: 'Array, not required, empty default'
+  arrayNotEmpty:
+    type: 'array'
+    default: ['value']
+    prompt: 'Array, not required, with default'
+  arrayReq:
+    type: 'array'
+    default: []
+    prompt: 'Array, required, empty default'
+    required: true
+  arrayReqNotEmpty:
+    type: 'array'
+    default: ['value']
+    prompt: 'Array, required, with default'
     required: true

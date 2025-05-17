@@ -77,6 +77,14 @@ pub fn parse_args_into_variables(
         }
 
         match cfg {
+            TemplateVariable::Array(_) => {
+                command = command.arg(
+                    Arg::new(name)
+                        .long(name)
+                        .action(ArgAction::Append)
+                        .value_parser(StringValueParser::new()),
+                );
+            }
             TemplateVariable::Boolean(_) => {
                 command = command.arg(
                     Arg::new(name)
@@ -150,6 +158,25 @@ pub fn parse_args_into_variables(
                 }
 
                 match cfg {
+                    TemplateVariable::Array(_) => {
+                        let mut list = vec![];
+
+                        if let Some(value) = matches.get_many::<String>(arg_name) {
+                            let value = value.collect::<Vec<_>>();
+
+                            debug!(
+                                name,
+                                value = ?value,
+                                "Setting array variable"
+                            );
+
+                            for item in value {
+                                list.push(JsonValue::from(item.to_owned()));
+                            }
+                        }
+
+                        vars.insert(name, &list);
+                    }
                     TemplateVariable::Boolean(_) => {
                         // Booleans always have a value when matched, so only extract
                         // the value when it was actually passed on the command line
@@ -187,7 +214,9 @@ pub fn parse_args_into_variables(
                             vars.insert(name, value);
                         }
                     }
-                    TemplateVariable::Object(_) => {}
+                    TemplateVariable::Object(_) => {
+                        vars.insert(name, &FxHashMap::<String, JsonValue>::default());
+                    }
                     TemplateVariable::String(_) => {
                         if let Some(value) = matches.get_one::<String>(arg_name) {
                             debug!(name, value, "Setting string variable");
@@ -251,6 +280,52 @@ pub async fn gather_variables(
         let required = config.is_required();
 
         match config {
+            TemplateVariable::Array(cfg) => {
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default.clone()
+                } else {
+                    let mut value = String::new();
+
+                    console
+                        .render_interactive(element! {
+                            Input(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                description: Some("As a JSON string".into()),
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    if required && input.is_empty() {
+                                        return Some("A value is required".into());
+                                    }
+
+                                    match json::parse::<String, JsonValue>(if input.is_empty() {
+                                        "[]".into()
+                                    } else {
+                                        input
+                                    }) {
+                                        Ok(data) => if data.is_array() {
+                                            None
+                                        } else {
+                                            Some("Must be an array".into())
+                                        },
+                                        Err(error) => Some(format!("Invalid JSON: {error}")),
+                                    }
+                                }
+                            )
+                        })
+                        .await?;
+
+                    let data: JsonValue = json::parse(value)?;
+
+                    match data {
+                        JsonValue::Array(inner) => inner,
+                        _ => vec![],
+                    }
+                };
+
+                debug!(name, value = ?value, "Setting array variable");
+
+                context.insert(name, &value);
+            }
             TemplateVariable::Boolean(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     cfg.default

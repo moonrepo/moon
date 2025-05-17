@@ -98,6 +98,52 @@ variables:
         }
 
         #[test]
+        fn loads_array() {
+            let config = test_load_config(
+                "template.yml",
+                r"
+title: title
+description: description
+variables:
+  array:
+    type: array
+    default: [abc, true]
+    prompt: prompt
+    required: true
+",
+                load_config_from_root,
+            );
+
+            assert_eq!(
+                *config.variables.get("array").unwrap(),
+                TemplateVariable::Array(TemplateVariableArraySetting {
+                    default: vec![JsonValue::String("abc".into()), JsonValue::Bool(true)],
+                    internal: false,
+                    order: None,
+                    prompt: Some("prompt".into()),
+                    required: Some(true)
+                })
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "invalid type: integer `123`, expected a sequence")]
+        fn invalid_array() {
+            test_load_config(
+                "template.yml",
+                r"
+title: title
+description: description
+variables:
+  array:
+    type: array
+    default: 123
+",
+                load_config_from_root,
+            );
+        }
+
+        #[test]
         fn loads_boolean() {
             let config = test_load_config(
                 "template.yml",

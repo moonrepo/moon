@@ -14,3 +14,10 @@ multenum = {{ multenum }}
 multenumNotEmpty = {{ multenumNotEmpty }}
 noPrompt = {{ noPrompt }}
 internal = {{ internal }}
+
+object = {{ object }}
+objectNotEmpty = {{ objectNotEmpty }}
+objectNotEmpty.key = {{ objectNotEmpty.key }}
+objectReq = {{ objectReq }}
+objectReqNotEmpty = {{ objectReqNotEmpty }}
+objectReqNotEmpty.key = {{ objectReqNotEmpty.key }}

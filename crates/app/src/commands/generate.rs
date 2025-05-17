@@ -17,6 +17,7 @@ use moon_console::{
 };
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
+use starbase_utils::json::{self, JsonValue};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tera::Context as TemplateContext;
@@ -114,6 +115,9 @@ pub fn parse_args_into_variables(
                         .allow_negative_numbers(true),
                 );
             }
+            TemplateVariable::Object(_) => {
+                debug!("Skipping object based arguments");
+            }
             TemplateVariable::String(_) => {
                 command = command.arg(
                     Arg::new(name)
@@ -183,6 +187,7 @@ pub fn parse_args_into_variables(
                             vars.insert(name, value);
                         }
                     }
+                    TemplateVariable::Object(_) => {}
                     TemplateVariable::String(_) => {
                         if let Some(value) = matches.get_one::<String>(arg_name) {
                             debug!(name, value, "Setting string variable");
@@ -299,6 +304,52 @@ pub async fn gather_variables(
                 };
 
                 debug!(name, value, "Setting number variable");
+
+                context.insert(name, &value);
+            }
+            TemplateVariable::Object(cfg) => {
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default.clone()
+                } else {
+                    let mut value = String::new();
+
+                    console
+                        .render_interactive(element! {
+                            Input(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                description: Some("As a JSON string".into()),
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    if required && input.is_empty() {
+                                        return Some("A value is required".into());
+                                    }
+
+                                    match json::parse::<String, JsonValue>(if input.is_empty() {
+                                        "{}".into()
+                                    } else {
+                                        input
+                                    }) {
+                                        Ok(data) => if data.is_object() {
+                                            None
+                                        } else {
+                                            Some("Must be an object".into())
+                                        },
+                                        Err(error) => Some(format!("Invalid JSON: {error}")),
+                                    }
+                                }
+                            )
+                        })
+                        .await?;
+
+                    let data: JsonValue = json::parse(value)?;
+
+                    match data {
+                        JsonValue::Object(inner) => FxHashMap::from_iter(inner),
+                        _ => FxHashMap::default(),
+                    }
+                };
+
+                debug!(name, value = ?value, "Setting object variable");
 
                 context.insert(name, &value);
             }

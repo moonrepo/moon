@@ -1,7 +1,8 @@
 mod utils;
 
-use moon_config::{ConfigLoader, TemplateConfig, TemplateVariableEnumDefault};
+use moon_config::*;
 use rustc_hash::FxHashMap;
+use serde_json::Value as JsonValue;
 use std::path::Path;
 use utils::*;
 
@@ -77,11 +78,6 @@ mod template_config {
 
     mod variables {
         use super::*;
-        use moon_config::{
-            TemplateVariable, TemplateVariableBoolSetting, TemplateVariableEnumSetting,
-            TemplateVariableEnumValue, TemplateVariableEnumValueConfig,
-            TemplateVariableNumberSetting, TemplateVariableStringSetting,
-        };
 
         #[test]
         #[should_panic(
@@ -188,6 +184,57 @@ variables:
   num:
     type: number
     default: true
+",
+                load_config_from_root,
+            );
+        }
+
+        #[test]
+        fn loads_object() {
+            let config = test_load_config(
+                "template.yml",
+                r"
+title: title
+description: description
+variables:
+  object:
+    type: object
+    default:
+      str: abc
+      bool: true
+    prompt: prompt
+    required: true
+",
+                load_config_from_root,
+            );
+
+            assert_eq!(
+                *config.variables.get("object").unwrap(),
+                TemplateVariable::Object(TemplateVariableObjectSetting {
+                    default: FxHashMap::from_iter([
+                        ("str".into(), JsonValue::String("abc".into())),
+                        ("bool".into(), JsonValue::Bool(true)),
+                    ]),
+                    internal: false,
+                    order: None,
+                    prompt: Some("prompt".into()),
+                    required: Some(true)
+                })
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "invalid type: integer `123`, expected a map")]
+        fn invalid_object() {
+            test_load_config(
+                "template.yml",
+                r"
+title: title
+description: description
+variables:
+  object:
+    type: object
+    default: 123
 ",
                 load_config_from_root,
             );
@@ -385,7 +432,6 @@ variables:
     mod pkl {
         use super::*;
         use moon_common::Id;
-        use moon_config::*;
         use starbase_sandbox::locate_fixture;
 
         #[test]

@@ -18,3 +18,10 @@ multenum = []
 multenumNotEmpty = [b]
 noPrompt = 456
 internal = original
+
+object = [object]
+objectNotEmpty = [object]
+objectNotEmpty.key = value
+objectReq = [object]
+objectReqNotEmpty = [object]
+objectReqNotEmpty.key = value

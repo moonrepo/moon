@@ -78,6 +78,21 @@ export interface TemplateVariableNumberSetting {
 }
 
 /** Configuration for a template variable. */
+export interface TemplateVariableObjectSetting {
+	/** The default value of the variable if none was provided. */
+	default: Record<string, unknown>;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required: boolean | null;
+	type: 'object';
+}
+
+/** Configuration for a template variable. */
 export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default: string;
@@ -96,6 +111,7 @@ export type TemplateVariable =
 	| TemplateVariableBoolSetting
 	| TemplateVariableEnumSetting
 	| TemplateVariableNumberSetting
+	| TemplateVariableObjectSetting
 	| TemplateVariableStringSetting;
 
 /**
@@ -183,6 +199,21 @@ export interface PartialTemplateVariableNumberSetting {
 }
 
 /** Configuration for a template variable. */
+export interface PartialTemplateVariableObjectSetting {
+	/** The default value of the variable if none was provided. */
+	default?: Record<string, unknown> | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required?: boolean | null;
+	type?: 'object' | null;
+}
+
+/** Configuration for a template variable. */
 export interface PartialTemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default?: string | null;
@@ -201,6 +232,7 @@ export type PartialTemplateVariable =
 	| PartialTemplateVariableBoolSetting
 	| PartialTemplateVariableEnumSetting
 	| PartialTemplateVariableNumberSetting
+	| PartialTemplateVariableObjectSetting
 	| PartialTemplateVariableStringSetting;
 
 /**

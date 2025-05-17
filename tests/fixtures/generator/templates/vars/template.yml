@@ -88,3 +88,24 @@ variables:
     type: 'string'
     default: 'original'
     internal: true
+
+  object:
+    type: 'object'
+    default: {}
+    prompt: 'Object, not required, empty default'
+  objectNotEmpty:
+    type: 'object'
+    default:
+      key: 'value'
+    prompt: 'Object, not required, with default'
+  objectReq:
+    type: 'object'
+    default: {}
+    prompt: 'Object, required, empty default'
+    required: true
+  objectReqNotEmpty:
+    type: 'object'
+    default:
+      key: 'value'
+    prompt: 'Object, required, with default'
+    required: true

@@ -138,9 +138,58 @@ mod codegen {
             assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
             assert!(
                 env.templates_dir
+                    .join("git")
                     .join("github.com")
                     .join("moonrepo")
                     .join("moon-configs.git")
+                    .exists()
+            );
+        }
+
+        #[tokio::test]
+        async fn downloads_a_zip_archive() {
+            let sandbox = create_empty_sandbox();
+            let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
+            let config = GeneratorConfig {
+                templates: vec![TemplateLocator::Archive {
+                    url: "https://github.com/moonrepo/git-test/archive/refs/tags/test-tag.zip"
+                        .into(),
+                }],
+            };
+
+            let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
+            codegen.load_templates().await.unwrap();
+
+            assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
+            assert!(
+                env.templates_dir
+                    .join("archive")
+                    .join("github.com")
+                    .join("test-tag")
+                    .exists()
+            );
+        }
+
+        #[tokio::test]
+        async fn downloads_a_tar_archive() {
+            let sandbox = create_empty_sandbox();
+            let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
+            let config = GeneratorConfig {
+                templates: vec![TemplateLocator::Archive {
+                    url: "https://github.com/moonrepo/git-test/archive/refs/tags/test-tag.tar.gz"
+                        .into(),
+                }],
+            };
+
+            let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
+            codegen.load_templates().await.unwrap();
+
+            assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
+            assert!(
+                env.templates_dir
+                    .join("archive")
+                    .join("github.com")
+                    .join("test-tag")
                     .exists()
             );
         }

@@ -19,6 +19,9 @@ static NPM: LazyLock<Regex> = LazyLock::new(|| {
 derive_enum!(
     #[serde(untagged, try_from = "String", into = "String")]
     pub enum TemplateLocator {
+        Archive {
+            url: String,
+        },
         File {
             path: FilePath,
         },
@@ -39,6 +42,7 @@ derive_enum!(
 impl fmt::Display for TemplateLocator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            TemplateLocator::Archive { url } => write!(f, "{url}"),
             TemplateLocator::File { path } => write!(f, "file://{path}"),
             TemplateLocator::Glob { glob } => write!(f, "glob://{glob}"),
             TemplateLocator::Git {
@@ -69,6 +73,23 @@ impl FromStr for TemplateLocator {
             }
 
             match protocol {
+                "http" | "https" => {
+                    // Keep in sync with starbase_archive
+                    for ext in [
+                        ".tar.gz", ".tar.xz", ".tar.bz2", ".tar", ".tgz", ".txz", ".tbz", ".tbz2",
+                        ".tz2", ".zstd", ".zst", ".zip", ".gz",
+                    ] {
+                        if value.ends_with(ext) {
+                            return Ok(TemplateLocator::Archive {
+                                url: value.to_owned(),
+                            });
+                        }
+                    }
+
+                    return Err(ParseError::new(
+                        "Invalid URL template locator, must contain a trailing file name with a supported archive extension",
+                    ));
+                }
                 "git" | "git+http" | "git+https" => {
                     if let Some(result) = GIT.captures(inner_value) {
                         return Ok(TemplateLocator::Git {

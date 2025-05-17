@@ -262,6 +262,21 @@ generator:
 
 When using literal file paths, all paths are relative from the workspace root.
 
+#### Archive URLs<VersionLabel version="1.36.0" />
+
+Template locations can reference archives (zip, tar, etc) through https URLs. These archives should
+contain templates and will be downloaded and unpacked. The list of
+[available archive formats can be found here](https://github.com/moonrepo/starbase/blob/master/crates/archive/src/lib.rs#L76).
+
+```yaml title=".moon/workspace.yml"
+generator:
+  templates:
+    - 'https://domain.com/some/path/to/archive.zip'
+```
+
+> Archives will be unpacked to `~/.moon/templates/archive/<host>`, and will be cached for future
+> use.
+
 #### Globs<VersionLabel version="1.31.0" />
 
 If you'd prefer more control over literal file paths (above), you can instead use glob paths or the
@@ -289,7 +304,7 @@ generator:
     - 'git://gitlab.com/org/repo#v1.2.3'
 ```
 
-> Git repositories will be cloned to `~/.moon/templates/<domain>` using an HTTPS URL (not a Git
+> Git repositories will be cloned to `~/.moon/templates/git/<host>` using an HTTPS URL (not a Git
 > URL), and will be cached for future use.
 
 #### npm packages<VersionLabel version="1.23.0" />
@@ -319,7 +334,13 @@ Using the package template example above, we could pre-fill the `name` variable 
 $ moon generate npm-package ./packages/example -- --name '@company/example' --private
 ```
 
-> Boolean variables can be negated by prefixing the argument with `--no-<arg>`.
+:::info
+
+- Array variables support multiple options of the same name.
+- Boolean variables can be negated by prefixing the argument with `--no-<arg>`.
+- Object variables _can not_ declare values through arguments.
+
+:::
 
 ## Sharing templates
 
@@ -329,6 +350,7 @@ not try...
 
 - Git submodules
 - Git repositories (using `git://` protocol)
+- File archives
 - Node.js modules
 - npm packages (using `npm://` protocol)
 - Another packaging system

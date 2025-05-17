@@ -3,6 +3,8 @@ title: template.{pkl,yml}
 toc_max_heading_level: 6
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -104,8 +106,10 @@ variables:
 
 ### `type`<RequiredLabel />
 
-The type of value for the variable. Accepts `boolean`, `string`, `number`, or `enum`. Floats _are
-not supported_, use strings instead.
+The type of value for the variable. Accepts `array`, `boolean`, `string`, `object`, `number`, or
+`enum`. Floats _are not supported_, use strings instead.
+
+For arrays and objects, the value of each member must be a JSON compatible type.
 
 ### `internal`<VersionLabel version="1.23.0" />
 
@@ -121,9 +125,74 @@ arguments.
 The order in which the variable will be prompted to the user. By default, variables are prompted in
 the order they are defined in the `template.yml` file.
 
-### Primitives
+### Primitives & collections
 
-Your basic primitives: boolean, numbers, strings.
+Your basic primitives: boolean, numbers, strings, and collections: arrays, objects.
+
+<Tabs
+  groupId="types"
+  defaultValue="array"
+  values={[{ value: 'array' }, { value: 'boolean' }, { value: 'number' }, { value: 'object' }, { value: 'string' }]}
+>
+<TabItem value="array">
+
+```yaml title="template.yml"
+variables:
+  type:
+    type: 'array'
+    prompt: 'Type?'
+    default: ['app', 'lib']
+```
+
+</TabItem>
+<TabItem value="boolean">
+
+```yaml title="template.yml"
+variables:
+  private:
+    type: 'boolean'
+    prompt: 'Private?'
+    default: false
+```
+
+</TabItem>
+<TabItem value="number">
+
+```yaml title="template.yml"
+variables:
+  age:
+    type: 'number'
+    prompt: 'Age?'
+    default: 0
+    required: true
+```
+
+</TabItem>
+<TabItem value="object">
+
+```yaml title="template.yml"
+variables:
+  metadata:
+    type: 'object'
+    prompt: 'Metadata?'
+    default:
+      type: 'lib'
+      dev: true
+```
+
+</TabItem>
+<TabItem value="string">
+
+```yaml title="template.yml"
+variables:
+  name:
+    type: 'string'
+    prompt: 'Name?'
+    required: true
+```
+
+</TabItem>
+</Tabs>
 
 ### `default`<RequiredLabel />
 
@@ -140,21 +209,14 @@ will be used, otherwise the user will be prompted to enter a custom value.
 When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
 [`default`](#default) will be used.
 
+For arrays and objects, a valid JSON string must be provided as the value.
+
 ### `required`
 
 <HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#required" />
 
-Marks the variable as required during _prompting only_. For strings, will error for empty values
-(`''`). For numbers, will error for zero's (`0`).
-
-```yaml title="template.yml"
-variables:
-  age:
-    type: 'number'
-    default: 0
-    required: true
-    prompt: 'Age?'
-```
+Marks the variable as required during _prompting only_. For arrays, strings, and objects, will error
+for empty values (`''`). For numbers, will error for zero's (`0`).
 
 ### Enums
 

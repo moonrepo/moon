@@ -81,7 +81,7 @@ mod template_config {
 
         #[test]
         #[should_panic(
-            expected = "unknown variant `array`, expected one of `boolean`, `enum`, `number`, `string`"
+            expected = "unknown variant `other`, expected one of `array`, `boolean`, `enum`, `number`, `object`, `string`"
         )]
         fn error_unknown_variable_type() {
             test_load_config(
@@ -91,7 +91,7 @@ title: title
 description: description
 variables:
   unknown:
-    type: array
+    type: other
 ",
                 load_config_from_root,
             );

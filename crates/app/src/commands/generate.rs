@@ -17,7 +17,7 @@ use moon_console::{
 };
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
-use starbase_utils::json::{self, JsonValue};
+use starbase_utils::json::{self, JsonValue, serde_json};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tera::Context as TemplateContext;
@@ -293,15 +293,17 @@ pub async fn gather_variables(
                                 description: Some("As a JSON string".into()),
                                 on_value: &mut value,
                                 validate: move |input: String| {
-                                    if required && input.is_empty() {
-                                        return Some("A value is required".into());
-                                    }
-
-                                    match json::parse::<String, JsonValue>(if input.is_empty() {
-                                        "[]".into()
+                                    let input = if input.is_empty() {
+                                        if required {
+                                            return Some("A value is required".into());
+                                        } else {
+                                            "[]"
+                                        }
                                     } else {
-                                        input
-                                    }) {
+                                        &input
+                                    };
+
+                                    match serde_json::from_str::<JsonValue>(input) {
                                         Ok(data) => if data.is_array() {
                                             None
                                         } else {
@@ -395,15 +397,17 @@ pub async fn gather_variables(
                                 description: Some("As a JSON string".into()),
                                 on_value: &mut value,
                                 validate: move |input: String| {
-                                    if required && input.is_empty() {
-                                        return Some("A value is required".into());
-                                    }
-
-                                    match json::parse::<String, JsonValue>(if input.is_empty() {
-                                        "{}".into()
+                                    let input = if input.is_empty() {
+                                        if required {
+                                            return Some("A value is required".into());
+                                        } else {
+                                            "{}"
+                                        }
                                     } else {
-                                        input
-                                    }) {
+                                        &input
+                                    };
+
+                                    match serde_json::from_str::<JsonValue>(input) {
                                         Ok(data) => if data.is_object() {
                                             None
                                         } else {

@@ -54,6 +54,28 @@ pub struct GenerateArgs {
     vars: Vec<String>,
 }
 
+fn is_numeric(value: &str) -> bool {
+    value
+        .as_bytes()
+        .iter()
+        .all(|b| *b == b'-' || *b == b'.' || *b >= b'0' && *b <= b'9')
+}
+
+fn parse_arg_into_json(value: &str) -> miette::Result<JsonValue> {
+    if value == "true"
+        || value == "false"
+        || value == "null"
+        || value.starts_with('[')
+        || value.starts_with('{')
+        || value.starts_with('"')
+        || is_numeric(value)
+    {
+        Ok(json::parse(value)?)
+    } else {
+        Ok(JsonValue::String(value.into()))
+    }
+}
+
 #[instrument(skip(config))]
 pub fn parse_args_into_variables(
     args: &[String],
@@ -159,7 +181,7 @@ pub fn parse_args_into_variables(
 
                 match cfg {
                     TemplateVariable::Array(_) => {
-                        let mut list = vec![];
+                        let mut list: Vec<JsonValue> = vec![];
 
                         if let Some(value) = matches.get_many::<String>(arg_name) {
                             let value = value.collect::<Vec<_>>();
@@ -171,7 +193,7 @@ pub fn parse_args_into_variables(
                             );
 
                             for item in value {
-                                list.push(JsonValue::from(item.to_owned()));
+                                list.push(parse_arg_into_json(item)?);
                             }
                         }
 

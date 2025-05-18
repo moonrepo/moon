@@ -686,7 +686,7 @@ impl Platform for RustPlatform {
         command.with_console(self.console.clone());
         command.args(&args);
         command.args(&task.args);
-        command.envs(&task.env);
+        command.envs_if_not_global(&task.env);
         command.env(
             "PATH",
             prepend_path_env_var(get_rust_env_paths(&self.proto_env)),

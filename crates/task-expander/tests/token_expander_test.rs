@@ -745,7 +745,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_args(&mut task).unwrap(),
-                vec!["bar/project"]
+                vec!["$FOO/project"]
             );
         }
     }

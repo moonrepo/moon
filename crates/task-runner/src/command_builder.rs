@@ -107,6 +107,7 @@ impl<'task> CommandBuilder<'task> {
                 // No platform so create a custom command
                 let mut cmd = Command::new(&task.command);
                 cmd.args(&task.args);
+                cmd.envs_if_not_global(&task.env);
                 cmd
             }
         };
@@ -427,7 +428,7 @@ impl<'task> CommandBuilder<'task> {
         env: FxHashMap<String, String>,
         env_remove: Vec<String>,
     ) {
-        command.envs(env);
+        command.envs_if_not_global(env);
 
         for key in env_remove {
             command.env_remove(key);

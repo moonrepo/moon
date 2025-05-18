@@ -43,6 +43,8 @@
 - Fixed an issue with remote cache hydration where multiple files with the same blob hash would fail
   to write them all.
 - Fixed an issue where changing `args` or `env` of a task dependency would not invalidate its cache.
+- Fixed an issue where environment variables passed on the command line would not overwrite task
+  `env`.
 - Fixed tag-based task dependencies not creating implicit project dependencies.
 - Fixed some task/command argument quoting issues.
 

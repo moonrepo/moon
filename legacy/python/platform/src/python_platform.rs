@@ -438,7 +438,7 @@ impl Platform for PythonPlatform {
 
         command.with_console(self.console.clone());
         command.args(&task.args);
-        command.envs(&task.env);
+        command.envs_if_not_global(&task.env);
 
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {

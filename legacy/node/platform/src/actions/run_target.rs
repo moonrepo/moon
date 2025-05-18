@@ -77,7 +77,7 @@ fn prepare_target_command(
     node_config: &NodeConfig,
     workspace_root: &Path,
 ) -> miette::Result<()> {
-    command.args(&task.args).envs(&task.env);
+    command.args(&task.args).envs_if_not_global(&task.env);
 
     // This functionality mimics what pnpm's "node_modules/.bin" binaries do
     if matches!(node_config.package_manager, NodePackageManager::Pnpm) {

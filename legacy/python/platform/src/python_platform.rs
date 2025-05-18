@@ -190,7 +190,7 @@ impl Platform for PythonPlatform {
                                         id: dep_project_id.to_owned(),
                                         scope: DependencyScope::Production,
                                         source: DependencySource::Implicit,
-                                        via: Some(dep_name.clone()),
+                                        via: Some(format!("package {dep_name}")),
                                     });
                                 }
                             }

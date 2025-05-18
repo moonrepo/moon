@@ -169,10 +169,13 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                                 ListItem {
                                     StyledText(
                                         content: format!(
-                                            "{} <mutedlight>({}, {})</mutedlight>",
+                                            "{} <mutedlight>({})</mutedlight>",
                                             dep.id,
-                                            dep.source,
-                                            dep.scope,
+                                            if let Some(via) = &dep.via {
+                                                format!("{} via {via}", dep.scope)
+                                            } else {
+                                                dep.scope.to_string()
+                                            },
                                         ),
                                         style: Style::Id
                                     )

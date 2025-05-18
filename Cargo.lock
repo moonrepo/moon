@@ -1361,6 +1361,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "crc"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9710d3b3739c2e349eb44fe848ad0b7c8cb1e42bd87ee49371df2f7acaf3e675"
+dependencies = [
+ "crc-catalog",
+]
+
+[[package]]
+name = "crc-catalog"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19d374276b40fb8bbdee95aef7c7fa6b5316ec764510eb64b8dd0e2ed0d7e7f5"
+
+[[package]]
 name = "crc32fast"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3305,6 +3320,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
+name = "lzma-rs"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "297e814c836ae64db86b36cf2a557ba54368d03f6afcd7d947c266692f71115e"
+dependencies = [
+ "byteorder",
+ "crc",
+]
+
+[[package]]
 name = "mach2"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3946,6 +3971,7 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -7032,9 +7058,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.9"
+version = "0.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dded0efaa1eb6ceefb76424e24e4e7e5993a678a5d40c5fdce1dbc7c0cd0b52"
+checksum = "1a920169babe1c2facc430cdef23f6a027d29a325cc88d7b8f270a81a62d07cb"
 dependencies = [
  "crossterm",
  "iocraft",
@@ -9344,11 +9370,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12598812502ed0105f607f941c386f43d441e00148fce9dec3ca5ffb0bde9308"
 dependencies = [
  "arbitrary",
+ "bzip2",
  "crc32fast",
  "flate2",
  "indexmap",
+ "lzma-rs",
  "memchr",
  "zopfli",
+ "zstd",
 ]
 
 [[package]]

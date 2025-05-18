@@ -21,6 +21,21 @@ export interface PartialTemplateFrontmatterConfig {
 }
 
 /** Configuration for a template variable. */
+export interface TemplateVariableArraySetting {
+	/** The default value of the variable if none was provided. */
+	default: unknown[];
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required: boolean | null;
+	type: 'array';
+}
+
+/** Configuration for a template variable. */
 export interface TemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default: boolean;
@@ -78,6 +93,21 @@ export interface TemplateVariableNumberSetting {
 }
 
 /** Configuration for a template variable. */
+export interface TemplateVariableObjectSetting {
+	/** The default value of the variable if none was provided. */
+	default: Record<string, unknown>;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required: boolean | null;
+	type: 'object';
+}
+
+/** Configuration for a template variable. */
 export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default: string;
@@ -93,9 +123,11 @@ export interface TemplateVariableStringSetting {
 }
 
 export type TemplateVariable =
+	| TemplateVariableArraySetting
 	| TemplateVariableBoolSetting
 	| TemplateVariableEnumSetting
 	| TemplateVariableNumberSetting
+	| TemplateVariableObjectSetting
 	| TemplateVariableStringSetting;
 
 /**
@@ -123,6 +155,21 @@ export interface TemplateConfig {
 	 * Variables can also be populated by passing command line arguments.
 	 */
 	variables: Record<string, TemplateVariable>;
+}
+
+/** Configuration for a template variable. */
+export interface PartialTemplateVariableArraySetting {
+	/** The default value of the variable if none was provided. */
+	default?: unknown[] | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required?: boolean | null;
+	type?: 'array' | null;
 }
 
 /** Configuration for a template variable. */
@@ -183,6 +230,21 @@ export interface PartialTemplateVariableNumberSetting {
 }
 
 /** Configuration for a template variable. */
+export interface PartialTemplateVariableObjectSetting {
+	/** The default value of the variable if none was provided. */
+	default?: Record<string, unknown> | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required?: boolean | null;
+	type?: 'object' | null;
+}
+
+/** Configuration for a template variable. */
 export interface PartialTemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default?: string | null;
@@ -198,9 +260,11 @@ export interface PartialTemplateVariableStringSetting {
 }
 
 export type PartialTemplateVariable =
+	| PartialTemplateVariableArraySetting
 	| PartialTemplateVariableBoolSetting
 	| PartialTemplateVariableEnumSetting
 	| PartialTemplateVariableNumberSetting
+	| PartialTemplateVariableObjectSetting
 	| PartialTemplateVariableStringSetting;
 
 /**

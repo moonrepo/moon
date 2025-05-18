@@ -29,11 +29,17 @@
     written files need to be removed.
   - Updated blob existence checks to be batched and parallelized.
   - Can now be enabled entirely through environment variables.
+- Updated and improved code generation:
+  - Added support for `array` and `object` variable types in `template.yml`. The values must be JSON
+    compatible.
+  - Updated `generator.templates` to support `https://` URLs that point to an archive that can be
+    unpacked.
 - Removed the restriction around `moon.{yml,pkl}` not being allowed as a task input. However, will
   not be included when using `**/*`.
 
 #### 🐞 Fixes
 
+- Fixed an issue where terminal prompt validation would not trigger.
 - Fixed an issue with remote cache hydration where multiple files with the same blob hash would fail
   to write them all.
 - Fixed some task/command argument quoting issues.

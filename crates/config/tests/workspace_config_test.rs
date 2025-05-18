@@ -418,6 +418,26 @@ generator:
         }
 
         #[test]
+        fn can_set_url_locations() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates:
+    - https://download.com/some/file.zip
+",
+                load_config_from_root,
+            );
+
+            assert_eq!(
+                config.generator.templates,
+                vec![TemplateLocator::Archive {
+                    url: "https://download.com/some/file.zip".into()
+                },]
+            );
+        }
+
+        #[test]
         fn can_set_git_locations() {
             let config = test_load_config(
                 FILENAME,
@@ -501,6 +521,21 @@ generator:
                         glob: GlobPath("common/*/templates/*".into())
                     },
                 ]
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid URL template locator, must contain a trailing file name with a supported archive extension"
+        )]
+        fn errors_for_invalid_url_ext() {
+            test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates: ['https://download.com/some/file.png']
+",
+                load_config_from_root,
             );
         }
 

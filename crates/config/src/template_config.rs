@@ -3,6 +3,7 @@ use crate::{config_enum, config_struct};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
+use serde_json::Value;
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
@@ -30,8 +31,10 @@ macro_rules! var_setting {
     };
 }
 
+var_setting!(TemplateVariableArraySetting, Vec<Value>);
 var_setting!(TemplateVariableBoolSetting, bool);
 var_setting!(TemplateVariableNumberSetting, isize);
+var_setting!(TemplateVariableObjectSetting, FxHashMap<String, Value>);
 var_setting!(TemplateVariableStringSetting, String);
 
 config_struct!(
@@ -173,6 +176,10 @@ config_enum!(
     #[derive(Config)]
     #[serde(tag = "type", expecting = "expected a supported value type")]
     pub enum TemplateVariable {
+        /// An array variable.
+        #[setting(nested)]
+        Array(TemplateVariableArraySetting),
+
         /// A boolean variable.
         #[setting(nested)]
         Boolean(TemplateVariableBoolSetting),
@@ -185,6 +192,10 @@ config_enum!(
         #[setting(nested)]
         Number(TemplateVariableNumberSetting),
 
+        /// An object variable.
+        #[setting(nested)]
+        Object(TemplateVariableObjectSetting),
+
         /// A string variable.
         #[setting(nested)]
         String(TemplateVariableStringSetting),
@@ -194,9 +205,11 @@ config_enum!(
 impl TemplateVariable {
     pub fn get_order(&self) -> usize {
         let order = match self {
+            Self::Array(cfg) => cfg.order.as_ref(),
             Self::Boolean(cfg) => cfg.order.as_ref(),
             Self::Enum(cfg) => cfg.order.as_ref(),
             Self::Number(cfg) => cfg.order.as_ref(),
+            Self::Object(cfg) => cfg.order.as_ref(),
             Self::String(cfg) => cfg.order.as_ref(),
         };
 
@@ -205,9 +218,11 @@ impl TemplateVariable {
 
     pub fn is_internal(&self) -> bool {
         match self {
+            Self::Array(cfg) => cfg.internal,
             Self::Boolean(cfg) => cfg.internal,
             Self::Enum(cfg) => cfg.internal,
             Self::Number(cfg) => cfg.internal,
+            Self::Object(cfg) => cfg.internal,
             Self::String(cfg) => cfg.internal,
         }
     }
@@ -221,8 +236,10 @@ impl TemplateVariable {
 
     pub fn is_required(&self) -> bool {
         match self {
+            Self::Array(cfg) => cfg.required,
             Self::Boolean(cfg) => cfg.required,
             Self::Number(cfg) => cfg.required,
+            Self::Object(cfg) => cfg.required,
             Self::String(cfg) => cfg.required,
             _ => None,
         }

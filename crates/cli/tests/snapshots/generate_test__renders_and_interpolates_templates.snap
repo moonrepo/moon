@@ -2,19 +2,37 @@
 source: crates/cli/tests/generate_test.rs
 expression: "fs::read_to_string(sandbox.path().join(\"./test/expressions.txt\")).unwrap()"
 ---
+noPrompt = 456
+internal = original
+
 boolTrue = true
 boolFalse = false
+
 string = 
 stringNotEmpty = default
 stringReq = 
 stringReqNotEmpty = default
+
 number = 0
 numberNotEmpty = 123
 numberReq = 0
 numberReqNotEmpty = 123
+
 enum = a
 enumNotEmpty = b
 multenum = []
 multenumNotEmpty = [b]
-noPrompt = 456
-internal = original
+
+object = [object]
+objectNotEmpty = [object]
+objectNotEmpty.key = value
+objectReq = [object]
+objectReqNotEmpty = [object]
+objectReqNotEmpty['key'] = value
+
+array = []
+arrayNotEmpty = [value]
+arrayNotEmpty.0 = value
+arrayReq = []
+arrayReqNotEmpty = [value]
+arrayReqNotEmpty[0] = value

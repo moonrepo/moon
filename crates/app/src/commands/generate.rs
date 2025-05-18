@@ -17,6 +17,7 @@ use moon_console::{
 };
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
+use starbase_utils::json::{self, JsonValue, serde_json};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tera::Context as TemplateContext;
@@ -53,6 +54,28 @@ pub struct GenerateArgs {
     vars: Vec<String>,
 }
 
+fn is_numeric(value: &str) -> bool {
+    value
+        .as_bytes()
+        .iter()
+        .all(|b| *b == b'-' || *b == b'.' || *b >= b'0' && *b <= b'9')
+}
+
+fn parse_arg_into_json(value: &str) -> miette::Result<JsonValue> {
+    if value == "true"
+        || value == "false"
+        || value == "null"
+        || value.starts_with('[')
+        || value.starts_with('{')
+        || value.starts_with('"')
+        || is_numeric(value)
+    {
+        Ok(json::parse(value)?)
+    } else {
+        Ok(JsonValue::String(value.into()))
+    }
+}
+
 #[instrument(skip(config))]
 pub fn parse_args_into_variables(
     args: &[String],
@@ -76,6 +99,14 @@ pub fn parse_args_into_variables(
         }
 
         match cfg {
+            TemplateVariable::Array(_) => {
+                command = command.arg(
+                    Arg::new(name)
+                        .long(name)
+                        .action(ArgAction::Append)
+                        .value_parser(StringValueParser::new()),
+                );
+            }
             TemplateVariable::Boolean(_) => {
                 command = command.arg(
                     Arg::new(name)
@@ -114,6 +145,9 @@ pub fn parse_args_into_variables(
                         .allow_negative_numbers(true),
                 );
             }
+            TemplateVariable::Object(_) => {
+                debug!("Skipping object based arguments");
+            }
             TemplateVariable::String(_) => {
                 command = command.arg(
                     Arg::new(name)
@@ -146,6 +180,25 @@ pub fn parse_args_into_variables(
                 }
 
                 match cfg {
+                    TemplateVariable::Array(_) => {
+                        let mut list: Vec<JsonValue> = vec![];
+
+                        if let Some(value) = matches.get_many::<String>(arg_name) {
+                            let value = value.collect::<Vec<_>>();
+
+                            debug!(
+                                name,
+                                value = ?value,
+                                "Setting array variable"
+                            );
+
+                            for item in value {
+                                list.push(parse_arg_into_json(item)?);
+                            }
+                        }
+
+                        vars.insert(name, &list);
+                    }
                     TemplateVariable::Boolean(_) => {
                         // Booleans always have a value when matched, so only extract
                         // the value when it was actually passed on the command line
@@ -182,6 +235,9 @@ pub fn parse_args_into_variables(
 
                             vars.insert(name, value);
                         }
+                    }
+                    TemplateVariable::Object(_) => {
+                        vars.insert(name, &FxHashMap::<String, JsonValue>::default());
                     }
                     TemplateVariable::String(_) => {
                         if let Some(value) = matches.get_one::<String>(arg_name) {
@@ -246,6 +302,54 @@ pub async fn gather_variables(
         let required = config.is_required();
 
         match config {
+            TemplateVariable::Array(cfg) => {
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default.clone()
+                } else {
+                    let mut value = String::new();
+
+                    console
+                        .render_interactive(element! {
+                            Input(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                description: Some("As a JSON string".into()),
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    let input = if input.is_empty() {
+                                        if required {
+                                            return Some("A value is required".into());
+                                        } else {
+                                            "[]"
+                                        }
+                                    } else {
+                                        &input
+                                    };
+
+                                    match serde_json::from_str::<JsonValue>(input) {
+                                        Ok(data) => if data.is_array() {
+                                            None
+                                        } else {
+                                            Some("Must be an array".into())
+                                        },
+                                        Err(error) => Some(format!("Invalid JSON: {error}")),
+                                    }
+                                }
+                            )
+                        })
+                        .await?;
+
+                    let data: JsonValue = json::parse(value)?;
+
+                    match data {
+                        JsonValue::Array(inner) => inner,
+                        _ => vec![],
+                    }
+                };
+
+                debug!(name, value = ?value, "Setting array variable");
+
+                context.insert(name, &value);
+            }
             TemplateVariable::Boolean(cfg) => {
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     cfg.default
@@ -299,6 +403,54 @@ pub async fn gather_variables(
                 };
 
                 debug!(name, value, "Setting number variable");
+
+                context.insert(name, &value);
+            }
+            TemplateVariable::Object(cfg) => {
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default.clone()
+                } else {
+                    let mut value = String::new();
+
+                    console
+                        .render_interactive(element! {
+                            Input(
+                                label: cfg.prompt.as_ref().unwrap(),
+                                description: Some("As a JSON string".into()),
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    let input = if input.is_empty() {
+                                        if required {
+                                            return Some("A value is required".into());
+                                        } else {
+                                            "{}"
+                                        }
+                                    } else {
+                                        &input
+                                    };
+
+                                    match serde_json::from_str::<JsonValue>(input) {
+                                        Ok(data) => if data.is_object() {
+                                            None
+                                        } else {
+                                            Some("Must be an object".into())
+                                        },
+                                        Err(error) => Some(format!("Invalid JSON: {error}")),
+                                    }
+                                }
+                            )
+                        })
+                        .await?;
+
+                    let data: JsonValue = json::parse(value)?;
+
+                    match data {
+                        JsonValue::Object(inner) => FxHashMap::from_iter(inner),
+                        _ => FxHashMap::default(),
+                    }
+                };
+
+                debug!(name, value = ?value, "Setting object variable");
 
                 context.insert(name, &value);
             }

@@ -2,8 +2,9 @@ use moon_app::commands::generate::parse_args_into_variables;
 use moon_codegen::tera::{Number, Value};
 use moon_common::path::standardize_separators;
 use moon_config::{
-    TemplateVariable, TemplateVariableBoolSetting, TemplateVariableEnumSetting,
-    TemplateVariableEnumValue, TemplateVariableNumberSetting, TemplateVariableStringSetting,
+    TemplateVariable, TemplateVariableArraySetting, TemplateVariableBoolSetting,
+    TemplateVariableEnumSetting, TemplateVariableEnumValue, TemplateVariableNumberSetting,
+    TemplateVariableStringSetting,
 };
 use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox_with_config, predicates::prelude::*,
@@ -468,6 +469,10 @@ mod cli_args {
             }),
         );
         vars.insert(
+            "array".into(),
+            TemplateVariable::Array(TemplateVariableArraySetting::default()),
+        );
+        vars.insert(
             "bool".into(),
             TemplateVariable::Boolean(TemplateVariableBoolSetting::default()),
         );
@@ -511,6 +516,48 @@ mod cli_args {
         let context = parse_args_into_variables(&["--internal".into()], &create_vars()).unwrap();
 
         assert!(!context.contains_key("internal"));
+    }
+
+    mod array {
+        use super::*;
+
+        #[test]
+        fn nothing_when_no_matching_arg() {
+            let context = parse_args_into_variables(&[], &create_vars()).unwrap();
+
+            assert!(!context.contains_key("array"));
+        }
+
+        #[test]
+        fn sets_var() {
+            let context = parse_args_into_variables(
+                &[
+                    "--array".into(),
+                    "abc".into(),
+                    "--array".into(),
+                    "123".into(),
+                    "--array".into(),
+                    "456.78".into(),
+                ],
+                &create_vars(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                context.get("array").unwrap(),
+                &Value::Array(vec![
+                    Value::String("abc".into()),
+                    Value::Number(Number::from_i128(123).unwrap()),
+                    Value::Number(Number::from_f64(456.78).unwrap()),
+                ])
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "a value is required")]
+        fn errors_when_no_value() {
+            parse_args_into_variables(&["--array".into()], &create_vars()).unwrap();
+        }
     }
 
     mod bool {

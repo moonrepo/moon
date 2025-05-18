@@ -1,13 +1,12 @@
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::{Id, color};
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
-    InheritedTasksResult, LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig,
-    ToolchainConfig,
+    ConfigLoader, DependencyConfig, DependencySource, InheritedTasksManager, InheritedTasksResult,
+    LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_task::{TargetScope, Task};
+use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
@@ -254,7 +253,7 @@ impl<'app> ProjectBuilder<'app> {
             .collect::<Vec<_>>();
 
         let mut project = Project {
-            dependencies: self.build_dependencies(&tasks)?,
+            dependencies: self.build_dependencies()?,
             file_groups: self.build_file_groups()?,
             task_targets,
             tasks,
@@ -284,10 +283,7 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    fn build_dependencies(
-        &self,
-        tasks: &BTreeMap<Id, Task>,
-    ) -> miette::Result<Vec<DependencyConfig>> {
+    fn build_dependencies(&self) -> miette::Result<Vec<DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(
@@ -306,42 +302,6 @@ impl<'app> ProjectBuilder<'app> {
                 };
 
                 deps.insert(dep_config.id.clone(), dep_config);
-            }
-        }
-
-        // Tasks can depend on arbitrary projects, so include them also
-        for task_config in tasks.values() {
-            for task_dep in &task_config.deps {
-                if let TargetScope::Project(dep_id) = &task_dep.target.scope {
-                    // Already a dependency, or references self
-                    if deps.contains_key(dep_id)
-                        || self.id == dep_id
-                        || self.alias.as_ref().is_some_and(|a| *a == dep_id.as_str())
-                    {
-                        continue;
-                    }
-
-                    trace!(
-                        project_id = self.id.as_str(),
-                        dep_id = dep_id.as_str(),
-                        task_target = task_config.target.as_str(),
-                        "Marking arbitrary project as an implicit dependency because of a task dependency"
-                    );
-
-                    deps.insert(
-                        dep_id.to_owned(),
-                        DependencyConfig {
-                            id: dep_id.to_owned(),
-                            scope: if self.context.root_project_id.is_some_and(|id| id == dep_id) {
-                                DependencyScope::Root
-                            } else {
-                                DependencyScope::Build
-                            },
-                            source: DependencySource::Implicit,
-                            via: Some(task_config.target.to_string()),
-                        },
-                    );
-                }
             }
         }
 

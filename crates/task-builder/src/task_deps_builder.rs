@@ -201,7 +201,7 @@ impl TaskDepsBuilder<'_> {
                 DependencyScope::Build
             },
             source: DependencySource::Implicit,
-            via: Some(task_dep.target.to_string()),
+            via: Some(format!("task {}", task_dep.target)),
         });
 
         Ok(())

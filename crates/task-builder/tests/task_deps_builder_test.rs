@@ -61,11 +61,19 @@ fn build_task_deps_with_data(
     task: &mut Task,
     data: FxHashMap<Target, TaskOptions>,
 ) {
-    TaskDepsBuilder {
-        querent: Box::new(TestQuerent {
+    build_task_deps_with_querent(
+        project,
+        task,
+        TestQuerent {
             data,
             tag_ids: vec![],
-        }),
+        },
+    )
+}
+
+fn build_task_deps_with_querent(project: &mut Project, task: &mut Task, querent: TestQuerent) {
+    TaskDepsBuilder {
+        querent: Box::new(querent),
         project: Some(project),
         root_project_id: None,
         task,
@@ -240,21 +248,15 @@ mod task_deps_builder {
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
-                    data: FxHashMap::from_iter([
-                        (Target::parse("foo:build").unwrap(), TaskOptions::default()),
-                        (Target::parse("bar:build").unwrap(), TaskOptions::default()),
-                        (Target::parse("baz:build").unwrap(), TaskOptions::default()),
-                    ]),
-                    tag_ids: vec![],
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([
+                    (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                    (Target::parse("bar:build").unwrap(), TaskOptions::default()),
+                    (Target::parse("baz:build").unwrap(), TaskOptions::default()),
+                ]),
+            );
 
             assert_eq!(
                 task.deps,
@@ -321,17 +323,7 @@ mod task_deps_builder {
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()).required());
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
-                    data: FxHashMap::default(),
-                    tag_ids: vec![],
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+            build_task_deps(&mut project, &mut task);
         }
     }
 
@@ -540,6 +532,37 @@ mod task_deps_builder {
 
             assert!(task.deps.is_empty());
         }
+
+        #[test]
+        fn injects_implicit_project_deps() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("a:build").unwrap()));
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("c:test").unwrap()));
+
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+
+            assert_eq!(
+                project.dependencies,
+                vec![
+                    DependencyConfig {
+                        id: Id::raw("a"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task a:build".into())
+                    },
+                    DependencyConfig {
+                        id: Id::raw("c"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task c:test".into())
+                    }
+                ]
+            );
+        }
     }
 
     mod tag_scope {
@@ -568,21 +591,18 @@ mod task_deps_builder {
                 Target::parse("#pkg:build").unwrap(),
             ));
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([
                         (Target::parse("foo:build").unwrap(), TaskOptions::default()),
                         (Target::parse("bar:build").unwrap(), TaskOptions::default()),
                         (Target::parse("baz:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
 
             assert_eq!(
                 task.deps,
@@ -602,21 +622,18 @@ mod task_deps_builder {
                 Target::parse("#pkg:build").unwrap(),
             ));
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([
                         (Target::parse("foo:build").unwrap(), TaskOptions::default()),
                         (Target::parse("bar:lint").unwrap(), TaskOptions::default()),
                         (Target::parse("baz:test").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
 
             assert_eq!(
                 task.deps,
@@ -637,17 +654,14 @@ mod task_deps_builder {
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("#pkg:build").unwrap()).required());
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
         }
 
         #[test]
@@ -659,22 +673,60 @@ mod task_deps_builder {
                 Target::parse("#pkg:task").unwrap(),
             ));
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([(
                         Target::parse("project:task").unwrap(),
                         TaskOptions::default(),
                     )]),
                     tag_ids: vec![Id::raw("project")],
-                }),
-                project: Some(&mut project),
-                root_project_id: None,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
 
             assert!(task.deps.is_empty());
+        }
+
+        #[test]
+        fn injects_implicit_project_deps() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("#pkg:build").unwrap(),
+            ));
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([
+                        (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                        (Target::parse("bar:build").unwrap(), TaskOptions::default()),
+                        (Target::parse("baz:build").unwrap(), TaskOptions::default()),
+                    ]),
+                    tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                },
+            );
+
+            assert_eq!(
+                project.dependencies,
+                vec![
+                    DependencyConfig {
+                        id: Id::raw("baz"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task baz:build".into())
+                    },
+                    DependencyConfig {
+                        id: Id::raw("foo"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task foo:build".into())
+                    },
+                ]
+            );
         }
     }
 }

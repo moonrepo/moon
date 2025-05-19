@@ -1,0 +1,135 @@
+---
+slug: moon-v1.36
+title: moon v1.36 - Toolchain plugins beta, optimized remote caching, and codegen improvements
+authors: [milesj]
+tags: [toolchain, wasm, plugin, remote, cache, integrity, codegen, template]
+image: ./img/moon/v1.36.png
+---
+
+In this release, we're very excited to fully release toolchain plugins!
+
+<!--truncate-->
+
+## Beta release of toolchain WASM plugins
+
+Two months ago we announced [alpha toolchain plugins](./moon-v1.33) with support for tier 3, but not
+tier 2. The reason for this was that tier 3 is powered by [proto APIs](/docs/proto/wasm-plugin),
+which already existed! We simply hooked them up to moon. The bulk of the remaining plugin work was
+tier 2 support, which we are excited to announce has been completed! The following APIs have been
+implemented:
+
+- `extend_project_graph` - Extend projects with toolchain specific info.
+- `extend_task_command` - Extend the command child process with parameters.
+- `extend_task_script` - Extend the script child process with parameters.
+- `locate_dependencies_root` - Locate the package dependencies workspace root.
+- `parse_manifest` - Parse a manifest file to extract dependencies.
+- `parse_lock` - Parse a lock file to extract resolved dependencies.
+
+And the following surface areas have been integrated with:
+
+- In the project graph:
+  - Extend projects with dependencies, tasks, and an alias.
+- In the action pipeline:
+  - Added `SetupEnvironment` action that executes the `setup_environment` API.
+  - Added `InstallDependencies` action that executes the `install_dependencies` API.
+- When running tasks:
+  - Extend the command/script with additional parameters before executing.
+  - Inject dependency and lock information into the hash.
+- With Docker:
+  - Updated `docker prune` to utilize the new WASM APIs for toolchain plugins.
+
+As of this release, all 27 APIs have been implemented, and toolchain plugins are now available for
+general use! However, they are still quite unstable, not fully tested, and the APIs may change
+between releases, but you can start using them today if you're feeling adventurous!
+
+With all this said, we do not have documentation yet. We plan to slowly work on this across the next
+few releases. In the meantime, check out the following resources for more information:
+
+- [`moon_pdk`](https://docs.rs/moon_pdk/) - Rust plugin development kit.
+- Existing [toolchain plugins](https://github.com/moonrepo/plugins/tree/master/toolchains).
+- In development [Rust toolchain](https://github.com/moonrepo/plugins/pull/48).
+
+## Optimized remote caching
+
+Like the past few releases, we've made some improvements to the remote caching layer.
+
+To start, we're adding a new
+[`unstable_remote.cache.verifyIntegrity`](/docs/config/workspace#verifyintegrity) setting, that will
+verify the digest (hash) of downloaded blobs to ensure they aren't corrupted or incomplete. We
+currently check the file size, but this will also now check the content. This setting will slightly
+degrade performance but ensure reliability.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  cache:
+    verifyIntegrity: true
+```
+
+While we're on the topic of reliability, we're also introducing an implicit rollback mechanic that
+will remove partially downloaded or incomplete blobs if hydration ever fails at some point. This
+will also run between executions to ensure there are no stale artifacts lying around.
+
+And lastly, we've parallelized the blob existence checks, reducing the amount of large requests for
+heavy tasks, and reworked how we inherit `MOON_REMOTE_*` environment variables.
+
+## Improved code generation
+
+It's been a while since we've added new features to code generation, but thanks to some great
+requests from the community, we have 2 this release!
+
+### Archive URLs
+
+The first is that [remote archives](/docs/guides/codegen#archive-urls) (zip, tar, etc) can be used
+as template locations. The archive will then be downloaded and unpacked into `~/.moon/templates`.
+
+```yaml title=".moon/workspace.yml"
+generator:
+  templates:
+    - 'https://domain.com/some/path/to/archive.zip'
+```
+
+### Array and object types
+
+The second is that we now support `array` and `object`
+[variable types](/docs/config/template#variables) in `template.yml`. The values within each of these
+collections can be any JSON-compatible type.
+
+```yaml title="template.yml"
+variables:
+  type:
+    type: 'array'
+    prompt: 'Type?'
+    default: ['app', 'lib']
+  metadata:
+    type: 'object'
+    prompt: 'Metadata?'
+    default:
+      internal: true
+```
+
+These variables and their nested values can then be accessed within templates using dot or bracket
+notation.
+
+```twig
+{{ type[0] }}
+{{ metadata.internal }}
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.36.0) for a full list
+of changes.
+
+- Added `--host` and `--port` options to `moon action-graph`, `moon task-graph`, and
+  `moon project-graph`.
+- Added `--stdin` option to `moon ci` and `moon run`, which will allow touched files to be passed
+  via stdin, instead of running VCS commands to determine them.
+- Removed the restriction around `moon.{yml,pkl}` not being allowed as a task input. However, will
+  not be included when using `**/*`.
+
+## What's next?
+
+Now that toolchain plugins are in beta, we can take the next step in migrating an existing platform
+into a toolchain.
+
+- Migrate the Rust toolchain to a WASM plugin.

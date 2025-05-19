@@ -1,14 +1,13 @@
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::{Id, color};
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
-    InheritedTasksResult, LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig,
-    ToolchainConfig,
+    ConfigLoader, DependencyConfig, DependencySource, InheritedTasksManager, InheritedTasksResult,
+    LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_task::{TargetScope, Task};
-use moon_task_builder::{TasksBuilder, TasksBuilderContext};
+use moon_task::Task;
+use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
 };
@@ -312,35 +311,19 @@ impl<'app> ProjectBuilder<'app> {
         // Tasks can depend on arbitrary projects, so include them also
         for task_config in tasks.values() {
             for task_dep in &task_config.deps {
-                if let TargetScope::Project(dep_id) = &task_dep.target.scope {
-                    // Already a dependency, or references self
-                    if deps.contains_key(dep_id)
-                        || self.id == dep_id
-                        || self.alias.as_ref().is_some_and(|a| *a == dep_id.as_str())
-                    {
-                        continue;
-                    }
-
-                    trace!(
-                        project_id = self.id.as_str(),
-                        dep_id = dep_id.as_str(),
-                        task_target = task_config.target.as_str(),
-                        "Marking arbitrary project as an implicit dependency because of a task dependency"
-                    );
-
-                    deps.insert(
-                        dep_id.to_owned(),
-                        DependencyConfig {
-                            id: dep_id.to_owned(),
-                            scope: if self.context.root_project_id.is_some_and(|id| id == dep_id) {
-                                DependencyScope::Root
-                            } else {
-                                DependencyScope::Build
-                            },
-                            source: DependencySource::Implicit,
-                            via: Some(task_config.target.to_string()),
-                        },
-                    );
+                if let Some(dep_config) = create_project_dep_from_task_dep(
+                    task_dep,
+                    self.id,
+                    self.context.root_project_id,
+                    |dep_project_id| {
+                        deps.contains_key(dep_project_id)
+                            || self
+                                .alias
+                                .as_ref()
+                                .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                    },
+                ) {
+                    deps.insert(dep_config.id.clone(), dep_config);
                 }
             }
         }

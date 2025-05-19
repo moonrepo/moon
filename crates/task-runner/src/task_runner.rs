@@ -388,7 +388,15 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
-        hash_common_task_contents(self.app, context, self.project, self.task, &mut hasher).await?;
+        hash_common_task_contents(
+            self.app,
+            context,
+            self.project,
+            self.task,
+            node,
+            &mut hasher,
+        )
+        .await?;
 
         // Hash platform fields
         self.platform_manager

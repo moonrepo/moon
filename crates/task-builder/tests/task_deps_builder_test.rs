@@ -1,5 +1,6 @@
 use moon_common::Id;
 use moon_config::*;
+use moon_project::Project;
 use moon_task::{Target, Task, TaskOptions};
 use moon_task_builder::{TaskDepsBuilder, TasksQuerent};
 use rustc_hash::FxHashMap;
@@ -36,6 +37,13 @@ impl TasksQuerent for TestQuerent {
     }
 }
 
+fn create_project() -> Project {
+    Project {
+        id: Id::raw("project"),
+        ..Default::default()
+    }
+}
+
 fn create_task() -> Task {
     Task {
         id: Id::raw("task"),
@@ -44,21 +52,30 @@ fn create_task() -> Task {
     }
 }
 
-fn build_task_deps(task: &mut Task) {
-    build_task_deps_with_data(task, FxHashMap::default());
+fn build_task_deps(project: &mut Project, task: &mut Task) {
+    build_task_deps_with_data(project, task, FxHashMap::default());
 }
 
-fn build_task_deps_with_data(task: &mut Task, data: FxHashMap<Target, TaskOptions>) {
-    let project_id = Id::raw("project");
-    let project_dependencies = vec![];
-
-    TaskDepsBuilder {
-        querent: Box::new(TestQuerent {
+fn build_task_deps_with_data(
+    project: &mut Project,
+    task: &mut Task,
+    data: FxHashMap<Target, TaskOptions>,
+) {
+    build_task_deps_with_querent(
+        project,
+        task,
+        TestQuerent {
             data,
             tag_ids: vec![],
-        }),
-        project_id: &project_id,
-        project_dependencies: &project_dependencies,
+        },
+    )
+}
+
+fn build_task_deps_with_querent(project: &mut Project, task: &mut Task, querent: TestQuerent) {
+    TaskDepsBuilder {
+        querent: Box::new(querent),
+        project: Some(project),
+        root_project_id: None,
         task,
     }
     .build()
@@ -71,12 +88,15 @@ mod task_deps_builder {
     #[test]
     #[should_panic(expected = "Task project:task cannot depend on task project:allow-failure")]
     fn errors_if_dep_on_allow_failure() {
+        let mut project = create_project();
+
         let mut task = create_task();
         task.deps.push(TaskDependencyConfig::new(
             Target::parse("allow-failure").unwrap(),
         ));
 
         build_task_deps_with_data(
+            &mut project,
             &mut task,
             FxHashMap::from_iter([(
                 Target::parse("project:allow-failure").unwrap(),
@@ -91,12 +111,15 @@ mod task_deps_builder {
     #[test]
     #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
     fn errors_if_dep_not_run_in_ci() {
+        let mut project = create_project();
+
         let mut task = create_task();
         task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
         task.deps
             .push(TaskDependencyConfig::new(Target::parse("no-ci").unwrap()));
 
         build_task_deps_with_data(
+            &mut project,
             &mut task,
             FxHashMap::from_iter([(
                 Target::parse("project:no-ci").unwrap(),
@@ -110,12 +133,15 @@ mod task_deps_builder {
 
     #[test]
     fn doesnt_errors_if_dep_run_in_ci() {
+        let mut project = create_project();
+
         let mut task = create_task();
         task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
         task.deps
             .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
 
         build_task_deps_with_data(
+            &mut project,
             &mut task,
             FxHashMap::from_iter([(
                 Target::parse("project:ci").unwrap(),
@@ -130,6 +156,8 @@ mod task_deps_builder {
     #[test]
     #[should_panic(expected = "Non-persistent task project:task cannot depend on persistent task")]
     fn errors_for_invalid_persistent_chain() {
+        let mut project = create_project();
+
         let mut task = create_task();
         task.options.persistent = false;
         task.deps.push(TaskDependencyConfig::new(
@@ -137,6 +165,7 @@ mod task_deps_builder {
         ));
 
         build_task_deps_with_data(
+            &mut project,
             &mut task,
             FxHashMap::from_iter([(
                 Target::parse("project:persistent").unwrap(),
@@ -150,6 +179,8 @@ mod task_deps_builder {
 
     #[test]
     fn doesnt_errors_for_valid_persistent_chain() {
+        let mut project = create_project();
+
         let mut task = create_task();
         task.options.persistent = true;
         task.deps.push(TaskDependencyConfig::new(
@@ -157,6 +188,7 @@ mod task_deps_builder {
         ));
 
         build_task_deps_with_data(
+            &mut project,
             &mut task,
             FxHashMap::from_iter([(
                 Target::parse("project:not-persistent").unwrap(),
@@ -176,11 +208,13 @@ mod task_deps_builder {
             expected = "Invalid dependency :build for project:task. All (:) scope is not"
         )]
         fn errors_for_all_scope() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse(":build").unwrap()));
 
-            build_task_deps(&mut task);
+            build_task_deps(&mut project, &mut task);
         }
     }
 
@@ -189,44 +223,40 @@ mod task_deps_builder {
 
         #[test]
         fn no_depends_on() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
 
-            build_task_deps(&mut task);
+            build_task_deps(&mut project, &mut task);
 
             assert!(task.deps.is_empty());
         }
 
         #[test]
         fn returns_each_parent_task() {
-            let mut task = create_task();
-            task.deps
-                .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
-
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![
+            let mut project = create_project();
+            project.dependencies = vec![
                 DependencyConfig::new(Id::raw("foo")),
                 DependencyConfig::new(Id::raw("bar")),
                 DependencyConfig::new(Id::raw("baz")),
                 DependencyConfig::new(Id::raw("qux")),
             ];
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
-                    data: FxHashMap::from_iter([
-                        (Target::parse("foo:build").unwrap(), TaskOptions::default()),
-                        (Target::parse("bar:build").unwrap(), TaskOptions::default()),
-                        (Target::parse("baz:build").unwrap(), TaskOptions::default()),
-                    ]),
-                    tag_ids: vec![],
-                }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+            let mut task = create_task();
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([
+                    (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                    (Target::parse("bar:build").unwrap(), TaskOptions::default()),
+                    (Target::parse("baz:build").unwrap(), TaskOptions::default()),
+                ]),
+            );
 
             assert_eq!(
                 task.deps,
@@ -240,16 +270,16 @@ mod task_deps_builder {
 
         #[test]
         fn returns_each_parent_task_only_if_id_matches() {
-            let mut task = create_task();
-            task.deps
-                .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
-
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![
+            let mut project = create_project();
+            project.dependencies = vec![
                 DependencyConfig::new(Id::raw("foo")),
                 DependencyConfig::new(Id::raw("bar")),
                 DependencyConfig::new(Id::raw("baz")),
             ];
+
+            let mut task = create_task();
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
 
             TaskDepsBuilder {
                 querent: Box::new(TestQuerent {
@@ -262,8 +292,8 @@ mod task_deps_builder {
                     ]),
                     tag_ids: vec![],
                 }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
+                project: Some(&mut project),
+                root_project_id: None,
                 task: &mut task,
             }
             .build()
@@ -282,28 +312,18 @@ mod task_deps_builder {
             expected = "Invalid dependency ^:build for project:task, no matching targets"
         )]
         fn can_error_if_non_optional_and_no_results() {
-            let mut task = create_task();
-            task.deps
-                .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()).required());
-
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![
+            let mut project = create_project();
+            project.dependencies = vec![
                 DependencyConfig::new(Id::raw("foo")),
                 DependencyConfig::new(Id::raw("bar")),
                 DependencyConfig::new(Id::raw("baz")),
             ];
 
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
-                    data: FxHashMap::default(),
-                    tag_ids: vec![],
-                }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+            let mut task = create_task();
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()).required());
+
+            build_task_deps(&mut project, &mut task);
         }
     }
 
@@ -334,6 +354,8 @@ mod task_deps_builder {
 
         #[test]
         fn returns_sibling_task() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("~:build").unwrap()));
@@ -341,7 +363,7 @@ mod task_deps_builder {
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("lint").unwrap()));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(
                 task.deps,
@@ -354,24 +376,28 @@ mod task_deps_builder {
 
         #[test]
         fn ignores_self_cycle() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("~:task").unwrap()));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(task.deps, vec![]);
         }
 
         #[test]
         fn ignores_dupe_ids() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("~:build").unwrap()));
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("build").unwrap()));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(
                 task.deps,
@@ -386,21 +412,25 @@ mod task_deps_builder {
             expected = "Invalid dependency ~:unknown for project:task, target does not exist"
         )]
         fn errors_if_unknown() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("~:unknown").unwrap(),
             ));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
         }
 
         #[test]
         fn doesnt_error_if_unknown_but_optional() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("~:unknown").unwrap()).optional());
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert!(task.deps.is_empty());
         }
@@ -424,13 +454,15 @@ mod task_deps_builder {
 
         #[test]
         fn returns_task() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("a:build").unwrap()));
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("c:test").unwrap()));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(
                 task.deps,
@@ -443,25 +475,29 @@ mod task_deps_builder {
 
         #[test]
         fn ignores_self_cycle() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("project:task").unwrap(),
             ));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(task.deps, vec![]);
         }
 
         #[test]
         fn ignores_dupe_ids() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("a:build").unwrap()));
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("a:build").unwrap()));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(
                 task.deps,
@@ -474,23 +510,58 @@ mod task_deps_builder {
             expected = "Invalid dependency d:unknown for project:task, target does not exist"
         )]
         fn errors_if_unknown() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("d:unknown").unwrap(),
             ));
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
         }
 
         #[test]
         fn doesnt_error_if_unknown_but_optional() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("d:unknown").unwrap()).optional());
 
-            build_task_deps_with_data(&mut task, create_project_task_data());
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert!(task.deps.is_empty());
+        }
+
+        #[test]
+        fn injects_implicit_project_deps() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("a:build").unwrap()));
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("c:test").unwrap()));
+
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+
+            assert_eq!(
+                project.dependencies,
+                vec![
+                    DependencyConfig {
+                        id: Id::raw("a"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task a:build".into())
+                    },
+                    DependencyConfig {
+                        id: Id::raw("c"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task c:test".into())
+                    }
+                ]
+            );
         }
     }
 
@@ -499,41 +570,39 @@ mod task_deps_builder {
 
         #[test]
         fn no_tags() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("#pkg:build").unwrap(),
             ));
 
-            build_task_deps(&mut task);
+            build_task_deps(&mut project, &mut task);
 
             assert!(task.deps.is_empty());
         }
 
         #[test]
         fn returns_each_tag_task() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("#pkg:build").unwrap(),
             ));
 
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![];
-
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([
                         (Target::parse("foo:build").unwrap(), TaskOptions::default()),
                         (Target::parse("bar:build").unwrap(), TaskOptions::default()),
                         (Target::parse("baz:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
-                }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
 
             assert_eq!(
                 task.deps,
@@ -546,29 +615,25 @@ mod task_deps_builder {
 
         #[test]
         fn returns_each_tag_task_only_if_id_matches() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("#pkg:build").unwrap(),
             ));
 
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![];
-
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([
                         (Target::parse("foo:build").unwrap(), TaskOptions::default()),
                         (Target::parse("bar:lint").unwrap(), TaskOptions::default()),
                         (Target::parse("baz:test").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
-                }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
 
             assert_eq!(
                 task.deps,
@@ -583,52 +648,85 @@ mod task_deps_builder {
             expected = "Invalid dependency #pkg:build for project:task, no matching targets"
         )]
         fn can_error_if_non_optional_and_no_results() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps
                 .push(TaskDependencyConfig::new(Target::parse("#pkg:build").unwrap()).required());
 
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![];
-
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
-                }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
         }
 
         #[test]
         fn ignores_self_cycle() {
+            let mut project = create_project();
+
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig::new(
                 Target::parse("#pkg:task").unwrap(),
             ));
 
-            let project_id = Id::raw("project");
-            let project_dependencies = vec![];
-
-            TaskDepsBuilder {
-                querent: Box::new(TestQuerent {
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
                     data: FxHashMap::from_iter([(
                         Target::parse("project:task").unwrap(),
                         TaskOptions::default(),
                     )]),
                     tag_ids: vec![Id::raw("project")],
-                }),
-                project_id: &project_id,
-                project_dependencies: &project_dependencies,
-                task: &mut task,
-            }
-            .build()
-            .unwrap();
+                },
+            );
 
             assert!(task.deps.is_empty());
+        }
+
+        #[test]
+        fn injects_implicit_project_deps() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("#pkg:build").unwrap(),
+            ));
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([
+                        (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                        (Target::parse("bar:build").unwrap(), TaskOptions::default()),
+                        (Target::parse("baz:build").unwrap(), TaskOptions::default()),
+                    ]),
+                    tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                },
+            );
+
+            assert_eq!(
+                project.dependencies,
+                vec![
+                    DependencyConfig {
+                        id: Id::raw("baz"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task baz:build".into())
+                    },
+                    DependencyConfig {
+                        id: Id::raw("foo"),
+                        scope: DependencyScope::Build,
+                        source: DependencySource::Implicit,
+                        via: Some("task foo:build".into())
+                    },
+                ]
+            );
         }
     }
 }

@@ -5,14 +5,14 @@ use moon_common::{
     path::{self, WorkspaceRelativePathBuf},
 };
 use moon_config::{InputPath, OutputPath, ProjectMetadataConfig, patterns};
-use moon_env_var::{EnvSubstitutor, GlobalEnvBag};
+use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::borrow::Cow;
 use std::env;
 use std::mem;
@@ -106,7 +106,7 @@ impl<'graph> TokenExpander<'graph> {
             }
         }
 
-        self.replace_all_variables_and_infer(task, &command)
+        self.replace_variables_and_scan(task, command)
     }
 
     #[instrument(skip_all)]
@@ -118,7 +118,7 @@ impl<'graph> TokenExpander<'graph> {
         while self.has_token_function(&script) {
             let result = self.replace_function(task, &script)?;
 
-            self.infer_inputs(task, &result);
+            self.infer_inputs_from_result(task, &result);
 
             if let Some(token) = result.token {
                 let mut items = vec![];
@@ -139,7 +139,7 @@ impl<'graph> TokenExpander<'graph> {
             }
         }
 
-        self.replace_all_variables_and_infer(task, &script)
+        self.replace_variables_and_scan(task, script)
     }
 
     #[instrument(skip_all)]
@@ -162,7 +162,7 @@ impl<'graph> TokenExpander<'graph> {
             if self.has_token_function(&arg) {
                 let result = self.replace_function(task, &arg)?;
 
-                self.infer_inputs(task, &result);
+                self.infer_inputs_from_result(task, &result);
 
                 for file in result.files {
                     args.push(self.resolve_path_for_task(task, file)?);
@@ -178,7 +178,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 // Everything else
             } else {
-                args.push(self.replace_all_variables_and_infer(task, arg)?);
+                args.push(self.replace_variables_and_scan(task, arg)?);
             }
         }
 
@@ -205,7 +205,7 @@ impl<'graph> TokenExpander<'graph> {
                 let result = self.replace_function(task, &value)?;
                 let mut items = vec![];
 
-                self.infer_inputs(task, &result);
+                self.infer_inputs_from_result(task, &result);
 
                 for file in result.files {
                     items.push(self.resolve_path_for_task(task, file)?);
@@ -223,10 +223,11 @@ impl<'graph> TokenExpander<'graph> {
                     key.to_owned(),
                     items.into_iter().collect::<Vec<_>>().join(","),
                 );
-            } else if self.has_token_variable(&value) {
-                env.insert(key.to_owned(), self.replace_variables(task, &value)?);
             } else {
-                env.insert(key.to_owned(), value.to_owned());
+                env.insert(
+                    key.to_owned(),
+                    self.replace_variables_and_substitute(task, value)?,
+                );
             }
         }
 
@@ -654,11 +655,11 @@ impl<'graph> TokenExpander<'graph> {
         path: WorkspaceRelativePathBuf,
     ) -> miette::Result<WorkspaceRelativePathBuf> {
         Ok(WorkspaceRelativePathBuf::from(
-            self.replace_all_variables(task, path.as_str())?,
+            self.replace_variables_and_substitute(task, path.as_str())?,
         ))
     }
 
-    fn replace_all_variables<T: AsRef<str>>(
+    fn replace_variables_and_substitute<T: AsRef<str>>(
         &self,
         task: &Task,
         value: T,
@@ -668,47 +669,16 @@ impl<'graph> TokenExpander<'graph> {
             .substitute(self.replace_variables(task, value.as_ref())?))
     }
 
-    fn replace_all_variables_and_infer<T: AsRef<str>>(
+    fn replace_variables_and_scan<T: AsRef<str>>(
         &self,
         task: &mut Task,
         value: T,
     ) -> miette::Result<String> {
-        let mut substitutor = EnvSubstitutor::new().with_local_vars(&task.env);
+        let mut scanner = EnvScanner::default();
+        let result = scanner.scan(self.replace_variables(task, value.as_ref())?);
 
-        let result = substitutor.substitute(self.replace_variables(task, value.as_ref())?);
-
-        if task.options.infer_inputs && !substitutor.replaced.is_empty() {
-            let mut blacklist = vec![
-                "CI_",
-                "GIT_",
-                "BUILD_",
-                "PR_",
-                "PULL_",
-                "COMMIT_HASH",
-                "COMMIT_REF",
-                "COMMIT_SHA",
-                "HEAD",
-                "BASE",
-                "BRANCH",
-            ];
-            let ci = ci_env::get_environment();
-            let cd = cd_env::get_environment();
-
-            if let Some(ci_prefix) = ci.as_ref().and_then(|ci| ci.env_prefix.as_ref()) {
-                blacklist.push(ci_prefix);
-            }
-
-            if let Some(cd_prefix) = cd.as_ref().and_then(|cd| cd.env_prefix.as_ref()) {
-                blacklist.push(cd_prefix);
-            }
-
-            substitutor.replaced.retain(|key| {
-                blacklist
-                    .iter()
-                    .all(|prefix| key != prefix && !key.starts_with(prefix))
-            });
-
-            task.input_env.extend(substitutor.replaced);
+        if task.options.infer_inputs && !scanner.found.is_empty() {
+            self.infer_inputs_from_set(task, scanner.found);
         }
 
         Ok(result)
@@ -763,10 +733,44 @@ impl<'graph> TokenExpander<'graph> {
         Ok(value)
     }
 
-    fn infer_inputs(&self, task: &mut Task, result: &ExpandedResult) {
+    fn infer_inputs_from_result(&self, task: &mut Task, result: &ExpandedResult) {
         if task.options.infer_inputs {
             task.input_files.extend(result.files.clone());
             task.input_globs.extend(result.globs.clone());
         }
+    }
+
+    fn infer_inputs_from_set(&self, task: &mut Task, mut set: FxHashSet<String>) {
+        let mut blacklist = vec![
+            "CI_",
+            "GIT_",
+            "BUILD_",
+            "PR_",
+            "PULL_",
+            "COMMIT_HASH",
+            "COMMIT_REF",
+            "COMMIT_SHA",
+            "HEAD",
+            "BASE",
+            "BRANCH",
+        ];
+        let ci = ci_env::get_environment();
+        let cd = cd_env::get_environment();
+
+        if let Some(ci_prefix) = ci.as_ref().and_then(|ci| ci.env_prefix.as_ref()) {
+            blacklist.push(ci_prefix);
+        }
+
+        if let Some(cd_prefix) = cd.as_ref().and_then(|cd| cd.env_prefix.as_ref()) {
+            blacklist.push(cd_prefix);
+        }
+
+        set.retain(|key| {
+            blacklist
+                .iter()
+                .all(|prefix| key != prefix && !key.starts_with(prefix))
+        });
+
+        task.input_env.extend(set);
     }
 }

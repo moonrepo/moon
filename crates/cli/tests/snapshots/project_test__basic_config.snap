@@ -11,7 +11,7 @@ About ──────────────────
   Stack: unknown
   Type: unknown
   Depends on:
-    - noConfig (explicit, production)
+    - noConfig (production)
 
 Configuation ───────────
 

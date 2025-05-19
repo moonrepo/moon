@@ -115,7 +115,7 @@ impl Platform for SystemPlatform {
             command.args(&task.args);
         }
 
-        command.envs(&task.env);
+        command.envs_if_not_global(&task.env);
 
         if !runtime.requirement.is_global() {
             command.env(

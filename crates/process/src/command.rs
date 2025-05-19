@@ -4,6 +4,7 @@
 use crate::shell::Shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
+use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::VecDeque;
 use std::env;
@@ -138,6 +139,25 @@ impl Command {
     {
         for (k, v) in vars {
             self.env(k, v);
+        }
+
+        self
+    }
+
+    pub fn envs_if_not_global<I, K, V>(&mut self, vars: I) -> &mut Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        let bag = GlobalEnvBag::instance();
+
+        for (k, v) in vars {
+            let k = k.as_ref();
+
+            if !bag.has(k) {
+                self.env(k, v);
+            }
         }
 
         self

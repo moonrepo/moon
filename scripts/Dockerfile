@@ -45,6 +45,7 @@ COPY --from=build-gnu /out/target/ /target/
 FROM messense/rust-musl-cross:x86_64-musl AS base-musl-amd64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
+RUN rustup toolchain list
 
 # RUN echo "Building OpenSSL" && \
 #   ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm && \
@@ -62,7 +63,7 @@ RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 # ENV OPENSSL_STATIC true
 # ENV OPENSSL_DIR /musl
 
-RUN cargo install cargo-chef --version ^0.1
+# RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
 COPY .cargo .cargo
 COPY rust-toolchain.toml .
@@ -90,6 +91,7 @@ RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 FROM messense/rust-musl-cross:aarch64-musl AS base-musl-arm64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
+RUN rustup toolchain list
 
 # RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
 #   tar zxvf aarch64-linux-musl-cross.tgz && \

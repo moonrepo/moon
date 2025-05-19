@@ -1,0 +1,36 @@
+---
+slug: moon-v1.36
+title: moon v1.36 - ???
+authors: [milesj]
+tags: [action, graph, task, priority, experiment, terminal, theme]
+image: ./img/moon/v1.34.png
+---
+
+???
+
+<!--truncate-->
+
+## Beta release of toolchain WASM plugins
+
+## Improved remote caching
+
+## Improved code generation
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.36.0) for a full list
+of changes.
+
+- Added `--host` and `--port` options to `moon action-graph`, `moon task-graph`, and
+  `moon project-graph`.
+- Added `--stdin` option to `moon ci` and `moon run`, which will allow touched files to be passed
+  via stdin, instead of running VCS commands to determine them.
+- Removed the restriction around `moon.{yml,pkl}` not being allowed as a task input. However, will
+  not be included when using `**/*`.
+
+## What's next?
+
+Now that toolchain plugins are in beta, we can take the next step in migrating an existing platform
+into a toolchain.
+
+- Migrate the Rust toolchain to a WASM plugin.

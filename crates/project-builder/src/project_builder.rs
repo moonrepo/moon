@@ -7,7 +7,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::Task;
-use moon_task_builder::{TasksBuilder, TasksBuilderContext};
+use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
 };
@@ -253,7 +253,7 @@ impl<'app> ProjectBuilder<'app> {
             .collect::<Vec<_>>();
 
         let mut project = Project {
-            dependencies: self.build_dependencies()?,
+            dependencies: self.build_dependencies(&tasks)?,
             file_groups: self.build_file_groups()?,
             task_targets,
             tasks,
@@ -283,7 +283,10 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    fn build_dependencies(&self) -> miette::Result<Vec<DependencyConfig>> {
+    fn build_dependencies(
+        &self,
+        tasks: &BTreeMap<Id, Task>,
+    ) -> miette::Result<Vec<DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(
@@ -302,6 +305,26 @@ impl<'app> ProjectBuilder<'app> {
                 };
 
                 deps.insert(dep_config.id.clone(), dep_config);
+            }
+        }
+
+        // Tasks can depend on arbitrary projects, so include them also
+        for task_config in tasks.values() {
+            for task_dep in &task_config.deps {
+                if let Some(dep_config) = create_project_dep_from_task_dep(
+                    task_dep,
+                    self.id,
+                    self.context.root_project_id,
+                    |dep_project_id| {
+                        deps.contains_key(dep_project_id)
+                            || self
+                                .alias
+                                .as_ref()
+                                .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                    },
+                ) {
+                    deps.insert(dep_config.id.clone(), dep_config);
+                }
             }
         }
 

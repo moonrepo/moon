@@ -28,40 +28,49 @@ impl TaskDepsBuilder<'_> {
         let project = self.project.take().unwrap();
 
         for dep_config in mem::take(&mut self.task.deps) {
-            let (project_ids, skip_if_missing) = match &dep_config.target.scope {
-                // :task
-                TargetScope::All => {
-                    return Err(TasksBuilderError::UnsupportedTargetScopeInDeps {
-                        dep: dep_config.target.to_owned(),
-                        task: self.task.target.to_owned(),
+            let (project_ids, skip_if_missing, link_implicit_project_deps) =
+                match &dep_config.target.scope {
+                    // :task
+                    TargetScope::All => {
+                        return Err(TasksBuilderError::UnsupportedTargetScopeInDeps {
+                            dep: dep_config.target.to_owned(),
+                            task: self.task.target.to_owned(),
+                        }
+                        .into());
                     }
-                    .into());
-                }
-                // ^:task
-                TargetScope::Deps => (
-                    project
-                        .dependencies
-                        .iter()
-                        .map(|dep| &dep.id)
-                        .collect::<Vec<_>>(),
-                    dep_config.optional.unwrap_or(true),
-                ),
-                // ~:task
-                TargetScope::OwnSelf => (vec![&project.id], dep_config.optional.unwrap_or(false)),
-                // id:task
-                TargetScope::Project(project_id) => {
-                    (vec![project_id], dep_config.optional.unwrap_or(false))
-                }
-                // #tag:task
-                TargetScope::Tag(tag) => (
-                    self.querent
-                        .query_projects_by_tag(tag)?
-                        .into_iter()
-                        .filter(|id| *id != &project.id)
-                        .collect(),
-                    dep_config.optional.unwrap_or(true),
-                ),
-            };
+                    // ^:task
+                    TargetScope::Deps => (
+                        project
+                            .dependencies
+                            .iter()
+                            .map(|dep| &dep.id)
+                            .collect::<Vec<_>>(),
+                        dep_config.optional.unwrap_or(true),
+                        false,
+                    ),
+                    // ~:task
+                    TargetScope::OwnSelf => (
+                        vec![&project.id],
+                        dep_config.optional.unwrap_or(false),
+                        false,
+                    ),
+                    // id:task
+                    TargetScope::Project(project_id) => (
+                        vec![project_id],
+                        dep_config.optional.unwrap_or(false),
+                        false,
+                    ),
+                    // #tag:task
+                    TargetScope::Tag(tag) => (
+                        self.querent
+                            .query_projects_by_tag(tag)?
+                            .into_iter()
+                            .filter(|id| *id != &project.id)
+                            .collect(),
+                        dep_config.optional.unwrap_or(true),
+                        true,
+                    ),
+                };
 
             let results = self
                 .querent
@@ -97,18 +106,31 @@ impl TaskDepsBuilder<'_> {
                     continue;
                 }
 
-                let dep = self.check_and_create_dep(
-                    dep_task_target,
-                    dep_task_options,
-                    &dep_config,
-                    // &mut deps,
-                    // skip_if_missing,
-                )?;
+                let task_dep =
+                    self.check_and_create_dep(dep_task_target, dep_task_options, &dep_config)?;
 
-                self.mark_project_dep(&dep, project)?;
+                if link_implicit_project_deps {
+                    if let Some(project_dep) = create_project_dep_from_task_dep(
+                        &task_dep,
+                        &project.id,
+                        self.root_project_id,
+                        |dep_project_id| {
+                            project
+                                .alias
+                                .as_ref()
+                                .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                                || project
+                                    .dependencies
+                                    .iter()
+                                    .any(|pd| &pd.id == dep_project_id)
+                        },
+                    ) {
+                        project.dependencies.push(project_dep);
+                    }
+                }
 
-                if !deps.contains(&dep) {
-                    deps.push(dep);
+                if !deps.contains(&task_dep) {
+                    deps.push(task_dep);
                 }
             }
         }
@@ -123,8 +145,6 @@ impl TaskDepsBuilder<'_> {
         dep_task_target: &Target,
         dep_task_options: &TaskOptions,
         dep_config: &TaskDependencyConfig,
-        // deps_list: &mut Vec<TaskDependencyConfig>,
-        // _skip_if_missing: bool,
     ) -> miette::Result<TaskDependencyConfig> {
         // Do not depend on tasks that can fail
         if dep_task_options.allow_failure {
@@ -162,48 +182,38 @@ impl TaskDepsBuilder<'_> {
 
         Ok(dep)
     }
+}
 
-    fn mark_project_dep(
-        &self,
-        task_dep: &TaskDependencyConfig,
-        project: &mut Project,
-    ) -> miette::Result<()> {
-        let TargetScope::Project(dep_project_id) = &task_dep.target.scope else {
-            return Ok(());
-        };
+pub fn create_project_dep_from_task_dep(
+    task_dep: &TaskDependencyConfig,
+    project_id: &Id,
+    root_project_id: Option<&Id>,
+    already_exists: impl FnOnce(&Id) -> bool,
+) -> Option<DependencyConfig> {
+    let TargetScope::Project(dep_project_id) = &task_dep.target.scope else {
+        return None;
+    };
 
-        // Already a dependency, or references self
-        if &project.id == dep_project_id
-            || project
-                .alias
-                .as_ref()
-                .is_some_and(|a| *a == dep_project_id.as_str())
-            || project
-                .dependencies
-                .iter()
-                .any(|pd| &pd.id == dep_project_id)
-        {
-            return Ok(());
-        }
-
-        trace!(
-            project_id = project.id.as_str(),
-            dep_id = dep_project_id.as_str(),
-            task_target = task_dep.target.as_str(),
-            "Marking arbitrary project as an implicit dependency because of a task dependency"
-        );
-
-        project.dependencies.push(DependencyConfig {
-            id: dep_project_id.to_owned(),
-            scope: if self.root_project_id.is_some_and(|id| id == dep_project_id) {
-                DependencyScope::Root
-            } else {
-                DependencyScope::Build
-            },
-            source: DependencySource::Implicit,
-            via: Some(format!("task {}", task_dep.target)),
-        });
-
-        Ok(())
+    // Already a dependency, or references self
+    if project_id == dep_project_id || already_exists(dep_project_id) {
+        return None;
     }
+
+    trace!(
+        project_id = project_id.as_str(),
+        dep_id = dep_project_id.as_str(),
+        task_target = task_dep.target.as_str(),
+        "Marking arbitrary project as an implicit dependency because of a task dependency"
+    );
+
+    Some(DependencyConfig {
+        id: dep_project_id.to_owned(),
+        scope: if root_project_id.is_some_and(|id| id == dep_project_id) {
+            DependencyScope::Root
+        } else {
+            DependencyScope::Build
+        },
+        source: DependencySource::Implicit,
+        via: Some(format!("task {}", task_dep.target)),
+    })
 }

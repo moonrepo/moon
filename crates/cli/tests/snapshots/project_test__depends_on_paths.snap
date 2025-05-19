@@ -11,8 +11,8 @@ About ──────────────────
   Stack: unknown
   Type: application
   Depends on:
-    - baz (explicit, production)
-    - bar (explicit, production)
+    - baz (production)
+    - bar (production)
 
 Configuation ───────────
 

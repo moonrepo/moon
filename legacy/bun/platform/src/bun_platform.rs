@@ -211,7 +211,7 @@ impl Platform for BunPlatform {
                                 id: dep_project_id.to_owned(),
                                 scope: *scope,
                                 source: DependencySource::Implicit,
-                                via: Some(dep_name.clone()),
+                                via: Some(format!("package {dep_name}")),
                             });
                         }
                     }
@@ -450,7 +450,7 @@ impl Platform for BunPlatform {
         let mut command = Command::new(&task.command);
         command.with_console(self.console.clone());
         command.args(&task.args);
-        command.envs(&task.env);
+        command.envs_if_not_global(&task.env);
 
         if let Ok(bun) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&bun.tool) {

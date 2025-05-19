@@ -53,17 +53,19 @@ impl<'task> TaskHasher<'task> {
         self.content
     }
 
-    pub fn hash_args(&mut self, args: &'task [String]) {
-        if !args.is_empty() {
-            for arg in args {
-                self.content.args.push(arg);
-            }
+    pub fn hash_args(&mut self, args: impl IntoIterator<Item = &'task String>) {
+        for arg in args {
+            self.content.args.push(arg);
         }
     }
 
-    pub fn hash_deps(&mut self, deps: BTreeMap<&'task Target, String>) {
-        if !deps.is_empty() {
-            self.content.deps.extend(deps);
+    pub fn hash_deps(&mut self, deps: impl IntoIterator<Item = (&'task Target, String)>) {
+        self.content.deps.extend(deps);
+    }
+
+    pub fn hash_env(&mut self, env: impl IntoIterator<Item = (&'task String, &'task String)>) {
+        for (key, value) in env {
+            self.content.env.insert(key.as_ref(), value.as_ref());
         }
     }
 

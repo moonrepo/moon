@@ -119,19 +119,16 @@ mod task_expander {
             let mut task = create_task();
             task.command = "./$FOO/${BAR}/$BAZ_QUX".into();
 
-            let bag = GlobalEnvBag::instance();
-            bag.set("FOO", "foo");
-            bag.set("BAZ_QUX", "baz-qux");
-
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
-            bag.remove("FOO");
-            bag.remove("BAZ_QUX");
+            assert_eq!(task.command, "./$FOO/$BAR/$BAZ_QUX");
 
-            assert_eq!(task.command, "./foo/${BAR}/baz-qux");
+            assert!(task.input_env.contains("FOO"));
+            assert!(task.input_env.contains("BAR"));
+            assert!(task.input_env.contains("BAZ_QUX"));
         }
 
         #[test]
@@ -148,7 +145,8 @@ mod task_expander {
                 .expand_command(&mut task)
                 .unwrap();
 
-            assert_eq!(task.command, "./foo-self");
+            assert_eq!(task.command, "./$FOO");
+            assert!(task.input_env.contains("FOO"));
         }
     }
 
@@ -242,17 +240,13 @@ mod task_expander {
                 "c/${BAR_BAZ}/d".into(),
             ];
 
-            let bag = GlobalEnvBag::instance();
-            bag.set("BAR_BAZ", "bar-baz");
-            bag.set("FOO_BAR", "foo-bar");
-
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
-            bag.remove("FOO_BAR");
-            bag.remove("BAR_BAZ");
+            assert_eq!(task.args, ["a", "$FOO_BAR", "b", "c/$BAR_BAZ/d"]);
 
-            assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
+            assert!(task.input_env.contains("FOO_BAR"));
+            assert!(task.input_env.contains("BAR_BAZ"));
         }
 
         #[test]
@@ -274,7 +268,10 @@ mod task_expander {
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
-            assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
+            assert_eq!(task.args, ["a", "$FOO_BAR", "b", "c/$BAR_BAZ/d"]);
+
+            assert!(task.input_env.contains("FOO_BAR"));
+            assert!(task.input_env.contains("BAR_BAZ"));
         }
 
         #[test]
@@ -289,7 +286,8 @@ mod task_expander {
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
 
-            assert_eq!(task.args, ["a", "foo-bar-self", "b"]);
+            assert_eq!(task.args, ["a", "$FOO_BAR", "b"]);
+            assert!(task.input_env.contains("FOO_BAR"));
         }
     }
 

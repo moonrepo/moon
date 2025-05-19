@@ -1,4 +1,5 @@
 use miette::IntoDiagnostic;
+use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_config::{HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
@@ -23,6 +24,7 @@ pub async fn hash_common_task_contents(
     action_context: &ActionContext,
     project: &Project,
     task: &Task,
+    node: &ActionNode,
     hasher: &mut ContentHasher,
 ) -> miette::Result<()> {
     let mut task_hasher = TaskHasher::new(
@@ -58,6 +60,11 @@ pub async fn hash_common_task_contents(
     });
 
     task_hasher.hash_inputs().await?;
+
+    if let ActionNode::RunTask(inner) = node {
+        task_hasher.hash_args(&inner.args);
+        task_hasher.hash_env(&inner.env);
+    }
 
     hasher.hash_content(task_hasher.hash())?;
 

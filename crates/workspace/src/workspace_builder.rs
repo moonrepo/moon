@@ -524,8 +524,8 @@ impl<'app> WorkspaceBuilder<'app> {
                 projects_by_tag: &self.projects_by_tag,
                 task_data: &self.task_data,
             }),
-            project_id: &project.id,
-            project_dependencies: &project.dependencies,
+            project: Some(project),
+            root_project_id: self.root_project_id.as_ref(),
             task: &mut task,
         }
         .build()?;

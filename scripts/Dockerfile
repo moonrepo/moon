@@ -45,7 +45,7 @@ COPY --from=build-gnu /out/target/ /target/
 FROM messense/rust-musl-cross:x86_64-musl AS base-musl-amd64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
-RUN rustup toolchain list
+RUN rm -rf ~/.rustup/toolchains
 
 # RUN echo "Building OpenSSL" && \
 #   ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm && \
@@ -91,7 +91,7 @@ RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 FROM messense/rust-musl-cross:aarch64-musl AS base-musl-arm64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
-RUN rustup toolchain list
+RUN rm -rf ~/.rustup/toolchains
 
 # RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
 #   tar zxvf aarch64-linux-musl-cross.tgz && \

@@ -12,6 +12,30 @@ image: ./img/moon/v1.34.png
 
 ## Beta release of toolchain WASM plugins
 
+Two months ago we announced [alpha toolchain plugins](./moon-v1.33) with support for tier 3, but not
+tier 2. The reason for this was that tier 3 is powered by [proto APIs](/docs/proto/wasm-plugin),
+which already existed! We simply hooked them up to moon. The bulk of the remaining plugin work was
+tier 2 support, which we are excited to announce has been completed! The following APIs have been
+implemented:
+
+- `extend_project_graph` - Extend projects with toolchain specific info.
+- `extend_task_command` - Extend the command child process with parameters.
+- `extend_task_script` - Extend the script child process with parameters.
+- `locate_dependencies_root` - Locate the package dependencies workspace root.
+- `parse_manifest` - Parse a manifest file to extract dependencies.
+- `parse_lock` - Parse a lock file to extract resolved dependencies.
+
+As of this release, all 27 APIs have been implemented, and toolchain plugins are now available for
+general use! However, they are still quite unstable, not fully tested, and the APIs may change
+between releases, but you can start using them today!
+
+With all this said, we do not have documentation yet. We plan to slowly work on this across the next
+few releases. In the meantime, check out the following resources for more information:
+
+- [`moon_pdk`](https://docs.rs/moon_pdk/) - Rust plugin development kit.
+- Existing [toolchain plugins](https://github.com/moonrepo/plugins/tree/master/toolchains).
+- In development [Rust toolchain](https://github.com/moonrepo/plugins/pull/48).
+
 ## Improved remote caching
 
 ## Improved code generation

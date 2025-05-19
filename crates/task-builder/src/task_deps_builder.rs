@@ -55,11 +55,9 @@ impl TaskDepsBuilder<'_> {
                         false,
                     ),
                     // id:task
-                    TargetScope::Project(project_id) => (
-                        vec![project_id],
-                        dep_config.optional.unwrap_or(false),
-                        false,
-                    ),
+                    TargetScope::Project(project_id) => {
+                        (vec![project_id], dep_config.optional.unwrap_or(false), true)
+                    }
                     // #tag:task
                     TargetScope::Tag(tag) => (
                         self.querent

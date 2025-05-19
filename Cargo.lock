@@ -3886,7 +3886,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "1.35.7"
+version = "1.36.0"
 dependencies = [
  "clap",
  "extism",

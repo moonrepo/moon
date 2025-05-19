@@ -2,11 +2,125 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2025-04-16T00:00:00.000Z</updated>
+    <updated>2025-05-18T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.36 - Toolchain plugins beta, optimized remote caching, and codegen improvements]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.36</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.36"/>
+        <updated>2025-05-18T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're very excited to fully release toolchain plugins!]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're very excited to fully release toolchain plugins!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="beta-release-of-toolchain-wasm-plugins">Beta release of toolchain WASM plugins<a href="https://moonrepo.dev/blog/moon-v1.36#beta-release-of-toolchain-wasm-plugins" class="hash-link" aria-label="Direct link to Beta release of toolchain WASM plugins" title="Direct link to Beta release of toolchain WASM plugins">​</a></h2>
+<p>Two months ago we announced <a href="https://moonrepo.dev/blog/moon-v1.33">alpha toolchain plugins</a> with support for tier 3, but not
+tier 2. The reason for this was that tier 3 is powered by <a href="https://moonrepo.dev/docs/proto/wasm-plugin">proto APIs</a>,
+which already existed! We simply hooked them up to moon. The bulk of the remaining plugin work was
+tier 2 support, which we are excited to announce has been completed! The following APIs have been
+implemented:</p>
+<ul>
+<li><code>extend_project_graph</code> - Extend projects with toolchain specific info.</li>
+<li><code>extend_task_command</code> - Extend the command child process with parameters.</li>
+<li><code>extend_task_script</code> - Extend the script child process with parameters.</li>
+<li><code>locate_dependencies_root</code> - Locate the package dependencies workspace root.</li>
+<li><code>parse_manifest</code> - Parse a manifest file to extract dependencies.</li>
+<li><code>parse_lock</code> - Parse a lock file to extract resolved dependencies.</li>
+</ul>
+<p>And the following surface areas have been integrated with:</p>
+<ul>
+<li>In the project graph:<!-- -->
+<ul>
+<li>Extend projects with dependencies, tasks, and an alias.</li>
+</ul>
+</li>
+<li>In the action pipeline:<!-- -->
+<ul>
+<li>Added <code>SetupEnvironment</code> action that executes the <code>setup_environment</code> API.</li>
+<li>Added <code>InstallDependencies</code> action that executes the <code>install_dependencies</code> API.</li>
+</ul>
+</li>
+<li>When running tasks:<!-- -->
+<ul>
+<li>Extend the command/script with additional parameters before executing.</li>
+<li>Inject dependency and lock information into the hash.</li>
+</ul>
+</li>
+<li>With Docker:<!-- -->
+<ul>
+<li>Updated <code>docker prune</code> to utilize the new WASM APIs for toolchain plugins.</li>
+</ul>
+</li>
+</ul>
+<p>As of this release, all 27 APIs have been implemented, and toolchain plugins are now available for
+general use! However, they are still quite unstable, not fully tested, and the APIs may change
+between releases, but you can start using them today if you're feeling adventurous!</p>
+<p>With all this said, we do not have documentation yet. We plan to slowly work on this across the next
+few releases. In the meantime, check out the following resources for more information:</p>
+<ul>
+<li><a href="https://docs.rs/moon_pdk/" target="_blank" rel="noopener noreferrer"><code>moon_pdk</code></a> - Rust plugin development kit.</li>
+<li>Existing <a href="https://github.com/moonrepo/plugins/tree/master/toolchains" target="_blank" rel="noopener noreferrer">toolchain plugins</a>.</li>
+<li>In development <a href="https://github.com/moonrepo/plugins/pull/48" target="_blank" rel="noopener noreferrer">Rust toolchain</a>.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="optimized-remote-caching">Optimized remote caching<a href="https://moonrepo.dev/blog/moon-v1.36#optimized-remote-caching" class="hash-link" aria-label="Direct link to Optimized remote caching" title="Direct link to Optimized remote caching">​</a></h2>
+<p>Like the past few releases, we've made some improvements to the remote caching layer.</p>
+<p>To start, we're adding a new
+<a href="https://moonrepo.dev/docs/config/workspace#verifyintegrity"><code>unstable_remote.cache.verifyIntegrity</code></a> setting, that will
+verify the digest (hash) of downloaded blobs to ensure they aren't corrupted or incomplete. We
+currently check the file size, but this will also now check the content. This setting will slightly
+degrade performance but ensure reliability.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">verifyIntegrity</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>While we're on the topic of reliability, we're also introducing an implicit rollback mechanic that
+will remove partially downloaded or incomplete blobs if hydration ever fails at some point. This
+will also run between executions to ensure there are no stale artifacts lying around.</p>
+<p>And lastly, we've parallelized the blob existence checks, reducing the amount of large requests for
+heavy tasks, and reworked how we inherit <code>MOON_REMOTE_*</code> environment variables.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-code-generation">Improved code generation<a href="https://moonrepo.dev/blog/moon-v1.36#improved-code-generation" class="hash-link" aria-label="Direct link to Improved code generation" title="Direct link to Improved code generation">​</a></h2>
+<p>It's been a while since we've added new features to code generation, but thanks to some great
+requests from the community, we have 2 this release!</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="archive-urls">Archive URLs<a href="https://moonrepo.dev/blog/moon-v1.36#archive-urls" class="hash-link" aria-label="Direct link to Archive URLs" title="Direct link to Archive URLs">​</a></h3>
+<p>The first is that <a href="https://moonrepo.dev/docs/guides/codegen#archive-urls">remote archives</a> (zip, tar, etc) can be used
+as template locations. The archive will then be downloaded and unpacked into <code>~/.moon/templates</code>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">generator</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">templates</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'https://domain.com/some/path/to/archive.zip'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="array-and-object-types">Array and object types<a href="https://moonrepo.dev/blog/moon-v1.36#array-and-object-types" class="hash-link" aria-label="Direct link to Array and object types" title="Direct link to Array and object types">​</a></h3>
+<p>The second is that we now support <code>array</code> and <code>object</code>
+<a href="https://moonrepo.dev/docs/config/template#variables">variable types</a> in <code>template.yml</code>. The values within each of these
+collections can be any JSON-compatible type.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">variables</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'array'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">prompt</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Type?'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">default</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'app'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'lib'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">metadata</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'object'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">prompt</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Metadata?'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">default</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">internal</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>These variables and their nested values can then be accessed within templates using dot or bracket
+notation.</p>
+<div class="language-twig codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-twig codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token delimiter punctuation" style="color:#cad4e2">{{</span><span class="token plain"> type</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token number" style="color:#94dded">0</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"> metadata</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">internal </span><span class="token delimiter punctuation" style="color:#cad4e2">}}</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.36#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.36.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added <code>--host</code> and <code>--port</code> options to <code>moon action-graph</code>, <code>moon task-graph</code>, and
+<code>moon project-graph</code>.</li>
+<li>Added <code>--stdin</code> option to <code>moon ci</code> and <code>moon run</code>, which will allow touched files to be passed
+via stdin, instead of running VCS commands to determine them.</li>
+<li>Removed the restriction around <code>moon.{yml,pkl}</code> not being allowed as a task input. However, will
+not be included when using <code>**/*</code>.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.36#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h2>
+<p>Now that toolchain plugins are in beta, we can take the next step in migrating an existing platform
+into a toolchain.</p>
+<ul>
+<li>Migrate the Rust toolchain to a WASM plugin.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="toolchain" term="toolchain"/>
+        <category label="wasm" term="wasm"/>
+        <category label="plugin" term="plugin"/>
+        <category label="remote" term="remote"/>
+        <category label="cache" term="cache"/>
+        <category label="integrity" term="integrity"/>
+        <category label="codegen" term="codegen"/>
+        <category label="template" term="template"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.35 - Action graph improvements, task priorities, and more!]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.35</id>
@@ -1702,65 +1816,5 @@ of changes.</p>
         <category label="version" term="version"/>
         <category label="diagnose" term="diagnose"/>
         <category label="doctor" term="doctor"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.36 - Static registry, plugin searching, and more]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.36</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.36"/>
-        <updated>2024-06-03T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're taking the first step in supporting a plugin registry.]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're taking the first step in supporting a plugin registry.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-static-registry">New static registry<a href="https://moonrepo.dev/blog/proto-v0.36#new-static-registry" class="hash-link" aria-label="Direct link to New static registry" title="Direct link to New static registry">​</a></h2>
-<p>Our long-term plan for proto is to provide a server-based registry in which users could publish and
-manage plugins, and immediately make them available to the community. However, this is quite a
-mountain of work, and will take some time, but making plugins available <em>now</em> is a priority.</p>
-<p>As a temporary solution, we're introducing a static registry, in which available plugins are defined
-in static JSON files, located in the official
-<a href="https://github.com/moonrepo/proto/tree/master/registry" target="_blank" rel="noopener noreferrer">moonrepo/proto</a> repository. This will help
-unblock new features moving forward.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-plugin-search-command">New <code>proto plugin search</code> command<a href="https://moonrepo.dev/blog/proto-v0.36#new-proto-plugin-search-command" class="hash-link" aria-label="Direct link to new-proto-plugin-search-command" title="Direct link to new-proto-plugin-search-command">​</a></h2>
-<p>Because of the static registry work above, we're now able to introduce a new command,
-<a href="https://moonrepo.dev/docs/proto/commands/plugin/search"><code>proto plugin search</code></a>, that can be used to search for plugins
-provided by the community. No longer will you need to browse the documentation, or search Google for
-available plugins.</p>
-<div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto plugin search moon</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Plugins</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Available for query: moon</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"> Plugin  Author    Format  Description                                                          Locator</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"> moon    moonrepo  TOML    moon is a multi-language build system and codebase management tool.  https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-unpin-command">New <code>proto unpin</code> command<a href="https://moonrepo.dev/blog/proto-v0.36#new-proto-unpin-command" class="hash-link" aria-label="Direct link to new-proto-unpin-command" title="Direct link to new-proto-unpin-command">​</a></h2>
-<p>Additionally, a command that probably should have existed from the start, but did not, is now
-available. The <a href="https://moonrepo.dev/docs/proto/commands/unpin"><code>proto unpin</code></a> command does exactly as its name says, it
-unpins (removes) a version from a <code>.prototools</code> file.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-locator-syntax-changes">Plugin locator syntax changes<a href="https://moonrepo.dev/blog/proto-v0.36#plugin-locator-syntax-changes" class="hash-link" aria-label="Direct link to Plugin locator syntax changes" title="Direct link to Plugin locator syntax changes">​</a></h2>
-<p>We've decided to slightly change the syntax of plugin locator strings by embracing the common
-protocol syntax. Instead of <code>source:</code> and <code>github:</code>, we now use <code>file://</code>, <code>https://</code>, and
-<code>github://</code>. The former syntax will continue to work for the time being, but will be removed
-entirely in the future.</p>
-<ul>
-<li><code>source:./file.wasm</code> -&gt; <code>file://./file.wasm</code></li>
-<li><code>source:https://url.com/file.wasm</code> -&gt; <code>https://url.com/file.wasm</code></li>
-<li><code>github:org/repo</code> -&gt; <code>github://org/repo</code></li>
-</ul>
-<blockquote>
-<p>If a <code>proto</code> command modifies a <code>.prototools</code> file, the file will be saved with the new syntax.
-Don't be surprised when this happens!</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.36#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.36.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Updated <code>proto uninstall</code> to also remove entries from <code>.prototools</code> if the version was
-uninstalled.</li>
-<li>Updated some error messages to include copy for work arounds.</li>
-<li>We now lock the bin/shims directory when creating/removing files.<!-- -->
-<ul>
-<li>This is an experiment to help avoid race conditions where multiple proto processes are all
-trying to write to the same location.</li>
-<li>If this results in too large of a performance hit, we'll remove the locking.</li>
-</ul>
-</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="registry" term="registry"/>
     </entry>
 </feed>

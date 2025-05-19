@@ -132,12 +132,9 @@
     "unstable_remote": {
       "title": "unstable_remote",
       "description": "Configures aspects of the remote service.",
-      "anyOf": [
+      "allOf": [
         {
           "$ref": "#/definitions/RemoteConfig"
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -688,6 +685,11 @@
           "description": "Unique instance name for blobs. Will be used as a folder name.",
           "default": "moon-outputs",
           "type": "string"
+        },
+        "verifyIntegrity": {
+          "title": "verifyIntegrity",
+          "description": "When downloading blobs, verify the digests/hashes in the response match the associated blob contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -738,7 +740,14 @@
         "host": {
           "title": "host",
           "description": "The remote host to connect and send requests to. Supports gRPC protocols.",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mtls": {
           "title": "mtls",

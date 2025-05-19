@@ -42,6 +42,7 @@ pub struct RunArgs {
     #[arg(
         long,
         short = 's',
+        env = "MOON_SUMMARY",
         help = "Include a summary of all actions that were processed in the pipeline"
     )]
     pub summary: bool,
@@ -55,6 +56,7 @@ pub struct RunArgs {
 
     #[arg(
         long,
+        env = "MOON_NO_ACTIONS",
         help = "Run the task without including sync and setup related actions in the graph"
     )]
     pub no_actions: bool,
@@ -62,6 +64,7 @@ pub struct RunArgs {
     #[arg(
         long,
         short = 'n',
+        env = "MOON_NO_BAIL",
         help = "When a task fails, continue executing other tasks instead of aborting immediately"
     )]
     pub no_bail: bool,
@@ -78,6 +81,7 @@ pub struct RunArgs {
     // Affected
     #[arg(
         long,
+        env = "MOON_AFFECTED",
         help = "Only run target if affected by touched files or the environment",
         help_heading = HEADING_AFFECTED,
         group = "affected-args"

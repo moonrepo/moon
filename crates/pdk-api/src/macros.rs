@@ -84,7 +84,7 @@ macro_rules! json_config {
                 {
                     host_log!(
                         "Saving <path>{}</path> with changed fields {}",
-                        self.path.display(),
+                        self.path,
                         self.dirty
                             .into_iter()
                             .map(|dirty| format!("<property>{dirty}</property>"))
@@ -103,7 +103,7 @@ macro_rules! json_config {
 
                 #[cfg(feature = "wasm")]
                 {
-                    host_log!("Saving <path>{}</path>", self.path.display());
+                    host_log!("Saving <path>{}</path>", self.path);
                 }
 
                 json::write_file_with_config(&self.path, &self.data, true)?;
@@ -149,7 +149,7 @@ macro_rules! toml_config {
                 {
                     host_log!(
                         "Saving <path>{}</path> with changed fields {}",
-                        self.path.display(),
+                        self.path,
                         self.dirty
                             .into_iter()
                             .map(|dirty| format!("<property>{dirty}</property>"))
@@ -168,7 +168,7 @@ macro_rules! toml_config {
 
                 #[cfg(feature = "wasm")]
                 {
-                    host_log!("Saving <path>{}</path>", self.path.display());
+                    host_log!("Saving <path>{}</path>", self.path);
                 }
 
                 toml::write_file(&self.path, &self.data, true)?;

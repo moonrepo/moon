@@ -350,6 +350,33 @@ mod tasks_builder {
             assert_eq!(task.args, vec!["./tests/**/*.js"]);
             assert_eq!(task.options.shell, Some(true));
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn handles_env_substitution() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("env-substitute").await;
+            let task = tasks.get("command-no-env").unwrap();
+
+            assert_eq!(task.command, "./file.sh");
+            assert_eq!(task.options.shell, Some(cfg!(windows)));
+
+            let task = tasks.get("command-with-env").unwrap();
+
+            assert_eq!(task.command, "./${DIR}/file.sh");
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("args-no-env").unwrap();
+
+            assert_eq!(task.args, vec!["arg"]);
+            assert_eq!(task.options.shell, Some(cfg!(windows)));
+
+            let task = tasks.get("args-with-env").unwrap();
+
+            assert_eq!(task.args, vec!["arg", "$ARG"]);
+            assert_eq!(task.options.shell, Some(true));
+        }
     }
 
     mod detect_platform_legacy {

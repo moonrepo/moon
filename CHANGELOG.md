@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks would not substitute environment variables when executing, because it
+  did not run in a shell.
+
 ## 1.36.0
 
 #### 🚀 Updates

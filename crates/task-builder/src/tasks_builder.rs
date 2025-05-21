@@ -10,6 +10,7 @@ use moon_config::{
     TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
     TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
 };
+use moon_env_var::ENV_VAR_SUBSTITUTE;
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
@@ -509,16 +510,28 @@ impl<'proj> TasksBuilder<'proj> {
             if cfg!(windows) || task.is_system_toolchain() || task.script.is_some() {
                 task.options.shell = Some(true);
             }
+        }
 
-            // If an arg contains a glob, we must run in a shell for expansion to work
-            if task.args.iter().any(|arg| is_glob_like(arg)) {
-                trace!(
-                    task_target = target.as_str(),
-                    "Task has a glob-like argument, wrapping in a shell so glob expansion works",
-                );
+        // If an arg contains a glob, we must run in a shell for expansion to work
+        if task.args.iter().any(|arg| is_glob_like(arg)) {
+            trace!(
+                task_target = target.as_str(),
+                "Task has a glob-like argument, wrapping in a shell so glob expansion works",
+            );
 
-                task.options.shell = Some(true);
-            }
+            task.options.shell = Some(true);
+        }
+
+        // If an arg contains an env var, we must run in a shell for substitution to work
+        if ENV_VAR_SUBSTITUTE.is_match(&task.command)
+            || task.args.iter().any(|arg| ENV_VAR_SUBSTITUTE.is_match(arg))
+        {
+            trace!(
+                task_target = target.as_str(),
+                "Task references an environment variable, wrapping in a shell so substitution works",
+            );
+
+            task.options.shell = Some(true);
         }
 
         if let Some(os_list) = &task.options.os {

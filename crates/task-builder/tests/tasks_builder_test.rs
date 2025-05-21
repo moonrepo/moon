@@ -360,7 +360,7 @@ mod tasks_builder {
             let task = tasks.get("command-no-env").unwrap();
 
             assert_eq!(task.command, "./file.sh");
-            assert_eq!(task.options.shell, Some(cfg!(windows)));
+            assert_eq!(task.options.shell, Some(false));
 
             let task = tasks.get("command-with-env").unwrap();
 
@@ -370,7 +370,7 @@ mod tasks_builder {
             let task = tasks.get("args-no-env").unwrap();
 
             assert_eq!(task.args, vec!["arg"]);
-            assert_eq!(task.options.shell, Some(cfg!(windows)));
+            assert_eq!(task.options.shell, Some(false));
 
             let task = tasks.get("args-with-env").unwrap();
 

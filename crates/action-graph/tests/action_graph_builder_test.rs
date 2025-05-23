@@ -469,7 +469,9 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: spec.clone() }),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: spec.clone()
+                    }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
                         project_id: None,
@@ -2667,7 +2669,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
                 ]
             );
         }
@@ -2701,9 +2703,9 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node1 }),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node2 }),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node3 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node1 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node2 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node3 }),
                 ]
             );
         }
@@ -2727,7 +2729,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
                 ]
             );
         }
@@ -2829,7 +2831,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_toolchain(SetupToolchainNode { spec: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
                 ]
             );
         }

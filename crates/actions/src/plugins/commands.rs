@@ -178,9 +178,10 @@ pub async fn exec_plugin_command(
         .await
         {
             Ok(op) => {
-                let success = op
-                    .get_exec_output()
-                    .is_some_and(|exec| exec.get_exit_code() == 0);
+                let success = op.status == ActionStatus::Skipped
+                    || op
+                        .get_exec_output()
+                        .is_some_and(|exec| exec.get_exit_code() == 0);
 
                 ops.push(op);
 
@@ -229,17 +230,19 @@ pub async fn exec_plugin_commands(
     }
 
     // Then execute the parallel commands
-    let mut set = JoinSet::new();
+    if !parallel.is_empty() {
+        let mut set = JoinSet::new();
 
-    for command in parallel {
-        let app_context = app_context.clone();
-        let options = options.clone();
+        for command in parallel {
+            let app_context = app_context.clone();
+            let options = options.clone();
 
-        set.spawn(async move { exec_plugin_command(app_context, &command, &options).await });
-    }
+            set.spawn(async move { exec_plugin_command(app_context, &command, &options).await });
+        }
 
-    while let Some(result) = set.join_next().await {
-        ops.extend(result.into_diagnostic()??);
+        while let Some(result) = set.join_next().await {
+            ops.extend(result.into_diagnostic()??);
+        }
     }
 
     // Inherit toolchain ID

@@ -8,7 +8,7 @@ use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::instrument;
@@ -68,14 +68,11 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    fn handle_output_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::Real(
-            file.real_path()
-                .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
-        );
+    fn handle_output_file(&self, file: &mut PathBuf) {
+        *file = self.plugin.from_virtual_path(&file);
     }
 
-    fn handle_output_files(&self, files: &mut [VirtualPath]) {
+    fn handle_output_files(&self, files: &mut [PathBuf]) {
         for file in files {
             self.handle_output_file(file);
         }
@@ -86,7 +83,7 @@ impl ToolchainPlugin {
         output: &LocateDependenciesRootOutput,
         path: &Path,
     ) -> miette::Result<bool> {
-        let Some(root) = output.root.as_ref().and_then(|root| root.real_path()) else {
+        let Some(root) = &output.root else {
             return Ok(false);
         };
 
@@ -97,7 +94,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(globs) = &output.members {
-                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(path))
+                GlobSet::new(globs)?.matches(path.strip_prefix(root).unwrap_or(path))
             }
             // Otherwise a stand alone project?
             else {
@@ -240,9 +237,10 @@ impl ToolchainPlugin {
     ) -> miette::Result<ExtendTaskCommandOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
-                .read()
+                .write()
                 .await
-                .get_globals_dir()
+                .locate_globals_dir()
+                .await?
                 .map(|dir| self.to_virtual_path(dir));
         }
 
@@ -261,9 +259,10 @@ impl ToolchainPlugin {
     ) -> miette::Result<ExtendTaskScriptOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
-                .read()
+                .write()
                 .await
-                .get_globals_dir()
+                .locate_globals_dir()
+                .await?
                 .map(|dir| self.to_virtual_path(dir));
         }
 

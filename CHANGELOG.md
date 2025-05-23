@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🧩 Plugins
+
+- Improved cache handling and invalidation for `SetupEnvironment` and `InstallDependencies` actions.
+- WASM
+  - Reworked all virtual path fields in "output" structs to greatly reduce the JSON payload.
+  - Reworked the `ManifestDependency` type to be an enum instead of a struct.
+  - Added `ProjectDependency.via` field.
+
 ## 1.36.1
 
 #### 🐞 Fixes

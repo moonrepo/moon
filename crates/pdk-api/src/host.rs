@@ -1,4 +1,4 @@
-use crate::is_false;
+use crate::{is_false, is_zero};
 use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct};
 
 api_struct!(
@@ -26,6 +26,7 @@ api_struct!(
 
         /// Checkpoint label to print to the console. If not
         /// provided, will default to the command + arguments.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub label: Option<String>,
 
         /// Execute the command in parallel.
@@ -34,6 +35,7 @@ api_struct!(
 
         /// A count of how many times to retry the command
         /// if it fails to execute.
+        #[serde(skip_serializing_if = "is_zero")]
         pub retry_count: u8,
     }
 );

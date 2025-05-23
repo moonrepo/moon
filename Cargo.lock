@@ -3603,6 +3603,7 @@ name = "moon_actions"
 version = "0.0.1"
 dependencies = [
  "convert_case",
+ "futures",
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",

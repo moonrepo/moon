@@ -69,6 +69,11 @@ pub async fn setup_toolchain_plugin(
     )
     .await?
     else {
+        debug!(
+            toolchain_id = node.spec.id.as_str(),
+            "No {} toolchain changes since last run, skipping setup", toolchain.metadata.name
+        );
+
         return Ok(ActionStatus::Skipped);
     };
 

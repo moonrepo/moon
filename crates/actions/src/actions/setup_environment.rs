@@ -92,6 +92,11 @@ pub async fn setup_environment(
     )
     .await?
     else {
+        debug!(
+            toolchain_id = node.toolchain_id.as_str(),
+            "No {} toolchain changes since last run, skipping setup", toolchain.metadata.name
+        );
+
         return Ok(ActionStatus::Skipped);
     };
 

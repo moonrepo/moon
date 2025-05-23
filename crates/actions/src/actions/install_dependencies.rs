@@ -145,6 +145,11 @@ pub async fn install_dependencies(
     )
     .await?
     else {
+        debug!(
+            toolchain_id = toolchain.id.as_str(),
+            "No {} toolchain changes since last run, skipping install", toolchain.metadata.name
+        );
+
         return Ok(ActionStatus::Skipped);
     };
 

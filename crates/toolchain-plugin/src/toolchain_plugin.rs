@@ -46,10 +46,7 @@ impl Plugin for ToolchainPlugin {
             tool: if plugin.has_func("register_tool").await {
                 Some(RwLock::new(
                     Tool::new(
-                        match &metadata.proto_id {
-                            Some(id) => PluginId::new(id)?,
-                            None => registration.id.clone(),
-                        },
+                        registration.id.clone(),
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )
@@ -97,7 +94,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(globs) = &output.members {
-                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(path))
+                GlobSet::new(globs)?.matches(path.strip_prefix(root).unwrap_or(path))
             }
             // Otherwise a stand alone project?
             else {

@@ -11,12 +11,11 @@
 
 #### 🧩 Plugins
 
-- Improved cache handling and invalidation for `SetupEnvironment` actions.
+- Improved cache handling and invalidation for `SetupEnvironment` and `InstallDependencies` actions.
 - WASM
-  - Reworked all "output" types virtual path fields to greatly reduce the JSON payload.
+  - Reworked all virtual path fields in "output" structs to greatly reduce the JSON payload.
   - Reworked the `ManifestDependency` type to be an enum instead of a struct.
   - Added `ProjectDependency.via` field.
-  - Added `RegisterToolchainOutput.proto_id` field.
 
 ## 1.36.3
 

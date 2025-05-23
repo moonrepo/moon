@@ -176,9 +176,20 @@ impl<T: Plugin> PluginRegistry<T> {
                     "Updated plugin manifest, attempting to register plugin",
                 );
 
+                // Create a new ID for the WASM manifest if it's prefixed with
+                // "unstable_". The reason for this is that proto's built-in tools
+                // expect a specific ID, for example "rust", and if we provide
+                // "unstable_rust", it breaks in weird ways.
+                let orig_id = entry.key().as_str();
+                let stable_id = orig_id.strip_prefix("unstable_").unwrap_or(orig_id);
+
                 // Combine everything into the container and register
                 let plugin = T::new(PluginRegistration {
-                    container: PluginContainer::new(entry.key().to_owned(), manifest, functions)?,
+                    container: PluginContainer::new(
+                        PluginId::new(stable_id)?,
+                        manifest,
+                        functions,
+                    )?,
                     locator: locator.to_owned(),
                     id: entry.key().to_owned(),
                     moon_env: Arc::clone(&self.host_data.moon_env),
@@ -188,7 +199,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
                 debug!(
                     plugin = self.type_of.get_label(),
-                    id = entry.key().as_str(),
+                    id = orig_id,
                     "Registered plugin",
                 );
 

@@ -1,20 +1,24 @@
 use crate::plugins::*;
 use crate::utils::{create_hash_and_return_lock_if_changed, should_skip_action_matching};
+use futures::StreamExt;
+use futures::stream::FuturesOrdered;
+use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, InstallDependenciesNode, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
+use moon_common::path::PathExt;
 use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::glob_walk_with_options;
 use moon_hash::hash_content;
-use moon_pdk_api::InstallDependenciesInput;
+use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
 use moon_project::ProjectFragment;
 use moon_time::to_millis;
 use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::glob::GlobWalkOptions;
 use starbase_utils::{fs, json::JsonValue};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -23,7 +27,8 @@ hash_content!(
     struct InstallDependenciesHash<'action> {
         action_node: &'action InstallDependenciesNode,
         lockfile_timestamp: Option<u128>,
-        manifest_dependencies: BTreeMap<WorkspaceRelativePathBuf, BTreeMap<String, String>>,
+        manifest_dependencies: BTreeMap<String, BTreeSet<String>>,
+        manifest_paths: BTreeSet<WorkspaceRelativePathBuf>,
         project: Option<&'action ProjectFragment>,
         toolchain_config: &'action JsonValue,
         vendor_dir_exists: bool,
@@ -141,7 +146,15 @@ pub async fn install_dependencies(
     let Some(_lock) = create_hash_and_return_lock_if_changed(
         action,
         &app_context,
-        create_hash_content(&toolchain, &deps_root, node, &input)?,
+        create_hash_content(
+            &app_context,
+            &action_context,
+            &toolchain,
+            &deps_root,
+            node,
+            &input,
+        )
+        .await?,
     )
     .await?
     else {
@@ -216,8 +229,10 @@ pub async fn install_dependencies(
     })
 }
 
-fn create_hash_content<'action>(
-    toolchain: &ToolchainPlugin,
+async fn create_hash_content<'action>(
+    app_context: &Arc<AppContext>,
+    action_context: &Arc<ActionContext>,
+    toolchain: &Arc<ToolchainPlugin>,
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     input: &'action InstallDependenciesInput,
@@ -226,10 +241,16 @@ fn create_hash_content<'action>(
         action_node: node,
         lockfile_timestamp: None,
         manifest_dependencies: BTreeMap::default(),
+        manifest_paths: BTreeSet::default(),
         project: input.project.as_ref(),
         toolchain_config: &input.toolchain_config,
         vendor_dir_exists: false,
     };
+
+    // Check if vendored already
+    if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
+        content.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
+    }
 
     // Extract lockfile last modification
     if let Some(lock_file_name) = &toolchain.metadata.lock_file_name {
@@ -246,32 +267,109 @@ fn create_hash_content<'action>(
 
     // Extract dependencies from all applicable manifests
     if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
-        let mut deps_members = node.members.clone().unwrap_or_default();
-        deps_members.push(".".into());
+        let has_touched_manifests = action_context
+            .touched_files
+            .iter()
+            .any(|file| file.as_str().ends_with(manifest_file_name));
 
-        let _manifest_paths =
-            glob_walk_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
-                .into_iter()
-                .filter_map(|path| {
-                    if path.ends_with(manifest_file_name) {
-                        Some(path)
-                    } else if path.join(manifest_file_name).exists() {
-                        Some(path.join(manifest_file_name))
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<_>>();
-
-        // TODO
-    }
-
-    // Check if vendored already
-    if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
-        content.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
+        // If no manifests touched, then do nothing and avoid all
+        // this overhead! We can assume no dependencies have changed
+        if has_touched_manifests {
+            hash_manifest_contents(
+                app_context,
+                toolchain,
+                deps_root,
+                node,
+                manifest_file_name,
+                &mut content,
+            )
+            .await?;
+        }
     }
 
     Ok(content)
+}
+
+async fn hash_manifest_contents<'action>(
+    app_context: &Arc<AppContext>,
+    toolchain: &Arc<ToolchainPlugin>,
+    deps_root: &Path,
+    node: &'action InstallDependenciesNode,
+    manifest_file_name: &str,
+    hash_content: &mut InstallDependenciesHash<'action>,
+) -> miette::Result<()> {
+    // Find all manifests in the workspace
+    let deps_members = node.members.clone().unwrap_or_default();
+
+    let mut manifest_paths =
+        glob_walk_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
+            .into_iter()
+            .filter_map(|path| {
+                if path.ends_with(manifest_file_name) {
+                    Some(path)
+                } else if path.join(manifest_file_name).exists() {
+                    Some(path.join(manifest_file_name))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+    // Always include the root manifest
+    if deps_root.join(manifest_file_name).exists() {
+        manifest_paths.push(deps_root.join(manifest_file_name));
+    }
+
+    manifest_paths.sort();
+
+    if manifest_paths.is_empty() {
+        return Ok(());
+    }
+
+    // Parse each manifest concurrently
+    let mut futures = FuturesOrdered::new();
+
+    for manifest_path in manifest_paths {
+        let app_context = Arc::clone(app_context);
+        let toolchain = Arc::clone(toolchain);
+
+        if let Ok(rel_path) = manifest_path.relative_to(&app_context.workspace_root) {
+            hash_content.manifest_paths.insert(rel_path);
+        }
+
+        futures.push_back(tokio::spawn(async move {
+            toolchain
+                .parse_manifest(ParseManifestInput {
+                    context: app_context.toolchain_registry.create_context(),
+                    path: toolchain.to_virtual_path(manifest_path),
+                })
+                .await
+        }));
+    }
+
+    // Inject the manifest deps into the hash
+    let mut inject_deps = |deps: BTreeMap<String, ManifestDependency>| {
+        for (name, dep) in deps {
+            if let Some(version) = dep.get_version() {
+                hash_content
+                    .manifest_dependencies
+                    .entry(name)
+                    .or_default()
+                    .insert(version.to_string());
+            }
+        }
+    };
+
+    while let Some(result) = futures.next().await {
+        let output = result.into_diagnostic()??;
+
+        inject_deps(output.dependencies);
+        inject_deps(output.dev_dependencies);
+        inject_deps(output.build_dependencies);
+        inject_deps(output.peer_dependencies);
+    }
+
+    Ok(())
 }
 
 fn has_vendor_installed_dependencies(toolchain: &ToolchainPlugin, deps_root: &Path) -> bool {

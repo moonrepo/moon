@@ -8,7 +8,7 @@ use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::instrument;
@@ -46,7 +46,10 @@ impl Plugin for ToolchainPlugin {
             tool: if plugin.has_func("register_tool").await {
                 Some(RwLock::new(
                     Tool::new(
-                        registration.id.clone(),
+                        match &metadata.proto_id {
+                            Some(id) => PluginId::new(id)?,
+                            None => registration.id.clone(),
+                        },
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )
@@ -68,14 +71,11 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    fn handle_output_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::Real(
-            file.real_path()
-                .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
-        );
+    fn handle_output_file(&self, file: &mut PathBuf) {
+        *file = self.plugin.from_virtual_path(&file);
     }
 
-    fn handle_output_files(&self, files: &mut [VirtualPath]) {
+    fn handle_output_files(&self, files: &mut [PathBuf]) {
         for file in files {
             self.handle_output_file(file);
         }
@@ -86,7 +86,7 @@ impl ToolchainPlugin {
         output: &LocateDependenciesRootOutput,
         path: &Path,
     ) -> miette::Result<bool> {
-        let Some(root) = output.root.as_ref().and_then(|root| root.real_path()) else {
+        let Some(root) = &output.root else {
             return Ok(false);
         };
 

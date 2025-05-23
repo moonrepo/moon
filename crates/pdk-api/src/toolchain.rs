@@ -10,6 +10,9 @@ use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
 use schematic::Schema;
 use serde_json::Value;
+use std::collections::BTreeMap;
+use std::path::PathBuf;
+use warpgate_api::api_enum;
 use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 // METADATA
@@ -56,6 +59,11 @@ api_struct!(
 
         /// Version of the plugin.
         pub plugin_version: String,
+
+        /// The identifier to use when instantiating a proto tool instance
+        /// to support tier 3 functionality. This is only required if the
+        /// moon toolchain ID differs from the proto tool ID.
+        pub proto_id: Option<String>,
 
         /// The name of the directory that contains installed dependencies.
         /// Will be used for detection.
@@ -145,7 +153,7 @@ api_struct!(
     pub struct SyncOutput {
         /// List of files that have been changed because of the sync.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<VirtualPath>,
+        pub changed_files: Vec<PathBuf>,
 
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.
@@ -184,7 +192,7 @@ api_struct!(
     pub struct SetupToolchainOutput {
         /// List of files that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<VirtualPath>,
+        pub changed_files: Vec<PathBuf>,
 
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.
@@ -242,7 +250,7 @@ api_struct!(
     pub struct SetupEnvironmentOutput {
         /// List of files that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<VirtualPath>,
+        pub changed_files: Vec<PathBuf>,
 
         /// List of commands to execute during setup.
         #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -279,7 +287,7 @@ api_struct!(
 
         /// Virtual path to the located root. If no root was found,
         /// return `None` to abort any relevant operations.
-        pub root: Option<VirtualPath>,
+        pub root: Option<PathBuf>,
     }
 );
 
@@ -349,20 +357,20 @@ api_struct!(
     #[serde(default)]
     pub struct ParseManifestOutput {
         /// Build dependencies.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub build_dependencies: FxHashMap<String, ManifestDependency>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub build_dependencies: BTreeMap<String, ManifestDependency>,
 
         /// Development dependencies.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub dev_dependencies: FxHashMap<String, ManifestDependency>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub dev_dependencies: BTreeMap<String, ManifestDependency>,
 
         /// Production dependencies.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub dependencies: FxHashMap<String, ManifestDependency>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub dependencies: BTreeMap<String, ManifestDependency>,
 
         /// Peer dependencies.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub peer_dependencies: FxHashMap<String, ManifestDependency>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub peer_dependencies: BTreeMap<String, ManifestDependency>,
 
         /// Can the package be published or not.
         #[serde(skip_serializing_if = "is_false")]
@@ -374,38 +382,47 @@ api_struct!(
     }
 );
 
-api_struct!(
+api_enum!(
     /// Represents a dependency definition in a manifest file.
-    #[serde(default)]
-    pub struct ManifestDependency {
-        /// The version is inherited from the workspace.
-        #[serde(skip_serializing_if = "is_false")]
-        pub inherited: bool,
+    #[serde(untagged)]
+    pub enum ManifestDependency {
+        Version(UnresolvedVersionSpec),
 
-        /// List of features enabled for this dependency.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub features: Vec<String>,
+        Config {
+            /// The version is inherited from the workspace.
+            #[serde(default, skip_serializing_if = "is_false")]
+            inherited: bool,
 
-        /// The defined version or requirement.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub version: Option<UnresolvedVersionSpec>,
+            /// List of features enabled for this dependency.
+            #[serde(default, skip_serializing_if = "Vec::is_empty")]
+            features: Vec<String>,
+
+            /// The defined version or requirement.
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            version: Option<UnresolvedVersionSpec>,
+        },
     }
 );
 
 impl ManifestDependency {
     /// Defines an explicit version or requirement.
     pub fn new(version: UnresolvedVersionSpec) -> Self {
-        Self {
-            version: Some(version),
-            ..Default::default()
-        }
+        Self::Version(version)
     }
 
     /// Inherits a version from the workspace.
     pub fn inherited() -> Self {
-        Self {
+        Self::Config {
             inherited: true,
-            ..Default::default()
+            features: vec![],
+            version: None,
+        }
+    }
+
+    pub fn get_version(&self) -> Option<&UnresolvedVersionSpec> {
+        match self {
+            ManifestDependency::Version(version) => Some(version),
+            ManifestDependency::Config { version, .. } => version.as_ref(),
         }
     }
 }
@@ -426,12 +443,12 @@ api_struct!(
     #[serde(default)]
     pub struct ParseLockOutput {
         /// Map of all dependencies and their locked versions.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub dependencies: FxHashMap<String, Vec<LockDependency>>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub dependencies: BTreeMap<String, Vec<LockDependency>>,
 
         /// Map of all packages within the current workspace.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub packages: FxHashMap<String, Option<Version>>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub packages: BTreeMap<String, Option<Version>>,
     }
 );
 
@@ -553,7 +570,7 @@ api_struct!(
     pub struct ScaffoldDockerOutput {
         /// List of files that were copied into the scaffold.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub copied_files: Vec<VirtualPath>,
+        pub copied_files: Vec<PathBuf>,
     }
 );
 
@@ -583,6 +600,6 @@ api_struct!(
     pub struct PruneDockerOutput {
         /// List of files that were changed during prune.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<VirtualPath>,
+        pub changed_files: Vec<PathBuf>,
     }
 );

@@ -48,12 +48,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
             )
             .await?
         {
-            if let Some(root) = locate_result
-                .output
-                .root
-                .as_ref()
-                .and_then(|root| root.real_path())
-            {
+            if let Some(root) = locate_result.output.root.as_ref() {
                 let toolchain = locate_result.toolchain;
 
                 if !toolchain.in_dependencies_workspace(&locate_result.output, &project.root)? {
@@ -61,14 +56,14 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                 }
 
                 match deps_roots.iter_mut().find(|instance| {
-                    instance.deps_root == root && instance.toolchain.id == toolchain.id
+                    &instance.deps_root == root && instance.toolchain.id == toolchain.id
                 }) {
                     Some(entry) => {
                         entry.projects.push(project.clone());
                     }
                     None => {
                         deps_roots.push(PruneToolchainInstance {
-                            deps_root: root,
+                            deps_root: root.into(),
                             projects: vec![project.clone()],
                             toolchain,
                         });

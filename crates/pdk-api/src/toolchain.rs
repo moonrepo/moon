@@ -386,8 +386,13 @@ api_enum!(
     /// Represents a dependency definition in a manifest file.
     #[serde(untagged)]
     pub enum ManifestDependency {
+        /// Inherited from workspace.
+        Inherited(bool),
+
+        /// Only a version.
         Version(UnresolvedVersionSpec),
 
+        /// Full configuration.
         Config {
             /// The version is inherited from the workspace.
             #[serde(default, skip_serializing_if = "is_false")]
@@ -412,17 +417,24 @@ impl ManifestDependency {
 
     /// Inherits a version from the workspace.
     pub fn inherited() -> Self {
-        Self::Config {
-            inherited: true,
-            features: vec![],
-            version: None,
-        }
+        Self::Inherited(true)
     }
 
+    /// Return an applicable version.
     pub fn get_version(&self) -> Option<&UnresolvedVersionSpec> {
         match self {
             ManifestDependency::Version(version) => Some(version),
             ManifestDependency::Config { version, .. } => version.as_ref(),
+            _ => None,
+        }
+    }
+
+    /// Is the dependency version inherited.
+    pub fn is_inherited(&self) -> bool {
+        match self {
+            ManifestDependency::Inherited(state) => *state,
+            ManifestDependency::Config { inherited, .. } => *inherited,
+            _ => false,
         }
     }
 }

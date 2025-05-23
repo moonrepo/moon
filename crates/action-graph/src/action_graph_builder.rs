@@ -945,7 +945,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let index = insert_node_or_exit!(
             self,
             ActionNode::setup_toolchain(SetupToolchainNode {
-                spec: spec.to_owned(),
+                toolchain: spec.to_owned(),
             })
         );
 

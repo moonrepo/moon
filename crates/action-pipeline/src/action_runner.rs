@@ -126,7 +126,9 @@ pub async fn run_action(
 
         ActionNode::SetupToolchain(inner) => {
             emitter
-                .emit(Event::ToolchainInstalling { spec: &inner.spec })
+                .emit(Event::ToolchainInstalling {
+                    spec: &inner.toolchain,
+                })
                 .await?;
 
             let result = setup_toolchain_plugin(action, action_context, app_context, inner).await;
@@ -134,7 +136,7 @@ pub async fn run_action(
             emitter
                 .emit(Event::ToolchainInstalled {
                     error: extract_error(&result),
-                    spec: &inner.spec,
+                    spec: &inner.toolchain,
                 })
                 .await?;
 

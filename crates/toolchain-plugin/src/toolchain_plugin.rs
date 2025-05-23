@@ -240,9 +240,10 @@ impl ToolchainPlugin {
     ) -> miette::Result<ExtendTaskCommandOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
-                .read()
+                .write()
                 .await
-                .get_globals_dir()
+                .locate_globals_dir()
+                .await?
                 .map(|dir| self.to_virtual_path(dir));
         }
 
@@ -261,9 +262,10 @@ impl ToolchainPlugin {
     ) -> miette::Result<ExtendTaskScriptOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
-                .read()
+                .write()
                 .await
-                .get_globals_dir()
+                .locate_globals_dir()
+                .await?
                 .map(|dir| self.to_virtual_path(dir));
         }
 

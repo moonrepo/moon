@@ -21,6 +21,15 @@ pub async fn sync_project(
 ) -> miette::Result<ActionStatus> {
     let project_id = &node.project_id;
 
+    // Include tasks for snapshot!
+    let project = workspace_graph.get_project_with_tasks(project_id)?;
+
+    // Create a snapshot for tasks to reference
+    app_context
+        .cache_engine
+        .state
+        .save_project_snapshot(project_id, &project)?;
+
     // Skip action if requested too
     if let Some(value) = should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", project_id) {
         debug!(
@@ -33,22 +42,13 @@ pub async fn sync_project(
         return Ok(ActionStatus::Skipped);
     }
 
-    // Include tasks for snapshot!
-    let project = workspace_graph.get_project_with_tasks(project_id)?;
+    debug!("Syncing project {}", color::id(project_id));
 
     // Lock the project to avoid collisions
     let _lock =
         app_context
             .cache_engine
             .create_lock(format!("{}-{}", action.get_prefix(), project_id))?;
-
-    debug!("Syncing project {}", color::id(project_id));
-
-    // Create a snapshot for tasks to reference
-    app_context
-        .cache_engine
-        .state
-        .save_project_snapshot(project_id, &project)?;
 
     // Collect all project dependencies so we can pass them along
     let mut dependencies = FxHashMap::default();

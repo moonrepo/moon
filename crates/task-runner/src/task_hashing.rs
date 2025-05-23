@@ -336,19 +336,12 @@ fn apply_toolchain_dependencies_by_scope(
     let mut inject = false;
 
     for (name, dep) in project_deps {
-        let req = match dep {
-            ManifestDependency::Version(version) => Some(version),
-            ManifestDependency::Config {
-                inherited, version, ..
-            } => {
-                if inherited {
-                    workspace_deps
-                        .get(&name)
-                        .and_then(|ws_dep| ws_dep.get_version().cloned())
-                } else {
-                    version
-                }
-            }
+        let req = if dep.is_inherited() {
+            workspace_deps
+                .get(&name)
+                .and_then(|ws_dep| ws_dep.get_version())
+        } else {
+            dep.get_version()
         };
 
         // If no version requirement, just skip
@@ -362,12 +355,12 @@ fn apply_toolchain_dependencies_by_scope(
                 // By exact version first
                 lock_deps
                     .iter()
-                    .find(|ld| ld.version.as_ref().is_some_and(|v| &req == v))
+                    .find(|ld| ld.version.as_ref().is_some_and(|v| req == v))
                     .or_else(|| {
                         // Then by matching requirement second
                         lock_deps
                             .iter()
-                            .find(|ld| ld.req.as_ref().is_some_and(|r| &req == r))
+                            .find(|ld| ld.req.as_ref().is_some_and(|r| req == r))
                     })
             {
                 // Found, so record a value

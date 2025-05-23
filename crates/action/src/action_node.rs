@@ -54,7 +54,7 @@ pub struct SetupToolchainLegacyNode {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct SetupToolchainNode {
-    pub spec: ToolchainSpec,
+    pub toolchain: ToolchainSpec,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -197,7 +197,7 @@ impl ActionNode {
 
     pub fn get_spec(&self) -> Option<&ToolchainSpec> {
         match self {
-            Self::SetupToolchain(inner) => Some(&inner.spec),
+            Self::SetupToolchain(inner) => Some(&inner.toolchain),
             _ => None,
         }
     }
@@ -288,7 +288,7 @@ impl ActionNode {
                 }
             }
             Self::SetupToolchain(inner) => {
-                format!("SetupToolchain({})", inner.spec.target())
+                format!("SetupToolchain({})", inner.toolchain.target())
             }
             Self::SyncProject(inner) => {
                 format!("SyncProject({})", inner.project_id)

@@ -1,4 +1,4 @@
-use crate::env_substitutor::ENV_VAR_SUBSTITUTE;
+use crate::env_substitutor::{ENV_VAR_SUBSTITUTE, rebuild_env_var};
 use rustc_hash::FxHashSet;
 
 #[derive(Default)]
@@ -23,17 +23,13 @@ impl EnvScanner {
         let mut found = FxHashSet::default();
 
         let result = ENV_VAR_SUBSTITUTE.replace_all(value, |caps: &regex::Captures| {
-            let Some(name) = caps
-                .name("name1")
-                .or_else(|| caps.name("name2"))
-                .map(|cap| cap.as_str())
-            else {
+            let Some(name) = caps.name("name").map(|cap| cap.as_str()) else {
                 return String::new();
             };
 
             found.insert(name.to_owned());
 
-            format!("${name}")
+            rebuild_env_var(caps)
         });
 
         self.found = found;

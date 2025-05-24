@@ -5,6 +5,82 @@ mod env_substitutor {
     use super::*;
 
     #[test]
+    fn matches_all_variants() {
+        let items = vec![
+            // Bash, Zsh, etc
+            ("$VAR", "${VAR}", "", "VAR"),
+            // Elvish
+            ("$E:VAR", "${E:VAR}", "E:", "VAR"),
+            // Ion
+            ("$env::VAR", "${env::VAR}", "env::", "VAR"),
+            // Murex
+            ("$ENV.VAR", "${ENV.VAR}", "ENV.", "VAR"),
+            // Nu
+            ("$env.VAR", "${env.VAR}", "env.", "VAR"),
+            // Pwsh
+            ("$env:VAR", "${env:VAR}", "env:", "VAR"),
+        ];
+
+        for (without_brackets, with_brackets, namespace, name) in items {
+            // No brackets
+            let without_match = ENV_VAR_SUBSTITUTE.captures(without_brackets).unwrap();
+
+            assert_eq!(
+                without_match
+                    .name("namespace")
+                    .map(|cap| cap.as_str())
+                    .unwrap_or_default(),
+                namespace
+            );
+            assert_eq!(without_match.name("name").unwrap().as_str(), name);
+
+            assert_eq!(
+                rebuild_env_var(&without_match),
+                if namespace == "env::" {
+                    with_brackets
+                } else {
+                    without_brackets
+                }
+            );
+
+            // With brackets
+            let with_match = ENV_VAR_SUBSTITUTE.captures(with_brackets).unwrap();
+
+            assert_eq!(
+                with_match
+                    .name("namespace")
+                    .map(|cap| cap.as_str())
+                    .unwrap_or_default(),
+                namespace
+            );
+            assert_eq!(with_match.name("name").unwrap().as_str(), name);
+
+            assert_eq!(
+                rebuild_env_var(&with_match),
+                if namespace == "env::" {
+                    with_brackets
+                } else {
+                    without_brackets
+                }
+            );
+
+            // With flags
+            for flag in ["!", "?"] {
+                assert!(
+                    ENV_VAR_SUBSTITUTE
+                        .captures(&format!("${namespace}{name}{flag}"))
+                        .is_some()
+                );
+                assert!(
+                    ENV_VAR_SUBSTITUTE
+                        .captures(&format!("${{{namespace}{name}{flag}}}"))
+                        .is_some()
+                );
+            }
+        }
+    }
+
+    #[test]
     fn handles_flags_when_missing() {
         let mut sub = EnvSubstitutor::default();
 

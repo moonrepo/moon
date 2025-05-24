@@ -1,12 +1,35 @@
 use crate::global_bag::GlobalEnvBag;
-use regex::Regex;
+use regex::{Captures, Regex};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::sync::LazyLock;
 
 // $ENV_VAR, ${ENV_VAR}
+// $E: = Elvish
+// $env: = PowerShell
+// $env:: = Ion
+// $env. = Nu
+// $ENV. = Murex
 pub static ENV_VAR_SUBSTITUTE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("(?:\\$\\{(?P<name1>[A-Z0-9_]+)(?P<flag1>[!?]{1})?\\})|(?:\\$(?P<name2>[A-Z0-9_]+)(?P<flag2>[!?]{1})?)").unwrap()
+    Regex::new(
+        "(?:\\$\\{?(?P<namespace>E:|env::|env:|env.|ENV.)?(?P<name>[A-Z0-9_]+)(?P<flag>[!?]{1})?\\}?)",
+    )
+    .unwrap()
 });
+
+pub fn rebuild_env_var(caps: &Captures) -> String {
+    let namespace = caps
+        .name("namespace")
+        .map(|cap| cap.as_str())
+        .unwrap_or_default();
+    let name = caps.name("name").map(|cap| cap.as_str()).unwrap();
+
+    // Ion must always be wrapped in brackets!
+    if namespace == "env::" {
+        format!("${{{namespace}{name}}}")
+    } else {
+        format!("${namespace}{name}")
+    }
+}
 
 #[derive(Default)]
 pub struct EnvSubstitutor<'bag> {
@@ -70,19 +93,12 @@ impl<'bag> EnvSubstitutor<'bag> {
         let local_vars = self.local_vars;
         let mut substituted = FxHashSet::default();
 
-        let result = ENV_VAR_SUBSTITUTE.replace_all(value, |caps: &regex::Captures| {
-            let Some(name) = caps
-                .name("name1")
-                .or_else(|| caps.name("name2"))
-                .map(|cap| cap.as_str())
-            else {
+        let result = ENV_VAR_SUBSTITUTE.replace_all(value, |caps: &Captures| {
+            let Some(name) = caps.name("name").map(|cap| cap.as_str()) else {
                 return String::new();
             };
 
-            let flag = caps
-                .name("flag1")
-                .or_else(|| caps.name("flag2"))
-                .map(|cap| cap.as_str());
+            let flag = caps.name("flag").map(|cap| cap.as_str());
 
             // If the variable is referencing itself, don't pull
             // from the local map, and instead only pull from the
@@ -101,7 +117,7 @@ impl<'bag> EnvSubstitutor<'bag> {
 
             match flag {
                 // Don't substitute
-                Some("!") => format!("${name}"),
+                Some("!") => rebuild_env_var(caps),
                 // Substitute with empty string when missing
                 Some("?") => get_replacement_value().unwrap_or_default(),
                 // Substitute with self when missing

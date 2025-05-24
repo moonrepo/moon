@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for shell-specific environment variable namespaces when scanning and substituting
+  values. Supports the following:
+  - `$E:` - Elvish
+  - `$env::` - Ion
+  - `$ENV.` - Murex
+  - `$env.` - Nu
+  - `$env:` - PowerShell
+
 ## 1.36.1
 
 #### 🐞 Fixes

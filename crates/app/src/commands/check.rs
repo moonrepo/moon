@@ -21,6 +21,7 @@ pub struct CheckArgs {
     #[arg(
         long,
         short = 's',
+        env = "MOON_SUMMARY",
         help = "Include a summary of all actions that were processed in the pipeline"
     )]
     pub summary: bool,

@@ -16,8 +16,12 @@ use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
 use tracing::instrument;
 
-pub fn get_rust_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
-    let mut paths = get_proto_paths(proto_env);
+pub fn get_rust_env_paths(proto_env: &ProtoEnvironment, global: bool) -> Vec<PathBuf> {
+    let mut paths = if global {
+        vec![]
+    } else {
+        get_proto_paths(proto_env)
+    };
 
     if let Some(value) = path_var("CARGO_INSTALL_ROOT") {
         paths.push(value.join("bin"));
@@ -84,7 +88,7 @@ impl RustTool {
             .args(args)
             .env(
                 "PATH",
-                prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+                prepend_path_env_var(get_rust_env_paths(&self.proto_env, self.global)),
             )
             .cwd(working_dir)
             .with_console(self.console.clone())
@@ -104,7 +108,7 @@ impl RustTool {
             .args(args)
             .env(
                 "PATH",
-                prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+                prepend_path_env_var(get_rust_env_paths(&self.proto_env, self.global)),
             )
             .cwd(working_dir)
             .with_console(self.console.clone())

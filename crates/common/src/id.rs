@@ -8,7 +8,11 @@ use std::sync::OnceLock;
 use std::{borrow::Borrow, fmt, ops::Deref, str::FromStr};
 use thiserror::Error;
 
-pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
+// https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
+// `\w` is too broad, as it includes punctuation and other characters,
+// so we need to be explicit with our Unicode character classes.
+pub static ID_CHARS: &str = r"[\p{Alphabetic}\p{M}\p{Join_Control}\d/\._-]*";
+
 pub static ID_PATTERN: OnceLock<Regex> = OnceLock::new();
 pub static ID_CLEAN: OnceLock<Regex> = OnceLock::new();
 

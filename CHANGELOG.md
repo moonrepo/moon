@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for shell-specific environment variable namespaces when scanning and substituting
+  values. Supports the following:
+  - `$E:` - Elvish
+  - `$env::` - Ion
+  - `$ENV.` - Murex
+  - `$env.` - Nu
+  - `$env:` - PowerShell
+- Updated all identifiers to support unicode alpha-numeric characters instead of just ASCII.
+
+#### 🐞 Fixes
+
+- Fixed some issues where `MOON_TOOLCHAIN_FORCE_GLOBALS` wasn't respected for Python and Rust
+  toolchains.
+
 ## 1.36.1
 
 #### 🐞 Fixes

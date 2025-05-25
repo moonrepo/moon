@@ -47,16 +47,15 @@ impl PipTool {
     }
 
     fn inject_command_paths(&self, cmd: &mut Command, python: &PythonTool, working_dir: &Path) {
-        if !self.global {
-            cmd.env(
-                "PATH",
-                prepend_path_env_var(get_python_tool_paths(
-                    python,
-                    working_dir,
-                    &get_workspace_root(),
-                )),
-            );
-        }
+        cmd.env(
+            "PATH",
+            prepend_path_env_var(get_python_tool_paths(
+                python,
+                working_dir,
+                &get_workspace_root(),
+                self.global,
+            )),
+        );
     }
 }
 

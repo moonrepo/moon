@@ -689,7 +689,10 @@ impl Platform for RustPlatform {
         command.envs_if_not_global(&task.env);
         command.env(
             "PATH",
-            prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+            prepend_path_env_var(get_rust_env_paths(
+                &self.proto_env,
+                runtime.requirement.is_global(),
+            )),
         );
 
         Ok(command)

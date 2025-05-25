@@ -13,8 +13,8 @@ mod id {
             assert!(Id::new(format!("abc{s}123")).is_ok());
         }
 
-        assert!(Id::new(format!("a.b-c_d/e")).is_ok());
-        assert!(Id::new(format!("@a1")).is_ok());
+        assert!(Id::new("a.b-c_d/e").is_ok());
+        assert!(Id::new("@a1").is_ok());
     }
 
     #[test]
@@ -23,8 +23,8 @@ mod id {
             assert!(Id::new(format!("ąęóąśłżźń{s}123")).is_ok());
         }
 
-        assert!(Id::new(format!("ą.ó-ą_ł/ń")).is_ok());
-        assert!(Id::new(format!("@ż9")).is_ok());
+        assert!(Id::new("ą.ó-ą_ł/ń").is_ok());
+        assert!(Id::new("@ż9").is_ok());
     }
 
     #[test]

@@ -11,6 +11,7 @@
   - `$ENV.` - Murex
   - `$env.` - Nu
   - `$env:` - PowerShell
+- Updated all identifiers to support unicode alpha-numeric characters instead of just ASCII.
 
 ## 1.36.1
 

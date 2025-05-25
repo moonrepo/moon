@@ -22,6 +22,7 @@ pub fn get_python_tool_paths(
     python_tool: &PythonTool,
     working_dir: &Path,
     workspace_root: &Path,
+    global: bool,
 ) -> Vec<PathBuf> {
     let mut paths = vec![];
 
@@ -32,7 +33,10 @@ pub fn get_python_tool_paths(
         paths.push(venv_root.join("bin"));
     }
 
-    paths.extend(get_proto_paths(&python_tool.proto_env));
+    if !global {
+        paths.extend(get_proto_paths(&python_tool.proto_env));
+    }
+
     paths
 }
 
@@ -125,9 +129,14 @@ impl PythonTool {
         if with_paths {
             cmd.env(
                 "PATH",
-                prepend_path_env_var(get_python_tool_paths(self, working_dir, workspace_root)),
+                prepend_path_env_var(get_python_tool_paths(
+                    self,
+                    working_dir,
+                    workspace_root,
+                    self.global,
+                )),
             );
-        } else {
+        } else if !self.global {
             cmd.env(
                 "PATH",
                 prepend_path_env_var(get_proto_paths(&self.proto_env)),

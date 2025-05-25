@@ -451,6 +451,7 @@ impl Platform for PythonPlatform {
                     python,
                     working_dir,
                     &self.workspace_root,
+                    runtime.requirement.is_global(),
                 )),
             );
         }

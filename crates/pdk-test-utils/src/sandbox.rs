@@ -1,4 +1,5 @@
-use crate::wrappers::*;
+use crate::extension_wrapper::*;
+use crate::toolchain_wrapper::*;
 use moon_pdk_api::{
     RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
@@ -6,8 +7,7 @@ use moon_pdk_api::{
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fmt;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs;
 use std::ops::Deref;
 use std::path::PathBuf;
 use warpgate::{
@@ -165,31 +165,7 @@ impl MoonWasmSandbox {
     }
 
     pub fn enable_logging(&self) {
-        let log_file = std::env::current_dir().unwrap().join(
-            self.wasm_file
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or_default()
-                .replace(".wasm", ".log"),
-        );
-
-        // Remove the file otherwise it keeps growing
-        if log_file.exists() {
-            let _ = fs::remove_file(&log_file);
-        }
-
-        let _ = extism::set_log_callback(
-            move |line| {
-                let mut file = OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(&log_file)
-                    .unwrap();
-
-                file.write_all(line.as_bytes()).unwrap();
-            },
-            "trace",
-        );
+        enable_wasm_logging(&self.wasm_file);
     }
 }
 

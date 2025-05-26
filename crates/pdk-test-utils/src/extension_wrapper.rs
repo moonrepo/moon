@@ -24,4 +24,14 @@ impl ExtensionTestWrapper {
             .await
             .unwrap();
     }
+
+    pub async fn register_extension(
+        &self,
+        input: RegisterExtensionInput,
+    ) -> RegisterExtensionOutput {
+        self.plugin
+            .call_func_with("register_extension", input)
+            .await
+            .unwrap()
+    }
 }

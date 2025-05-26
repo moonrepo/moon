@@ -8,6 +8,12 @@
   that responds to AI agent requests.
   - Supports the following tools: `get_project`, `get_projects`, `get_task`, `get_tasks`.
   - We will be expanding this with more functionality over time, like `run_task`, etc.
+- Updated webhook events.
+  - Added `environment.initializing` and `environment.initialized` events.
+  - Added `root` and `toolchain` fields to `dependencies.installing` and `dependencies.installed`
+    events.
+  - Deprecated the `runtime` field in all events. Will be removed once toolchain plugins are
+    complete.
 
 #### 🧩 Plugins
 

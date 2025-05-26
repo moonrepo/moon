@@ -82,27 +82,39 @@ pub async fn run_action(
             result
         }
 
-        // TODO
         ActionNode::SetupEnvironment(inner) => {
-            // emitter
-            //     .emit(Event::ToolchainInstalling { spec: &inner.spec })
-            //     .await?;
+            let project = match &inner.project_id {
+                Some(id) => Some(workspace_graph.get_project(id)?),
+                None => None,
+            };
 
-            setup_environment(
+            emitter
+                .emit(Event::EnvironmentInitializing {
+                    project: project.as_deref(),
+                    root: &inner.root,
+                    toolchain: &inner.toolchain_id,
+                })
+                .await?;
+
+            let result = setup_environment(
                 action,
                 action_context,
                 app_context,
                 workspace_graph.clone(),
                 inner,
             )
-            .await
+            .await;
 
-            // emitter
-            //     .emit(Event::ToolchainInstalled {
-            //         error: extract_error(&result),
-            //         spec: &inner.spec,
-            //     })
-            //     .await?;
+            emitter
+                .emit(Event::EnvironmentInitialized {
+                    error: extract_error(&result),
+                    project: project.as_deref(),
+                    root: &inner.root,
+                    toolchain: &inner.toolchain_id,
+                })
+                .await?;
+
+            result
         }
 
         ActionNode::SetupToolchainLegacy(inner) => {
@@ -143,42 +155,50 @@ pub async fn run_action(
             result
         }
 
-        // TODO
         ActionNode::InstallDependencies(inner) => {
-            // let project = workspace_graph.get_project(&inner.project_id)?;
+            let project = match &inner.project_id {
+                Some(id) => Some(workspace_graph.get_project(id)?),
+                None => None,
+            };
 
-            // emitter
-            //     .emit(Event::DependenciesInstalling {
-            //         project: Some(&project),
-            //         runtime: &inner.runtime,
-            //     })
-            //     .await?;
+            emitter
+                .emit(Event::DependenciesInstalling {
+                    project: project.as_deref(),
+                    runtime: None,
+                    root: Some(&inner.root),
+                    toolchain: Some(&inner.toolchain_id),
+                })
+                .await?;
 
-            install_dependencies(
+            let result = install_dependencies(
                 action,
                 action_context,
                 app_context,
                 workspace_graph.clone(),
                 inner,
             )
-            .await
+            .await;
 
-            // emitter
-            //     .emit(Event::DependenciesInstalled {
-            //         error: extract_error(&result),
-            //         project: Some(&project),
-            //         runtime: &inner.runtime,
-            //     })
-            //     .await?;
+            emitter
+                .emit(Event::DependenciesInstalled {
+                    error: extract_error(&result),
+                    project: project.as_deref(),
+                    runtime: None,
+                    root: Some(&inner.root),
+                    toolchain: Some(&inner.toolchain_id),
+                })
+                .await?;
 
-            // result
+            result
         }
 
         ActionNode::InstallWorkspaceDeps(inner) => {
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
-                    runtime: &inner.runtime,
+                    runtime: Some(&inner.runtime),
+                    root: None,
+                    toolchain: None,
                 })
                 .await?;
 
@@ -197,7 +217,9 @@ pub async fn run_action(
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&result),
                     project: None,
-                    runtime: &inner.runtime,
+                    runtime: Some(&inner.runtime),
+                    root: None,
+                    toolchain: None,
                 })
                 .await?;
 
@@ -210,7 +232,9 @@ pub async fn run_action(
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: Some(&project),
-                    runtime: &inner.runtime,
+                    runtime: Some(&inner.runtime),
+                    root: None,
+                    toolchain: None,
                 })
                 .await?;
 
@@ -229,7 +253,9 @@ pub async fn run_action(
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&result),
                     project: Some(&project),
-                    runtime: &inner.runtime,
+                    runtime: Some(&inner.runtime),
+                    root: None,
+                    toolchain: None,
                 })
                 .await?;
 

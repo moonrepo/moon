@@ -4,12 +4,15 @@ use moon_pdk_api::{
     RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
 };
+use proto_core::{ProtoEnvironment, Tool, inject_proto_manifest_config};
+use proto_pdk_test_utils::WasmTestWrapper as ToolTestWrapper;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::ops::Deref;
 use std::path::PathBuf;
+use std::sync::Arc;
 use warpgate::{
     Id, PluginContainer, PluginLoader, PluginManifest, Wasm, host::*,
     inject_default_manifest_config, test_utils::*,
@@ -19,6 +22,7 @@ pub struct MoonWasmSandbox {
     pub sandbox: Sandbox,
     pub home_dir: PathBuf,
     pub moon_dir: PathBuf,
+    pub proto: Arc<ProtoEnvironment>,
     pub proto_dir: PathBuf,
     pub root: PathBuf,
     pub wasm_file: PathBuf,
@@ -37,9 +41,14 @@ impl MoonWasmSandbox {
         fs::create_dir_all(&moon_dir).unwrap();
         fs::create_dir_all(&proto_dir).unwrap();
 
+        // Required for toolchains
+        let mut proto = ProtoEnvironment::new_testing(&root).unwrap();
+        proto.working_dir = root.clone();
+
         Self {
             home_dir,
             moon_dir,
+            proto: Arc::new(proto),
             proto_dir,
             root,
             sandbox,
@@ -74,7 +83,7 @@ impl MoonWasmSandbox {
         manifest.config.extend(config.build());
 
         // Create plugin
-        let plugin = self.create_plugin_container(id, manifest);
+        let plugin = self.create_plugin_container(id, manifest, false);
         let metadata: RegisterExtensionOutput = plugin
             .cache_func_with(
                 "register_extension",
@@ -115,7 +124,7 @@ impl MoonWasmSandbox {
         manifest.config.extend(config.build());
 
         // Create plugin
-        let plugin = self.create_plugin_container(id, manifest);
+        let plugin = Arc::new(self.create_plugin_container(id, manifest, true));
         let metadata: RegisterToolchainOutput = plugin
             .cache_func_with(
                 "register_toolchain",
@@ -128,12 +137,22 @@ impl MoonWasmSandbox {
 
         ToolchainTestWrapper {
             metadata,
-            plugin,
+            plugin: plugin.clone(),
             root: self.root.clone(),
+            tool: ToolTestWrapper {
+                tool: Tool::new(plugin.id.clone(), self.proto.clone(), plugin)
+                    .await
+                    .unwrap(),
+            },
         }
     }
 
-    fn create_plugin_container(&self, id: Id, mut manifest: PluginManifest) -> PluginContainer {
+    fn create_plugin_container(
+        &self,
+        id: Id,
+        mut manifest: PluginManifest,
+        with_proto: bool,
+    ) -> PluginContainer {
         let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));
 
         let virtual_paths = BTreeMap::<PathBuf, PathBuf>::from_iter([
@@ -153,6 +172,10 @@ impl MoonWasmSandbox {
         );
 
         inject_default_manifest_config(&id, &self.home_dir, &mut manifest).unwrap();
+
+        if with_proto {
+            inject_proto_manifest_config(&id, &self.proto, &mut manifest).unwrap();
+        }
 
         let funcs = create_host_functions(HostData {
             cache_dir: self.moon_dir.join("cache"),

@@ -1,11 +1,15 @@
 use moon_pdk_api::*;
+use proto_pdk_test_utils::WasmTestWrapper as ToolTestWrapper;
+use std::ops::Deref;
 use std::path::PathBuf;
+use std::sync::Arc;
 use warpgate::PluginContainer;
 
 pub struct ToolchainTestWrapper {
     pub metadata: RegisterToolchainOutput,
-    pub plugin: PluginContainer,
+    pub plugin: Arc<PluginContainer>,
     pub root: PathBuf,
+    pub tool: ToolTestWrapper,
 }
 
 impl ToolchainTestWrapper {
@@ -218,5 +222,13 @@ impl ToolchainTestWrapper {
             .call_func_without_output("teardown_toolchain", input)
             .await
             .unwrap();
+    }
+}
+
+impl Deref for ToolchainTestWrapper {
+    type Target = ToolTestWrapper;
+
+    fn deref(&self) -> &Self::Target {
+        &self.tool
     }
 }

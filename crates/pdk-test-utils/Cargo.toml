@@ -10,11 +10,13 @@ publish = true
 
 [dependencies]
 moon_pdk_api = { version = "0.1.6", path = "../pdk-api" }
-warpgate = { workspace = true }
 extism = { workspace = true }
+proto_core = { workspace = true }
+proto_pdk_test_utils = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
+warpgate = { workspace = true }
 
 [lints]
 workspace = true

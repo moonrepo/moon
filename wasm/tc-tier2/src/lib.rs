@@ -13,11 +13,16 @@ fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
         } => inner,
     };
 
-    // `ends_with` or `file_name` didn't work on Windows...
-    let value = outer.to_string_lossy();
-    let res = value.ends_with("in") || value.ends_with("in-root") || value.ends_with("out");
+    // // `ends_with` or `file_name` didn't work on Windows...
+    // let value = outer.to_string_lossy();
+    // let res = value.ends_with("in") || value.ends_with("in-root") || value.ends_with("out");
 
-    res
+    // res
+
+    outer
+        .file_name()
+        .and_then(|file| file.to_str())
+        .is_some_and(|value| value == "in" || value == "in-root" || value == "out")
 }
 
 #[plugin_fn]
@@ -39,11 +44,11 @@ pub fn locate_dependencies_root(
         },
         // We need a root for the `InstallDependencies`
         // action to work, otherwise it aborts early
-        root: Some(if is_deps_workspace {
-            input.context.workspace_root
+        root: if is_deps_workspace {
+            input.context.workspace_root.virtual_path()
         } else {
-            cwd
-        }),
+            cwd.virtual_path()
+        },
     }))
 }
 

@@ -105,12 +105,13 @@ impl ToolchainPlugin {
 
     // Detection
     pub async fn supports_tier_1(&self) -> bool {
-        self.has_func("parse_lockfile").await || self.has_func("parse_manifest").await
+        self.has_func("register_toolchain").await || self.has_func("detect_version_files").await
     }
 
     // Install dependencies
     pub async fn supports_tier_2(&self) -> bool {
         self.has_func("locate_dependencies_root").await
+            && (self.has_func("parse_lockfile").await || self.has_func("parse_manifest").await)
     }
 
     // Setup toolchain

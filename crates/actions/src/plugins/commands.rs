@@ -12,7 +12,6 @@ use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::{Command, Output};
 use moon_time::to_millis;
-use moon_toolchain_plugin::ToolchainPlugin;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -22,6 +21,8 @@ use tracing::{debug, warn};
 
 hash_content!(
     struct ExecCommandHash<'data> {
+        key: &'data str,
+
         command: &'data ExecCommandInput,
 
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
@@ -60,7 +61,7 @@ pub fn handle_on_exec(
 pub struct ExecCommandOptions {
     pub on_exec: Option<OnExecFn>,
     pub prefix: String,
-    pub working_dir: PathBuf,
+    pub working_dir: Option<PathBuf>,
 }
 
 async fn internal_exec_plugin_command(
@@ -77,8 +78,8 @@ async fn internal_exec_plugin_command(
 
     if let Some(cwd) = input.working_dir.as_ref().and_then(|dir| dir.real_path()) {
         cmd.cwd(cwd);
-    } else {
-        cmd.cwd(&options.working_dir);
+    } else if let Some(cwd) = &options.working_dir {
+        cmd.cwd(cwd);
     }
 
     cmd.with_console(app_context.console.clone());
@@ -112,6 +113,7 @@ async fn internal_exec_plugin_command_as_operation(
     let result = match &command.cache {
         Some(key) => {
             let mut hash_item = ExecCommandHash {
+                key,
                 command: &command.command,
                 input_env: BTreeMap::new(),
                 input_files: BTreeMap::new(),
@@ -206,7 +208,7 @@ pub async fn exec_plugin_command(
 }
 
 pub async fn exec_plugin_commands(
-    toolchain: &ToolchainPlugin,
+    toolchain_id: &str,
     app_context: Arc<AppContext>,
     commands: Vec<ExecCommand>,
     options: ExecCommandOptions,
@@ -247,7 +249,7 @@ pub async fn exec_plugin_commands(
 
     // Inherit toolchain ID
     for op in &mut ops {
-        op.plugin = Some(Id::new(&toolchain.id)?);
+        op.plugin = Some(Id::new(toolchain_id)?);
     }
 
     Ok(ops)
@@ -258,7 +260,9 @@ async fn gather_cache_inputs(
     inputs: &[CacheInput],
     hash_item: &mut ExecCommandHash<'_>,
 ) -> miette::Result<()> {
-    let mut hashable_files = vec![];
+    let mut hash_files = vec![];
+    let mut size_files = vec![];
+    let has_vcs = app_context.vcs.is_enabled();
 
     let get_file = |virtual_path: &VirtualPath,
                     workspace_root: &Path|
@@ -291,23 +295,26 @@ async fn gather_cache_inputs(
                 );
             }
             CacheInput::FileHash(virtual_path) => {
-                if let Some((_, rel_path)) = get_file(virtual_path, &app_context.workspace_root) {
-                    hashable_files.push(rel_path);
+                if let Some(res) = get_file(virtual_path, &app_context.workspace_root) {
+                    if has_vcs {
+                        hash_files.push(res);
+                    } else {
+                        size_files.push(res);
+                    }
                 }
             }
-            CacheInput::FileSize(virtual_path) | CacheInput::FileTimestamp(virtual_path) => {
+            CacheInput::FileSize(virtual_path) => {
+                if let Some(res) = get_file(virtual_path, &app_context.workspace_root) {
+                    size_files.push(res);
+                }
+            }
+            CacheInput::FileTimestamp(virtual_path) => {
                 if let Some((abs_path, rel_path)) =
                     get_file(virtual_path, &app_context.workspace_root)
                 {
                     let metadata = fs::metadata(&abs_path)?;
 
-                    if matches!(input, CacheInput::FileSize(_)) {
-                        hash_item
-                            .input_files
-                            .insert(rel_path, format!("size:{}", metadata.len()));
-                    } else if let Ok(timestamp) =
-                        metadata.modified().or_else(|_| metadata.created())
-                    {
+                    if let Ok(timestamp) = metadata.modified().or_else(|_| metadata.created()) {
                         hash_item
                             .input_files
                             .insert(rel_path, format!("timestamp:{}", to_millis(timestamp)));
@@ -317,15 +324,21 @@ async fn gather_cache_inputs(
         };
     }
 
-    if !hashable_files.is_empty() && app_context.vcs.is_enabled() {
-        for (rel_path, hash) in app_context
-            .vcs
-            .get_file_hashes(&hashable_files, true)
-            .await?
-        {
+    if !hash_files.is_empty() {
+        let hash_files = hash_files.into_iter().map(|f| f.1).collect::<Vec<_>>();
+
+        for (rel_path, hash) in app_context.vcs.get_file_hashes(&hash_files, true).await? {
             hash_item
                 .input_files
                 .insert(rel_path, format!("hash:{hash}"));
+        }
+    }
+
+    if !size_files.is_empty() {
+        for (abs_path, rel_path) in size_files {
+            hash_item
+                .input_files
+                .insert(rel_path, format!("size:{}", fs::metadata(&abs_path)?.len()));
         }
     }
 

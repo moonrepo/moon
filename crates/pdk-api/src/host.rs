@@ -60,9 +60,9 @@ impl ExecCommand {
         self
     }
 
-    /// Enable caching.
-    pub fn cache(mut self, label: impl AsRef<str>) -> Self {
-        self.cache = Some(label.as_ref().into());
+    /// Enable caching with the provided unique key.
+    pub fn cache(mut self, key: impl AsRef<str>) -> Self {
+        self.cache = Some(key.as_ref().into());
         self
     }
 

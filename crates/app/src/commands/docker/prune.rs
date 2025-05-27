@@ -155,7 +155,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                         &install,
                         &ExecCommandOptions {
                             prefix: "prune-docker".into(),
-                            working_dir: instance.deps_root,
+                            working_dir: Some(instance.deps_root),
                             ..Default::default()
                         },
                     )

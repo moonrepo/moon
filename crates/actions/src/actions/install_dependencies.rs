@@ -178,7 +178,7 @@ pub async fn install_dependencies(
 
     let options = ExecCommandOptions {
         prefix: action.get_prefix().into(),
-        working_dir: deps_root,
+        working_dir: Some(deps_root),
         on_exec: Some(Arc::new(move |cmd, attempts| {
             handle_on_exec(&console, cmd, attempts)
         })),

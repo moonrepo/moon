@@ -123,12 +123,12 @@ pub async fn setup_environment(
 
     if !output.commands.is_empty() {
         let operations = exec_plugin_commands(
-            &toolchain,
+            &toolchain.id,
             app_context.clone(),
             output.commands,
             ExecCommandOptions {
                 prefix: action.get_prefix().into(),
-                working_dir: node.root.to_logical_path(&app_context.workspace_root),
+                working_dir: Some(node.root.to_logical_path(&app_context.workspace_root)),
                 on_exec: Some(Arc::new(move |cmd, attempts| {
                     handle_on_exec(&app_context.console, cmd, attempts)
                 })),

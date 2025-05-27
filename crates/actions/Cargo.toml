@@ -42,5 +42,9 @@ tracing = { workspace = true }
 # TODO REMOVE
 moon_platform = { path = "../../legacy/core/platform" }
 
+[dev-dependencies]
+moon_test_utils2 = { path = "../test-utils" }
+starbase_sandbox = { workspace = true }
+
 [lints]
 workspace = true

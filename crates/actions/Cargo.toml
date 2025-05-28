@@ -44,6 +44,7 @@ moon_platform = { path = "../../legacy/core/platform" }
 
 [dev-dependencies]
 moon_test_utils2 = { path = "../test-utils" }
+serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

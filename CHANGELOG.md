@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🔖 RFCs
+
+- Task input additions and enhancements: https://github.com/moonrepo/moon/issues/1985
+
 #### 🚀 Updates
 
 - Added an unstable `moon mcp` command, which starts an MCP (model context protocol) stdio server

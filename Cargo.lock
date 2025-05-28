@@ -4980,6 +4980,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_config",
+ "moon_env_var",
  "moon_feature_flags",
  "moon_pdk_api",
  "moon_plugin",

@@ -17,6 +17,7 @@
 
 #### 🧩 Plugins
 
+- Added test utilities for testing toolchain plugin functions.
 - Improved cache handling and invalidation for `SetupEnvironment` and `InstallDependencies` actions.
 - WASM
   - Reworked all virtual path fields in "output" structs to greatly reduce the JSON payload.

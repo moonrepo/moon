@@ -89,7 +89,7 @@ async fn internal_exec_plugin_command(
     // Must be last!
     app_context
         .toolchain_registry
-        .prepare_process_command(&mut cmd);
+        .prepare_process_command(&mut cmd, GlobalEnvBag::instance());
 
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;

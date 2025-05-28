@@ -2,6 +2,7 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_common::consts::PROTO_CLI_VERSION;
+use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectGraphInput,
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput,
@@ -201,7 +202,7 @@ impl ToolchainRegistry {
         Ok(results.into_iter().collect())
     }
 
-    pub fn prepare_process_command(&self, command: &mut Command) {
+    pub fn prepare_process_command(&self, command: &mut Command, bag: &GlobalEnvBag) {
         let moon = &self.host_data.moon_env;
         let proto = &self.host_data.proto_env;
 
@@ -214,7 +215,7 @@ impl ToolchainRegistry {
 
         // Inherit versions for each toolchain
         for (id, config) in &self.configs {
-            if is_using_global_toolchain(id) {
+            if is_using_global_toolchain(bag, id) {
                 continue;
             }
 
@@ -224,7 +225,8 @@ impl ToolchainRegistry {
         }
 
         // Abort early if using globals
-        if is_using_global_toolchains() {
+        if is_using_global_toolchains(bag) {
+            command.prepend_paths([moon.store_root.join("bin")]);
             return;
         }
 

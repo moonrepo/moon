@@ -3,6 +3,7 @@
 use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
+use moon_env_var::GlobalEnvBag;
 use moon_platform::{PlatformManager, Runtime};
 use moon_process::Command;
 use moon_project::Project;
@@ -29,6 +30,7 @@ pub fn create_node(task: &Task) -> ActionNode {
 pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
     pub app_context: Arc<AppContext>,
+    pub env_bag: GlobalEnvBag,
     pub platform_manager: PlatformManager,
     pub project: Arc<Project>,
     pub project_id: String,
@@ -42,7 +44,8 @@ impl TaskRunnerContainer {
         let sandbox = create_sandbox(fixture);
         let mocker = WorkspaceMocker::new(sandbox.path())
             .load_default_configs()
-            .with_global_envs();
+            .with_global_envs()
+            .with_test_toolchains();
 
         let app_context = mocker.mock_app_context();
         let workspace_graph = mocker.mock_workspace_graph().await;
@@ -55,6 +58,7 @@ impl TaskRunnerContainer {
         Self {
             sandbox,
             app_context: Arc::new(app_context),
+            env_bag: GlobalEnvBag::default(),
             platform_manager,
             workspace_graph,
             project,
@@ -173,6 +177,7 @@ impl TaskRunnerContainer {
         node: &ActionNode,
     ) -> Command {
         let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
+        builder.set_env_bar(&self.env_bag);
         builder.set_platform_manager(&self.platform_manager);
         builder.build(context).await.unwrap()
     }

@@ -536,7 +536,7 @@ mod plugin_commands {
             if let json::JsonValue::String(inner) = &data[0]["inputFiles"]["input.txt"] {
                 assert!(inner.starts_with("timestamp:"));
             } else {
-                assert!(false);
+                panic!();
             }
         }
     }

@@ -7,17 +7,15 @@ pub use spec::*;
 
 use moon_env_var::{GlobalEnvBag, as_bool};
 
-pub fn is_using_global_toolchains() -> bool {
-    GlobalEnvBag::instance()
-        .get_as("MOON_TOOLCHAIN_FORCE_GLOBALS", as_bool)
+pub fn is_using_global_toolchains(bag: &GlobalEnvBag) -> bool {
+    bag.get_as("MOON_TOOLCHAIN_FORCE_GLOBALS", as_bool)
         .unwrap_or_default()
 }
 
-pub fn is_using_global_toolchain(id: impl AsRef<str>) -> bool {
+pub fn is_using_global_toolchain(bag: &GlobalEnvBag, id: impl AsRef<str>) -> bool {
     let id = id.as_ref();
 
-    GlobalEnvBag::instance()
-        .get("MOON_TOOLCHAIN_FORCE_GLOBALS")
+    bag.get("MOON_TOOLCHAIN_FORCE_GLOBALS")
         .is_some_and(|value| {
             if value == "1" || value == "true" || value == "on" || value == id {
                 true

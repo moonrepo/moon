@@ -2,15 +2,14 @@
 // https://github.com/rust-lang/cargo/blob/master/crates/cargo-util/src/process_builder.rs
 
 use crate::shell::Shell;
+use miette::IntoDiagnostic;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
-use std::collections::VecDeque;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
-use std::path::Path;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -34,6 +33,12 @@ pub struct Command {
 
     /// Values to pass to stdin
     pub input: Vec<OsString>,
+
+    /// Paths to append to `PATH`
+    pub paths_after: Vec<OsString>,
+
+    /// Paths to prepend to `PATH`
+    pub paths_before: Vec<OsString>,
 
     /// Prefix to prepend to all log lines
     pub prefix: Option<String>,
@@ -59,6 +64,8 @@ impl Command {
             error_on_nonzero: true,
             escape_args: true,
             input: vec![],
+            paths_after: vec![],
+            paths_before: vec![],
             prefix: None,
             print_command: false,
             shell: Some(Shell::default()),
@@ -192,6 +199,30 @@ impl Command {
         self
     }
 
+    pub fn inherit_path(&mut self) -> miette::Result<&mut Self> {
+        let key = OsString::from("PATH");
+
+        if self.env.contains_key(&key)
+            || (self.paths_before.is_empty() && self.paths_after.is_empty())
+        {
+            return Ok(self);
+        }
+
+        let mut paths = vec![];
+
+        paths.extend(self.paths_before.clone());
+
+        for path in env::split_paths(&env::var_os(&key).unwrap_or_default()) {
+            paths.push(path.into_os_string());
+        }
+
+        paths.extend(self.paths_after.clone());
+
+        self.env(&key, env::join_paths(paths).into_diagnostic()?);
+
+        Ok(self)
+    }
+
     pub fn input<I, V>(&mut self, input: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,
@@ -204,32 +235,31 @@ impl Command {
         self
     }
 
+    pub fn append_paths<I, V>(&mut self, list: I) -> &mut Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<OsStr>,
+    {
+        self.paths_after
+            .extend(list.into_iter().map(|path| path.as_ref().to_os_string()));
+
+        self
+    }
+
     pub fn prepend_paths<I, V>(&mut self, list: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,
-        V: AsRef<Path>,
+        V: AsRef<OsStr>,
     {
-        let key = OsString::from("PATH");
+        let mut list = list
+            .into_iter()
+            .map(|path| path.as_ref().to_os_string())
+            .collect::<Vec<_>>();
 
-        let paths_string = self
-            .env
-            .get(&key)
-            .cloned()
-            .and_then(|value| value)
-            .or_else(|| env::var_os("PATH"))
-            .unwrap_or_default();
+        list.extend(std::mem::take(&mut self.paths_before));
 
-        let mut paths = env::split_paths(&paths_string).collect::<VecDeque<_>>();
-
-        for item in list.into_iter() {
-            let path = item.as_ref();
-
-            if path.is_absolute() {
-                paths.push_front(path.to_path_buf());
-            }
-        }
-
-        self.env(key, env::join_paths(paths).unwrap())
+        self.paths_before = list;
+        self
     }
 
     pub fn get_bin_name(&self) -> String {

@@ -25,6 +25,11 @@ pub static ENV_VAR_SUBSTITUTE_BRACKETS: LazyLock<Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
+pub fn contains_env_var(value: impl AsRef<str>) -> bool {
+    ENV_VAR_SUBSTITUTE.is_match(value.as_ref())
+        || ENV_VAR_SUBSTITUTE_BRACKETS.is_match(value.as_ref())
+}
+
 pub fn rebuild_env_var(caps: &Captures) -> String {
     let namespace = caps
         .name("namespace")

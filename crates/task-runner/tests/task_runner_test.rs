@@ -16,7 +16,7 @@ mod task_runner {
     mod run {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn skips_if_noop() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -38,7 +38,7 @@ mod task_runner {
         mod has_deps {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             #[should_panic(expected = "Encountered a missing hash for task project:dep")]
             async fn errors_if_dep_hasnt_ran() {
                 let container = TaskRunnerContainer::new("runner", "has-deps").await;
@@ -49,7 +49,7 @@ mod task_runner {
                 runner.run_with_panic(&context, &node).await.unwrap();
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_dep_skipped() {
                 let container = TaskRunnerContainer::new("runner", "has-deps").await;
                 let mut runner = container.create_runner();
@@ -73,7 +73,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_dep_failed() {
                 let container = TaskRunnerContainer::new("runner", "has-deps").await;
                 let mut runner = container.create_runner();
@@ -101,7 +101,7 @@ mod task_runner {
         mod with_cache {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn creates_cache_state_file() {
                 let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
@@ -123,7 +123,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn generates_a_hash() {
                 let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
@@ -137,7 +137,7 @@ mod task_runner {
                 assert!(result.hash.is_some());
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn generates_a_hash_for_noop() {
                 let container = TaskRunnerContainer::new_os("runner", "noop").await;
                 container.sandbox.enable_git();
@@ -151,7 +151,7 @@ mod task_runner {
                 assert!(result.hash.is_some());
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn generates_same_hashes_based_on_input() {
                 let container = TaskRunnerContainer::new_os("runner", "hash-inputs").await;
                 container.sandbox.enable_git();
@@ -170,7 +170,7 @@ mod task_runner {
                 assert_eq!(a.hash, b.hash);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn generates_different_hashes_based_on_input() {
                 let container = TaskRunnerContainer::new_os("runner", "hash-inputs").await;
                 container.sandbox.enable_git();
@@ -194,7 +194,7 @@ mod task_runner {
                 assert_ne!(a.hash, b.hash);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn creates_operations_for_each_step() {
                 let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
@@ -216,7 +216,7 @@ mod task_runner {
                 assert_eq!(result.operations[3].status, ActionStatus::Passed);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn running_again_hits_the_output_cache() {
                 let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
@@ -239,7 +239,7 @@ mod task_runner {
                 assert_eq!(result.operations[1].status, ActionStatus::Cached);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing() {
                 let container = TaskRunnerContainer::new_os("runner", "missing-output").await;
@@ -252,7 +252,7 @@ mod task_runner {
                 runner.run_with_panic(&context, &node).await.unwrap();
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing_via_glob() {
                 let container = TaskRunnerContainer::new_os("runner", "missing-output-glob").await;
@@ -269,7 +269,7 @@ mod task_runner {
         mod without_cache {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn creates_cache_state_file() {
                 let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
@@ -291,7 +291,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_generate_a_hash() {
                 let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
@@ -305,7 +305,7 @@ mod task_runner {
                 assert!(result.hash.is_none());
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_create_non_task_operations() {
                 let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
@@ -324,7 +324,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn running_again_reexecutes_task() {
                 let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
@@ -351,7 +351,7 @@ mod task_runner {
     mod is_cached {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn returns_none_by_default() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -359,7 +359,7 @@ mod task_runner {
             assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn sets_the_hash_to_cache() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -372,7 +372,7 @@ mod task_runner {
         mod previous_output {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn returns_if_hashes_match() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -386,7 +386,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_hashes_dont_match() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -397,7 +397,7 @@ mod task_runner {
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_codes_dont_match() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -408,7 +408,7 @@ mod task_runner {
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_outputs_dont_exist() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
@@ -419,7 +419,7 @@ mod task_runner {
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn returns_if_outputs_do_exist() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -434,7 +434,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn returns_none_if_non_zero_exit() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -448,7 +448,7 @@ mod task_runner {
         mod local_cache {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn returns_if_archive_exists() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -463,7 +463,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_archive_doesnt_exist() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -471,7 +471,7 @@ mod task_runner {
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_cache_isnt_readable() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -490,7 +490,7 @@ mod task_runner {
                 GlobalEnvBag::instance().remove("MOON_CACHE");
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn skips_if_cache_is_writeonly() {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
@@ -514,7 +514,7 @@ mod task_runner {
             use super::*;
             use std::time::Duration;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn returns_if_within_the_ttl() {
                 let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
                 let mut runner = container.create_runner();
@@ -529,7 +529,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn misses_if_passed_the_ttl() {
                 let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
                 let mut runner = container.create_runner();
@@ -561,7 +561,7 @@ mod task_runner {
     mod is_dependencies_complete {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn returns_true_if_no_deps() {
             let container = TaskRunnerContainer::new("runner", "no-deps").await;
             let runner = container.create_runner();
@@ -570,7 +570,7 @@ mod task_runner {
             assert!(runner.is_dependencies_complete(&context).unwrap());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn returns_false_if_dep_failed() {
             let container = TaskRunnerContainer::new("runner", "has-deps").await;
             let runner = container.create_runner();
@@ -584,7 +584,7 @@ mod task_runner {
             assert!(!runner.is_dependencies_complete(&context).unwrap());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn returns_false_if_dep_skipped() {
             let container = TaskRunnerContainer::new("runner", "has-deps").await;
             let runner = container.create_runner();
@@ -598,7 +598,7 @@ mod task_runner {
             assert!(!runner.is_dependencies_complete(&context).unwrap());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn returns_true_if_dep_passed() {
             let container = TaskRunnerContainer::new("runner", "no-deps").await;
             let runner = container.create_runner();
@@ -615,7 +615,7 @@ mod task_runner {
             assert!(runner.is_dependencies_complete(&context).unwrap());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Encountered a missing hash for task project:dep")]
         async fn errors_if_dep_not_ran() {
             let container = TaskRunnerContainer::new("runner", "has-deps").await;
@@ -629,7 +629,7 @@ mod task_runner {
     mod generate_hash {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn generates_a_hash() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
@@ -644,7 +644,7 @@ mod task_runner {
             assert_eq!(hash.len(), 64);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn generates_a_different_hash_via_passthrough_args() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
@@ -665,7 +665,7 @@ mod task_runner {
             assert_ne!(before_hash, after_hash);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
@@ -682,7 +682,7 @@ mod task_runner {
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_a_manifest_file() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
@@ -711,7 +711,7 @@ mod task_runner {
             runner.report_item.hash = Some("hash123".into());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn executes_and_sets_success_state() {
             let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
@@ -730,7 +730,7 @@ mod task_runner {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn executes_and_sets_success_state_without_hash() {
             let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
@@ -747,7 +747,7 @@ mod task_runner {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn executes_and_sets_failed_state() {
             let container = TaskRunnerContainer::new_os("runner", "failure").await;
             container.sandbox.enable_git();
@@ -764,7 +764,7 @@ mod task_runner {
             assert_eq!(runner.target_state.as_ref().unwrap(), &TargetState::Failed);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn executes_and_creates_operation_on_success() {
             let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
@@ -788,7 +788,7 @@ mod task_runner {
             assert_eq!(output.stdout.as_ref().unwrap().trim(), "test");
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn executes_and_creates_operation_on_failure() {
             let container = TaskRunnerContainer::new_os("runner", "failure").await;
             container.sandbox.enable_git();
@@ -812,7 +812,7 @@ mod task_runner {
             assert_eq!(output.exit_code, Some(1));
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn saves_stdlog_file_to_cache() {
             let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
@@ -836,7 +836,7 @@ mod task_runner {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_operation_for_mutex_acquire() {
             let container = TaskRunnerContainer::new_os("runner", "with-mutex").await;
             container.sandbox.enable_git();
@@ -859,7 +859,7 @@ mod task_runner {
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "failed to run")]
         async fn errors_when_task_exec_fails() {
             let container = TaskRunnerContainer::new_os("runner", "failure").await;
@@ -877,7 +877,7 @@ mod task_runner {
     mod skip {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -890,7 +890,7 @@ mod task_runner {
             assert_eq!(operation.status, ActionStatus::Skipped);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn sets_skipped_state() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -904,7 +904,7 @@ mod task_runner {
     mod skip_noop {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -917,7 +917,7 @@ mod task_runner {
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn sets_passthrough_state() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -929,7 +929,7 @@ mod task_runner {
                 &TargetState::Passthrough
             );
         }
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn sets_completed_state() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
@@ -947,7 +947,7 @@ mod task_runner {
     mod archive {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_a_passed_operation_if_archived() {
             let container = TaskRunnerContainer::new("runner", "outputs").await;
             container.sandbox.enable_git();
@@ -964,7 +964,7 @@ mod task_runner {
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_archive_tasks_without_outputs() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
@@ -981,7 +981,7 @@ mod task_runner {
         mod not_cached {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn creates_a_skipped_operation_if_no_cache() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 container.sandbox.enable_git();
@@ -1010,7 +1010,7 @@ mod task_runner {
                 runner.cache.data.hash = "hash123".into();
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn creates_a_cached_operation() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
@@ -1027,7 +1027,7 @@ mod task_runner {
                 assert_eq!(operation.status, ActionStatus::Cached);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn sets_passed_state() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
@@ -1052,7 +1052,7 @@ mod task_runner {
                 container.pack_archive();
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn creates_a_cached_operation() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
@@ -1069,7 +1069,7 @@ mod task_runner {
                 assert_eq!(operation.status, ActionStatus::Cached);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn sets_passed_state() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
@@ -1084,7 +1084,7 @@ mod task_runner {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn unpacks_archive_into_project() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();
@@ -1099,7 +1099,7 @@ mod task_runner {
                 assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn loads_stdlogs_in_archive_into_operation() {
                 let container = TaskRunnerContainer::new("runner", "outputs").await;
                 let mut runner = container.create_runner();

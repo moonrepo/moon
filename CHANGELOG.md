@@ -7,6 +7,10 @@
 - Fixed an issue where environment variables with default/fallback values (`${VAR:+default}`) were
   not parsed correctly.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.36.2
 
 #### 🚀 Updates

@@ -44,7 +44,7 @@ mod env_substitutor {
             );
 
             // With brackets
-            let with_match = ENV_VAR_SUBSTITUTE.captures(with_brackets).unwrap();
+            let with_match = ENV_VAR_SUBSTITUTE_BRACKETS.captures(with_brackets).unwrap();
 
             assert_eq!(
                 with_match
@@ -72,11 +72,21 @@ mod env_substitutor {
                         .is_some()
                 );
                 assert!(
-                    ENV_VAR_SUBSTITUTE
+                    ENV_VAR_SUBSTITUTE_BRACKETS
                         .captures(&format!("${{{namespace}{name}{flag}}}"))
                         .is_some()
                 );
             }
+        }
+    }
+
+    #[test]
+    fn supports_bracket_fallback() {
+        for fallback in ["string", "123", "--arg", "$VAR"] {
+            let var = format!("${{ENV_VAR:{fallback}}}");
+            let caps = ENV_VAR_SUBSTITUTE_BRACKETS.captures(&var).unwrap();
+
+            assert_eq!(caps.name("fallback").unwrap().as_str(), fallback);
         }
     }
 

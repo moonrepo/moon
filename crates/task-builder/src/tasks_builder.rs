@@ -10,7 +10,7 @@ use moon_config::{
     TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
     TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
 };
-use moon_env_var::ENV_VAR_SUBSTITUTE;
+use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
@@ -523,9 +523,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         // If an arg contains an env var, we must run in a shell for substitution to work
-        if ENV_VAR_SUBSTITUTE.is_match(&task.command)
-            || task.args.iter().any(|arg| ENV_VAR_SUBSTITUTE.is_match(arg))
-        {
+        if contains_env_var(&task.command) || task.args.iter().any(contains_env_var) {
             trace!(
                 task_target = target.as_str(),
                 "Task references an environment variable, wrapping in a shell so substitution works",

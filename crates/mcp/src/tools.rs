@@ -81,6 +81,50 @@ cacheable!(
     }
 );
 
+#[mcp_tool(name = "get_projects", description = "Get all projects.")]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+pub struct GetProjectsTool {
+    #[serde(default)]
+    include_tasks: bool,
+}
+
+impl GetProjectsTool {
+    pub fn call_tool(
+        &self,
+        workspace_graph: &WorkspaceGraph,
+    ) -> Result<CallToolResult, CallToolError> {
+        let mut projects = workspace_graph.get_projects().map_err(map_miette_error)?;
+
+        projects.sort_by(|a, d| a.id.cmp(&d.id));
+
+        if self.include_tasks {
+            let mut new_projects = vec![];
+
+            for project in projects {
+                new_projects.push(Arc::new(
+                    workspace_graph
+                        .get_project_with_tasks(&project.id)
+                        .map_err(map_miette_error)?,
+                ));
+            }
+
+            projects = new_projects;
+        }
+
+        Ok(CallToolResult::text_content(
+            serde_json::to_string_pretty(&GetProjectsResponse { projects })
+                .map_err(CallToolError::new)?,
+            None,
+        ))
+    }
+}
+
+cacheable!(
+    pub struct GetProjectsResponse {
+        projects: Vec<Arc<Project>>,
+    }
+);
+
 #[mcp_tool(name = "get_task", description = "Get a task by `target`.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetTaskTool {
@@ -129,4 +173,43 @@ cacheable!(
     }
 );
 
-tool_box!(MoonTools, [GetProjectTool, GetTaskTool]);
+#[mcp_tool(name = "get_tasks", description = "Get all tasks.")]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+pub struct GetTasksTool {
+    #[serde(default)]
+    include_internal: bool,
+}
+
+impl GetTasksTool {
+    pub fn call_tool(
+        &self,
+        workspace_graph: &WorkspaceGraph,
+    ) -> Result<CallToolResult, CallToolError> {
+        let mut tasks = if self.include_internal {
+            workspace_graph
+                .get_tasks_with_internal()
+                .map_err(map_miette_error)?
+        } else {
+            workspace_graph.get_tasks().map_err(map_miette_error)?
+        };
+
+        tasks.sort_by(|a, d| a.target.cmp(&d.target));
+
+        Ok(CallToolResult::text_content(
+            serde_json::to_string_pretty(&GetTasksResponse { tasks })
+                .map_err(CallToolError::new)?,
+            None,
+        ))
+    }
+}
+
+cacheable!(
+    pub struct GetTasksResponse {
+        tasks: Vec<Arc<Task>>,
+    }
+);
+
+tool_box!(
+    MoonTools,
+    [GetProjectTool, GetProjectsTool, GetTaskTool, GetTasksTool]
+);

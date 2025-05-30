@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"moon": {
+			"type": "stdio",
+			"command": "bash",
+			"args": ["-c", "cd ${workspaceFolder} && cargo run -- mcp"]
+		}
+	}
+}

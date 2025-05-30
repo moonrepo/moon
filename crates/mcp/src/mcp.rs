@@ -43,7 +43,9 @@ impl ServerHandler for MoonMcpHandler {
 
         match tool_params {
             MoonTools::GetProjectTool(inner) => inner.call_tool(&self.workspace_graph),
+            MoonTools::GetProjectsTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
+            MoonTools::GetTasksTool(inner) => inner.call_tool(&self.workspace_graph),
         }
     }
 }
@@ -68,16 +70,16 @@ pub async fn run_mcp(
         protocol_version: LATEST_PROTOCOL_VERSION.to_string(),
     };
 
-    // STEP 2: create a std transport with default options
+    // STEP 2: Create an std transport with default options
     let transport = StdioTransport::new(TransportOptions::default())?;
 
-    // STEP 3: instantiate our custom handler for handling MCP messages
+    // STEP 3: Instantiate our custom handler for handling MCP messages
     let handler = MoonMcpHandler {
         app_context,
         workspace_graph,
     };
 
-    // STEP 4: create a MCP server
+    // STEP 4: Create the MCP runtime
     let server: ServerRuntime = server_runtime::create_server(server_details, transport, handler);
 
     // STEP 5: Start the server

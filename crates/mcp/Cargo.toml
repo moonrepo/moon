@@ -1,0 +1,24 @@
+[package]
+name = "moon_mcp"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "MCP utilities for interacting with AI agents."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_common = { version = "0.1.2", path = "../common" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+rust-mcp-sdk = { version = "0.4.1", default-features = false, features = [
+	"macros",
+	"server",
+] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

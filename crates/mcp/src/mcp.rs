@@ -1,15 +1,23 @@
 use crate::tools::*;
 use async_trait::async_trait;
+use moon_app_context::AppContext;
+use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::error::SdkResult;
 use rust_mcp_sdk::mcp_server::{ServerHandler, ServerRuntime, server_runtime};
-use rust_mcp_sdk::schema::schema_utils::CallToolError;
 use rust_mcp_sdk::schema::{
     CallToolRequest, CallToolResult, Implementation, InitializeResult, LATEST_PROTOCOL_VERSION,
     ListToolsRequest, ListToolsResult, RpcError, ServerCapabilities, ServerCapabilitiesTools,
+    schema_utils::CallToolError,
 };
 use rust_mcp_sdk::{McpServer, StdioTransport, TransportOptions};
+use std::env;
+use std::sync::Arc;
 
-pub struct MoonMcpHandler {}
+#[allow(dead_code)]
+pub struct MoonMcpHandler {
+    app_context: Arc<AppContext>,
+    workspace_graph: Arc<WorkspaceGraph>,
+}
 
 #[async_trait]
 impl ServerHandler for MoonMcpHandler {
@@ -34,24 +42,29 @@ impl ServerHandler for MoonMcpHandler {
             MoonTools::try_from(request.params).map_err(CallToolError::new)?;
 
         match tool_params {
-            MoonTools::LoadProjectTool(inner) => inner.call_tool(),
+            MoonTools::GetProjectTool(inner) => inner.call_tool(&self.workspace_graph),
+            MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
         }
     }
 }
 
-async fn run_mcp() -> SdkResult<()> {
+pub async fn run_mcp(
+    app_context: Arc<AppContext>,
+    workspace_graph: Arc<WorkspaceGraph>,
+) -> SdkResult<()> {
     // STEP 1: Define server details and capabilities
     let server_details = InitializeResult {
         server_info: Implementation {
             name: "moon MCP Server".to_string(),
-            version: "0.1.0".to_string(), // TODO
+            version: env::var("MOON_VERSION")
+                .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").to_string()),
         },
         capabilities: ServerCapabilities {
             tools: Some(ServerCapabilitiesTools { list_changed: None }),
             ..Default::default()
         },
         meta: None,
-        instructions: Some("server instructions...".to_string()),
+        instructions: None,
         protocol_version: LATEST_PROTOCOL_VERSION.to_string(),
     };
 
@@ -59,7 +72,10 @@ async fn run_mcp() -> SdkResult<()> {
     let transport = StdioTransport::new(TransportOptions::default())?;
 
     // STEP 3: instantiate our custom handler for handling MCP messages
-    let handler = MoonMcpHandler {};
+    let handler = MoonMcpHandler {
+        app_context,
+        workspace_graph,
+    };
 
     // STEP 4: create a MCP server
     let server: ServerRuntime = server_runtime::create_server(server_details, transport, handler);

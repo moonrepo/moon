@@ -12,6 +12,7 @@ use crate::commands::graph::action::ActionGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
 use crate::commands::graph::task::TaskGraphArgs;
 use crate::commands::init::InitArgs;
+use crate::commands::mcp::McpArgs;
 use crate::commands::migrate::MigrateCommands;
 use crate::commands::node::NodeCommands;
 use crate::commands::project::ProjectArgs;
@@ -198,6 +199,13 @@ pub enum Commands {
         #[command(subcommand)]
         command: DockerCommands,
     },
+
+    // moon mcp
+    #[command(
+        name = "mcp",
+        about = "Start a Model-Context-Provider (MCP) server that can respond to AI agent requests."
+    )]
+    Mcp(McpArgs),
 
     // moon migrate <operation>
     #[command(

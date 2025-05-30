@@ -72,9 +72,9 @@ impl Target {
             return Err(TargetError::TooWild.into());
         }
 
-        if !target_id.contains(':') {
-            return Target::new_self(target_id);
-        }
+        // if !target_id.contains(':') {
+        //     return Target::new_self(target_id);
+        // }
 
         let Some(matches) = TARGET_PATTERN.captures(target_id) else {
             return Err(TargetError::InvalidFormat(target_id.to_owned()).into());

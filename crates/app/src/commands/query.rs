@@ -447,7 +447,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
         let mut grouped_tasks = BTreeMap::default();
 
         for task in tasks {
-            let Some(project_id) = task.target.get_project_id() else {
+            let Ok(project_id) = task.target.get_project_id() else {
                 continue;
             };
 

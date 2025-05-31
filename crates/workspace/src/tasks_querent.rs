@@ -34,7 +34,7 @@ impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
             .task_data
             .iter()
             .filter_map(|(target, data)| {
-                let project_id = target.get_project_id()?;
+                let project_id = target.get_project_id().ok()?;
 
                 if &target.task_id == task_id && project_ids.contains(project_id) {
                     Some((target, &data.options))

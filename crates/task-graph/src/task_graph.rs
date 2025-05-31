@@ -93,7 +93,7 @@ impl TaskGraph {
         let mut all = vec![];
 
         for target in self.metadata.keys() {
-            if target.get_project_id().is_some_and(|id| id == project_id) {
+            if target.get_project_id().is_ok_and(|id| id == project_id) {
                 let task = self.internal_get(target)?;
 
                 if !include_internal && task.is_internal() {
@@ -152,11 +152,8 @@ impl TaskGraph {
         let mut cache = self.write_cache();
 
         let expander = TaskExpander::new(
-            self.project_graph.get_unexpanded(
-                target
-                    .get_project_id()
-                    .expect("Project scope required for target."),
-            )?,
+            self.project_graph
+                .get_unexpanded(target.get_project_id()?)?,
             &self.context,
         );
 

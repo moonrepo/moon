@@ -1,0 +1,77 @@
+---
+title: MCP integration
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="1.37.0" header />
+
+[Model Context Protocol](https://modelcontextprotocol.io) (MCP) is an open standard that enables AI
+models to interact with external tools and services through a unified interface. The moon CLI
+contains an MCP server that you can register with your code editor to allow LLMs to use moon
+directly.
+
+## Setup
+
+### Cursor
+
+To use MCP servers in Cursor, create a `.cursor/mcp.json` file in your project directory, or
+`~/.cursor/mcp.json` globally, with the following content:
+
+```json title=".cursor/mcp.json"
+{
+  "mcpServers": {
+    "moon": {
+      "command": "moon",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Once configured, the moon MCP server should appear in the "Available Tools" section on the MCP
+settings page in Cursor.
+
+### VS Code
+
+To use MCP servers in VS Code, you must have the
+[Copilot Chat](https://code.visualstudio.com/docs/copilot/chat/copilot-chat) extension installed.
+Once installed, create a `.vscode/mcp.json` file with the following content:
+
+```json title=".vscode/mcp.json"
+{
+  "servers": {
+    "moon": {
+      "type": "stdio",
+      "command": "moon",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Once your MCP server is configured, you can use it with
+[GitHub Copilot’s agent mode](https://code.visualstudio.com/docs/copilot/chat/chat-agent-mode):
+
+- Open the Copilot Chat view in VS Code
+- Enable agent mode using the mode select dropdown
+- Toggle on moon's MCP tools using the “Tools” button
+
+## Available tools
+
+The following tools are available in the moon MCP server and can be executed by LLMs using agent
+mode.
+
+- `get_project` - Get a project and its tasks by `id`.
+- `get_projects` - Get all projects.
+- `get_task` - Get a task by `target`.
+- `get_tasks` - Get all tasks.
+
+:::info
+
+The
+[request and response shapes](https://github.com/moonrepo/moon/blob/master/packages/types/src/mcp.ts)
+for these tools are defined as TypeScript types in the
+[`@moonrepo/types`](https://www.npmjs.com/package/@moonrepo/types) package.
+
+:::

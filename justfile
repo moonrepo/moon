@@ -70,6 +70,9 @@ release:
 docs:
 	cargo run -- run website:start
 
+mcp:
+	npx @modelcontextprotocol/inspector -- cargo run -- mcp
+
 moon-check:
 	cargo run -- check --all --log trace --summary
 

@@ -78,7 +78,7 @@ fn does_task_match_criteria(task: &Task, query: &Criteria) -> miette::Result<boo
             Condition::Field { field, .. } => {
                 let result = match field {
                     Field::Project(ids) => {
-                        if let Some(project_id) = task.target.get_project_id() {
+                        if let Ok(project_id) = task.target.get_project_id() {
                             condition.matches(ids, project_id)
                         } else {
                             Ok(false)

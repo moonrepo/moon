@@ -15,10 +15,7 @@ pub async fn run_task(
     workspace_graph: Arc<WorkspaceGraph>,
     node: &RunTaskNode,
 ) -> miette::Result<ActionStatus> {
-    let project_id = node
-        .target
-        .get_project_id()
-        .expect("Project required for running tasks!");
+    let project_id = node.target.get_project_id()?;
     let project = workspace_graph.get_project(project_id)?;
     let task = workspace_graph.get_task(&node.target)?;
 

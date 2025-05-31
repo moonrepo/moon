@@ -165,7 +165,7 @@ fn load_task(
         color::label("load_task_by_target"),
     );
 
-    if target.get_project_id().is_none() {
+    if target.get_project_id().is_err() {
         return Err(Error::msg(format!(
             "Unable to load task {target}. Requires a fully-qualified target with a project scope."
         )));
@@ -218,7 +218,7 @@ fn load_tasks(
     for target in &targets {
         let target = Target::parse(target).map_err(map_error)?;
 
-        if target.get_project_id().is_none() {
+        if target.get_project_id().is_err() {
             return Err(Error::msg(format!(
                 "Unable to load task {target}. Requires a fully-qualified target with a project scope."
             )));

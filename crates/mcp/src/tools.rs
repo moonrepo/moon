@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_types)]
+
 use moon_common::cacheable;
 use moon_project::Project;
 use moon_task::{Target, Task};
@@ -77,6 +79,8 @@ impl GetProjectTool {
 cacheable!(
     pub struct GetProjectResponse {
         project: Project,
+
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         project_dependencies: Vec<Project>,
     }
 );
@@ -139,7 +143,7 @@ impl GetTaskTool {
         &self,
         workspace_graph: &WorkspaceGraph,
     ) -> Result<CallToolResult, CallToolError> {
-        let target = Target::parse(&self.target).map_err(map_miette_error)?;
+        let target = Target::parse_strict(&self.target).map_err(map_miette_error)?;
         let task = workspace_graph
             .get_task(&target)
             .map_err(map_miette_error)?;
@@ -169,6 +173,8 @@ impl GetTaskTool {
 cacheable!(
     pub struct GetTaskResponse {
         task: Arc<Task>,
+
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         task_dependencies: Vec<Arc<Task>>,
     }
 );

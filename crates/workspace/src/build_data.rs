@@ -69,17 +69,12 @@ impl TaskBuildData {
     pub fn resolve_target(
         target: &Target,
         project_data: &FxHashMap<Id, ProjectBuildData>,
-    ) -> Target {
+    ) -> miette::Result<Target> {
         // Target may be using an alias!
-        let project_id = ProjectBuildData::resolve_id(
-            target
-                .get_project_id()
-                .expect("Target requires a fully-qualified project scope!"),
-            project_data,
-        );
+        let project_id = ProjectBuildData::resolve_id(target.get_project_id()?, project_data);
 
         // IDs should be valid here, so ignore the result
-        Target::new(&project_id, &target.task_id).expect("Failed to format target!")
+        Target::new(&project_id, &target.task_id)
     }
 }
 

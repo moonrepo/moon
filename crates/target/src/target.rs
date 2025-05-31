@@ -72,9 +72,9 @@ impl Target {
             return Err(TargetError::TooWild.into());
         }
 
-        // if !target_id.contains(':') {
-        //     return Target::new_self(target_id);
-        // }
+        if !target_id.contains(':') {
+            return Target::new_self(target_id);
+        }
 
         let Some(matches) = TARGET_PATTERN.captures(target_id) else {
             return Err(TargetError::InvalidFormat(target_id.to_owned()).into());
@@ -104,6 +104,14 @@ impl Target {
             scope,
             task_id,
         })
+    }
+
+    pub fn parse_strict(target_id: &str) -> miette::Result<Target> {
+        if !target_id.contains(':') {
+            return Err(TargetError::ProjectScopeRequired(target_id.into()).into());
+        }
+
+        Self::parse(target_id)
     }
 
     pub fn as_str(&self) -> &str {
@@ -138,10 +146,10 @@ impl Target {
         false
     }
 
-    pub fn get_project_id(&self) -> Option<&Id> {
+    pub fn get_project_id(&self) -> miette::Result<&Id> {
         match &self.scope {
-            TargetScope::Project(id) => Some(id),
-            _ => None,
+            TargetScope::Project(id) => Ok(id),
+            _ => Err(TargetError::ProjectScopeRequired(self.id.to_string()).into()),
         }
     }
 

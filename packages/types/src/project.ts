@@ -48,7 +48,7 @@ export interface TaskOptions {
 	os: TaskOperatingSystem[] | null;
 	outputStyle: TaskOutputStyle | null;
 	persistent: boolean;
-	priority: TaskPriority,
+	priority: TaskPriority;
 	retryCount: number;
 	runDepsInParallel: boolean;
 	runInCI: boolean;

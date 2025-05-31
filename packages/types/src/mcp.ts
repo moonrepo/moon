@@ -1,37 +1,37 @@
 import type { Project, Task } from './project';
 
 export interface GetProjectTool {
-	id: string,
-	includeDependencies?: boolean,
+	id: string;
+	includeDependencies?: boolean;
 }
 
 export interface GetProjectToolResponse {
-	project: Project,
-	projectDependencies?: Project[],
+	project: Project;
+	projectDependencies?: Project[];
 }
 
 export interface GetProjectsTool {
-	includeTasks?: boolean,
+	includeTasks?: boolean;
 }
 
 export interface GetProjectsToolResponse {
-	projects: Project[],
+	projects: Project[];
 }
 
 export interface GetTaskTool {
-	target: string,
-	includeDependencies?: boolean,
+	target: string;
+	includeDependencies?: boolean;
 }
 
 export interface GetTaskToolResponse {
-	task: Task,
-	taskDependencies?: Task[],
+	task: Task;
+	taskDependencies?: Task[];
 }
 
 export interface GetTasksTool {
-	includeInternal?: boolean,
+	includeInternal?: boolean;
 }
 
 export interface GetTasksToolResponse {
-	tasks: Task[],
+	tasks: Task[];
 }

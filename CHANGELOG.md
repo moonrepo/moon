@@ -28,6 +28,11 @@
   - Reworked the `ManifestDependency` type to be an enum instead of a struct.
   - Added `ProjectDependency.via` field.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.49.4](https://github.com/moonrepo/proto/releases/tag/v0.49.4) (from 0.49.1).
+- Updated dependencies.
+
 ## 1.36.3
 
 #### 🐞 Fixes

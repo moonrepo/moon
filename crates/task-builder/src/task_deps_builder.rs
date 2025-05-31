@@ -98,7 +98,7 @@ impl TaskDepsBuilder<'_> {
                 // Avoid circular references
                 if dep_task_target
                     .get_project_id()
-                    .is_some_and(|id| id == &project.id)
+                    .is_ok_and(|id| id == &project.id)
                     && dep_task_target.task_id == self.task.target.task_id
                 {
                     continue;

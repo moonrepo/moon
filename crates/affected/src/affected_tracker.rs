@@ -391,7 +391,7 @@ impl AffectedTracker {
         self.track_task_dependencies(task, 0, &mut FxHashSet::default())?;
         self.track_task_dependents(task, 0, &mut FxHashSet::default())?;
 
-        if let Some(project_id) = task.target.get_project_id() {
+        if let Ok(project_id) = task.target.get_project_id() {
             self.projects
                 .entry(project_id.to_owned())
                 .or_default()

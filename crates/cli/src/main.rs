@@ -34,7 +34,8 @@ fn get_version() -> String {
 fn get_tracing_modules() -> Vec<String> {
     let bag = GlobalEnvBag::instance();
     let mut modules = string_vec![
-        "moon", "proto", // "schematic",
+        "moon",
+        "proto", // "schematic",
         "starbase",
         "warpgate",
         // Remote testing
@@ -42,6 +43,9 @@ fn get_tracing_modules() -> Vec<String> {
         // "hyper",
         // "tonic",
         // "rustls",
+        // MCP
+        "rust_mcp_sdk",
+        "rust_mcp_transport",
     ];
 
     if bag.should_debug_wasm() {
@@ -163,6 +167,7 @@ async fn main() -> MainResult {
                 Commands::Ext(args) => commands::ext::ext(session, args).await,
                 Commands::Generate(args) => commands::generate::generate(session, args).await,
                 Commands::Init(args) => commands::init::init(session, args).await,
+                Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
                 Commands::Migrate {
                     command,
                     skip_touched_files_check,

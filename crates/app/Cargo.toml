@@ -23,6 +23,7 @@ moon_env = { path = "../env" }
 moon_env_var = { path = "../env-var" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
+moon_mcp = { path = "../mcp" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }

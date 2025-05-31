@@ -18,6 +18,12 @@ pub enum TargetError {
     #[error("Self scope (~:) is not supported in run contexts.")]
     NoSelfInRunContext,
 
+    #[diagnostic(code(target::project_scope_required))]
+    #[error(
+        "Invalid target {}, requires fully-qualified project and task identifers (project:task).", .0.style(Style::Label)
+    )]
+    ProjectScopeRequired(String),
+
     #[diagnostic(code(target::missing_segments))]
     #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
     TooWild,

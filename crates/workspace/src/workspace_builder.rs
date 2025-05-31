@@ -484,7 +484,7 @@ impl<'app> WorkspaceBuilder<'app> {
         target: &Target,
         cycle: &mut FxHashSet<Target>,
     ) -> miette::Result<NodeIndex> {
-        let target = TaskBuildData::resolve_target(target, &self.project_data);
+        let target = TaskBuildData::resolve_target(target, &self.project_data)?;
 
         {
             let Some(build_data) = self.task_data.get(&target) else {
@@ -499,7 +499,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         // Not loaded, resolve the task
         let (_, project_index) = self
-            .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
+            .internal_load_project(target.get_project_id()?, &mut FxHashSet::default())
             .await?;
 
         let NodeState::Loaded(project) = self.project_graph.node_weight_mut(project_index).unwrap()

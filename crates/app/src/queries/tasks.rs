@@ -70,7 +70,7 @@ fn load_with_regex(
             }
         }
 
-        if let (Some(regex), Some(project_id)) = (&project_regex, task.target.get_project_id()) {
+        if let (Some(regex), Ok(project_id)) = (&project_regex, task.target.get_project_id()) {
             if !regex.is_match(project_id.as_str()) {
                 continue;
             }

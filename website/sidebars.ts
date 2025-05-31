@@ -212,6 +212,7 @@ const sidebars: SidebarsConfig = {
 		'guides/debug-task',
 		'guides/docker',
 		'guides/extensions',
+		'guides/mcp',
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/pkl-config',

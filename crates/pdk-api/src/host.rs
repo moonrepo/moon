@@ -1,22 +1,27 @@
 use crate::{is_false, is_zero};
+use derive_setters::*;
 use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct};
 
 api_struct!(
+    #[derive(Setters)]
     #[serde(default)]
     pub struct ExecCommand {
         /// When enabled, failed command executions will
         /// not abort the moon process, and allow it to
         /// continue running.
         #[serde(skip_serializing_if = "is_false")]
+        #[setters(bool)]
         pub allow_failure: bool,
 
         /// Cache the command based on its inputs/params and
         /// avoid re-executing until they change. Enabling
         /// this cache requires a label for debug purposes.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[setters(into, strip_option)]
         pub cache: Option<String>,
 
         /// The command parameters.
+        #[setters(skip)]
         pub command: ExecCommandInput,
 
         /// List of additional inputs to gather when generating
@@ -27,10 +32,12 @@ api_struct!(
         /// Checkpoint label to print to the console. If not
         /// provided, will default to the command + arguments.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[setters(into, strip_option)]
         pub label: Option<String>,
 
         /// Execute the command in parallel.
         #[serde(skip_serializing_if = "is_false")]
+        #[setters(bool)]
         pub parallel: bool,
 
         /// A count of how many times to retry the command
@@ -52,54 +59,6 @@ impl ExecCommand {
             parallel: false,
             retry_count: 0,
         }
-    }
-
-    /// Allow failures to not abort the moon process.
-    pub fn allow_failure(mut self) -> Self {
-        self.allow_failure = true;
-        self
-    }
-
-    /// Enable caching with the provided unique key.
-    pub fn cache(mut self, key: impl AsRef<str>) -> Self {
-        self.cache = Some(key.as_ref().into());
-        self
-    }
-
-    /// Disallow failures and abort the moon process.
-    pub fn disallow_failure(mut self) -> Self {
-        self.allow_failure = false;
-        self
-    }
-
-    /// Disable caching.
-    pub fn no_cache(mut self) -> Self {
-        self.cache = None;
-        self
-    }
-
-    /// Set a list of inputs to cache with.
-    pub fn inputs(mut self, inputs: Vec<CacheInput>) -> Self {
-        self.inputs = inputs;
-        self
-    }
-
-    /// Set checkpoint label.
-    pub fn label(mut self, label: impl AsRef<str>) -> Self {
-        self.label = Some(label.as_ref().into());
-        self
-    }
-
-    /// Run in parallel.
-    pub fn parallel(mut self) -> Self {
-        self.parallel = true;
-        self
-    }
-
-    /// Set the retry count.
-    pub fn retry(mut self, count: u8) -> Self {
-        self.retry_count = count;
-        self
     }
 }
 

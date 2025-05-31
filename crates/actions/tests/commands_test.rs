@@ -192,7 +192,7 @@ mod plugin_commands {
                 ctx,
                 &ExecCommand::new(ExecCommandInput::pipe("exit", ["1"]))
                     .allow_failure()
-                    .retry(2),
+                    .retry_count(2),
                 &ExecCommandOptions::default(),
             )
             .await
@@ -210,7 +210,7 @@ mod plugin_commands {
                 ctx,
                 &ExecCommand::new(ExecCommandInput::pipe("exit", ["0"]))
                     .allow_failure()
-                    .retry(2),
+                    .retry_count(2),
                 &ExecCommandOptions::default(),
             )
             .await

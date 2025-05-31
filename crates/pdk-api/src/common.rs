@@ -22,6 +22,7 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `extend_project_graph` function.
+    #[serde(default)]
     pub struct ExtendProjectGraphOutput {
         /// Map of project IDs to extracted information in which to
         /// extend projects in the project graph.

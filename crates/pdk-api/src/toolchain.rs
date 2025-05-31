@@ -279,14 +279,17 @@ api_struct!(
 
 api_struct!(
     /// Output returned from the `locate_dependencies_root` function.
+    #[serde(default)]
     pub struct LocateDependenciesRootOutput {
         /// A list of relative globs for all members (packages, libs, etc)
         /// within the current dependencies workspace. If not defined,
         /// the current project is the root, or there is no workspace.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub members: Option<Vec<String>>,
 
         /// Virtual path to the located root. If no root was found,
         /// return `None` to abort any relevant operations.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub root: Option<PathBuf>,
     }
 );

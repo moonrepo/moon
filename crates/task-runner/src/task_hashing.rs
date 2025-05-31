@@ -186,22 +186,24 @@ async fn apply_toolchain(
     }
 
     // Hash dynamic content
-    let output = toolchain
-        .hash_task_contents(HashTaskContentsInput {
-            context: app_context.toolchain_registry.create_context(),
-            project,
-            task,
-            toolchain_config: app_context.toolchain_registry.create_merged_config(
-                &toolchain.id,
-                &app_context.toolchain_config,
-                &project_config,
-            ),
-        })
-        .await?;
+    if toolchain.has_func("hash_task_contents").await {
+        let output = toolchain
+            .hash_task_contents(HashTaskContentsInput {
+                context: app_context.toolchain_registry.create_context(),
+                project,
+                task,
+                toolchain_config: app_context.toolchain_registry.create_merged_config(
+                    &toolchain.id,
+                    &app_context.toolchain_config,
+                    &project_config,
+                ),
+            })
+            .await?;
 
-    if !output.contents.is_empty() {
-        content.contents = output.contents;
-        inject = true;
+        if !output.contents.is_empty() {
+            content.contents = output.contents;
+            inject = true;
+        }
     }
 
     Ok(if inject { Some(content) } else { None })
@@ -249,7 +251,7 @@ async fn apply_toolchain_dependencies(
     };
 
     // Found a dependency root
-    if let Some(deps_root) = output.root.and_then(|root| root.real_path()) {
+    if let Some(deps_root) = output.root {
         // Parse and extract locked dependencies
         if let Some(lock_file_name) = &toolchain.metadata.lock_file_name {
             let lock_path = deps_root.join(lock_file_name);
@@ -326,20 +328,20 @@ async fn apply_toolchain_dependencies(
 }
 
 fn apply_toolchain_dependencies_by_scope(
-    project_deps: FxHashMap<String, ManifestDependency>,
-    workspace_deps: &FxHashMap<String, ManifestDependency>,
-    locked_deps: &FxHashMap<String, Vec<LockDependency>>,
+    project_deps: BTreeMap<String, ManifestDependency>,
+    workspace_deps: &BTreeMap<String, ManifestDependency>,
+    locked_deps: &BTreeMap<String, Vec<LockDependency>>,
     hash_content: &mut TaskToolchainHash,
 ) -> bool {
     let mut inject = false;
 
     for (name, dep) in project_deps {
-        let req = if dep.inherited {
+        let req = if dep.is_inherited() {
             workspace_deps
                 .get(&name)
-                .and_then(|ws_dep| ws_dep.version.clone())
+                .and_then(|ws_dep| ws_dep.get_version())
         } else {
-            dep.version
+            dep.get_version()
         };
 
         // If no version requirement, just skip
@@ -353,12 +355,12 @@ fn apply_toolchain_dependencies_by_scope(
                 // By exact version first
                 lock_deps
                     .iter()
-                    .find(|ld| ld.version.as_ref().is_some_and(|v| &req == v))
+                    .find(|ld| ld.version.as_ref().is_some_and(|v| req == v))
                     .or_else(|| {
                         // Then by matching requirement second
                         lock_deps
                             .iter()
-                            .find(|ld| ld.req.as_ref().is_some_and(|r| &req == r))
+                            .find(|ld| ld.req.as_ref().is_some_and(|r| req == r))
                     })
             {
                 // Found, so record a value

@@ -29,6 +29,7 @@ moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs_hooks = { path = "../vcs-hooks" }
 moon_workspace_graph = { path = "../workspace-graph" }
 convert_case = { workspace = true }
+futures = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
@@ -40,6 +41,11 @@ tracing = { workspace = true }
 
 # TODO REMOVE
 moon_platform = { path = "../../legacy/core/platform" }
+
+[dev-dependencies]
+moon_test_utils2 = { path = "../test-utils" }
+serial_test = { workspace = true }
+starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

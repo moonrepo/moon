@@ -1,0 +1,14 @@
+tasks:
+  env:
+    script: 'bin --flag'
+    toolchain: tc-tier2
+
+  env-remove:
+    script: 'bin --flag'
+    toolchain: tc-tier2
+    env:
+      REMOVE_VAR: 'true'
+
+  path:
+    script: 'bin --flag'
+    toolchain: tc-tier2

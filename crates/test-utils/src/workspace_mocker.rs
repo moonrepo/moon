@@ -182,6 +182,11 @@ impl WorkspaceMocker {
                                 id.replace("-", "_")
                             ))),
                         }))),
+                        version: if id == "tc-tier3" {
+                            Some(UnresolvedVersionSpec::parse("1.2.3").unwrap())
+                        } else {
+                            None
+                        },
                         ..Default::default()
                     },
                 );

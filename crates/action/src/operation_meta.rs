@@ -1,4 +1,3 @@
-use moon_common::Id;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::ExitStatus;
@@ -16,8 +15,6 @@ pub struct OperationMetaHash {
 pub struct OperationMetaFileChange {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub changed_files: Vec<PathBuf>,
-
-    pub id: Id,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]

@@ -13,12 +13,14 @@ extern "ExtismHost" {
     fn load_tasks_by_target(targets: Json<Vec<String>>) -> Json<FxHashMap<Target, Task>>;
 }
 
+/// Load a single project by ID.
 pub fn load_project(id: impl AsRef<str>) -> AnyResult<Project> {
     let project = unsafe { load_project_by_id(id.as_ref().into())? };
 
     Ok(project.0)
 }
 
+/// Load multiple projects by ID.
 pub fn load_projects<I, V>(ids: I) -> AnyResult<FxHashMap<Id, Project>>
 where
     I: IntoIterator<Item = V>,
@@ -35,12 +37,14 @@ where
     Ok(projects.0)
 }
 
+/// Load a single task by target.
 pub fn load_task(target: impl AsRef<str>) -> AnyResult<Task> {
     let task = unsafe { load_task_by_target(target.as_ref().into())? };
 
     Ok(task.0)
 }
 
+/// Load multiple tasks by target.
 pub fn load_tasks<I, V>(targets: I) -> AnyResult<FxHashMap<Target, Task>>
 where
     I: IntoIterator<Item = V>,

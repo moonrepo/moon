@@ -1,0 +1,7 @@
+# With toolchain that's disabled
+toolchain:
+  default: 'tc-tier3'
+  tc-tier3: false
+
+tasks:
+  build: {}

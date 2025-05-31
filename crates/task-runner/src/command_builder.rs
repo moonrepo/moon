@@ -4,6 +4,7 @@ use moon_app_context::AppContext;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
+use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
 use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
@@ -20,6 +21,7 @@ pub struct CommandBuilder<'task> {
     project: &'task Project,
     task: &'task Task,
     working_dir: &'task Path,
+    env_bag: &'task GlobalEnvBag,
     platform_manager: &'task PlatformManager,
 
     // To be built
@@ -46,10 +48,15 @@ impl<'task> CommandBuilder<'task> {
             project,
             task,
             working_dir,
+            env_bag: GlobalEnvBag::instance(),
             platform_manager: PlatformManager::read(),
             command: Command::new("noop"),
             using_platform: false,
         }
+    }
+
+    pub fn set_env_bar(&mut self, bag: &'task GlobalEnvBag) {
+        self.env_bag = bag;
     }
 
     pub fn set_platform_manager(&mut self, manager: &'task PlatformManager) {
@@ -78,6 +85,9 @@ impl<'task> CommandBuilder<'task> {
         self.inherit_affected(context)?;
         self.inherit_config();
         self.inherit_proto();
+
+        // Must be last!
+        self.command.inherit_path()?;
 
         Ok(self.command)
     }
@@ -387,11 +397,11 @@ impl<'task> CommandBuilder<'task> {
         // Inherit common parameters
         self.app
             .toolchain_registry
-            .prepare_process_command(&mut self.command);
+            .prepare_process_command(&mut self.command, self.env_bag);
 
         // Inherit project overrides
         for (id, config) in &self.project.config.toolchain.plugins {
-            if is_using_global_toolchain(id) {
+            if is_using_global_toolchain(self.env_bag, id) {
                 continue;
             }
 
@@ -440,7 +450,7 @@ impl<'task> CommandBuilder<'task> {
             return;
         }
 
-        // Normalize separators since WASM is always forward slashes
+        // Normalize separators since WASM always uses forward slashes
         #[cfg(windows)]
         {
             command.prepend_paths(next_paths.into_iter().map(|path| {

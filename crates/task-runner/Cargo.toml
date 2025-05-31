@@ -18,6 +18,7 @@ moon_cache_item = { path = "../cache-item" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
+moon_env_var = { path = "../env-var" }
 moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }
 # TODO remove
@@ -42,7 +43,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_affected = { path = "../affected" }
-moon_env_var = { path = "../env-var" }
 moon_test_utils2 = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
 

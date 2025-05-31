@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use moon_action::{Action, ActionNode, ActionPipelineStatus, RunTaskNode};
 use moon_action_context::ActionContext;
+use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project::Project;
 use moon_task::Target;
 use moon_toolchain::{Runtime, ToolchainSpec};
@@ -29,12 +31,37 @@ pub enum Event<'data> {
     // Installing deps
     DependenciesInstalling {
         project: Option<&'data Project>,
-        runtime: &'data Runtime,
+
+        // Old
+        runtime: Option<&'data Runtime>,
+
+        // New
+        root: Option<&'data WorkspaceRelativePathBuf>,
+        toolchain: Option<&'data Id>,
     },
     DependenciesInstalled {
         error: Option<String>,
         project: Option<&'data Project>,
-        runtime: &'data Runtime,
+
+        // Old
+        runtime: Option<&'data Runtime>,
+
+        // New
+        root: Option<&'data WorkspaceRelativePathBuf>,
+        toolchain: Option<&'data Id>,
+    },
+
+    // Setup environment
+    EnvironmentInitializing {
+        project: Option<&'data Project>,
+        root: &'data WorkspaceRelativePathBuf,
+        toolchain: &'data Id,
+    },
+    EnvironmentInitialized {
+        error: Option<String>,
+        project: Option<&'data Project>,
+        root: &'data WorkspaceRelativePathBuf,
+        toolchain: &'data Id,
     },
 
     #[serde(rename_all = "camelCase")]
@@ -104,6 +131,8 @@ impl Event<'_> {
             Event::ActionCompleted { .. } => "action.completed",
             Event::DependenciesInstalling { .. } => "dependencies.installing",
             Event::DependenciesInstalled { .. } => "dependencies.installed",
+            Event::EnvironmentInitializing { .. } => "environment.initializing",
+            Event::EnvironmentInitialized { .. } => "environment.initialized",
             Event::ProjectSyncing { .. } => "project.syncing",
             Event::ProjectSynced { .. } => "project.synced",
             Event::PipelineStarted { .. } => "pipeline.started",

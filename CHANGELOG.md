@@ -2,12 +2,36 @@
 
 ## Unreleased
 
+#### 🔖 RFCs
+
+- Task input additions and enhancements: https://github.com/moonrepo/moon/issues/1985
+
 #### 🚀 Updates
 
 - Added an unstable `moon mcp` command, which starts an MCP (model context protocol) stdio server
   that responds to AI agent requests.
   - Supports the following tools: `get_project`, `get_projects`, `get_task`, `get_tasks`.
   - We will be expanding this with more functionality over time, like `run_task`, etc.
+- Updated webhook events.
+  - Added `environment.initializing` and `environment.initialized` events.
+  - Added `root` and `toolchain` fields to `dependencies.installing` and `dependencies.installed`
+    events.
+  - Deprecated the `runtime` field in all events. Will be removed once toolchain plugins are
+    complete.
+
+#### 🧩 Plugins
+
+- Added test utilities for testing toolchain plugin functions.
+- Improved cache handling and invalidation for `SetupEnvironment` and `InstallDependencies` actions.
+- WASM
+  - Reworked all virtual path fields in "output" structs to greatly reduce the JSON payload.
+  - Reworked the `ManifestDependency` type to be an enum instead of a struct.
+  - Added `ProjectDependency.via` field.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.49.4](https://github.com/moonrepo/proto/releases/tag/v0.49.4) (from 0.49.1).
+- Updated dependencies.
 
 ## 1.36.3
 

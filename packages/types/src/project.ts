@@ -91,6 +91,11 @@ export interface Task {
 	type: TaskType;
 }
 
+export interface TaskFragment {
+	target: string;
+	toolchains: string[];
+}
+
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;

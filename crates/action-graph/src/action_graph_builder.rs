@@ -755,7 +755,7 @@ impl<'query> ActionGraphBuilder<'query> {
     ) -> miette::Result<Option<NodeIndex>> {
         let project = self
             .workspace_graph
-            .get_project(task.target.get_project_id().unwrap())?;
+            .get_project(task.target.get_project_id()?)?;
 
         let mut child_reqs = RunRequirements {
             ci: reqs.ci,

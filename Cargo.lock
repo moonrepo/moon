@@ -3718,6 +3718,7 @@ dependencies = [
  "moon_extension_plugin",
  "moon_feature_flags",
  "moon_lang",
+ "moon_mcp",
  "moon_node_lang",
  "moon_node_platform",
  "moon_node_tool",
@@ -4206,6 +4207,23 @@ name = "moon_logger"
 version = "0.0.1"
 dependencies = [
  "log",
+]
+
+[[package]]
+name = "moon_mcp"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette 7.6.0",
+ "moon_app_context",
+ "moon_common",
+ "moon_project",
+ "moon_task",
+ "moon_workspace_graph",
+ "rust-mcp-sdk",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -6340,6 +6358,66 @@ dependencies = [
  "rmp-serde",
  "rmpv",
  "serde",
+]
+
+[[package]]
+name = "rust-mcp-macros"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b5dbc170eee5a6ba6ea4fd4175846a49fdf8cdcdb60bccd55f94a92294af32d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "rust-mcp-schema"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c9966340f5104a8d22b6c2db8901f8626a0f737820a385db3ffbb29b1f6ae0f"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "rust-mcp-sdk"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aee75ac978738a3ce3ad666665dbbbb9d97331ceb0badb483969acef2024374c"
+dependencies = [
+ "async-trait",
+ "futures",
+ "hyper 1.6.0",
+ "rust-mcp-macros",
+ "rust-mcp-schema",
+ "rust-mcp-transport",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "rust-mcp-transport"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c975ce25df3b395a0cca763e17fb51978462a29bb816d8f6936ecd8a4412eac"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures",
+ "rust-mcp-schema",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-stream",
+ "tracing",
 ]
 
 [[package]]

@@ -47,12 +47,12 @@ cacheable!(
         /// Absolute path to the project's root folder.
         pub root: PathBuf,
 
-        /// The technology stack of the project.
-        pub stack: StackType,
-
         /// Relative path from the workspace root to the project root.
         /// Is the RHS of the `projects` setting.
         pub source: WorkspaceRelativePathBuf,
+
+        /// The technology stack of the project.
+        pub stack: StackType,
 
         /// Tasks specific to the project. Inherits all tasks from the global config.
         /// Note: This map is empty when the project is in the project graph!

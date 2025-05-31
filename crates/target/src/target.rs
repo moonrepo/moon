@@ -106,6 +106,14 @@ impl Target {
         })
     }
 
+    pub fn parse_strict(target_id: &str) -> miette::Result<Target> {
+        if !target_id.contains(':') {
+            return Err(TargetError::ProjectScopeRequired(target_id.into()).into());
+        }
+
+        Self::parse(target_id)
+    }
+
     pub fn as_str(&self) -> &str {
         &self.id
     }
@@ -138,10 +146,10 @@ impl Target {
         false
     }
 
-    pub fn get_project_id(&self) -> Option<&Id> {
+    pub fn get_project_id(&self) -> miette::Result<&Id> {
         match &self.scope {
-            TargetScope::Project(id) => Some(id),
-            _ => None,
+            TargetScope::Project(id) => Ok(id),
+            _ => Err(TargetError::ProjectScopeRequired(self.id.to_string()).into()),
         }
     }
 

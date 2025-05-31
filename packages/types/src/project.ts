@@ -13,7 +13,9 @@ import type {
 	PlatformType,
 	TaskDependencyConfig,
 	TaskMergeStrategy,
+	TaskOperatingSystem,
 	TaskOutputStyle,
+	TaskPriority,
 	TaskType,
 	TaskUnixShell,
 	TaskWindowsShell,
@@ -31,7 +33,10 @@ export interface TaskOptions {
 	affectedPassInputs: boolean;
 	allowFailure: boolean;
 	cache: boolean;
+	cacheKey: string | null;
+	cacheLifetime: string | null;
 	envFiles: string[] | null;
+	inferInputs: boolean;
 	internal: boolean;
 	interactive: boolean;
 	mergeArgs: TaskMergeStrategy;
@@ -39,19 +44,23 @@ export interface TaskOptions {
 	mergeEnv: TaskMergeStrategy;
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
-	outputStyle: TaskOutputStyle | null;
 	mutex: string | null;
+	os: TaskOperatingSystem[] | null;
+	outputStyle: TaskOutputStyle | null;
 	persistent: boolean;
+	priority: TaskPriority;
 	retryCount: number;
 	runDepsInParallel: boolean;
 	runInCI: boolean;
 	runFromWorkspaceRoot: boolean;
-	shell: boolean;
+	shell: boolean | null;
+	timeout: number | null;
 	unixShell: TaskUnixShell | null;
 	windowsShell: TaskWindowsShell | null;
 }
 
 export interface TaskState {
+	defaultInputs: boolean;
 	emptyInputs: boolean;
 	expanded: boolean;
 	localOnly: boolean;
@@ -62,20 +71,23 @@ export interface Task {
 	args: string[];
 	command: string;
 	deps: TaskDependencyConfig[];
+	description: string | null;
 	env: Record<string, string>;
 	id: string;
 	inputs: string[];
+	inputEnv: string[];
 	inputFiles: string[];
 	inputGlobs: string[];
-	inputVars: string[];
 	options: TaskOptions;
 	outputs: string[];
 	outputFiles: string[];
 	outputGlobs: string[];
 	platform: PlatformType;
+	preset: 'server' | 'watcher' | null;
 	script: string | null;
 	state: TaskState;
 	target: string;
+	toolchains: string[];
 	type: TaskType;
 }
 
@@ -98,7 +110,16 @@ export interface Project {
 	stack: StackType;
 	tasks: Record<string, Task>;
 	taskTargets: string[];
+	toolchains: string[];
 	type: ProjectType;
+}
+
+export interface ProjectFragment {
+	alias: string | null;
+	dependencyScope: DependencyScope;
+	id: string;
+	source: string;
+	toolchains: string[];
 }
 
 export interface ProjectGraphInner {

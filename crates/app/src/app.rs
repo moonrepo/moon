@@ -203,7 +203,7 @@ pub enum Commands {
     // moon mcp
     #[command(
         name = "mcp",
-        about = "Start a Model-Context-Provider (MCP) server that can respond to AI agent requests."
+        about = "Start an MCP (model context protocol) server that can respond to AI agent requests."
     )]
     Mcp(McpArgs),
 

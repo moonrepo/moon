@@ -4,7 +4,7 @@
 
 #### 🚀 Updates
 
-- Added an unstable `moon mcp` command, which starts an MCP (model-context-provider) stdio server
+- Added an unstable `moon mcp` command, which starts an MCP (model context protocol) stdio server
   that responds to AI agent requests.
   - Supports the following tools: `get_project`, `get_projects`, `get_task`, `get_tasks`.
   - We will be expanding this with more functionality over time, like `run_task`, etc.

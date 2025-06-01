@@ -63,7 +63,8 @@ api_struct!(
         /// The identifier to use when instantiating a proto tool instance
         /// to support tier 3 functionality. This is only required if the
         /// moon toolchain ID differs from the proto tool ID.
-        // pub proto_id: Option<String>,
+        // #[serde(skip_serializing_if = "Option::is_none")]
+        // pub proto_tool_id: Option<String>,
 
         /// The name of the directory that contains installed dependencies.
         /// Will be used for detection.

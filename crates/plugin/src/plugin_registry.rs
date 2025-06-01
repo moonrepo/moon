@@ -166,7 +166,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 );
 
                 // Create the manifest and let the consumer configure it
-                let mut manifest = self.create_manifest(entry.key(), plugin_file)?;
+                let mut manifest = self.create_manifest(entry.key(), plugin_file.clone())?;
 
                 op(&mut manifest)?;
 
@@ -194,6 +194,7 @@ impl<T: Plugin> PluginRegistry<T> {
                     id: entry.key().to_owned(),
                     moon_env: Arc::clone(&self.host_data.moon_env),
                     proto_env: Arc::clone(&self.host_data.proto_env),
+                    wasm_file: plugin_file,
                 })
                 .await?;
 

@@ -8,7 +8,7 @@ use utils::*;
 mod command_executor {
     use super::*;
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn returns_attempt_on_success() {
         let container = TaskRunnerContainer::new_os("runner", "success").await;
         let context = ActionContext::default();
@@ -43,7 +43,7 @@ mod command_executor {
         assert_eq!(output.stdout.as_ref().unwrap().trim(), "test");
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn returns_attempt_on_failure() {
         let container = TaskRunnerContainer::new_os("runner", "failure").await;
         let context = ActionContext::default();
@@ -77,7 +77,7 @@ mod command_executor {
         assert_eq!(output.exit_code.unwrap(), 1);
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn returns_attempts_for_each_retry() {
         let container = TaskRunnerContainer::new_os("runner", "retry").await;
         let context = ActionContext::default();

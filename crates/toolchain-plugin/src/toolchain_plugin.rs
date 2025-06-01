@@ -110,7 +110,6 @@ impl ToolchainPlugin {
     // Install dependencies
     pub async fn supports_tier_2(&self) -> bool {
         self.has_func("locate_dependencies_root").await
-            && (self.has_func("parse_lockfile").await || self.has_func("parse_manifest").await)
     }
 
     // Setup toolchain

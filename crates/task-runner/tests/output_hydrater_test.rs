@@ -11,7 +11,7 @@ mod output_hydrater {
     mod unpack {
         use super::*;
 
-        // #[tokio::test]
+        // #[tokio::test(flavor = "multi_thread")]
         // async fn does_nothing_if_no_hash() {
         //     let container = TaskRunnerContainer::new("archive", "file-outputs").await;
         //     let hydrater = container.create_hydrator();
@@ -19,7 +19,7 @@ mod output_hydrater {
         //     assert!(!hydrater.hydrate("", HydrateFrom::LocalCache).await.unwrap());
         // }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn does_nothing_if_from_prev_outputs() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             let hydrater = container.create_hydrator();
@@ -32,7 +32,7 @@ mod output_hydrater {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_unpack_if_cache_disabled() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container
@@ -56,7 +56,7 @@ mod output_hydrater {
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_unpack_if_cache_write_only() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container
@@ -80,7 +80,7 @@ mod output_hydrater {
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn unpacks_archive_into_project() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.pack_archive();
@@ -97,7 +97,7 @@ mod output_hydrater {
             assert!(container.sandbox.path().join("project/file.txt").exists());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn unpacks_logs_from_archive() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.pack_archive();

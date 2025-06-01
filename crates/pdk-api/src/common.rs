@@ -134,7 +134,8 @@ api_struct!(
         pub env_remove: Vec<String>,
 
         /// List of absolute paths to prepend into the `PATH` environment
-        /// variable, but after the proto prepended paths.
+        /// variable, but after the proto prepended paths. These *must*
+        /// be real paths, not virtual!
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub paths: Vec<PathBuf>,
     }

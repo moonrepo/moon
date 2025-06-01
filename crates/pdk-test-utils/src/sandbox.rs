@@ -139,10 +139,14 @@ impl MoonWasmSandbox {
             metadata,
             plugin: plugin.clone(),
             root: self.root.clone(),
-            tool: ToolTestWrapper {
-                tool: Tool::new(plugin.id.clone(), self.proto.clone(), plugin)
-                    .await
-                    .unwrap(),
+            tool: if plugin.has_func("register_tool").await {
+                Some(ToolTestWrapper {
+                    tool: Tool::new(plugin.id.clone(), self.proto.clone(), plugin)
+                        .await
+                        .unwrap(),
+                })
+            } else {
+                None
             },
         }
     }

@@ -21,7 +21,7 @@ About ──────────────────
   Type: configuration
   Depends on: —
 
-Configuation ───────────
+Configuration ──────────
 
   Inherits from:
     - .moon/tasks.yml

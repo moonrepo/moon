@@ -12,7 +12,7 @@ About ──────────────────
   Type: application
   Depends on: —
 
-Configuation ───────────
+Configuration ──────────
 
   Inherits from:
     - .moon/tasks.yml

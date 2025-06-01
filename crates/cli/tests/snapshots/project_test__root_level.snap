@@ -13,7 +13,7 @@ About ──────────────────
   Type: unknown
   Depends on: —
 
-Configuation ───────────
+Configuration ──────────
 
   Inherits from:
     - .moon/tasks.yml

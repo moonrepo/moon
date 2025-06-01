@@ -9,7 +9,7 @@ pub struct ToolchainTestWrapper {
     pub metadata: RegisterToolchainOutput,
     pub plugin: Arc<PluginContainer>,
     pub root: PathBuf,
-    pub tool: ToolTestWrapper,
+    pub tool: Option<ToolTestWrapper>,
 }
 
 impl ToolchainTestWrapper {
@@ -229,6 +229,8 @@ impl Deref for ToolchainTestWrapper {
     type Target = ToolTestWrapper;
 
     fn deref(&self) -> &Self::Target {
-        &self.tool
+        self.tool
+            .as_ref()
+            .expect("Toolchain requires `register_tool` (tier 3) to use this API.")
     }
 }

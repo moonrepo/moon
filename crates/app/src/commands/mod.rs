@@ -21,4 +21,5 @@ pub mod syncs;
 pub mod task;
 pub mod teardown;
 pub mod templates;
+pub mod toolchain;
 pub mod upgrade;

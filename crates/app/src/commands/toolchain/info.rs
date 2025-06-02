@@ -1,8 +1,8 @@
 use crate::session::MoonSession;
 use clap::Args;
-use iocraft::prelude::element;
-use moon_actions::operations::sync_config_schemas;
-use moon_console::ui::{Container, Notice, StyledText, Variant};
+// use iocraft::prelude::element;
+// use moon_actions::operations::sync_config_schemas;
+// use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -13,9 +13,9 @@ pub struct ToolchainInfoArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
-    let context = session.get_app_context().await?;
-    let toolchain_registry = session.get_toolchain_registry().await?;
+pub async fn info(_session: MoonSession, _args: ToolchainInfoArgs) -> AppResult {
+    // let context = session.get_app_context().await?;
+    // let toolchain_registry = session.get_toolchain_registry().await?;
 
     // sync_config_schemas(&context, args.force).await?;
 

@@ -8,6 +8,16 @@
 
 #### 🚀 Updates
 
+- Added a new
+  [Rust toolchain implementation](https://github.com/moonrepo/plugins/tree/master/toolchains/rust),
+  powered entirely by our new WASM plugin system. Since toolchain plugins are new and unstable, this
+  Rust toolchain can be enabled with the `unstable_rust` identifier (instead of `rust`).
+  - Supports multiple Cargo workspaces, and workspaces can exist at any depth.
+  - More accurate project relationship detection.
+  - New `addMsrvConstraint` setting.
+  - Better Docker prune implementation.
+  - Improved manifest/lockfile parsing.
+  - Cargo/rustup commands are now hashed and cached.
 - Added an unstable `moon mcp` command, which starts an MCP (model context protocol) stdio server
   that responds to AI agent requests.
   - Supports the following tools: `get_project`, `get_projects`, `get_task`, `get_tasks`.

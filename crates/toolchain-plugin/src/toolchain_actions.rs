@@ -11,10 +11,7 @@ use moon_pdk_api::{
     ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_process::Command;
-use moon_toolchain::{
-    get_version_env_key, get_version_env_value, is_using_global_toolchain,
-    is_using_global_toolchains,
-};
+use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchains};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
 use std::path::Path;
@@ -215,10 +212,6 @@ impl ToolchainRegistry {
 
         // Inherit versions for each toolchain
         for (id, config) in &self.configs {
-            if is_using_global_toolchain(bag, id) {
-                continue;
-            }
-
             if let Some(version) = &config.version {
                 command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
             }

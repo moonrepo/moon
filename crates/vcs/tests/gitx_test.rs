@@ -367,8 +367,6 @@ mod gitx {
         fn loads_trees_when_bare() {
             let (sandbox, git) = create_worktree_sandbox(true);
 
-            dbg!(&git);
-
             assert_eq!(git.repository_root, sandbox.path());
             assert_eq!(git.workspace_root, sandbox.path().join("trees/one"));
             assert_eq!(

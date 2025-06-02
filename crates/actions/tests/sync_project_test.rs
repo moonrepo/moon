@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;
 use moon_actions::actions::sync_project;
-use moon_common::Id;
+use moon_common::{Id, is_ci};
 use moon_env_var::GlobalEnvBag;
 use moon_test_utils2::WorkspaceMocker;
 use starbase_sandbox::{Sandbox, create_sandbox};
@@ -229,10 +229,15 @@ mod sync_project {
             .await
             .unwrap();
 
-            dbg!(&action);
-            dbg!(&status);
-
-            assert_eq!(status, ActionStatus::Passed);
+            // Is invalid in CI because files changed
+            assert_eq!(
+                status,
+                if is_ci() {
+                    ActionStatus::Invalid
+                } else {
+                    ActionStatus::Passed
+                }
+            );
 
             // All toolchains inherit from tc-tier1
             assert_eq!(

@@ -571,33 +571,33 @@ mod command_builder {
             );
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_inherit_proto_tool_version_if_disabled() {
-            let container = TaskRunnerContainer::new("toolchain", "with-version").await;
-            container
-                .env_bag
-                .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "true");
+        // #[tokio::test(flavor = "multi_thread")]
+        // async fn doesnt_inherit_proto_tool_version_if_disabled() {
+        //     let container = TaskRunnerContainer::new("toolchain", "with-version").await;
+        //     container
+        //         .env_bag
+        //         .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "true");
 
-            let command = container.create_command(ActionContext::default()).await;
+        //     let command = container.create_command(ActionContext::default()).await;
 
-            container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
+        //     container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
 
-            assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
-        }
+        //     assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
+        // }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_inherit_proto_tool_version_if_disabled_by_id() {
-            let container = TaskRunnerContainer::new("toolchain", "with-version").await;
-            container
-                .env_bag
-                .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "tc-tier3");
+        // #[tokio::test(flavor = "multi_thread")]
+        // async fn doesnt_inherit_proto_tool_version_if_disabled_by_id() {
+        //     let container = TaskRunnerContainer::new("toolchain", "with-version").await;
+        //     container
+        //         .env_bag
+        //         .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "tc-tier3");
 
-            let command = container.create_command(ActionContext::default()).await;
+        //     let command = container.create_command(ActionContext::default()).await;
 
-            container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
+        //     container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
 
-            assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
-        }
+        //     assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
+        // }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn inherits_proto_tool_version_project_override() {

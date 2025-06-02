@@ -12,8 +12,7 @@ use schematic::Schema;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use warpgate_api::api_enum;
-use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
+use warpgate_api::{VirtualPath, api_enum, api_struct, api_unit_enum};
 
 // METADATA
 

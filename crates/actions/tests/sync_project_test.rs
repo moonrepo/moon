@@ -229,6 +229,9 @@ mod sync_project {
             .await
             .unwrap();
 
+            dbg!(&action);
+            dbg!(&status);
+
             assert_eq!(status, ActionStatus::Passed);
 
             // All toolchains inherit from tc-tier1

@@ -274,13 +274,21 @@ mod plugin_commands {
                     ExecCommand::new(ExecCommandInput::pipe("echo", ["3"])).parallel(),
                     ExecCommand::new(ExecCommandInput::pipe("echo", ["4"])).parallel(),
                     ExecCommand::new(ExecCommandInput::pipe("echo", ["5"])).parallel(),
+                    ExecCommand::new(ExecCommandInput::pipe("echo", ["6"])).parallel(),
+                    ExecCommand::new(ExecCommandInput::pipe("echo", ["7"])).parallel(),
+                    ExecCommand::new(ExecCommandInput::pipe("echo", ["8"])).parallel(),
+                    ExecCommand::new(ExecCommandInput::pipe("echo", ["9"])).parallel(),
+                    ExecCommand::new(ExecCommandInput::pipe("echo", ["10"])).parallel(),
                 ],
                 ExecCommandOptions::default(),
             )
             .await
             .unwrap();
 
-            assert_ne!(get_order(ops), ["1", "2", "3", "4", "5"]);
+            assert_ne!(
+                get_order(ops),
+                ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            );
         }
 
         #[tokio::test]

@@ -112,6 +112,8 @@ pub async fn sync_project(
         action.operations.push(op);
     }
 
+    dbg!(&changed_files);
+
     // If files have been modified in CI, we should update the status to warning,
     // as these modifications should be committed to the repo!
     if mutated_files && is_ci() {

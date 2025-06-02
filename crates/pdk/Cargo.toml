@@ -15,9 +15,18 @@ moon_project = { version = "0.1.3", path = "../project" }
 moon_task = { version = "0.1.2", path = "../task" }
 clap = { workspace = true }
 extism-pdk = { workspace = true }
+schematic = { workspace = true, optional = true, features = [
+	"config",
+	"json",
+	"validate",
+] }
 serde = { workspace = true }
 rustc-hash = { workspace = true }
 warpgate_pdk = { workspace = true }
+
+[features]
+default = []
+schematic = ["dep:schematic"]
 
 [lints]
 workspace = true

@@ -783,7 +783,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.1.4"
+version = "0.2.0"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -798,7 +798,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "derive_setters",
  "moon_common",
@@ -981,10 +981,11 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.27.12"
+version = "0.27.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f949c01f5e8bb9f0e30eb55ea4748c588973bb74bbbe4c2835f0d4b79784c290"
+checksum = "5cc07934d0b43d10595f3ea6d214e7c42091d1a68205c980cb97ba476a0e7140"
 dependencies = [
+ "derive_setters",
  "rustc-hash",
  "schematic",
  "semver",
@@ -1611,11 +1612,12 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.14.4"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ad8ccf52fdd98b3d1335327186af4f9b513befa93cc3fd38e3e586efb1e6473"
+checksum = "7a39242fd1e9ea7fccb7d7f5feab8673a06de1220126b547b96758e9167b6165"
 dependencies = [
  "anyhow",
+ "derive_setters",
  "rustc-hash",
  "schematic",
  "serde",
@@ -1626,9 +1628,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dbb126efa9cfb47878b9bf6d8f26cb9ec3b3221b206fd73b99f73a61a9d5adb"
+checksum = "1fc769e25c94f647dbbfd8b0f23d569784f86835a7bcec180e1c9f831730e822"
 dependencies = [
  "extism-pdk",
  "serde",

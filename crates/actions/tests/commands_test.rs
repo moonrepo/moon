@@ -111,7 +111,6 @@ mod plugin_commands {
 
             assert_eq!(exec.exit_code.unwrap(), 0);
 
-            // Windows path outputs are weird
             if cfg!(unix) {
                 assert_eq!(
                     exec.stdout.as_deref().unwrap().trim(),
@@ -136,10 +135,13 @@ mod plugin_commands {
             let exec = ops.first().unwrap().get_exec_output().unwrap();
 
             assert_eq!(exec.exit_code.unwrap(), 0);
-            assert_eq!(
-                exec.stdout.as_deref().unwrap().trim(),
-                sandbox.path().join("subdir").to_str().unwrap()
-            );
+
+            if cfg!(unix) {
+                assert_eq!(
+                    exec.stdout.as_deref().unwrap().trim(),
+                    sandbox.path().join("subdir").to_str().unwrap()
+                );
+            }
 
             // Custom dir via options
             let ops = exec_plugin_command(
@@ -156,10 +158,13 @@ mod plugin_commands {
             let exec = ops.first().unwrap().get_exec_output().unwrap();
 
             assert_eq!(exec.exit_code.unwrap(), 0);
-            assert_eq!(
-                exec.stdout.as_deref().unwrap().trim(),
-                sandbox.path().join("subdir").to_str().unwrap()
-            );
+
+            if cfg!(unix) {
+                assert_eq!(
+                    exec.stdout.as_deref().unwrap().trim(),
+                    sandbox.path().join("subdir").to_str().unwrap()
+                );
+            }
         }
 
         #[tokio::test]

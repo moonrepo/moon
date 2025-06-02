@@ -166,7 +166,7 @@ impl WorkspaceMocker {
                     }
                 }
 
-                current_dir.unwrap().join("wasm/target")
+                current_dir.unwrap().join("wasm").join("target")
             }
         };
 
@@ -177,10 +177,12 @@ impl WorkspaceMocker {
                     ToolchainPluginConfig {
                         plugin: Some(PluginLocator::File(Box::new(FileLocator {
                             file: "".into(),
-                            path: Some(target_dir.join(format!(
-                                "wasm32-wasip1/release/{}.wasm",
-                                id.replace("-", "_")
-                            ))),
+                            path: Some(
+                                target_dir
+                                    .join("wasm32-wasip1")
+                                    .join("release")
+                                    .join(format!("{}.wasm", id.replace("-", "_"))),
+                            ),
                         }))),
                         version: if id == "tc-tier3" {
                             Some(UnresolvedVersionSpec::parse("1.2.3").unwrap())
@@ -209,9 +211,11 @@ impl WorkspaceMocker {
         self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();
         self.moon_env.working_dir = self.working_dir.clone();
         self.moon_env.workspace_root = self.workspace_root.clone();
+        self.moon_env.test_only = true;
 
         self.proto_env = ProtoEnvironment::from(home_dir.join(".proto"), home_dir).unwrap();
         self.proto_env.working_dir = self.working_dir.clone();
+        self.proto_env.test_only = true;
 
         self
     }

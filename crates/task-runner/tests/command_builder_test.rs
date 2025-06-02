@@ -311,7 +311,14 @@ mod command_builder {
             let container = TaskRunnerContainer::new("toolchain", "path").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.paths_before.last().unwrap(), "/extended/path");
+            assert_eq!(
+                command.paths_before.last().unwrap(),
+                if cfg!(windows) {
+                    "\\extended\\path"
+                } else {
+                    "/extended/path"
+                }
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -320,7 +327,14 @@ mod command_builder {
                 TaskRunnerContainer::new_for_project("toolchain", "script", "path").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.paths_before.last().unwrap(), "/extended/path");
+            assert_eq!(
+                command.paths_before.last().unwrap(),
+                if cfg!(windows) {
+                    "\\extended\\path"
+                } else {
+                    "/extended/path"
+                }
+            );
         }
     }
 
@@ -537,7 +551,11 @@ mod command_builder {
                 command
                     .paths_before
                     .iter()
-                    .any(|path| path.to_str().unwrap().ends_with(".proto/shims"))
+                    .any(|path| path.to_str().unwrap().ends_with(if cfg!(windows) {
+                        ".proto\\shims"
+                    } else {
+                        ".proto/shims"
+                    }))
             );
         }
 

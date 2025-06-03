@@ -68,6 +68,7 @@ mod plugin_commands {
             .unwrap();
         }
 
+        #[cfg(unix)]
         #[tokio::test]
         async fn can_set_env() {
             let (_, ws) = create_workspace();

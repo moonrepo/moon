@@ -1,4 +1,4 @@
-$schema: '../website/static/schemas/toolchain.json'
+$schema: './cache/schemas/toolchain.json'
 
 # rust:
 #   version: '1.86.0'
@@ -17,4 +17,3 @@ node:
 typescript:
   routeOutDirToCache: true
   syncProjectReferences: true
-# unstable_rust: {}

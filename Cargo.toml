@@ -48,14 +48,14 @@ regex = { version = "1.11.1", default-features = false, features = [
     "std",
     "perf",
 ] }
-reqwest = { version = "0.12.15", default-features = false, features = [
+reqwest = { version = "0.12.19", default-features = false, features = [
     "rustls-tls-native-roots",
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
 scc = "2.3.4"
-schematic = { version = "0.18.5", default-features = false, features = [
+schematic = { version = "0.18.6", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"

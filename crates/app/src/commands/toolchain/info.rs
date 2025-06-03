@@ -84,8 +84,6 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
         None
     };
 
-    let schema = config_schema.unwrap();
-
     session.console.render(element! {
         Container {
             Section(title: "Toolchain") {
@@ -122,48 +120,57 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                 )
             }
 
-            Section(title: "Configuration") {
-                Entry(name: "Settings") {
-                    Map {
-                        #(schema.fields.into_iter().map(|(field, setting)| {
-                            let mut flags = vec![];
+            #(config_schema.map(|schema| {
+                element! {
+                    Section(title: "Configuration") {
+                        Stack(gap: 1) {
+                            #(schema.fields.into_iter().map(|(field, setting)| {
+                                let mut flags = vec![];
 
-                            if setting.deprecated.is_some() {
-                                flags.push("deprecated");
-                            }
+                                if setting.deprecated.is_some() {
+                                    flags.push("deprecated");
+                                }
 
-                            if !setting.optional {
-                                flags.push("required");
-                            }
+                                if !setting.optional {
+                                    flags.push("required");
+                                }
 
-                            element! {
-                                MapItem(
-                                    name: element! {
-                                        StyledText(
-                                            content: field,
-                                            style: Style::Property
-                                        )
-                                    }.into_any(),
-                                    value: element! {
-                                        StyledText(
-                                            content: if flags.is_empty() {
-                                                setting.comment.unwrap_or_default()
-                                            } else {
-                                                format!(
-                                                    "{} <muted>({})</muted>",
-                                                    setting.comment.unwrap_or_default(),
-                                                    flags.join(", ")
+                                element! {
+                                    Stack {
+                                        View {
+                                            StyledText(
+                                                content: format!(
+                                                    "<property>{}</property><muted>:</muted> {} {}",
+                                                    field,
+                                                    setting.schema,
+                                                    if flags.is_empty() {
+                                                        "".to_string()
+                                                    } else {
+                                                        format!(
+                                                            "<muted>({})</muted>",
+                                                            flags.join(", ")
+                                                        )
+                                                    }
                                                 )
-                                            },
-                                            style: Style::MutedLight
-                                        )
-                                    }.into_any()
-                                )
-                            }.into_any()
-                        }))
+                                            )
+                                        }
+                                        #(setting.comment.as_ref().map(|comment| {
+                                            element! {
+                                                View {
+                                                    StyledText(
+                                                        content: comment,
+                                                        style: Style::MutedLight
+                                                    )
+                                                }
+                                            }
+                                        }))
+                                    }
+                                }.into_any()
+                            }))
+                        }
                     }
-                }
-            }
+                }.into_any()
+            }))
 
             Section(title: "Tier 1 - Usage detection") {
                 #((!toolchain.metadata.config_file_globs.is_empty()).then(|| {

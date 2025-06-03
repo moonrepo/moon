@@ -3,15 +3,47 @@ slug: moon-v1.37
 title: moon v1.37 - Rust WASM toolchain and MCP support
 authors: [milesj]
 tags: [toolchain, wasm, plugin, rust, mcp, ai]
-# image: ./img/moon/v1.37.png
+image: ./img/moon/v1.37.png
 ---
 
-In this release, we're stoked to release our first WASM toolchain plugin, and experimental MCP/AI
+In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI
 support!
 
 <!--truncate-->
 
 ## New Rust toolchain powered by WASM
+
+With [toolchain plugins](./moon-v1.36) entering beta last release, it's only natural that we start
+migrating the legacy toolchains into plugins. And with this release, the next one we've migrated is
+the Rust toolchain! However, unlike the TypeScript toolchain, the new Rust toolchain is opt-in and
+must be enabled. Simply rename `rust` to `unstable_rust` in `.moon/toolchain.yml`.
+
+```yaml title=".moon/toolchain.yml"
+unstable_rust:
+  version: '1.87.0'
+  components: ['clippy', 'rustfmt']
+  targets: ['wasm32-wasip1']
+  syncToolchainConfig: true
+```
+
+Although the new Rust toolchain is a one-to-one port, the WASM APIs provide far more flexibility and
+functionality than before. For example, the follow improvements and enhancements have been made:
+
+- The Cargo workspace can now exist at any folder depth and does not need to exist at the moon
+  workspace root. Additionally, because of this, we can now support multiple Cargo workspaces in the
+  same moon workspace.
+- Added a new `addMsrvConstraint` setting, which will sync the version as a constraint to
+  `Cargo.toml` under the `workspace.package.rust-version` or `package.rust-version` fields.
+- Improved the accuracy of implicit project dependencies (inferred from `Cargo.toml`).
+- Improved the parsing of manifest (`Cargo.toml`) and lock (`Cargo.lock`) files. This information is
+  then fed into the task hashing process.
+- Improved the Docker prune implementation by preserving all binaries (inferred from
+  `cargo metadata`) while deleting the `target` directory.
+- Any `cargo` or `rustup` commands are now hashed and cached, and will only re-run when parameters
+  change. Unlike the current toolchain, which always runs these commands.
+
+Quite a list of improvements, and this doesn't even include all the WASM / plugin improvements that
+have been slowly introduced! Give this new toolchain a try, and let us know what you think!
 
 ## MCP editor integration
 

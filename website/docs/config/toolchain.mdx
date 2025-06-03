@@ -982,3 +982,24 @@ rust:
 
 > Targets are currently _not scoped_ based on operating system, and will be installed for all
 > machines.
+
+## `unstable_rust`<VersionLabel version="1.37.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#rust" />
+
+Enables and configures [Rust](../guides/rust/handbook). This setting enables the new WASM powered
+Rust toolchain, which is far more accurate and efficient, but still unstable.
+
+Supports all the same settings as [`rust`](#rust), with the addition of:
+
+### `addMsrvConstraint`<VersionLabel version="1.37.0" />
+
+<HeadingApiLink to="/api/types/interface/RustConfig#addMsrvConstraint" />
+
+When `version` is defined, syncs the version as a constraint to `Cargo.toml` under the
+`workspace.package.rust-version` or `package.rust-version` fields.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_rust:
+  addMsrvConstraint: true
+```

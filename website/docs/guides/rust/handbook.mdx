@@ -37,6 +37,13 @@ rust:
   syncToolchainConfig: true
 ```
 
+:::info
+
+In moon v1.37+, use `unstable_rust` instead of `rust` to enable the new WASM powered Rust toolchain,
+which is far more accurate and efficient. The non-WASM toolchain will be deprecated in the future.
+
+:::
+
 Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"

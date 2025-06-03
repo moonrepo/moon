@@ -1,0 +1,121 @@
+---
+slug: moon-v1.37
+title: moon v1.37 - Rust WASM toolchain and MCP support
+authors: [milesj]
+tags: [toolchain, wasm, plugin, rust, mcp, ai]
+image: ./img/moon/v1.37.png
+---
+
+In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI
+support!
+
+<!--truncate-->
+
+## RFC: Task input additions and enhancements
+
+We're planning to improve task inputs and have written up an
+[RFC to discuss these changes](https://github.com/moonrepo/moon/issues/1985). We'd appreciate any
+and all feedback!
+
+## New Rust toolchain powered by WASM
+
+With [toolchain plugins](./moon-v1.36) entering beta last release, it's only natural that we start
+migrating the legacy toolchains into plugins. And with this release, the next one we've migrated is
+the Rust toolchain! However, unlike the TypeScript toolchain, the new Rust toolchain is opt-in and
+must be enabled. Simply rename `rust` to `unstable_rust` in `.moon/toolchain.yml`.
+
+```yaml title=".moon/toolchain.yml"
+unstable_rust:
+  version: '1.87.0'
+  components: ['clippy', 'rustfmt']
+  targets: ['wasm32-wasip1']
+  syncToolchainConfig: true
+```
+
+### New functionality
+
+Although the new Rust toolchain is a one-to-one port, the WASM APIs provide far more flexibility and
+functionality than before. For example, the follow improvements and enhancements have been made:
+
+- The Cargo workspace can now exist at any folder depth and does not need to exist at the moon
+  workspace root. Additionally, because of this, we can now support multiple Cargo workspaces in the
+  same moon workspace.
+- Added a new `addMsrvConstraint` setting, which will sync the version as a constraint to
+  `Cargo.toml` under the `workspace.package.rust-version` or `package.rust-version` fields.
+- Improved the accuracy of implicit project dependencies (inferred from `Cargo.toml`).
+- Improved the parsing of manifest (`Cargo.toml`) and lock (`Cargo.lock`) files. This information is
+  then fed into the task hashing process.
+- Improved the Docker prune implementation by preserving all binaries (inferred from
+  `cargo metadata`) while deleting the `target` directory.
+- Any `cargo` or `rustup` commands are now hashed and cached, and will only re-run when parameters
+  change. Unlike the current toolchain, which always runs these commands.
+
+Quite a list of improvements, and this doesn't even include all the WASM / plugin improvements that
+have been slowly introduced! Give this new toolchain a try, and let us know what you think!
+
+## MCP editor integration
+
+AI is all the rage these days, and even more so lately with the introduction of
+[MCP](https://modelcontextprotocol.io) (model context protocol) and agentic workflows. MCP is a new
+way for AI assistants to "understand" what's going on in your project without you having to explain
+everything. It works by feeding structured information, like in the context of moon, projects,
+tasks, and relationships, directly into AI models like GitHub Copilot or Cursor.
+
+No more tedious explanations required! The AI can jump straight to helpful suggestions that actually
+work in your codebase, saving you time, and making the whole experience much smoother, especially in
+complex monorepos with lots of moving parts.
+
+To support agentic workflows, we're introducing an experimental [`moon mcp`](/docs/commands/mcp)
+command, that starts an MCP server, and can be [integrated into your editor](/docs/guides/mcp). For
+example, VS Code:
+
+```json title=".vscode/mcp.json"
+{
+  "servers": {
+    "moon": {
+      "type": "stdio",
+      "command": "moon",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Supported tools
+
+Our MCP server currently supports the following tools. We'll be adding more tools in the future, so
+if you have any suggestions, please let us know!
+
+- `get_project` - Get a project and its tasks by `id`.
+- `get_projects` - Get all projects.
+- `get_task` - Get a task by `target`.
+- `get_tasks` - Get all tasks.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.37.0) for a full list
+of changes.
+
+- Added `environment.initializing` and `environment.initialized` webhook events.
+- Added `root` and `toolchain` fields to `dependencies.installing` and `dependencies.installed`
+  webhook events.
+- Updated proto to [v0.49.4](https://github.com/moonrepo/proto/releases/tag/v0.49.4) (from 0.49.1).
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Better command line argument parsing/joining (especially for task `args`)
+- Better child process I/O piping
+- Terminal notifications
+- WASM toolchain documentation
+
+### Looking for toolchain contributors!
+
+Now that the Rust toolchain has been ported to WASM, we'd like to start porting the other
+toolchains, starting with Go and JavaScript (not Bun or Node.js), and also investigate supporting
+toolchains for entirely new languages, like PHP and Ruby! If you're interested in contributing these
+toolchains, please ping us in Discord!
+
+The only requirements is that these toolchains must be written in Rust and must exist in the
+[moonrepo/plugins](https://github.com/moonrepo/plugins) repository!

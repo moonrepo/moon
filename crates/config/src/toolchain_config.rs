@@ -276,6 +276,16 @@ impl ToolchainConfig {
 
         self.inherit_plugin_locators()?;
 
+        if self.rust.is_some()
+            && (self.plugins.contains_key("rust") || self.plugins.contains_key("unstable_rust"))
+        {
+            use tracing::warn;
+
+            warn!(
+                "The legacy Rust toolchain and WASM based Rust toolchain must not be used together"
+            );
+        }
+
         Ok(())
     }
 

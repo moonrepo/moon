@@ -24,9 +24,9 @@ pub async fn setup_toolchain_plugin(
     node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
     // No version configured, use globals on PATH
-    if node.spec.is_global() {
+    if node.toolchain.is_global() {
         debug!(
-            toolchain_id = node.spec.id.as_str(),
+            toolchain_id = node.toolchain.id.as_str(),
             "Skipping toolchain setup because we'll be using global commands on PATH instead",
         );
 
@@ -35,11 +35,11 @@ pub async fn setup_toolchain_plugin(
 
     // Skip this action if requested by the user
     if let Some(value) =
-        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.spec.target())
+        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.toolchain.target())
     {
         debug!(
-            toolchain_id = node.spec.id.as_str(),
-            version = node.spec.req.as_ref().map(|v| v.to_string()),
+            toolchain_id = node.toolchain.id.as_str(),
+            version = node.toolchain.req.as_ref().map(|v| v.to_string()),
             env = value,
             "Skipping toolchain setup because {} is set and matches",
             color::symbol("MOON_SKIP_SETUP_TOOLCHAIN")
@@ -49,12 +49,15 @@ pub async fn setup_toolchain_plugin(
     }
 
     // Load the toolchain
-    let toolchain = app_context.toolchain_registry.load(&node.spec.id).await?;
+    let toolchain = app_context
+        .toolchain_registry
+        .load(&node.toolchain.id)
+        .await?;
 
     if !toolchain.supports_tier_3().await {
         debug!(
-            toolchain_id = node.spec.id.as_str(),
-            version = node.spec.req.as_ref().map(|v| v.to_string()),
+            toolchain_id = node.toolchain.id.as_str(),
+            version = node.toolchain.req.as_ref().map(|v| v.to_string()),
             "Skipping toolchain setup as the toolchain does not support tier 3 (downloading and installing tools)"
         );
 
@@ -69,13 +72,19 @@ pub async fn setup_toolchain_plugin(
     )
     .await?
     else {
+        debug!(
+            toolchain_id = node.toolchain.id.as_str(),
+            "No {} toolchain changes since last run, skipping toolchain setup",
+            toolchain.metadata.name
+        );
+
         return Ok(ActionStatus::Skipped);
     };
 
     // Run the install and setup flows
     debug!(
-        toolchain_id = node.spec.id.as_str(),
-        version = node.spec.req.as_ref().map(|v| v.to_string()),
+        toolchain_id = node.toolchain.id.as_str(),
+        version = node.toolchain.req.as_ref().map(|v| v.to_string()),
         "Setting up {} toolchain",
         toolchain.metadata.name
     );
@@ -84,7 +93,7 @@ pub async fn setup_toolchain_plugin(
     let output = toolchain
         .setup_toolchain(
             SetupToolchainInput {
-                configured_version: node.spec.req.clone(),
+                configured_version: node.toolchain.req.clone(),
                 context: app_context.toolchain_registry.create_context(),
                 toolchain_config: app_context
                     .toolchain_registry
@@ -94,7 +103,7 @@ pub async fn setup_toolchain_plugin(
             || {
                 app_context.console.print_checkpoint(
                     Checkpoint::Setup,
-                    format!("installing {}", node.spec.label()),
+                    format!("installing {}", node.toolchain.label()),
                 )
             },
         )

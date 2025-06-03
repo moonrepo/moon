@@ -5,7 +5,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_hash::hash_content;
-use moon_pdk_api::SetupEnvironmentInput;
+use moon_pdk_api::{ExecCommand, Operation as PluginOperation, SetupEnvironmentInput};
 use moon_project::ProjectFragment;
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::json::JsonValue;
@@ -15,8 +15,12 @@ use tracing::{debug, instrument};
 hash_content!(
     struct SetupEnvironmentHash<'action> {
         action_node: &'action SetupEnvironmentNode,
+        // Input
         project: Option<&'action ProjectFragment>,
         toolchain_config: &'action JsonValue,
+        // Output
+        commands: &'action [ExecCommand],
+        operations: &'action [PluginOperation],
     }
 );
 
@@ -59,7 +63,7 @@ pub async fn setup_environment(
         return Ok(ActionStatus::Skipped);
     }
 
-    // Build the input
+    // Build the input and output
     let mut input = SetupEnvironmentInput {
         context: app_context.toolchain_registry.create_context(),
         project: None,
@@ -80,6 +84,8 @@ pub async fn setup_environment(
         );
     }
 
+    let output = toolchain.setup_environment(input.clone()).await?;
+
     // Create a lock if we haven't run before
     let Some(_lock) = create_hash_and_return_lock_if_changed(
         action,
@@ -88,16 +94,23 @@ pub async fn setup_environment(
             action_node: node,
             project: input.project.as_ref(),
             toolchain_config: &input.toolchain_config,
+            commands: &output.commands,
+            operations: &output.operations,
         },
     )
     .await?
     else {
+        debug!(
+            toolchain_id = node.toolchain_id.as_str(),
+            "No {} toolchain changes since last run, skipping environment setup",
+            toolchain.metadata.name
+        );
+
         return Ok(ActionStatus::Skipped);
     };
 
     // Extract from output
     let setup_op = Operation::setup_operation(action.get_prefix())?;
-    let output = toolchain.setup_environment(input).await?;
     let skipped = output.commands.is_empty() && output.operations.is_empty();
 
     // Execute all commands
@@ -110,12 +123,12 @@ pub async fn setup_environment(
 
     if !output.commands.is_empty() {
         let operations = exec_plugin_commands(
-            &toolchain,
+            &toolchain.id,
             app_context.clone(),
             output.commands,
             ExecCommandOptions {
                 prefix: action.get_prefix().into(),
-                working_dir: node.root.to_logical_path(&app_context.workspace_root),
+                working_dir: Some(node.root.to_logical_path(&app_context.workspace_root)),
                 on_exec: Some(Arc::new(move |cmd, attempts| {
                     handle_on_exec(&app_context.console, cmd, attempts)
                 })),

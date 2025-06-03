@@ -362,13 +362,13 @@ impl<'query> ActionGraphBuilder<'query> {
             .await?;
 
         // Only insert this action if a root was located
-        if let Some(abs_root) = output.root.as_ref().and_then(|root| root.real_path()) {
+        if let Some(abs_root) = output.root.as_ref() {
             let rel_root = abs_root
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
             // Determine if we're in the dependencies workspace
-            let in_project = project.root == abs_root;
+            let in_project = &project.root == abs_root;
             let in_workspace = toolchain.in_dependencies_workspace(&output, &project.root)?;
 
             // If not in the dependencies workspace (if there is one),
@@ -945,7 +945,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let index = insert_node_or_exit!(
             self,
             ActionNode::setup_toolchain(SetupToolchainNode {
-                spec: spec.to_owned(),
+                toolchain: spec.to_owned(),
             })
         );
 

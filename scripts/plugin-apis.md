@@ -1,6 +1,6 @@
 # WASM toolchain plugins
 
-## Tier 1 - 8/8
+## Tier 1 - 10/10
 
 - [x] `register_toolchain` \*
 - [x] `initialize_toolchain`
@@ -8,10 +8,12 @@
 - [x] `parse_version_file`
 - [x] `define_toolchain_config`
 - [x] `define_docker_metadata`
-- [x] `scaffold_docker`
 - [x] `prune_docker`
+- [x] `scaffold_docker`
+- [x] `sync_workspace`
+- [x] `sync_project`
 
-## Tier 2 - 11/11
+## Tier 2 - 9/9
 
 - [x] `extend_project_graph`
 - [x] `extend_task_command`
@@ -22,8 +24,6 @@
 - [x] `parse_lock`
 - [x] `parse_manifest`
 - [x] `setup_environment`
-- [x] `sync_workspace`
-- [x] `sync_project`
 
 ## Tier 3 - 8/8
 

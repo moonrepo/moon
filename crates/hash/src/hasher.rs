@@ -29,12 +29,6 @@ impl ContentHasher {
     #[instrument(skip_all)]
     pub fn generate_hash(&mut self) -> miette::Result<String> {
         if let Some(hash) = &self.hash_cache {
-            debug!(
-                hash,
-                label = &self.label,
-                "Using cached content hash (previously generated)"
-            );
-
             return Ok(hash.to_owned());
         }
 

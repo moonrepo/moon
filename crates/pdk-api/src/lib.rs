@@ -23,3 +23,7 @@ pub use warpgate_api::*;
 pub(crate) fn is_false(value: &bool) -> bool {
     !(*value)
 }
+
+pub(crate) fn is_zero(value: &u8) -> bool {
+    *value == 0
+}

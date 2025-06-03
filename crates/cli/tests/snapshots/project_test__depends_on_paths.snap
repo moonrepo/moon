@@ -14,7 +14,7 @@ About ──────────────────
     - baz (production)
     - bar (production)
 
-Configuation ───────────
+Configuration ──────────
 
   Inherits from:
     - .moon/tasks.yml

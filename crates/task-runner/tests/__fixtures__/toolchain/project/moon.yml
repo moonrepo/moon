@@ -1,0 +1,43 @@
+tasks:
+  base:
+    toolchain: tc-tier1
+  with-version:
+    toolchain: tc-tier3
+
+  command:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+  args-empty:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+  args-append:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+  args-prepend:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+  args-replace:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+  env:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+  env-remove:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+    env:
+      REMOVE_VAR: 'true'
+
+  path:
+    command: 'bin --flag'
+    toolchain: tc-tier2
+
+toolchain:
+  tc-custom:
+    version: '4.5.6'

@@ -186,7 +186,7 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                 }
             }
 
-            Section(title: "Configuation") {
+            Section(title: "Configuration") {
                 #(project.inherited.as_ref().map(|inherited| {
                     element! {
                         Entry(

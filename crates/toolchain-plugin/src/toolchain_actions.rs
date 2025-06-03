@@ -2,6 +2,7 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_common::consts::PROTO_CLI_VERSION;
+use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectGraphInput,
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput,
@@ -10,10 +11,7 @@ use moon_pdk_api::{
     ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_process::Command;
-use moon_toolchain::{
-    get_version_env_key, get_version_env_value, is_using_global_toolchain,
-    is_using_global_toolchains,
-};
+use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchains};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
 use std::path::Path;
@@ -201,7 +199,7 @@ impl ToolchainRegistry {
         Ok(results.into_iter().collect())
     }
 
-    pub fn prepare_process_command(&self, command: &mut Command) {
+    pub fn prepare_process_command(&self, command: &mut Command, bag: &GlobalEnvBag) {
         let moon = &self.host_data.moon_env;
         let proto = &self.host_data.proto_env;
 
@@ -214,17 +212,14 @@ impl ToolchainRegistry {
 
         // Inherit versions for each toolchain
         for (id, config) in &self.configs {
-            if is_using_global_toolchain(id) {
-                continue;
-            }
-
             if let Some(version) = &config.version {
                 command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
             }
         }
 
         // Abort early if using globals
-        if is_using_global_toolchains() {
+        if is_using_global_toolchains(bag) {
+            command.prepend_paths([moon.store_root.join("bin")]);
             return;
         }
 

@@ -1,11 +1,12 @@
 use crate::{config_enum, config_struct};
-use schematic::Config;
+use schematic::{Config, validate};
 
 config_struct!(
     /// Configures to a tool-specific binary to install.
     #[derive(Config)]
     pub struct BinConfig {
         /// Name of the binary, with optional version separated by `@`.
+        #[setting(validate = validate::not_empty)]
         pub bin: String,
 
         /// Force install the binary if it already exists.

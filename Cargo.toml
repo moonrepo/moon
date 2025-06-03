@@ -27,7 +27,7 @@ clap = { version = "4.5.39", default-features = false, features = [
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.51"
+clap_complete = "4.5.52"
 clean-path = "0.2.1"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
@@ -73,7 +73,7 @@ starbase_archive = { version = "0.10.6", default-features = false, features = [
 starbase_console = { version = "0.6.11", features = ["miette"] }
 starbase_events = "0.7.2"
 starbase_sandbox = "0.9.3"
-starbase_shell = "0.7.5"
+starbase_shell = "0.7.7"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
 starbase_utils = { version = "0.11.10", default-features = false, features = [
     "editor-config",
@@ -98,16 +98,17 @@ url = "2.5.4"
 uuid = { version = "1.16.0", features = ["v4"] }
 
 # proto/plugin related
-extism = "=1.10.0"
-extism-pdk = "1.4.0"
-proto_core = "0.49.1"
+extism = "=1.11.1"
+extism-pdk = "1.4.1"
+proto_core = "0.49.4"
 proto_installer = "0.12.5"
-proto_pdk_api = "0.27.11"
+proto_pdk_api = "0.27.13"
+proto_pdk_test_utils = "0.37.2"
 system_env = "0.8.0"
 version_spec = "0.9.1"
-warpgate = "0.24.1"
-warpgate_api = "0.14.2"
-warpgate_pdk = "0.13.1"
+warpgate = "0.24.3"
+warpgate_api = "0.14.5"
+warpgate_pdk = "0.13.2"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

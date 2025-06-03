@@ -26,6 +26,25 @@ pub fn parse_toolchain_config<T: Default + DeserializeOwned>(value: json::Value)
     Ok(config)
 }
 
+/// Parse workspace & project merged configuration for the current toolchain plugin
+/// using `schematic`. Will run any validation rules.
+#[cfg(feature = "schematic")]
+pub fn parse_toolchain_config_schema<T: schematic::Config>(value: json::Value) -> AnyResult<T> {
+    use moon_pdk_api::anyhow;
+    use schematic::{ConfigLoader, Format};
+
+    match ConfigLoader::<T>::new()
+        .code(json::to_string(&value)?, Format::Json)?
+        .load()
+    {
+        Ok(result) => Ok(result.config),
+
+        // miette swallows a bunch of error information since the errors are nested,
+        // so we must convert to a string to extract all the relevant information
+        Err(error) => Err(anyhow!("{}", error.to_full_string())),
+    }
+}
+
 /// Return true if the project has the current plugin/toolchain enabled.
 pub fn is_project_toolchain_enabled(project: &ProjectFragment) -> bool {
     get_plugin_id().is_ok_and(|id| is_project_toolchain_enabled_for(project, id))

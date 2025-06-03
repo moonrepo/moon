@@ -18,6 +18,9 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub finished_at: Option<NaiveDateTime>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Id>,
+
     pub meta: OperationMeta,
 
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -39,6 +42,7 @@ impl Operation {
         Operation {
             duration: None,
             finished_at: None,
+            id: None,
             meta,
             operations: vec![],
             plugin: None,
@@ -54,6 +58,7 @@ impl Operation {
         Operation {
             duration: None,
             finished_at: Some(time),
+            id: None,
             meta,
             operations: vec![],
             plugin: None,
@@ -291,25 +296,27 @@ impl Operation {
     }
 
     pub fn setup_operation(id: impl AsRef<str>) -> miette::Result<Self> {
-        let id = Id::new(id.as_ref())?;
-
-        Ok(Self::new(OperationMeta::SetupOperation(Box::new(
+        let mut op = Self::new(OperationMeta::SetupOperation(Box::new(
             OperationMetaFileChange {
                 changed_files: vec![],
-                id,
             },
-        ))))
+        )));
+
+        op.id = Some(Id::new(id.as_ref())?);
+
+        Ok(op)
     }
 
     pub fn sync_operation(id: impl AsRef<str>) -> miette::Result<Self> {
-        let id = Id::new(id.as_ref())?;
-
-        Ok(Self::new(OperationMeta::SyncOperation(Box::new(
+        let mut op = Self::new(OperationMeta::SyncOperation(Box::new(
             OperationMetaFileChange {
                 changed_files: vec![],
-                id,
             },
-        ))))
+        )));
+
+        op.id = Some(Id::new(id.as_ref())?);
+
+        Ok(op)
     }
 
     pub fn task_execution(command: impl AsRef<str>) -> Self {

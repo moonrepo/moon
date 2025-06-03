@@ -13,7 +13,7 @@ About ──────────────────
   Depends on:
     - noConfig (production)
 
-Configuation ───────────
+Configuration ──────────
 
   Inherits from:
     - .moon/tasks.yml

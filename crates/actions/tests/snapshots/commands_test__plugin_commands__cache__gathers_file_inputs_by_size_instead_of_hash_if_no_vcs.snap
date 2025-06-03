@@ -1,0 +1,20 @@
+---
+source: crates/actions/tests/commands_test.rs
+expression: "json::format(&data, true).unwrap()"
+---
+[
+  {
+    "key": "key",
+    "command": {
+      "command": "echo",
+      "args": [
+        "cache"
+      ],
+      "set_executable": false,
+      "stream": false
+    },
+    "inputFiles": {
+      "input.txt": "size:4"
+    }
+  }
+]

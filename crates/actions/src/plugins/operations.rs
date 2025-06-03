@@ -1,9 +1,10 @@
 use convert_case::{Case, Casing};
 use moon_action::{Action, ActionStatus, Operation};
 use moon_common::Id;
-use moon_pdk_api::{Operation as PluginOperation, OperationStatus, SyncOutput, VirtualPath};
+use moon_pdk_api::{Operation as PluginOperation, OperationStatus, SyncOutput};
 use moon_time::chrono::{DateTime, Local};
 use moon_toolchain_plugin::{CallResult, ToolchainPlugin};
+use std::path::PathBuf;
 
 pub fn convert_plugin_operation(
     toolchain: &ToolchainPlugin,
@@ -46,13 +47,9 @@ pub fn convert_plugin_operations(
     Ok(ops)
 }
 
-pub fn inherit_changed_files(op: &mut Operation, files: Vec<VirtualPath>) {
+pub fn inherit_changed_files(op: &mut Operation, files: Vec<PathBuf>) {
     if let Some(meta) = op.get_file_state_mut() {
-        for file in files {
-            if let Some(file) = file.real_path() {
-                meta.changed_files.push(file);
-            }
-        }
+        meta.changed_files.extend(files);
     }
 }
 
@@ -61,7 +58,7 @@ pub fn finalize_action_operations(
     toolchain: &ToolchainPlugin,
     mut op: Operation,
     plugin_ops: Vec<PluginOperation>,
-    changed_files: Vec<VirtualPath>,
+    changed_files: Vec<PathBuf>,
 ) -> miette::Result<()> {
     op.plugin = Some(Id::new(&toolchain.id)?);
 

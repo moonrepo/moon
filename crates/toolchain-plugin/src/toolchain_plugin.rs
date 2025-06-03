@@ -2,13 +2,12 @@ use async_trait::async_trait;
 use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
-use moon_toolchain::is_using_global_toolchain;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::instrument;
@@ -68,14 +67,11 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    fn handle_output_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::Real(
-            file.real_path()
-                .unwrap_or_else(|| self.plugin.from_virtual_path(&file)),
-        );
+    fn handle_output_file(&self, file: &mut PathBuf) {
+        *file = self.plugin.from_virtual_path(&file);
     }
 
-    fn handle_output_files(&self, files: &mut [VirtualPath]) {
+    fn handle_output_files(&self, files: &mut [PathBuf]) {
         for file in files {
             self.handle_output_file(file);
         }
@@ -86,7 +82,7 @@ impl ToolchainPlugin {
         output: &LocateDependenciesRootOutput,
         path: &Path,
     ) -> miette::Result<bool> {
-        let Some(root) = output.root.as_ref().and_then(|root| root.real_path()) else {
+        let Some(root) = &output.root else {
             return Ok(false);
         };
 
@@ -97,7 +93,7 @@ impl ToolchainPlugin {
             }
             // Match against the provided member globs
             else if let Some(globs) = &output.members {
-                GlobSet::new(globs)?.matches(path.strip_prefix(&root).unwrap_or(path))
+                GlobSet::new(globs)?.matches(path.strip_prefix(root).unwrap_or(path))
             }
             // Otherwise a stand alone project?
             else {
@@ -108,7 +104,7 @@ impl ToolchainPlugin {
 
     // Detection
     pub async fn supports_tier_1(&self) -> bool {
-        self.has_func("parse_lockfile").await || self.has_func("parse_manifest").await
+        self.has_func("register_toolchain").await || self.has_func("detect_version_files").await
     }
 
     // Install dependencies
@@ -240,9 +236,10 @@ impl ToolchainPlugin {
     ) -> miette::Result<ExtendTaskCommandOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
-                .read()
+                .write()
                 .await
-                .get_globals_dir()
+                .locate_globals_dir()
+                .await?
                 .map(|dir| self.to_virtual_path(dir));
         }
 
@@ -261,9 +258,10 @@ impl ToolchainPlugin {
     ) -> miette::Result<ExtendTaskScriptOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
-                .read()
+                .write()
                 .await
-                .get_globals_dir()
+                .locate_globals_dir()
+                .await?
                 .map(|dir| self.to_virtual_path(dir));
         }
 
@@ -397,35 +395,33 @@ impl ToolchainPlugin {
 
         // Only install if a version has been configured,
         // and the plugin provides the required APIs
-        if !is_using_global_toolchain(&self.id) {
-            if let (Some(version), Some(tool)) = (&input.configured_version, &self.tool) {
-                let mut tool = tool.write().await;
-                let spec = ToolSpec::new(version.to_owned());
+        if let (Some(version), Some(tool)) = (&input.configured_version, &self.tool) {
+            let mut tool = tool.write().await;
+            let spec = ToolSpec::new(version.to_owned());
 
-                // Resolve the version first so that it is available
-                input.version = Some(tool.resolve_version(&spec, false).await?);
+            // Resolve the version first so that it is available
+            input.version = Some(tool.resolve_version(&spec, false).await?);
 
-                // Only setup if not already been
-                if !tool.is_setup(&spec).await? {
-                    on_setup()?;
+            // Only setup if not already been
+            if !tool.is_setup(&spec).await? {
+                on_setup()?;
 
-                    output.installed = tool
-                        .setup(
-                            &spec,
-                            InstallOptions {
-                                skip_prompts: true,
-                                skip_ui: true,
-                                ..Default::default()
-                            },
-                        )
-                        .await?
-                        .is_some();
-                }
-
-                // Locate pieces that we'll need
-                tool.locate_exes_dirs().await?;
-                tool.locate_globals_dirs().await?;
+                output.installed = tool
+                    .setup(
+                        &spec,
+                        InstallOptions {
+                            skip_prompts: true,
+                            skip_ui: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await?
+                    .is_some();
             }
+
+            // Locate pieces that we'll need
+            tool.locate_exes_dirs().await?;
+            tool.locate_globals_dirs().await?;
         }
 
         // This should always run, regardless of the install outcome

@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use moon_env::MoonEnvironment;
 use proto_core::ProtoEnvironment;
 use std::fmt::Debug;
+use std::path::PathBuf;
 use std::sync::Arc;
 use warpgate::{Id, PluginContainer, PluginLocator};
 
@@ -11,6 +12,7 @@ pub struct PluginRegistration {
     pub locator: PluginLocator,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
+    pub wasm_file: PathBuf,
 }
 
 #[derive(Clone, Copy, Debug)]

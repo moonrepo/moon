@@ -2,6 +2,7 @@ use crate::context::MoonContext;
 use moon_config::{DependencyScope, PartialTaskConfig};
 use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use warpgate_api::*;
 
@@ -15,22 +16,23 @@ api_struct!(
 
         /// Map of project IDs to their source location,
         /// relative from the workspace root.
-        pub project_sources: FxHashMap<String, String>,
+        pub project_sources: BTreeMap<String, String>,
     }
 );
 
 api_struct!(
     /// Output returned from the `extend_project_graph` function.
+    #[serde(default)]
     pub struct ExtendProjectGraphOutput {
         /// Map of project IDs to extracted information in which to
         /// extend projects in the project graph.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub extended_projects: FxHashMap<String, ExtendProjectOutput>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub extended_projects: BTreeMap<String, ExtendProjectOutput>,
 
         /// List of virtual files in which information was extracted from and
         /// should invalidate the project graph cache.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub input_files: Vec<VirtualPath>,
+        pub input_files: Vec<PathBuf>,
     }
 );
 
@@ -42,6 +44,9 @@ api_struct!(
 
         /// Scope of the dependency relationship.
         pub scope: DependencyScope,
+
+        /// Quick information on where the dependency came from.
+        pub via: Option<String>,
     }
 );
 
@@ -59,8 +64,8 @@ api_struct!(
         pub dependencies: Vec<ProjectDependency>,
 
         /// Map of inherited tasks keyed by a unique ID, typically extracted from a manifest.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub tasks: FxHashMap<String, PartialTaskConfig>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        pub tasks: BTreeMap<String, PartialTaskConfig>,
     }
 );
 
@@ -129,7 +134,8 @@ api_struct!(
         pub env_remove: Vec<String>,
 
         /// List of absolute paths to prepend into the `PATH` environment
-        /// variable, but after the proto prepended paths.
+        /// variable, but after the proto prepended paths. These *must*
+        /// be real paths, not virtual!
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub paths: Vec<PathBuf>,
     }

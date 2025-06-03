@@ -17,3 +17,4 @@ node:
 typescript:
   routeOutDirToCache: true
   syncProjectReferences: true
+# unstable_rust: {}

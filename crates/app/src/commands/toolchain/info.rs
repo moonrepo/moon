@@ -1,8 +1,9 @@
 use crate::session::MoonSession;
 use clap::Args;
-// use iocraft::prelude::element;
-// use moon_actions::operations::sync_config_schemas;
-// use moon_console::ui::{Container, Notice, StyledText, Variant};
+use iocraft::prelude::{View, element};
+use moon_console::ui::*;
+use moon_toolchain_plugin::ToolchainPlugin;
+use schematic::SchemaType;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -13,24 +14,330 @@ pub struct ToolchainInfoArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn info(_session: MoonSession, _args: ToolchainInfoArgs) -> AppResult {
-    // let context = session.get_app_context().await?;
-    // let toolchain_registry = session.get_toolchain_registry().await?;
+pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
+    let toolchain = session
+        .get_toolchain_registry()
+        .await?
+        .load(&args.id)
+        .await?;
 
-    // sync_config_schemas(&context, args.force).await?;
+    let tier1_apis = collect_tier_apis(
+        &toolchain,
+        &[
+            "register_toolchain",
+            "define_toolchain_config",
+            "initialize_toolchain",
+            "detect_version_files",
+            "parse_version_file",
+            "define_docker_metadata",
+            "scaffold_docker",
+            "prune_docker",
+            "sync_project",
+            "sync_workspace",
+        ],
+        &["register_toolchain"],
+    )
+    .await;
 
-    // session.console.render(element! {
-    //     Container {
-    //         Notice(variant: Variant::Success) {
-    //             StyledText(
-    //                 content: format!(
-    //                     "Generated configuration schemas to <path>{}</path>",
-    //                     context.cache_engine.cache_dir.join("schemas").display()
-    //                 )
-    //             )
-    //         }
-    //     }
-    // })?;
+    let tier2_apis = collect_tier_apis(
+        &toolchain,
+        &[
+            "extend_project_graph",
+            "extend_task_command",
+            "extend_task_script",
+            "locate_dependencies_root",
+            "install_dependencies",
+            "hash_task_contents",
+            "parse_lock",
+            "parse_manifest",
+            "setup_environment",
+        ],
+        &[],
+    )
+    .await;
+
+    let tier3_apis = collect_tier_apis(
+        &toolchain,
+        &[
+            "register_tool",
+            "load_versions",
+            "resolve_version",
+            "download_prebuilt",
+            "unpack_archive",
+            "locate_executables",
+            "setup_toolchain",
+            "teardown_toolchain",
+        ],
+        &["register_tool", "download_prebuilt", "locate_executables"],
+    )
+    .await;
+
+    let config_schema = if toolchain.has_func("define_toolchain_config").await {
+        toolchain
+            .define_toolchain_config()
+            .await
+            .map(|output| match output.schema.ty {
+                SchemaType::Struct(inner) => Some(inner),
+                _ => None,
+            })?
+    } else {
+        None
+    };
+
+    let schema = config_schema.unwrap();
+
+    session.console.render(element! {
+        Container {
+            Section(title: "Toolchain") {
+                #(toolchain.metadata.description.as_ref().map(|description| {
+                    element! {
+                        View(margin_bottom: 1) {
+                            StyledText(
+                                content: description
+                            )
+                        }
+                    }
+                }))
+                Entry(
+                    name: "ID",
+                    value: element! {
+                        StyledText(
+                            content: toolchain.id.to_string(),
+                            style: Style::Id
+                        )
+                    }.into_any()
+                )
+                Entry(
+                    name: "Name",
+                    content: toolchain.metadata.name.clone(),
+                )
+                Entry(
+                    name: "Version",
+                    value: element! {
+                        StyledText(
+                            content: toolchain.metadata.plugin_version.to_string(),
+                            style: Style::Hash
+                        )
+                    }.into_any()
+                )
+            }
+
+            Section(title: "Configuration") {
+                Entry(name: "Settings") {
+                    Map {
+                        #(schema.fields.into_iter().map(|(field, setting)| {
+                            let mut flags = vec![];
+
+                            if setting.deprecated.is_some() {
+                                flags.push("deprecated");
+                            }
+
+                            if !setting.optional {
+                                flags.push("required");
+                            }
+
+                            element! {
+                                MapItem(
+                                    name: element! {
+                                        StyledText(
+                                            content: field,
+                                            style: Style::Property
+                                        )
+                                    }.into_any(),
+                                    value: element! {
+                                        StyledText(
+                                            content: if flags.is_empty() {
+                                                setting.comment.unwrap_or_default()
+                                            } else {
+                                                format!(
+                                                    "{} <muted>({})</muted>",
+                                                    setting.comment.unwrap_or_default(),
+                                                    flags.join(", ")
+                                                )
+                                            },
+                                            style: Style::MutedLight
+                                        )
+                                    }.into_any()
+                                )
+                            }.into_any()
+                        }))
+                    }
+                }
+            }
+
+            Section(title: "Tier 1 - Usage detection") {
+                #((!toolchain.metadata.config_file_globs.is_empty()).then(|| {
+                    element! {
+                        Entry(
+                            name: "Config files",
+                            value: element! {
+                                StyledText(
+                                    content: toolchain.metadata.config_file_globs
+                                        .iter()
+                                        .map(|file| format!("<file>{file}</file>"))
+                                        .collect::<Vec<_>>()
+                                        .join(", "),
+                                    style: Style::MutedLight
+                                )
+                            }.into_any()
+                        )
+                    }
+                }))
+                #((!toolchain.metadata.exe_names.is_empty()).then(|| {
+                    element! {
+                        Entry(
+                            name: "Executable names",
+                            value: element! {
+                                StyledText(
+                                    content: toolchain.metadata.exe_names
+                                        .iter()
+                                        .map(|exe| format!("<shell>{exe}</shell>"))
+                                        .collect::<Vec<_>>()
+                                        .join(", "),
+                                    style: Style::MutedLight
+                                )
+                            }.into_any()
+                        )
+                    }
+                }))
+                Entry(name: "APIs") {
+                    #(tier1_apis.into_iter().map(|(api, implemented, required)| {
+                        element! {
+                            List {
+                                ListItem(
+                                    bullet: if implemented {
+                                        "🟢"
+                                    } else {
+                                        "⚫️"
+                                    }.to_owned()
+                                ) {
+                                    StyledText(
+                                        content: if required {
+                                            format!("{api} <muted>(required)</muted>")
+                                        } else {
+                                            api
+                                        },
+                                        style: Style::MutedLight
+                                    )
+                                }
+                            }
+                        }
+                    }))
+                }
+            }
+
+            Section(title: "Tier 2 - Platform integration") {
+                #(toolchain.metadata.manifest_file_name.as_ref().map(|manifest_file_name| {
+                    element! {
+                        Entry(
+                            name: "Manifest file",
+                            value: element! {
+                                StyledText(
+                                    content: manifest_file_name,
+                                    style: Style::File
+                                )
+                            }.into_any()
+                        )
+                    }
+                }))
+                #(toolchain.metadata.lock_file_name.as_ref().map(|lock_file_name| {
+                    element! {
+                        Entry(
+                            name: "Lock file",
+                            value: element! {
+                                StyledText(
+                                    content: lock_file_name,
+                                    style: Style::File
+                                )
+                            }.into_any()
+                        )
+                    }
+                }))
+                #(toolchain.metadata.vendor_dir_name.as_ref().map(|vendor_dir_name| {
+                    element! {
+                        Entry(
+                            name: "Vendor directory",
+                            value: element! {
+                                StyledText(
+                                    content: vendor_dir_name,
+                                    style: Style::File
+                                )
+                            }.into_any()
+                        )
+                    }
+                }))
+                Entry(name: "APIs") {
+                    #(tier2_apis.into_iter().map(|(api, implemented, required)| {
+                        element! {
+                            List {
+                                ListItem(
+                                    bullet: if implemented {
+                                        "🟢"
+                                    } else {
+                                        "⚫️"
+                                    }.to_owned()
+                                ) {
+                                    StyledText(
+                                        content: if required {
+                                            format!("{api} <muted>(required)</muted>")
+                                        } else {
+                                            api
+                                        },
+                                        style: Style::MutedLight
+                                    )
+                                }
+                            }
+                        }
+                    }))
+                }
+            }
+
+            Section(title: "Tier 3 - Tool management") {
+                Entry(name: "APIs") {
+                    #(tier3_apis.into_iter().map(|(api, implemented, required)| {
+                        element! {
+                            List {
+                                ListItem(
+                                    bullet: if implemented {
+                                        "🟢"
+                                    } else {
+                                        "⚫️"
+                                    }.to_owned()
+                                ) {
+                                    StyledText(
+                                        content: if required {
+                                            format!("{api} <muted>(required)</muted>")
+                                        } else {
+                                            api
+                                        },
+                                        style: Style::MutedLight
+                                    )
+                                }
+                            }
+                        }
+                    }))
+                }
+            }
+        }
+    })?;
 
     Ok(None)
+}
+
+async fn collect_tier_apis(
+    toolchain: &ToolchainPlugin,
+    apis: &[&str],
+    required: &[&str],
+) -> Vec<(String, bool, bool)> {
+    let mut list = vec![];
+
+    for api in apis {
+        list.push((
+            api.to_string(),
+            toolchain.has_func(api).await,
+            required.contains(api),
+        ));
+    }
+
+    list
 }

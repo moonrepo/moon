@@ -9,6 +9,7 @@ use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
+use moon_app::commands::toolchain::ToolchainCommands;
 use moon_app::{Cli, Commands, MoonSession, commands, systems::bootstrap};
 use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
@@ -217,6 +218,11 @@ async fn main() -> MainResult {
                 Commands::TaskGraph(args) => commands::graph::task::task_graph(session, args).await,
                 Commands::Teardown => commands::teardown::teardown(session).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
+                Commands::Toolchain { command } => match command {
+                    ToolchainCommands::Info(args) => {
+                        commands::toolchain::info::info(session, args).await
+                    }
+                },
                 Commands::Upgrade => commands::upgrade::upgrade(session).await,
             }
         })

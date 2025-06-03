@@ -21,6 +21,7 @@ use crate::commands::run::RunArgs;
 use crate::commands::sync::SyncCommands;
 use crate::commands::task::TaskArgs;
 use crate::commands::templates::TemplatesArgs;
+use crate::commands::toolchain::ToolchainCommands;
 use crate::systems::bootstrap;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
@@ -180,6 +181,12 @@ pub enum Commands {
     // moon ext
     #[command(name = "ext", about = "Execute an extension plugin.")]
     Ext(ExtArgs),
+
+    #[command(name = "toolchain", about = "Manage toolchain plugins.")]
+    Toolchain {
+        #[command(subcommand)]
+        command: ToolchainCommands,
+    },
 
     // OTHER
 

@@ -4,6 +4,7 @@ toc_max_heading_level: 6
 ---
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
 you want to send Slack or Discord notifications? With our webhooks, all of these are possible!
@@ -239,7 +240,9 @@ project, the `project` field will be set, otherwise `null` for the entire worksp
     "runtime": {
       "toolchain": "Node",
       "version": "18.0.0"
-    }
+    },
+    "root": ".",
+    "toolchain": "node"
   },
   "uuid": "..."
 }
@@ -267,7 +270,59 @@ Installed deps can be scoped with the `InstallDeps(...)` labels.
     "runtime": {
       "toolchain": "Node",
       "version": "18.0.0"
-    }
+    },
+    "root": ".",
+    "toolchain": "node"
+  },
+  "uuid": "..."
+}
+```
+
+### `environment.initializing`<VersionLabel version="1.37.0" />
+
+<HeadingApiLink to="/api/types#PayloadEnvironmentInitializing" />
+
+Triggered when an environment is being setup for a toolchain. When targeting a project, the
+`project` field will be set, otherwise `null` for the entire workspace.
+
+```json
+{
+  "type": "environment.initializing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "project": {
+      "id": "server"
+      // ...
+    },
+    "root": ".",
+    "toolchain": "node"
+  },
+  "uuid": "..."
+}
+```
+
+### `environment.initialized`<VersionLabel version="1.37.0" />
+
+<HeadingApiLink to="/api/types#PayloadEnvironmentInitialized" />
+
+Triggered when an environment has been setup for a toolchain. When targeting a project, the
+`project` field will be set, otherwise `null` for the entire workspace. If setup failed, the `error`
+field will be set with the error message.
+
+For more information about the action, refer to the [`action.finished`](#actionfinished) event.
+Installed deps can be scoped with the `SetupEnvironment(...)` labels.
+
+```json
+{
+  "type": "environment.initialized",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "project": null,
+    "root": ".",
+    "toolchain": "node"
   },
   "uuid": "..."
 }

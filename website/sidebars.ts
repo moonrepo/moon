@@ -141,6 +141,7 @@ const sidebars: SidebarsConfig = {
 						keywords: ['cli', 'commands', 'migrate'],
 					},
 				},
+				'commands/mcp',
 				'commands/project',
 				'commands/project-graph',
 				{

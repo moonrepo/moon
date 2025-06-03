@@ -26,6 +26,8 @@ unstable_rust:
   syncToolchainConfig: true
 ```
 
+### New functionality
+
 Although the new Rust toolchain is a one-to-one port, the WASM APIs provide far more flexibility and
 functionality than before. For example, the follow improvements and enhancements have been made:
 
@@ -73,6 +75,8 @@ example, VS Code:
 }
 ```
 
+### Supported tools
+
 Our MCP server currently supports the following tools. We'll be adding more tools in the future, so
 if you have any suggestions, please let us know!
 
@@ -100,11 +104,12 @@ With toolchains plugins being stabilized more, we'd like to focus on some other 
 - Terminal notifications
 - WASM toolchain documentation
 
-### Go & JavaScript WASM toolchains
+### Looking for toolchain contributors!
 
 Now that the Rust toolchain has been ported to WASM, we'd like to start porting the other
-toolchains, starting with Go and JavaScript (not Bun or Node.js). If you're interested in
-contributing these toolchains, please ping us in Discord!
+toolchains, starting with Go and JavaScript (not Bun or Node.js), and also investigate supporting
+toolchains for entirely new languages, like PHP and Ruby! If you're interested in contributing these
+toolchains, please ping us in Discord!
 
 The only requirements is that these toolchains must be written in Rust and must exist in the
 [moonrepo/plugins](https://github.com/moonrepo/plugins) repository!

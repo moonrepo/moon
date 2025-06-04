@@ -4,10 +4,100 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Sun, 18 May 2025 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 03 Jun 2025 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[moon v1.37 - Rust WASM toolchain and MCP support]]></title>
+            <link>https://moonrepo.dev/blog/moon-v1.37</link>
+            <guid>https://moonrepo.dev/blog/moon-v1.37</guid>
+            <pubDate>Tue, 03 Jun 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI]]></description>
+            <content:encoded><![CDATA[<p>In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI
+support!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="rfc-task-input-additions-and-enhancements">RFC: Task input additions and enhancements<a href="https://moonrepo.dev/blog/moon-v1.37#rfc-task-input-additions-and-enhancements" class="hash-link" aria-label="Direct link to RFC: Task input additions and enhancements" title="Direct link to RFC: Task input additions and enhancements">​</a></h2>
+<p>We're planning to improve task inputs and have written up an
+<a href="https://github.com/moonrepo/moon/issues/1985" target="_blank" rel="noopener noreferrer">RFC to discuss these changes</a>. We'd appreciate any
+and all feedback!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-rust-toolchain-powered-by-wasm">New Rust toolchain powered by WASM<a href="https://moonrepo.dev/blog/moon-v1.37#new-rust-toolchain-powered-by-wasm" class="hash-link" aria-label="Direct link to New Rust toolchain powered by WASM" title="Direct link to New Rust toolchain powered by WASM">​</a></h2>
+<p>With <a href="https://moonrepo.dev/blog/moon-v1.36">toolchain plugins</a> entering beta last release, it's only natural that we start
+migrating the legacy toolchains into plugins. And with this release, the next one we've migrated is
+the Rust toolchain! However, unlike the TypeScript toolchain, the new Rust toolchain is opt-in and
+must be enabled. Simply rename <code>rust</code> to <code>unstable_rust</code> in <code>.moon/toolchain.yml</code>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/toolchain.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_rust</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'1.87.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">components</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'clippy'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'rustfmt'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">targets</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'wasm32-wasip1'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncToolchainConfig</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-functionality">New functionality<a href="https://moonrepo.dev/blog/moon-v1.37#new-functionality" class="hash-link" aria-label="Direct link to New functionality" title="Direct link to New functionality">​</a></h3>
+<p>Although the new Rust toolchain is a one-to-one port, the WASM APIs provide far more flexibility and
+functionality than before. For example, the follow improvements and enhancements have been made:</p>
+<ul>
+<li>The Cargo workspace can now exist at any folder depth and does not need to exist at the moon
+workspace root. Additionally, because of this, we can now support multiple Cargo workspaces in the
+same moon workspace.</li>
+<li>Added a new <code>addMsrvConstraint</code> setting, which will sync the version as a constraint to
+<code>Cargo.toml</code> under the <code>workspace.package.rust-version</code> or <code>package.rust-version</code> fields.</li>
+<li>Improved the accuracy of implicit project dependencies (inferred from <code>Cargo.toml</code>).</li>
+<li>Improved the parsing of manifest (<code>Cargo.toml</code>) and lock (<code>Cargo.lock</code>) files. This information is
+then fed into the task hashing process.</li>
+<li>Improved the Docker prune implementation by preserving all binaries (inferred from
+<code>cargo metadata</code>) while deleting the <code>target</code> directory.</li>
+<li>Any <code>cargo</code> or <code>rustup</code> commands are now hashed and cached, and will only re-run when parameters
+change. Unlike the current toolchain, which always runs these commands.</li>
+</ul>
+<p>Quite a list of improvements, and this doesn't even include all the WASM / plugin improvements that
+have been slowly introduced! Give this new toolchain a try, and let us know what you think!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="mcp-editor-integration">MCP editor integration<a href="https://moonrepo.dev/blog/moon-v1.37#mcp-editor-integration" class="hash-link" aria-label="Direct link to MCP editor integration" title="Direct link to MCP editor integration">​</a></h2>
+<p>AI is all the rage these days, and even more so lately with the introduction of
+<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer">MCP</a> (model context protocol) and agentic workflows. MCP is a new
+way for AI assistants to "understand" what's going on in your project without you having to explain
+everything. It works by feeding structured information, like in the context of moon, projects,
+tasks, and relationships, directly into AI models like GitHub Copilot or Cursor.</p>
+<p>No more tedious explanations required! The AI can jump straight to helpful suggestions that actually
+work in your codebase, saving you time, and making the whole experience much smoother, especially in
+complex monorepos with lots of moving parts.</p>
+<p>To support agentic workflows, we're introducing an experimental <a href="https://moonrepo.dev/docs/commands/mcp"><code>moon mcp</code></a>
+command, that starts an MCP server, and can be <a href="https://moonrepo.dev/docs/guides/mcp">integrated into your editor</a>. For
+example, VS Code:</p>
+<div class="language-json codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.vscode/mcp.json</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-json codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token property" style="color:#b7a9f9">"servers"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token property" style="color:#b7a9f9">"moon"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"type"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"stdio"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"command"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"moon"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"args"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"mcp"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">}</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="supported-tools">Supported tools<a href="https://moonrepo.dev/blog/moon-v1.37#supported-tools" class="hash-link" aria-label="Direct link to Supported tools" title="Direct link to Supported tools">​</a></h3>
+<p>Our MCP server currently supports the following tools. We'll be adding more tools in the future, so
+if you have any suggestions, please let us know!</p>
+<ul>
+<li><code>get_project</code> - Get a project and its tasks by <code>id</code>.</li>
+<li><code>get_projects</code> - Get all projects.</li>
+<li><code>get_task</code> - Get a task by <code>target</code>.</li>
+<li><code>get_tasks</code> - Get all tasks.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.37#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.37.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added <code>environment.initializing</code> and <code>environment.initialized</code> webhook events.</li>
+<li>Added <code>root</code> and <code>toolchain</code> fields to <code>dependencies.installing</code> and <code>dependencies.installed</code>
+webhook events.</li>
+<li>Updated proto to <a href="https://github.com/moonrepo/proto/releases/tag/v0.49.4" target="_blank" rel="noopener noreferrer">v0.49.4</a> (from 0.49.1).</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.37#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h2>
+<p>With toolchains plugins being stabilized more, we'd like to focus on some other areas.</p>
+<ul>
+<li>Better command line argument parsing/joining (especially for task <code>args</code>)</li>
+<li>Better child process I/O piping</li>
+<li>Terminal notifications</li>
+<li>WASM toolchain documentation</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="looking-for-toolchain-contributors">Looking for toolchain contributors!<a href="https://moonrepo.dev/blog/moon-v1.37#looking-for-toolchain-contributors" class="hash-link" aria-label="Direct link to Looking for toolchain contributors!" title="Direct link to Looking for toolchain contributors!">​</a></h3>
+<p>Now that the Rust toolchain has been ported to WASM, we'd like to start porting the other
+toolchains, starting with Go and JavaScript (not Bun or Node.js), and also investigate supporting
+toolchains for entirely new languages, like PHP and Ruby! If you're interested in contributing these
+toolchains, please ping us in Discord!</p>
+<p>The only requirements is that these toolchains must be written in Rust and must exist in the
+<a href="https://github.com/moonrepo/plugins" target="_blank" rel="noopener noreferrer">moonrepo/plugins</a> repository!</p>]]></content:encoded>
+            <category>toolchain</category>
+            <category>wasm</category>
+            <category>plugin</category>
+            <category>rust</category>
+            <category>mcp</category>
+            <category>ai</category>
+        </item>
         <item>
             <title><![CDATA[moon v1.36 - Toolchain plugins beta, optimized remote caching, and codegen improvements]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.36</link>
@@ -1695,48 +1785,6 @@ of changes.</p>
             <category>trace</category>
             <category>profile</category>
             <category>shell</category>
-        </item>
-        <item>
-            <title><![CDATA[proto v0.37 - Calver support and self diagnosis]]></title>
-            <link>https://moonrepo.dev/blog/proto-v0.37</link>
-            <guid>https://moonrepo.dev/blog/proto-v0.37</guid>
-            <pubDate>Sun, 16 Jun 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is a small release, but includes 2 very important features.]]></description>
-            <content:encoded><![CDATA[<p>This is a small release, but includes 2 very important features.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="calender-versioning-support">Calender versioning support<a href="https://moonrepo.dev/blog/proto-v0.37#calender-versioning-support" class="hash-link" aria-label="Direct link to Calender versioning support" title="Direct link to Calender versioning support">​</a></h2>
-<p>For the most part, tools use <a href="http://semver.org/" target="_blank" rel="noopener noreferrer">semver</a> (semantic versions) for their releases,
-but every so often you run into a tool that uses another format, <a href="https://calver.org/" target="_blank" rel="noopener noreferrer">calver</a>
-(calendar versions). Some examples of calver are <code>2024-02</code>, <code>2024-10-23</code>, and <code>2024-12-9.123</code>.</p>
-<p>Calendar based versions were not supported previously as the syntax between semver and calver are
-different enough that they could not be parsed successfully. Well no longer, as we spent the time
-writing our own custom parser to differentiate between the 2 formats. This process is quite
-complicated, and has many restrictions and caveats, so we took the time to document it under the
-name <a href="https://moonrepo.dev/docs/proto/tool-spec">version specification</a>.</p>
-<p>The biggest difference between semver and calver syntax, is that semver is dot-separated, while
-calver is dash-separated. The day part (patch) is also optional in calver.</p>
-<div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>We wrote a ton of tests to cover all the formats and edge cases we could think of, but if you run
-into a tool that fails to parse versions correctly, please report an issue immediately! All of our
-built-in tools have been tested against.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-diagnose-command">New <code>proto diagnose</code> command<a href="https://moonrepo.dev/blog/proto-v0.37#new-proto-diagnose-command" class="hash-link" aria-label="Direct link to new-proto-diagnose-command" title="Direct link to new-proto-diagnose-command">​</a></h2>
-<p>A common issue within the community that we've seen is commands not being available after installing
-a tool. Most of the time, this is caused by certain proto paths not existing within <code>PATH</code>. To help
-remedy these issues moving forward, we're introducing a new command,
-<a href="https://moonrepo.dev/docs/proto/commands/diagnose"><code>proto diagnose</code></a> (or <code>doctor</code>) that will attempt to find all issues
-with your proto installation.</p>
-<div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto diagnose</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Shell: zsh</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Shell profile: ~/.zshrc</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Errors</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Issue: Bin directory (~/.proto/bin) was found BEFORE the shims directory (~/.proto/shims) on PATH</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Resolution: Ensure the shims path comes before the bin path in your shell</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Warnings</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Issue: Missing PROTO_HOME environment variable (Will default to ~/.proto if not defined)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Resolution: Export PROTO_HOME="$HOME/.proto" from your shell</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>In the future, we'll expand on this command by also bubbling up issues from your installed tools.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.37#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.37.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Improved command execution. May see some slight performance gains.</li>
-<li>Updated wasmtime to v21 (from v17).</li>
-</ul>]]></content:encoded>
-            <category>calver</category>
-            <category>calendar</category>
-            <category>version</category>
-            <category>diagnose</category>
-            <category>doctor</category>
         </item>
     </channel>
 </rss>

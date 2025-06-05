@@ -4391,7 +4391,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "extism",
  "moon_pdk_api",

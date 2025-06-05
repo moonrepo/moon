@@ -6,6 +6,11 @@
 
 - Fixed environment variable inheritance for config settings not always working correctly.
 
+#### 🧩 Plugins
+
+- WASM API
+  - Added `SetupEnvironmentInput.globals_dir` field.
+
 ## 1.37.0
 
 #### 🔖 RFCs

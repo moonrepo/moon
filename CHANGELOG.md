@@ -6,6 +6,7 @@
 
 - Updated the MCP documentation.
   - Added Zed support.
+  - Added an `llms.txt` file to our website.
   - Updated code examples to include the `MOON_WORKSPACE_ROOT` environment variable.
 
 #### 🐞 Fixes

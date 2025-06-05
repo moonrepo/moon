@@ -75,7 +75,10 @@ example, VS Code:
     "moon": {
       "type": "stdio",
       "command": "moon",
-      "args": ["mcp"]
+      "args": ["mcp"],
+      "env": {
+        "MOON_WORKSPACE_ROOT": "${workspaceFolder}"
+      }
     }
   }
 }

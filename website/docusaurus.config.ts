@@ -268,6 +268,24 @@ const config: Config = {
 				},
 			};
 		},
+		// [
+		// 	'@signalwire/docusaurus-plugin-llms-txt',
+		// 	{
+		// 		depth: 3,
+		// 		content: {
+		// 			includeBlog: true,
+		// 			includePages: true,
+		// 		},
+		// 	},
+		// ],
+		[
+			'docusaurus-plugin-llms',
+			{
+				includeBlog: true,
+				ignoreFiles: ['**/__partials__/**'],
+				// version: ''
+			},
+		],
 	],
 
 	clientModules: [require.resolve('./src/js/darkModeSyncer.ts')],

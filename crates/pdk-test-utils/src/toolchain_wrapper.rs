@@ -181,6 +181,9 @@ impl ToolchainTestWrapper {
     ) -> SetupEnvironmentOutput {
         input.context = self.create_context();
         input.root = self.plugin.to_virtual_path(input.root);
+        input.globals_dir = input
+            .globals_dir
+            .map(|path| self.plugin.to_virtual_path(path));
 
         self.plugin
             .call_func_with("setup_environment", input)

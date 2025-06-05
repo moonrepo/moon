@@ -67,6 +67,7 @@ pub async fn setup_environment(
     let mut input = SetupEnvironmentInput {
         context: app_context.toolchain_registry.create_context(),
         project: None,
+        globals_dir: None, // Get's set in the plugin
         root: toolchain.to_virtual_path(node.root.to_logical_path(&app_context.workspace_root)),
         toolchain_config: app_context
             .toolchain_registry

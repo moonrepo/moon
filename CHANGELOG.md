@@ -19,6 +19,10 @@
 - WASM API
   - Added `SetupEnvironmentInput.globals_dir` field.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.37.0
 
 #### 🔖 RFCs

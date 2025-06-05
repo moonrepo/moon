@@ -8,6 +8,8 @@
 
 #### 🧩 Plugins
 
+- Updated `rust_toolchain` to v0.1.2.
+  - Fixed `cargo-binstall` failing in CI when the binary already exists.
 - WASM API
   - Added `SetupEnvironmentInput.globals_dir` field.
 

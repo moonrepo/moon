@@ -1,5 +1,7 @@
 use crate::config_struct;
-use crate::project::{TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps};
+use crate::project::{
+    PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps,
+};
 use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
 use moon_common::{Id, cacheable};

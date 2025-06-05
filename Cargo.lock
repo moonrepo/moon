@@ -6685,9 +6685,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.6"
+version = "0.18.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ce947fb41e16ee8d80897703b415da35e3c8de77504f7b5787daeae598b4f8b"
+checksum = "a2c0e1ae5bc89b759800c421bafff0d2e455d62dcd840ab7f18ee9e0137b32cc"
 dependencies = [
  "garde",
  "indexmap",
@@ -6710,9 +6710,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.18.5"
+version = "0.18.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78cc9c4bd37e621d600425f5024580411a5b0d06bbd6c5a675b71cc45f2245f3"
+checksum = "d8b6301a0ecdc83813fa711755d58c942226e408eb8fdc075ca929563e07b593"
 dependencies = [
  "convert_case",
  "darling",
@@ -7224,9 +7224,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.7.7"
+version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be5d17b9de116c34b8ba30ac47a43e7b42501a3ebc2794cb9f9e4e29b98d73b1"
+checksum = "da94ee148a195eea93b23acd1078ccc268865f54cb855ee63e0c1dad87046b41"
 dependencies = [
  "regex",
  "shell-quote",
@@ -7392,9 +7392,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.35.1"
+version = "0.35.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79251336d17c72d9762b8b54be4befe38d2db56fbbc0241396d70f173c39d47a"
+checksum = "3c3ffa3e4ff2b324a57f7aeb3c349656c7b127c3c189520251a648102a92496e"
 dependencies = [
  "libc",
  "memchr",

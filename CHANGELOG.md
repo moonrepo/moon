@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed environment variable inheritance for config settings not always working correctly.
+
 ## 1.37.0
 
 #### 🔖 RFCs

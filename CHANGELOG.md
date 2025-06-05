@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+#### 📚 Documentation
+
+- Updated the MCP documentation.
+  - Added Zed support.
+  - Updated code examples to include the `MOON_WORKSPACE_ROOT` environment variable.
+
 #### 🐞 Fixes
 
 - Fixed environment variable inheritance for config settings not always working correctly.

@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+#### 📚 Documentation
+
+- Updated the MCP documentation.
+  - Added Zed support.
+  - Added an `llms.txt` file to our website.
+  - Updated code examples to include the `MOON_WORKSPACE_ROOT` environment variable.
+
+#### 🐞 Fixes
+
+- Fixed environment variable inheritance for config settings not always working correctly.
+
+#### 🧩 Plugins
+
+- Updated `rust_toolchain` to v0.1.2.
+  - Fixed `cargo-binstall` failing in CI when the binary already exists.
+- WASM API
+  - Added `SetupEnvironmentInput.globals_dir` field.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.37.0
 
 #### 🔖 RFCs

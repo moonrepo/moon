@@ -15,15 +15,19 @@ directly.
 
 ### Cursor
 
-To use MCP servers in Cursor, create a `.cursor/mcp.json` file in your project directory, or
-`~/.cursor/mcp.json` globally, with the following content:
+To use [MCP servers in Cursor](https://docs.cursor.com/context/model-context-protocol), create a
+`.cursor/mcp.json` file in your project directory, or `~/.cursor/mcp.json` globally, with the
+following content:
 
 ```json title=".cursor/mcp.json"
 {
   "mcpServers": {
     "moon": {
       "command": "moon",
-      "args": ["mcp"]
+      "args": ["mcp"],
+      "env": {
+        "MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
+      }
     }
   }
 }
@@ -44,7 +48,10 @@ Once installed, create a `.vscode/mcp.json` file with the following content:
     "moon": {
       "type": "stdio",
       "command": "moon",
-      "args": ["mcp"]
+      "args": ["mcp"],
+      "env": {
+        "MOON_WORKSPACE_ROOT": "${workspaceFolder}"
+      }
     }
   }
 }
@@ -55,7 +62,36 @@ Once your MCP server is configured, you can use it with
 
 - Open the Copilot Chat view in VS Code
 - Enable agent mode using the mode select dropdown
-- Toggle on moon's MCP tools using the “Tools” button
+- Toggle on moon's MCP tools using the "Tools" button
+
+### Zed
+
+To use [MCP servers in Zed](https://zed.dev/docs/ai/mcp), create a `.zed/settings.json` file in your
+project directory, or `~/.config/zed/settings.json` globally, with the following content:
+
+```json title=".zed/settings.json"
+{
+  "context_servers": {
+    "moon": {
+      "command": {
+        "path": "moon",
+        "args": ["mcp"],
+        "env": {
+          "MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
+        }
+      }
+    }
+  }
+}
+```
+
+Once your MCP server is configured, you'll need to enable the tools using the following steps:
+
+- Open the Agent panel in Zed
+- Click the Write/Ask toggle button and go to "Configure Profiles"
+- Click "Customize" in the Ask section
+- Click "Configure MCP Tools"
+- Enable each tool under the "moon" section
 
 ## Available tools
 

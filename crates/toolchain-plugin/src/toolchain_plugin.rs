@@ -373,8 +373,17 @@ impl ToolchainPlugin {
     #[instrument(skip(self))]
     pub async fn setup_environment(
         &self,
-        input: SetupEnvironmentInput,
+        mut input: SetupEnvironmentInput,
     ) -> miette::Result<SetupEnvironmentOutput> {
+        if let Some(tool) = &self.tool {
+            input.globals_dir = tool
+                .write()
+                .await
+                .locate_globals_dir()
+                .await?
+                .map(|dir| self.to_virtual_path(dir));
+        }
+
         let mut output: SetupEnvironmentOutput = self
             .plugin
             .call_func_with("setup_environment", input)

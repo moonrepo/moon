@@ -230,6 +230,10 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
+        /// Virtual path to a global executables directory
+        /// for the current toolchain.
+        pub globals_dir: Option<VirtualPath>,
+
         /// The project if the dependencies and environment root
         /// are the project root (non-workspace).
         pub project: Option<ProjectFragment>,

@@ -117,6 +117,10 @@ impl GlobalEnvBag {
         self.removed.scan(op);
     }
 
+    pub fn should_debug_mcp(&self) -> bool {
+        self.get_as("MOON_DEBUG_MCP", as_bool).unwrap_or_default()
+    }
+
     pub fn should_debug_process_env(&self) -> bool {
         self.get_as("MOON_DEBUG_PROCESS_ENV", as_bool)
             .unwrap_or_default()

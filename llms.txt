@@ -1,0 +1,252 @@
+# moonrepo
+
+> A developer productivity tooling platform.
+
+This file contains links to documentation sections following the llmstxt.org standard.
+
+## Table of Contents
+
+- [Cheat sheet](https://moonrepo.dev/docs/cheat-sheet): import Columns from '@site/src/components/Columns';
+- [action-graph](https://moonrepo.dev/docs/commands/action-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [bin](https://moonrepo.dev/docs/commands/bin): The `moon bin <tool>` command will return an absolute path to a tool's binary within the toolchain.
+- [check](https://moonrepo.dev/docs/commands/check): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [ci](https://moonrepo.dev/docs/commands/ci): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [clean](https://moonrepo.dev/docs/commands/clean): The `moon clean` command will clean the current workspace by deleting stale cache. For the most
+- [completions](https://moonrepo.dev/docs/commands/completions): import Tabs from '@theme/Tabs';
+- [docker file](https://moonrepo.dev/docs/commands/docker/file): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [docker prune](https://moonrepo.dev/docs/commands/docker/prune): The `moon docker prune` command will reduce the overall filesize of the Docker environment by
+- [docker scaffold](https://moonrepo.dev/docs/commands/docker/scaffold): The `moon docker scaffold <...projects>` command creates multiple repository skeletons for use
+- [docker setup](https://moonrepo.dev/docs/commands/docker/setup): The `moon docker setup` command will efficiently install dependencies for focused projects. This is
+- [ext](https://moonrepo.dev/docs/commands/ext): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [generate](https://moonrepo.dev/docs/commands/generate): The `moon generate <name>` (or `moon g`) command will generate code (files and folders) from a
+- [init](https://moonrepo.dev/docs/commands/init): The `moon init` command will initialize moon into a repository and scaffold necessary config files
+- [mcp](https://moonrepo.dev/docs/commands/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [migrate from-package-json](https://moonrepo.dev/docs/commands/migrate/from-package-json): Use the `moon migrate from-package-json <project>` sub-command to migrate a project's `package.json`
+- [migrate from-turborepo](https://moonrepo.dev/docs/commands/migrate/from-turborepo): This command has been deprecated, use the
+- [Overview](https://moonrepo.dev/docs/commands/overview): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [project-graph](https://moonrepo.dev/docs/commands/project-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [project](https://moonrepo.dev/docs/commands/project): The `moon project <name>` (or `moon p`) command will display all available information about a
+- [query hash-diff](https://moonrepo.dev/docs/commands/query/hash-diff): Use the `moon query hash-diff` sub-command to query the content and source differences between 2
+- [query hash](https://moonrepo.dev/docs/commands/query/hash): Use the `moon query hash` sub-command to inspect the contents and sources of a generated hash, also
+- [query projects](https://moonrepo.dev/docs/commands/query/projects): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [query tasks](https://moonrepo.dev/docs/commands/query/tasks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [query touched-files](https://moonrepo.dev/docs/commands/query/touched-files): Use the `moon query touched-files` sub-command to query for a list of touched files (added,
+- [run](https://moonrepo.dev/docs/commands/run): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [setup](https://moonrepo.dev/docs/commands/setup): The `moon setup` command can be used to setup the developer and pipeline environments. It achieves
+- [sync codeowners](https://moonrepo.dev/docs/commands/sync/codeowners): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [sync config-schemas](https://moonrepo.dev/docs/commands/sync/config-schemas): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [sync hooks](https://moonrepo.dev/docs/commands/sync/hooks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [sync projects](https://moonrepo.dev/docs/commands/sync/projects): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [task-graph](https://moonrepo.dev/docs/commands/task-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [task](https://moonrepo.dev/docs/commands/task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [teardown](https://moonrepo.dev/docs/commands/teardown): The `moon teardown` command, as its name infers, will teardown and clean the current environment,
+- [templates](https://moonrepo.dev/docs/commands/templates): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [upgrade](https://moonrepo.dev/docs/commands/upgrade): The `moon upgrade` command can be used to upgrade your current moon binary (if installed globally)
+- [Feature comparison](https://moonrepo.dev/docs/comparison): import {
+- [Cache](https://moonrepo.dev/docs/concepts/cache): moon's able to achieve high performance and blazing speeds by implementing a cache that's powered by
+- [File groups](https://moonrepo.dev/docs/concepts/file-group): File groups are a mechanism for grouping similar types of files and environment variables within a
+- [File patterns](https://moonrepo.dev/docs/concepts/file-pattern): Globs in moon are [Rust-based globs](https://github.com/olson-sean-k/wax), _not_ JavaScript-based.
+- [Projects](https://moonrepo.dev/docs/concepts/project): A project is a library, application, package, binary, tool, etc, that contains source files, test
+- [Query language](https://moonrepo.dev/docs/concepts/query-lang): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Targets](https://moonrepo.dev/docs/concepts/target): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Task inheritance](https://moonrepo.dev/docs/concepts/task-inheritance): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Tasks](https://moonrepo.dev/docs/concepts/task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Tokens](https://moonrepo.dev/docs/concepts/token): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Toolchain](https://moonrepo.dev/docs/concepts/toolchain): The toolchain is an internal layer for downloading, installing, and managing tools (languages,
+- [Workspace](https://moonrepo.dev/docs/concepts/workspace): A workspace is a directory that contains [projects](./project), manages a [toolchain](./toolchain),
+- [moon.{pkl,yml}](https://moonrepo.dev/docs/config/project): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [.moon/tasks[/**/*].{pkl,yml}](https://moonrepo.dev/docs/config/tasks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [template.{pkl,yml}](https://moonrepo.dev/docs/config/template): import Tabs from '@theme/Tabs';
+- [.moon/toolchain.{pkl,yml}](https://moonrepo.dev/docs/config/toolchain): import Tabs from '@theme/Tabs';
+- [.moon/workspace.{pkl,yml}](https://moonrepo.dev/docs/config/workspace): import Tabs from '@theme/Tabs';
+- [Create a project](https://moonrepo.dev/docs/create-project): import Tabs from '@theme/Tabs';
+- [Create a task](https://moonrepo.dev/docs/create-task): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [VS Code extension](https://moonrepo.dev/docs/editors/vscode): import Image from '@site/src/components/Image';
+- [FAQ](https://moonrepo.dev/docs/faq): The first incarnation of the name was a misspelling of monorepo (= moonrepo). This is where the
+- [Continuous integration (CI)](https://moonrepo.dev/docs/guides/ci): import Tabs from '@theme/Tabs';
+- [Code generation](https://moonrepo.dev/docs/guides/codegen): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Code owners](https://moonrepo.dev/docs/guides/codeowners): import Tabs from '@theme/Tabs';
+- [Debugging a task](https://moonrepo.dev/docs/guides/debug-task): Running [tasks](../concepts/task) is the most common way to interact with moon, so what do you do
+- [Docker integration](https://moonrepo.dev/docs/guides/docker): import Tabs from '@theme/Tabs';
+- [Angular example](https://moonrepo.dev/docs/guides/examples/angular): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Astro example](https://moonrepo.dev/docs/guides/examples/astro): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [ESLint example](https://moonrepo.dev/docs/guides/examples/eslint): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Jest example](https://moonrepo.dev/docs/guides/examples/jest): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Nest example](https://moonrepo.dev/docs/guides/examples/nest): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Next example](https://moonrepo.dev/docs/guides/examples/next): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Nuxt example](https://moonrepo.dev/docs/guides/examples/nuxt): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [Packemon example](https://moonrepo.dev/docs/guides/examples/packemon): import Tabs from '@theme/Tabs';
+- [Prettier example](https://moonrepo.dev/docs/guides/examples/prettier): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [React example](https://moonrepo.dev/docs/guides/examples/react): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Remix example](https://moonrepo.dev/docs/guides/examples/remix): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Solid example](https://moonrepo.dev/docs/guides/examples/solid): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Storybook example](https://moonrepo.dev/docs/guides/examples/storybook): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [SvelteKit example](https://moonrepo.dev/docs/guides/examples/sveltekit): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [TypeScript example](https://moonrepo.dev/docs/guides/examples/typescript): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Vite & Vitest example](https://moonrepo.dev/docs/guides/examples/vite): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Vue example](https://moonrepo.dev/docs/guides/examples/vue): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Extensions](https://moonrepo.dev/docs/guides/extensions): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Bun handbook](https://moonrepo.dev/docs/guides/javascript/bun-handbook): import Tabs from '@theme/Tabs';
+- [Deno handbook](https://moonrepo.dev/docs/guides/javascript/deno-handbook): import Tabs from '@theme/Tabs';
+- [Node.js handbook](https://moonrepo.dev/docs/guides/javascript/node-handbook): import Tabs from '@theme/Tabs';
+- [Typescript Eslint](https://moonrepo.dev/docs/guides/javascript/typescript-eslint): A handful of ESLint rules are not compatible with the TypeScript plugin, or they cause serious
+- [TypeScript project references](https://moonrepo.dev/docs/guides/javascript/typescript-project-refs): import Tabs from '@theme/Tabs';
+- [MCP integration](https://moonrepo.dev/docs/guides/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Offline mode](https://moonrepo.dev/docs/guides/offline-mode): moon assumes that an internet connection is always available, as we download and install tools into
+- [Open source usage](https://moonrepo.dev/docs/guides/open-source): import Image from '@site/src/components/Image';
+- [Pkl configuration](https://moonrepo.dev/docs/guides/pkl-config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Task profiling](https://moonrepo.dev/docs/guides/profile): import Image from '@site/src/components/Docs/Image';
+- [Remote caching](https://moonrepo.dev/docs/guides/remote-cache): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Root-level project](https://moonrepo.dev/docs/guides/root-project): Coming from other repositories or task runner, you may be familiar with tasks available at the
+- [Rust handbook](https://moonrepo.dev/docs/guides/rust/handbook): import Tabs from '@theme/Tabs';
+- [Sharing workspace configuration](https://moonrepo.dev/docs/guides/sharing-config): For large companies, open source maintainers, and those that love reusability, more often than not
+- [VCS hooks](https://moonrepo.dev/docs/guides/vcs-hooks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [WASM plugins](https://moonrepo.dev/docs/guides/wasm-plugins): [moon](/moon) and [proto](/proto) plugins can be written in
+- [Webhooks (experimental)](https://moonrepo.dev/docs/guides/webhooks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [Action graph](https://moonrepo.dev/docs/how-it-works/action-graph): import ActionGraph from '@site/src/components/Docs/ActionGraph';
+- [Languages](https://moonrepo.dev/docs/how-it-works/languages): import LangGraph from '@site/src/components/Docs/LangGraph';
+- [Project graph](https://moonrepo.dev/docs/how-it-works/project-graph): import ProjectGraph from '@site/src/components/Docs/ProjectGraph';
+- [Task graph](https://moonrepo.dev/docs/how-it-works/task-graph): import TaskGraph from '@site/src/components/Docs/TaskGraph';
+- [Install moon](https://moonrepo.dev/docs/install): import Tabs from '@theme/Tabs';
+- [Introduction](https://moonrepo.dev/docs/intro): import FeatureStatus from '@site/src/components/FeatureStatus';
+- [Migrate to moon](https://moonrepo.dev/docs/migrate-to-moon): import NextSteps from '@site/src/components/NextSteps';
+- [activate](https://moonrepo.dev/docs/proto/commands/activate): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [alias](https://moonrepo.dev/docs/proto/commands/alias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [bin](https://moonrepo.dev/docs/proto/commands/bin): The `proto bin <tool> [version]` command will return an absolute path to a tool's binary within the
+- [clean](https://moonrepo.dev/docs/proto/commands/clean): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [completions](https://moonrepo.dev/docs/proto/commands/completions): import Tabs from '@theme/Tabs';
+- [debug config](https://moonrepo.dev/docs/proto/commands/debug/config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [debug env](https://moonrepo.dev/docs/proto/commands/debug/env): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [diagnose](https://moonrepo.dev/docs/proto/commands/diagnose): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [install](https://moonrepo.dev/docs/proto/commands/install): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [list-remote](https://moonrepo.dev/docs/proto/commands/list-remote): :::danger
+- [list](https://moonrepo.dev/docs/proto/commands/list): :::danger
+- [outdated](https://moonrepo.dev/docs/proto/commands/outdated): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [pin](https://moonrepo.dev/docs/proto/commands/pin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [plugin add](https://moonrepo.dev/docs/proto/commands/plugin/add): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [plugin info](https://moonrepo.dev/docs/proto/commands/plugin/info): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [plugin list](https://moonrepo.dev/docs/proto/commands/plugin/list): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [plugin remove](https://moonrepo.dev/docs/proto/commands/plugin/remove): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [plugin search](https://moonrepo.dev/docs/proto/commands/plugin/search): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [regen](https://moonrepo.dev/docs/proto/commands/regen): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [run](https://moonrepo.dev/docs/proto/commands/run): The `proto run <tool> [version]` (or `proto r`) command will run a tool after
+- [setup](https://moonrepo.dev/docs/proto/commands/setup): The `proto setup` command will setup proto in your current shell by modifying an applicable profile
+- [status](https://moonrepo.dev/docs/proto/commands/status): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [unalias](https://moonrepo.dev/docs/proto/commands/unalias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [uninstall](https://moonrepo.dev/docs/proto/commands/uninstall): The `proto uninstall <tool> [version]` (or `proto ui`) command will uninstall and remove a tool from
+- [unpin](https://moonrepo.dev/docs/proto/commands/unpin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [upgrade](https://moonrepo.dev/docs/proto/commands/upgrade): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [use](https://moonrepo.dev/docs/proto/commands/use): :::danger
+- [versions](https://moonrepo.dev/docs/proto/commands/versions): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Configuration](https://moonrepo.dev/docs/proto/config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Version detection](https://moonrepo.dev/docs/proto/detection): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [FAQ](https://moonrepo.dev/docs/proto/faq): We wanted to keep with the space theme, and spent quite some time digging through Wikipedia and
+- [What is proto?](https://moonrepo.dev/docs/proto): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [Install proto](https://moonrepo.dev/docs/proto/install): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [Non-WASM plugin](https://moonrepo.dev/docs/proto/non-wasm-plugin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Plugins](https://moonrepo.dev/docs/proto/plugins): proto supports a pluggable architecture as a means for consumers to integrate and manage custom
+- [Tool specification](https://moonrepo.dev/docs/proto/tool-spec): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [Supported tools](https://moonrepo.dev/docs/proto/tools): import Button from '@site/src/ui/Button';
+- [WASM plugin](https://moonrepo.dev/docs/proto/wasm-plugin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Workflows](https://moonrepo.dev/docs/proto/workflows): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Run a task](https://moonrepo.dev/docs/run-task): import Tabs from '@theme/Tabs';
+- [Setup toolchain](https://moonrepo.dev/docs/setup-toolchain): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [Setup workspace](https://moonrepo.dev/docs/setup-workspace): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [Terminology](https://moonrepo.dev/docs/terminology): | Term                          | Description                                                                                                      ...
+- [moon v0.13 - Hashing and toolchain improvements](https://moonrepo.dev/blog/2022-09-01_v0.13): With this release, we've landed some improvements to our smart hashing, and paved the road for
+- [moon v0.14 - Code generation and implicit dependencies](https://moonrepo.dev/blog/2022-09-13_v0.14): import Image from '@site/src/components/Image';
+- [moon v0.15 - Enhanced Docker support and 1,000 stars!](https://moonrepo.dev/blog/2022-09-26_v0.15): import Tabs from '@theme/Tabs';
+- [moon v0.16 - Per-project tool versions and TypeScript improvements](https://moonrepo.dev/blog/2022-10-06_v0.16): With this release, we've landed a long standing request of supporting project-level overrides for
+- [New VS Code extension!](https://moonrepo.dev/blog/2022-10-17_vscode-extension): import Image from '@site/src/components/Image';
+- [moon v0.17 - Webhooks, extended YAML, and improved runtime performance](https://moonrepo.dev/blog/2022-10-21_v0.17): import Tabs from '@theme/Tabs';
+- [moon v0.18 - Improved configuration and initialization flow](https://moonrepo.dev/blog/2022-10-31_v0.18): import Image from '@site/src/components/Image';
+- [moon v0.19 - Remote caching beta, affected files, and graph optimization](https://moonrepo.dev/blog/2022-11-14_v0.19): import Image from '@site/src/components/Image';
+- [Integrating TypeScript in a monorepo](https://moonrepo.dev/blog/2022-11-21_typescript-monorepo): A common question in the JavaScript ecosystem is how to integrate TypeScript in a monorepo. This is
+- [moon v0.20 - Toolchain, caching, and hydration improvements](https://moonrepo.dev/blog/2022-11-29_v0.20): With this release, we've focused heavily on future proofing our toolchain and how it integrates with
+- [moon v0.21 - Tiered language support with initial Go, PHP, Python, Ruby, and Rust](https://moonrepo.dev/blog/2022-12-19_v0.21): import Label from '@site/src/ui/typography/Label';
+- [What's in store for 2023](https://moonrepo.dev/blog/2023-01-04_2023-roadmap): Happy new year! Let's start 2023 by reflecting on last year and diving into our tentative year long
+- [moon v0.22 - New pipeline, hashing, and caching, with Turborepo migration](https://moonrepo.dev/blog/2023-01-16_v0.22): import Label from '@site/src/ui/typography/Label';
+- [moon v0.23 - Scoped task inheritance, and project config updates](https://moonrepo.dev/blog/2023-01-30_v0.23): import Tabs from '@theme/Tabs';
+- [Remote caching is now publicly available through moonbase](https://moonrepo.dev/blog/2023-02-08_moonbase): import Button from '@site/src/ui/Button';
+- [moon v0.24 - Remote caching, interactive tasks, query improvements, and more](https://moonrepo.dev/blog/2023-02-13_v0.24): import Tabs from '@theme/Tabs';
+- [moon v0.25 - Deno tier 2 support, CI insights, custom project languages, and more](https://moonrepo.dev/blog/2023-02-27_v0.25): import Tabs from '@theme/Tabs';
+- [Introducing proto, a next-generation toolchain manager!](https://moonrepo.dev/blog/2023-03-09_proto): import Button from '@site/src/ui/Button';
+- [moon v0.26 - Deeper proto integration, Docker setup, and query commands](https://moonrepo.dev/blog/2023-03-13_v0.26): import Tabs from '@theme/Tabs';
+- [proto v0.3 - Improved npm, go, and version requirement support](https://moonrepo.dev/blog/2023-03-15_proto-v0.3): With this release, we're improving some workflows and version detection logic based on initial
+- [moon v1.0 - Official release! Project constraints, tagging, and more!](https://moonrepo.dev/blog/2023-03-27_moon-v1.0): 🎉 It's finally here! After almost a year of development, a handful of breaking changes, we've
+- [proto v0.4 - Rust support, user configs, and more](https://moonrepo.dev/blog/2023-03-31_proto-v0.4): With this release, we've added Rust language support, user configs, and a few other improvements.
+- [moon v1.1 - Task debugging and improvements](https://moonrepo.dev/blog/2023-04-03_moon-v1.1): With this release, we're introducing some quality of life task improvements.
+- [proto v0.5 - Version aliasing and global binaries](https://moonrepo.dev/blog/2023-04-06_proto-v0.5): With this release, we're providing solutions for installing globals and using aliases.
+- [proto v0.6 - Unused cleaning and improved global binaries](https://moonrepo.dev/blog/2023-04-13_proto-v0.6): import Button from '@site/src/ui/Button';
+- [moon v1.2 - Tag based task inheritance](https://moonrepo.dev/blog/2023-04-17_moon-v1.2): In this small release, we're improving our task inheritance and performance.
+- [proto v0.7 - First step towards plugins](https://moonrepo.dev/blog/2023-04-21_proto-v0.7): With this release, we're very excited to announce our initial support for plugins in proto!
+- [moon v1.3 - Advanced run targeting and an official proto plugin](https://moonrepo.dev/blog/2023-04-24_moon-v1.3): After many months of design and development, we're finally introducing MQL, our own unique query
+- [proto v0.8 - Version detection and installation improvements](https://moonrepo.dev/blog/2023-04-28_proto-v0.8): In this release, we're dropping some quality of life workflow improvements.
+- [moon v1.4 - New tag target scope, MQL support for query commands, and more!](https://moonrepo.dev/blog/2023-05-01_moon-v1.4): With this release, we're bringing further improvements to tags and MQL.
+- [moon v1.5 - Rust tier 2 and 3 support](https://moonrepo.dev/blog/2023-05-08_moon-v1.5): import Button from '@site/src/ui/Button';
+- [moon v1.6 - Persistent tasks and task extending RFC](https://moonrepo.dev/blog/2023-05-15_moon-v1.6): import Button from '@site/src/ui/Button';
+- [proto v0.9 - New GitHub action, plugin unpacking, and more](https://moonrepo.dev/blog/2023-05-23_proto-v0.9): This is a small release that provides many internal improvements.
+- [moon v1.7 - Next-generation configuration and errors](https://moonrepo.dev/blog/2023-05-30_moon-v1.7): import Image from '@site/src/components/Image';
+- [moon v1.8 - Code owners and shared configuration](https://moonrepo.dev/blog/2023-06-12_moon-v1.8): With this release, we've focused on a critical facet of managing a large codebase, source code
+- [proto v0.11 - New shims and better logging](https://moonrepo.dev/blog/2023-06-25_proto-v0.11): This is a small release that improves shims and logs.
+- [moon v1.9 - VCS hooks management and improved task inheritance](https://moonrepo.dev/blog/2023-06-26_moon-v1.9): In this release, we're introducing a long requested feature, VCS hooks! As well as a complete
+- [proto v0.12 - Experimental WASM plugins](https://moonrepo.dev/blog/2023-07-07_proto-v0.12): import Button from '@site/src/ui/Button';
+- [moon v1.10 - Mid-year quality of life improvements](https://moonrepo.dev/blog/2023-07-10_moon-v1.10): import Button from '@site/src/ui/Button';
+- [proto v0.13 - Bun, Deno, and Go now powered by WASM plugins](https://moonrepo.dev/blog/2023-07-21_proto-v0.13): With this release, we're embracing WASM even further.
+- [moon v1.11 - Next-generation project graph](https://moonrepo.dev/blog/2023-07-31_moon-v1.11): With this release, we've focused heavily on rewriting our project graph for the next-generation of
+- [proto v0.14 - Node.js and Rust now powered by WASM plugins](https://moonrepo.dev/blog/2023-08-11_proto-v0.14): With this release, we've finished our migration to a WASM based plugin architecture.
+- [moon v1.12 - Task improvements: extending, interactive, and more](https://moonrepo.dev/blog/2023-08-21_moon-v1.12): In this release, we focused heavily on improving tasks, its configuration, and related systems.
+- [proto v0.15 - Install and uninstall globals](https://moonrepo.dev/blog/2023-08-23_proto-v0.15): This is a small release that adds support for uninstalling globals, and improves our WASM APIs.
+- [proto v0.16 - Add, remove, and purge plugins](https://moonrepo.dev/blog/2023-09-04_proto-v0.16): This release adds functionality for managing plugins and purging the proto store.
+- [moon v1.13 - Toolchain now uses WASM plugins](https://moonrepo.dev/blog/2023-09-05_moon-v1.13): This is a light release that focused primarily on upgrading to the WASM based proto implementation.
+- [proto v0.17 - Experimental Python support and canary releases](https://moonrepo.dev/blog/2023-09-11_proto-v0.17): This release implements two long requested features, Python language support and canary releases.
+- [proto v0.18 - List installed tools and configure HTTP client](https://moonrepo.dev/blog/2023-09-18_proto-v0.18): Today we've got a small release that includes some helpful features.
+- [moon v1.14 - Improvements to running targets and toolchain versions](https://moonrepo.dev/blog/2023-09-25_moon-v1.14): In this release, we've focused on loosening restrictions to improve the overall developer
+- [proto v0.19 - Version pinning and outdated checks](https://moonrepo.dev/blog/2023-09-29_proto-v0.19): In this release, we're improving version pinning and introducing a new command to check for outdated
+- [moon v1.15 - Next-generation action graph](https://moonrepo.dev/blog/2023-10-09_moon-v1.15): In this release, we've taken the next step in modernizing our action pipeline, by rewriting the
+- [proto v0.20 - New shims and binaries management](https://moonrepo.dev/blog/2023-10-20_proto-v0.20): In this release, we're reworking how shims and binaries work.
+- [proto v0.21 - Linux x64 musl support](https://moonrepo.dev/blog/2023-10-27_proto-v0.21): This is a very small release that primarily adds support for the Linux x64 musl target.
+- [moon v1.16 - Bun support, Rust improvements, and more!](https://moonrepo.dev/blog/2023-10-30_moon-v1.16): With this release, we've focused on requests from the community, instead of internal migration work
+- [proto v0.23 - New detection strategy, tool commands, and more](https://moonrepo.dev/blog/2023-11-16_proto-v0.23): With this release, we've reorganized our commands, improved version detection, and Windows support.
+- [moon v1.17 - Full Bun support, TypeScript improvements, and more!](https://moonrepo.dev/blog/2023-11-20_moon-v1.17): In this release, we've focused heavily on the JavaScript and TypeScript ecosystems, by improving our
+- [proto v0.24 - Standardized configuration and 10x WASM boost](https://moonrepo.dev/blog/2023-12-07_proto-v0.24): In this release, we've standardized our configuration from the ground-up.
+- [proto v0.25 - Linux arm64 gnu and musl support](https://moonrepo.dev/blog/2023-12-11_proto-v0.25): This is a very small release that primarily adds support for Linux arm64 targets.
+- [moon v1.18 - New task execution flow and custom project names](https://moonrepo.dev/blog/2023-12-12_moon-v1.18): With this release, we've focused heavily on 2 important aspects: task execution, and our onboarding
+- [proto v0.26 (rc) - Release candidate available for testing!](https://moonrepo.dev/blog/2023-12-19_proto-v0.26-rc): We've got a very special release candidate that we'd love to stress test before an official release!
+- [proto v0.26 - New native shim implementation](https://moonrepo.dev/blog/2023-12-21_proto-v0.26): After many release candidates, and a ton of testing, proto v0.26 is finally here!
+- [moon v1.19 - Improvements to task dependencies, codegen, and more](https://moonrepo.dev/blog/2024-01-01_moon-v1.19): In this release, we're introducing some long-awaited and requested improvements.
+- [proto v0.27 - PowerShell profiles, shim regeneration, and more](https://moonrepo.dev/blog/2024-01-04_proto-v0.27): This is a small release that improves the overall developer experience.
+- [What's in store for 2024](https://moonrepo.dev/blog/2024-01-12_2024-roadmap): Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long
+- [proto v0.28 - Upgraded WASM runtime](https://moonrepo.dev/blog/2024-01-17_proto-v0.28): This is a small release that primarily upgrades our WASM runtime.
+- [proto v0.29 - Better environment support](https://moonrepo.dev/blog/2024-01-23_proto-v0.29): In this release, we focused heavily on environment interoperability.
+- [moon v1.20 - Extension plugins, default task options, and more](https://moonrepo.dev/blog/2024-01-26_moon-v1.20): In this release, we're excited to introduce extensions, our first type of plugin!
+- [moon v1.21 - Deno tier 3, file group improvements, task shells, and more!](https://moonrepo.dev/blog/2024-02-07_moon-v1.21): With this release, get ready for Deno tier 3 support, file group and task improvements, a new
+- [moon v1.22 - Organizational settings, wildcard env var inputs, and Nx migration](https://moonrepo.dev/blog/2024-02-26_moon-v1.22): This release introduces new organizational settings for projects, a migrate from Nx extension, and
+- [proto v0.31 - Improved version pinning, removed global packages management, and more](https://moonrepo.dev/blog/2024-03-01_proto-v0.31): In preparation for an official v1 release, we've improved stability, the overall developer
+- [moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more](https://moonrepo.dev/blog/2024-03-25_moon-v1.23): It's been a month since our last release, and we're excited to land major codegen and task
+- [proto v0.34 - New detection strategy, status command, and outdated improvements](https://moonrepo.dev/blog/2024-04-07_proto-v0.34): In this release, we've focused on the developer experience for common workflows.
+- [moon v1.24 - Task mutexes, auto-detect revisions, project dependents, and more!](https://moonrepo.dev/blog/2024-04-17_moon-v1.24): This is a light release that focused solely on requests and improvements from the community.
+- [proto v0.35 - Support for more shells](https://moonrepo.dev/blog/2024-05-05_proto-v0.35): This is a light release that adds support for more terminal shells.
+- [moon v1.25 - New task runner and console reporter](https://moonrepo.dev/blog/2024-05-27_moon-v1.25): In this release, we focused primarily on rewriting our task runner, and improving our console.
+- [proto v0.36 - Static registry, plugin searching, and more](https://moonrepo.dev/blog/2024-06-03_proto-v0.36): In this release, we're taking the first step in supporting a plugin registry.
+- [proto v0.37 - Calver support and self diagnosis](https://moonrepo.dev/blog/2024-06-16_proto-v0.37): This is a small release, but includes 2 very important features.
+- [moon v1.26 - New experimental pipeline, trace profiles, and more](https://moonrepo.dev/blog/2024-06-24_moon-v1.26): In this release, we focused primarily on a next-generation actions pipeline.
+- [proto v0.38 - Shell activation / hooks](https://moonrepo.dev/blog/2024-07-07_proto-v0.38): In this release, we're introducing a long requested feature, shell hooks!
+- [moon v1.27 - Task scripts, Docker settings, and more](https://moonrepo.dev/blog/2024-07-14_moon-v1.27): In this release, we're adding improved Docker support, and a long-awaited task request.
+- [proto v0.39 - Mid-year quality of life improvements](https://moonrepo.dev/blog/2024-07-26_proto-v0.39): This is a small release that includes many quality of life improvements.
+- [proto v0.40 - Config mode, progress bars, and more](https://moonrepo.dev/blog/2024-08-16_proto-v0.40): import Image from '@site/src/components/Image';
+- [moon v1.28 - Task presets, OS tasks, meta tokens, and more](https://moonrepo.dev/blog/2024-09-02_moon-v1.28): In this release, we've focused on developer experience and quality-of-life improvements.
+- [moon v1.29 - Improved affected tracking, experimental Pkl configuration, and more](https://moonrepo.dev/blog/2024-10-07_moon-v1.29): import Tabs from '@theme/Tabs';
+- [proto v0.42 - New bin linking, JSON/YAML plugins, and more](https://moonrepo.dev/blog/2024-10-31_proto-v0.42): import NonWasmTabs from '@site/src/components/NonWasmTabs';
+- [moon v1.30 - Python support, self-hosted remote caching, task graph, and more!](https://moonrepo.dev/blog/2024-11-25_moon-v1.30): import Tabs from '@theme/Tabs';
+- [proto v0.44 - New terminal user interface and versions command](https://moonrepo.dev/blog/2024-12-25_proto-v0.44): import Image from '@site/src/components/Image';
+- [moon v1.31 - Toolchain progress, glob-based targets, task & remote cache improvements](https://moonrepo.dev/blog/2025-01-06_moon-v1.31): Happy new years everyone 🎉! In this release, we've landed a handful of quality-of-life
+- [proto v0.45 - New built-in tools and build from source](https://moonrepo.dev/blog/2025-01-22_proto-v0.45): import Image from '@site/src/components/Image';
+- [moon v1.32 - Remote cache and built-in toolchain improvements](https://moonrepo.dev/blog/2025-02-03_moon-v1.32): In this release we focused primarily on remote caching and toolchain improvements.
+- [proto v0.47 - New backend system & asdf support](https://moonrepo.dev/blog/2025-02-25_proto-v0.47): In this release, we're stoked to release backends, a new type of plugin that enables the use of
+- [moon v1.33 - Alpha support for toolchain WASM plugins](https://moonrepo.dev/blog/2025-03-13_moon-v1.33): With this release, we're stoked to provide an initial release for plugin support.
+- [moon v1.34 - Action customization, faster globs, better Git, and more!](https://moonrepo.dev/blog/2025-03-31_moon-v1.34): With this release, we're introducing a handful of performance and customization improvements!
+- [moonbase has been sunset](https://moonrepo.dev/blog/2025-03-31_moonbase-sunset): As mentioned in previous moon releases and announcements, we have sunset [moonbase](/moonbase), our
+- [moon v1.35 - Action graph improvements, task priorities, and more!](https://moonrepo.dev/blog/2025-04-16_moon-v1.35): With this release, we're taking yet another step to supporting plugins.
+- [moon v1.36 - Toolchain plugins beta, optimized remote caching, and codegen improvements](https://moonrepo.dev/blog/2025-05-18_moon-v1.36): In this release, we're very excited to fully release toolchain plugins!
+- [moon v1.37 - Rust WASM toolchain and MCP support](https://moonrepo.dev/blog/2025-06-03_moon-v1.37): In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI

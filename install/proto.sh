@@ -157,4 +157,4 @@ fi
 
 export STARBASE_FORCE_TTY=true
 
-exec $bin_path setup "${setup_args[@]}"
+exec "$bin_path" setup "${setup_args[@]}"

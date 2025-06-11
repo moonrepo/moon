@@ -258,6 +258,31 @@ telemetry = false
 > The data we track is publicly available and
 > [can be found here](https://github.com/moonrepo/proto/blob/master/legacy/cli/src/telemetry.rs).
 
+#### `url-rewrites`<VersionLabel version="0.50.0" />
+
+Provides a mechanism for rewriting most URLs used by proto, such as those used for downloading
+tools. This setting accepts a map of [Rust regular expressions](https://docs.rs/regex/latest/regex/)
+to [replacement strings](https://docs.rs/regex/latest/regex/struct.Regex.html#method.replace). When
+a URL is rewritten, all entries in the map are applied in order, and all matches are replaced.
+
+```toml title=".prototools"
+[settings.url-rewrites]
+"github.com/(\\w+)/(\\w+)" = "gh-mirror.corp.com/$1/$2"
+"mo+n" = "lunar"
+```
+
+The following types of URLs are rewritten:
+
+- Tool download/checksum URLs (even from third-party plugins)
+- Plugin download URLs
+- Build script URLs
+- Archive URLs
+
+The following are _not_ rewritten:
+
+- Git repository URLs
+- proto version check/telemtry URLs
+
 ### `[settings.build]`<VersionLabel version="0.46.0" />
 
 Can be used to customize the build from source flow.

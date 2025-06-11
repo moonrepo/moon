@@ -37,7 +37,7 @@ $ proto install deno 1.31
 $ proto install deno --canary
 ```
 
-### Pinning the version
+#### Pinning the version
 
 By default this command will only install the tool into `~/.proto/tools` but will not make the
 binary available. If you would like to also pin the resolved version to a `.prototools` file, use
@@ -66,14 +66,15 @@ $ proto install go -- --no-gobin
 
 ### Arguments
 
-- `[tool]` - Type of tool.
-- `[version]` - Version of tool. Defaults to "latest".
-- `[-- <args>]` - Additional arguments to pass to post-install hooks.
+- One tool
+  - `[tool]` - Type of tool.
+  - `[version]` - Version of tool. Defaults to a pinned version in `.prototools` or "latest".
+  - `[-- <args>]` - Additional arguments to pass to post-install hooks.
 
 ### Options
 
 - `force` - Force install, even if already installed.
-- One
+- One tool
   - `--build` - Build from source if available. <VersionLabel version="0.45.0" />
   - `--no-build` - Download a pre-built if available. <VersionLabel version="0.45.0" />
   - `--canary` - Install a canary (next, nightly, etc) version.

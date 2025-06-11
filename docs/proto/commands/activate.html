@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.7d5a7797.js" defer="defer"></script>
-<script src="/assets/js/main.61aaa7fc.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.363f6a10.js" defer="defer"></script>
+<script src="/assets/js/main.fe271d9c.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -37,8 +37,8 @@ Activation is ran each time the current directory changes using a shell hook.</p
 <li><code>--json</code> - Print the activate instructions in JSON format.</li>
 <li><code>--no-bin</code> - Do not include <code>~/.proto/bin</code> when appending <code>PATH</code>.</li>
 <li><code>--no-shim</code> - Do not include <code>~/.proto/shims</code> when prepending <code>PATH</code>.</li>
-<li><code>--on-init</code> - Trigger activation when initialized in the shell, instead of waiting for a cd/prompt
-change. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.43.0</span></li>
+<li><code>--no-init</code> - Do not trigger activation when initialized in the shell, and instead wait for a
+cd/prompt change. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.50.0</span></li>
 </ul>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="caveats">Caveats<a href="#caveats" class="hash-link" aria-label="Direct link to Caveats" title="Direct link to Caveats">​</a></h3>
 <ul>
@@ -50,15 +50,10 @@ activated.</li>
 <li>Do note that this will worsen performance depending on the number of tools.</li>
 </ul>
 </li>
-<li>Activation is only applied <em>after changing directories</em> and not when a new shell session is
-started, unless the <code>--on-init</code> argument is passed.</li>
 </ul>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="setup">Setup<a href="#setup" class="hash-link" aria-label="Direct link to Setup" title="Direct link to Setup">​</a></h3>
 <p>The following activation steps should be added <em>after</em> all environment variable and <code>PATH</code>
 modifications have happened in your shell, typically at the end of your shell profile.</p>
-<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>Any <code>PATH</code> modifications <em>after</em> <code>proto activate</code> will be lost when activation triggers. This
-happens because we take a snapshot of <code>PATH</code> when executed from your shell, and reset <code>PATH</code> on each
-activation to the snapshot. To avoid this problem, modify <code>PATH</code> before <code>proto activate</code>.</p></div></div>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="bash">Bash<a href="#bash" class="hash-link" aria-label="Direct link to Bash" title="Direct link to Bash">​</a></h4>
 <p>Add the following line to the end of your <code>~/.bashrc</code> or <code>~/.bash_profile</code>.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">eval</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&quot;</span><span class="token string variable" style="color:#fef9c3">$(</span><span class="token string variable" style="color:#fef9c3">proto activate </span><span class="token string variable function" style="color:#ff94ff;font-weight:bold">bash</span><span class="token string variable" style="color:#fef9c3">)</span><span class="token string" style="color:#c9e166">&quot;</span><br></span></code></pre></div></div>

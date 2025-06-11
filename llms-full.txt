@@ -16245,8 +16245,8 @@ Learn more about
 - `--json` - Print the activate instructions in JSON format.
 - `--no-bin` - Do not include `~/.proto/bin` when appending `PATH`.
 - `--no-shim` - Do not include `~/.proto/shims` when prepending `PATH`.
-- `--on-init` - Trigger activation when initialized in the shell, instead of waiting for a cd/prompt
-  change. 
+- `--no-init` - Do not trigger activation when initialized in the shell, and instead wait for a
+  cd/prompt change. 
 
 ### Caveats
 
@@ -16255,21 +16255,11 @@ Learn more about
 - Tool versions configured in the global `~/.proto/.prototools` are _not_ included by default. Pass
   `--config-mode all` during activation to include them.
   - Do note that this will worsen performance depending on the number of tools.
-- Activation is only applied _after changing directories_ and not when a new shell session is
-  started, unless the `--on-init` argument is passed.
 
 ### Setup
 
 The following activation steps should be added _after_ all environment variable and `PATH`
 modifications have happened in your shell, typically at the end of your shell profile.
-
-:::warning
-
-Any `PATH` modifications _after_ `proto activate` will be lost when activation triggers. This
-happens because we take a snapshot of `PATH` when executed from your shell, and reset `PATH` on each
-activation to the snapshot. To avoid this problem, modify `PATH` before `proto activate`.
-
-:::
 
 #### Bash
 
@@ -16371,6 +16361,8 @@ the location.
 
 ## bin
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `proto bin  [version]` command will return an absolute path to a tool's binary within the
 toolchain. When a tool has not been installed, or a version cannot be resolved, the command will
 exit with a failure.
@@ -16378,6 +16370,16 @@ exit with a failure.
 ```shell
 $ proto bin node 16.10.0
 /Users/example/.proto/tools/node/16.10.0/bin/node
+```
+
+This command can also return directories using the `--dir` option.
+
+```shell
+$ proto bin node 16.10.0 --dir exes
+/Users/example/.proto/tools/node/16.10.0/bin
+
+$ proto bin node 16.10.0 --dir globals
+/Users/example/.proto/tools/node/globals/bin
 ```
 
 ### Arguments
@@ -16388,6 +16390,11 @@ $ proto bin node 16.10.0
 
 ### Options
 
+- `--all` - Return multiple paths, separated by newlines, instead of the first path.
+  
+- `--dir ` - Return a directory instead of of the main file. 
+  - `exes` - Returns the executable's directory.
+  - `globals` - Returns the globals/packages directory.
 - `--bin` - When applicable, return the `~/.proto/bin` path.
 - `--shim` - When applicable, return the `~/.proto/shims` path.
 
@@ -16635,7 +16642,7 @@ $ proto install deno 1.31
 $ proto install deno --canary
 ```
 
-### Pinning the version
+#### Pinning the version
 
 By default this command will only install the tool into `~/.proto/tools` but will not make the
 binary available. If you would like to also pin the resolved version to a `.prototools` file, use
@@ -16664,14 +16671,15 @@ $ proto install go -- --no-gobin
 
 ### Arguments
 
-- `[tool]` - Type of tool.
-- `[version]` - Version of tool. Defaults to "latest".
-- `[-- ]` - Additional arguments to pass to post-install hooks.
+- One tool
+  - `[tool]` - Type of tool.
+  - `[version]` - Version of tool. Defaults to a pinned version in `.prototools` or "latest".
+  - `[-- ]` - Additional arguments to pass to post-install hooks.
 
 ### Options
 
 - `force` - Force install, even if already installed.
-- One
+- One tool
   - `--build` - Build from source if available. 
   - `--no-build` - Download a pre-built if available. 
   - `--canary` - Install a canary (next, nightly, etc) version.
@@ -17612,6 +17620,31 @@ telemetry = false
 
 > The data we track is publicly available and
 > [can be found here](https://github.com/moonrepo/proto/blob/master/legacy/cli/src/telemetry.rs).
+
+#### `url-rewrites`
+
+Provides a mechanism for rewriting most URLs used by proto, such as those used for downloading
+tools. This setting accepts a map of [Rust regular expressions](https://docs.rs/regex/latest/regex/)
+to [replacement strings](https://docs.rs/regex/latest/regex/struct.Regex.html#method.replace). When
+a URL is rewritten, all entries in the map are applied in order, and all matches are replaced.
+
+```toml title=".prototools"
+[settings.url-rewrites]
+"github.com/(\\w+)/(\\w+)" = "gh-mirror.corp.com/$1/$2"
+"mo+n" = "lunar"
+```
+
+The following types of URLs are rewritten:
+
+- Tool download/checksum URLs (even from third-party plugins)
+- Plugin download URLs
+- Build script URLs
+- Archive URLs
+
+The following are _not_ rewritten:
+
+- Git repository URLs
+- proto version check/telemtry URLs
 
 ### `[settings.build]`
 
@@ -29630,3 +29663,83 @@ toolchains, please ping us in Discord!
 
 The only requirements is that these toolchains must be written in Rust and must exist in the
 [moonrepo/plugins](https://github.com/moonrepo/plugins) repository!
+
+---
+
+## proto v0.50 - URL rewrites, on-init activation, preserved comments, and more
+
+In this release, we're landing a handful of quality of life improvements that have been requested by
+the community.
+
+## Rewrite URLs for better interoperability
+
+proto is heavily reliant on URLs, as they power everything from tool and plugin downloading to
+version resolving. Many URLs are hard-coded into proto but most of them come from plugins. For the
+most part this is fine, but if you work within a corporate environment, or have a firewall, you may
+have to deal with proxy servers, mirrors, or other factors.
+
+Until now, this was very difficult to circumvent, so we wanted to provide a built-in solution to
+this problem, and as such, we're introducing the new
+[`url-rewrites`](/docs/proto/config#url-rewrites) configuration setting. This setting accepts a map
+of regex patterns to replacements, and will rewrite URLs that match the pattern.
+
+```toml title=".prototools"
+[settings.url-rewrites]
+"github.com/(\\w+)/(\\w+)" = "gh-mirror.corp.com/$1/$2"
+"mo+n" = "lunar"
+```
+
+For example, in the configuration above, any URL that contains `github.com` will be replaced with
+`gh-mirror.corp.com`, and any URL that contains the word "moon" (with different length o's) will be
+replaced with "lunar". Learn more about URL rewriting in the settings documentation!
+
+## Activation flow now triggers immediately
+
+Our [activation flow](/docs/proto/workflows#shell-activation) (shell hooks) is seeing more and more
+usage, with improved stability, but based on feedback we've received, there was still some pain
+points. One of these pain points was that activation would not trigger immediately (new terminal
+window/tab), and would only trigger after changing directories.
+
+There was a way around this using the `--on-init` flag, but that was not easily discoverable, and
+the setup as a whole was not very intuitive. With this release, that flag has been deprecated and
+the activation flow now triggers immediately, so you can start using your tools right away.
+
+Historically we've been hesitent to do this, as we were worried about potential performance hits
+when having to download WASM plugins, or refetch caches. However in practice this has not been an
+issue.
+
+## Comments are now preserved in `.prototools`
+
+This has been a long standing issue and a long requested feature, and it's finally here! Comments
+are now preserved in `.prototools` files, and they'll no longer be removed when running `proto`
+commands that modify these files (like [`proto alias`](/docs/proto/commands/alias) or
+[`proto pin`](/docs/proto/commands/pin)).
+
+Historically this has been a hard problem to solve, as Rust serde (serialization/deserialization
+library) strips comments when deserializing (reading) the file. To solve this problem, we had to
+avoid serde, and operate on an AST-like structure instead. Because of this, we lose type-safety and
+there may be some edge cases not accounted for.
+
+## Plugin commands are now executed within a shell
+
+When a plugin executes a command (child process) on the host system (your computer), it now executes
+it within a shell, e.g. `bash -c "command"`. This change was made to ensure environment variables
+(like `PATH`), aliases, and other shell features that you have configured are available to the
+plugin.
+
+By default the shell to use is detected from the parent host process, but you can override it with
+the `PROTO_SHELL` environment variable. For example, to use `zsh` you can set:
+
+```shell
+PROTO_SHELL=zsh
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.50.0) for a full list
+of changes.
+
+- Added `--dir` and `--all` options to the [`proto bin`](/docs/proto/commands/bin) command.
+- Added environment variable support to many non-tool related `.prototools` settings.
+- Updated `proto install ` (without version) to install a version pinned in `.prototools`,
+  instead of the latest version.

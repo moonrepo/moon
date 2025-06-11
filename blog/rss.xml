@@ -4,10 +4,76 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Tue, 03 Jun 2025 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 11 Jun 2025 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[proto v0.50 - URL rewrites, on-init activation, preserved comments, and more]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.50</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.50</guid>
+            <pubDate>Wed, 11 Jun 2025 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this release, we're landing a handful of quality of life improvements that have been requested by]]></description>
+            <content:encoded><![CDATA[<p>In this release, we're landing a handful of quality of life improvements that have been requested by
+the community.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="rewrite-urls-for-better-interoperability">Rewrite URLs for better interoperability<a href="https://moonrepo.dev/blog/proto-v0.50#rewrite-urls-for-better-interoperability" class="hash-link" aria-label="Direct link to Rewrite URLs for better interoperability" title="Direct link to Rewrite URLs for better interoperability">​</a></h2>
+<p>proto is heavily reliant on URLs, as they power everything from tool and plugin downloading to
+version resolving. Many URLs are hard-coded into proto but most of them come from plugins. For the
+most part this is fine, but if you work within a corporate environment, or have a firewall, you may
+have to deal with proxy servers, mirrors, or other factors.</p>
+<p>Until now, this was very difficult to circumvent, so we wanted to provide a built-in solution to
+this problem, and as such, we're introducing the new
+<a href="https://moonrepo.dev/docs/proto/config#url-rewrites"><code>url-rewrites</code></a> configuration setting. This setting accepts a map
+of regex patterns to replacements, and will rewrite URLs that match the pattern.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings.url-rewrites</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">"github.com/(\\w+)/(\\w+)"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"gh-mirror.corp.com/$1/$2"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">"mo+n"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"lunar"</span><br></span></code></pre></div></div>
+<p>For example, in the configuration above, any URL that contains <code>github.com</code> will be replaced with
+<code>gh-mirror.corp.com</code>, and any URL that contains the word "moon" (with different length o's) will be
+replaced with "lunar". Learn more about URL rewriting in the settings documentation!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="activation-flow-now-triggers-immediately">Activation flow now triggers immediately<a href="https://moonrepo.dev/blog/proto-v0.50#activation-flow-now-triggers-immediately" class="hash-link" aria-label="Direct link to Activation flow now triggers immediately" title="Direct link to Activation flow now triggers immediately">​</a></h2>
+<p>Our <a href="https://moonrepo.dev/docs/proto/workflows#shell-activation">activation flow</a> (shell hooks) is seeing more and more
+usage, with improved stability, but based on feedback we've received, there was still some pain
+points. One of these pain points was that activation would not trigger immediately (new terminal
+window/tab), and would only trigger after changing directories.</p>
+<p>There was a way around this using the <code>--on-init</code> flag, but that was not easily discoverable, and
+the setup as a whole was not very intuitive. With this release, that flag has been deprecated and
+the activation flow now triggers immediately, so you can start using your tools right away.</p>
+<p>Historically we've been hesitent to do this, as we were worried about potential performance hits
+when having to download WASM plugins, or refetch caches. However in practice this has not been an
+issue.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="comments-are-now-preserved-in-prototools">Comments are now preserved in <code>.prototools</code><a href="https://moonrepo.dev/blog/proto-v0.50#comments-are-now-preserved-in-prototools" class="hash-link" aria-label="Direct link to comments-are-now-preserved-in-prototools" title="Direct link to comments-are-now-preserved-in-prototools">​</a></h2>
+<p>This has been a long standing issue and a long requested feature, and it's finally here! Comments
+are now preserved in <code>.prototools</code> files, and they'll no longer be removed when running <code>proto</code>
+commands that modify these files (like <a href="https://moonrepo.dev/docs/proto/commands/alias"><code>proto alias</code></a> or
+<a href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin</code></a>).</p>
+<p>Historically this has been a hard problem to solve, as Rust serde (serialization/deserialization
+library) strips comments when deserializing (reading) the file. To solve this problem, we had to
+avoid serde, and operate on an AST-like structure instead. Because of this, we lose type-safety and
+there may be some edge cases not accounted for.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-commands-are-now-executed-within-a-shell">Plugin commands are now executed within a shell<a href="https://moonrepo.dev/blog/proto-v0.50#plugin-commands-are-now-executed-within-a-shell" class="hash-link" aria-label="Direct link to Plugin commands are now executed within a shell" title="Direct link to Plugin commands are now executed within a shell">​</a></h2>
+<p>When a plugin executes a command (child process) on the host system (your computer), it now executes
+it within a shell, e.g. <code>bash -c "command"</code>. This change was made to ensure environment variables
+(like <code>PATH</code>), aliases, and other shell features that you have configured are available to the
+plugin.</p>
+<p>By default the shell to use is detected from the parent host process, but you can override it with
+the <code>PROTO_SHELL</code> environment variable. For example, to use <code>zsh</code> you can set:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token assign-left variable" style="color:#fef9c3">PROTO_SHELL</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">zsh</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.50#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.50.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added <code>--dir</code> and <code>--all</code> options to the <a href="https://moonrepo.dev/docs/proto/commands/bin"><code>proto bin</code></a> command.</li>
+<li>Added environment variable support to many non-tool related <code>.prototools</code> settings.</li>
+<li>Updated <code>proto install &lt;tool&gt;</code> (without version) to install a version pinned in <code>.prototools</code>,
+instead of the latest version.</li>
+</ul>]]></content:encoded>
+            <category>rewrite</category>
+            <category>url</category>
+            <category>activation</category>
+            <category>comments</category>
+            <category>config</category>
+            <category>plugin</category>
+            <category>shell</category>
+        </item>
         <item>
             <title><![CDATA[moon v1.37 - Rust WASM toolchain and MCP support]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.37</link>
@@ -1721,70 +1787,6 @@ of changes.</p>
             <category>murex</category>
             <category>env</category>
             <category>path</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.26 - New experimental pipeline, trace profiles, and more]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.26</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.26</guid>
-            <pubDate>Mon, 24 Jun 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[In this release, we focused primarily on a next-generation actions pipeline.]]></description>
-            <content:encoded><![CDATA[<p>In this release, we focused primarily on a next-generation actions pipeline.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-experimental-pipeline">New experimental pipeline<a href="https://moonrepo.dev/blog/moon-v1.26#new-experimental-pipeline" class="hash-link" aria-label="Direct link to New experimental pipeline" title="Direct link to New experimental pipeline">​</a></h2>
-<p>The <a href="https://moonrepo.dev/docs/how-it-works/action-graph">action pipeline</a> or just "pipeline", is the system in which we
-actually run tasks in topological order when <a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>,
-<a href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a>, or <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> is executed. The pipeline is
-powered by the <a href="https://moonrepo.dev/docs/how-it-works/action-graph">action graph</a> (also known as a task graph or
-dependency graph) and is quite complex, as we need to efficiently run tasks on our thread pool,
-ensure dependency tasks are ran before running dependent tasks, handle signals (ctrl + c), and much
-more.</p>
-<p>Our current implementation "works" but could be much better, as it still has some problematic edge
-cases, <a href="https://github.com/moonrepo/moon/issues/902" target="_blank" rel="noopener noreferrer">doesn't always shutdown correctly</a>, and is
-pretty much tech debt at this point. To remedy this, we spent the last month working on a new action
-pipeline that aims to solve all of these problems, with a more modern implementation. Some such
-improvements are:</p>
-<ul>
-<li>Increased performance with better concurrency handling and scheduling. Threads in the pool should
-now be constantly utilized.</li>
-<li>More accurately monitors signals (ctrl+c) and shutdowns. We now use Rust channels internally to
-manage this state.</li>
-<li>The CLI will now wait for aborted/cancelled task handles to exit before the entire CLI exits. This
-should alleviate zombie processes.</li>
-</ul>
-<p>With all that said, unlike previous releases that replaced the old feature with a new feature, we
-chose to gate this new pipeline behind an experimental flag. We want to ensure this works correctly
-in all cases, before enabling it by default. So please test it and report back any issues! We've
-successfully been using it on moon's repository without issue.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">actionPipelineV2</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="generate-trace-profiles">Generate trace profiles<a href="https://moonrepo.dev/blog/moon-v1.26#generate-trace-profiles" class="hash-link" aria-label="Direct link to Generate trace profiles" title="Direct link to Generate trace profiles">​</a></h2>
-<p>A major goal of moon is to be extremely efficient and to optimize as much as possible. To help
-accomplish this goal, we're introducing the global CLI <code>--dump</code> flag, which will generate a trace
-profile that can be loaded and reviewed in <code>chrome://tracing</code>.</p>
-<p>This will display a flame graph with labeled operations, their timing information, and any
-associated data. This is the first step in capturing this kind of information, and it will only get
-better moving forward.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="additional-shell-support">Additional shell support<a href="https://moonrepo.dev/blog/moon-v1.26#additional-shell-support" class="hash-link" aria-label="Direct link to Additional shell support" title="Direct link to Additional shell support">​</a></h2>
-<p>Based on the work in <a href="https://moonrepo.dev/proto">proto</a>, we now have built-in support for additional command line
-shells. To start, we've updated the <a href="https://moonrepo.dev/docs/config/project#unixshell"><code>unixShell</code></a> and
-<a href="https://moonrepo.dev/docs/config/project#windowsshell"><code>windowsShell</code></a> task options to support the following new
-shells:</p>
-<ul>
-<li>Unix: <code>ion</code>, <code>nu</code> (nushell), <code>pwsh</code> (powershell), <code>xonsh</code>.</li>
-<li>Windows: <code>elvish</code>, <code>fish</code>, <code>nu</code> (nushell), <code>xonsh</code></li>
-</ul>
-<p>And furthermore, we've added Nushell completion support to the
-<a href="https://moonrepo.dev/docs/commands/completions"><code>moon completions</code></a> command!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.26#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.26.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Updated CLI command execution to be more performant, and to reduce our usage of concurrent locks.</li>
-<li>Updated proto to v0.37.1 (from v0.36.2).</li>
-</ul>]]></content:encoded>
-            <category>action</category>
-            <category>pipeline</category>
-            <category>trace</category>
-            <category>profile</category>
-            <category>shell</category>
         </item>
     </channel>
 </rss>

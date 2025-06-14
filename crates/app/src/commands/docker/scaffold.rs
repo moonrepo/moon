@@ -302,7 +302,13 @@ async fn scaffold_sources_project(
     docker_sources_root: &Path,
     project_id: &Id,
     manifest: &mut DockerManifest,
+    visited: &mut FxHashSet<Id>,
 ) -> AppResult {
+    // Skip if already visited
+    if !visited.insert(project_id.to_owned()) {
+        return Ok(None);
+    }
+
     manifest.focused_projects.insert(project_id.to_owned());
 
     let project = project_graph.get(project_id)?;
@@ -377,6 +383,7 @@ async fn scaffold_sources_project(
                 docker_sources_root,
                 &dep_cfg.id,
                 manifest,
+                visited,
             )
             .await?;
         }
@@ -405,6 +412,8 @@ async fn scaffold_sources(
         unfocused_projects: FxHashSet::default(),
     };
 
+    let mut visited = FxHashSet::default();
+
     // Copy all projects
     for project_id in project_ids {
         scaffold_sources_project(
@@ -413,6 +422,7 @@ async fn scaffold_sources(
             &docker_sources_root,
             project_id,
             &mut manifest,
+            &mut visited,
         )
         .await?;
     }

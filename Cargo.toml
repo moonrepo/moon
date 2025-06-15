@@ -22,12 +22,12 @@ cached = "0.55.1"
 chrono = { version = "0.4.41", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.39", default-features = false, features = [
+clap = { version = "4.5.40", default-features = false, features = [
     "derive",
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.52"
+clap_complete = "4.5.54"
 clean-path = "0.2.1"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
@@ -55,7 +55,7 @@ reqwest = { version = "0.12.19", default-features = false, features = [
 ] }
 rustc-hash = "2.1.1"
 scc = "2.3.4"
-schematic = { version = "0.18.7", default-features = false, features = [
+schematic = { version = "0.18.8", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
@@ -70,12 +70,12 @@ starbase_archive = { version = "0.10.6", default-features = false, features = [
     "tar-all",
     "zip-all",
 ] }
-starbase_console = { version = "0.6.11", features = ["miette"] }
+starbase_console = { version = "0.6.12", features = ["miette"] }
 starbase_events = "0.7.2"
 starbase_sandbox = "0.9.3"
 starbase_shell = "0.7.8"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.11.10", default-features = false, features = [
+starbase_utils = { version = "0.11.11", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",

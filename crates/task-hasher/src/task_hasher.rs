@@ -97,6 +97,7 @@ impl<'task> TaskHasher<'task> {
 
     async fn aggregate_inputs(&mut self) -> miette::Result<FxHashSet<PathBuf>> {
         let mut files = FxHashSet::default();
+        let vcs_enabled = self.vcs.is_enabled();
 
         if !self.task.input_files.is_empty() {
             for input in &self.task.input_files {
@@ -106,7 +107,8 @@ impl<'task> TaskHasher<'task> {
 
         if !self.task.input_globs.is_empty() {
             let use_globs = self.project.root == self.workspace_root
-                || matches!(self.hasher_config.walk_strategy, HasherWalkStrategy::Glob);
+                || matches!(self.hasher_config.walk_strategy, HasherWalkStrategy::Glob)
+                || !vcs_enabled;
 
             // Collect inputs by walking and globbing the file system
             if use_globs {
@@ -143,7 +145,7 @@ impl<'task> TaskHasher<'task> {
 
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
-        if !is_ci() {
+        if !is_ci() && vcs_enabled {
             for local_file in self.vcs.get_touched_files().await?.all() {
                 let abs_file = local_file.to_logical_path(self.workspace_root);
 

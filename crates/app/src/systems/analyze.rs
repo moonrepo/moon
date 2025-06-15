@@ -12,6 +12,7 @@ use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
+use moon_toolchain::is_using_global_toolchains;
 use moon_vcs::BoxedVcs;
 use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
 use proto_installer::*;
@@ -74,7 +75,11 @@ pub async fn install_proto(
 
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!
-    if install_dir.exists() || is_test_env() || !toolchain_config.should_install_proto() {
+    if install_dir.exists()
+        || is_test_env()
+        || is_using_global_toolchains(bag)
+        || !toolchain_config.should_install_proto()
+    {
         return Ok(None);
     }
 

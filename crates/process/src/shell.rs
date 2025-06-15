@@ -5,7 +5,7 @@ use std::path::PathBuf;
 pub use starbase_shell::{ShellCommand, ShellType};
 
 #[cached]
-fn find_command_on_path(name: String) -> Option<PathBuf> {
+pub fn find_command_on_path(name: String) -> Option<PathBuf> {
     if name == "pwsh" || name == "powershell" {
         system_env::find_command_on_path("pwsh")
             .or_else(|| system_env::find_command_on_path("powershell"))
@@ -15,7 +15,7 @@ fn find_command_on_path(name: String) -> Option<PathBuf> {
 }
 
 #[cached]
-fn get_default_shell() -> ShellType {
+pub fn get_default_shell() -> ShellType {
     ShellType::detect_with_fallback()
 }
 

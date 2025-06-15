@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon ci` to always run the sync workspace action, even when no tasks are affected.
+
+#### 🐞 Fixes
+
+- Fixed an issue where `git` commands would attempt to execute, even when no `git` binary was found.
+- Fixed an issue where `moon docker scaffold` would over scaffold the same project multiple times.
+- Fixed an issue where proto would be installed when `MOON_TOOLCHAIN_FORCE_GLOBALS` is set.
+- Reworked the `git` commands that are executed for `git://` based code generation.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.37.1
 
 #### 📚 Documentation

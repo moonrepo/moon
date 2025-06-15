@@ -5,7 +5,7 @@ use moon_common::Id;
 use moon_common::path::{PathExt, RelativePathBuf};
 use moon_config::{ConfigFinder, GeneratorConfig, TemplateLocator, load_template_config_template};
 use moon_env::MoonEnvironment;
-use moon_process::Command;
+use moon_process::{Command, Output};
 use moon_time::now_millis;
 use rustc_hash::FxHashMap;
 use starbase_archive::Archiver;
@@ -315,15 +315,13 @@ async fn clone_and_checkout_git_repository(
         revision, "Resolving template location for Git repository",
     );
 
-    async fn run_git(args: &[&str], cwd: &Path) -> miette::Result<()> {
+    async fn run_git(args: &[&str], cwd: &Path) -> miette::Result<Output> {
         Command::new("git")
             .args(args)
             .cwd(cwd)
             .without_shell()
             .exec_capture_output()
-            .await?;
-
-        Ok(())
+            .await
     }
 
     // Clone or fetch the repository
@@ -334,7 +332,13 @@ async fn clone_and_checkout_git_repository(
         );
 
         run_git(
-            &["fetch", "--prune", "--no-recurse-submodules"],
+            &[
+                "fetch",
+                "--tags",
+                "--prune",
+                "--prune-tags",
+                "--no-recurse-submodules",
+            ],
             &template_location,
         )
         .await?;
@@ -351,16 +355,20 @@ async fn clone_and_checkout_git_repository(
     // Checkout the revision
     debug!(revision, "Checking out the configured revision");
 
-    run_git(
-        &["checkout", "-B", &revision, "--track"],
-        &template_location,
-    )
-    .await?;
+    run_git(&["checkout", &revision], &template_location).await?;
 
-    // Checkout the revision
+    // Pull latest changes (only if a branch)
     debug!("Pulling latest changes");
 
-    run_git(&["pull", "--rebase", "--prune"], &template_location).await?;
+    let output = run_git(&["branch", "--show-current"], &template_location).await?;
+
+    if !output.stdout.is_empty() {
+        run_git(
+            &["pull", "--rebase", "--prune", "origin", &revision],
+            &template_location,
+        )
+        .await?;
+    }
 
     fs::write_file(
         template_location.join(".installed-at"),

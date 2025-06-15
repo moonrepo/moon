@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon docker scaffold` would over scaffold the same project multiple times.
+- Fixed an issue where proto would be installed when `MOON_TOOLCHAIN_FORCE_GLOBALS` is set.
+
 ## 1.37.1
 
 #### 📚 Documentation

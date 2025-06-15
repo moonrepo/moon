@@ -77,7 +77,7 @@ pub async fn install_proto(
     // so just avoid it and assume proto exists!
     if install_dir.exists()
         || is_test_env()
-        || is_using_global_toolchains(&bag)
+        || is_using_global_toolchains(bag)
         || !toolchain_config.should_install_proto()
     {
         return Ok(None);

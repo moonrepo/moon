@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
+use moon_process::find_command_on_path;
 use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -487,7 +488,7 @@ impl Vcs for Gitx {
     }
 
     fn is_enabled(&self) -> bool {
-        self.worktree.git_dir.exists()
+        self.worktree.git_dir.exists() && find_command_on_path("git".into()).is_some()
     }
 
     fn is_ignored(&self, file: &Path) -> bool {

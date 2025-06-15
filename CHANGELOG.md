@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `moon ci` to always run the sync workspace action, even when no tasks are affected.
+
 #### 🐞 Fixes
 
 - Fixed an issue where `git` commands would attempt to execute, even when no `git` binary was found.

@@ -215,6 +215,9 @@ async fn generate_action_graph(
     action_graph_builder.set_touched_files(touched_files)?;
     action_graph_builder.track_affected(UpstreamScope::Deep, DownstreamScope::Deep, true)?;
 
+    // Always sync workspace in CI
+    action_graph_builder.sync_workspace().await?;
+
     // Run dependents to ensure consumers still work correctly
     let reqs = RunRequirements {
         ci: true,
@@ -265,14 +268,8 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     let (action_graph, action_context) =
         generate_action_graph(&mut console, &session, &targets, touched_files).await?;
 
-    if action_graph.is_empty() {
-        console.write_line(color::invalid("No tasks affected based on touched files"))?;
-
-        return Ok(None);
-    }
-
     // Process all tasks in the graph
-    console.print_header("Running tasks")?;
+    console.print_header("Running pipeline")?;
 
     let results = run_action_pipeline(&session, action_context, action_graph).await?;
 

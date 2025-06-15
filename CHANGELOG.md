@@ -13,6 +13,10 @@
 - Fixed an issue where proto would be installed when `MOON_TOOLCHAIN_FORCE_GLOBALS` is set.
 - Reworked the `git` commands that are executed for `git://` based code generation.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.37.1
 
 #### 📚 Documentation

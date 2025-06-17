@@ -98,7 +98,7 @@ mod plugin_commands {
 
             // Current dir
             let mut input = ExecCommandInput::pipe("echo", ["$PWD"]);
-            input.working_dir = Some(VirtualPath::Real(sandbox.path().into()));
+            input.cwd = Some(VirtualPath::Real(sandbox.path().into()));
 
             let ops = exec_plugin_command(
                 ctx.clone(),
@@ -123,7 +123,7 @@ mod plugin_commands {
             sandbox.create_file("subdir/file", "");
 
             let mut input = ExecCommandInput::pipe("echo", ["$PWD"]);
-            input.working_dir = Some(VirtualPath::Real(sandbox.path().join("subdir")));
+            input.cwd = Some(VirtualPath::Real(sandbox.path().join("subdir")));
 
             let ops = exec_plugin_command(
                 ctx.clone(),

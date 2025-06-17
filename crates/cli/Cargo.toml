@@ -1,6 +1,6 @@
 [package]
 name = "moon_cli"
-version = "1.37.2"
+version = "1.37.3"
 edition = "2024"
 publish = false
 

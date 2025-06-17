@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `git://` based code generation couldn't checkout a specific commit.
+
 ## 1.37.2
 
 #### 🚀 Updates

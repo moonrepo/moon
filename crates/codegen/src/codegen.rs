@@ -349,7 +349,7 @@ async fn clone_and_checkout_git_repository(
         );
 
         fs::create_dir_all(&template_location)?;
-        run_git(&["clone", &url, ".", "--depth", "1"], &template_location).await?;
+        run_git(&["clone", &url, "."], &template_location).await?;
     }
 
     // Checkout the revision

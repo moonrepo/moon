@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where `git://` based code generation couldn't checkout a specific commit.
+- Fixed incorrect casing for the `moon migrate --skipTouchedFilesCheck` option.
 
 ## 1.37.2
 

@@ -19,7 +19,10 @@ pub struct FromPackageJsonArgs {
     #[arg(help = "ID of project to migrate")]
     id: Id,
 
-    #[arg(long, hide = true)]
+    #[arg(
+        long = "skipTouchedFilesCheck",
+        help = "Skip checking for touched files to determine if the repo is dirty"
+    )]
     pub skip_touched_files_check: bool,
 }
 

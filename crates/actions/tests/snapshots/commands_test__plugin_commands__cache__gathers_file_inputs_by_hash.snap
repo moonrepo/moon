@@ -11,6 +11,7 @@ expression: "json::format(&data, true).unwrap()"
         "cache"
       ],
       "set_executable": false,
+      "shell": null,
       "stream": false
     },
     "inputFiles": {

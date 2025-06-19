@@ -180,6 +180,7 @@ async fn apply_toolchain(
         &app_context,
         &toolchain,
         app_context.workspace_root.join(&project.source),
+        &project_config,
         &mut content,
     )
     .await?
@@ -215,6 +216,7 @@ async fn apply_toolchain_dependencies(
     app_context: &AppContext,
     toolchain: &ToolchainPlugin,
     project_root: PathBuf,
+    project_config: &ProjectConfig,
     hash_content: &mut TaskToolchainHash,
 ) -> miette::Result<bool> {
     let mut lock_files = vec![];
@@ -243,6 +245,11 @@ async fn apply_toolchain_dependencies(
             .locate_dependencies_root(LocateDependenciesRootInput {
                 context: app_context.toolchain_registry.create_context(),
                 starting_dir: toolchain.to_virtual_path(&project_root),
+                toolchain_config: app_context.toolchain_registry.create_merged_config(
+                    &toolchain.id,
+                    &app_context.toolchain_config,
+                    project_config,
+                ),
             })
             .await?
     } else {

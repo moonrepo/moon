@@ -10,6 +10,13 @@
   - Renamed `RegisterToolchainOutput.manifest_file_name` to
     `RegisterToolchainOutput.manifest_file_names` and its type to `Vec<String>`.
 
+#### 🧩 Plugins
+
+- WASM API
+  - Added `LocateDependenciesRootInput.toolchain_config` field.
+  - Added `PruneDockerInput.toolchain_config` field.
+  - Added `ScaffoldDockerInput.toolchain_config` field.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.50.0](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).

@@ -234,27 +234,35 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
             }
 
             Section(title: "Tier 2 - Platform integration") {
-                #(toolchain.metadata.manifest_file_name.as_ref().map(|manifest_file_name| {
+                #((!toolchain.metadata.manifest_file_names.is_empty()).then(|| {
                     element! {
                         Entry(
-                            name: "Manifest file",
+                            name: "Manifest files",
                             value: element! {
                                 StyledText(
-                                    content: manifest_file_name,
-                                    style: Style::File
+                                    content: toolchain.metadata.manifest_file_names
+                                        .iter()
+                                        .map(|file| format!("<file>{file}</file>"))
+                                        .collect::<Vec<_>>()
+                                        .join(", "),
+                                    style: Style::MutedLight
                                 )
                             }.into_any()
                         )
                     }
                 }))
-                #(toolchain.metadata.lock_file_name.as_ref().map(|lock_file_name| {
+                #((!toolchain.metadata.lock_file_names.is_empty()).then(|| {
                     element! {
                         Entry(
-                            name: "Lock file",
+                            name: "Lock files",
                             value: element! {
                                 StyledText(
-                                    content: lock_file_name,
-                                    style: Style::File
+                                    content: toolchain.metadata.lock_file_names
+                                        .iter()
+                                        .map(|file| format!("<file>{file}</file>"))
+                                        .collect::<Vec<_>>()
+                                        .join(", "),
+                                    style: Style::MutedLight
                                 )
                             }.into_any()
                         )

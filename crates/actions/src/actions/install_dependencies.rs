@@ -253,7 +253,7 @@ async fn create_hash_content<'action>(
     }
 
     // Extract lockfile last modification
-    if let Some(lock_file_name) = &toolchain.metadata.lock_file_name {
+    for lock_file_name in &toolchain.metadata.lock_file_names {
         let lock_path = deps_root.join(lock_file_name);
 
         if lock_path.exists() {
@@ -261,12 +261,13 @@ async fn create_hash_content<'action>(
 
             if let Ok(timestamp) = meta.modified().or_else(|_| meta.created()) {
                 content.lockfile_timestamp = Some(to_millis(timestamp));
+                break;
             }
         }
     }
 
     // Extract dependencies from all applicable manifests
-    if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
+    for manifest_file_name in &toolchain.metadata.manifest_file_names {
         let has_touched_manifests = action_context
             .touched_files
             .iter()

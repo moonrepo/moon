@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- WASM API
+  - Renamed `RegisterToolchainOutput.lock_file_name` to `RegisterToolchainOutput.lock_file_names`
+    and its type to `Vec<String>`.
+  - Renamed `RegisterToolchainOutput.manifest_file_name` to
+    `RegisterToolchainOutput.manifest_file_names` and its type to `Vec<String>`.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.50.0](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).

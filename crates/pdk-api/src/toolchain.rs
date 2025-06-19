@@ -43,15 +43,15 @@ api_struct!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub exe_names: Vec<String>,
 
-        /// The name of the lock file used for dependency installs.
+        /// The name(s) of the lock file used for dependency installs.
         /// Will be used for project usage detection.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub lock_file_name: Option<String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub lock_file_names: Vec<String>,
 
-        /// The name of the manifest file that contains project and
+        /// The name(s) of the manifest file that contains project and
         /// dependency information. Will be used for project usage detection.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub manifest_file_name: Option<String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub manifest_file_names: Vec<String>,
 
         /// Name of the toolchain.
         pub name: String,

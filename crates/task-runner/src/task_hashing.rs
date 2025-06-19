@@ -2,7 +2,7 @@ use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
-use moon_config::{HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
+use moon_config::{DependencyScope, HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
 use moon_hash::{ContentHasher, hash_content};
 use moon_pdk_api::{
     HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
@@ -217,27 +217,24 @@ async fn apply_toolchain_dependencies(
     project_root: PathBuf,
     hash_content: &mut TaskToolchainHash,
 ) -> miette::Result<bool> {
-    let mut inject = false;
-    let mut locked = ParseLockOutput::default();
-    let mut workspace_manifest = ParseManifestOutput::default();
-    let mut project_manifest = ParseManifestOutput::default();
+    let mut lock_files = vec![];
+    let mut workspace_manifests = vec![];
+    let mut project_manifests = vec![];
 
     // Load the project manifest
-    if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
+    for manifest_file_name in &toolchain.metadata.manifest_file_names {
         let manifest_path = project_root.join(manifest_file_name);
 
-        // If the manifest doesn't exist, we can abort early as
-        // theres no dependencies to extract!
-        if !manifest_path.exists() || !toolchain.has_func("parse_manifest").await {
-            return Ok(false);
+        if toolchain.has_func("parse_manifest").await {
+            project_manifests.push(
+                toolchain
+                    .parse_manifest(ParseManifestInput {
+                        context: app_context.toolchain_registry.create_context(),
+                        path: toolchain.to_virtual_path(manifest_path),
+                    })
+                    .await?,
+            );
         }
-
-        project_manifest = toolchain
-            .parse_manifest(ParseManifestInput {
-                context: app_context.toolchain_registry.create_context(),
-                path: toolchain.to_virtual_path(manifest_path),
-            })
-            .await?;
     }
 
     // Try and locate a dependency root
@@ -255,84 +252,118 @@ async fn apply_toolchain_dependencies(
     // Found a dependency root
     if let Some(deps_root) = output.root {
         // Parse and extract locked dependencies
-        if let Some(lock_file_name) = &toolchain.metadata.lock_file_name {
+        for lock_file_name in &toolchain.metadata.lock_file_names {
             let lock_path = deps_root.join(lock_file_name);
 
             if lock_path.exists()
                 && app_context.workspace_config.hasher.optimization == HasherOptimization::Accuracy
                 && toolchain.has_func("parse_lock").await
             {
-                locked = toolchain
-                    .parse_lock(ParseLockInput {
-                        context: app_context.toolchain_registry.create_context(),
-                        path: toolchain.to_virtual_path(lock_path),
-                    })
-                    .await?;
+                lock_files.push(
+                    toolchain
+                        .parse_lock(ParseLockInput {
+                            context: app_context.toolchain_registry.create_context(),
+                            path: toolchain.to_virtual_path(lock_path),
+                        })
+                        .await?,
+                );
             }
         }
 
         // Parse and extract workspace manifest
-        if let Some(manifest_file_name) = &toolchain.metadata.manifest_file_name {
+        for manifest_file_name in &toolchain.metadata.manifest_file_names {
             let manifest_path = deps_root.join(manifest_file_name);
 
             if manifest_path.exists()
                 && deps_root != project_root
                 && toolchain.has_func("parse_manifest").await
             {
-                workspace_manifest = toolchain
-                    .parse_manifest(ParseManifestInput {
-                        context: app_context.toolchain_registry.create_context(),
-                        path: toolchain.to_virtual_path(manifest_path),
-                    })
-                    .await?;
+                workspace_manifests.push(
+                    toolchain
+                        .parse_manifest(ParseManifestInput {
+                            context: app_context.toolchain_registry.create_context(),
+                            path: toolchain.to_virtual_path(manifest_path),
+                        })
+                        .await?,
+                );
             }
         }
     }
 
     // Now extract and hash the dependencies
-    if apply_toolchain_dependencies_by_scope(
-        project_manifest.peer_dependencies,
-        &workspace_manifest.peer_dependencies,
-        &locked.dependencies,
+    let inject = apply_toolchain_dependencies_by_manifest(
+        project_manifests,
+        workspace_manifests,
+        lock_files,
         hash_content,
-    ) {
-        inject = true;
-    }
-
-    if apply_toolchain_dependencies_by_scope(
-        project_manifest.build_dependencies,
-        &workspace_manifest.build_dependencies,
-        &locked.dependencies,
-        hash_content,
-    ) {
-        inject = true;
-    }
-
-    if apply_toolchain_dependencies_by_scope(
-        project_manifest.dev_dependencies,
-        &workspace_manifest.dev_dependencies,
-        &locked.dependencies,
-        hash_content,
-    ) {
-        inject = true;
-    }
-
-    if apply_toolchain_dependencies_by_scope(
-        project_manifest.dependencies,
-        &workspace_manifest.dependencies,
-        &locked.dependencies,
-        hash_content,
-    ) {
-        inject = true;
-    }
+    );
 
     Ok(inject)
 }
 
+fn apply_toolchain_dependencies_by_manifest(
+    project_manifests: Vec<ParseManifestOutput>,
+    workspace_manifests: Vec<ParseManifestOutput>,
+    locks: Vec<ParseLockOutput>,
+    hash_content: &mut TaskToolchainHash,
+) -> bool {
+    // Flatten locked deps
+    let locked_deps = locks.iter().fold(BTreeMap::default(), |mut map, lock| {
+        map.extend(&lock.dependencies);
+        map
+    });
+
+    // Flatten workspace deps by scope
+    let workspace_deps = workspace_manifests.iter().fold(
+        BTreeMap::<DependencyScope, BTreeMap<&String, &ManifestDependency>>::default(),
+        |mut map, manifest| {
+            map.entry(DependencyScope::Peer)
+                .or_default()
+                .extend(&manifest.peer_dependencies);
+
+            map.entry(DependencyScope::Build)
+                .or_default()
+                .extend(&manifest.build_dependencies);
+
+            map.entry(DependencyScope::Development)
+                .or_default()
+                .extend(&manifest.dev_dependencies);
+
+            map.entry(DependencyScope::Production)
+                .or_default()
+                .extend(&manifest.dependencies);
+
+            map
+        },
+    );
+
+    let mut inject = false;
+
+    for manifest in project_manifests {
+        for (scope, project_deps) in [
+            (DependencyScope::Peer, &manifest.peer_dependencies),
+            (DependencyScope::Build, &manifest.build_dependencies),
+            (DependencyScope::Development, &manifest.dev_dependencies),
+            (DependencyScope::Production, &manifest.dependencies),
+        ] {
+            if apply_toolchain_dependencies_by_scope(
+                project_deps,
+                workspace_deps.get(&scope).unwrap(),
+                &locked_deps,
+                hash_content,
+            ) {
+                inject = true;
+            }
+        }
+    }
+
+    inject
+}
+
 fn apply_toolchain_dependencies_by_scope(
-    project_deps: BTreeMap<String, ManifestDependency>,
-    workspace_deps: &BTreeMap<String, ManifestDependency>,
-    locked_deps: &BTreeMap<String, Vec<LockDependency>>,
+    project_deps: &BTreeMap<String, ManifestDependency>,
+    workspace_deps: &BTreeMap<&String, &ManifestDependency>,
+    locked_deps: &BTreeMap<&String, &Vec<LockDependency>>,
     hash_content: &mut TaskToolchainHash,
 ) -> bool {
     let mut inject = false;
@@ -340,7 +371,7 @@ fn apply_toolchain_dependencies_by_scope(
     for (name, dep) in project_deps {
         let req = if dep.is_inherited() {
             workspace_deps
-                .get(&name)
+                .get(name)
                 .and_then(|ws_dep| ws_dep.get_version())
         } else {
             dep.get_version()
@@ -352,7 +383,7 @@ fn apply_toolchain_dependencies_by_scope(
         };
 
         // Try and find a resolved version from the lock file
-        if let Some(lock_deps) = locked_deps.get(&name) {
+        if let Some(lock_deps) = locked_deps.get(name) {
             if let Some(lock_dep) =
                 // By exact version first
                 lock_deps
@@ -372,7 +403,7 @@ fn apply_toolchain_dependencies_by_scope(
                     .or_else(|| lock_dep.version.as_ref().map(|v| v.to_string()))
                     .or_else(|| lock_dep.meta.clone())
                 {
-                    hash_content.dependencies.insert(name, hash);
+                    hash_content.dependencies.insert(name.to_owned(), hash);
                     inject = true;
 
                     continue;
@@ -381,7 +412,9 @@ fn apply_toolchain_dependencies_by_scope(
         }
 
         // None found, so just record the requirement
-        hash_content.dependencies.insert(name, req.to_string());
+        hash_content
+            .dependencies
+            .insert(name.to_owned(), req.to_string());
         inject = true;
     }
 

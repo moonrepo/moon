@@ -141,22 +141,19 @@ impl ToolchainPlugin {
             .await?;
 
         // Include toolchain metadata in docker
-        let mut add_glob = |glob: &str| {
-            if !output.scaffold_globs.iter().any(|g| g == glob) {
-                output.scaffold_globs.push(glob.to_owned());
+        let mut add_globs = |globs: &[String]| {
+            for glob in globs {
+                if !output.scaffold_globs.iter().any(|g| g == glob) {
+                    output.scaffold_globs.push(glob.to_owned());
+                }
             }
         };
 
-        if let Some(name) = &self.metadata.lock_file_name {
-            add_glob(name);
-        }
-
-        if let Some(name) = &self.metadata.manifest_file_name {
-            add_glob(name);
-        }
+        add_globs(&self.metadata.lock_file_names);
+        add_globs(&self.metadata.manifest_file_names);
 
         if let Some(name) = &self.metadata.vendor_dir_name {
-            add_glob(&format!("!{name}/**/*"));
+            add_globs(&[format!("!{name}/**/*")]);
         }
 
         Ok(output)
@@ -165,13 +162,13 @@ impl ToolchainPlugin {
     #[instrument(skip(self))]
     pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
         // Do simple checks first to avoid glob overhead
-        if let Some(file) = &self.metadata.manifest_file_name {
+        for file in &self.metadata.manifest_file_names {
             if dir.join(file).exists() {
                 return Ok(true);
             }
         }
 
-        if let Some(file) = &self.metadata.lock_file_name {
+        for file in &self.metadata.lock_file_names {
             if dir.join(file).exists() {
                 return Ok(true);
             }

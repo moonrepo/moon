@@ -1,5 +1,6 @@
 use extism_pdk::{config, json};
 use moon_common::Id;
+use moon_pdk_api::VirtualPath;
 use moon_project::ProjectFragment;
 use serde::de::DeserializeOwned;
 use warpgate_pdk::{AnyResult, get_plugin_id};
@@ -34,7 +35,13 @@ pub fn parse_toolchain_config_schema<T: schematic::Config>(value: json::Value) -
     use schematic::{ConfigLoader, Format};
 
     match ConfigLoader::<T>::new()
-        .code(json::to_string(&value)?, Format::Json)?
+        .code(
+            match value {
+                json::Value::Null => "{}".to_owned(),
+                _ => json::to_string(&value)?,
+            },
+            Format::Json,
+        )?
         .load()
     {
         Ok(result) => Ok(result.config),
@@ -53,4 +60,42 @@ pub fn is_project_toolchain_enabled(project: &ProjectFragment) -> bool {
 /// Return true if the project has the provided toolchain enabled.
 pub fn is_project_toolchain_enabled_for(project: &ProjectFragment, id: impl AsRef<str>) -> bool {
     project.toolchains.contains(&Id::raw(id.as_ref()))
+}
+
+/// Locate the root directory that contains the provided file name,
+/// by traversing upwards from the starting directory.
+pub fn locate_root(starting_dir: &VirtualPath, file_name: &str) -> Option<VirtualPath> {
+    let mut current_dir = Some(starting_dir.to_owned());
+
+    while let Some(dir) = current_dir {
+        if dir.join(file_name).exists() {
+            return Some(dir);
+        }
+
+        current_dir = dir.parent();
+    }
+
+    None
+}
+
+/// Locate the root directory that contains the provided file name,
+/// by traversing upwards from the starting directory and running
+/// the check function on each directory. If the check returns true,
+/// the traversal will stop.
+pub fn locate_root_with_check(
+    starting_dir: &VirtualPath,
+    file_name: &str,
+    mut check: impl FnMut(&VirtualPath) -> AnyResult<bool>,
+) -> AnyResult<()> {
+    let mut current_dir = Some(starting_dir.to_owned());
+
+    while let Some(dir) = current_dir {
+        if dir.join(file_name).exists() && check(&dir)? {
+            return Ok(());
+        }
+
+        current_dir = dir.parent();
+    }
+
+    Ok(())
 }

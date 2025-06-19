@@ -278,6 +278,10 @@ api_struct!(
         /// The starting directory in which to locate the root.
         /// This is typically a project root.
         pub starting_dir: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -580,6 +584,10 @@ api_struct!(
 
         /// The project being scaffolding.
         pub project: ProjectFragment,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -610,6 +618,9 @@ api_struct!(
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

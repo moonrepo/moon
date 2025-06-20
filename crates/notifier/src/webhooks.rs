@@ -42,7 +42,7 @@ pub async fn notify_webhook(
         .await?;
 
     if require_acknowledge && !response.status().is_success() {
-        return Err(reqwest::Error::from(response.error_for_status().unwrap_err()));
+        return Err(response.error_for_status().unwrap_err());
     }
 
     Ok(response)
@@ -72,7 +72,7 @@ impl WebhooksNotifier {
             } else {
                 Uuid::new_v4().to_string()
             },
-            trace: env::var("MOON_TRACE_ID").unwrap_or("".into()),
+            trace: env::var("MOON_TRACE_ID").unwrap_or_default(),
             url,
             verified: false,
             require_acknowledge,
@@ -114,14 +114,12 @@ impl WebhooksNotifier {
         }
         // For every other event, we will make the request and ignore the result.
         // We will also avoid awaiting the request to not slow down the overall runner.
-        else {
-            if require_acknowledge {
-                let _ = notify_webhook(url.clone(), body, true).await;
-            } else {
-                self.requests.push(tokio::spawn(async move {
-                    let _ = notify_webhook(url, body, false).await;
-                }));
-            }
+        else if require_acknowledge {
+            let _ = notify_webhook(url.clone(), body, true).await;
+        } else {
+            self.requests.push(tokio::spawn(async move {
+                let _ = notify_webhook(url, body, false).await;
+            }));
         }
 
         Ok(())

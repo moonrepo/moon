@@ -100,13 +100,13 @@ uuid = { version = "1.16.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.11.1"
 extism-pdk = "1.4.1"
-proto_core = "0.50.1"
+proto_core = "0.50.2"
 proto_installer = { version = "0.13.0", features = ["miette"] }
 proto_pdk_api = "0.28.0"
 proto_pdk_test_utils = "0.38.0"
 system_env = "0.8.0"
 version_spec = "0.9.1"
-warpgate = "0.25.0"
+warpgate = "0.25.2"
 warpgate_api = "0.15.1"
 warpgate_pdk = "0.14.0"
 

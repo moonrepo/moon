@@ -5873,9 +5873,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.50.1"
+version = "0.50.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a300e4a03634a4c398eb44b988d2a27a2221e4e92a52e7a2feb4d1926faff7c1"
+checksum = "b4c257c0a274679a51ee7c902303fc80ba2d51c7b679b4317026f4998b43c17c"
 dependencies = [
  "convert_case",
  "dotenvy",
@@ -8243,9 +8243,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.25.0"
+version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1f758a48d71bc76055f0137144e024fc1853c5efb71f33db413b42534cfa5f9"
+checksum = "386222b4fb798488eed83bd890ef062630bf1329cd43c7d93d2a3f3903b38e09"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",

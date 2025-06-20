@@ -8,9 +8,9 @@ pub struct WebhooksSubscriber {
 }
 
 impl WebhooksSubscriber {
-    pub fn new(url: &str) -> Self {
+    pub fn new(url: &str, require_acknowledge: bool) -> Self {
         WebhooksSubscriber {
-            notifier: WebhooksNotifier::new(url.to_owned()),
+            notifier: WebhooksNotifier::new(url.to_owned(), require_acknowledge),
         }
     }
 }

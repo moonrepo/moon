@@ -521,6 +521,26 @@ notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
 ```
 
+### `acknowledge`
+
+<HeadingApiLink to="/api/types/interface/NotifierConfig#acknowledge" />
+
+When enabled, webhook notfier will wait for request result and validates the return code for 2xx.
+Defaults to `false`.
+
+:::warning
+
+Activating this setting will slow down your pipeline, because every webhook request will be evaluated!
+
+:::
+
+```yaml title=".moon/workspace.yml" {2}
+notifier:
+  webhookUrl: 'https://api.company.com/some/endpoint'
+  webhookAcknowledge: true
+```
+
+
 ## `pipeline`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#pipeline" />

@@ -14,7 +14,7 @@ use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_toolchain::is_using_global_toolchains;
 use moon_vcs::BoxedVcs;
-use proto_core::{ProtoEnvError, ProtoEnvironment, is_offline};
+use proto_core::{ProtoEnvironment, flow::install::ProtoInstallError, is_offline};
 use proto_installer::*;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
@@ -104,7 +104,7 @@ pub async fn install_proto(
 
             return Ok(None);
         } else {
-            return Err(ProtoEnvError::RequiredInternetConnection.into());
+            return Err(ProtoInstallError::RequiredInternetConnection.into());
         }
     }
 

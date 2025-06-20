@@ -76,7 +76,7 @@ async fn internal_exec_plugin_command(
     cmd.args(&input.args);
     cmd.envs(&input.env);
 
-    if let Some(cwd) = input.working_dir.as_ref().and_then(|dir| dir.real_path()) {
+    if let Some(cwd) = input.cwd.as_ref().and_then(|dir| dir.real_path()) {
         cmd.cwd(cwd);
     } else if let Some(cwd) = &options.working_dir {
         cmd.cwd(cwd);

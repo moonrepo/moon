@@ -1,5 +1,4 @@
 use extism_pdk::{config, json};
-use moon_common::Id;
 use moon_pdk_api::VirtualPath;
 use moon_project::ProjectFragment;
 use serde::de::DeserializeOwned;
@@ -59,7 +58,10 @@ pub fn is_project_toolchain_enabled(project: &ProjectFragment) -> bool {
 
 /// Return true if the project has the provided toolchain enabled.
 pub fn is_project_toolchain_enabled_for(project: &ProjectFragment, id: impl AsRef<str>) -> bool {
-    project.toolchains.contains(&Id::raw(id.as_ref()))
+    project
+        .toolchains
+        .iter()
+        .any(|tc| tc.as_str() == id.as_ref())
 }
 
 /// Locate the root directory that contains the provided file name,

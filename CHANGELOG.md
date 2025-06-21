@@ -31,6 +31,8 @@
   - View information about a toolchain plugin with `moon toolchain info`.
 - Added support for terminal desktop notifications. Can be enabled with the new
   `notifier.terminalNotifications` setting in `.moon/workspace.yml`.
+- Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2xx status
+  code.
 
 #### 🧩 Plugins
 

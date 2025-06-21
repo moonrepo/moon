@@ -2,9 +2,37 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- WASM API
+  - Renamed `RegisterToolchainOutput.lock_file_name` to `RegisterToolchainOutput.lock_file_names`
+    and its type to `Vec<String>`.
+  - Renamed `RegisterToolchainOutput.manifest_file_name` to
+    `RegisterToolchainOutput.manifest_file_names` and its type to `Vec<String>`.
+
+#### 🚀 Updates
+
+- Added a new
+  [Go toolchain implementation](https://github.com/moonrepo/plugins/tree/master/toolchains/go),
+  powered entirely by our new WASM plugin system. It can be enabled with the `unstable_go`
+  identifier.
+  - Supports tiers 1, 2, and 3!
+  - Supports Go workspaces via `go.work` files.
+  - Extracts project dependencies and relationships from `go.mod` files.
+  - Extracts version and lockfile information from `go.sum` and `go.work.sum` files.
+- Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2xx status
+  code.
+
+#### 🧩 Plugins
+
+- WASM API
+  - Added `LocateDependenciesRootInput.toolchain_config` field.
+  - Added `PruneDockerInput.toolchain_config` field.
+  - Added `ScaffoldDockerInput.toolchain_config` field.
+
 #### ⚙️ Internal
 
-- Updated proto to [v0.50.0](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).
+- Updated proto to [v0.50.1](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).
 
 ## 1.37.3
 

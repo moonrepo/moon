@@ -7,7 +7,7 @@ use tracing::{debug, instrument};
 
 impl WorkspaceGraph {
     /// Return all expanded projects that match the query criteria.
-    #[instrument(name = "query_projects", skip(self))]
+    #[instrument(skip(self))]
     pub fn query_projects<'input, Q: AsRef<Criteria<'input>> + Debug>(
         &self,
         query: Q,

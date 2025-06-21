@@ -209,6 +209,11 @@ async fn scaffold_workspace_project(
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Configs,
                 project: project.to_fragment(),
+                toolchain_config: registry.create_merged_config(
+                    &toolchain.id,
+                    &session.toolchain_config,
+                    &project.config,
+                ),
             })
             .await?;
     }
@@ -362,6 +367,11 @@ async fn scaffold_sources_project(
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Sources,
                 project: project.to_fragment(),
+                toolchain_config: registry.create_merged_config(
+                    &toolchain.id,
+                    &session.toolchain_config,
+                    &project.config,
+                ),
             })
             .await?;
     }

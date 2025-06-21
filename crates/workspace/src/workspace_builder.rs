@@ -56,6 +56,10 @@ pub struct WorkspaceBuilder<'app> {
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext<'app>>>,
 
+    /// List of config paths used in the hashing process.
+    /// These are used for invalidation.
+    config_paths: Vec<WorkspaceRelativePathBuf>,
+
     /// Aliases to their associated project.
     aliases: FxHashMap<String, Id>,
 
@@ -99,6 +103,7 @@ impl<'app> WorkspaceBuilder<'app> {
         debug!("Building workspace graph (project and task graphs)");
 
         let mut graph = WorkspaceBuilder {
+            config_paths: vec![],
             context: Some(Arc::new(context)),
             aliases: FxHashMap::default(),
             projects_by_tag: FxHashMap::default(),
@@ -655,31 +660,11 @@ impl<'app> WorkspaceBuilder<'app> {
     async fn hash_required_configs(
         &self,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        let context = self.context();
-        let config_names = context.config_loader.get_project_file_names();
-        let mut configs = vec![];
-
-        // Hash all project-level config files
-        for build_data in self.project_data.values() {
-            for name in &config_names {
-                configs.push(build_data.source.join(name));
-            }
-        }
-
-        // Hash all workspace-level config files
-        for file in glob_walk_with_options(
-            context.workspace_root.join(consts::CONFIG_DIRNAME),
-            ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
-            GlobWalkOptions::default().cache(),
-        )? {
-            configs.push(file.relative_to(context.workspace_root).into_diagnostic()?);
-        }
-
-        context
+        self.context()
             .vcs
             .as_ref()
             .expect("VCS required!")
-            .get_file_hashes(&configs, true)
+            .get_file_hashes(&self.config_paths, true)
             .await
     }
 
@@ -733,12 +718,23 @@ impl<'app> WorkspaceBuilder<'app> {
         // Then extend projects from toolchains
         self.extend_project_build_data().await?;
 
+        // Include all workspace-level config files
+        for file in glob_walk_with_options(
+            context.workspace_root.join(consts::CONFIG_DIRNAME),
+            ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
+            GlobWalkOptions::default().cache(),
+        )? {
+            self.config_paths
+                .push(file.relative_to(context.workspace_root).into_diagnostic()?);
+        }
+
         Ok(())
     }
 
     fn load_project_build_data(&mut self, sources: ProjectsSourcesList) -> miette::Result<()> {
         let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon", false);
+        let config_names = context.config_loader.get_project_file_names();
         let mut project_data: FxHashMap<Id, ProjectBuildData> = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();
         let mut dupe_original_ids = FxHashSet::default();
@@ -752,6 +748,12 @@ impl<'app> WorkspaceBuilder<'app> {
                 color::file(source.join(&config_label))
             );
 
+            // Hash all project-level config files
+            for name in &config_names {
+                self.config_paths.push(source.join(name));
+            }
+
+            // Load the config file
             let config = context
                 .config_loader
                 .load_project_config_from_source(context.workspace_root, &source)?;
@@ -870,6 +872,16 @@ impl<'app> WorkspaceBuilder<'app> {
                 if let Some(build_data) = self.project_data.get_mut(&id) {
                     build_data.extensions.push(project_extend);
                 }
+            }
+
+            for input_file in output.input_files {
+                self.config_paths.push(
+                    context
+                        .toolchain_registry
+                        .from_virtual_path(input_file)
+                        .relative_to(context.workspace_root)
+                        .into_diagnostic()?,
+                );
             }
         }
 

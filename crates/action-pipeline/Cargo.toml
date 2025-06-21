@@ -25,7 +25,7 @@ moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }
-num_cpus = "1.16.0"
+num_cpus = "1.17.0"
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

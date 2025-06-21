@@ -8,6 +8,7 @@ config_struct!(
         /// A secure URL in which to send webhooks to.
         #[setting(validate = validate::url_secure)]
         pub webhook_url: Option<String>,
+
         /// Whether webhook requests require acknowledgment (2xx response).
         #[setting(default = false)]
         pub webhook_acknowledge: bool,

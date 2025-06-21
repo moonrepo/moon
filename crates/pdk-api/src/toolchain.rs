@@ -43,15 +43,15 @@ api_struct!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub exe_names: Vec<String>,
 
-        /// The name of the lock file used for dependency installs.
+        /// The name(s) of the lock file used for dependency installs.
         /// Will be used for project usage detection.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub lock_file_name: Option<String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub lock_file_names: Vec<String>,
 
-        /// The name of the manifest file that contains project and
+        /// The name(s) of the manifest file that contains project and
         /// dependency information. Will be used for project usage detection.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub manifest_file_name: Option<String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub manifest_file_names: Vec<String>,
 
         /// Name of the toolchain.
         pub name: String,
@@ -278,6 +278,10 @@ api_struct!(
         /// The starting directory in which to locate the root.
         /// This is typically a project root.
         pub starting_dir: VirtualPath,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -580,6 +584,10 @@ api_struct!(
 
         /// The project being scaffolding.
         pub project: ProjectFragment,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -610,6 +618,9 @@ api_struct!(
         /// Virtual path to the dependencies root. This is where
         /// the lockfile and root manifest should exist.
         pub root: VirtualPath,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

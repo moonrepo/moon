@@ -513,6 +513,12 @@
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
+        "webhookAcknowledge": {
+          "title": "webhookAcknowledge",
+          "description": "Whether webhook requests require acknowledgment (2xx response).",
+          "default": false,
+          "type": "boolean"
+        },
         "webhookUrl": {
           "title": "webhookUrl",
           "description": "A secure URL in which to send webhooks to.",

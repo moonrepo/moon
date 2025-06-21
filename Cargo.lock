@@ -4419,7 +4419,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "clap",
  "extism-pdk",

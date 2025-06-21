@@ -12,6 +12,16 @@
 
 #### 🚀 Updates
 
+- Added a new
+  [Go toolchain implementation](https://github.com/moonrepo/plugins/tree/master/toolchains/go),
+  powered entirely by our new WASM plugin system. It can be enabled with the `unstable_go`
+  identifier.
+  - Supports tiers 1, 2, and 3!
+  - Supports Go workspaces via `go.work` files.
+  - Extracts project dependencies and relationships from `go.mod` files.
+  - Extracts version and lockfile information from `go.sum` and `go.work.sum` files.
+  - Basic vendor support via `go mod vendor`.
+  - Basic Docker support.
 - Added new tools for `moon mcp`.
   - `get_touched_files` - Gets touched files between base and head.
   - `sync_projects` - Runs the `SyncProject` action for one or many projects.

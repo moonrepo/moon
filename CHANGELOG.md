@@ -20,8 +20,8 @@
   - Supports Go workspaces via `go.work` files.
   - Extracts project dependencies and relationships from `go.mod` files.
   - Extracts version and lockfile information from `go.sum` and `go.work.sum` files.
-  - Basic vendor support via `go mod vendor`.
-  - Basic Docker support.
+- Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2xx status
+  code.
 
 #### 🧩 Plugins
 

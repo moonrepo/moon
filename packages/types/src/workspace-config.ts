@@ -205,17 +205,17 @@ export interface HasherConfig {
 	warnOnMissingInputs?: boolean;
 }
 
-/** The types of events in which to notify the terminal. */
-export type NotifierTerminalToasts = 'never' | 'always' | 'failure' | 'success' | 'task-failure';
+/** The types of events in which to send notifications. */
+export type NotifierEventType = 'never' | 'always' | 'failure' | 'success' | 'task-failure';
 
 /** Configures how and where notifications are sent. */
 export interface NotifierConfig {
 	/**
-	 * Display a toast in the terminal for certain events.
+	 * Display an OS notification for certain pipeline events.
 	 *
 	 * @default 'never'
 	 */
-	terminalToasts: NotifierTerminalToasts | null;
+	notifications: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 *
@@ -731,11 +731,11 @@ export interface PartialHasherConfig {
 /** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
 	/**
-	 * Display a toast in the terminal for certain events.
+	 * Display an OS notification for certain pipeline events.
 	 *
 	 * @default 'never'
 	 */
-	terminalToasts?: NotifierTerminalToasts | null;
+	notifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 *

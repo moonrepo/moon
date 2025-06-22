@@ -2,9 +2,9 @@ use crate::{config_struct, config_unit_enum};
 use schematic::{Config, ConfigEnum, validate};
 
 config_unit_enum!(
-    /// The types of events in which to notify the terminal.
+    /// The types of events in which to send notifications.
     #[derive(ConfigEnum)]
-    pub enum NotifierTerminalToasts {
+    pub enum NotifierEventType {
         /// Never toast.
         #[default]
         Never,
@@ -27,8 +27,8 @@ config_struct!(
     /// Configures how and where notifications are sent.
     #[derive(Config)]
     pub struct NotifierConfig {
-        /// Display a toast in the terminal for certain events.
-        pub terminal_toasts: Option<NotifierTerminalToasts>,
+        /// Display an OS notification for certain pipeline events.
+        pub notifications: Option<NotifierEventType>,
 
         /// A secure URL in which to send webhooks to.
         #[setting(validate = validate::url_secure)]

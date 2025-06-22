@@ -38,7 +38,7 @@ docker:
       - '*.json'
 
 notifier:
-  terminalToasts: 'task-failure'
+  notifications: 'always'
 
 unstable_remote:
   # DEPOT

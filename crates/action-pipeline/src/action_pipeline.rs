@@ -425,10 +425,10 @@ impl ActionPipeline {
             }
         }
 
-        if let Some(toast) = self.app_context.workspace_config.notifier.terminal_toasts {
+        if let Some(toast) = self.app_context.workspace_config.notifier.notifications {
             debug!(
                 "Subscribing terminal notifications ({} enabled)",
-                color::property("notifier.terminalToasts"),
+                color::property("notifier.notifications"),
             );
 
             self.emitter

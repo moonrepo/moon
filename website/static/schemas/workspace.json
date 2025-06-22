@@ -513,13 +513,13 @@
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
-        "terminalToasts": {
-          "title": "terminalToasts",
-          "description": "Display a toast in the terminal for certain events.",
+        "notifications": {
+          "title": "notifications",
+          "description": "Display an OS notification for certain pipeline events.",
           "default": "never",
           "anyOf": [
             {
-              "$ref": "#/definitions/NotifierTerminalToasts"
+              "$ref": "#/definitions/NotifierEventType"
             },
             {
               "type": "null"
@@ -547,8 +547,8 @@
       },
       "additionalProperties": false
     },
-    "NotifierTerminalToasts": {
-      "description": "The types of events in which to notify the terminal.",
+    "NotifierEventType": {
+      "description": "The types of events in which to send notifications.",
       "type": "string",
       "enum": [
         "never",

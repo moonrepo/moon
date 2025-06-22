@@ -2,45 +2,54 @@
 
 use moon_common::is_ci;
 use notify_rust::{Notification, Timeout};
-use std::env;
 use std::sync::OnceLock;
 use std::time::Duration;
 use tracing::{debug, trace};
 
-static APP_NAME: OnceLock<Option<String>> = OnceLock::new();
-
 #[cfg(target_os = "macos")]
-fn configure_application() -> Option<&'static str> {
+fn configure_application(_notification: &mut Notification) {
     use notify_rust::{get_bundle_identifier_or_default, set_application};
+    use std::env;
 
-    APP_NAME
-        .get_or_init(|| {
-            // Try and detect the current terminal identifier so that
-            // notifications come from it, and we can use its OS settings
-            let id = env::var("__CFBundleIdentifier").unwrap_or_else(|_| {
-                get_bundle_identifier_or_default(
-                    env::var("TERM_PROGRAM")
-                        .unwrap_or_else(|_| "moon".into())
-                        .as_str(),
-                )
-            });
+    static APP_NAME: OnceLock<()> = OnceLock::new();
 
-            // Finder is already the default
-            if id != "com.apple.Finder" {
-                if let Err(error) = set_application(&id) {
-                    debug!("Failed to set terminal source application: {error}");
-                }
+    APP_NAME.get_or_init(|| {
+        // Try and detect the current terminal identifier so that
+        // notifications come from it, and we can then use its OS settings
+        let id = env::var("__CFBundleIdentifier").unwrap_or_else(|_| {
+            get_bundle_identifier_or_default(
+                env::var("TERM_PROGRAM")
+                    .unwrap_or_else(|_| "moon".into())
+                    .as_str(),
+            )
+        });
+
+        // Finder is already the default
+        if id != "com.apple.Finder" {
+            if let Err(error) = set_application(&id) {
+                debug!("Failed to set terminal source application: {error}");
             }
-
-            // App name is not used by macOS
-            None
-        })
-        .as_deref()
+        }
+    })
 }
 
-#[cfg(not(target_os = "macos"))]
-fn configure_application() -> Option<&'static str> {
-    None
+#[cfg(target_os = "linux")]
+fn configure_application(_notification: &mut Notification) {}
+
+#[cfg(windows)]
+fn configure_application(notification: &mut Notification) {
+    use std::env;
+    use system_env::find_command_on_path;
+
+    static APP_ID: OnceLock<bool> = OnceLock::new();
+
+    // Try and use Windows Terminal as the app ID,
+    // otherwise this will fallback to legacy PowerShell
+    if *APP_ID.get_or_init(|| find_command_on_path("wt").is_some())
+        || env::var("WT_SESSION").is_ok()
+    {
+        notification.app_id("Microsoft.WindowsTerminal_8wekyb3d8bbwe!App");
+    }
 }
 
 // https://docs.rs/notify-rust/latest/notify_rust/#platform-differences
@@ -49,17 +58,19 @@ pub fn notify_terminal(title: impl AsRef<str>, description: impl AsRef<str>) -> 
         return Ok(());
     }
 
-    let name = configure_application();
+    let mut notification = Notification::new();
+
+    notification
+        .appname("moon")
+        .summary(title.as_ref())
+        .body(description.as_ref())
+        .timeout(Timeout::from(Duration::from_secs(10)));
+
+    configure_application(&mut notification);
 
     trace!("Sending terminal notification");
 
-    match Notification::new()
-        .appname(name.unwrap_or("moon"))
-        .summary(title.as_ref())
-        .body(description.as_ref())
-        .timeout(Timeout::from(Duration::from_secs(10)))
-        .show()
-    {
+    match notification.show() {
         Ok(handle) => {
             trace!("Sent terminal notification");
 

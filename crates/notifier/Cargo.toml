@@ -13,6 +13,7 @@ notify-rust = { version = "4.11.7", default-features = false, features = ["z"] }
 reqwest = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }
+system_env = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }

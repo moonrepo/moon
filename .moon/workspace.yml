@@ -37,6 +37,9 @@ docker:
       - '*.config.js'
       - '*.json'
 
+notifier:
+  terminalToasts: 'task-failure'
+
 unstable_remote:
   # DEPOT
   host: 'grpcs://cache.depot.dev'

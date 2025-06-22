@@ -4,6 +4,7 @@ use crate::job_context::JobContext;
 use crate::job_dispatcher::JobDispatcher;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
+use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
 use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
@@ -422,6 +423,17 @@ impl ActionPipeline {
                     .subscribe(WebhooksSubscriber::new(webhook_url, require_acknowledge))
                     .await;
             }
+        }
+
+        if let Some(toast) = self.app_context.workspace_config.notifier.terminal_toasts {
+            debug!(
+                "Subscribing terminal notifications ({} enabled)",
+                color::property("notifier.terminalToasts"),
+            );
+
+            self.emitter
+                .subscribe(NotificationsSubscriber::new(toast))
+                .await;
         }
 
         if self.app_context.workspace_config.pipeline.auto_clean_cache {

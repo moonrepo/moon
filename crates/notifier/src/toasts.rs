@@ -1,5 +1,6 @@
 #![allow(unused_variables)]
 
+use moon_common::is_ci;
 use notify_rust::{Notification, Timeout};
 use std::sync::OnceLock;
 use std::time::Duration;
@@ -14,7 +15,7 @@ fn configure_application() {
     APP_NAME.get_or_init(|| {
         let id = get_bundle_identifier_or_default("moon");
 
-        // Finder is the default
+        // Finder is already the default
         if id != "com.apple.Finder" {
             if let Err(error) = set_application(&id) {
                 debug!("Failed to set terminal source application: {error}");
@@ -28,6 +29,10 @@ fn configure_application() {}
 
 // https://docs.rs/notify-rust/latest/notify_rust/#platform-differences
 pub fn notify_terminal(title: impl AsRef<str>, description: impl AsRef<str>) -> miette::Result<()> {
+    if is_ci() {
+        return Ok(());
+    }
+
     configure_application();
 
     trace!("Sending terminal notification");

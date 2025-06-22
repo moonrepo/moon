@@ -340,7 +340,6 @@ impl WorkspaceMocker {
     pub async fn mock_action_pipeline(&self) -> ActionPipeline {
         ActionPipeline::new(
             self.mock_app_context().into(),
-            self.mock_toolchain_registry().into(),
             self.mock_workspace_graph().await.into(),
         )
     }

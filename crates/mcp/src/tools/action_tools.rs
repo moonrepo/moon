@@ -19,9 +19,8 @@ async fn run_pipeline(
     action_graph_builder: ActionGraphBuilder<'_>,
 ) -> miette::Result<Vec<Action>> {
     let (action_context, action_graph) = action_graph_builder.build();
-    let toolchain_registry = Arc::clone(&app_context.toolchain_registry);
 
-    let mut pipeline = ActionPipeline::new(app_context, toolchain_registry, workspace_graph);
+    let mut pipeline = ActionPipeline::new(app_context, workspace_graph);
     pipeline.bail = true;
     pipeline.quiet = true;
 

@@ -1,7 +1,6 @@
 #![allow(clippy::disallowed_types)]
 
 use super::map_miette_error;
-use moon_common::cacheable;
 use moon_project::Project;
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::{
@@ -54,14 +53,14 @@ impl GetProjectTool {
     }
 }
 
-cacheable!(
-    pub struct GetProjectResponse {
-        pub project: Project,
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetProjectResponse {
+    pub project: Project,
 
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub project_dependencies: Vec<Project>,
-    }
-);
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub project_dependencies: Vec<Project>,
+}
 
 #[mcp_tool(name = "get_projects", description = "Get all moon projects.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
@@ -101,8 +100,7 @@ impl GetProjectsTool {
     }
 }
 
-cacheable!(
-    pub struct GetProjectsResponse {
-        pub projects: Vec<Arc<Project>>,
-    }
-);
+#[derive(Serialize)]
+pub struct GetProjectsResponse {
+    pub projects: Vec<Arc<Project>>,
+}

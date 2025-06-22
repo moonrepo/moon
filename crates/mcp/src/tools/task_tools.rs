@@ -1,7 +1,6 @@
 #![allow(clippy::disallowed_types)]
 
 use super::map_miette_error;
-use moon_common::cacheable;
 use moon_task::{Target, Task};
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::{
@@ -52,14 +51,14 @@ impl GetTaskTool {
     }
 }
 
-cacheable!(
-    pub struct GetTaskResponse {
-        pub task: Arc<Task>,
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetTaskResponse {
+    pub task: Arc<Task>,
 
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub task_dependencies: Vec<Arc<Task>>,
-    }
-);
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub task_dependencies: Vec<Arc<Task>>,
+}
 
 #[mcp_tool(name = "get_tasks", description = "Get all moon tasks.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
@@ -91,8 +90,7 @@ impl GetTasksTool {
     }
 }
 
-cacheable!(
-    pub struct GetTasksResponse {
-        pub tasks: Vec<Arc<Task>>,
-    }
-);
+#[derive(Serialize)]
+pub struct GetTasksResponse {
+    pub tasks: Vec<Arc<Task>>,
+}

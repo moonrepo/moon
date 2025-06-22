@@ -4309,6 +4309,9 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "miette 7.6.0",
+ "moon_action",
+ "moon_action_graph",
+ "moon_action_pipeline",
  "moon_app_context",
  "moon_common",
  "moon_project",

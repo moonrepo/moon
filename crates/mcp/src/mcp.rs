@@ -1,3 +1,4 @@
+use crate::tools::action_tools::SyncWorkspaceTool;
 use crate::tools::project_tools::{GetProjectTool, GetProjectsTool};
 use crate::tools::task_tools::{GetTaskTool, GetTasksTool};
 use crate::tools::vcs_tools::GetTouchedFiles;
@@ -48,6 +49,11 @@ impl ServerHandler for MoonMcpHandler {
             MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTasksTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTouchedFiles(inner) => inner.call_tool(&self.app_context).await,
+            MoonTools::SyncWorkspaceTool(inner) => {
+                inner
+                    .call_tool(&self.app_context, &self.workspace_graph)
+                    .await
+            }
         }
     }
 }
@@ -95,6 +101,7 @@ tool_box!(
         GetProjectsTool,
         GetTaskTool,
         GetTasksTool,
-        GetTouchedFiles
+        GetTouchedFiles,
+        SyncWorkspaceTool
     ]
 );

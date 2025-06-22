@@ -2,8 +2,8 @@
 
 use super::map_miette_error;
 use moon_app_context::AppContext;
+use moon_common::is_ci;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{cacheable, is_ci};
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
     schema::{CallToolResult, schema_utils::CallToolError},
@@ -60,8 +60,7 @@ impl GetTouchedFiles {
     }
 }
 
-cacheable!(
-    pub struct GetTouchedFilesResponse {
-        pub files: Vec<WorkspaceRelativePathBuf>,
-    }
-);
+#[derive(Serialize)]
+pub struct GetTouchedFilesResponse {
+    pub files: Vec<WorkspaceRelativePathBuf>,
+}

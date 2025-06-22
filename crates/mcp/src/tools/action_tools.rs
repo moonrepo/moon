@@ -23,13 +23,19 @@ async fn run_pipeline(
 
     let mut pipeline = ActionPipeline::new(app_context, toolchain_registry, workspace_graph);
     pipeline.bail = true;
-    pipeline.summarize = true;
+    pipeline.quiet = true;
 
     let results = pipeline
         .run_with_context(action_graph, action_context)
         .await?;
 
     Ok(results)
+}
+
+#[derive(Serialize)]
+pub struct SyncResponse {
+    pub actions: Vec<Action>,
+    pub synced: bool,
 }
 
 #[mcp_tool(name = "sync_workspace", description = "Sync the moon workspace.")]
@@ -66,7 +72,7 @@ impl SyncWorkspaceTool {
         .map_err(map_miette_error)?;
 
         Ok(CallToolResult::text_content(
-            serde_json::to_string_pretty(&SyncWorkspaceToolResponse {
+            serde_json::to_string_pretty(&SyncResponse {
                 actions,
                 synced: true,
             })
@@ -76,8 +82,56 @@ impl SyncWorkspaceTool {
     }
 }
 
-#[derive(Serialize)]
-pub struct SyncWorkspaceToolResponse {
-    pub actions: Vec<Action>,
-    pub synced: bool,
+#[mcp_tool(
+    name = "sync_projects",
+    description = "Sync one or many moon projects by `id`."
+)]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+pub struct SyncProjectsTool {
+    pub ids: Vec<String>,
+}
+
+impl SyncProjectsTool {
+    pub async fn call_tool(
+        &self,
+        app_context: &Arc<AppContext>,
+        workspace_graph: &Arc<WorkspaceGraph>,
+    ) -> Result<CallToolResult, CallToolError> {
+        let mut action_graph = ActionGraphBuilder::new(
+            Arc::clone(app_context),
+            Arc::clone(workspace_graph),
+            ActionGraphBuilderOptions {
+                // Called by sync_project
+                sync_workspace: false,
+                ..Default::default()
+            },
+        )
+        .map_err(map_miette_error)?;
+
+        for id in &self.ids {
+            let project = workspace_graph.get_project(id).map_err(map_miette_error)?;
+
+            action_graph
+                .sync_project(&project)
+                .await
+                .map_err(map_miette_error)?;
+        }
+
+        let actions = run_pipeline(
+            Arc::clone(app_context),
+            Arc::clone(workspace_graph),
+            action_graph,
+        )
+        .await
+        .map_err(map_miette_error)?;
+
+        Ok(CallToolResult::text_content(
+            serde_json::to_string_pretty(&SyncResponse {
+                actions,
+                synced: true,
+            })
+            .map_err(CallToolError::new)?,
+            None,
+        ))
+    }
 }

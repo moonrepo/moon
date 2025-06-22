@@ -8,6 +8,7 @@
   `notifier.terminalNotifications` setting in `.moon/workspace.yml`.
 - Added new MCP tools.
   - `get_touched_files` - Gets touched files between base and head.
+  - `sync_projects` - Runs the `SyncProject` action for one or many projects.
   - `sync_workspace` - Runs the `SyncWorkspace` action.
 
 #### ⚙️ Internal

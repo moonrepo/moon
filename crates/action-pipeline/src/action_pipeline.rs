@@ -29,6 +29,7 @@ use tracing::{debug, instrument, trace, warn};
 pub struct ActionPipeline {
     pub bail: bool,
     pub concurrency: usize,
+    pub quiet: bool,
     pub report_name: String,
     pub summarize: bool,
 
@@ -61,6 +62,7 @@ impl ActionPipeline {
             concurrency: num_cpus::get(),
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
+            quiet: false,
             report_name: "runReport.json".into(),
             status: ActionPipelineStatus::Pending,
             summarize: false,
@@ -385,12 +387,14 @@ impl ActionPipeline {
     async fn setup_subscribers(&mut self) {
         debug!("Registering event subscribers");
 
-        self.emitter
-            .subscribe(ConsoleSubscriber::new(
-                Arc::clone(&self.app_context.console),
-                self.summarize,
-            ))
-            .await;
+        if !self.quiet {
+            self.emitter
+                .subscribe(ConsoleSubscriber::new(
+                    Arc::clone(&self.app_context.console),
+                    self.summarize,
+                ))
+                .await;
+        }
 
         self.emitter.subscribe(RemoteSubscriber).await;
 

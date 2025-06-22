@@ -918,7 +918,7 @@ extensions:
             assert_eq!(
                 config.notifier,
                 NotifierConfig {
-                    notifications: None,
+                    terminal_notifications: None,
                     webhook_url: Some("http://localhost".into()),
                     webhook_acknowledge: false
                 }

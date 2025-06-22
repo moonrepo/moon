@@ -28,7 +28,7 @@ config_struct!(
     #[derive(Config)]
     pub struct NotifierConfig {
         /// Display an OS notification for certain pipeline events.
-        pub notifications: Option<NotifierEventType>,
+        pub terminal_notifications: Option<NotifierEventType>,
 
         /// A secure URL in which to send webhooks to.
         #[setting(validate = validate::url_secure)]

@@ -509,9 +509,9 @@ hasher:
 
 Configures how moon notifies and interacts with a developer or an external system.
 
-### `notifications`<VersionLabel version="1.38.0" />
+### `terminalNotifications`<VersionLabel version="1.38.0" />
 
-<HeadingApiLink to="/api/types/interface/NotifierConfig#notifications" />
+<HeadingApiLink to="/api/types/interface/NotifierConfig#terminalNotifications" />
 
 When defined, will display OS notifications for action pipeline events when running commands from a
 terminal. Supports the following values:
@@ -523,7 +523,7 @@ terminal. Supports the following values:
 
 ```yaml title=".moon/workspace.yml" {2}
 notifier:
-  notifications: 'always'
+  terminalNotifications: 'always'
 ```
 
 ### `webhookUrl`

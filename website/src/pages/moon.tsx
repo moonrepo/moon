@@ -105,7 +105,7 @@ const notificationFeatures: Feature[] = [
 		icon: 'material-symbols:deployed-code-alert',
 		description:
 			'Receives notifications in your chosen terminal when builds are successful... or are not.',
-		status: 'coming-soon',
+		status: 'experimental',
 	},
 	{
 		title: 'Git hooks',

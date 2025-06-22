@@ -1,4 +1,6 @@
-use crate::tools::*;
+use crate::tools::project_tools::{GetProjectTool, GetProjectsTool};
+use crate::tools::task_tools::{GetTaskTool, GetTasksTool};
+use crate::tools::vcs_tools::GetTouchedFiles;
 use async_trait::async_trait;
 use moon_app_context::AppContext;
 use moon_workspace_graph::WorkspaceGraph;
@@ -9,11 +11,10 @@ use rust_mcp_sdk::schema::{
     ListToolsRequest, ListToolsResult, RpcError, ServerCapabilities, ServerCapabilitiesTools,
     schema_utils::CallToolError,
 };
-use rust_mcp_sdk::{McpServer, StdioTransport, TransportOptions};
+use rust_mcp_sdk::{McpServer, StdioTransport, TransportOptions, tool_box};
 use std::env;
 use std::sync::Arc;
 
-#[allow(dead_code)]
 pub struct MoonMcpHandler {
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -86,3 +87,14 @@ pub async fn run_mcp(
     // STEP 5: Start the server
     server.start().await
 }
+
+tool_box!(
+    MoonTools,
+    [
+        GetProjectTool,
+        GetProjectsTool,
+        GetTaskTool,
+        GetTasksTool,
+        GetTouchedFiles
+    ]
+);

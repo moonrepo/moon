@@ -1,6 +1,8 @@
 #![allow(clippy::disallowed_types)]
 
-use moon_common::cacheable;
+use moon_app_context::AppContext;
+use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{cacheable, is_ci};
 use moon_project::Project;
 use moon_task::{Target, Task};
 use moon_workspace_graph::WorkspaceGraph;
@@ -35,7 +37,7 @@ fn map_miette_error(report: miette::Report) -> CallToolError {
 
 #[mcp_tool(
     name = "get_project",
-    description = "Get a project and its tasks by `id`."
+    description = "Get a moon project and its tasks by `id`."
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetProjectTool {
@@ -85,7 +87,7 @@ cacheable!(
     }
 );
 
-#[mcp_tool(name = "get_projects", description = "Get all projects.")]
+#[mcp_tool(name = "get_projects", description = "Get all moon projects.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetProjectsTool {
     #[serde(default)]
@@ -129,7 +131,7 @@ cacheable!(
     }
 );
 
-#[mcp_tool(name = "get_task", description = "Get a task by `target`.")]
+#[mcp_tool(name = "get_task", description = "Get a moon task by `target`.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetTaskTool {
     target: String,
@@ -179,7 +181,7 @@ cacheable!(
     }
 );
 
-#[mcp_tool(name = "get_tasks", description = "Get all tasks.")]
+#[mcp_tool(name = "get_tasks", description = "Get all moon tasks.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetTasksTool {
     #[serde(default)]
@@ -215,7 +217,69 @@ cacheable!(
     }
 );
 
+#[mcp_tool(
+    name = "get_touched_files",
+    description = "Get touched files between the current head and base."
+)]
+#[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
+#[serde(default)]
+pub struct GetTouchedFiles {
+    base: Option<String>,
+    head: Option<String>,
+    remote: Option<bool>,
+}
+
+impl GetTouchedFiles {
+    pub async fn call_tool(
+        &self,
+        app_context: &AppContext,
+    ) -> Result<CallToolResult, CallToolError> {
+        let vcs = &app_context.vcs;
+        let default_branch = vcs.get_default_branch().await.map_err(map_miette_error)?;
+        let current_branch = vcs.get_local_branch().await.map_err(map_miette_error)?;
+
+        let base = self.base.as_deref().unwrap_or(&default_branch);
+        let head = self.head.as_deref().unwrap_or("HEAD");
+        let remote = self.remote.unwrap_or(is_ci());
+
+        let check_against_previous =
+            self.base.is_none() && self.head.is_none() && vcs.is_default_branch(&current_branch);
+
+        let touched_files = if !remote {
+            vcs.get_touched_files().await.map_err(map_miette_error)?
+        } else if check_against_previous {
+            vcs.get_touched_files_against_previous_revision(&default_branch)
+                .await
+                .map_err(map_miette_error)?
+        } else {
+            vcs.get_touched_files_between_revisions(base, head)
+                .await
+                .map_err(map_miette_error)?
+        };
+
+        Ok(CallToolResult::text_content(
+            serde_json::to_string_pretty(&GetTouchedFilesResponse {
+                files: touched_files.all().into_iter().cloned().collect(),
+            })
+            .map_err(CallToolError::new)?,
+            None,
+        ))
+    }
+}
+
+cacheable!(
+    pub struct GetTouchedFilesResponse {
+        files: Vec<WorkspaceRelativePathBuf>,
+    }
+);
+
 tool_box!(
     MoonTools,
-    [GetProjectTool, GetProjectsTool, GetTaskTool, GetTasksTool]
+    [
+        GetProjectTool,
+        GetProjectsTool,
+        GetTaskTool,
+        GetTasksTool,
+        GetTouchedFiles
+    ]
 );

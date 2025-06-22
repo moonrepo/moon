@@ -6,6 +6,7 @@
 
 - Added support for terminal desktop notifications. Can be enabled with the new
   `notifier.terminalNotifications` setting in `.moon/workspace.yml`.
+- Added a new `get_touched_files` MCP tool.
 
 #### ⚙️ Internal
 

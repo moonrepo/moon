@@ -46,6 +46,7 @@ impl ServerHandler for MoonMcpHandler {
             MoonTools::GetProjectsTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTasksTool(inner) => inner.call_tool(&self.workspace_graph),
+            MoonTools::GetTouchedFiles(inner) => inner.call_tool(&self.app_context).await,
         }
     }
 }

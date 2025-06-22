@@ -1,4 +1,7 @@
-use crate::tools::*;
+use crate::tools::action_tools::{SyncProjectsTool, SyncWorkspaceTool};
+use crate::tools::project_tools::{GetProjectTool, GetProjectsTool};
+use crate::tools::task_tools::{GetTaskTool, GetTasksTool};
+use crate::tools::vcs_tools::GetTouchedFiles;
 use async_trait::async_trait;
 use moon_app_context::AppContext;
 use moon_workspace_graph::WorkspaceGraph;
@@ -9,11 +12,10 @@ use rust_mcp_sdk::schema::{
     ListToolsRequest, ListToolsResult, RpcError, ServerCapabilities, ServerCapabilitiesTools,
     schema_utils::CallToolError,
 };
-use rust_mcp_sdk::{McpServer, StdioTransport, TransportOptions};
+use rust_mcp_sdk::{McpServer, StdioTransport, TransportOptions, tool_box};
 use std::env;
 use std::sync::Arc;
 
-#[allow(dead_code)]
 pub struct MoonMcpHandler {
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -46,6 +48,17 @@ impl ServerHandler for MoonMcpHandler {
             MoonTools::GetProjectsTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTasksTool(inner) => inner.call_tool(&self.workspace_graph),
+            MoonTools::GetTouchedFiles(inner) => inner.call_tool(&self.app_context).await,
+            MoonTools::SyncProjectsTool(inner) => {
+                inner
+                    .call_tool(&self.app_context, &self.workspace_graph)
+                    .await
+            }
+            MoonTools::SyncWorkspaceTool(inner) => {
+                inner
+                    .call_tool(&self.app_context, &self.workspace_graph)
+                    .await
+            }
         }
     }
 }
@@ -85,3 +98,16 @@ pub async fn run_mcp(
     // STEP 5: Start the server
     server.start().await
 }
+
+tool_box!(
+    MoonTools,
+    [
+        GetProjectTool,
+        GetProjectsTool,
+        GetTaskTool,
+        GetTasksTool,
+        GetTouchedFiles,
+        SyncProjectsTool,
+        SyncWorkspaceTool
+    ]
+);

@@ -15,7 +15,6 @@ use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
 use moon_process::{ProcessRegistry, SignalType};
-use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -29,6 +28,7 @@ use tracing::{debug, instrument, trace, warn};
 pub struct ActionPipeline {
     pub bail: bool,
     pub concurrency: usize,
+    pub quiet: bool,
     pub report_name: String,
     pub summarize: bool,
 
@@ -41,16 +41,11 @@ pub struct ActionPipeline {
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
     emitter: Arc<EventEmitter>,
-    toolchain_registry: Arc<ToolchainRegistry>,
     workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl ActionPipeline {
-    pub fn new(
-        app_context: Arc<AppContext>,
-        toolchain_registry: Arc<ToolchainRegistry>,
-        workspace_graph: Arc<WorkspaceGraph>,
-    ) -> Self {
+    pub fn new(app_context: Arc<AppContext>, workspace_graph: Arc<WorkspaceGraph>) -> Self {
         debug!("Creating pipeline to run actions");
 
         Self {
@@ -61,10 +56,10 @@ impl ActionPipeline {
             concurrency: num_cpus::get(),
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
+            quiet: false,
             report_name: "runReport.json".into(),
             status: ActionPipelineStatus::Pending,
             summarize: false,
-            toolchain_registry,
             workspace_graph,
         }
     }
@@ -153,7 +148,7 @@ impl ActionPipeline {
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
-            toolchain_registry: Arc::clone(&self.toolchain_registry),
+            toolchain_registry: Arc::clone(&self.app_context.toolchain_registry),
             workspace_graph: self.workspace_graph.clone(),
         };
 
@@ -385,12 +380,14 @@ impl ActionPipeline {
     async fn setup_subscribers(&mut self) {
         debug!("Registering event subscribers");
 
-        self.emitter
-            .subscribe(ConsoleSubscriber::new(
-                Arc::clone(&self.app_context.console),
-                self.summarize,
-            ))
-            .await;
+        if !self.quiet {
+            self.emitter
+                .subscribe(ConsoleSubscriber::new(
+                    Arc::clone(&self.app_context.console),
+                    self.summarize,
+                ))
+                .await;
+        }
 
         self.emitter.subscribe(RemoteSubscriber).await;
 

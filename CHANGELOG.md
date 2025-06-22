@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added support for terminal desktop notifications. Can be enabled with the new
+  `notifier.terminalNotifications` setting in `.moon/workspace.yml`.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.50.0](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).

@@ -9,6 +9,7 @@ moon_common = { path = "../common" }
 moon_time = { path = "../time" }
 ci_env = { workspace = true }
 miette = { workspace = true }
+notify-rust = { version = "4.11.7", default-features = false, features = ["z"] }
 reqwest = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }

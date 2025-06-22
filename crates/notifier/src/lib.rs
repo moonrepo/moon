@@ -1,5 +1,5 @@
-mod toasts;
+mod notifications;
 mod webhooks;
 
-pub use toasts::*;
+pub use notifications::*;
 pub use webhooks::*;

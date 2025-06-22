@@ -30,7 +30,7 @@ fn configure_application(_notification: &mut Notification) {
                 debug!("Failed to set terminal source application: {error}");
             }
         }
-    })
+    });
 }
 
 #[cfg(target_os = "linux")]

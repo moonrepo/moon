@@ -205,8 +205,23 @@ export interface HasherConfig {
 	warnOnMissingInputs?: boolean;
 }
 
+/** The types of events in which to notify the terminal. */
+export type NotifierTerminalToasts = 'never' | 'always' | 'failure' | 'success' | 'task-failure';
+
 /** Configures how and where notifications are sent. */
 export interface NotifierConfig {
+	/**
+	 * Display a toast in the terminal for certain events.
+	 *
+	 * @default 'never'
+	 */
+	terminalToasts: NotifierTerminalToasts | null;
+	/**
+	 * Whether webhook requests require acknowledgment (2xx response).
+	 *
+	 * @default false
+	 */
+	webhookAcknowledge?: boolean;
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl: string | null;
 }
@@ -715,6 +730,18 @@ export interface PartialHasherConfig {
 
 /** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
+	/**
+	 * Display a toast in the terminal for certain events.
+	 *
+	 * @default 'never'
+	 */
+	terminalToasts?: NotifierTerminalToasts | null;
+	/**
+	 * Whether webhook requests require acknowledgment (2xx response).
+	 *
+	 * @default false
+	 */
+	webhookAcknowledge?: boolean | null;
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl?: string | null;
 }

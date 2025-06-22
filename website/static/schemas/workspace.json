@@ -513,6 +513,25 @@
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
+        "terminalToasts": {
+          "title": "terminalToasts",
+          "description": "Display a toast in the terminal for certain events.",
+          "default": "never",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NotifierTerminalToasts"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "webhookAcknowledge": {
+          "title": "webhookAcknowledge",
+          "description": "Whether webhook requests require acknowledgment (2xx response).",
+          "default": false,
+          "type": "boolean"
+        },
         "webhookUrl": {
           "title": "webhookUrl",
           "description": "A secure URL in which to send webhooks to.",
@@ -527,6 +546,17 @@
         }
       },
       "additionalProperties": false
+    },
+    "NotifierTerminalToasts": {
+      "description": "The types of events in which to notify the terminal.",
+      "type": "string",
+      "enum": [
+        "never",
+        "always",
+        "failure",
+        "success",
+        "task-failure"
+      ]
     },
     "PipelineActionSwitch": {
       "description": "Toggles the state of actions within the pipeline.",

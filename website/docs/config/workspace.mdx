@@ -509,6 +509,23 @@ hasher:
 
 Configures how moon notifies and interacts with a developer or an external system.
 
+### `terminalNotifications`<VersionLabel version="1.38.0" />
+
+<HeadingApiLink to="/api/types/interface/NotifierConfig#terminalNotifications" />
+
+When defined, will display OS notifications for action pipeline events when running commands from a
+terminal. Supports the following values:
+
+- `always` - Display on pipeline success and failure.
+- `failure` - Display on pipeline failure only.
+- `success` - Display on pipeline success only.
+- `task-failure` - Display for each task failure.
+
+```yaml title=".moon/workspace.yml" {2}
+notifier:
+  terminalNotifications: 'always'
+```
+
 ### `webhookUrl`
 
 <HeadingApiLink to="/api/types/interface/NotifierConfig#webhookUrl" />
@@ -530,7 +547,8 @@ Defaults to `false`.
 
 :::warning
 
-Activating this setting will slow down your pipeline, because every webhook request will be evaluated!
+Activating this setting will slow down your pipeline, because every webhook request will be
+evaluated!
 
 :::
 
@@ -539,7 +557,6 @@ notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
   webhookAcknowledge: true
 ```
-
 
 ## `pipeline`
 

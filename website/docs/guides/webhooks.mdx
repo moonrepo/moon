@@ -24,7 +24,8 @@ Every webhook event is posted with the following request body, known as a payloa
 - `createdAt` (`string`) - When the event was created, as a UTC timestamp in ISO 8601 (RFC 3339)
   format.
 - `uuid` (`string`) - A unique identifier for all webhooks in the current run batch.
-- `trace` (`string`) - A unique identifier for all webhooks in the overall run batch. Can be defined via `MOON_TRACE_ID` environment variable.
+- `trace` (`string`) - A unique identifier for all webhooks in the overall run batch. Can be defined
+  via `MOON_TRACE_ID` environment variable.
 
 ```json
 {

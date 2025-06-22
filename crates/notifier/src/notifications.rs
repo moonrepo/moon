@@ -1,5 +1,3 @@
-#![allow(unused_variables)]
-
 use moon_common::is_ci;
 use notify_rust::{Notification, Timeout};
 use std::sync::OnceLock;
@@ -45,8 +43,8 @@ fn configure_application(notification: &mut Notification) {
 
     // Try and use Windows Terminal as the app ID,
     // otherwise this will fallback to legacy PowerShell
-    if *APP_ID.get_or_init(|| find_command_on_path("wt").is_some())
-        || env::var("WT_SESSION").is_ok()
+    if env::var("WT_SESSION").is_ok()
+        || *APP_ID.get_or_init(|| find_command_on_path("wt").is_some())
     {
         notification.app_id("Microsoft.WindowsTerminal_8wekyb3d8bbwe!App");
     }
@@ -71,13 +69,8 @@ pub fn notify_terminal(title: impl AsRef<str>, description: impl AsRef<str>) -> 
     trace!("Sending terminal notification");
 
     match notification.show() {
-        Ok(handle) => {
+        Ok(_) => {
             trace!("Sent terminal notification");
-
-            #[cfg(all(unix, not(target_os = "macos")))]
-            {
-                handle.on_close(|reason| trace!("Closed terminal notification: {:?}", reason));
-            }
         }
         Err(error) => {
             debug!("Failed to send terminal notification: {error}");

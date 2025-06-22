@@ -513,8 +513,8 @@
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
-        "notifications": {
-          "title": "notifications",
+        "terminalNotifications": {
+          "title": "terminalNotifications",
           "description": "Display an OS notification for certain pipeline events.",
           "default": "never",
           "anyOf": [

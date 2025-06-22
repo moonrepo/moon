@@ -215,7 +215,7 @@ export interface NotifierConfig {
 	 *
 	 * @default 'never'
 	 */
-	notifications: NotifierEventType | null;
+	terminalNotifications: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 *
@@ -735,7 +735,7 @@ export interface PartialNotifierConfig {
 	 *
 	 * @default 'never'
 	 */
-	notifications?: NotifierEventType | null;
+	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 *

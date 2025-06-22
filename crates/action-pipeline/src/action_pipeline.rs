@@ -433,7 +433,7 @@ impl ActionPipeline {
         {
             debug!(
                 "Subscribing terminal notifications ({} enabled)",
-                color::property("notifier.notifications"),
+                color::property("notifier.terminalNotifications"),
             );
 
             self.emitter

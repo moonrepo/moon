@@ -1,6 +1,5 @@
 use moon_common::is_ci;
 use notify_rust::{Notification, Timeout};
-use std::sync::OnceLock;
 use std::time::Duration;
 use tracing::{debug, trace};
 
@@ -8,6 +7,7 @@ use tracing::{debug, trace};
 fn configure_application(_notification: &mut Notification) {
     use notify_rust::{get_bundle_identifier_or_default, set_application};
     use std::env;
+    use std::sync::OnceLock;
 
     static APP_NAME: OnceLock<()> = OnceLock::new();
 
@@ -37,6 +37,7 @@ fn configure_application(_notification: &mut Notification) {}
 #[cfg(windows)]
 fn configure_application(notification: &mut Notification) {
     use std::env;
+    use std::sync::OnceLock;
     use system_env::find_command_on_path;
 
     static APP_ID: OnceLock<bool> = OnceLock::new();

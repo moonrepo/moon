@@ -285,11 +285,17 @@ pub struct Cli {
         global = true,
         env = "MOON_CACHE",
         help = "Mode for cache operations",
+        help_heading = "Global options",
         default_value_t
     )]
     pub cache: CacheMode,
 
-    #[arg(long, global = true, help = "Force colored output")]
+    #[arg(
+        long,
+        global = true,
+        help = "Force colored output",
+        help_heading = "Global options"
+    )]
     pub color: bool,
 
     #[arg(
@@ -297,7 +303,8 @@ pub struct Cli {
         short = 'c',
         global = true,
         env = "MOON_CONCURRENCY",
-        help = "Maximum number of threads to utilize"
+        help = "Maximum number of threads to utilize",
+        help_heading = "Global options"
     )]
     pub concurrency: Option<usize>,
 
@@ -305,7 +312,8 @@ pub struct Cli {
         long,
         global = true,
         env = "MOON_DUMP",
-        help = "Dump a trace profile to the working directory"
+        help = "Dump a trace profile to the working directory",
+        help_heading = "Global options"
     )]
     pub dump: bool,
 
@@ -315,6 +323,7 @@ pub struct Cli {
         global = true,
         env = "MOON_LOG",
         help = "Lowest log level to output",
+        help_heading = "Global options",
         default_value_t
     )]
     pub log: LogLevel,
@@ -323,7 +332,8 @@ pub struct Cli {
         long,
         global = true,
         env = "MOON_LOG_FILE",
-        help = "Path to a file to write logs to"
+        help = "Path to a file to write logs to",
+        help_heading = "Global options"
     )]
     pub log_file: Option<PathBuf>,
 
@@ -332,7 +342,8 @@ pub struct Cli {
         short = 'q',
         global = true,
         env = "MOON_QUIET",
-        help = "Hide all non-important terminal output"
+        help = "Hide all non-important terminal output",
+        help_heading = "Global options"
     )]
     pub quiet: bool,
 
@@ -342,6 +353,7 @@ pub struct Cli {
         global = true,
         env = "MOON_THEME",
         help = "Terminal theme to print with",
+        help_heading = "Global options",
         default_value_t
     )]
     pub theme: AppTheme,

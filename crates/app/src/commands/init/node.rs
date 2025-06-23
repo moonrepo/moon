@@ -83,7 +83,7 @@ async fn detect_package_manager(
     if pm_type.is_empty() {
         let pm = render_prompt(
             console,
-            options,
+            options.yes,
             &SettingPrompt::new(
                 "packageManager",
                 "Package manager?",
@@ -100,14 +100,15 @@ async fn detect_package_manager(
         }
     }
 
-    let pm_version = render_version_prompt(console, options, &pm_type, || {
-        if pm_version.is_empty() {
-            Ok(None)
-        } else {
-            Ok(UnresolvedVersionSpec::parse(&pm_version).ok())
-        }
-    })
-    .await?;
+    let pm_version =
+        render_version_prompt(console, options.yes || options.minimal, &pm_type, || {
+            if pm_version.is_empty() {
+                Ok(None)
+            } else {
+                Ok(UnresolvedVersionSpec::parse(&pm_version).ok())
+            }
+        })
+        .await?;
 
     Ok((pm_type, pm_version))
 }
@@ -151,13 +152,16 @@ pub async fn init_node(console: &Console, options: &InitOptions) -> miette::Resu
     }
 
     let node_version =
-        render_version_prompt(console, options, "Node", || detect_node_version(options)).await?;
+        render_version_prompt(console, options.yes || options.minimal, "Node", || {
+            detect_node_version(options)
+        })
+        .await?;
     let node_version_manager = detect_node_version_manager(options)?;
     let package_manager = detect_package_manager(console, options).await?;
 
     let infer_tasks = render_prompt(
         console,
-        options,
+        options.yes,
         &SettingPrompt::new(
             "inferTasks",
             "Infer <file>package.json</file> scripts as moon tasks? <muted>(not recommended)</muted>",
@@ -168,7 +172,7 @@ pub async fn init_node(console: &Console, options: &InitOptions) -> miette::Resu
 
     let sync_dependencies = render_prompt(
         console,
-        options,
+        options.yes,
         &SettingPrompt::new(
             "syncDependencies",
             "Sync project relationships as <file>package.json</file> <property>dependencies</property>?",
@@ -179,7 +183,7 @@ pub async fn init_node(console: &Console, options: &InitOptions) -> miette::Resu
 
     let dedupe_lockfile = render_prompt(
         console,
-        options,
+        options.yes,
         &SettingPrompt::new(
             "dedupeLockfile",
             "Automatically dedupe lockfile when changed?",

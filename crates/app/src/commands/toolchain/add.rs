@@ -1,25 +1,88 @@
-use super::InitOptions;
-use super::prompts::*;
+use crate::app_error::AppError;
+use crate::commands::init::prompts::*;
+use crate::session::MoonSession;
+use clap::Args;
 use iocraft::prelude::element;
-use moon_console::{
-    Console,
-    ui::{Container, Entry, Section, Style, StyledText},
-};
+use moon_common::Id;
+use moon_config::ToolchainConfig;
+use moon_console::ui::{Container, Entry, Notice, Section, Style, StyledText, Variant};
 use moon_pdk_api::{ConditionType, InitializeToolchainInput, SettingCondition, SettingPrompt};
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
+use proto_core::PluginLocator;
+use starbase::AppResult;
+use starbase_utils::fs;
 use starbase_utils::json::JsonValue;
 use starbase_utils::yaml::{self, YamlMapping, YamlNumber, YamlValue};
 use std::collections::VecDeque;
 use std::str::FromStr;
 use tracing::instrument;
 
+#[derive(Args, Clone, Debug)]
+pub struct ToolchainAddArgs {
+    #[arg(help = "ID of the toolchain to add")]
+    id: Id,
+
+    #[arg(help = "Plugin locator string to find and load the toolchain")]
+    plugin: Option<PluginLocator>,
+
+    #[arg(long, help = "Initialize with minimal configuration and prompts")]
+    minimal: bool,
+
+    #[arg(long, help = "Skip prompts and use default values")]
+    yes: bool,
+}
+
+#[instrument(skip_all)]
+pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
+    let Some(locator) = args
+        .plugin
+        .clone()
+        .or_else(|| ToolchainConfig::get_plugin_locator(&args.id))
+    else {
+        return Err(AppError::PluginLocatorRequired.into());
+    };
+
+    // Load toolchain
+    let toolchain_registry = session.get_toolchain_registry().await?;
+    let toolchain = toolchain_registry
+        .load_without_config(&args.id, &locator)
+        .await?;
+
+    // Render config template
+    let template = init_toolchain(&session, &args, &toolchain_registry, &toolchain).await?;
+
+    // Update toolchain file
+    let toolchain_config_path = &session
+        .config_loader
+        .get_toolchain_files(&session.workspace_root)[0];
+
+    if toolchain_config_path.exists() {
+        fs::append_file(toolchain_config_path, format!("\n\n{template}"))?;
+    } else {
+        fs::write_file(toolchain_config_path, template)?;
+    }
+
+    session.console.render(element! {
+        Container {
+            Notice(variant: Variant::Success) {
+                StyledText(
+                    content: format!(
+                        "Added toolchain <id>{}</id> to <file>.moon/toolchain.yml</file>!", toolchain.id
+                    )
+                )
+            }
+        }
+    })?;
+
+    Ok(None)
+}
+
 #[instrument(skip_all)]
 pub async fn init_toolchain(
-    console: &Console,
-    options: &InitOptions,
+    session: &MoonSession,
+    args: &ToolchainAddArgs,
     toolchain_registry: &ToolchainRegistry,
     toolchain: &ToolchainPlugin,
-    include_locator: bool,
 ) -> miette::Result<String> {
     // No instructions, so render an empty block
     if !toolchain.has_func("initialize_toolchain").await {
@@ -33,8 +96,8 @@ pub async fn init_toolchain(
         })
         .await?;
 
-    if !options.yes {
-        console.render(element! {
+    if !args.yes {
+        session.console.render(element! {
             Container {
                 Section(title: &toolchain.metadata.name) {
                     Entry(
@@ -80,7 +143,7 @@ pub async fn init_toolchain(
     // Gather built-in settings
     let mut settings = YamlMapping::new();
 
-    if include_locator {
+    if args.plugin.is_some() {
         settings.insert(
             YamlValue::String("plugin".into()),
             YamlValue::String(toolchain.locator.to_string()),
@@ -89,7 +152,7 @@ pub async fn init_toolchain(
 
     if toolchain.supports_tier_3().await {
         if toolchain.has_func("detect_version_files").await {
-            if let Some(version) = toolchain.detect_version(&options.dir).await? {
+            if let Some(version) = toolchain.detect_version(&session.working_dir).await? {
                 settings.insert(
                     YamlValue::String("version".into()),
                     YamlValue::String(version.to_string()),
@@ -99,8 +162,8 @@ pub async fn init_toolchain(
 
         if !settings.contains_key("version") {
             if let Some(version) = render_version_prompt(
-                console,
-                options.yes || options.minimal,
+                &session.console,
+                args.yes || args.minimal,
                 &toolchain.metadata.name,
                 || Ok(None),
             )
@@ -119,7 +182,7 @@ pub async fn init_toolchain(
         inject_setting(key, value, &mut settings);
     }
 
-    evaluate_prompts(console, options, &output.prompts, &mut settings).await?;
+    evaluate_prompts(session, args, &output.prompts, &mut settings).await?;
 
     // Render into a YAML string
     let config = YamlValue::Mapping(YamlMapping::from_iter([(
@@ -131,14 +194,14 @@ pub async fn init_toolchain(
 }
 
 async fn evaluate_prompts(
-    console: &Console,
-    options: &InitOptions,
+    session: &MoonSession,
+    args: &ToolchainAddArgs,
     prompts: &[SettingPrompt],
     settings: &mut YamlMapping,
 ) -> miette::Result<()> {
     for prompt in prompts
         .iter()
-        .filter(|p| if options.minimal { p.minimal } else { true })
+        .filter(|p| if args.minimal { p.minimal } else { true })
     {
         if let Some(condition) = &prompt.condition {
             if !evaluate_condition(condition, settings) {
@@ -146,7 +209,7 @@ async fn evaluate_prompts(
             }
         }
 
-        if let Some(value) = render_prompt(console, options.yes, prompt).await? {
+        if let Some(value) = render_prompt(&session.console, args.yes, prompt).await? {
             let falsy = is_json_falsy(&value);
 
             if prompt.skip_if_falsy && falsy {
@@ -156,13 +219,7 @@ async fn evaluate_prompts(
             inject_setting(prompt.setting.clone(), value, settings);
 
             if !falsy {
-                Box::pin(evaluate_prompts(
-                    console,
-                    options,
-                    &prompt.prompts,
-                    settings,
-                ))
-                .await?;
+                Box::pin(evaluate_prompts(session, args, &prompt.prompts, settings)).await?;
             }
         }
     }

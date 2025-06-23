@@ -1,6 +1,6 @@
 mod bun;
 mod node;
-mod prompts;
+pub mod prompts;
 mod rust;
 mod toolchain;
 

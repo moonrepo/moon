@@ -1,8 +1,7 @@
 mod bun;
 mod node;
-mod prompts;
+pub mod prompts;
 mod rust;
-mod toolchain;
 
 use crate::session::MoonSession;
 use bun::init_bun;
@@ -11,16 +10,14 @@ use clean_path::Clean;
 use iocraft::prelude::{FlexDirection, View, element};
 use miette::IntoDiagnostic;
 use moon_common::{Id, consts::CONFIG_DIRNAME, is_test_env};
-use moon_config::{
-    ToolchainConfig, load_toolchain_config_template, load_workspace_config_template,
-};
+use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_console::{
     Console,
     ui::{Confirm, Container, Notice, StyledText, Variant},
 };
 use moon_vcs::{Git, Vcs};
 use node::init_node;
-use proto_core::{Id as PluginId, PluginLocator};
+use proto_core::PluginLocator;
 use rust::init_rust;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -28,8 +25,7 @@ use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use tera::{Context, Tera};
-use toolchain::init_toolchain;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
 #[derive(Args, Clone, Debug)]
 pub struct InitArgs {
@@ -164,41 +160,12 @@ pub async fn init_for_toolchain(
         "node" => init_node(console, options).await?,
         "rust" => init_rust(console, options).await?,
         _ => {
-            let mut include_locator = true;
-            let plugin_id = PluginId::raw(id.as_str());
-            let plugin_locator = match args.plugin.as_ref() {
-                Some(locator) => locator.to_owned(),
-                None => match ToolchainConfig::get_plugin_locator(id) {
-                    Some(locator) => {
-                        include_locator = false;
-                        locator
-                    }
-                    None => {
-                        console.err.write_line(
-                            "A plugin locator is required as the 2nd argument when initializing a toolchain!"
-                        )?;
+            warn!(
+                "This command has been deprecated for toolchain plugins, use {} instead.",
+                color::shell(format!("moon toolchain add {}", id))
+            );
 
-                        return Ok(Some(1));
-                    }
-                },
-            };
-
-            let toolchain_registry = session.get_toolchain_registry().await?;
-
-            toolchain_registry
-                .load_without_config(&plugin_id, plugin_locator)
-                .await?;
-
-            let toolchain = toolchain_registry.get_instance(&plugin_id).await?;
-
-            init_toolchain(
-                &session.console,
-                options,
-                &toolchain_registry,
-                &toolchain,
-                include_locator,
-            )
-            .await?
+            return Ok(None);
         }
     };
 

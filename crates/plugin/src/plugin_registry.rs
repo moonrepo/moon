@@ -129,7 +129,12 @@ impl<T: Plugin> PluginRegistry<T> {
     }
 
     #[instrument(skip(self, op))]
-    pub async fn load<I, L, F>(&self, id: I, locator: L, mut op: F) -> miette::Result<()>
+    pub async fn load_with_config<I, L, F>(
+        &self,
+        id: I,
+        locator: L,
+        mut op: F,
+    ) -> miette::Result<Arc<T>>
     where
         I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
@@ -140,10 +145,8 @@ impl<T: Plugin> PluginRegistry<T> {
 
         // Use an entry so that it creates a lock,
         // and hopefully avoids parallel registrations
-        match self.plugins.entry_async(id).await {
-            Entry::Occupied(_) => {
-                // Already loaded
-            }
+        let instance = match self.plugins.entry_async(id).await {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
                 debug!(
                     plugin = self.type_of.get_label(),
@@ -204,19 +207,23 @@ impl<T: Plugin> PluginRegistry<T> {
                     "Registered plugin",
                 );
 
-                entry.insert_entry(Arc::new(plugin));
+                let instance = Arc::new(plugin);
+
+                entry.insert_entry(Arc::clone(&instance));
+
+                instance
             }
         };
 
-        Ok(())
+        Ok(instance)
     }
 
-    pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<()>
+    pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<Arc<T>>
     where
         I: AsRef<str> + fmt::Debug,
         L: AsRef<PluginLocator> + fmt::Debug,
     {
-        self.load(id, locator, |_| Ok(())).await
+        self.load_with_config(id, locator, |_| Ok(())).await
     }
 
     pub fn register(&self, id: PluginId, plugin: T) -> miette::Result<()> {

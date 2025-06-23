@@ -75,10 +75,11 @@ pub async fn init_rust(console: &Console, options: &InitOptions) -> miette::Resu
         })?;
     }
 
-    let rust_version = render_version_prompt(console, options, "Rust", || {
-        detect_rust_version(&options.dir)
-    })
-    .await?;
+    let rust_version =
+        render_version_prompt(console, options.yes || options.minimal, "Rust", || {
+            detect_rust_version(&options.dir)
+        })
+        .await?;
 
     let mut context = Context::new();
     if let Some(rust_version) = rust_version {

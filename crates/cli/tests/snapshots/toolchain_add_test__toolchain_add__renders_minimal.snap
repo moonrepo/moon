@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/toolchain_add_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\".moon\").join(\"toolchain.yml\")).unwrap()"
+---
+typescript:
+  syncProjectReferences: true
+  includeSharedTypes: false

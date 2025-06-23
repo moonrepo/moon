@@ -9,6 +9,7 @@
   - `sync_projects` - Runs the `SyncProject` action for one or many projects.
   - `sync_workspace` - Runs the `SyncWorkspace` action.
 - Added new `moon toolchain` command and sub-commands.
+  - Add a toolchain to `.moon/toolchain.yml` with `moon toolchain add`.
   - View information about a toolchain plugin with `moon toolchain info`.
 - Added support for terminal desktop notifications. Can be enabled with the new
   `notifier.terminalNotifications` setting in `.moon/workspace.yml`.

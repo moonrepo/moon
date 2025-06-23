@@ -186,6 +186,21 @@ const sidebars: SidebarsConfig = {
 				'commands/task-graph',
 				'commands/teardown',
 				'commands/templates',
+				{
+					type: 'category',
+					label: 'toolchain',
+					items: [
+						'commands/toolchain/add',
+						'commands/toolchain/info',
+					],
+					link: {
+						type: 'generated-index',
+						title: 'toolchain',
+						description: 'Manage toolchain plugins.',
+						slug: '/commands/toolchain',
+						keywords: ['manage', 'toolchain', 'plugins'],
+					},
+				},
 				'commands/upgrade',
 			],
 			link: {

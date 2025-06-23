@@ -65,7 +65,7 @@ pub enum AppError {
         code(app::plugin::locator_required),
         url = "https://moonrepo.dev/docs/guides/wasm-plugins#configuring-plugin-locations"
     )]
-    #[error("A plugin locator string is required for non-builtin plugins.")]
+    #[error("A plugin locator string is required for non-built-in plugins.")]
     PluginLocatorRequired,
 
     #[diagnostic(code(app::id_required))]

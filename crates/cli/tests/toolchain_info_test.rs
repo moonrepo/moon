@@ -18,7 +18,7 @@ mod toolchain_info {
     }
 
     #[test]
-    fn errors_no_locator() {
+    fn errors_for_missing_locator() {
         let sandbox = create_empty_moon_sandbox();
 
         let assert = sandbox

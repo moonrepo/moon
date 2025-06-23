@@ -120,7 +120,7 @@ impl ToolchainRegistry {
         I: IntoIterator<Item = Id>,
         Id: AsRef<str>,
     {
-        let mut set = JoinSet::<miette::Result<PluginId>>::new();
+        let mut set = JoinSet::<miette::Result<Arc<ToolchainPlugin>>>::new();
         let mut list = vec![];
 
         for id in ids {
@@ -139,8 +139,8 @@ impl ToolchainRegistry {
             let config = config.to_owned();
 
             set.spawn(async move {
-                registry
-                    .load(&id, config.plugin.as_ref().unwrap(), |manifest| {
+                let instance = registry
+                    .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
                         let value = serialize_config(config.config.iter())?;
 
                         trace!(
@@ -159,15 +159,13 @@ impl ToolchainRegistry {
                     })
                     .await?;
 
-                Ok(id)
+                Ok(instance)
             });
         }
 
         if !set.is_empty() {
             while let Some(result) = set.join_next().await {
-                let id = result.into_diagnostic()??;
-
-                list.push(self.get_instance(&id).await?);
+                list.push(result.into_diagnostic()??);
             }
         }
 

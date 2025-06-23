@@ -1,4 +1,3 @@
-use super::InitOptions;
 use iocraft::prelude::element;
 use moon_console::{
     Console,
@@ -27,13 +26,13 @@ pub fn fully_qualify_version(version: String) -> Option<String> {
 
 pub async fn render_prompt(
     console: &Console,
-    options: &InitOptions,
+    skip_prompts: bool,
     prompt: &SettingPrompt,
 ) -> miette::Result<Option<JsonValue>> {
     match &prompt.ty {
         PromptType::None => Ok(None),
         PromptType::Confirm { default } => {
-            let result = if options.yes {
+            let result = if skip_prompts {
                 *default
             } else {
                 let mut value = *default;
@@ -54,7 +53,7 @@ pub async fn render_prompt(
             Ok(Some(JsonValue::Bool(result)))
         }
         PromptType::Input { default } => {
-            let result = if options.yes {
+            let result = if skip_prompts {
                 default.to_owned()
             } else {
                 let mut value = default.to_owned();
@@ -87,7 +86,7 @@ pub async fn render_prompt(
             default_index,
             options: items,
         } => {
-            let index = if options.yes {
+            let index = if skip_prompts {
                 *default_index
             } else {
                 let mut index = *default_index;
@@ -114,13 +113,13 @@ pub async fn render_prompt(
 
 pub async fn render_version_prompt(
     console: &Console,
-    options: &InitOptions,
+    skip_prompts: bool,
     tool: &str,
     op: impl FnOnce() -> miette::Result<Option<UnresolvedVersionSpec>>,
 ) -> miette::Result<Option<UnresolvedVersionSpec>> {
     let default_version = op()?;
 
-    if options.yes || options.minimal {
+    if skip_prompts {
         return Ok(default_version);
     }
 

@@ -1,8 +1,12 @@
+use crate::app_error::AppError;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
+use moon_common::{Id, is_test_env};
+use moon_config::ToolchainConfig;
 use moon_console::ui::*;
 use moon_toolchain_plugin::ToolchainPlugin;
+use proto_core::PluginLocator;
 use schematic::SchemaType;
 use starbase::AppResult;
 use tracing::instrument;
@@ -10,15 +14,25 @@ use tracing::instrument;
 #[derive(Args, Clone, Debug)]
 pub struct ToolchainInfoArgs {
     #[arg(help = "ID of the toolchain to inspect")]
-    id: String,
+    id: Id,
+
+    #[arg(help = "Plugin locator string to find and load the toolchain")]
+    plugin: Option<PluginLocator>,
 }
 
 #[instrument(skip_all)]
 pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
+    let Some(locator) = args
+        .plugin
+        .or_else(|| ToolchainConfig::get_plugin_locator(&args.id))
+    else {
+        return Err(AppError::PluginLocatorRequired.into());
+    };
+
     let toolchain = session
         .get_toolchain_registry()
         .await?
-        .load(&args.id)
+        .load_without_config(&args.id, &locator)
         .await?;
 
     let tier1_apis = collect_tier_apis(
@@ -109,15 +123,19 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                     name: "Name",
                     content: toolchain.metadata.name.clone(),
                 )
-                Entry(
-                    name: "Version",
-                    value: element! {
-                        StyledText(
-                            content: toolchain.metadata.plugin_version.to_string(),
-                            style: Style::Hash
+                #((!is_test_env()).then(|| {
+                    element! {
+                        Entry(
+                            name: "Version",
+                            value: element! {
+                                StyledText(
+                                    content: toolchain.metadata.plugin_version.to_string(),
+                                    style: Style::Hash
+                                )
+                            }.into_any()
                         )
-                    }.into_any()
-                )
+                    }
+                }))
             }
 
             #(config_schema.map(|schema| {

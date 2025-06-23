@@ -53,11 +53,12 @@ pub async fn init_bun(console: &Console, options: &InitOptions) -> miette::Resul
         })?;
     }
 
-    let bun_version = render_version_prompt(console, options, "Bun", || Ok(None)).await?;
+    let bun_version =
+        render_version_prompt(console, options.yes || options.minimal, "Bun", || Ok(None)).await?;
 
     let sync_dependencies = render_prompt(
         console,
-        options,
+        options.yes,
         &SettingPrompt::new(
             "syncDependencies",
             "Sync project relationships as <file>package.json</file> <property>dependencies</property>?",

@@ -63,7 +63,7 @@ impl ExtensionRegistry {
         let ext_id = id.clone();
 
         self.registry
-            .load(&id, config.get_plugin_locator(), move |manifest| {
+            .load_with_config(&id, config.get_plugin_locator(), move |manifest| {
                 let value = serialize_config(config.config.iter())?;
 
                 trace!(
@@ -78,9 +78,7 @@ impl ExtensionRegistry {
 
                 Ok(())
             })
-            .await?;
-
-        self.get_instance(&id).await
+            .await
     }
 }
 

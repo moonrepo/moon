@@ -220,6 +220,9 @@ async fn main() -> MainResult {
                 Commands::Teardown => commands::teardown::teardown(session).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
                 Commands::Toolchain { command } => match command {
+                    ToolchainCommands::Add(args) => {
+                        commands::toolchain::add::add(session, args).await
+                    }
                     ToolchainCommands::Info(args) => {
                         commands::toolchain::info::info(session, args).await
                     }

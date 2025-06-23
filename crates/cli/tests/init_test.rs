@@ -1,4 +1,4 @@
-use moon_test_utils::{assert_snapshot, create_sandbox, predicates::prelude::*};
+use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
 #[test]
@@ -158,78 +158,5 @@ mod vcs {
 
         // We don't show the vcs block if it defaults to git/master
         assert!(!predicate::str::contains("manager: 'git'").eval(&content));
-    }
-}
-
-mod init_toolchain {
-    use super::*;
-
-    #[test]
-    fn errors_for_missing_locator() {
-        let sandbox = create_sandbox("init-sandbox");
-        let root = sandbox.path().to_path_buf();
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("init").arg("tc").arg("--yes").arg("--to").arg(root);
-        });
-
-        assert!(
-            predicate::str::contains(
-                "A plugin locator is required as the 2nd argument when initializing a toolchain!"
-            )
-            .eval(&assert.output())
-        );
-    }
-
-    #[test]
-    fn errors_for_invalid_locator() {
-        let sandbox = create_sandbox("init-sandbox");
-        let root = sandbox.path().to_path_buf();
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("init")
-                .arg("tc")
-                .arg("invalid")
-                .arg("--yes")
-                .arg("--to")
-                .arg(root);
-        });
-
-        assert!(predicate::str::contains("Missing plugin protocol").eval(&assert.output()));
-    }
-
-    #[test]
-    fn renders_full() {
-        let sandbox = create_sandbox("init-sandbox");
-        let root = sandbox.path().to_path_buf();
-        let config = root.join(".moon").join("toolchain.yml");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("init")
-                .arg("typescript")
-                .arg("--yes")
-                .arg("--to")
-                .arg(root);
-        });
-
-        assert_snapshot!(fs::read_to_string(config).unwrap());
-    }
-
-    #[test]
-    fn renders_minimal() {
-        let sandbox = create_sandbox("init-sandbox");
-        let root = sandbox.path().to_path_buf();
-        let config = root.join(".moon").join("toolchain.yml");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("init")
-                .arg("typescript")
-                .arg("--yes")
-                .arg("--minimal")
-                .arg("--to")
-                .arg(root);
-        });
-
-        assert_snapshot!(fs::read_to_string(config).unwrap());
     }
 }

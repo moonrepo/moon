@@ -2,7 +2,7 @@ use crate::app_error::AppError;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
-use moon_common::Id;
+use moon_common::{Id, is_test_env};
 use moon_config::ToolchainConfig;
 use moon_console::ui::*;
 use moon_toolchain_plugin::ToolchainPlugin;
@@ -123,15 +123,19 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                     name: "Name",
                     content: toolchain.metadata.name.clone(),
                 )
-                Entry(
-                    name: "Version",
-                    value: element! {
-                        StyledText(
-                            content: toolchain.metadata.plugin_version.to_string(),
-                            style: Style::Hash
+                #((!is_test_env()).then(|| {
+                    element! {
+                        Entry(
+                            name: "Version",
+                            value: element! {
+                                StyledText(
+                                    content: toolchain.metadata.plugin_version.to_string(),
+                                    style: Style::Hash
+                                )
+                            }.into_any()
                         )
-                    }.into_any()
-                )
+                    }
+                }))
             }
 
             #(config_schema.map(|schema| {

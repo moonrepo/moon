@@ -189,10 +189,7 @@ const sidebars: SidebarsConfig = {
 				{
 					type: 'category',
 					label: 'toolchain',
-					items: [
-						'commands/toolchain/add',
-						'commands/toolchain/info',
-					],
+					items: ['commands/toolchain/add', 'commands/toolchain/info'],
 					link: {
 						type: 'generated-index',
 						title: 'toolchain',
@@ -229,13 +226,13 @@ const sidebars: SidebarsConfig = {
 		'guides/docker',
 		'guides/extensions',
 		'guides/mcp',
-		'guides/notifications',
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/pkl-config',
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',
+		'guides/notifications',
 		'guides/wasm-plugins',
 		'guides/webhooks',
 		'guides/vcs-hooks',

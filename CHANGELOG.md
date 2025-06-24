@@ -32,6 +32,7 @@
   `notifier.terminalNotifications` setting in `.moon/workspace.yml`.
 - Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2xx status
   code.
+- Updated project graph invalidation to take manifests from toolchain plugins into account.
 
 #### 🐞 Fixes
 

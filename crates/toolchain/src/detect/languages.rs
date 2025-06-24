@@ -5,7 +5,15 @@ pub static BUN: StaticStringList = &["bunfig.toml", "bun.lock", "bun.lockb", ".b
 
 pub static DENO: StaticStringList = &["deno.json", "deno.jsonc", "deno.lock", ".dvmrc"];
 
-pub static GO: StaticStringList = &["go.mod", "go.sum", "g.lock", ".gvmrc", ".go-version"];
+pub static GO: StaticStringList = &[
+    "go.mod",
+    "go.sum",
+    "go.work",
+    "go.work.sum",
+    "g.lock",
+    ".gvmrc",
+    ".go-version",
+];
 
 pub static NODE: StaticStringList = &[
     "package.json",

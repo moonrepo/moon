@@ -45,7 +45,7 @@ impl Plugin for ToolchainPlugin {
             tool: if plugin.has_func("register_tool").await {
                 Some(RwLock::new(
                     Tool::new(
-                        registration.id.clone(),
+                        registration.id_stable,
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )

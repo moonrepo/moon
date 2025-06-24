@@ -222,12 +222,14 @@ async fn apply_toolchain_dependencies(
     let mut lock_files = vec![];
     let mut workspace_manifests = vec![];
     let mut project_manifests = vec![];
+    let has_parse_manifest = toolchain.has_func("parse_manifest").await;
+    let has_parse_lock = toolchain.has_func("parse_lock").await;
 
     // Load the project manifest
     for manifest_file_name in &toolchain.metadata.manifest_file_names {
         let manifest_path = project_root.join(manifest_file_name);
 
-        if toolchain.has_func("parse_manifest").await {
+        if manifest_path.exists() && has_parse_manifest {
             project_manifests.push(
                 toolchain
                     .parse_manifest(ParseManifestInput {
@@ -264,7 +266,7 @@ async fn apply_toolchain_dependencies(
 
             if lock_path.exists()
                 && app_context.workspace_config.hasher.optimization == HasherOptimization::Accuracy
-                && toolchain.has_func("parse_lock").await
+                && has_parse_lock
             {
                 lock_files.push(
                     toolchain
@@ -281,10 +283,7 @@ async fn apply_toolchain_dependencies(
         for manifest_file_name in &toolchain.metadata.manifest_file_names {
             let manifest_path = deps_root.join(manifest_file_name);
 
-            if manifest_path.exists()
-                && deps_root != project_root
-                && toolchain.has_func("parse_manifest").await
-            {
+            if manifest_path.exists() && deps_root != project_root && has_parse_manifest {
                 workspace_manifests.push(
                     toolchain
                         .parse_manifest(ParseManifestInput {
@@ -345,6 +344,7 @@ fn apply_toolchain_dependencies_by_manifest(
     );
 
     let mut inject = false;
+    let empty_deps = BTreeMap::new();
 
     for manifest in project_manifests {
         for (scope, project_deps) in [
@@ -355,7 +355,7 @@ fn apply_toolchain_dependencies_by_manifest(
         ] {
             if apply_toolchain_dependencies_by_scope(
                 project_deps,
-                workspace_deps.get(&scope).unwrap(),
+                workspace_deps.get(&scope).unwrap_or(&empty_deps),
                 &locked_deps,
                 hash_content,
             ) {

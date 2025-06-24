@@ -15,7 +15,7 @@ config_unit_enum!(
 
 config_unit_enum!(
     /// The scope and or relationship of the dependency.
-    #[derive(ConfigEnum)]
+    #[derive(ConfigEnum, PartialOrd, Ord)]
     pub enum DependencyScope {
         Build,
         Development,

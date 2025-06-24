@@ -347,7 +347,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let sync_workspace_index = self.sync_workspace().await?;
         let setup_toolchain_index = self.setup_toolchain(spec).await?;
-        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
+        let toolchain_registry = &self.app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
 
         // Toolchain does not support this action, so skip and fall through
         if !toolchain.supports_tier_2().await {
@@ -356,8 +357,13 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let output = toolchain
             .locate_dependencies_root(LocateDependenciesRootInput {
-                context: self.app_context.toolchain_registry.create_context(),
+                context: toolchain_registry.create_context(),
                 starting_dir: toolchain.to_virtual_path(&project.root),
+                toolchain_config: toolchain_registry.create_merged_config(
+                    &toolchain.id,
+                    &self.app_context.toolchain_config,
+                    &project.config,
+                ),
             })
             .await?;
 

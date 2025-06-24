@@ -1,0 +1,69 @@
+---
+slug: moon-v1.38
+title: moon v1.38 - Go WASM toolchain ...
+authors: [milesj]
+tags: [toolchain, wasm, plugin, go, mcp, ai, webhooks]
+# image: ./img/moon/v1.38.png
+---
+
+In this release, we're stoked to release yet another WASM toolchain plugin, and improved MCP/AI
+support!
+
+<!--truncate-->
+
+## RFC: Task inheritance via inline configuration
+
+TODO
+
+## New Go toolchain powered by WASM
+
+Official Go toolchain support has been requested by the community for a long time now, and with the
+somewhat stabilization of WASM plugins and the introduction of the
+[Rust toolchain in the last release](./moon-v1.37), we felt it was finally time to add Go! To enable
+Go, run our new command or add an [`unstable_go`](/docs/config/toolchain#unstable_go) entry to
+`.moon/toolchain.yml`.
+
+```shell
+$ moon toolchain add unstable_go
+```
+
+```yaml title=".moon/toolchain.yml"
+unstable_go:
+  version: '1.24.0'
+  workspaces: true
+```
+
+The Go toolchain releases with full [tier 1, 2, and 3 support](/docs/how-it-works/languages)!
+Additionally, the following features and functionality is available when enabling the toolchain:
+
+- Supports Go workspaces through the `go.work` file. Can be disabled with the
+  [`unstable_go.workspaces`](/docs/config/toolchain#unstable_go) setting.
+- Extracts the `go.mod` `module` directive as a project alias.
+- Extracts project relationships and dependency information from `go.mod` `require` directives.
+- Extracts version and checksum information from `go.sum` and `go.work.sum` files.
+- Injects Go globals directory (`GOBIN`) into task command/script child processes.
+- Supports installing Go globals via `go install` commands. Can be customized with the
+  [`unstable_go.bins`](/docs/config/toolchain#unstable_go) setting.
+- Automatically runs `go mod` or `go work` commands when installing dependencies.
+- Basic Docker image and pruning support.
+
+We hope you enjoy this new Go toolchain. With that said, we are _not_ Go experts, and would love to
+hear from you on what works, what doesn't, what can be improved, and what features you would like to
+see added!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.38.0) for a full list
+of changes.
+
+- Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2XX status
+  code.
+- Updated proto to [v0.50.1](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Better command line argument parsing/joining (especially for task `args`)
+- Better child process I/O piping
+- WASM toolchain documentation

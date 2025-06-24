@@ -5,15 +5,16 @@ use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
 use scc::hash_map::Entry;
 use starbase_utils::fs;
+use std::collections::BTreeMap;
 use std::fmt;
-use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::{debug, instrument};
 use warpgate::{
-    Id as PluginId, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm,
-    host::HostData, inject_default_manifest_config, to_virtual_path,
+    Id as PluginId, PluginContainer, PluginLoader, PluginLocator, PluginManifest, VirtualPath,
+    Wasm, from_virtual_path, host::HostData, inject_default_manifest_config, to_virtual_path,
 };
 
-#[allow(dead_code)]
 pub struct PluginRegistry<T: Plugin> {
     pub host_data: PluginHostData,
 
@@ -51,14 +52,8 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_context(&self) -> MoonContext {
         MoonContext {
-            working_dir: to_virtual_path(
-                self.get_virtual_paths(),
-                &self.host_data.moon_env.working_dir,
-            ),
-            workspace_root: to_virtual_path(
-                self.get_virtual_paths(),
-                &self.host_data.moon_env.workspace_root,
-            ),
+            working_dir: self.to_virtual_path(&self.host_data.moon_env.working_dir),
+            workspace_root: self.to_virtual_path(&self.host_data.moon_env.workspace_root),
         }
     }
 
@@ -245,6 +240,14 @@ impl<T: Plugin> PluginRegistry<T> {
 
         Ok(())
     }
+
+    pub fn from_virtual_path(&self, path: impl AsRef<Path>) -> PathBuf {
+        from_virtual_path(&self.virtual_paths, path.as_ref())
+    }
+
+    pub fn to_virtual_path(&self, path: impl AsRef<Path>) -> VirtualPath {
+        to_virtual_path(&self.virtual_paths, path.as_ref())
+    }
 }
 
 impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
@@ -257,21 +260,3 @@ impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
             .finish()
     }
 }
-
-// pub struct PluginInstance<'l, T: Plugin> {
-//     entry: OccupiedEntry<'l, Id, T>,
-// }
-
-// impl<T: Plugin> Deref for PluginInstance<'_, T> {
-//     type Target = T;
-
-//     fn deref(&self) -> &Self::Target {
-//         self.entry.get()
-//     }
-// }
-
-// impl<T: Plugin> DerefMut for PluginInstance<'_, T> {
-//     fn deref_mut(&mut self) -> &mut Self::Target {
-//         self.entry.get_mut()
-//     }
-// }

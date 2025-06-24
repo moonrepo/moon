@@ -44,6 +44,11 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                 |registry, toolchain| LocateDependenciesRootInput {
                     context: registry.create_context(),
                     starting_dir: toolchain.to_virtual_path(&project.root),
+                    toolchain_config: registry.create_merged_config(
+                        &toolchain.id,
+                        &session.toolchain_config,
+                        &project.config,
+                    ),
                 },
             )
             .await?
@@ -99,6 +104,8 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                             .map(|project| project.to_fragment())
                             .collect(),
                         root: toolchain.to_virtual_path(&instance.deps_root),
+                        toolchain_config: toolchain_registry
+                            .create_config(&toolchain.id, &app_context.toolchain_config),
                     })
                     .await?;
             }

@@ -1,19 +1,25 @@
 ---
 slug: moon-v1.38
-title: moon v1.38 - Go WASM toolchain ...
+title: moon v1.38 - Go WASM toolchain, MCP tools, terminal notifications, and more!
 authors: [milesj]
 tags: [toolchain, wasm, plugin, go, mcp, ai, webhooks]
 # image: ./img/moon/v1.38.png
 ---
 
-In this release, we're stoked to release yet another WASM toolchain plugin, and improved MCP/AI
-support!
+In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!
 
 <!--truncate-->
 
 ## RFC: Task inheritance via inline configuration
 
-TODO
+Task inheritance is one of moon's most powerful features, allowing you to define tasks at the
+top-level and have them automatically inherited by projects that match certain conditions. In it's
+current form, task inheritance is based on the file name of the configuration file, but this
+approach has several limitations.
+
+We're planning to improve task inheritance and have written up an
+[RFC to discuss these changes](https://github.com/moonrepo/moon/issues/2023). We'd appreciate any
+and all feedback!
 
 ## New Go toolchain powered by WASM
 
@@ -51,11 +57,41 @@ We hope you enjoy this new Go toolchain. With that said, we are _not_ Go experts
 hear from you on what works, what doesn't, what can be improved, and what features you would like to
 see added!
 
+## New MCP tools
+
+In our last release, we introduced the [`moon mcp` command](./moon-v1.37#mcp-editor-integration),
+offering deep editor integration with AI models like GitHub Copilot and Cursor. This release expands
+on that by introducing 3 more tools to utilize:
+
+- `get_touched_files` - Gets touched files between base and head revisions.
+- `sync_projects` - Runs the `SyncProject` action for one or many projects by `id`.
+- `sync_workspace` - Runs the `SyncWorkspace` action.
+
+## New OS terminal notifications
+
+This was a feature we originally scoped out during moon's inception, almost 3 years ago, but we
+never got around to implementing it. However, there has been some improvements to native operating
+system notifications in Rust lately, so it felt like a good time to finally implement it!
+
+And on that note, we are introducing a new
+[`notifier.terminalNotifications`](/docs/config/workspace#terminalnotifications) setting that allows
+you to receive terminal notifications for pipeline events.
+
+```yaml title=".moon/workspace.yml"
+notifier:
+  terminalNotifications: 'failure'
+```
+
+> View the [official guide](/docs/guides/notifications) for more information!
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.38.0) for a full list
 of changes.
 
+- Added new `moon toolchain` command and sub-commands.
+  - Add a toolchain to `.moon/toolchain.yml` with `moon toolchain add`.
+  - View information about a toolchain plugin with `moon toolchain info`.
 - Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2XX status
   code.
 - Updated proto to [v0.50.1](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).

@@ -9,8 +9,6 @@ tasks:
     command: 'go build -o @out(0)'
     inputs:
       - '@globs(sources)'
-      - 'go.mod'
-      - '/go.mod'
     outputs:
       - 'build' # Just an example!
 ```

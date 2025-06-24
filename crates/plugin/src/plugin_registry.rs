@@ -179,17 +179,15 @@ impl<T: Plugin> PluginRegistry<T> {
                 // expect a specific ID, for example "rust", and if we provide
                 // "unstable_rust", it breaks in weird ways.
                 let orig_id = entry.key().as_str();
-                let stable_id = orig_id.strip_prefix("unstable_").unwrap_or(orig_id);
+                let stable_id =
+                    PluginId::new(orig_id.strip_prefix("unstable_").unwrap_or(orig_id))?;
 
                 // Combine everything into the container and register
                 let plugin = T::new(PluginRegistration {
-                    container: PluginContainer::new(
-                        PluginId::new(stable_id)?,
-                        manifest,
-                        functions,
-                    )?,
+                    container: PluginContainer::new(stable_id.clone(), manifest, functions)?,
                     locator: locator.to_owned(),
                     id: entry.key().to_owned(),
+                    id_stable: stable_id,
                     moon_env: Arc::clone(&self.host_data.moon_env),
                     proto_env: Arc::clone(&self.host_data.proto_env),
                     wasm_file: plugin_file,

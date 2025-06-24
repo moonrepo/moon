@@ -8,7 +8,8 @@ use warpgate::{Id, PluginContainer, PluginLocator};
 
 pub struct PluginRegistration {
     pub container: PluginContainer,
-    pub id: Id,
+    pub id: Id,        // unstable_foo
+    pub id_stable: Id, // foo
     pub locator: PluginLocator,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,

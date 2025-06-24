@@ -2,8 +2,25 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- WASM API
+  - Renamed `RegisterToolchainOutput.lock_file_name` to `RegisterToolchainOutput.lock_file_names`
+    and its type to `Vec<String>`.
+  - Renamed `RegisterToolchainOutput.manifest_file_name` to
+    `RegisterToolchainOutput.manifest_file_names` and its type to `Vec<String>`.
+
 #### 🚀 Updates
 
+- Added a new
+  [Go toolchain implementation](https://github.com/moonrepo/plugins/tree/master/toolchains/go),
+  powered entirely by our new WASM plugin system. It can be enabled with the `unstable_go`
+  identifier.
+  - Supports tiers 1, 2, and 3!
+  - Supports Go workspaces via `go.work` files.
+  - Extracts project dependencies and relationships from `go.mod` files.
+  - Extracts version and lockfile information from `go.sum` and `go.work.sum` files.
+  - Basic vendor support (`go mod vendor`) during Docker prune.
 - Added new tools for `moon mcp`.
   - `get_touched_files` - Gets touched files between base and head.
   - `sync_projects` - Runs the `SyncProject` action for one or many projects.
@@ -13,10 +30,27 @@
   - View information about a toolchain plugin with `moon toolchain info`.
 - Added support for terminal desktop notifications. Can be enabled with the new
   `notifier.terminalNotifications` setting in `.moon/workspace.yml`.
+- Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2xx status
+  code.
+
+#### 🐞 Fixes
+
+- Fixed an issue with task output hydration that would sometimes fail with a permission denied error
+  when cleaning stale files.
+
+#### 🧩 Plugins
+
+- Updated `rust_toolchain` to v0.2.0.
+  - Cached the globals bin directory when extending task commands/scripts.
+  - Task hashing now includes the host OS, arch, and libc.
+- WASM API
+  - Added `LocateDependenciesRootInput.toolchain_config` field.
+  - Added `PruneDockerInput.toolchain_config` field.
+  - Added `ScaffoldDockerInput.toolchain_config` field.
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.50.0](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).
+- Updated proto to [v0.50.1](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).
 
 ## 1.37.3
 

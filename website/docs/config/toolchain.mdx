@@ -75,6 +75,84 @@ moon:
   downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
 ```
 
+## Go
+
+## `unstable_go`<VersionLabel version="1.38.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#go" />
+
+Enables and configures Go. This setting enables the new WASM powered Go toolchain.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/GoConfig#version" />
+
+Defines the explicit Go toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `go` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  version: '1.24.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `bins`
+
+<HeadingApiLink to="/api/types/interface/GoConfig#bins" />
+
+A list of binaries to install globally into Go (`~/go/bin`) using `go install`. This setting
+requires a list of URLs or binary configuration objects with the following fields:
+
+- `bin` (required) - URL of the binary.
+- `local` - Only install the binary locally, and not in CI.
+
+```yaml title=".moon/toolchain.yml" {2-5}
+unstable_go:
+  bins:
+    - 'golang.org/x/tools/gopls'
+    - bin: 'github.com/revel/cmd/revel@1'
+      local: true
+```
+
+### `tidyOnChange`
+
+<HeadingApiLink to="/api/types/interface/GoConfig#tidyOnChange" />
+
+Tidy modules when dependencies or `go.sum` changes by running `go mod tidy`. This setting is ignored
+when using Go workspaces. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  tidyOnChange: true
+```
+
+### `vendorDir`
+
+<HeadingApiLink to="/api/types/interface/GoConfig#vendorDir" />
+
+A relative path to the vendor directory from the dependencies root, as generated with
+`go mod vendor`. If vendored with the default name of "vendor", this setting can be omitted.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  vendorDir: 'custom/vendor/path'
+```
+
+### `workspaces`
+
+<HeadingApiLink to="/api/types/interface/GoConfig#workspaces" />
+
+Enables support for [Go workspaces](https://go.dev/ref/mod#workspaces) and will attempt to locate
+the dependencies root by locating the `go.work` file, and parsing `go.work.sum` files. This
+functionality will take precedence over `go.sum` files. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  workspaces: true
+```
+
 ## JavaScript
 
 ## `bun`<VersionLabel version="1.17.0" />

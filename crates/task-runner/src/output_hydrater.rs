@@ -138,7 +138,10 @@ impl OutputHydrater<'_> {
 
     fn delete_existing_outputs(&self) -> miette::Result<()> {
         for output in self.task.get_output_files(&self.app.workspace_root, true)? {
-            fs::remove_file(output)?;
+            // Ignore failures as we don't want to crash the entire pipeline,
+            // and in most cases, these artifacts will just be overwritten
+            // on the next hydration anyways!
+            let _ = fs::remove(output);
         }
 
         Ok(())

@@ -20,8 +20,7 @@
   - Supports Go workspaces via `go.work` files.
   - Extracts project dependencies and relationships from `go.mod` files.
   - Extracts version and lockfile information from `go.sum` and `go.work.sum` files.
-  - Basic vendor support via `go mod vendor`.
-  - Basic Docker support.
+  - Basic vendor support (`go mod vendor`) during Docker prune.
 - Added new tools for `moon mcp`.
   - `get_touched_files` - Gets touched files between base and head.
   - `sync_projects` - Runs the `SyncProject` action for one or many projects.
@@ -34,8 +33,16 @@
 - Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2xx status
   code.
 
+#### 🐞 Fixes
+
+- Fixed an issue with task output hydration that would sometimes fail with a permission denied error
+  when cleaning stale files.
+
 #### 🧩 Plugins
 
+- Updated `rust_toolchain` to v0.2.0.
+  - Cached the globals bin directory when extending task commands/scripts.
+  - Task hashing now includes the host OS, arch, and libc.
 - WASM API
   - Added `LocateDependenciesRootInput.toolchain_config` field.
   - Added `PruneDockerInput.toolchain_config` field.

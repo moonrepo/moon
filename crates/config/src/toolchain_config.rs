@@ -127,7 +127,7 @@ impl ToolchainConfig {
                 url: "https://github.com/moonrepo/plugins/releases/download/go_toolchain-v0.1.0/go_toolchain.wasm".into()
             }))),
             "unstable_rust" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/rust_toolchain-v0.1.3/rust_toolchain.wasm".into()
+                url: "https://github.com/moonrepo/plugins/releases/download/rust_toolchain-v0.2.0/rust_toolchain.wasm".into()
             }))),
             // "typescript" => Some(PluginLocator::File(Box::new(FileLocator {
             //     file: "".into(),
@@ -293,7 +293,7 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {
-        for id in ["typescript", "unstable_rust"] {
+        for id in ["typescript", "unstable_go", "unstable_rust"] {
             if !self.plugins.contains_key(id) {
                 self.plugins
                     .insert(Id::raw(id), ToolchainPluginConfig::default());
@@ -312,7 +312,7 @@ impl ToolchainConfig {
             }
 
             match id.as_str() {
-                "typescript" | "unstable_rust" => {
+                "typescript" | "unstable_go" | "unstable_rust" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 other => {

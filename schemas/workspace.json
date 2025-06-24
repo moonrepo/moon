@@ -513,6 +513,25 @@
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
+        "terminalNotifications": {
+          "title": "terminalNotifications",
+          "description": "Display an OS notification for certain pipeline events.",
+          "default": "never",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NotifierEventType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "webhookAcknowledge": {
+          "title": "webhookAcknowledge",
+          "description": "Whether webhook requests require acknowledgment (2xx response).",
+          "default": false,
+          "type": "boolean"
+        },
         "webhookUrl": {
           "title": "webhookUrl",
           "description": "A secure URL in which to send webhooks to.",
@@ -527,6 +546,17 @@
         }
       },
       "additionalProperties": false
+    },
+    "NotifierEventType": {
+      "description": "The types of events in which to send notifications.",
+      "type": "string",
+      "enum": [
+        "never",
+        "always",
+        "failure",
+        "success",
+        "task-failure"
+      ]
     },
     "PipelineActionSwitch": {
       "description": "Toggles the state of actions within the pipeline.",

@@ -1909,6 +1909,164 @@ $ moon templates
 
 ---
 
+## toolchain add
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+The `moon toolchain add  [plugin]` command will add a toolchain to the workspace by injecting a
+configuration block into `.moon/toolchain.yml`. To do this, the command will download the WASM
+plugin, extract information, and call initialize functions.
+
+For built-in toolchains, the [plugin locator][locator] argument is optional, and will be derived
+from the identifier.
+
+```shell
+$ moon toolchain add typescript
+```
+
+For third-party toolchains, the [plugin locator][locator] argument is required, and must point to
+the WASM plugin.
+
+```shell
+$ moon toolchain add custom https://example.com/path/to/plugin.wasm
+```
+
+### Arguments
+
+- `` - ID of the toolchain to use.
+- `[plugin]` - Optional [plugin locator][locator] for third-party toolchains.
+
+### Options
+
+- `--minimal` - Generate minimal configurations and sane defaults.
+- `--yes` - Skip all prompts and enables tools based on file detection.
+
+[locator]: ../../guides/wasm-plugins#configuring-plugin-locations
+
+---
+
+## toolchain info
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+The `moon toolchain info  [plugin]` command will display detailed information about a toolchain,
+like what files are scanned, what configuration settings are available, and what tier APIs are
+supported. To do this, the command will download the WASM plugin, extract information, and call
+specific functions.
+
+For built-in toolchains, the [plugin locator][locator] argument is optional, and will be derived
+from the identifier.
+
+```shell
+$ moon toolchain info typescript
+```
+
+For third-party toolchains, the [plugin locator][locator] argument is required, and must point to
+the WASM plugin.
+
+```shell
+$ moon toolchain info custom https://example.com/path/to/plugin.wasm
+```
+
+### Arguments
+
+- `` - ID of the toolchain to view.
+- `[plugin]` - Optional [plugin locator][locator] for third-party toolchains.
+
+## Example output
+
+```
+Toolchain ─────────────────────────────────────────────────────────────────
+
+  Provides sync operations that keep tsconfig.json's in a healthy state.
+
+  ID: typescript
+  Name: TypeScript
+  Version: 0.2.0
+
+Configuration ─────────────────────────────────────────────────────────────
+
+  createMissingConfig: bool
+  When `syncProjectReferences` is enabled, will create a `tsconfig.json`
+  in referenced projects if it does not exist.
+
+  includeProjectReferenceSources: bool
+  Appends sources of project reference to `include` in `tsconfig.json`,
+  for each project.
+
+  includeSharedTypes: bool
+  Appends shared types to `include` in `tsconfig.json`, for each project.
+
+  projectConfigFileName: string
+  Name of the `tsconfig.json` file within each project.
+
+  root: string
+  The relative root to the TypeScript root. Primarily used for
+  resolving project references.
+
+  rootConfigFileName: string
+  Name of the `tsconfig.json` file at the workspace root.
+
+  rootOptionsConfigFileName: string
+  Name of the shared compiler options `tsconfig.json` file
+  at the workspace root.
+
+  routeOutDirToCache: bool
+  Updates and routes `outDir` in `tsconfig.json` to moon's cache,
+  for each project.
+
+  syncProjectReferences: bool
+  Syncs all project dependencies as `references` in `tsconfig.json`,
+  for each project.
+
+  syncProjectReferencesToPaths: bool
+  Syncs all project dependencies as `paths` in `tsconfig.json`,
+  for each project.
+
+Tier 1 - Usage detection ──────────────────────────────────────────────────
+
+  Config files: tsconfig.json, tsconfig.*.json, *.tsconfig.json, .tsbuildinfo, *.tsbuildinfo
+  Executable names: tsc, tsserver
+  APIs:
+    🟢 register_toolchain (required)
+    🟢 define_toolchain_config
+    🟢 initialize_toolchain
+    ⚫️ detect_version_files
+    ⚫️ parse_version_file
+    🟢 define_docker_metadata
+    ⚫️ scaffold_docker
+    ⚫️ prune_docker
+    🟢 sync_project
+    ⚫️ sync_workspace
+
+Tier 2 - Platform integration ─────────────────────────────────────────────
+
+  APIs:
+    ⚫️ extend_project_graph
+    ⚫️ extend_task_command
+    ⚫️ extend_task_script
+    ⚫️ locate_dependencies_root
+    ⚫️ install_dependencies
+    🟢 hash_task_contents
+    ⚫️ parse_lock
+    ⚫️ parse_manifest
+    ⚫️ setup_environment
+
+Tier 3 - Tool management ──────────────────────────────────────────────────
+
+  APIs:
+    ⚫️ register_tool (required)
+    ⚫️ load_versions
+    ⚫️ resolve_version
+    ⚫️ download_prebuilt (required)
+    ⚫️ unpack_archive
+    ⚫️ locate_executables (required)
+    ⚫️ setup_toolchain
+    ⚫️ teardown_toolchain
+```
+
+---
+
 ## upgrade
 
 The `moon upgrade` command can be used to upgrade your current moon binary (if installed globally)
@@ -5759,6 +5917,72 @@ moon:
   downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
 ```
 
+## Go
+
+## `unstable_go`
+
+Enables and configures Go. This setting enables the new WASM powered Go toolchain.
+
+### `version`
+
+Defines the explicit Go toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `go` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  version: '1.24.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `bins`
+
+A list of binaries to install globally into Go (`~/go/bin`) using `go install`. This setting
+requires a list of URLs or binary configuration objects with the following fields:
+
+- `bin` (required) - URL of the binary.
+- `local` - Only install the binary locally, and not in CI.
+
+```yaml title=".moon/toolchain.yml" {2-5}
+unstable_go:
+  bins:
+    - 'golang.org/x/tools/gopls'
+    - bin: 'github.com/revel/cmd/revel@1'
+      local: true
+```
+
+### `tidyOnChange`
+
+Tidy modules when dependencies or `go.sum` changes by running `go mod tidy`. This setting is ignored
+when using Go workspaces. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  tidyOnChange: true
+```
+
+### `vendorDir`
+
+A relative path to the vendor directory from the dependencies root, as generated with
+`go mod vendor`. If vendored with the default name of "vendor", this setting can be omitted.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  vendorDir: 'custom/vendor/path'
+```
+
+### `workspaces`
+
+Enables support for [Go workspaces](https://go.dev/ref/mod#workspaces) and will attempt to locate
+the dependencies root by locating the `go.work` file, and parsing `go.work.sum` files. This
+functionality will take precedence over `go.sum` files. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_go:
+  workspaces: true
+```
+
 ## JavaScript
 
 ## `bun`
@@ -7026,6 +7250,21 @@ hasher:
 
 Configures how moon notifies and interacts with a developer or an external system.
 
+### `terminalNotifications`
+
+When defined, will display OS notifications for action pipeline events when running commands from a
+terminal. Supports the following values:
+
+- `always` - Display on pipeline success and failure.
+- `failure` - Display on pipeline failure only.
+- `success` - Display on pipeline success only.
+- `task-failure` - Display for each task failure.
+
+```yaml title=".moon/workspace.yml" {2}
+notifier:
+  terminalNotifications: 'always'
+```
+
 ### `webhookUrl`
 
 Defines an HTTPS URL that all pipeline events will be posted to. View the
@@ -7034,6 +7273,24 @@ Defines an HTTPS URL that all pipeline events will be posted to. View the
 ```yaml title=".moon/workspace.yml" {2}
 notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
+```
+
+### `acknowledge`
+
+When enabled, webhook notfier will wait for request result and validates the return code for 2xx.
+Defaults to `false`.
+
+:::warning
+
+Activating this setting will slow down your pipeline, because every webhook request will be
+evaluated!
+
+:::
+
+```yaml title=".moon/workspace.yml" {2}
+notifier:
+  webhookUrl: 'https://api.company.com/some/endpoint'
+  webhookAcknowledge: true
 ```
 
 ## `pipeline`
@@ -13291,6 +13548,11 @@ mode.
 - `get_projects` - Get all projects.
 - `get_task` - Get a task by `target`.
 - `get_tasks` - Get all tasks.
+- `get_touched_files` - Gets touched files between base and head revisions.
+  
+- `sync_projects` - Runs the `SyncProject` action for one or many projects by `id`.
+  
+- `sync_workspace` - Runs the `SyncWorkspace` action. 
 
 :::info
 
@@ -13300,6 +13562,60 @@ for these tools are defined as TypeScript types in the
 [`@moonrepo/types`](https://www.npmjs.com/package/@moonrepo/types) package.
 
 :::
+
+---
+
+## Terminal notifications
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+moon is able to send operating system desktop notifications for specific events in the action
+pipeline, on behalf of your terminal application. This is useful for continuous feedback loops and
+reacting to long-running commands while multi-tasking.
+
+Notifications are opt-in and must be enabled with the
+[`notify.terminalNotifications`](/docs/config/workspace#terminalnotifications) setting.
+
+```yaml title=".moon/workspace.yml"
+notifier:
+  terminalNotifications: 'always'
+```
+
+## Setup
+
+Notifications must be enabled at the operating system level.
+
+### Linux
+
+Linux support is based on the [XDG specification](https://en.wikipedia.org/wiki/XDG) and utilizes
+D-BUS APIs, primarily the
+[`org.freedesktop.Notifications.Notify`](https://www.galago-project.org/specs/notification/0.9/x408.html#command-notify)
+method. Refer to your desktop distribution for more information.
+
+Notifications will be sent using the `moon` application name (the current executable).
+
+### macOS
+
+- Open "System Settings" or "System Preferences"
+- Select "Notifications" in the left sidebar
+- Select your terminal application from the list (e.g., "Terminal", "iTerm", etc)
+- Ensure "Allow notifications" is enabled
+- Customize the other settings as desired
+
+Notifications will be sent from your currently running terminal application, derived from the
+`TERM_PROGRAM` environment variable. If we fail to detect the terminal, it will default to "Finder".
+
+### Windows
+
+Requires Windows 10 or later.
+
+- Open "Settings"
+- Go to the "System" panel
+- Select "Notifications & Actions" in the left sidebar
+- Ensure notifications are enabled
+
+Notifications will be sent from the "Windows Terminal" app if it's currently in use, otherwise from
+"Microsoft PowerShell".
 
 ---
 
@@ -14995,6 +15311,8 @@ Every webhook event is posted with the following request body, known as a payloa
 - `createdAt` (`string`) - When the event was created, as a UTC timestamp in ISO 8601 (RFC 3339)
   format.
 - `uuid` (`string`) - A unique identifier for all webhooks in the current run batch.
+- `trace` (`string`) - A unique identifier for all webhooks in the overall run batch. Can be defined
+  via `MOON_TRACE_ID` environment variable.
 
 ```json
 {
@@ -15004,7 +15322,8 @@ Every webhook event is posted with the following request body, known as a payloa
     // ...
   },
   "createdAt": "...",
-  "uuid": "..."
+  "uuid": "...",
+  "trace": "..."
 }
 ```
 
@@ -16078,7 +16397,7 @@ incrementally integrate and improve them over time. The 4 tiers are as follows:
 | Bash/Batch                    |   🟢   |   🟢   |        |        |
 | Bun (JavaScript, TypeScript)  |   🟢   |   🟢   |   🟢   |   🟢   |
 | Deno (JavaScript, TypeScript) |   🟢   |   🟢   |   🟣   |   🟣   |
-| Go                            |   🟢   |   🟢   |        |        |
+| Go                            |   🟢   |   🟢   |   🟢   |   🟢   |
 | Node (JavaScript, TypeScript) |   🟢   |   🟢   |   🟢   |   🟢   |
 | └─ npm, pnpm, yarn            |   🟢   |   ⚪️   |   🟢   |   🟢   |
 | PHP                           |   🟢   |   🟢   |        |        |
@@ -16087,7 +16406,7 @@ incrementally integrate and improve them over time. The 4 tiers are as follows:
 | └─ Pip                        |   🟢   |   ⚪️   |   🟣   |        |
 | Ruby                          |   🟢   |   🟢   |        |        |
 | └─ Gems, Bundler              |   🟢   |   ⚪️   |        |        |
-| Rust                          |   🟢   |   🟢   |   🟣   |   🟣   |
+| Rust                          |   🟢   |   🟢   |   🟢   |   🟢   |
 | └─ Cargo                      |   🟢   |   ⚪️   |   🟣   |   🟣   |
 | Other (Kotlin, Java, C#, ...) |   🟢   |        |        |        |
 
@@ -16144,8 +16463,8 @@ currently:
 - **Flakiness detection** - Reduce flaky builds with automatic retries and passthrough settings.
 - **Webhook events**  - Receive a webhook for every event in
   the pipeline. Useful for metrics gathering and insights.
-- **Terminal notifications**  - Receives notifications in your
-  chosen terminal when builds are successful... or are not.
+- **Terminal notifications**  - Receives notifications in
+  your chosen terminal when builds are successful... or are not.
 - **Git hooks** - Manage Git hooks to enforce workflows and requirements for contributors.
 
 ## proto
@@ -29743,3 +30062,103 @@ of changes.
 - Added environment variable support to many non-tool related `.prototools` settings.
 - Updated `proto install ` (without version) to install a version pinned in `.prototools`,
   instead of the latest version.
+
+---
+
+## moon v1.38 - Go WASM toolchain, MCP tools, terminal notifications, and more!
+
+In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!
+
+## RFC: Task inheritance via inline configuration
+
+Task inheritance is one of moon's most powerful features, allowing you to define tasks at the
+top-level and have them automatically inherited by projects that match certain conditions. In it's
+current form, task inheritance is based on the file name of the configuration file, but this
+approach has several limitations.
+
+We're planning to improve task inheritance and have written up an
+[RFC to discuss these changes](https://github.com/moonrepo/moon/issues/2023). We'd appreciate any
+and all feedback!
+
+## New Go toolchain powered by WASM
+
+Official Go toolchain support has been requested by the community for a long time now, and with the
+somewhat stabilization of WASM plugins and the introduction of the
+[Rust toolchain in the last release](./moon-v1.37), we felt it was finally time to add Go! To enable
+Go, run our new command or add an [`unstable_go`](/docs/config/toolchain#unstable_go) entry to
+`.moon/toolchain.yml`.
+
+```shell
+$ moon toolchain add unstable_go
+```
+
+```yaml title=".moon/toolchain.yml"
+unstable_go:
+  version: '1.24.0'
+  workspaces: true
+```
+
+The Go toolchain releases with full [tier 1, 2, and 3 support](/docs/how-it-works/languages)!
+Additionally, the following features and functionality is available when enabling the toolchain:
+
+- Supports Go workspaces through the `go.work` file. Can be disabled with the
+  [`unstable_go.workspaces`](/docs/config/toolchain#unstable_go) setting.
+- Extracts the `go.mod` `module` directive as a project alias.
+- Extracts project relationships and dependency information from `go.mod` `require` directives.
+- Extracts version and checksum information from `go.sum` and `go.work.sum` files.
+- Injects Go globals directory (`GOBIN`) into task command/script child processes.
+- Supports installing Go globals via `go install` commands. Can be customized with the
+  [`unstable_go.bins`](/docs/config/toolchain#unstable_go) setting.
+- Automatically runs `go mod` or `go work` commands when installing dependencies.
+- Basic Docker image and pruning support.
+
+We hope you enjoy this new Go toolchain. With that said, we are _not_ Go experts, and would love to
+hear from you on what works, what doesn't, what can be improved, and what features you would like to
+see added!
+
+## New MCP tools
+
+In our last release, we introduced the [`moon mcp` command](./moon-v1.37#mcp-editor-integration),
+offering deep editor integration with AI models like GitHub Copilot and Cursor. This release expands
+on that by introducing 3 more tools to utilize:
+
+- `get_touched_files` - Gets touched files between base and head revisions.
+- `sync_projects` - Runs the `SyncProject` action for one or many projects by `id`.
+- `sync_workspace` - Runs the `SyncWorkspace` action.
+
+## New OS terminal notifications
+
+This was a feature we originally scoped out during moon's inception, almost 3 years ago, but we
+never got around to implementing it. However, there has been some improvements to native operating
+system notifications in Rust lately, so it felt like a good time to finally implement it!
+
+And on that note, we are introducing a new
+[`notifier.terminalNotifications`](/docs/config/workspace#terminalnotifications) setting that allows
+you to receive terminal notifications for pipeline events.
+
+```yaml title=".moon/workspace.yml"
+notifier:
+  terminalNotifications: 'failure'
+```
+
+> View the [official guide](/docs/guides/notifications) for more information!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.38.0) for a full list
+of changes.
+
+- Added new `moon toolchain` command and sub-commands.
+  - Add a toolchain to `.moon/toolchain.yml` with `moon toolchain add`.
+  - View information about a toolchain plugin with `moon toolchain info`.
+- Added a `notifier.webhookAcknowledge` setting, that ensures webhooks resolve with a 2XX status
+  code.
+- Updated proto to [v0.50.1](https://github.com/moonrepo/proto/releases/tag/v0.50.0) (from 0.49.4).
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Better command line argument parsing/joining (especially for task `args`)
+- Better child process I/O piping
+- WASM toolchain documentation

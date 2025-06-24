@@ -2,11 +2,106 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2025-06-11T00:00:00.000Z</updated>
+    <updated>2025-06-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.38 - Go WASM toolchain, MCP tools, terminal notifications, and more!]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.38</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.38"/>
+        <updated>2025-06-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="rfc-task-inheritance-via-inline-configuration">RFC: Task inheritance via inline configuration<a href="https://moonrepo.dev/blog/moon-v1.38#rfc-task-inheritance-via-inline-configuration" class="hash-link" aria-label="Direct link to RFC: Task inheritance via inline configuration" title="Direct link to RFC: Task inheritance via inline configuration">​</a></h2>
+<p>Task inheritance is one of moon's most powerful features, allowing you to define tasks at the
+top-level and have them automatically inherited by projects that match certain conditions. In it's
+current form, task inheritance is based on the file name of the configuration file, but this
+approach has several limitations.</p>
+<p>We're planning to improve task inheritance and have written up an
+<a href="https://github.com/moonrepo/moon/issues/2023" target="_blank" rel="noopener noreferrer">RFC to discuss these changes</a>. We'd appreciate any
+and all feedback!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-go-toolchain-powered-by-wasm">New Go toolchain powered by WASM<a href="https://moonrepo.dev/blog/moon-v1.38#new-go-toolchain-powered-by-wasm" class="hash-link" aria-label="Direct link to New Go toolchain powered by WASM" title="Direct link to New Go toolchain powered by WASM">​</a></h2>
+<p>Official Go toolchain support has been requested by the community for a long time now, and with the
+somewhat stabilization of WASM plugins and the introduction of the
+<a href="https://moonrepo.dev/blog/moon-v1.37">Rust toolchain in the last release</a>, we felt it was finally time to add Go! To enable
+Go, run our new command or add an <a href="https://moonrepo.dev/docs/config/toolchain#unstable_go"><code>unstable_go</code></a> entry to
+<code>.moon/toolchain.yml</code>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon toolchain </span><span class="token function" style="color:#ff94ff;font-weight:bold">add</span><span class="token plain"> unstable_go</span><br></span></code></pre></div></div>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_go</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'1.24.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">workspaces</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>The Go toolchain releases with full <a href="https://moonrepo.dev/docs/how-it-works/languages">tier 1, 2, and 3 support</a>!
+Additionally, the following features and functionality is available when enabling the toolchain:</p>
+<ul>
+<li>Supports Go workspaces through the <code>go.work</code> file. Can be disabled with the
+<a href="https://moonrepo.dev/docs/config/toolchain#unstable_go"><code>unstable_go.workspaces</code></a> setting.</li>
+<li>Extracts the <code>go.mod</code> <code>module</code> directive as a project alias.</li>
+<li>Extracts project relationships and dependency information from <code>go.mod</code> <code>require</code> directives.</li>
+<li>Extracts version and checksum information from <code>go.sum</code> and <code>go.work.sum</code> files.</li>
+<li>Injects Go globals directory (<code>GOBIN</code>) into task command/script child processes.</li>
+<li>Supports installing Go globals via <code>go install</code> commands. Can be customized with the
+<a href="https://moonrepo.dev/docs/config/toolchain#unstable_go"><code>unstable_go.bins</code></a> setting.</li>
+<li>Automatically runs <code>go mod</code> or <code>go work</code> commands when installing dependencies.</li>
+<li>Basic Docker image and pruning support.</li>
+</ul>
+<p>We hope you enjoy this new Go toolchain. With that said, we are <em>not</em> Go experts, and would love to
+hear from you on what works, what doesn't, what can be improved, and what features you would like to
+see added!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-mcp-tools">New MCP tools<a href="https://moonrepo.dev/blog/moon-v1.38#new-mcp-tools" class="hash-link" aria-label="Direct link to New MCP tools" title="Direct link to New MCP tools">​</a></h2>
+<p>In our last release, we introduced the <a href="https://moonrepo.dev/blog/moon-v1.37#mcp-editor-integration"><code>moon mcp</code> command</a>,
+offering deep editor integration with AI models like GitHub Copilot and Cursor. This release expands
+on that by introducing 3 more tools to utilize:</p>
+<ul>
+<li><code>get_touched_files</code> - Gets touched files between base and head revisions.</li>
+<li><code>sync_projects</code> - Runs the <code>SyncProject</code> action for one or many projects by <code>id</code>.</li>
+<li><code>sync_workspace</code> - Runs the <code>SyncWorkspace</code> action.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-os-terminal-notifications">New OS terminal notifications<a href="https://moonrepo.dev/blog/moon-v1.38#new-os-terminal-notifications" class="hash-link" aria-label="Direct link to New OS terminal notifications" title="Direct link to New OS terminal notifications">​</a></h2>
+<p>This was a feature we originally scoped out during moon's inception, almost 3 years ago, but we
+never got around to implementing it. However, there has been some improvements to native operating
+system notifications in Rust lately, so it felt like a good time to finally implement it!</p>
+<p>And on that note, we are introducing a new
+<a href="https://moonrepo.dev/docs/config/workspace#terminalnotifications"><code>notifier.terminalNotifications</code></a> setting that allows
+you to receive terminal notifications for pipeline events.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">notifier</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">terminalNotifications</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'failure'</span><br></span></code></pre></div></div>
+<blockquote>
+<p>View the <a href="https://moonrepo.dev/docs/guides/notifications">official guide</a> for more information!</p>
+</blockquote>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.38#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.38.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added new <code>moon toolchain</code> command and sub-commands.<!-- -->
+<ul>
+<li>Add a toolchain to <code>.moon/toolchain.yml</code> with <code>moon toolchain add</code>.</li>
+<li>View information about a toolchain plugin with <code>moon toolchain info</code>.</li>
+</ul>
+</li>
+<li>Added a <code>notifier.webhookAcknowledge</code> setting, that ensures webhooks resolve with a 2XX status
+code.</li>
+<li>Updated proto to <a href="https://github.com/moonrepo/proto/releases/tag/v0.50.0" target="_blank" rel="noopener noreferrer">v0.50.1</a> (from 0.49.4).</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.38#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h2>
+<p>With toolchains plugins being stabilized more, we'd like to focus on some other areas.</p>
+<ul>
+<li>Better command line argument parsing/joining (especially for task <code>args</code>)</li>
+<li>Better child process I/O piping</li>
+<li>WASM toolchain documentation</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="toolchain" term="toolchain"/>
+        <category label="wasm" term="wasm"/>
+        <category label="plugin" term="plugin"/>
+        <category label="go" term="go"/>
+        <category label="mcp" term="mcp"/>
+        <category label="ai" term="ai"/>
+        <category label="webhooks" term="webhooks"/>
+        <category label="terminal" term="terminal"/>
+        <category label="notifications" term="notifications"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.50 - URL rewrites, on-init activation, preserved comments, and more]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.50</id>
@@ -1807,64 +1902,5 @@ indentation.</li>
         <category label="command" term="command"/>
         <category label="docker" term="docker"/>
         <category label="dockerfile" term="dockerfile"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.38 - Shell activation / hooks]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.38</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.38"/>
-        <updated>2024-07-07T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're introducing a long requested feature, shell hooks!]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're introducing a long requested feature, shell hooks!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-experimental-shell-activation-workflow">New experimental shell activation workflow<a href="https://moonrepo.dev/blog/proto-v0.38#new-experimental-shell-activation-workflow" class="hash-link" aria-label="Direct link to New experimental shell activation workflow" title="Direct link to New experimental shell activation workflow">​</a></h2>
-<p>You've most likely used another version manager before proto, and may have used a workflow where
-<code>PATH</code> was automatically updated with versioned binaries of specific tools, or environment variables
-were injected into your shell. This functionality is what's known as shell hooks, and proto now has
-experimental support for them through a feature known as
-<a href="https://moonrepo.dev/docs/proto/workflows#shell-activation">shell activation</a>!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="how-it-works">How it works<a href="https://moonrepo.dev/blog/proto-v0.38#how-it-works" class="hash-link" aria-label="Direct link to How it works" title="Direct link to How it works">​</a></h3>
-<p>For example, say you're using Zsh as your shell. You could now append the following expression at
-the bottom of your shell profile, which evaluates our new
-<a href="https://moonrepo.dev/docs/proto/commands/activate"><code>proto activate</code></a> command.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">eval</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"</span><span class="token string variable" style="color:#fef9c3">$(</span><span class="token string variable" style="color:#fef9c3">proto activate </span><span class="token string variable function" style="color:#ff94ff;font-weight:bold">zsh</span><span class="token string variable" style="color:#fef9c3">)</span><span class="token string" style="color:#c9e166">"</span><br></span></code></pre></div></div>
-<p>When the current working directory changes (via <code>cd</code>), or the CLI prompt changes, this activation
-workflow will trigger the following:</p>
-<ul>
-<li>Download and install necessary proto plugins (if they do not exist)</li>
-<li>Load and resolve all <code>.prototools</code> configurations up the file system</li>
-<li>Detect and resolve versions for all configured tools</li>
-<li>Export environment variables defined in <code>[env]</code> and <code>[tools.*.env]</code></li>
-<li>Prepend <code>PATH</code> with binary directories for detected tools</li>
-</ul>
-<p>Pretty awesome right? We think so. But as mentioned above, this feature is highly experimental, and
-may not work properly across all shells (we're unable to test everything). So if you run into an
-issue, please report it!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="unlocked-features">Unlocked features<a href="https://moonrepo.dev/blog/proto-v0.38#unlocked-features" class="hash-link" aria-label="Direct link to Unlocked features" title="Direct link to Unlocked features">​</a></h3>
-<p>This new workflow unlocks some functionality that was previously not possible with proto shims/bins
-directly, and they are:</p>
-<ul>
-<li>Directory paths to globally installed packages are now automatically prepended to <code>PATH</code>.
-Previously, you would need to add them manually. This was non-trivial if they were installed to
-versioned locations.</li>
-<li>Directory paths to pre-installed binaries within a tool are also prepended to <code>PATH</code>. For example,
-Rust/Cargo and Python provide a lot of executables that were ignored by our shims.</li>
-<li>This workflow is 1 step closer to replacing <a href="https://direnv.net/" target="_blank" rel="noopener noreferrer">direnv</a> itself.</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.38#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.38.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added support for <a href="https://murex.rocks/" target="_blank" rel="noopener noreferrer">murex</a> shells.</li>
-<li>Added a <code>--include-global</code> flag to <code>proto use</code>, that will also install globally configured tools.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="shell" term="shell"/>
-        <category label="activate" term="activate"/>
-        <category label="hook" term="hook"/>
-        <category label="murex" term="murex"/>
-        <category label="env" term="env"/>
-        <category label="path" term="path"/>
     </entry>
 </feed>

@@ -41,6 +41,8 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [task](https://moonrepo.dev/docs/commands/task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [teardown](https://moonrepo.dev/docs/commands/teardown): The `moon teardown` command, as its name infers, will teardown and clean the current environment,
 - [templates](https://moonrepo.dev/docs/commands/templates): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [toolchain add](https://moonrepo.dev/docs/commands/toolchain/add): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [toolchain info](https://moonrepo.dev/docs/commands/toolchain/info): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [upgrade](https://moonrepo.dev/docs/commands/upgrade): The `moon upgrade` command can be used to upgrade your current moon binary (if installed globally)
 - [Feature comparison](https://moonrepo.dev/docs/comparison): import {
 - [Cache](https://moonrepo.dev/docs/concepts/cache): moon's able to achieve high performance and blazing speeds by implementing a cache that's powered by
@@ -92,6 +94,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Typescript Eslint](https://moonrepo.dev/docs/guides/javascript/typescript-eslint): A handful of ESLint rules are not compatible with the TypeScript plugin, or they cause serious
 - [TypeScript project references](https://moonrepo.dev/docs/guides/javascript/typescript-project-refs): import Tabs from '@theme/Tabs';
 - [MCP integration](https://moonrepo.dev/docs/guides/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Terminal notifications](https://moonrepo.dev/docs/guides/notifications): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Offline mode](https://moonrepo.dev/docs/guides/offline-mode): moon assumes that an internet connection is always available, as we download and install tools into
 - [Open source usage](https://moonrepo.dev/docs/guides/open-source): import Image from '@site/src/components/Image';
 - [Pkl configuration](https://moonrepo.dev/docs/guides/pkl-config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -251,3 +254,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v1.36 - Toolchain plugins beta, optimized remote caching, and codegen improvements](https://moonrepo.dev/blog/2025-05-18_moon-v1.36): In this release, we're very excited to fully release toolchain plugins!
 - [moon v1.37 - Rust WASM toolchain and MCP support](https://moonrepo.dev/blog/2025-06-03_moon-v1.37): In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI
 - [proto v0.50 - URL rewrites, on-init activation, preserved comments, and more](https://moonrepo.dev/blog/2025-06-11_proto-v0.50): In this release, we're landing a handful of quality of life improvements that have been requested by
+- [moon v1.38 - Go WASM toolchain, MCP tools, terminal notifications, and more!](https://moonrepo.dev/blog/2025-06-24_moon-v1.38): In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!

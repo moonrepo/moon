@@ -345,7 +345,7 @@ constraints:
                 FILENAME,
                 r"
 constraints:
-  enforceProjectTypeRelationships: abc
+  enforceLayerRelationships: abc
 ",
                 load_config_from_root,
             );

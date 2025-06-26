@@ -6,18 +6,19 @@ A project is a library, application, package, binary, tool, etc, that contains s
 files, assets, resources, and more. A project must exist and be configured within a
 [workspace](./workspace).
 
-## Names
+## IDs
 
-A project name (or identifier) is a unique resource for locating a project. The name is explicitly
+A project identifier (or name) is a unique resource for locating a project. The ID is explicitly
 configured within [`.moon/workspace.yml`](../config/workspace), as a key within the
 [`projects`](../config/workspace#projects) setting, and can be written in camel/kebab/snake case.
-Names support `a-z`, `A-Z`, `0-9`, `_`, `-`, `/`, `.`, and must start with a character.
+IDs support alphabetic unicode characters, `0-9`, `_`, `-`, `/`, `.`, and must start with a
+character.
 
-Names are used heavily by configuration and the command line to link and reference everything.
-They're also a much easier concept for remembering projects than file system paths, and they
-typically can be written with less key strokes.
+IDs are used heavily by configuration and the command line to link and reference everything. They're
+also a much easier concept for remembering projects than file system paths, and they typically can
+be written with less key strokes.
 
-Lastly, a project name can be paired with a task name to create a [target](./target).
+Lastly, a project ID can be paired with a task ID to create a [target](./target).
 
 ## Aliases
 

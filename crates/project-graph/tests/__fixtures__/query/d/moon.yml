@@ -1,5 +1,5 @@
 language: go
-type: library
+layer: library
 
 tags: [four]
 

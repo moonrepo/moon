@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a file lock would be created for proto installation, even when it didn't need
+  to be installed.
+
 ## 1.38.0
 
 #### 💥 Breaking

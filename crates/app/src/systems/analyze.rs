@@ -55,8 +55,6 @@ pub async fn install_proto(
     cache_engine: &CacheEngine,
     toolchain_config: &ToolchainConfig,
 ) -> AppResult {
-    let _lock = cache_engine.create_lock("proto-install")?;
-
     let bin_name = exe_name("proto");
     let install_dir = proto_env
         .store
@@ -107,6 +105,8 @@ pub async fn install_proto(
             return Err(ProtoInstallError::RequiredInternetConnection.into());
         }
     }
+
+    let _lock = cache_engine.create_lock("proto-install")?;
 
     let target_triple = determine_triple()?;
 

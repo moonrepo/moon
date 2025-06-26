@@ -8,9 +8,9 @@ config_struct!(
     #[derive(Config)]
     pub struct ConstraintsConfig {
         /// Enforces relationships between projects based on each project's
-        /// `type` setting.
-        #[setting(default = true)]
-        pub enforce_project_type_relationships: bool,
+        /// `layer` setting.
+        #[setting(default = true, alias = "enforceProjectTypeRelationships")]
+        pub enforce_layer_relationships: bool,
 
         /// Enforces relationships between projects based on each project's
         /// `tags` setting. Requires a mapping of tags, to acceptable tags.

@@ -11,6 +11,7 @@
   - `--type` -> `--layer` in `moon query projects`
   - `projectType` -> `projectLayer` for MQL
   - `$projectType` -> `$projectLayer` for task tokens
+  - `enforceProjectTypeRelationships` -> `enforceLayerRelationships` in `.moon/workspace.yml`
 
 ## Unreleased
 

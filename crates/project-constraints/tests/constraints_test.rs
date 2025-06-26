@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{DependencyScope, StackType};
-use moon_project::{Project, ProjectConfig, LayerType};
-use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
+use moon_project::{LayerType, Project, ProjectConfig};
+use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 
 fn create_project(id: &str, layer: LayerType) -> Project {
     Project {
@@ -22,7 +22,7 @@ fn create_project_with_tags(id: &str, tags: Vec<Id>) -> Project {
     }
 }
 
-mod by_type {
+mod by_layer {
     use super::*;
 
     mod scopes {
@@ -30,7 +30,7 @@ mod by_type {
 
         #[test]
         fn works_for_prod() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Production,
@@ -40,7 +40,7 @@ mod by_type {
 
         #[test]
         fn works_for_dev() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Development,
@@ -50,7 +50,7 @@ mod by_type {
 
         #[test]
         fn works_for_peer() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Peer,
@@ -60,7 +60,7 @@ mod by_type {
 
         #[test]
         fn works_for_build() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Build,
@@ -70,7 +70,7 @@ mod by_type {
 
         #[test]
         fn works_for_root() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Root,
@@ -80,7 +80,7 @@ mod by_type {
 
         #[test]
         fn doesnt_error_for_invalid_constraint_when_build() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Application),
                 &DependencyScope::Build,
@@ -90,7 +90,7 @@ mod by_type {
 
         #[test]
         fn doesnt_error_for_invalid_constraint_when_root() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Application),
                 &create_project("bar", LayerType::Application),
                 &DependencyScope::Root,
@@ -110,7 +110,7 @@ mod by_type {
             let mut b = create_project("bar", LayerType::Application);
             b.config.stack = StackType::Backend;
 
-            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+            enforce_layer_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
 
         #[test]
@@ -122,7 +122,7 @@ mod by_type {
             let mut b = create_project("bar", LayerType::Application);
             b.config.stack = StackType::Unknown;
 
-            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+            enforce_layer_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
 
         #[test]
@@ -134,7 +134,7 @@ mod by_type {
             let mut b = create_project("bar", LayerType::Application);
             b.config.stack = StackType::Unknown;
 
-            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+            enforce_layer_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
 
         #[test]
@@ -146,13 +146,13 @@ mod by_type {
             let mut b = create_project("bar", LayerType::Application);
             b.config.stack = StackType::Frontend;
 
-            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+            enforce_layer_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
     }
 
     #[test]
     fn app_use_lib() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Library),
             &DependencyScope::Production,
@@ -162,7 +162,7 @@ mod by_type {
 
     #[test]
     fn app_use_tool() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Tool),
             &DependencyScope::Production,
@@ -172,7 +172,7 @@ mod by_type {
 
     #[test]
     fn app_use_config() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Configuration),
             &DependencyScope::Production,
@@ -182,7 +182,7 @@ mod by_type {
 
     #[test]
     fn app_use_scaffold() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Scaffolding),
             &DependencyScope::Production,
@@ -192,7 +192,7 @@ mod by_type {
 
     #[test]
     fn app_use_unknown() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Unknown),
             &DependencyScope::Production,
@@ -201,9 +201,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type application")]
+    #[should_panic(expected = "Layering violation: Project foo with layer application")]
     fn app_cant_use_app() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Application),
             &DependencyScope::Production,
@@ -212,9 +212,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type application")]
+    #[should_panic(expected = "Layering violation: Project foo with layer application")]
     fn app_cant_use_e2e() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Application),
             &create_project("bar", LayerType::Automation),
             &DependencyScope::Production,
@@ -224,7 +224,7 @@ mod by_type {
 
     #[test]
     fn lib_use_lib() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Library),
             &DependencyScope::Production,
@@ -234,7 +234,7 @@ mod by_type {
 
     #[test]
     fn lib_use_config() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Configuration),
             &DependencyScope::Production,
@@ -244,7 +244,7 @@ mod by_type {
 
     #[test]
     fn lib_use_scaffold() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Scaffolding),
             &DependencyScope::Production,
@@ -254,7 +254,7 @@ mod by_type {
 
     #[test]
     fn lib_use_unknown() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Unknown),
             &DependencyScope::Production,
@@ -263,9 +263,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type library")]
+    #[should_panic(expected = "Layering violation: Project foo with layer library")]
     fn lib_cant_use_tool() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Tool),
             &DependencyScope::Production,
@@ -274,9 +274,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type library")]
+    #[should_panic(expected = "Layering violation: Project foo with layer library")]
     fn lib_cant_use_app() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Application),
             &DependencyScope::Production,
@@ -285,9 +285,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type library")]
+    #[should_panic(expected = "Layering violation: Project foo with layer library")]
     fn lib_cant_use_e2e() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Library),
             &create_project("bar", LayerType::Automation),
             &DependencyScope::Production,
@@ -297,7 +297,7 @@ mod by_type {
 
     #[test]
     fn tool_use_lib() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Library),
             &DependencyScope::Production,
@@ -307,7 +307,7 @@ mod by_type {
 
     #[test]
     fn tool_use_config() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Configuration),
             &DependencyScope::Production,
@@ -317,7 +317,7 @@ mod by_type {
 
     #[test]
     fn tool_use_scaffold() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Scaffolding),
             &DependencyScope::Production,
@@ -327,7 +327,7 @@ mod by_type {
 
     #[test]
     fn tool_use_unknown() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Unknown),
             &DependencyScope::Production,
@@ -336,9 +336,8 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type tool")]
-    fn tool_cant_use_tool() {
-        enforce_project_type_relationships(
+    fn tool_can_use_tool() {
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Tool),
             &DependencyScope::Production,
@@ -347,9 +346,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type tool")]
+    #[should_panic(expected = "Layering violation: Project foo with layer tool")]
     fn tool_cant_use_app() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Application),
             &DependencyScope::Production,
@@ -358,9 +357,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type tool")]
+    #[should_panic(expected = "Layering violation: Project foo with layer tool")]
     fn tool_cant_use_e2e() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Tool),
             &create_project("bar", LayerType::Automation),
             &DependencyScope::Production,
@@ -370,7 +369,7 @@ mod by_type {
 
     #[test]
     fn e2e_use_app() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Application),
             &DependencyScope::Production,
@@ -380,7 +379,7 @@ mod by_type {
 
     #[test]
     fn e2e_use_lib() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Library),
             &DependencyScope::Production,
@@ -390,7 +389,7 @@ mod by_type {
 
     #[test]
     fn e2e_use_tool() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Tool),
             &DependencyScope::Production,
@@ -400,7 +399,7 @@ mod by_type {
 
     #[test]
     fn e2e_use_config() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Configuration),
             &DependencyScope::Production,
@@ -410,7 +409,7 @@ mod by_type {
 
     #[test]
     fn e2e_use_scaffold() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Scaffolding),
             &DependencyScope::Production,
@@ -420,7 +419,7 @@ mod by_type {
 
     #[test]
     fn e2e_use_unknown() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Unknown),
             &DependencyScope::Production,
@@ -429,9 +428,9 @@ mod by_type {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid project relationship. Project foo of type automation")]
+    #[should_panic(expected = "Layering violation: Project foo with layer automation")]
     fn e2e_cant_use_e2e() {
-        enforce_project_type_relationships(
+        enforce_layer_relationships(
             &create_project("foo", LayerType::Automation),
             &create_project("bar", LayerType::Automation),
             &DependencyScope::Production,
@@ -444,7 +443,7 @@ mod by_type {
 
         #[test]
         fn config_use_config() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Configuration),
                 &create_project("bar", LayerType::Configuration),
                 &DependencyScope::Production,
@@ -453,8 +452,9 @@ mod by_type {
         }
 
         #[test]
-        fn config_use_scaffold() {
-            enforce_project_type_relationships(
+        #[should_panic(expected = "Layering violation: Project foo with layer configuration")]
+        fn config_cant_use_scaffold() {
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Configuration),
                 &create_project("bar", LayerType::Scaffolding),
                 &DependencyScope::Production,
@@ -463,11 +463,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project foo of type configuration"
-        )]
+        #[should_panic(expected = "Layering violation: Project foo with layer configuration")]
         fn config_cant_use_app() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Configuration),
                 &create_project("bar", LayerType::Application),
                 &DependencyScope::Production,
@@ -476,11 +474,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project foo of type configuration"
-        )]
+        #[should_panic(expected = "Layering violation: Project foo with layer configuration")]
         fn config_cant_use_e2e() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Configuration),
                 &create_project("bar", LayerType::Automation),
                 &DependencyScope::Production,
@@ -489,11 +485,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project foo of type configuration"
-        )]
+        #[should_panic(expected = "Layering violation: Project foo with layer configuration")]
         fn config_cant_use_lib() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Configuration),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Production,
@@ -502,11 +496,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project foo of type configuration"
-        )]
+        #[should_panic(expected = "Layering violation: Project foo with layer configuration")]
         fn config_cant_use_tool() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Configuration),
                 &create_project("bar", LayerType::Tool),
                 &DependencyScope::Production,
@@ -520,7 +512,7 @@ mod by_type {
 
         #[test]
         fn scaffold_use_config() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Scaffolding),
                 &create_project("bar", LayerType::Configuration),
                 &DependencyScope::Production,
@@ -530,7 +522,7 @@ mod by_type {
 
         #[test]
         fn scaffold_use_scaffold() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Scaffolding),
                 &create_project("bar", LayerType::Scaffolding),
                 &DependencyScope::Production,
@@ -539,9 +531,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        #[should_panic(expected = "Layering violation: Project foo with layer scaffolding")]
         fn scaffold_cant_use_app() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Scaffolding),
                 &create_project("bar", LayerType::Application),
                 &DependencyScope::Production,
@@ -550,9 +542,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        #[should_panic(expected = "Layering violation: Project foo with layer scaffolding")]
         fn scaffold_cant_use_e2e() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Scaffolding),
                 &create_project("bar", LayerType::Automation),
                 &DependencyScope::Production,
@@ -561,9 +553,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        #[should_panic(expected = "Layering violation: Project foo with layer scaffolding")]
         fn scaffold_cant_use_lib() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Scaffolding),
                 &create_project("bar", LayerType::Library),
                 &DependencyScope::Production,
@@ -572,9 +564,9 @@ mod by_type {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        #[should_panic(expected = "Layering violation: Project foo with layer scaffolding")]
         fn scaffold_cant_use_tool() {
-            enforce_project_type_relationships(
+            enforce_layer_relationships(
                 &create_project("foo", LayerType::Scaffolding),
                 &create_project("bar", LayerType::Tool),
                 &DependencyScope::Production,
@@ -643,7 +635,7 @@ mod by_tag {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid tag relationship. Project foo with tag #a cannot depend on")]
+    #[should_panic(expected = "Invalid tag relationship: Project foo with tag #a cannot depend on")]
     fn fail_when_dep_has_no_matching_tags() {
         enforce_tag_relationships(
             &create_project_with_tags("foo", vec![Id::raw("a")]),

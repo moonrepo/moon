@@ -1217,7 +1217,7 @@ mod project_graph {
 
             create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
-                    config.constraints.enforce_project_type_relationships = true;
+                    config.constraints.enforce_layer_relationships = true;
                 })
                 .mock_workspace_graph()
                 .await

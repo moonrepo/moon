@@ -123,6 +123,9 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     }
                     "project" => Field::Project(value),
                     "projectAlias" => Field::ProjectAlias(value),
+                    "projectLayer" => {
+                        Field::ProjectLayer(build_criteria_enum::<LayerType>(&field, &op, value)?)
+                    }
                     "projectName" => Field::ProjectName(value),
                     "projectSource" => Field::ProjectSource(value),
                     "projectStack" => {

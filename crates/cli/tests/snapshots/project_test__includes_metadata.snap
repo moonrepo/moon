@@ -18,7 +18,7 @@ About ──────────────────
   Toolchain: system
   Language: unknown
   Stack: infrastructure
-  Type: configuration
+  Layer: configuration
   Depends on: —
 
 Configuration ──────────

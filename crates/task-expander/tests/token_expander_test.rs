@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{InputPath, LanguageType, OutputPath, LayerType};
+use moon_config::{InputPath, LanguageType, LayerType, OutputPath};
 use moon_env_var::GlobalEnvBag;
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};

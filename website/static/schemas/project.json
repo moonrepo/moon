@@ -73,6 +73,16 @@
         }
       ]
     },
+    "layer": {
+      "title": "layer",
+      "description": "The layer within the project stack, for categorizing.",
+      "default": "unknown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/LayerType"
+        }
+      ]
+    },
     "owners": {
       "title": "owners",
       "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
@@ -146,16 +156,6 @@
         }
       ],
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
-    },
-    "type": {
-      "title": "type",
-      "description": "The type of project.",
-      "default": "unknown",
-      "allOf": [
-        {
-          "$ref": "#/definitions/ProjectType"
-        }
-      ]
     },
     "workspace": {
       "title": "workspace",
@@ -282,6 +282,19 @@
           "description": "An unsupported language.",
           "type": "string"
         }
+      ]
+    },
+    "LayerType": {
+      "description": "The layer within the project stack, for categorizing.",
+      "type": "string",
+      "enum": [
+        "application",
+        "automation",
+        "configuration",
+        "library",
+        "scaffolding",
+        "tool",
+        "unknown"
       ]
     },
     "OwnersConfig": {
@@ -696,19 +709,6 @@
         {
           "$ref": "#/definitions/ToolchainPluginConfig"
         }
-      ]
-    },
-    "ProjectType": {
-      "description": "The type of project, for categorizing.",
-      "type": "string",
-      "enum": [
-        "application",
-        "automation",
-        "configuration",
-        "library",
-        "scaffolding",
-        "tool",
-        "unknown"
       ]
     },
     "ProjectWorkspaceConfig": {

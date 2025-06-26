@@ -106,7 +106,7 @@ impl InheritedTasksManager {
         &self,
         toolchains: &[Id],
         stack: &StackType,
-        project: &LayerType,
+        layer: &LayerType,
         tags: &[Id],
     ) -> Vec<String> {
         let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
@@ -124,7 +124,7 @@ impl InheritedTasksManager {
         lookup.insert(format!("{stack}"));
 
         // frontend-library
-        lookup.insert(format!("{stack}-{project}"));
+        lookup.insert(format!("{stack}-{layer}"));
 
         for toolchain in &toolchains {
             // node
@@ -138,12 +138,12 @@ impl InheritedTasksManager {
 
         for toolchain in &toolchains {
             // node-library
-            lookup.insert(format!("{toolchain}-{project}"));
+            lookup.insert(format!("{toolchain}-{layer}"));
         }
 
         for toolchain in &toolchains {
             // node-frontend-library
-            lookup.insert(format!("{toolchain}-{stack}-{project}"));
+            lookup.insert(format!("{toolchain}-{stack}-{layer}"));
         }
 
         // tag-foo
@@ -198,7 +198,7 @@ impl InheritedTasksManager {
         &self,
         toolchains: &[Id],
         stack: &StackType,
-        project: &LayerType,
+        layer: &LayerType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {
         use crate::shapes::OneOrMany;
@@ -206,7 +206,7 @@ impl InheritedTasksManager {
         use moon_common::path::standardize_separators;
         use schematic::{ConfigError, PartialConfig};
 
-        let lookup_order = self.get_lookup_order(toolchains, stack, project, tags);
+        let lookup_order = self.get_lookup_order(toolchains, stack, layer, tags);
         let lookup_key = lookup_order.join(":");
 
         // Check the cache first in read only mode!
@@ -271,7 +271,7 @@ impl InheritedTasksManager {
                         "inherited tasks ({}, {}, {})",
                         toolchains.join(", "),
                         stack,
-                        project
+                        layer
                     ),
                     error,
                     help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),

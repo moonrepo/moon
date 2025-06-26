@@ -3,8 +3,8 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, PlatformType,
-    ProjectConfig, ProjectType, StackType,
+    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType,
+    ProjectConfig, StackType,
 };
 use moon_file_group::FileGroup;
 use moon_task::{Target, Task};
@@ -41,7 +41,7 @@ cacheable!(
 
         /// The type of layer within the stack. Is used for layer constraints.
         #[serde(alias = "type")]
-        pub layer: ProjectType,
+        pub layer: LayerType,
 
         /// Default platform to run tasks against.
         // TODO REMOVE

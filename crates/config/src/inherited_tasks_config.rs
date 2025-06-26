@@ -2,7 +2,7 @@ use crate::config_struct;
 use crate::project::{
     PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps,
 };
-use crate::project_config::{ProjectType, StackType};
+use crate::project_config::{LayerType, StackType};
 use crate::shapes::InputPath;
 use moon_common::{Id, cacheable};
 use rustc_hash::{FxHashMap, FxHasher};
@@ -106,7 +106,7 @@ impl InheritedTasksManager {
         &self,
         toolchains: &[Id],
         stack: &StackType,
-        project: &ProjectType,
+        project: &LayerType,
         tags: &[Id],
     ) -> Vec<String> {
         let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
@@ -198,7 +198,7 @@ impl InheritedTasksManager {
         &self,
         toolchains: &[Id],
         stack: &StackType,
-        project: &ProjectType,
+        project: &LayerType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {
         use crate::shapes::OneOrMany;

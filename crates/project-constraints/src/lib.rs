@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use moon_common::{Id, Style, Stylize};
 use moon_config::{DependencyScope, StackType};
-use moon_project::{Project, ProjectType};
+use moon_project::{Project, LayerType};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -16,9 +16,9 @@ pub enum ProjectConstraintsError {
     )]
     InvalidTypeRelationship {
         source_id: Id,
-        source_type: ProjectType,
+        source_type: LayerType,
         dep_id: Id,
-        dep_type: ProjectType,
+        dep_type: LayerType,
         allowed: String,
     },
 
@@ -62,49 +62,49 @@ pub fn enforce_project_type_relationships(
     }
 
     let mut allowed = vec![
-        ProjectType::Configuration.to_string(),
-        ProjectType::Scaffolding.to_string(),
+        LayerType::Configuration.to_string(),
+        LayerType::Scaffolding.to_string(),
     ];
 
     let valid = match source.layer {
-        ProjectType::Application => {
-            allowed.push(ProjectType::Library.to_string());
-            allowed.push(ProjectType::Tool.to_string());
+        LayerType::Application => {
+            allowed.push(LayerType::Library.to_string());
+            allowed.push(LayerType::Tool.to_string());
 
             matches!(
                 dependency.layer,
-                ProjectType::Configuration
-                    | ProjectType::Scaffolding
-                    | ProjectType::Library
-                    | ProjectType::Tool
-                    | ProjectType::Unknown
+                LayerType::Configuration
+                    | LayerType::Scaffolding
+                    | LayerType::Library
+                    | LayerType::Tool
+                    | LayerType::Unknown
             )
         }
-        ProjectType::Automation => {
-            allowed.push(ProjectType::Application.to_string());
-            allowed.push(ProjectType::Library.to_string());
-            allowed.push(ProjectType::Tool.to_string());
+        LayerType::Automation => {
+            allowed.push(LayerType::Application.to_string());
+            allowed.push(LayerType::Library.to_string());
+            allowed.push(LayerType::Tool.to_string());
 
-            !matches!(dependency.layer, ProjectType::Automation)
+            !matches!(dependency.layer, LayerType::Automation)
         }
-        ProjectType::Library | ProjectType::Tool => {
-            allowed.push(ProjectType::Library.to_string());
+        LayerType::Library | LayerType::Tool => {
+            allowed.push(LayerType::Library.to_string());
 
             matches!(
                 dependency.layer,
-                ProjectType::Configuration
-                    | ProjectType::Scaffolding
-                    | ProjectType::Library
-                    | ProjectType::Unknown
+                LayerType::Configuration
+                    | LayerType::Scaffolding
+                    | LayerType::Library
+                    | LayerType::Unknown
             )
         }
-        ProjectType::Configuration | ProjectType::Scaffolding => {
+        LayerType::Configuration | LayerType::Scaffolding => {
             matches!(
                 dependency.layer,
-                ProjectType::Configuration | ProjectType::Scaffolding
+                LayerType::Configuration | LayerType::Scaffolding
             )
         }
-        ProjectType::Unknown => {
+        LayerType::Unknown => {
             // Do nothing?
             true
         }

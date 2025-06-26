@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths,
-    PlatformType, ProjectConfig, ProjectDependsOn, ProjectToolchainEntry, ProjectType, TaskArgs,
+    ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, LayerType,
+    OwnersPaths, PlatformType, ProjectConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
     ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
@@ -36,7 +36,7 @@ mod project_config {
         let config = test_load_config("moon.yml", "{}", |path| load_config_from_root(path, "."));
 
         assert_eq!(config.language, LanguageType::Unknown);
-        assert_eq!(config.type_of, ProjectType::Unknown);
+        assert_eq!(config.layer, LayerType::Unknown);
     }
 
     #[test]
@@ -805,7 +805,7 @@ workspace:
                         )]),
                         ..Default::default()
                     },
-                    type_of: ProjectType::Library,
+                    layer: LayerType::Library,
                     workspace: ProjectWorkspaceConfig {
                         inherited_tasks: ProjectWorkspaceInheritedTasksConfig {
                             exclude: vec![Id::raw("build")],

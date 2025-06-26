@@ -1,5 +1,17 @@
 # Changelog
 
+## Next
+
+#### 🚀 Updates
+
+- Renamed project `type` to `layer`, as it better reflects what it does, a layer of abstraction
+  within the project stack. For backwards compatibility, the `type` name will still be supported
+  until v2. The following changes have been made:
+  - `type` -> `layer` in `moon.yml`
+  - `--type` -> `--layer` in `moon query projects`
+  - `projectType` -> `projectLayer` in MQL
+  - `$projectType` -> `$projectLayer` for task tokens
+
 ## Unreleased
 
 #### 🐞 Fixes

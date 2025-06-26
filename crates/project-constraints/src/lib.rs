@@ -66,13 +66,13 @@ pub fn enforce_project_type_relationships(
         ProjectType::Scaffolding.to_string(),
     ];
 
-    let valid = match source.type_of {
+    let valid = match source.layer {
         ProjectType::Application => {
             allowed.push(ProjectType::Library.to_string());
             allowed.push(ProjectType::Tool.to_string());
 
             matches!(
-                dependency.type_of,
+                dependency.layer,
                 ProjectType::Configuration
                     | ProjectType::Scaffolding
                     | ProjectType::Library
@@ -85,13 +85,13 @@ pub fn enforce_project_type_relationships(
             allowed.push(ProjectType::Library.to_string());
             allowed.push(ProjectType::Tool.to_string());
 
-            !matches!(dependency.type_of, ProjectType::Automation)
+            !matches!(dependency.layer, ProjectType::Automation)
         }
         ProjectType::Library | ProjectType::Tool => {
             allowed.push(ProjectType::Library.to_string());
 
             matches!(
-                dependency.type_of,
+                dependency.layer,
                 ProjectType::Configuration
                     | ProjectType::Scaffolding
                     | ProjectType::Library
@@ -100,7 +100,7 @@ pub fn enforce_project_type_relationships(
         }
         ProjectType::Configuration | ProjectType::Scaffolding => {
             matches!(
-                dependency.type_of,
+                dependency.layer,
                 ProjectType::Configuration | ProjectType::Scaffolding
             )
         }
@@ -113,9 +113,9 @@ pub fn enforce_project_type_relationships(
     if !valid {
         return Err(ProjectConstraintsError::InvalidTypeRelationship {
             source_id: source.id.clone(),
-            source_type: source.type_of,
+            source_type: source.layer,
             dep_id: dependency.id.clone(),
-            dep_type: dependency.type_of,
+            dep_type: dependency.layer,
             allowed: allowed.join(", "),
         }
         .into());

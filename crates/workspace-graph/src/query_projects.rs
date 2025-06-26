@@ -95,14 +95,14 @@ impl WorkspaceGraph {
                                 Ok(false)
                             }
                         }
+                        Field::ProjectLayer(types) | Field::ProjectType(types) => {
+                            condition.matches_enum(types, &project.layer)
+                        }
                         Field::ProjectName(ids) => condition.matches(ids, &project.id),
                         Field::ProjectSource(sources) => {
                             condition.matches(sources, project.source.as_str())
                         }
                         Field::ProjectStack(types) => condition.matches_enum(types, &project.stack),
-                        Field::ProjectType(types) => {
-                            condition.matches_enum(types, &project.type_of)
-                        }
                         Field::Tag(tags) => condition.matches_list(
                             tags,
                             &project

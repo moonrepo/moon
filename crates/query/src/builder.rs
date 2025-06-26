@@ -16,6 +16,7 @@ pub enum Field<'l> {
     Language(Vec<LanguageType>),
     Project(FieldValues<'l>),
     ProjectAlias(FieldValues<'l>),
+    ProjectLayer(Vec<ProjectType>),
     ProjectName(FieldValues<'l>),
     ProjectSource(FieldValues<'l>),
     ProjectStack(Vec<StackType>),

@@ -242,7 +242,7 @@ mod token_expander {
         fn replaces_variables() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            project.type_of = ProjectType::Library;
+            project.layer = ProjectType::Library;
             project.language = LanguageType::JavaScript;
 
             let task = create_task();

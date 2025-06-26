@@ -3,10 +3,10 @@ use moon_config::{DependencyScope, StackType};
 use moon_project::{Project, ProjectConfig, ProjectType};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 
-fn create_project(id: &str, type_of: ProjectType) -> Project {
+fn create_project(id: &str, layer: ProjectType) -> Project {
     Project {
         id: Id::raw(id),
-        type_of,
+        layer,
         ..Project::default()
     }
 }

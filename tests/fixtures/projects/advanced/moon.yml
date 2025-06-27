@@ -1,4 +1,4 @@
-type: 'application'
+layer: 'application'
 language: 'typescript'
 stack: 'frontend'
 

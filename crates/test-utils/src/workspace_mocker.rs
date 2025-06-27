@@ -313,7 +313,7 @@ impl WorkspaceMocker {
             .get_inherited_config(
                 &project.toolchains,
                 &project.config.stack,
-                &project.config.type_of,
+                &project.config.layer,
                 &project.config.tags,
             )
             .unwrap();

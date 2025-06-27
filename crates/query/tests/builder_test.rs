@@ -1,4 +1,4 @@
-use moon_config::{LanguageType, ProjectType, StackType, TaskType};
+use moon_config::{LanguageType, LayerType, StackType, TaskType};
 use moon_query::{
     ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator, build_query,
 };
@@ -431,7 +431,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectType(vec![ProjectType::Library]),
+                        field: Field::ProjectType(vec![LayerType::Library]),
                         op: ComparisonOperator::Equal,
                     }],
                     input: Some("projectType=library".into())
@@ -446,7 +446,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectType(vec![ProjectType::Tool, ProjectType::Library]),
+                        field: Field::ProjectType(vec![LayerType::Tool, LayerType::Library]),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("projectType!=[tool, library]".into())

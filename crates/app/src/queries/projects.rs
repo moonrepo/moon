@@ -16,12 +16,12 @@ pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub id: Option<String>,
     pub language: Option<String>,
+    #[serde(alias = "type")]
+    pub layer: Option<String>,
     pub stack: Option<String>,
     pub source: Option<String>,
     pub tags: Option<String>,
     pub tasks: Option<String>,
-    #[serde(rename = "type")]
-    pub type_of: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -44,11 +44,11 @@ fn load_with_regex(
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
+    let layer_regex = convert_to_regex("layer", &options.layer)?;
     let stack_regex = convert_to_regex("stack", &options.stack)?;
     let source_regex = convert_to_regex("source", &options.source)?;
     let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
-    let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
     for project_id in workspace_graph.projects.get_node_keys() {
@@ -106,8 +106,8 @@ fn load_with_regex(
             }
         }
 
-        if let Some(regex) = &type_regex {
-            if !regex.is_match(&project.type_of.to_string()) {
+        if let Some(regex) = &layer_regex {
+            if !regex.is_match(&project.layer.to_string()) {
                 continue;
             }
         }

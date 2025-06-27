@@ -102,6 +102,14 @@ Alias of the project. For example, the `package.json` name.
 projectAlias~@scope/*
 ```
 
+### `projectLayer`<VersionLabel version="1.39.0" />
+
+The project layer, as defined in [`moon.yml`](../config/project#layer).
+
+```
+projectLayer=application
+```
+
 ### `projectName`
 
 Name of the project, as defined in [`.moon/workspace.yml`](../config/workspace), or `id` in
@@ -122,7 +130,7 @@ projectSource~packages/*
 
 ### `projectStack`<VersionLabel version="1.22.0" />
 
-The stack of the project, as defined in [`moon.yml`](../config/project#stack).
+The project stack, as defined in [`moon.yml`](../config/project#stack).
 
 ```
 projectStack=frontend
@@ -130,7 +138,9 @@ projectStack=frontend
 
 ### `projectType`
 
-The type of project, as defined in [`moon.yml`](../config/project#type).
+> This field is deprecated, use `projectLayer` instead.
+
+The type of project, as defined in [`moon.yml`](../config/project#layer).
 
 ```
 projectType=application

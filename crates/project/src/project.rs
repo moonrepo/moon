@@ -3,8 +3,8 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, PlatformType,
-    ProjectConfig, ProjectType, StackType,
+    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType,
+    ProjectConfig, StackType,
 };
 use moon_file_group::FileGroup;
 use moon_task::{Target, Task};
@@ -39,6 +39,10 @@ cacheable!(
         /// Primary programming language of the project.
         pub language: LanguageType,
 
+        /// The type of layer within the stack. Is used for layer constraints.
+        #[serde(alias = "type")]
+        pub layer: LayerType,
+
         /// Default platform to run tasks against.
         // TODO REMOVE
         #[deprecated]
@@ -64,10 +68,6 @@ cacheable!(
 
         /// Toolchains derived from the configured language.
         pub toolchains: Vec<Id>,
-
-        /// The type of project.
-        #[serde(rename = "type")]
-        pub type_of: ProjectType,
     }
 );
 
@@ -133,12 +133,12 @@ impl PartialEq for Project {
             && self.file_groups == other.file_groups
             && self.id == other.id
             && self.language == other.language
+            && self.layer == other.layer
             && self.root == other.root
             && self.source == other.source
             && self.stack == other.stack
             && self.tasks == other.tasks
             && self.task_targets == other.task_targets
-            && self.type_of == other.type_of
     }
 }
 

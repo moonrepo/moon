@@ -3,8 +3,8 @@ import type {
 	DependencyScope,
 	DependencyType,
 	LanguageType,
+	LayerType,
 	ProjectConfig,
-	ProjectType,
 	StackType,
 } from './project-config';
 import type {
@@ -109,6 +109,7 @@ export interface Project {
 		taskLayers: Record<string, string[]>;
 	};
 	language: LanguageType;
+	layer: LayerType;
 	platform: PlatformType;
 	root: string;
 	source: string;
@@ -116,7 +117,6 @@ export interface Project {
 	tasks: Record<string, Task>;
 	taskTargets: string[];
 	toolchains: string[];
-	type: ProjectType;
 }
 
 export interface ProjectFragment {

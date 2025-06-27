@@ -195,6 +195,9 @@ pub struct QueryProjectsArgs {
     #[arg(long, help = "Filter projects of this programming language", help_heading = HEADING_FILTERS)]
     language: Option<String>,
 
+    #[arg(long, alias = "type", help = "Filter projects of this layer", help_heading = HEADING_FILTERS)]
+    layer: Option<String>,
+
     #[arg(long, help = "Filter projects that match this source path", help_heading = HEADING_FILTERS)]
     stack: Option<String>,
 
@@ -206,9 +209,6 @@ pub struct QueryProjectsArgs {
 
     #[arg(long, help = "Filter projects that have the following tasks", help_heading = HEADING_FILTERS)]
     tasks: Option<String>,
-
-    #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
-    type_of: Option<String>,
 
     #[arg(
         long,
@@ -230,12 +230,12 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
         id: args.id,
         json: args.json,
         language: args.language,
+        layer: args.layer,
         query: args.query,
         stack: args.stack,
         source: args.source,
         tags: args.tags,
         tasks: args.tasks,
-        type_of: args.type_of,
     };
 
     // Filter down to affected projects only
@@ -287,7 +287,7 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
                     TableHeader::new("Project", Size::Length((id_width + 5).max(10) as u32)),
                     TableHeader::new("Source", Size::Length((source_width + 5) as u32)),
                     TableHeader::new("Stack", Size::Length(16)).hide_below(160),
-                    TableHeader::new("Type", Size::Length(16)).hide_below(120),
+                    TableHeader::new("Layer", Size::Length(16)).hide_below(120),
                     TableHeader::new("Language", Size::Length(13)).hide_below(140),
                     TableHeader::new("Toolchains", Size::Length(25)),
                     TableHeader::new("Description", Size::Auto).hide_below(100),
@@ -315,7 +315,7 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
                             }
                             TableCol(col: 3) {
                                 StyledText(
-                                    content: project.type_of.to_string(),
+                                    content: project.layer.to_string(),
                                 )
                             }
                             TableCol(col: 4) {

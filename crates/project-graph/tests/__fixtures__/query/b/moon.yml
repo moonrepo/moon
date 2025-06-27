@@ -1,5 +1,5 @@
 language: typescript
-type: library
+layer: library
 
 tags: [two, three, five]
 

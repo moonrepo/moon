@@ -1,4 +1,4 @@
 language: javascript
-type: application
+layer: application
 toolchain:
   default: bun

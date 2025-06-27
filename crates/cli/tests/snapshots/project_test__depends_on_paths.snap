@@ -9,7 +9,7 @@ About ──────────────────
   Toolchain: node
   Language: javascript
   Stack: unknown
-  Type: application
+  Layer: application
   Depends on:
     - baz (production)
     - bar (production)

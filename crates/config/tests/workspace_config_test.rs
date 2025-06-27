@@ -305,7 +305,7 @@ projects:
                 load_config_from_root(path)
             });
 
-            assert!(config.constraints.enforce_project_type_relationships);
+            assert!(config.constraints.enforce_layer_relationships);
             assert!(config.constraints.tag_relationships.is_empty());
         }
 
@@ -321,7 +321,7 @@ constraints:
                 load_config_from_root,
             );
 
-            assert!(config.constraints.enforce_project_type_relationships);
+            assert!(config.constraints.enforce_layer_relationships);
             assert_eq!(
                 config.constraints.tag_relationships,
                 FxHashMap::from_iter([(Id::raw("id"), vec![Id::raw("other")])])
@@ -345,7 +345,7 @@ constraints:
                 FILENAME,
                 r"
 constraints:
-  enforceProjectTypeRelationships: abc
+  enforceLayerRelationships: abc
 ",
                 load_config_from_root,
             );
@@ -875,7 +875,7 @@ extensions:
             assert_eq!(
                 config.constraints,
                 ConstraintsConfig {
-                    enforce_project_type_relationships: false,
+                    enforce_layer_relationships: false,
                     tag_relationships: FxHashMap::from_iter([(
                         Id::raw("a"),
                         vec![Id::raw("b"), Id::raw("c")]

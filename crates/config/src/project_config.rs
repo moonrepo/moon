@@ -34,9 +34,9 @@ config_unit_enum!(
 );
 
 config_unit_enum!(
-    /// The type of project, for categorizing.
+    /// The layer within the project stack, for categorizing.
     #[derive(ConfigEnum)]
-    pub enum ProjectType {
+    pub enum LayerType {
         Application,
         Automation,
         Configuration,
@@ -127,6 +127,10 @@ config_struct!(
         /// The primary programming language of the project.
         pub language: LanguageType,
 
+        /// The layer within the project stack, for categorizing.
+        #[serde(alias = "type")]
+        pub layer: LayerType,
+
         /// Defines ownership of source code within the current project, by mapping
         /// file paths and globs to owners. An owner is either a user, team, or group.
         #[setting(nested)]
@@ -155,10 +159,6 @@ config_struct!(
         /// Overrides top-level toolchain settings, scoped to this project.
         #[setting(nested)]
         pub toolchain: ProjectToolchainConfig,
-
-        /// The type of project.
-        #[serde(rename = "type")]
-        pub type_of: ProjectType,
 
         /// Overrides top-level workspace settings, scoped to this project.
         #[setting(nested)]

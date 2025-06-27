@@ -1,2 +1,2 @@
 language: go
-type: application
+layer: application

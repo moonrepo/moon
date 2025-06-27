@@ -591,12 +591,12 @@ impl<'graph> TokenExpander<'graph> {
                 None => Cow::Owned(String::new()),
             },
             "projectChannel" => get_metadata(|md| md.channel.as_deref()),
+            "projectLayer" | "projectType" => Cow::Owned(project.layer.to_string()),
             "projectName" => get_metadata(|md| md.name.as_deref()),
             "projectOwner" => get_metadata(|md| md.owner.as_deref()),
             "projectRoot" => Cow::Owned(self.stringify_path(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
             "projectStack" => Cow::Owned(project.stack.to_string()),
-            "projectType" => Cow::Owned(project.type_of.to_string()),
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),
             "task" => Cow::Borrowed(task.id.as_str()),

@@ -86,6 +86,16 @@ export type LanguageType =
 	| 'unknown'
 	| string;
 
+/** The layer within the project stack, for categorizing. */
+export type LayerType =
+	| 'application'
+	| 'automation'
+	| 'configuration'
+	| 'library'
+	| 'scaffolding'
+	| 'tool'
+	| 'unknown';
+
 export type OwnersPaths = string[] | Record<string, string[]>;
 
 /**
@@ -170,16 +180,6 @@ export interface ProjectToolchainConfig {
 	rust: ProjectToolchainCommonToolConfig | null;
 }
 
-/** The type of project, for categorizing. */
-export type ProjectType =
-	| 'application'
-	| 'automation'
-	| 'configuration'
-	| 'library'
-	| 'scaffolding'
-	| 'tool'
-	| 'unknown';
-
 /** Controls how tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
 	/** Excludes inheriting tasks by ID. */
@@ -234,6 +234,13 @@ export interface ProjectConfig {
 	 */
 	language: LanguageType;
 	/**
+	 * The layer within the project stack, for categorizing.
+	 *
+	 * @default 'unknown'
+	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
+	 */
+	layer: LayerType;
+	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
 	 */
@@ -264,13 +271,6 @@ export interface ProjectConfig {
 	tasks: Record<string, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain: ProjectToolchainConfig;
-	/**
-	 * The type of project.
-	 *
-	 * @default 'unknown'
-	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
-	 */
-	type: ProjectType;
 	/** Overrides top-level workspace settings, scoped to this project. */
 	workspace: ProjectWorkspaceConfig;
 }
@@ -458,6 +458,12 @@ export interface PartialProjectConfig {
 	 */
 	language?: LanguageType | null;
 	/**
+	 * The layer within the project stack, for categorizing.
+	 *
+	 * @default 'unknown'
+	 */
+	layer?: LayerType | null;
+	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
 	 */
@@ -487,12 +493,6 @@ export interface PartialProjectConfig {
 	tasks?: Record<string, PartialTaskConfig> | null;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain?: PartialProjectToolchainConfig | null;
-	/**
-	 * The type of project.
-	 *
-	 * @default 'unknown'
-	 */
-	type?: ProjectType | null;
 	/** Overrides top-level workspace settings, scoped to this project. */
 	workspace?: PartialProjectWorkspaceConfig | null;
 }

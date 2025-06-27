@@ -1,5 +1,5 @@
 language: 'rust'
-type: 'application'
+layer: 'tool'
 
 env:
   CARGO_TERM_COLOR: 'always'

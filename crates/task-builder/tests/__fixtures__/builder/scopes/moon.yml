@@ -1,5 +1,5 @@
 language: 'javascript'
-type: 'application'
+layer: 'application'
 tags: ['scope']
 
 tasks:

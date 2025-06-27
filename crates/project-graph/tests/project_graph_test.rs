@@ -238,7 +238,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn filters_using_gitignore() {
-            let sandbox = create_sandbox("type-constraints");
+            let sandbox = create_sandbox("layer-constraints");
 
             sandbox.enable_git();
             sandbox.create_file(".gitignore", "*-other");
@@ -1207,17 +1207,17 @@ mod project_graph {
         }
     }
 
-    mod type_constraints {
+    mod layer_constraints {
         use super::*;
 
-        async fn build_type_constraints_graph(func: impl FnOnce(&Sandbox)) -> WorkspaceGraph {
-            let sandbox = create_sandbox("type-constraints");
+        async fn build_layer_constraints_graph(func: impl FnOnce(&Sandbox)) -> WorkspaceGraph {
+            let sandbox = create_sandbox("layer-constraints");
 
             func(&sandbox);
 
             create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
-                    config.constraints.enforce_project_type_relationships = true;
+                    config.constraints.enforce_layer_relationships = true;
                 })
                 .mock_workspace_graph()
                 .await
@@ -1225,7 +1225,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn app_can_use_unknown() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [unknown]");
             })
             .await;
@@ -1233,7 +1233,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn app_can_use_library() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [library]");
             })
             .await;
@@ -1241,16 +1241,16 @@ mod project_graph {
 
         #[tokio::test]
         async fn app_can_use_tool() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [tool]");
             })
             .await;
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project app of type application")]
+        #[should_panic(expected = "Layering violation: Project app with layer application")]
         async fn app_cannot_use_app() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(
                     sandbox.path().join("app/moon.yml"),
                     "dependsOn: [app-other]",
@@ -1261,7 +1261,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn library_can_use_unknown() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(
                     sandbox.path().join("library/moon.yml"),
                     "dependsOn: [unknown]",
@@ -1272,7 +1272,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn library_can_use_library() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(
                     sandbox.path().join("library/moon.yml"),
                     "dependsOn: [library-other]",
@@ -1282,18 +1282,18 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project library of type library")]
+        #[should_panic(expected = "Layering violation: Project library with layer library")]
         async fn library_cannot_use_app() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [app]");
             })
             .await;
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project library of type library")]
+        #[should_panic(expected = "Layering violation: Project library with layer library")]
         async fn library_cannot_use_tool() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
             })
             .await;
@@ -1301,7 +1301,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn tool_can_use_unknown() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [unknown]");
             })
             .await;
@@ -1309,25 +1309,24 @@ mod project_graph {
 
         #[tokio::test]
         async fn tool_can_use_library() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [library]");
             })
             .await;
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project tool of type tool")]
+        #[should_panic(expected = "Layering violation: Project tool with layer tool")]
         async fn tool_cannot_use_app() {
-            build_type_constraints_graph(|sandbox| {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
             })
             .await;
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project tool of type tool")]
-        async fn tool_cannot_use_tool() {
-            build_type_constraints_graph(|sandbox| {
+        async fn tool_can_use_tool() {
+            build_layer_constraints_graph(|sandbox| {
                 append_file(
                     sandbox.path().join("tool/moon.yml"),
                     "dependsOn: [tool-other]",
@@ -1394,7 +1393,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior")]
+        #[should_panic(expected = "Invalid tag relationship: Project a with tag #warrior")]
         async fn errors_for_no_source_tag_match() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(
@@ -1419,7 +1418,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior")]
+        #[should_panic(expected = "Invalid tag relationship: Project a with tag #warrior")]
         async fn errors_for_no_allowed_tag_match() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(
@@ -1432,7 +1431,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage")]
+        #[should_panic(expected = "Invalid tag relationship: Project a with tag #mage")]
         async fn errors_for_depon_empty_tags() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(

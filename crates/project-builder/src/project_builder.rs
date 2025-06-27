@@ -98,7 +98,7 @@ impl<'app> ProjectBuilder<'app> {
         let global_config = tasks_manager.get_inherited_config(
             &self.toolchains_config,
             &local_config.stack,
-            &local_config.type_of,
+            &local_config.layer,
             &local_config.tags,
         )?;
 
@@ -276,7 +276,7 @@ impl<'app> ProjectBuilder<'app> {
         let config = self.local_config.take().unwrap_or_default();
 
         project.stack = config.stack;
-        project.type_of = config.type_of;
+        project.layer = config.layer;
         project.config = config;
 
         Ok(project)

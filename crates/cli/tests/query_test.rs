@@ -928,7 +928,7 @@ mod tasks {
             cmd.arg("query")
                 .arg("tasks")
                 .arg("--json")
-                .args(["--layer", "build"]);
+                .args(["--type", "build"]);
         });
 
         let json: QueryTasksResult = json::parse(assert.output()).unwrap();

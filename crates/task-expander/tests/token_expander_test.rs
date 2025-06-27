@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
+use moon_config::{InputPath, LanguageType, LayerType, OutputPath};
 use moon_env_var::GlobalEnvBag;
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -242,7 +242,7 @@ mod token_expander {
         fn replaces_variables() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            project.type_of = ProjectType::Library;
+            project.layer = LayerType::Library;
             project.language = LanguageType::JavaScript;
 
             let task = create_task();

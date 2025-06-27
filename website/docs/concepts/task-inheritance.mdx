@@ -21,7 +21,7 @@ quickly in multi-language setups.
 
 To support these complex repositories, we support scoped tasks with [`.moon/tasks/**/*.yml`][tasks],
 where `*.yml` maps to a project based on a combination of its [language][language], [stack][stack],
-[type][type], or [tags][tags]. This enables you to easily declare tasks for "JavaScript projects",
+[layer][layer], or [tags][tags]. This enables you to easily declare tasks for "JavaScript projects",
 "Go applications", "Ruby libraries", so on and so forth.
 
 When resolving configuration files, moon will locate and _shallow_ merge files in the following
@@ -33,12 +33,12 @@ order, from widest scope to narrowest scope:
   <VersionLabel version="1.23.0" />
 - `.moon/tasks/<language>-<stack>.yml` - Projects with a matching [`language`][language] and
   [`stack`][stack] settings. <VersionLabel version="1.23.0" />
-- `.moon/tasks/<stack>-<type>.yml` - Projects with matching [`stack`][stack] and [`type`][type]
+- `.moon/tasks/<stack>-<layer>.yml` - Projects with matching [`stack`][stack] and [`layer`][layer]
   settings. <VersionLabel version="1.23.0" />
-- `.moon/tasks/<language>-<type>.yml` - Projects with matching [`language`][language] and
-  [`type`][type] settings.
-- `.moon/tasks/<language>-<stack>-<type>.yml` - Projects with matching [`language`][language],
-  [`stack`][stack], and [`type`][type] settings. <VersionLabel version="1.23.0" />
+- `.moon/tasks/<language>-<layer>.yml` - Projects with matching [`language`][language] and
+  [`layer`][layer] settings.
+- `.moon/tasks/<language>-<stack>-<layer>.yml` - Projects with matching [`language`][language],
+  [`stack`][stack], and [`layer`][layer] settings. <VersionLabel version="1.23.0" />
 - `.moon/tasks/tag-<name>.yml` - Projects with a matching [`tag`][tags].
   <VersionLabel version="1.2.0" />
 
@@ -57,8 +57,8 @@ TypeScript) based projects have the following additional lookups using
 
 - `.moon/tasks/<toolchain>.yml`
 - `.moon/tasks/<toolchain>-<stack>.yml`
-- `.moon/tasks/<toolchain>-<type>.yml`
-- `.moon/tasks/<toolchain>-<stack>-<type>.yml`
+- `.moon/tasks/<toolchain>-<layer>.yml`
+- `.moon/tasks/<toolchain>-<stack>-<layer>.yml`
 
 For example, `node.yml` would be inherited for Node.js projects, `bun-library.yml` for Bun
 libraries, and `deno-application.yml` for Deno applications. While `javascript.yml`,
@@ -148,4 +148,4 @@ tasks:
 [tasks]: ../config/tasks
 [language]: ../config/project#language
 [stack]: ../config/project#stack
-[type]: ../config/project#type
+[layer]: ../config/project#layer

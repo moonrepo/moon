@@ -9,7 +9,7 @@ About ──────────────────
   Toolchain: node
   Language: javascript
   Stack: unknown
-  Type: unknown
+  Layer: unknown
   Depends on:
     - noConfig (production)
 

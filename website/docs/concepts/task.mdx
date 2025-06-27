@@ -7,14 +7,14 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 Tasks are commands that are ran in the context of a [project](./project). Underneath the hood, a
 task is simply a binary or system command that is ran as a child process.
 
-## Names
+## IDs
 
-A task name (or identifier) is a unique resource for locating a task _within_ a project. The name is
+A task identifier (or name) is a unique resource for locating a task _within_ a project. The ID is
 explicitly configured as a key within the [`tasks`](../config/project#tasks) setting, and can be
-written in camel/kebab/snake case. Names support `a-z`, `A-Z`, `0-9`, `_`, `-`, `/`, `.`, and must
-start with a character.
+written in camel/kebab/snake case. IDs support alphabetic unicode characters, `0-9`, `_`, `-`, `/`,
+`.`, and must start with a character.
 
-A task name can be paired with a scope to create a [target](./target).
+A task ID can be paired with a scope to create a [target](./target).
 
 ## Types
 

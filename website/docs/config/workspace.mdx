@@ -163,20 +163,31 @@ codeowners:
 Configures constraints between projects that are enforced during project graph generation. This is
 also known as project boundaries.
 
-### `enforceProjectTypeRelationships`
+### `enforceLayerRelationships`
 
-<HeadingApiLink to="/api/types/interface/ConstraintsConfig#enforceProjectTypeRelationships" />
+<HeadingApiLink to="/api/types/interface/ConstraintsConfig#enforceLayerRelationships" />
 
-Enforces allowed relationships between a project its dependencies based on the project's
-[`type`](./project#type) and [`stack`](./project#stack) settings. When a project depends on another
-project of an invalid type, an error will be thrown when attempting to run a task. The following
-relationships are enforced when this setting is enabled, which defaults to `true`.
+> This was previously known as `enforceProjectTypeRelationships` and was renamed to
+> `enforceLayerRelationships` in v1.39.
 
-- Applications can depend on all types _except other_ applications or automation.
-- Automation can depend on all types _except other_ automation.
-- Libraries can _only_ depend on other libraries, configuration, or scaffolding.
-- Tools can _only_ depend on libraries, configuration, or scaffolding.
-- Configuration and scaffolding can _only_ depend on other configuration and scaffolding.
+Enforces allowed relationships between a project and its dependencies based on the project's
+[`layer`](./project#layer) and [`stack`](./project#stack) settings. When a project depends on
+another project of an invalid layer, a layering violation error will be thrown when attempting to
+run a task.
+
+Layers are allowed to depend on lower layers in the same stack, but not higher layers. Additionally,
+layers may depend on itself, excluding automations and applications. The following layers are
+stacked as such:
+
+| Layer           | Description                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `automation`    | An automated testing suite, like E2E, integration, or visual tests. |
+| `application`   | An application of any kind.                                         |
+| `tool`          | An internal tool, CLI, one-off script, etc.                         |
+| `library`       | A self-contained, shareable, and publishable set of code.           |
+| `scaffolding`   | Templates or generators for scaffolding.                            |
+| `configuration` | Configuration files or infrastructure.                              |
+| `unknown`       | When not configured.                                                |
 
 When the project `stack` setting is defined, it alters these rules to allow these kinds of
 relationships. For example, a frontend application can depend on a backend application, but not
@@ -184,19 +195,18 @@ another frontend application.
 
 ```yaml title=".moon/workspace.yml" {2}
 constraints:
-  enforceProjectTypeRelationships: false
+  enforceLayerRelationships: false
 ```
 
-> Projects with an unconfigured or unknown type are ignored during enforcement.
+> Projects with an unconfigured or unknown layer are ignored during enforcement.
 
 ### `tagRelationships`
 
 <HeadingApiLink to="/api/types/interface/ConstraintsConfig#tagRelationships" />
 
 Enforces allowed relationships between a project and its dependencies based on the project's
-[`tags`](./project#tags) setting. This works in a similar fashion to
-`enforceProjectTypeRelationships`, but gives you far more control over what these relationships look
-like.
+[`tags`](./project#tags) setting. This works in a similar fashion to `enforceLayerRelationships`,
+but gives you far more control over what these relationships look like.
 
 For example, let's enforce that Next.js projects using the `next` tag can only depend on React
 projects using the `react` tag. If a dependency does not have one of the configured required tags,

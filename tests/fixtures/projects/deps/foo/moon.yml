@@ -2,7 +2,7 @@ dependsOn:
   - bar
   - baz
 
-type: application
+layer: application
 language: javascript
 
 tags: ['react']

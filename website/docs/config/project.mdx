@@ -205,6 +205,36 @@ owners:
   requiredApprovals: 2
 ```
 
+## `layer`
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#layer" />
+
+> This was previously known as `type` and was renamed to `layer` in v1.39.
+
+The layer within a [stack](#stack). Supports the following values:
+
+- `application` - An application of any kind.
+- `automation` - An automated testing suite, like E2E, integration, or visual tests.
+  <VersionLabel version="1.16.0" />
+- `configuration` - Configuration files or infrastructure.
+  <VersionLabel version="1.22.0" />
+- `library` - A self-contained, shareable, and publishable set of code.
+- `scaffolding` - Templates or generators for scaffolding.
+  <VersionLabel version="1.22.0" />
+- `tool` - An internal tool, CLI, one-off script, etc.
+- `unknown` (default) - When not configured.
+
+```yaml title="moon.yml"
+layer: 'application'
+```
+
+:::info
+
+The project layer is used in [task inheritance](../concepts/task-inheritance),
+[constraints and boundaries](./workspace#constraints), editor extensions, and more!
+
+:::
+
 ## `project`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#project" />
@@ -308,34 +338,6 @@ tags:
   - 'react'
   - 'prisma'
 ```
-
-## `type`
-
-<HeadingApiLink to="/api/types/interface/ProjectConfig#type" />
-
-The type of project. Supports the following values:
-
-- `application` - An application of any kind.
-- `automation` - An automated testing suite, like E2E, integration, or visual tests.
-  <VersionLabel version="1.16.0" />
-- `configuration` - Configuration files or infrastructure.
-  <VersionLabel version="1.22.0" />
-- `library` - A self-contained, shareable, and publishable set of code.
-- `scaffolding` - Templates or generators for scaffolding.
-  <VersionLabel version="1.22.0" />
-- `tool` - An internal tool, one-off script, etc.
-- `unknown` (default) - When not configured.
-
-```yaml title="moon.yml"
-type: 'application'
-```
-
-:::info
-
-The project type is used in [task inheritance](../concepts/task-inheritance),
-[constraints and boundaries](./workspace#constraints), editor extensions, and more!
-
-:::
 
 ## Integrations
 

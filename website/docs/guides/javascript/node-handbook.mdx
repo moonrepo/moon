@@ -152,11 +152,11 @@ Applications are runnable or executable, like an HTTP server, and are pieced tog
 and its own encapsulated code. They represent the whole, while packages are the pieces. Applications
 can import and depend on packages, but they _must not_ import and depend on other applications.
 
-In moon, you can denote a project as an application using the [`type`](../../config/project#type)
+In moon, you can denote a project as an application using the [`layer`](../../config/project#layer)
 setting in [`moon.yml`](../../config/project).
 
 ```yaml title="moon.yml"
-type: 'application'
+layer: 'application'
 ```
 
 ### Packages
@@ -165,11 +165,11 @@ Packages (also known as a libraries) are self-contained reusable pieces of code,
 suggested pattern for [code sharing](#code-sharing). Packages can import and depend on other
 packages, but they _must not_ import and depend on applications!
 
-In moon, you can denote a project as a library using the [`type`](../../config/project#type) setting
-in [`moon.yml`](../../config/project).
+In moon, you can denote a project as a library using the [`layer`](../../config/project#layer)
+setting in [`moon.yml`](../../config/project).
 
 ```yaml title="moon.yml"
-type: 'library'
+layer: 'library'
 ```
 
 ### Configuration

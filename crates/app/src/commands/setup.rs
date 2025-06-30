@@ -10,17 +10,19 @@ use tracing::instrument;
 pub async fn setup(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
-        "Downloading and installing tools...",
+        "Downloading and installing toolchains...",
     );
 
-    analyze::load_toolchain().await?;
+    let toolchain_registry = session.get_toolchain_registry().await?;
+
+    analyze::load_toolchain(&toolchain_registry, &session.toolchain_config).await?;
 
     progress.stop().await?;
 
     session.console.render(element! {
         Container {
             Notice(variant: Variant::Success) {
-                StyledText(content: "Toolchain has been setup!")
+                StyledText(content: "Toolchains have been setup!")
             }
         }
     })?;

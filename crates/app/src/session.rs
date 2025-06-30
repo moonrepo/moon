@@ -365,7 +365,9 @@ impl AppSession for MoonSession {
             .await?;
 
             if self.requires_toolchain_installed() {
-                analyze::load_toolchain().await?;
+                let toolchain_registry = self.get_toolchain_registry().await?;
+
+                analyze::load_toolchain(&toolchain_registry, &self.toolchain_config).await?;
             }
         }
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `moon setup` to also install toolchain plugins.
+
 #### 🐞 Fixes
 
 - Fixed an issue where a file lock would be created for proto installation, even when it didn't need

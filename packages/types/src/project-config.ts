@@ -147,8 +147,6 @@ export interface ProjectToolchainCommonToolConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
-export type ToolchainPluginVersionFrom = boolean | string;
-
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */

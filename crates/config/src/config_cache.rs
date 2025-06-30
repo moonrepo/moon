@@ -1,4 +1,4 @@
-use moon_common::consts::CONFIG_DIRNAME;
+use moon_common::consts::{CONFIG_DIRNAME, CONFIG_EXTENSIONS};
 use moon_common::path::hash_component;
 use rustc_hash::FxHashMap;
 use schematic::{Cacher, HandlerError};
@@ -20,19 +20,17 @@ impl ConfigCache {
     }
 
     pub fn get_temp_path(&self, url: &str) -> PathBuf {
-        let ext = if url.ends_with(".pkl") {
-            ".pkl"
-        } else if url.ends_with(".yaml") || url.ends_with(".yml") {
-            ".yml"
-        } else {
-            ""
-        };
+        let ext = CONFIG_EXTENSIONS
+            .iter()
+            .find(|&&e| url.ends_with(&format!(".{}", e)))
+            .map(|&e| format!(".{}", e))
+            .unwrap_or_default();
 
         self.workspace_root
             .join(CONFIG_DIRNAME)
             .join("cache")
             .join("temp")
-            .join(format!("{}{ext}", hash_component(url)))
+            .join(format!("{}{}", hash_component(url), ext))
     }
 }
 

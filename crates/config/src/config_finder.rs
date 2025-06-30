@@ -1,4 +1,4 @@
-use moon_common::consts::CONFIG_DIRNAME;
+use moon_common::consts::{CONFIG_DIRNAME, CONFIG_EXTENSIONS};
 use schematic::ConfigError;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -77,13 +77,17 @@ impl ConfigFinder {
         }
 
         label.push_str(name);
-        label.push_str(".{pkl,yml}");
+        label.push_str(".{pkl,yml,ron}");
 
         label
     }
 
     pub fn get_file_names(&self, name: &str) -> Vec<String> {
-        vec![format!("{name}.yml"), format!("{name}.pkl")]
+        CONFIG_EXTENSIONS
+            .iter()
+            .filter(|&&ext| ext != "yaml") // Skip yaml variant for standard file names
+            .map(|ext| format!("{name}.{ext}"))
+            .collect()
     }
 
     #[allow(clippy::only_used_in_recursion)]
@@ -114,7 +118,7 @@ impl ConfigFinder {
                 // so avoid failing when trying to parse it as a config
                 if path
                     .extension()
-                    .is_some_and(|ext| ext == "yml" || ext == "yaml" || ext == "pkl")
+                    .is_some_and(|ext| CONFIG_EXTENSIONS.contains(&ext.to_str().unwrap_or("")))
                 {
                     files.push(path);
                 }

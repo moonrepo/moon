@@ -1,0 +1,39 @@
+(
+    projects: ["apps/*", "packages/**/*"],
+    
+    codeowners: (
+        globalPaths: {
+            "*": ["@admins"],
+        },
+        orderBy: "file-source",
+        syncOnRun: false,
+    ),
+    
+    hasher: (
+        batchSize: 2500,
+        optimization: "performance",
+        walkStrategy: "vcs",
+        warnOnMissingInputs: true,
+    ),
+    
+    notifier: (
+        webhookUrl: "https://localhost",
+    ),
+    
+    runner: (
+        archivableTargets: ["dist"],
+        cacheLifetime: "7 days",
+        logRunningCommand: true,
+    ),
+    
+    telemetry: false,
+    
+    vcs: (
+        defaultBranch: "master",
+        provider: "git",
+        remoteCandidates: ["origin", "upstream"],
+        syncHooks: true,
+    ),
+    
+    versionConstraint: "^1.0.0",
+)

@@ -1,0 +1,78 @@
+(
+    id: "custom-id",
+    type: "library",
+    language: "rust",
+    platform: "node",
+    stack: "frontend",
+    
+    dependsOn: [
+        "a",
+        (
+            id: "b",
+            scope: "build",
+            source: "implicit",
+        ),
+    ],
+    
+    docker: (
+        file: (
+            buildTask: "build",
+            image: "node:latest",
+            startTask: "start",
+        ),
+        scaffold: (
+            include: ["*.js"],
+        ),
+    ),
+    
+    env: {
+        "KEY": "value",
+    },
+    
+    fileGroups: {
+        "sources": ["src/**/*"],
+        "tests": ["/**/*.test.*"],
+    },
+    
+    owners: (
+        customGroups: {},
+        defaultOwner: "owner",
+        optional: true,
+        paths: ["dir/", "file.txt"],
+        requiredApprovals: 5,
+    ),
+    
+    project: (
+        name: "Name",
+        description: "Does something",
+        owner: "team",
+        channel: "#team",
+        metadata: {
+            "bool": true,
+            "string": "abc",
+        },
+    ),
+    
+    tags: ["a", "b", "c"],
+    
+    tasks: {},
+    
+    toolchain: (
+        deno: (
+            version: "1.2.3",
+        ),
+        typescript: (
+            includeSharedTypes: true,
+        ),
+    ),
+    
+    workspace: (
+        inheritedTasks: (
+            exclude: ["build"],
+            include: ["test"],
+            rename: {
+                "old": "new",
+            },
+        ),
+    ),
+)

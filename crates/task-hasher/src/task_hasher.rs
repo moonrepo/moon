@@ -1,5 +1,6 @@
 use crate::task_hash::TaskHash;
 use miette::IntoDiagnostic;
+use moon_common::consts::CONFIG_EXTENSIONS;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy};
@@ -172,8 +173,9 @@ impl<'task> TaskHasher<'task> {
         // Don't invalidate existing hashes when moon.* changes
         // as we already hash the contents of each task!
         if self.task.state.default_inputs
-            && (workspace_relative_path.ends_with("moon.yml")
-                || workspace_relative_path.ends_with("moon.pkl"))
+            && CONFIG_EXTENSIONS
+                .iter()
+                .any(|ext| workspace_relative_path.ends_with(&format!("moon.{}", ext)))
         {
             return false;
         }

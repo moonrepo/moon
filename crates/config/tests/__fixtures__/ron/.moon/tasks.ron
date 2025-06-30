@@ -1,0 +1,16 @@
+(
+    tasks: {
+        "build": (
+            command: "cargo build",
+            inputs: ["src/**/*.rs", "Cargo.toml"],
+        ),
+        "test": (
+            command: "cargo test",
+            deps: ["build"],
+        ),
+        "lint": (
+            command: "cargo clippy",
+            args: ["--all-features", "--", "-D", "warnings"],
+        ),
+    },
+)

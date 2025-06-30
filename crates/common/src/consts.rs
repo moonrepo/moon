@@ -6,4 +6,6 @@ pub const BIN_NAME: &str = "moon";
 
 pub const CONFIG_DIRNAME: &str = ".moon";
 
+pub const CONFIG_EXTENSIONS: &[&str] = &["yml", "yaml", "pkl", "ron"];
+
 pub const PROTO_CLI_VERSION: &str = "0.50.1";

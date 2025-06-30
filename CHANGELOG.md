@@ -7,6 +7,8 @@
 - Added a new setting for toolchain plugins, `versionFromPrototools`, which controls how we inherit
   a version from the root `.prototools` file. By default this is enabled, but can be configured with
   a string if the IDs don't match.
+- Added support for toolchain plugins to replace/wrap a task script in the `extend_task_script` WASM
+  API.
 - Updated toolchain setup to preload the proto WASM plugin. This should help to alleviate network
   race conditions.
 - Updated `moon setup` to also install toolchain plugins.
@@ -16,6 +18,11 @@
 - Fixed an issue where toolchain plugins do not inherit versions from `.prototools`.
 - Fixed an issue where a file lock would be created for proto installation, even when it didn't need
   to be installed.
+
+#### 🧩 Plugins
+
+- WASM API
+  - Added `ExtendTaskScriptOutput.script` field.
 
 ## 1.38.0
 

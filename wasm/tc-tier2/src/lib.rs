@@ -113,6 +113,9 @@ pub fn extend_task_script(
         "path" => {
             output.paths.push("/extended/path".into());
         }
+        "script" => {
+            output.script = Some(format!("wrapped=$({})", input.script));
+        }
         _ => {}
     };
 

@@ -18,6 +18,8 @@
 - Fixed an issue where toolchain plugins do not inherit versions from `.prototools`.
 - Fixed an issue where a file lock would be created for proto installation, even when it didn't need
   to be installed.
+- Fixed an issue where `moon docker prune` would force install all toolchains. If you were relying
+  on this functionality, run `moon docker setup` instead.
 
 #### 🧩 Plugins
 

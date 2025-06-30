@@ -340,7 +340,13 @@ pub async fn prune(session: MoonSession) -> AppResult {
     );
 
     for project_id in &manifest.focused_projects {
-        toolchains.extend(workspace_graph.get_project(project_id)?.toolchains.clone());
+        toolchains.extend(
+            workspace_graph
+                .get_project(project_id)?
+                .get_enabled_toolchains()
+                .into_iter()
+                .cloned(),
+        );
     }
 
     // Do this later so we only run once for each platform instead of per project

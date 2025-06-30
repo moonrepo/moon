@@ -242,7 +242,45 @@ impl ToolchainConfig {
         false
     }
 
+    pub fn inherit_proto_for_plugins(
+        &mut self,
+        proto_config: &proto_core::ProtoConfig,
+    ) -> miette::Result<()> {
+        use moon_common::color;
+        use tracing::trace;
+
+        for (id, config) in &mut self.plugins {
+            if config.version.is_some() {
+                continue;
+            }
+
+            let proto_id = match &config.version_from_prototools {
+                ToolchainPluginVersionFrom::Enabled(enabled) => {
+                    if *enabled {
+                        id.as_str().strip_prefix("unstable_").unwrap_or(id.as_str())
+                    } else {
+                        continue;
+                    }
+                }
+                ToolchainPluginVersionFrom::Id(custom_id) => custom_id,
+            };
+
+            if let Some(version) = proto_config.versions.get(proto_id) {
+                trace!(
+                    "Inheriting {} version {} from .prototools",
+                    color::id(id),
+                    version
+                );
+
+                config.version = Some(version.req.to_owned());
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
+        self.inherit_proto_for_plugins(proto_config)?;
         self.inherit_proto_bun(proto_config)?;
         self.inherit_proto_deno(proto_config)?;
         self.inherit_proto_node(proto_config)?;
@@ -285,7 +323,7 @@ impl ToolchainConfig {
             use tracing::warn;
 
             warn!(
-                "The legacy Rust toolchain and WASM based Rust toolchain must not be used together"
+                "The legacy Rust toolchain and WASM based Rust toolchain must not be used together!"
             );
         }
 

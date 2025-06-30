@@ -4,10 +4,14 @@
 
 #### 🚀 Updates
 
+- Added a new setting for toolchain plugins, `versionFromPrototools`, which controls how we inherit
+  a version from the root `.prototools` file. By default this is enabled, but can be configured with
+  a string if the IDs don't match.
 - Updated `moon setup` to also install toolchain plugins.
 
 #### 🐞 Fixes
 
+- Fixed an issue where toolchain plugins do not inherit versions from `.prototools`.
 - Fixed an issue where a file lock would be created for proto installation, even when it didn't need
   to be installed.
 

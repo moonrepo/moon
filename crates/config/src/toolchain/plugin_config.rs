@@ -1,9 +1,25 @@
-use crate::config_struct;
-use schematic::Config;
+use crate::{config_enum, config_struct};
+use schematic::{Config, Schematic};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
+
+config_enum!(
+    /// Strategy in which to inherit a version from `.prototools`.
+    #[derive(Schematic)]
+    #[serde(untagged)]
+    pub enum ToolchainPluginVersionFrom {
+        Enabled(bool),
+        Id(String),
+    }
+);
+
+impl Default for ToolchainPluginVersionFrom {
+    fn default() -> Self {
+        Self::Enabled(true)
+    }
+}
 
 config_struct!(
     /// Configures an individual toolchain.
@@ -19,6 +35,11 @@ config_struct!(
 
         /// The version of the toolchain to download and install.
         pub version: Option<UnresolvedVersionSpec>,
+
+        /// Inherit the version from the root `.prototools`.
+        /// When true, matches using the same ID, otherwise a
+        /// string can be provided for a custom ID.
+        pub version_from_prototools: ToolchainPluginVersionFrom,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
         #[setting(flatten)]

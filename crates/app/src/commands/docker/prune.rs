@@ -356,7 +356,9 @@ pub async fn prune(session: MoonSession) -> AppResult {
             continue;
         }
 
-        if let Ok(platform) = PlatformManager::read().get_by_toolchain(&toolchain_id) {
+        if let Ok(platform) = PlatformManager::write().get_by_toolchain_mut(&toolchain_id) {
+            platform.setup_toolchain().await?;
+
             match platform.get_type() {
                 PlatformType::Bun => {
                     prune_bun(

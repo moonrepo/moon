@@ -3,8 +3,9 @@ mod utils;
 use httpmock::prelude::*;
 use moon_config::{
     BinConfig, BinEntry, ConfigLoader, NodePackageManager, NodeVersionFormat, ToolchainConfig,
+    ToolchainPluginConfig,
 };
-use proto_core::{Id, ProtoConfig, UnresolvedVersionSpec};
+use proto_core::{Id, PluginLocator, ProtoConfig, UnresolvedVersionSpec, warpgate::FileLocator};
 use schematic::ConfigLoader as BaseLoader;
 use serde_json::Value;
 use serial_test::serial;
@@ -1369,6 +1370,144 @@ typescript:
             assert_eq!(
                 cfg.config.get("syncProjectReferences").unwrap(),
                 &Value::Bool(false)
+            );
+        }
+    }
+
+    mod plugin {
+        use super::*;
+
+        #[test]
+        fn uses_defaults() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+plugin:
+  plugin: file://example.wasm
+",
+                |path| load_config_from_root(path, &ProtoConfig::default()),
+            );
+
+            let cfg = config.plugins.get("plugin").unwrap();
+
+            assert_eq!(
+                cfg,
+                &ToolchainPluginConfig {
+                    plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                        file: "file://example.wasm".into(),
+                        path: None
+                    }))),
+                    ..Default::default()
+                }
+            );
+        }
+
+        #[test]
+        fn inherits_proto_version() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+plugin:
+  plugin: file://example.wasm
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("plugin"),
+                        UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
+                    );
+
+                    load_config_from_root(path, &proto)
+                },
+            );
+
+            let cfg = config.plugins.get("plugin").unwrap();
+
+            assert_eq!(
+                cfg.version.as_ref().unwrap(),
+                &UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn inherits_proto_version_with_different_id() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+plugin:
+  plugin: file://example.wasm
+  versionFromPrototools: 'plugin-other'
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("plugin-other"),
+                        UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
+                    );
+
+                    load_config_from_root(path, &proto)
+                },
+            );
+
+            let cfg = config.plugins.get("plugin").unwrap();
+
+            assert_eq!(
+                cfg.version.as_ref().unwrap(),
+                &UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn doesnt_inherit_proto_version_when_disabled() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+plugin:
+  plugin: file://example.wasm
+  versionFromPrototools: false
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("plugin"),
+                        UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
+                    );
+
+                    load_config_from_root(path, &proto)
+                },
+            );
+
+            let cfg = config.plugins.get("plugin").unwrap();
+
+            assert!(cfg.version.is_none());
+        }
+
+        #[test]
+        #[serial]
+        fn proto_version_doesnt_override() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+plugin:
+  plugin: file://example.wasm
+  version: 1.0.0
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("plugin"),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
+                    );
+
+                    load_config_from_root(path, &proto)
+                },
+            );
+
+            let cfg = config.plugins.get("plugin").unwrap();
+
+            assert_eq!(
+                cfg.version.as_ref().unwrap(),
+                &UnresolvedVersionSpec::parse("1.0.0").unwrap()
             );
         }
     }

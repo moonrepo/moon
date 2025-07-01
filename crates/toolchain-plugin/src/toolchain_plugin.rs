@@ -399,35 +399,45 @@ impl ToolchainPlugin {
     ) -> miette::Result<SetupToolchainOutput> {
         let mut output = SetupToolchainOutput::default();
 
-        // Only install if a version has been configured,
-        // and the plugin provides the required APIs
-        if let (Some(version), Some(tool)) = (&input.configured_version, &self.tool) {
+        if let Some(tool) = &self.tool {
             let mut tool = tool.write().await;
-            let spec = ToolSpec::new(version.to_owned());
 
-            // Resolve the version first so that it is available
-            input.version = Some(tool.resolve_version(&spec, false).await?);
+            // Only install if a version has been configured
+            if let Some(version) = &input.configured_version {
+                let spec = ToolSpec::new(version.to_owned());
 
-            // Only setup if not already been
-            if !tool.is_setup(&spec).await? {
-                on_setup()?;
+                // Resolve the version first so that it is available
+                input.version = Some(tool.resolve_version(&spec, false).await?);
 
-                output.installed = tool
-                    .setup(
-                        &spec,
-                        InstallOptions {
-                            skip_prompts: true,
-                            skip_ui: true,
-                            ..Default::default()
-                        },
-                    )
-                    .await?
-                    .is_some();
+                // Only setup if not already been
+                if !tool.is_setup(&spec).await? {
+                    on_setup()?;
+
+                    output.installed = tool
+                        .setup(
+                            &spec,
+                            InstallOptions {
+                                skip_prompts: true,
+                                skip_ui: true,
+                                ..Default::default()
+                            },
+                        )
+                        .await?
+                        .is_some();
+                }
+
+                // Locate pieces that we'll need
+                tool.locate_exes_dirs().await?;
+                tool.locate_globals_dirs().await?;
             }
 
-            // Locate pieces that we'll need
-            tool.locate_exes_dirs().await?;
-            tool.locate_globals_dirs().await?;
+            // Pre-load the tool plugin so that task executions
+            // avoid network race conditions and collisions
+            if let (Ok(loader), Some(locator)) =
+                (tool.proto.get_plugin_loader(), tool.locator.as_ref())
+            {
+                let _ = loader.load_plugin(&tool.id, locator).await;
+            }
         }
 
         // This should always run, regardless of the install outcome

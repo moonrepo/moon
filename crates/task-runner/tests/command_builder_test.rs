@@ -67,6 +67,19 @@ mod command_builder {
         }
     }
 
+    mod script {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_replace_script_from_toolchain() {
+            let container =
+                TaskRunnerContainer::new_for_project("toolchain", "script", "script").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(command.bin, "wrapped=$(bin --flag)");
+        }
+    }
+
     mod args {
         use super::*;
 

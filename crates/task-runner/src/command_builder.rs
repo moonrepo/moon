@@ -143,6 +143,10 @@ impl<'task> CommandBuilder<'task> {
                     })
                     .await?
                 {
+                    if let Some(new_script) = params.script {
+                        command.bin = new_script.into();
+                    }
+
                     self.extend_with_env(&mut command, params.env, params.env_remove);
                     self.extend_with_paths(&mut command, params.paths);
                 }

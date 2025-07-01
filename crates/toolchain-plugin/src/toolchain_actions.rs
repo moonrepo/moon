@@ -8,7 +8,8 @@ use moon_pdk_api::{
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput,
     ExtendTaskScriptInput, ExtendTaskScriptOutput, HashTaskContentsInput,
     LocateDependenciesRootInput, LocateDependenciesRootOutput, ScaffoldDockerInput,
-    ScaffoldDockerOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput, SyncOutput, SyncProjectInput,
+    SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_process::Command;
 use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchains};
@@ -259,6 +260,24 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
+    pub async fn setup_toolchain_all<InFn>(
+        &self,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<CallResult<SetupToolchainOutput>>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SetupToolchainInput,
+    {
+        let ids = self.get_plugin_ids();
+
+        self.call_func_all(
+            "setup_toolchain",
+            ids,
+            input_factory,
+            |toolchain, input| async move { toolchain.setup_toolchain(input, || Ok(())).await },
+        )
+        .await
+    }
+
     pub async fn sync_project_many<InFn>(
         &self,
         ids: Vec<&Id>,
@@ -294,7 +313,7 @@ impl ToolchainRegistry {
         .await
     }
 
-    pub async fn teardown_all<InFn>(
+    pub async fn teardown_toolchain_all<InFn>(
         &self,
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<()>>>

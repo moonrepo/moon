@@ -40,6 +40,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskWindowsShell".into(),
                 "TaskType".into(),
                 "ToolchainPluginConfig".into(),
+                "ToolchainPluginVersionFrom".into(),
                 "UnresolvedVersionSpec".into(),
             ],
             external_types: HashMap::from_iter([

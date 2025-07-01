@@ -9,6 +9,7 @@
 #### 🐞 Fixes
 
 - Potential fix for duplicate nodes in the action graph.
+- Potential fix for the node platform panicing for a missing package manager.
 
 ## 1.38.1
 

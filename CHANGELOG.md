@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- More plugin pre-loading improvements.
+
 ## 1.38.1
 
 #### 🚀 Updates

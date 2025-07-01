@@ -564,7 +564,7 @@ impl MoonReporter {
         self.print_checkpoint_with_comments(
             Checkpoint::RunStarted,
             target,
-            [format!("running for {}s", secs)],
+            [format!("running for {secs}s")],
         )?;
 
         Ok(())

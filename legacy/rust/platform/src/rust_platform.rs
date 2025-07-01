@@ -673,7 +673,7 @@ impl Platform for RustPlatform {
             _ => {
                 let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
                 let cargo_bin = task.command.strip_prefix("cargo-").unwrap_or(&task.command);
-                let cargo_bin_path = globals_dir.join(exe_name(format!("cargo-{}", cargo_bin)));
+                let cargo_bin_path = globals_dir.join(exe_name(format!("cargo-{cargo_bin}")));
 
                 // Must run through cargo
                 if cargo_bin_path.exists() {

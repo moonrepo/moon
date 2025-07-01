@@ -629,7 +629,7 @@ impl<'query> ActionGraphBuilder<'query> {
             TargetScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
-                    .query_projects(build_query(format!("tag={}", tag).as_str())?)?;
+                    .query_projects(build_query(format!("tag={tag}").as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist

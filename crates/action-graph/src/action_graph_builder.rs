@@ -22,17 +22,18 @@ use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tracing::{debug, instrument, trace};
 
 macro_rules! insert_node_or_exit {
     ($builder:ident, $node:expr) => {{
         let node = $node;
 
-        match $builder.get_index_from_node(&node) {
+        match $builder.get_index_from_node(&node).await {
             Some(index) => {
                 return Ok(Some(index));
             }
-            None => $builder.insert_node(node),
+            None => $builder.insert_node(node).await,
         }
     }};
 }
@@ -78,7 +79,7 @@ pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
     graph: DiGraph<ActionNode, ()>,
-    nodes: FxHashMap<ActionNode, NodeIndex>,
+    nodes: RwLock<FxHashMap<ActionNode, NodeIndex>>,
     options: ActionGraphBuilderOptions,
     platform_manager: Option<PlatformManager>,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -106,7 +107,7 @@ impl<'query> ActionGraphBuilder<'query> {
             all_query: None,
             app_context,
             graph: DiGraph::new(),
-            nodes: FxHashMap::default(),
+            nodes: RwLock::new(FxHashMap::default()),
             options,
             passthrough_targets: FxHashSet::default(),
             platform_manager: None,
@@ -269,10 +270,10 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         };
 
-        let mut edges = vec![
+        let mut edges = FxHashSet::from_iter([
             self.sync_workspace().await?,
             self.setup_toolchain_legacy(runtime).await?,
-        ];
+        ]);
 
         let platform_manager = match &self.platform_manager {
             Some(manager) => manager,
@@ -312,7 +313,7 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
-        edges.push(self.setup_toolchain_legacy(&new_runtime).await?);
+        edges.insert(self.setup_toolchain_legacy(&new_runtime).await?);
 
         let index = insert_node_or_exit!(
             self,
@@ -329,7 +330,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         );
 
-        self.link_optional_requirements(index, edges);
+        self.link_optional_requirements(index, edges.into_iter().collect());
 
         Ok(Some(index))
     }
@@ -833,7 +834,7 @@ impl<'query> ActionGraphBuilder<'query> {
         });
 
         // Check if the node exists to avoid all the overhead below
-        if let Some(index) = self.get_index_from_node(&node) {
+        if let Some(index) = self.get_index_from_node(&node).await {
             return Ok(Some(index));
         }
 
@@ -851,7 +852,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Insert and then link edges
-        let index = self.insert_node(node);
+        let index = self.insert_node(node).await;
 
         if !task.deps.is_empty() {
             child_reqs.skip_affected = true;
@@ -1037,8 +1038,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
     // PRIVATE
 
-    fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
-        self.nodes.get(node).cloned()
+    async fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
+        self.nodes.read().await.get(node).cloned()
     }
 
     fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
@@ -1069,11 +1070,13 @@ impl<'query> ActionGraphBuilder<'query> {
         }
     }
 
-    fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
+    async fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
+        let mut nodes = self.nodes.write().await;
+
         let label = node.label();
         let index = self.graph.add_node(node.clone());
 
-        self.nodes.insert(node, index);
+        nodes.insert(node, index);
 
         debug!(
             index = index.index(),

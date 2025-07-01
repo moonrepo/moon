@@ -6,6 +6,10 @@
 
 - More plugin pre-loading improvements.
 
+#### 🐞 Fixes
+
+- Potential fix for duplicate nodes in the action graph.
+
 ## 1.38.1
 
 #### 🚀 Updates

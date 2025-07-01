@@ -179,23 +179,37 @@ fn distribute_targets_across_jobs(
     let job_index = args.job.unwrap_or_default();
     let job_total = args.job_total.unwrap_or_default();
     let batch_size = targets.len().div_ceil(job_total);
-    let batched_targets;
 
     console.print_header("Distributing targets across jobs")?;
     console.write_line(format!("Job index: {job_index}"))?;
     console.write_line(format!("Job total: {job_total}"))?;
     console.write_line(format!("Batch size: {batch_size}"))?;
-    console.write_line("Batched targets:")?;
 
+    let (start, stop) =
+    // beginning
     if job_index == 0 {
-        batched_targets = targets[0..batch_size].to_vec();
-    } else if job_index == job_total - 1 {
-        batched_targets = targets[(batch_size * job_index)..].to_vec();
-    } else {
-        batched_targets =
-            targets[(batch_size * job_index)..(batch_size * (job_index + 1))].to_vec();
+        (0, batch_size)
+    }
+    // end
+    else if job_index == job_total - 1 {
+        ((batch_size * job_index), targets.len())
+    }
+    // middle
+    else {
+        ((batch_size * job_index), (batch_size * (job_index + 1)))
+    };
+
+    let mut batched_targets = vec![];
+
+    if targets.get(start).is_some() {
+        if targets.get(stop).is_some() {
+            batched_targets = targets[start..stop].to_vec();
+        } else {
+            batched_targets = targets[start..].to_vec();
+        }
     }
 
+    console.write_line("Batched targets:")?;
     console.print_targets(&batched_targets)?;
     console.print_footer()?;
 

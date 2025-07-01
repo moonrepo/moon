@@ -13,6 +13,10 @@
   - `$projectType` -> `$projectLayer` for task tokens
   - `enforceProjectTypeRelationships` -> `enforceLayerRelationships` in `.moon/workspace.yml`
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.88.0.
+
 ## 1.38.3
 
 #### 🐞 Fixes

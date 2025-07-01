@@ -856,9 +856,31 @@
               "type": "null"
             }
           ]
+        },
+        "versionFromPrototools": {
+          "title": "versionFromPrototools",
+          "description": "Inherit the version from the root .prototools. When true, matches using the same ID, otherwise a string can be provided for a custom ID.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ToolchainPluginVersionFrom"
+            }
+          ],
+          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same ID, otherwise a string can be provided for a custom ID."
         }
       },
       "additionalProperties": false
+    },
+    "ToolchainPluginVersionFrom": {
+      "description": "Strategy in which to inherit a version from .prototools.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "markdownDescription": "Strategy in which to inherit a version from `.prototools`."
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

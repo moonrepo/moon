@@ -239,6 +239,12 @@ impl ToolchainConfig {
             return true;
         }
 
+        for config in self.plugins.values() {
+            if config.version.is_some() {
+                return true;
+            }
+        }
+
         false
     }
 

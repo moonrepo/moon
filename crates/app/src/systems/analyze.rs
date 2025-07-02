@@ -117,14 +117,23 @@ pub async fn install_proto(
     let result = download_release(
         &target_triple,
         PROTO_CLI_VERSION,
-        &proto_env.store.temp_dir,
+        proto_env.store.temp_dir.join("proto"),
         |_, _| {},
     )
     .await?;
 
     debug!("Unpacking archive and installing proto");
 
-    install_release(result, &install_dir, &proto_env.store.temp_dir, false)?;
+    install_release(
+        result,
+        install_dir,
+        proto_env
+            .store
+            .temp_dir
+            .join("proto")
+            .join(PROTO_CLI_VERSION),
+        false,
+    )?;
 
     debug!("Successfully installed proto!");
 

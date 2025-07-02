@@ -107,6 +107,13 @@ impl NodeTool {
             }
         };
 
+        // Temp fix
+        if node.bun.is_none() && node.npm.is_none() && node.pnpm.is_none() && node.yarn.is_none() {
+            node.npm = Some(
+                NpmTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.npm).await?,
+            );
+        }
+
         Ok(node)
     }
 

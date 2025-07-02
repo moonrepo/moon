@@ -3,7 +3,7 @@ use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
-use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec};
+use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec, locate_tool};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
@@ -433,10 +433,14 @@ impl ToolchainPlugin {
 
             // Pre-load the tool plugin so that task executions
             // avoid network race conditions and collisions
-            if let (Ok(loader), Some(locator)) =
-                (tool.proto.get_plugin_loader(), tool.locator.as_ref())
-            {
-                let _ = loader.load_plugin(&tool.id, locator).await;
+            if let Ok(loader) = tool.proto.get_plugin_loader() {
+                if let Some(locator) = tool
+                    .locator
+                    .clone()
+                    .or_else(|| locate_tool(&tool.id, &tool.proto).ok())
+                {
+                    let _ = loader.load_plugin(&tool.id, &locator).await;
+                }
             }
         }
 

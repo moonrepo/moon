@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- More plugin pre-loading improvements.
+
+#### 🐞 Fixes
+
+- Potential fix for duplicate nodes in the action graph.
+- Potential fix for the node platform panicing for a missing package manager.
+- Potential fix for a fs rename error when installing proto.
+- Fixed a panic that would occur during `moon ci` job calculation.
+
 ## 1.38.1
 
 #### 🚀 Updates

@@ -22,18 +22,17 @@ use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tracing::{debug, instrument, trace};
 
 macro_rules! insert_node_or_exit {
     ($builder:ident, $node:expr) => {{
         let node = $node;
 
-        match $builder.get_index_from_node(&node).await {
+        match $builder.get_index_from_node(&node) {
             Some(index) => {
                 return Ok(Some(index));
             }
-            None => $builder.insert_node(node).await,
+            None => $builder.insert_node(node),
         }
     }};
 }
@@ -79,7 +78,7 @@ pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
     graph: DiGraph<ActionNode, ()>,
-    nodes: RwLock<FxHashMap<ActionNode, NodeIndex>>,
+    nodes: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
     platform_manager: Option<PlatformManager>,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -107,7 +106,7 @@ impl<'query> ActionGraphBuilder<'query> {
             all_query: None,
             app_context,
             graph: DiGraph::new(),
-            nodes: RwLock::new(FxHashMap::default()),
+            nodes: FxHashMap::default(),
             options,
             passthrough_targets: FxHashSet::default(),
             platform_manager: None,
@@ -296,7 +295,7 @@ impl<'query> ActionGraphBuilder<'query> {
         } else {
             None
         }
-        .unwrap_or_else(|| runtime.to_owned());
+        .unwrap_or_else(|| self.get_compat_runtime(runtime));
 
         let platform = platform_manager.get_by_toolchain(&new_runtime.toolchain)?;
         let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
@@ -834,7 +833,7 @@ impl<'query> ActionGraphBuilder<'query> {
         });
 
         // Check if the node exists to avoid all the overhead below
-        if let Some(index) = self.get_index_from_node(&node).await {
+        if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(index));
         }
 
@@ -852,7 +851,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Insert and then link edges
-        let index = self.insert_node(node).await;
+        let index = self.insert_node(node);
 
         if !task.deps.is_empty() {
             child_reqs.skip_affected = true;
@@ -921,7 +920,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let index = insert_node_or_exit!(
             self,
             ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
-                runtime: runtime.to_owned(),
+                runtime: self.get_compat_runtime(runtime),
             })
         );
 
@@ -1038,8 +1037,16 @@ impl<'query> ActionGraphBuilder<'query> {
 
     // PRIVATE
 
-    async fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
-        self.nodes.read().await.get(node).cloned()
+    fn get_compat_runtime(&self, runtime: &Runtime) -> Runtime {
+        let mut next = runtime.to_owned();
+        // Disable this, so that the index for both override and not-override
+        // is the same, as we only care about the toolchain ID + version
+        next.overridden = false;
+        next
+    }
+
+    fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
+        self.nodes.get(node).cloned()
     }
 
     fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
@@ -1070,13 +1077,11 @@ impl<'query> ActionGraphBuilder<'query> {
         }
     }
 
-    async fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
-        let mut nodes = self.nodes.write().await;
-
+    fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
         let label = node.label();
         let index = self.graph.add_node(node.clone());
 
-        nodes.insert(node, index);
+        self.nodes.insert(node, index);
 
         debug!(
             index = index.index(),

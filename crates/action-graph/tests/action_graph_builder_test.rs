@@ -2455,17 +2455,24 @@ mod action_graph_builder {
                 Id::raw("node"),
                 create_runtime_with_version(Version::new(1, 2, 3)),
             );
-            let node2 = Runtime::new_override(
+            let mut node2 = Runtime::new_override(
                 Id::raw("node"),
                 create_runtime_with_version(Version::new(4, 5, 6)),
             );
             let node3 = Runtime::new(Id::raw("node"), RuntimeReq::Global);
+            let node4 = node1.clone();
+            let node5 = node2.clone();
 
             builder.setup_toolchain_legacy(&node1).await.unwrap();
             builder.setup_toolchain_legacy(&node2).await.unwrap();
             builder.setup_toolchain_legacy(&node3).await.unwrap();
+            builder.setup_toolchain_legacy(&node4).await.unwrap();
+            builder.setup_toolchain_legacy(&node5).await.unwrap();
 
             let (_, graph) = builder.build();
+
+            // Remove override since we discard it for equality
+            node2.overridden = false;
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -2691,10 +2698,14 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(4, 5, 6)),
             );
             let node3 = ToolchainSpec::new_global(Id::raw("tc-tier3"));
+            let node4 = node1.clone();
+            let node5 = node2.clone();
 
             builder.setup_toolchain(&node1).await.unwrap();
             builder.setup_toolchain(&node2).await.unwrap();
             builder.setup_toolchain(&node3).await.unwrap();
+            builder.setup_toolchain(&node4).await.unwrap();
+            builder.setup_toolchain(&node5).await.unwrap();
 
             let (_, graph) = builder.build();
 

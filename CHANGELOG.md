@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed the duplicate nodes in the action graph.
+
 ## 1.38.2
 
 #### 🚀 Updates

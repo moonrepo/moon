@@ -48,21 +48,21 @@ async fn detect_package_manager(
     let mut pm_version = String::new();
 
     // Extract value from `packageManager` field
-    if let Ok(Some(pkg)) = PackageJsonCache::read(&options.dir) {
-        if let Some(pm) = pkg.data.package_manager {
-            if pm.contains('@') {
-                let mut parts = pm.split('@');
+    if let Ok(Some(pkg)) = PackageJsonCache::read(&options.dir)
+        && let Some(pm) = pkg.data.package_manager
+    {
+        if pm.contains('@') {
+            let mut parts = pm.split('@');
 
-                pm_type = parts.next().unwrap_or_default().to_owned();
-                pm_version = parts.next().unwrap_or_default().to_owned();
+            pm_type = parts.next().unwrap_or_default().to_owned();
+            pm_version = parts.next().unwrap_or_default().to_owned();
 
-                // Remove corepack hash
-                if let Some(index) = pm_version.find('+') {
-                    pm_version = pm_version[0..index].to_owned();
-                }
-            } else {
-                pm_type = pm;
+            // Remove corepack hash
+            if let Some(index) = pm_version.find('+') {
+                pm_version = pm_version[0..index].to_owned();
             }
+        } else {
+            pm_type = pm;
         }
     }
 

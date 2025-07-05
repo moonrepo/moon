@@ -97,16 +97,16 @@ where
                 continue;
             }
 
-            if let Some(vcs) = &context.vcs {
-                if vcs.is_ignored(&project_root) {
-                    warn!(
-                        source = project_source,
-                        "Found a project with source {}, but this path has been ignored by your VCS, skipping",
-                        color::file(&project_source)
-                    );
+            if let Some(vcs) = &context.vcs
+                && vcs.is_ignored(&project_root)
+            {
+                warn!(
+                    source = project_source,
+                    "Found a project with source {}, but this path has been ignored by your VCS, skipping",
+                    color::file(&project_source)
+                );
 
-                    continue;
-                }
+                continue;
             }
 
             let (id, source) = infer_project_id_and_source(&project_source)?;

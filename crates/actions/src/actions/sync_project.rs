@@ -72,13 +72,12 @@ pub async fn sync_project(
 
     // Loop through legacy platforms
     for toolchain_id in project.get_enabled_toolchains() {
-        if let Ok(platform) = PlatformManager::read().get_by_toolchain(toolchain_id) {
-            if platform
+        if let Ok(platform) = PlatformManager::read().get_by_toolchain(toolchain_id)
+            && platform
                 .sync_project(&action_context, &project, &dependencies)
                 .await?
-            {
-                mutated_files = true;
-            }
+        {
+            mutated_files = true;
         }
     }
 

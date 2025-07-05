@@ -206,14 +206,12 @@ pub async fn prune_bun(
         let mut package_names = vec![];
 
         for project_id in &manifest.focused_projects {
-            if let Some(source) = project_graph.sources().get(project_id) {
-                if let Some(package_json) =
+            if let Some(source) = project_graph.sources().get(project_id)
+                && let Some(package_json) =
                     PackageJsonCache::read(source.to_path(&session.workspace_root))?
-                {
-                    if let Some(package_name) = package_json.data.name {
-                        package_names.push(package_name);
-                    }
-                }
+                && let Some(package_name) = package_json.data.name
+            {
+                package_names.push(package_name);
             }
         }
 
@@ -272,14 +270,12 @@ pub async fn prune_node(
         let mut package_names = vec![];
 
         for project_id in &manifest.focused_projects {
-            if let Some(source) = project_graph.sources().get(project_id) {
-                if let Some(package_json) =
+            if let Some(source) = project_graph.sources().get(project_id)
+                && let Some(package_json) =
                     PackageJsonCache::read(source.to_path(&session.workspace_root))?
-                {
-                    if let Some(package_name) = package_json.data.name {
-                        package_names.push(package_name);
-                    }
-                }
+                && let Some(package_name) = package_json.data.name
+            {
+                package_names.push(package_name);
             }
         }
 

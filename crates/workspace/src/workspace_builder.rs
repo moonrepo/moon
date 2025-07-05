@@ -764,38 +764,38 @@ impl<'app> WorkspaceBuilder<'app> {
             };
 
             // Track ID renames
-            if let Some(new_id) = &config.id {
-                if new_id != &id {
-                    debug!(
-                        old_id = id.as_str(),
-                        new_id = new_id.as_str(),
-                        "Project has been configured with an explicit identifier of {}, renaming from {}",
-                        color::id(new_id),
-                        color::id(id.as_str()),
-                    );
+            if let Some(new_id) = &config.id
+                && new_id != &id
+            {
+                debug!(
+                    old_id = id.as_str(),
+                    new_id = new_id.as_str(),
+                    "Project has been configured with an explicit identifier of {}, renaming from {}",
+                    color::id(new_id),
+                    color::id(id.as_str()),
+                );
 
-                    build_data.original_id = Some(id.clone());
+                build_data.original_id = Some(id.clone());
 
-                    if renamed_ids.contains_key(&id) {
-                        dupe_original_ids.insert(id.clone());
-                    } else {
-                        renamed_ids.insert(id.clone(), new_id.to_owned());
-                    }
-
-                    id = new_id.to_owned();
+                if renamed_ids.contains_key(&id) {
+                    dupe_original_ids.insert(id.clone());
+                } else {
+                    renamed_ids.insert(id.clone(), new_id.to_owned());
                 }
+
+                id = new_id.to_owned();
             }
 
             // Check for duplicate IDs
-            if let Some(existing_data) = project_data.get(&id) {
-                if existing_data.source != build_data.source {
-                    return Err(WorkspaceBuilderError::DuplicateProjectId {
-                        id: id.clone(),
-                        old_source: existing_data.source.to_string(),
-                        new_source: build_data.source.to_string(),
-                    }
-                    .into());
+            if let Some(existing_data) = project_data.get(&id)
+                && existing_data.source != build_data.source
+            {
+                return Err(WorkspaceBuilderError::DuplicateProjectId {
+                    id: id.clone(),
+                    old_source: existing_data.source.to_string(),
+                    new_source: build_data.source.to_string(),
                 }
+                .into());
             }
 
             // Otherwise persist the build data

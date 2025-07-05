@@ -233,10 +233,10 @@ impl MoonReporter {
                 comments.push(comment);
             }
 
-            if let Some(duration) = operation.duration {
-                if let Some(elapsed) = time::elapsed_opt(duration) {
-                    comments.push(elapsed);
-                }
+            if let Some(duration) = operation.duration
+                && let Some(elapsed) = time::elapsed_opt(duration)
+            {
+                comments.push(elapsed);
             }
         }
 
@@ -272,23 +272,23 @@ impl MoonReporter {
     ) -> miette::Result<()> {
         let print = || -> miette::Result<()> {
             if let Some(output) = operation.get_exec_output() {
-                if let Some(out) = &output.stdout {
-                    if !out.is_empty() {
-                        if let Some(prefix) = &item.output_prefix {
-                            self.out.write_line_with_prefix(out.trim(), prefix)?;
-                        } else {
-                            self.out.write_line(out.trim())?;
-                        }
+                if let Some(out) = &output.stdout
+                    && !out.is_empty()
+                {
+                    if let Some(prefix) = &item.output_prefix {
+                        self.out.write_line_with_prefix(out.trim(), prefix)?;
+                    } else {
+                        self.out.write_line(out.trim())?;
                     }
                 }
 
-                if let Some(err) = &output.stderr {
-                    if !err.is_empty() {
-                        if let Some(prefix) = &item.output_prefix {
-                            self.err.write_line_with_prefix(err.trim(), prefix)?;
-                        } else {
-                            self.err.write_line(err.trim())?;
-                        }
+                if let Some(err) = &output.stderr
+                    && !err.is_empty()
+                {
+                    if let Some(prefix) = &item.output_prefix {
+                        self.err.write_line_with_prefix(err.trim(), prefix)?;
+                    } else {
+                        self.err.write_line(err.trim())?;
                     }
                 }
             }
@@ -335,10 +335,10 @@ impl MoonReporter {
                 },
             )?;
 
-            if let Some(attempt) = action.operations.get_last_execution() {
-                if attempt.has_failed() {
-                    self.print_operation_output(attempt, &TaskReportItem::default())?;
-                }
+            if let Some(attempt) = action.operations.get_last_execution()
+                && attempt.has_failed()
+            {
+                self.print_operation_output(attempt, &TaskReportItem::default())?;
             }
 
             // Force flush so the output is rendered in the correct order
@@ -464,10 +464,10 @@ impl MoonReporter {
                 comments.push(status_comment);
             }
 
-            if let Some(duration) = action.duration {
-                if let Some(elapsed) = time::elapsed_opt(duration) {
-                    comments.push(elapsed);
-                }
+            if let Some(duration) = action.duration
+                && let Some(elapsed) = time::elapsed_opt(duration)
+            {
+                comments.push(elapsed);
             }
 
             if let Some(hash) = action.operations.get_hash() {

@@ -7,6 +7,7 @@ use moon_time::now_millis;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
+use std::collections::BTreeMap;
 use std::env::consts;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
@@ -32,6 +33,11 @@ cache_item!(
         pub remote_version: Option<Version>,
     }
 );
+
+#[derive(Serialize)]
+pub struct ToolchainUsage {
+    pub toolchains: BTreeMap<String, String>,
+}
 
 fn load_or_create_anonymous_uid(id_path: &Path) -> miette::Result<String> {
     if id_path.exists() {
@@ -181,7 +187,10 @@ impl Launchpad {
         }))
     }
 
-    pub async fn track_toolchain_usage(&self, id: String, plugin: String) -> miette::Result<()> {
+    pub async fn track_toolchain_usage(
+        &self,
+        toolchains: BTreeMap<String, String>,
+    ) -> miette::Result<()> {
         if !is_ci() {
             // } || is_test_env() || proto_core::is_offline() {
             return Ok(());
@@ -189,8 +198,7 @@ impl Launchpad {
 
         let request = self
             .create_request("https://launch.moonrepo.app/moon/toolchain_usage")?
-            .header("X-Moon-ToolchainId", id)
-            .header("X-Moon-ToolchainPlugin", plugin);
+            .json(&ToolchainUsage { toolchains });
 
         let _response = request.send().await.into_diagnostic()?;
 

@@ -3,20 +3,16 @@ use async_trait::async_trait;
 use moon_api::Launchpad;
 use moon_common::is_ci;
 use moon_config::ToolchainConfig;
+use std::collections::BTreeMap;
 use std::sync::Arc;
-use tokio::task::JoinHandle;
 
 pub struct TelemetrySubscriber {
     toolchain_config: Arc<ToolchainConfig>,
-    requests: Vec<JoinHandle<miette::Result<()>>>,
 }
 
 impl TelemetrySubscriber {
     pub fn new(toolchain_config: Arc<ToolchainConfig>) -> Self {
-        Self {
-            toolchain_config,
-            requests: vec![],
-        }
+        Self { toolchain_config }
     }
 }
 
@@ -28,40 +24,25 @@ impl Subscriber for TelemetrySubscriber {
             return Ok(());
         }
 
-        match event {
-            Event::PipelineStarted { .. } => {
-                for (id, plugin) in &self.toolchain_config.plugins {
-                    if let Some(locator) = &plugin.plugin {
-                        let id = id.to_string();
-                        let locator = locator.to_string();
+        if matches!(event, Event::PipelineStarted { .. }) {
+            let mut toolchains = BTreeMap::default();
 
-                        self.requests.push(tokio::spawn(async move {
-                            Launchpad::instance()
-                                .track_toolchain_usage(id, locator)
-                                .await
-                        }));
-                    }
-                }
-
-                for platform in self.toolchain_config.get_enabled_platforms() {
-                    let id = platform.to_string().to_lowercase();
-                    let locator = "legacy".to_owned();
-
-                    self.requests.push(tokio::spawn(async move {
-                        Launchpad::instance()
-                            .track_toolchain_usage(id, locator)
-                            .await
-                    }));
+            for (id, plugin) in &self.toolchain_config.plugins {
+                if let Some(locator) = &plugin.plugin {
+                    toolchains.insert(id.to_string(), locator.to_string());
                 }
             }
-            Event::PipelineCompleted { .. } => {
-                for future in self.requests.drain(0..) {
-                    // Ignore telemetry errors
-                    let _ = future.await;
-                }
+
+            for platform in self.toolchain_config.get_enabled_platforms() {
+                toolchains.insert(platform.to_string().to_lowercase(), "legacy".to_owned());
             }
-            _ => {}
-        };
+
+            if !toolchains.is_empty() {
+                let _ = Launchpad::instance()
+                    .track_toolchain_usage(toolchains)
+                    .await;
+            }
+        }
 
         Ok(())
     }

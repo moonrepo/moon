@@ -1,13 +1,14 @@
 use miette::IntoDiagnostic;
 use moon_cache::{CacheEngine, cache_item};
-use moon_common::{consts::CONFIG_DIRNAME, is_test_env};
+use moon_common::{Id, consts::CONFIG_DIRNAME, is_ci, is_test_env};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_time::now_millis;
+use proto_core::PluginLocator;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
-use std::env::{self, consts};
+use std::env::consts;
 use std::path::Path;
 use std::time::Duration;
 use tracing::{debug, instrument};
@@ -111,37 +112,18 @@ impl Launchpad {
             "Checking for a new version of moon"
         );
 
-        let mut client = reqwest::Client::new()
-            .get(manifest_url)
-            .header("X-Moon-OS", consts::OS.to_owned())
-            .header("X-Moon-Arch", consts::ARCH.to_owned())
-            .header("X-Moon-Version", &version)
-            .header("X-Moon-CI", ci_env::is_ci().to_string())
+        let request = Self::create_request(moon_env, manifest_url)?
+            .header("X-Moon-Version", version.to_owned())
             .header(
                 "X-Moon-CI-Provider",
                 format!("{:?}", ci_env::detect_provider()),
             )
-            .header("X-Moon-CD", cd_env::is_cd().to_string())
             .header(
                 "X-Moon-CD-Provider",
                 format!("{:?}", cd_env::detect_provider()),
-            )
-            .header(
-                "X-Moon-UID",
-                load_or_create_anonymous_uid(&moon_env.id_file)?,
             );
 
-        if let Some(moon_dir) = fs::find_upwards(
-            CONFIG_DIRNAME,
-            env::current_dir().expect("Invalid working directory!"),
-        ) {
-            client = client.header(
-                "X-Moon-RID",
-                create_anonymous_rid(moon_dir.parent().unwrap()),
-            );
-        }
-
-        let Ok(response) = client.send().await else {
+        let Ok(response) = request.send().await else {
             return Ok(None);
         };
 
@@ -167,5 +149,52 @@ impl Launchpad {
             message: data.message,
             update_available,
         }))
+    }
+
+    pub async fn track_toolchain_usage(
+        moon_env: &MoonEnvironment,
+        id: &Id,
+        plugin: &PluginLocator,
+    ) -> miette::Result<()> {
+        if !is_ci() || is_test_env() || proto_core::is_offline() {
+            return Ok(());
+        }
+
+        let request =
+            Self::create_request(moon_env, "https://launch.moonrepo.app/moon/toolchain_usage")?;
+
+        let _response = request
+            .header("X-Moon-ToolchainId", id.to_string())
+            .header("X-Moon-ToolchainPlugin", plugin.to_string())
+            .send()
+            .await
+            .into_diagnostic()?;
+
+        Ok(())
+    }
+
+    fn create_request(
+        moon_env: &MoonEnvironment,
+        url: &str,
+    ) -> miette::Result<reqwest::RequestBuilder> {
+        let mut client = reqwest::Client::new()
+            .get(url)
+            .header("X-Moon-OS", consts::OS.to_owned())
+            .header("X-Moon-Arch", consts::ARCH.to_owned())
+            .header("X-Moon-CI", ci_env::is_ci().to_string())
+            .header("X-Moon-CD", cd_env::is_cd().to_string())
+            .header(
+                "X-Moon-UID",
+                load_or_create_anonymous_uid(&moon_env.id_file)?,
+            );
+
+        if let Some(moon_dir) = fs::find_upwards(CONFIG_DIRNAME, &moon_env.working_dir) {
+            client = client.header(
+                "X-Moon-RID",
+                create_anonymous_rid(moon_dir.parent().unwrap()),
+            );
+        }
+
+        Ok(client)
     }
 }

@@ -1,6 +1,7 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
 use moon_api::Launchpad;
+use moon_common::is_ci;
 use moon_config::ToolchainConfig;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
@@ -22,6 +23,11 @@ impl TelemetrySubscriber {
 #[async_trait]
 impl Subscriber for TelemetrySubscriber {
     async fn on_emit<'data>(&mut self, event: &Event<'data>) -> miette::Result<()> {
+        // Only capture toolchain usage in CI
+        if !is_ci() {
+            return Ok(());
+        }
+
         match event {
             Event::PipelineStarted { .. } => {
                 for (id, plugin) in &self.toolchain_config.plugins {

@@ -182,7 +182,8 @@ impl Launchpad {
     }
 
     pub async fn track_toolchain_usage(&self, id: String, plugin: String) -> miette::Result<()> {
-        if !is_ci() || is_test_env() || proto_core::is_offline() {
+        if !is_ci() {
+            // } || is_test_env() || proto_core::is_offline() {
             return Ok(());
         }
 

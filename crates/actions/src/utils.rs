@@ -42,10 +42,10 @@ pub fn should_skip_action(key: &str) -> Option<String> {
 }
 
 pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> Option<String> {
-    if let Some(value) = GlobalEnvBag::instance().get(key) {
-        if matches_pattern(&value, pattern.as_ref()) {
-            return Some(value);
-        }
+    if let Some(value) = GlobalEnvBag::instance().get(key)
+        && matches_pattern(&value, pattern.as_ref())
+    {
+        return Some(value);
     }
 
     None

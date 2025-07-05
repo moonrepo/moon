@@ -127,21 +127,21 @@ pub async fn hash_diff(session: MoonSession, args: QueryHashDiffArgs) -> AppResu
                     if is_tty {
                         console.out.write_line(color::success(l))?
                     } else {
-                        console.out.write_line(format!("+{}", l))?
+                        console.out.write_line(format!("+{l}"))?
                     }
                 }
                 diff::Result::Both(l, _) => {
                     if is_tty {
                         console.out.write_line(l)?
                     } else {
-                        console.out.write_line(format!(" {}", l))?
+                        console.out.write_line(format!(" {l}"))?
                     }
                 }
                 diff::Result::Right(r) => {
                     if is_tty {
                         console.out.write_line(color::failure(r))?
                     } else {
-                        console.out.write_line(format!("-{}", r))?
+                        console.out.write_line(format!("-{r}"))?
                     }
                 }
             };

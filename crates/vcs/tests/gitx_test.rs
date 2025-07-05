@@ -776,7 +776,7 @@ mod gitx {
             let (sandbox, git) = create_git_sandbox("vcs");
 
             for i in 0..10000 {
-                fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
+                fs::write(sandbox.path().join(format!("file{i}")), i.to_string()).unwrap();
             }
 
             let tree = git

@@ -10,7 +10,7 @@ pub static ID_CLEAN: LazyLock<regex::Regex> =
     LazyLock::new(|| create_regex("[^0-9A-Za-z/\\._-]+").unwrap());
 
 pub static ID_PATTERN: LazyLock<regex::Regex> =
-    LazyLock::new(|| create_regex(format!("^{}$", ID_GROUP)).unwrap());
+    LazyLock::new(|| create_regex(format!("^{ID_GROUP}$")).unwrap());
 
 pub static TARGET_PATTERN: LazyLock<regex::Regex> = LazyLock::new(|| {
     // Only target projects support `@` because of Node.js,

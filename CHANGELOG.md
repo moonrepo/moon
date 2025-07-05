@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated MCP (Model Context Protocol) implementation to use protocol version `2025-06-18` from `2025-03-26` - in turn, allowing Claude Code to use the MCP.
+
 ## 1.38.3
 
 #### 🐞 Fixes

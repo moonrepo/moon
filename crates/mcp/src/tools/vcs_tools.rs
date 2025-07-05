@@ -6,7 +6,7 @@ use moon_common::is_ci;
 use moon_common::path::WorkspaceRelativePathBuf;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
-    schema::{CallToolResult, schema_utils::CallToolError},
+    schema::{CallToolResult, TextContent, schema_utils::CallToolError},
 };
 use serde::{Deserialize, Serialize};
 
@@ -50,13 +50,14 @@ impl GetTouchedFiles {
                 .map_err(map_miette_error)?
         };
 
-        Ok(CallToolResult::text_content(
+        Ok(CallToolResult::text_content(vec![TextContent::new(
             serde_json::to_string_pretty(&GetTouchedFilesResponse {
                 files: touched_files.all().into_iter().cloned().collect(),
             })
             .map_err(CallToolError::new)?,
             None,
-        ))
+            None,
+        )]))
     }
 }
 

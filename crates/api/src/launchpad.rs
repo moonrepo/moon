@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
 use std::env::consts;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Duration;
 use tracing::{debug, instrument};
 use uuid::Uuid;
@@ -61,13 +62,37 @@ pub struct VersionCheck {
     pub update_available: bool,
 }
 
-pub struct Launchpad;
+pub struct Launchpad {
+    #[allow(dead_code)]
+    moon_env: Arc<MoonEnvironment>,
+    moon_version: String,
+    user_id: String,
+    repo_id: Option<String>,
+}
 
 impl Launchpad {
+    pub fn new(moon_env: Arc<MoonEnvironment>) -> miette::Result<Self> {
+        let user_id = load_or_create_anonymous_uid(&moon_env.id_file)?;
+
+        let repo_id = fs::find_upwards(CONFIG_DIRNAME, &moon_env.working_dir)
+            .map(|dir| create_anonymous_rid(dir.parent().unwrap()));
+
+        let moon_version = GlobalEnvBag::instance()
+            .get("MOON_VERSION")
+            .unwrap_or_default();
+
+        Ok(Self {
+            moon_env,
+            moon_version,
+            user_id,
+            repo_id,
+        })
+    }
+
     #[instrument(skip_all)]
     pub async fn check_version(
+        &self,
         cache_engine: &CacheEngine,
-        moon_env: &MoonEnvironment,
         bypass_cache: bool,
         manifest_url: &str,
     ) -> miette::Result<Option<VersionCheck>> {
@@ -82,7 +107,7 @@ impl Launchpad {
             }
         }
 
-        if let Some(result) = Self::check_version_without_cache(moon_env, manifest_url).await? {
+        if let Some(result) = self.check_version_without_cache(manifest_url).await? {
             state.data.last_check_time = Some(now);
             state.data.local_version = Some(result.local_version.clone());
             state.data.remote_version = Some(result.remote_version.clone());
@@ -95,16 +120,14 @@ impl Launchpad {
     }
 
     pub async fn check_version_without_cache(
-        moon_env: &MoonEnvironment,
+        &self,
         manifest_url: &str,
     ) -> miette::Result<Option<VersionCheck>> {
         if is_test_env() || proto_core::is_offline() {
             return Ok(None);
         }
 
-        let version = GlobalEnvBag::instance()
-            .get("MOON_VERSION")
-            .unwrap_or_default();
+        let version = &self.moon_version;
 
         debug!(
             current_version = &version,
@@ -112,8 +135,8 @@ impl Launchpad {
             "Checking for a new version of moon"
         );
 
-        let request = Self::create_request(moon_env, manifest_url)?
-            .header("X-Moon-Version", version.to_owned())
+        let request = self
+            .create_request(manifest_url)?
             .header(
                 "X-Moon-CI-Provider",
                 format!("{:?}", ci_env::detect_provider()),
@@ -152,7 +175,7 @@ impl Launchpad {
     }
 
     pub async fn track_toolchain_usage(
-        moon_env: &MoonEnvironment,
+        &self,
         id: &Id,
         plugin: &PluginLocator,
     ) -> miette::Result<()> {
@@ -160,39 +183,28 @@ impl Launchpad {
             return Ok(());
         }
 
-        let request =
-            Self::create_request(moon_env, "https://launch.moonrepo.app/moon/toolchain_usage")?;
-
-        let _response = request
+        let request = self
+            .create_request("https://launch.moonrepo.app/moon/toolchain_usage")?
             .header("X-Moon-ToolchainId", id.to_string())
-            .header("X-Moon-ToolchainPlugin", plugin.to_string())
-            .send()
-            .await
-            .into_diagnostic()?;
+            .header("X-Moon-ToolchainPlugin", plugin.to_string());
+
+        let _response = request.send().await.into_diagnostic()?;
 
         Ok(())
     }
 
-    fn create_request(
-        moon_env: &MoonEnvironment,
-        url: &str,
-    ) -> miette::Result<reqwest::RequestBuilder> {
+    fn create_request(&self, url: &str) -> miette::Result<reqwest::RequestBuilder> {
         let mut client = reqwest::Client::new()
             .get(url)
             .header("X-Moon-OS", consts::OS.to_owned())
             .header("X-Moon-Arch", consts::ARCH.to_owned())
+            .header("X-Moon-Version", self.moon_version.clone())
             .header("X-Moon-CI", ci_env::is_ci().to_string())
             .header("X-Moon-CD", cd_env::is_cd().to_string())
-            .header(
-                "X-Moon-UID",
-                load_or_create_anonymous_uid(&moon_env.id_file)?,
-            );
+            .header("X-Moon-UID", self.user_id.clone());
 
-        if let Some(moon_dir) = fs::find_upwards(CONFIG_DIRNAME, &moon_env.working_dir) {
-            client = client.header(
-                "X-Moon-RID",
-                create_anonymous_rid(moon_dir.parent().unwrap()),
-            );
+        if let Some(repo_id) = &self.repo_id {
+            client = client.header("X-Moon-RID", repo_id.to_owned());
         }
 
         Ok(client)

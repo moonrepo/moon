@@ -4,6 +4,7 @@ use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
+use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
@@ -46,6 +47,7 @@ pub struct MoonSession {
     // Lazy components
     cache_engine: OnceLock<Arc<CacheEngine>>,
     extension_registry: OnceLock<Arc<ExtensionRegistry>>,
+    launchpad: OnceLock<Arc<Launchpad>>,
     project_graph: OnceLock<Arc<ProjectGraph>>,
     task_graph: OnceLock<Arc<TaskGraph>>,
     toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
@@ -73,6 +75,7 @@ impl MoonSession {
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
             extension_registry: OnceLock::new(),
+            launchpad: OnceLock::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceLock::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
@@ -156,6 +159,16 @@ impl MoonSession {
         });
 
         Ok(Arc::clone(item))
+    }
+
+    pub fn get_launchpad(&self) -> miette::Result<Arc<Launchpad>> {
+        if self.launchpad.get().is_none() {
+            let _ = self
+                .launchpad
+                .set(Arc::new(Launchpad::new(self.moon_env.clone())?));
+        }
+
+        Ok(self.launchpad.get().map(Arc::clone).unwrap())
     }
 
     pub async fn get_project_graph(&self) -> miette::Result<Arc<ProjectGraph>> {
@@ -372,11 +385,12 @@ impl AppSession for MoonSession {
                 Commands::Ci(_) | Commands::Check(_) | Commands::Run(_) | Commands::Sync { .. }
             )
         {
+            let launchpad = self.get_launchpad()?;
             let cache_engine = self.get_cache_engine()?;
 
             execute::check_for_new_version(
                 &self.console,
-                &self.moon_env,
+                &launchpad,
                 &cache_engine,
                 &self.toolchain_config.moon.manifest_url,
             )

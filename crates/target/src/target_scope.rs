@@ -16,8 +16,8 @@ impl Display for TargetScope {
             TargetScope::All => write!(f, ""),
             TargetScope::Deps => write!(f, "^"),
             TargetScope::OwnSelf => write!(f, "~"),
-            TargetScope::Project(id) => write!(f, "{}", id),
-            TargetScope::Tag(id) => write!(f, "#{}", id),
+            TargetScope::Project(id) => write!(f, "{id}"),
+            TargetScope::Tag(id) => write!(f, "#{id}"),
         }
     }
 }

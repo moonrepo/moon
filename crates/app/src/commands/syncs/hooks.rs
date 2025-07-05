@@ -47,11 +47,11 @@ pub async fn sync(session: MoonSession, args: SyncHooksArgs) -> AppResult {
     let message = if args.clean {
         unsync_vcs_hooks(&context).await?;
 
-        format!("Removed {} hooks", hook_names)
+        format!("Removed {hook_names} hooks")
     } else {
         sync_vcs_hooks(&context, args.force).await?;
 
-        format!("Created {} hooks", hook_names)
+        format!("Created {hook_names} hooks")
     };
 
     session.console.render(element! {

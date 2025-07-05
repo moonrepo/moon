@@ -401,8 +401,8 @@ mod bun {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains(format!("Args: {}\n", args)).eval(&output));
-            assert!(predicate::str::contains(format!("Env: {}\n", envs)).eval(&output));
+            assert!(predicate::str::contains(format!("Args: {args}\n")).eval(&output));
+            assert!(predicate::str::contains(format!("Env: {envs}\n")).eval(&output));
         }
 
         #[test]

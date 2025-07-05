@@ -1,2 +1,2 @@
 language: rust
-type: library
+layer: library

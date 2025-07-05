@@ -433,14 +433,13 @@ impl ToolchainPlugin {
 
             // Pre-load the tool plugin so that task executions
             // avoid network race conditions and collisions
-            if let Ok(loader) = tool.proto.get_plugin_loader() {
-                if let Some(locator) = tool
+            if let Ok(loader) = tool.proto.get_plugin_loader()
+                && let Some(locator) = tool
                     .locator
                     .clone()
                     .or_else(|| locate_tool(&tool.id, &tool.proto).ok())
-                {
-                    let _ = loader.load_plugin(&tool.id, &locator).await;
-                }
+            {
+                let _ = loader.load_plugin(&tool.id, &locator).await;
             }
         }
 

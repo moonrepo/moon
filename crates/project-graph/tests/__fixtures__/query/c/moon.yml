@@ -1,5 +1,5 @@
 language: python
-type: tool
+layer: tool
 
 tags: [three, one]
 

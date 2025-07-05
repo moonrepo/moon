@@ -32,11 +32,9 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         return Err(AppError::UpgradeRequiresInternet.into());
     }
 
-    let remote_version = match Launchpad::check_version_without_cache(
-        &session.moon_env,
-        &session.toolchain_config.moon.manifest_url,
-    )
-    .await
+    let remote_version = match Launchpad::instance()
+        .check_version_without_cache(&session.toolchain_config.moon.manifest_url)
+        .await
     {
         Ok(Some(result)) if result.update_available => result.remote_version,
         Ok(_) => {

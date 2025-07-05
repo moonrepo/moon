@@ -629,7 +629,7 @@ impl<'query> ActionGraphBuilder<'query> {
             TargetScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
-                    .query_projects(build_query(format!("tag={}", tag).as_str())?)?;
+                    .query_projects(build_query(format!("tag={tag}").as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist
@@ -977,10 +977,10 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Return early if not affected
-        if let Some(affected) = &mut self.affected {
-            if !affected.is_project_marked(project) {
-                return Ok(None);
-            }
+        if let Some(affected) = &mut self.affected
+            && !affected.is_project_marked(project)
+        {
+            return Ok(None);
         }
 
         // Insert the node and edges

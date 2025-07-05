@@ -162,7 +162,7 @@ pub async fn init_for_toolchain(
         _ => {
             warn!(
                 "This command has been deprecated for toolchain plugins, use {} instead.",
-                color::shell(format!("moon toolchain add {}", id))
+                color::shell(format!("moon toolchain add {id}"))
             );
 
             return Ok(None);

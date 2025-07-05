@@ -4,6 +4,7 @@ use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
+use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
@@ -317,10 +318,11 @@ impl AppSession for MoonSession {
             self.tasks_config = tasks_config;
         }
 
-        // Load components
+        // Load singleton components
 
         startup::register_feature_flags(&self.workspace_config)?;
 
+        Launchpad::register(self.moon_env.clone())?;
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 
         Ok(None)
@@ -376,7 +378,6 @@ impl AppSession for MoonSession {
 
             execute::check_for_new_version(
                 &self.console,
-                &self.moon_env,
                 &cache_engine,
                 &self.toolchain_config.moon.manifest_url,
             )

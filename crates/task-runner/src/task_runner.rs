@@ -224,16 +224,16 @@ impl<'task> TaskRunner<'task> {
         };
 
         let is_cache_stale = || {
-            if let Some(duration) = cache_lifetime {
-                if is_stale(self.cache.data.last_run_time, duration) {
-                    debug!(
-                        task_target = self.task.target.as_str(),
-                        hash,
-                        "Cache skip, a lifetime has been configured and the last run is stale, continuing run"
-                    );
+            if let Some(duration) = cache_lifetime
+                && is_stale(self.cache.data.last_run_time, duration)
+            {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash,
+                    "Cache skip, a lifetime has been configured and the last run is stale, continuing run"
+                );
 
-                    return true;
-                }
+                return true;
             }
 
             false
@@ -290,17 +290,17 @@ impl<'task> TaskRunner<'task> {
 
         if archive_file.exists() {
             // Also check if the archive itself is stale
-            if let Some(duration) = cache_lifetime {
-                if fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some() {
-                    debug!(
-                        task_target = self.task.target.as_str(),
-                        hash,
-                        archive_file = ?archive_file,
-                        "Cache skip in local cache, a lifetime has been configured and the archive is stale, continuing run"
-                    );
+            if let Some(duration) = cache_lifetime
+                && fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some()
+            {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash,
+                    archive_file = ?archive_file,
+                    "Cache skip in local cache, a lifetime has been configured and the archive is stale, continuing run"
+                );
 
-                    return Ok(None);
-                }
+                return Ok(None);
             }
 
             debug!(
@@ -314,17 +314,17 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in the remote service
-        if let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session()) {
-            if let Some(result) = remote.is_action_cached(state).await? {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash, "Cache hit in remote service, will attempt to download output blobs"
-                );
+        if let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session())
+            && let Some(result) = remote.is_action_cached(state).await?
+        {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Cache hit in remote service, will attempt to download output blobs"
+            );
 
-                state.set_action_result(result);
+            state.set_action_result(result);
 
-                return Ok(Some(HydrateFrom::RemoteCache));
-            }
+            return Ok(Some(HydrateFrom::RemoteCache));
         }
 
         debug!(

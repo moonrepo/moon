@@ -578,14 +578,14 @@ mod projects {
             cmd.arg("query")
                 .arg("projects")
                 .arg("--json")
-                .args(["--type", "app"]);
+                .args(["--layer", "app"]);
         });
 
         let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
-        assert_eq!(json.options.type_of.unwrap(), "app".to_string());
+        assert_eq!(json.options.layer.unwrap(), "app".to_string());
     }
 
     #[test]

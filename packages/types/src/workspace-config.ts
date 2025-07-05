@@ -38,11 +38,11 @@ export interface CodeownersConfig {
 export interface ConstraintsConfig {
 	/**
 	 * Enforces relationships between projects based on each project's
-	 * `type` setting.
+	 * `layer` setting.
 	 *
 	 * @default true
 	 */
-	enforceProjectTypeRelationships?: boolean;
+	enforceLayerRelationships?: boolean;
 	/**
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
@@ -569,11 +569,11 @@ export interface PartialCodeownersConfig {
 export interface PartialConstraintsConfig {
 	/**
 	 * Enforces relationships between projects based on each project's
-	 * `type` setting.
+	 * `layer` setting.
 	 *
 	 * @default true
 	 */
-	enforceProjectTypeRelationships?: boolean | null;
+	enforceLayerRelationships?: boolean | null;
 	/**
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.

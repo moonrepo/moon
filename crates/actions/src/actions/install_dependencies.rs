@@ -203,21 +203,21 @@ pub async fn install_dependencies(
             .extend(exec_plugin_command(app_context.clone(), &install, &options).await?);
     }
 
-    if !is_ci() {
-        if let Some(mut dedupe) = output.dedupe_command {
-            debug!(
-                root = node.root.as_str(),
-                toolchain_id = node.toolchain_id.as_str(),
-                "Deduping {} dependencies",
-                toolchain.metadata.name
-            );
+    if !is_ci()
+        && let Some(mut dedupe) = output.dedupe_command
+    {
+        debug!(
+            root = node.root.as_str(),
+            toolchain_id = node.toolchain_id.as_str(),
+            "Deduping {} dependencies",
+            toolchain.metadata.name
+        );
 
-            dedupe.cache = None; // Disable
-            dedupe.command.stream = !hide_output;
-            action
-                .operations
-                .extend(exec_plugin_command(app_context, &dedupe, &options).await?);
-        }
+        dedupe.cache = None; // Disable
+        dedupe.command.stream = !hide_output;
+        action
+            .operations
+            .extend(exec_plugin_command(app_context, &dedupe, &options).await?);
     }
 
     finalize_action_operations(action, &toolchain, setup_op, output.operations, vec![])?;

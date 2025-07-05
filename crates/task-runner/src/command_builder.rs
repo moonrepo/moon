@@ -184,16 +184,16 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_args(&mut self, context: &ActionContext) {
         // Must be first!
-        if let ActionNode::RunTask(inner) = &self.node {
-            if !inner.args.is_empty() {
-                trace!(
-                    task_target = self.task.target.as_str(),
-                    args = ?inner.args,
-                    "Inheriting args from dependent task"
-                );
+        if let ActionNode::RunTask(inner) = &self.node
+            && !inner.args.is_empty()
+        {
+            trace!(
+                task_target = self.task.target.as_str(),
+                args = ?inner.args,
+                "Inheriting args from dependent task"
+            );
 
-                self.command.args(&inner.args);
-            }
+            self.command.args(&inner.args);
         }
 
         if self.task.script.is_none()
@@ -213,16 +213,16 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_env(&mut self) {
         // Must be first!
-        if let ActionNode::RunTask(inner) = &self.node {
-            if !inner.env.is_empty() {
-                trace!(
-                    task_target = self.task.target.as_str(),
-                    env = ?inner.env,
-                    "Inheriting env from dependent task"
-                );
+        if let ActionNode::RunTask(inner) = &self.node
+            && !inner.env.is_empty()
+        {
+            trace!(
+                task_target = self.task.target.as_str(),
+                env = ?inner.env,
+                "Inheriting env from dependent task"
+            );
 
-                self.command.envs(&inner.env);
-            }
+            self.command.envs(&inner.env);
         }
 
         self.command.env("PWD", self.working_dir);

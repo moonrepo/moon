@@ -576,7 +576,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("bash"), Id::raw("system")],
                     &StackType::Backend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[]
                 ),
                 vec![
@@ -603,7 +603,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[]
                 ),
                 vec![
@@ -630,7 +630,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[]
                 ),
                 vec![
@@ -657,7 +657,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("ruby")],
                     &StackType::Backend,
-                    &ProjectType::Tool,
+                    &LayerType::Tool,
                     &[]
                 ),
                 vec![
@@ -675,7 +675,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("rust")],
                     &StackType::Backend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[]
                 ),
                 vec![
@@ -698,7 +698,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("kotlin")],
                     &StackType::Backend,
-                    &ProjectType::Tool,
+                    &LayerType::Tool,
                     &[]
                 ),
                 vec![
@@ -716,7 +716,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Backend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[]
                 ),
                 vec![
@@ -743,7 +743,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &[Id::raw("rust")],
                     &StackType::Backend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[Id::raw("cargo"), Id::raw("cli-app")]
                 ),
                 vec![
@@ -774,7 +774,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Backend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[],
                 )
                 .unwrap();
@@ -821,7 +821,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("python")],
                     &StackType::Frontend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[],
                 )
                 .unwrap();
@@ -852,7 +852,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("bun"), Id::raw("javascript")],
                     &StackType::Backend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[],
                 )
                 .unwrap();
@@ -887,7 +887,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
-                    &ProjectType::Tool,
+                    &LayerType::Tool,
                     &[],
                 )
                 .unwrap();
@@ -922,7 +922,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("rust")],
                     &StackType::Frontend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[],
                 )
                 .unwrap();
@@ -950,7 +950,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
-                    &ProjectType::Tool,
+                    &LayerType::Tool,
                     &[Id::raw("normal"), Id::raw("kebab-case")],
                 )
                 .unwrap();
@@ -998,7 +998,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("kotlin"), Id::raw("system")],
                     &StackType::Frontend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[],
                 )
                 .unwrap();
@@ -1036,7 +1036,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[],
                 )
                 .unwrap();
@@ -1062,7 +1062,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Frontend,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[],
                 )
                 .unwrap();
@@ -1086,7 +1086,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("rust")],
                     &StackType::Infrastructure,
-                    &ProjectType::Application,
+                    &LayerType::Application,
                     &[],
                 )
                 .unwrap();
@@ -1107,7 +1107,7 @@ mod task_manager {
                 .get_inherited_config(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
-                    &ProjectType::Library,
+                    &LayerType::Library,
                     &[],
                 )
                 .unwrap();

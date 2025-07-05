@@ -217,10 +217,10 @@ impl Operation {
     {
         let result = func().await;
 
-        if let Ok(files) = &result {
-            if let Some(sync) = self.get_file_state_mut() {
-                sync.changed_files.extend(files.clone());
-            }
+        if let Ok(files) = &result
+            && let Some(sync) = self.get_file_state_mut()
+        {
+            sync.changed_files.extend(files.clone());
         }
 
         self.handle_track(result, |_| true).map(|_| self)

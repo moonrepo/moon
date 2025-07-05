@@ -18,7 +18,7 @@ use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
-use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
+use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
@@ -602,13 +602,13 @@ impl<'app> WorkspaceBuilder<'app> {
         debug!("Enforcing project constraints");
 
         let context = self.context();
-        let type_relationships = context
+        let layer_relationships = context
             .workspace_config
             .constraints
-            .enforce_project_type_relationships;
+            .enforce_layer_relationships;
         let tag_relationships = &context.workspace_config.constraints.tag_relationships;
 
-        if !type_relationships && tag_relationships.is_empty() {
+        if !layer_relationships && tag_relationships.is_empty() {
             return Ok(());
         }
 
@@ -642,8 +642,8 @@ impl<'app> WorkspaceBuilder<'app> {
                 .collect();
 
             for (dep, dep_scope) in deps {
-                if type_relationships {
-                    enforce_project_type_relationships(project, dep, dep_scope)?;
+                if layer_relationships {
+                    enforce_layer_relationships(project, dep, dep_scope)?;
                 }
 
                 for (source_tag, required_tags) in tag_relationships {
@@ -764,38 +764,38 @@ impl<'app> WorkspaceBuilder<'app> {
             };
 
             // Track ID renames
-            if let Some(new_id) = &config.id {
-                if new_id != &id {
-                    debug!(
-                        old_id = id.as_str(),
-                        new_id = new_id.as_str(),
-                        "Project has been configured with an explicit identifier of {}, renaming from {}",
-                        color::id(new_id),
-                        color::id(id.as_str()),
-                    );
+            if let Some(new_id) = &config.id
+                && new_id != &id
+            {
+                debug!(
+                    old_id = id.as_str(),
+                    new_id = new_id.as_str(),
+                    "Project has been configured with an explicit identifier of {}, renaming from {}",
+                    color::id(new_id),
+                    color::id(id.as_str()),
+                );
 
-                    build_data.original_id = Some(id.clone());
+                build_data.original_id = Some(id.clone());
 
-                    if renamed_ids.contains_key(&id) {
-                        dupe_original_ids.insert(id.clone());
-                    } else {
-                        renamed_ids.insert(id.clone(), new_id.to_owned());
-                    }
-
-                    id = new_id.to_owned();
+                if renamed_ids.contains_key(&id) {
+                    dupe_original_ids.insert(id.clone());
+                } else {
+                    renamed_ids.insert(id.clone(), new_id.to_owned());
                 }
+
+                id = new_id.to_owned();
             }
 
             // Check for duplicate IDs
-            if let Some(existing_data) = project_data.get(&id) {
-                if existing_data.source != build_data.source {
-                    return Err(WorkspaceBuilderError::DuplicateProjectId {
-                        id: id.clone(),
-                        old_source: existing_data.source.to_string(),
-                        new_source: build_data.source.to_string(),
-                    }
-                    .into());
+            if let Some(existing_data) = project_data.get(&id)
+                && existing_data.source != build_data.source
+            {
+                return Err(WorkspaceBuilderError::DuplicateProjectId {
+                    id: id.clone(),
+                    old_source: existing_data.source.to_string(),
+                    new_source: build_data.source.to_string(),
                 }
+                .into());
             }
 
             // Otherwise persist the build data

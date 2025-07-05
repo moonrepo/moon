@@ -1,4 +1,5 @@
 use moon_common::Id;
+use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::Target;
 use moon_toolchain::{Runtime, ToolchainSpec};
@@ -45,6 +46,9 @@ pub struct SetupEnvironmentNode {
 
     pub toolchain_id: Id,
 }
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+pub struct SetupProtoNode {}
 
 // DEPRECATED
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -126,10 +130,13 @@ pub enum ActionNode {
     /// Setup the environment for the provided toolchain.
     SetupEnvironment(Box<SetupEnvironmentNode>),
 
-    /// Setup a tool + version for the provided toolchain.
+    /// Setup and install proto.
+    SetupProto(Box<SetupProtoNode>),
+
+    /// Setup and install the provided toolchain.
     SetupToolchainLegacy(Box<SetupToolchainLegacyNode>),
 
-    /// Setup a tool + version for the provided toolchain.
+    /// Setup and install the provided toolchain.
     SetupToolchain(Box<SetupToolchainNode>),
 
     /// Sync a project with language specific semantics.
@@ -160,6 +167,10 @@ impl ActionNode {
 
     pub fn setup_environment(node: SetupEnvironmentNode) -> Self {
         Self::SetupEnvironment(Box::new(node))
+    }
+
+    pub fn setup_proto() -> Self {
+        Self::SetupProto(Box::new(SetupProtoNode {}))
     }
 
     pub fn setup_toolchain_legacy(node: SetupToolchainLegacyNode) -> Self {
@@ -279,6 +290,9 @@ impl ActionNode {
                 } else {
                     format!("SetupEnvironment({}, {})", inner.toolchain_id, inner.root)
                 }
+            }
+            Self::SetupProto(_) => {
+                format!("SetupProto({})", PROTO_CLI_VERSION)
             }
             Self::SetupToolchainLegacy(inner) => {
                 if inner.runtime.is_system() {

@@ -117,6 +117,10 @@ pub async fn run_action(
             result
         }
 
+        ActionNode::SetupProto(_) => {
+            todo!()
+        }
+
         ActionNode::SetupToolchainLegacy(inner) => {
             emitter
                 .emit(Event::ToolInstalling {

@@ -199,7 +199,7 @@ impl Launchpad {
 
     fn create_request(&self, url: &str) -> miette::Result<reqwest::RequestBuilder> {
         let mut client = reqwest::Client::new()
-            .get(url)
+            .post(url)
             .header("X-Moon-OS", consts::OS.to_owned())
             .header("X-Moon-Arch", consts::ARCH.to_owned())
             .header("X-Moon-Version", self.moon_version.clone())

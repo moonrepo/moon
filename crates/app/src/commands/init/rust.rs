@@ -18,20 +18,20 @@ fn render_template(context: Context) -> miette::Result<String> {
 }
 
 fn detect_rust_version(dest_dir: &Path) -> miette::Result<Option<UnresolvedVersionSpec>> {
-    if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
-        if let Some(version) = toolchain_toml.toolchain.channel {
-            let rust_version = if version == "stable"
-                || version == "beta"
-                || version == "nightly"
-                || version.starts_with("nightly")
-            {
-                Some(version)
-            } else {
-                fully_qualify_version(version)
-            };
+    if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)?
+        && let Some(version) = toolchain_toml.toolchain.channel
+    {
+        let rust_version = if version == "stable"
+            || version == "beta"
+            || version == "nightly"
+            || version.starts_with("nightly")
+        {
+            Some(version)
+        } else {
+            fully_qualify_version(version)
+        };
 
-            return Ok(rust_version.and_then(|v| UnresolvedVersionSpec::parse(v).ok()));
-        }
+        return Ok(rust_version.and_then(|v| UnresolvedVersionSpec::parse(v).ok()));
     }
 
     Ok(None)

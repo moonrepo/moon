@@ -517,14 +517,15 @@ impl Command {
         };
         let working_dir = PathBuf::from(self.cwd.as_deref().unwrap_or(workspace_root.as_os_str()));
 
-        if let Some(console) = self.console.as_ref() {
-            if self.print_command && !console.out.is_quiet() {
-                let _ = console.out.write_line(CommandLine::format(
-                    &line.get_line(false, false),
-                    &workspace_root,
-                    &working_dir,
-                ));
-            }
+        if let Some(console) = self.console.as_ref()
+            && self.print_command
+            && !console.out.is_quiet()
+        {
+            let _ = console.out.write_line(CommandLine::format(
+                &line.get_line(false, false),
+                &workspace_root,
+                &working_dir,
+            ));
         }
 
         // Avoid all this overhead if we're not logging

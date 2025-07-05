@@ -203,10 +203,10 @@ async fn evaluate_prompts(
         .iter()
         .filter(|p| if args.minimal { p.minimal } else { true })
     {
-        if let Some(condition) = &prompt.condition {
-            if !evaluate_condition(condition, settings) {
-                continue;
-            }
+        if let Some(condition) = &prompt.condition
+            && !evaluate_condition(condition, settings)
+        {
+            continue;
         }
 
         if let Some(value) = render_prompt(&session.console, args.yes, prompt).await? {

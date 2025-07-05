@@ -21,7 +21,7 @@ fn load_generator(provider: VcsProvider) -> Sandbox {
 
     for project_fixture in ["custom-groups", "list-paths", "map-paths", "no-paths"] {
         sandbox.create_file(
-            format!("{}/moon.yml", project_fixture),
+            format!("{project_fixture}/moon.yml"),
             fs::read_to_string(locate_fixture(project_fixture).join("moon.yml")).unwrap(),
         );
 

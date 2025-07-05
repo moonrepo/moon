@@ -85,7 +85,7 @@ impl<'app> JavaScriptSyncer<'app> {
                         NodeVersionFormat::Version
                         | NodeVersionFormat::VersionCaret
                         | NodeVersionFormat::VersionTilde => {
-                            format!("{}{}", version_prefix, dep_package_version)
+                            format!("{version_prefix}{dep_package_version}")
                         }
                         _ => version_prefix.clone(),
                     };

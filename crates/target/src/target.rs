@@ -12,8 +12,7 @@ use tracing::instrument;
 // The @ is to support npm package scopes!
 pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&format!(
-        r"^(?P<scope>(?:[A-Za-z@#_]{{1}}{chars}|\^|~))?:(?P<task>{chars})$",
-        chars = ID_CHARS
+        r"^(?P<scope>(?:[A-Za-z@#_]{{1}}{ID_CHARS}|\^|~))?:(?P<task>{ID_CHARS})$"
     ))
     .unwrap()
 });
@@ -122,7 +121,7 @@ impl Target {
         let prefix = self.as_str();
 
         let label = if let Some(width) = width {
-            format!("{: >width$}", prefix, width = width)
+            format!("{prefix: >width$}")
         } else {
             prefix.to_owned()
         };

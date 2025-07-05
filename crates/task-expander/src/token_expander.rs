@@ -691,11 +691,11 @@ impl<'graph> TokenExpander<'graph> {
     ) -> miette::Result<String> {
         // From workspace root to any file
         if task.options.run_from_workspace_root {
-            Ok(format!("./{}", path))
+            Ok(format!("./{path}"))
 
             // From project root to project file
         } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
-            Ok(format!("./{}", proj_path))
+            Ok(format!("./{proj_path}"))
 
             // From project root to non-project file
         } else {

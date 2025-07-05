@@ -6,7 +6,7 @@ config_struct!(
     #[derive(Config)]
     pub struct MoonConfig {
         /// A secure URL to lookup the latest version.
-        #[setting(validate = validate::url_secure, default = "https://launch.moonrepo.app/versions/cli/current")]
+        #[setting(validate = validate::url_secure, default = "https://launch.moonrepo.app/moon/check_version")]
         pub manifest_url: String,
 
         /// A secure URL for downloading the moon binary.

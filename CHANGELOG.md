@@ -15,6 +15,7 @@
 
 #### ⚙️ Internal
 
+- Added telemetry for toolchain usage.
 - Updated Rust to v1.88.0.
 
 ## 1.38.6

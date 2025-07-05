@@ -111,7 +111,7 @@ export interface MoonConfig {
 	/**
 	 * A secure URL to lookup the latest version.
 	 *
-	 * @default 'https://launch.moonrepo.app/versions/cli/current'
+	 * @default 'https://launch.moonrepo.app/moon/check_version'
 	 */
 	manifestUrl?: string;
 }
@@ -481,7 +481,7 @@ export interface PartialMoonConfig {
 	/**
 	 * A secure URL to lookup the latest version.
 	 *
-	 * @default 'https://launch.moonrepo.app/versions/cli/current'
+	 * @default 'https://launch.moonrepo.app/moon/check_version'
 	 */
 	manifestUrl?: string | null;
 }

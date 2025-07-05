@@ -8,7 +8,7 @@ use moon_app_context::AppContext;
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
-    schema::{CallToolResult, schema_utils::CallToolError},
+    schema::{CallToolResult, TextContent, schema_utils::CallToolError},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -70,14 +70,15 @@ impl SyncWorkspaceTool {
         .await
         .map_err(map_miette_error)?;
 
-        Ok(CallToolResult::text_content(
+        Ok(CallToolResult::text_content(vec![TextContent::new(
             serde_json::to_string_pretty(&SyncResponse {
                 actions,
                 synced: true,
             })
             .map_err(CallToolError::new)?,
             None,
-        ))
+            None,
+        )]))
     }
 }
 
@@ -124,13 +125,14 @@ impl SyncProjectsTool {
         .await
         .map_err(map_miette_error)?;
 
-        Ok(CallToolResult::text_content(
+        Ok(CallToolResult::text_content(vec![TextContent::new(
             serde_json::to_string_pretty(&SyncResponse {
                 actions,
                 synced: true,
             })
             .map_err(CallToolError::new)?,
             None,
-        ))
+            None,
+        )]))
     }
 }

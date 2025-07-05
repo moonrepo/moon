@@ -7,7 +7,7 @@ use std::hash::Hash;
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ToolchainSpec {
     pub id: Id,
-    pub overridden: bool,
+    // pub overridden: bool,
     pub req: Option<UnresolvedVersionSpec>,
 }
 
@@ -16,7 +16,7 @@ impl ToolchainSpec {
         Self {
             id,
             req: Some(req),
-            overridden: false,
+            // overridden: false,
         }
     }
 
@@ -24,7 +24,7 @@ impl ToolchainSpec {
         Self {
             id,
             req: None,
-            overridden: false,
+            // overridden: false,
         }
     }
 
@@ -32,7 +32,7 @@ impl ToolchainSpec {
         Self {
             id,
             req: Some(req),
-            overridden: true,
+            // overridden: true,
         }
     }
 

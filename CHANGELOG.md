@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.38.3
 
 #### 🚀 Updates
 
@@ -10,8 +10,46 @@
 
 #### 🐞 Fixes
 
+- Fixed the duplicate nodes in the action graph.
+
+## 1.38.2
+
+#### 🚀 Updates
+
+- More plugin pre-loading improvements.
+
+#### 🐞 Fixes
+
+- Potential fix for duplicate nodes in the action graph.
+- Potential fix for the node platform panicing for a missing package manager.
+- Potential fix for a fs rename error when installing proto.
+- Fixed a panic that would occur during `moon ci` job calculation.
+
+## 1.38.1
+
+#### 🚀 Updates
+
+- Added a new setting for toolchain plugins, `versionFromPrototools`, which controls how we inherit
+  a version from the root `.prototools` file. By default this is enabled, but can be configured with
+  a string if the IDs don't match.
+- Added support for toolchain plugins to replace/wrap a task script in the `extend_task_script` WASM
+  API.
+- Updated toolchain setup to preload the proto WASM plugin. This should help to alleviate network
+  race conditions.
+- Updated `moon setup` to also install toolchain plugins.
+
+#### 🐞 Fixes
+
+- Fixed an issue where toolchain plugins do not inherit versions from `.prototools`.
 - Fixed an issue where a file lock would be created for proto installation, even when it didn't need
   to be installed.
+- Fixed an issue where `moon docker prune` would force install all toolchains. If you were relying
+  on this functionality, run `moon docker setup` instead.
+
+#### 🧩 Plugins
+
+- WASM API
+  - Added `ExtendTaskScriptOutput.script` field.
 
 ## 1.38.0
 

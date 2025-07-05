@@ -269,10 +269,10 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         };
 
-        let mut edges = vec![
+        let mut edges = FxHashSet::from_iter([
             self.sync_workspace().await?,
             self.setup_toolchain_legacy(runtime).await?,
-        ];
+        ]);
 
         let platform_manager = match &self.platform_manager {
             Some(manager) => manager,
@@ -295,7 +295,7 @@ impl<'query> ActionGraphBuilder<'query> {
         } else {
             None
         }
-        .unwrap_or_else(|| runtime.to_owned());
+        .unwrap_or_else(|| self.get_compat_runtime(runtime));
 
         let platform = platform_manager.get_by_toolchain(&new_runtime.toolchain)?;
         let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
@@ -312,7 +312,7 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
-        edges.push(self.setup_toolchain_legacy(&new_runtime).await?);
+        edges.insert(self.setup_toolchain_legacy(&new_runtime).await?);
 
         let index = insert_node_or_exit!(
             self,
@@ -329,7 +329,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         );
 
-        self.link_optional_requirements(index, edges);
+        self.link_optional_requirements(index, edges.into_iter().collect());
 
         Ok(Some(index))
     }
@@ -920,7 +920,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let index = insert_node_or_exit!(
             self,
             ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
-                runtime: runtime.to_owned(),
+                runtime: self.get_compat_runtime(runtime),
             })
         );
 
@@ -1036,6 +1036,14 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     // PRIVATE
+
+    fn get_compat_runtime(&self, runtime: &Runtime) -> Runtime {
+        let mut next = runtime.to_owned();
+        // Disable this, so that the index for both override and not-override
+        // is the same, as we only care about the toolchain ID + version
+        next.overridden = false;
+        next
+    }
 
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
         self.nodes.get(node).cloned()

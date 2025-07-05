@@ -176,5 +176,10 @@ api_struct!(
         /// variable, but after the proto prepended paths.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub paths: Vec<PathBuf>,
+
+        /// The script to use. Will replace the existing script.
+        /// Can be overwritten by subsequent extend calls.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub script: Option<String>,
     }
 );

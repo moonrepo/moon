@@ -19,7 +19,7 @@ pub async fn setup(session: MoonSession) -> AppResult {
 
     debug!(
         projects = ?manifest.focused_projects.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
-        "Installing tools and dependencies for focused projects"
+        "Installing toolchains and dependencies for focused projects"
     );
 
     for project_id in &manifest.focused_projects {

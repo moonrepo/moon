@@ -263,6 +263,8 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+export type ToolchainPluginVersionFrom = boolean | string;
+
 /** Configures an individual toolchain. */
 export interface ToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
@@ -272,6 +274,12 @@ export interface ToolchainPluginConfig {
 	plugin: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
 	version: UnresolvedVersionSpec | null;
+	/**
+	 * Inherit the version from the root `.prototools`.
+	 * When true, matches using the same ID, otherwise a
+	 * string can be provided for a custom ID.
+	 */
+	versionFromPrototools: ToolchainPluginVersionFrom;
 }
 
 /** The available package managers for Python. */
@@ -626,6 +634,12 @@ export interface PartialToolchainPluginConfig {
 	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
 	version?: UnresolvedVersionSpec | null;
+	/**
+	 * Inherit the version from the root `.prototools`.
+	 * When true, matches using the same ID, otherwise a
+	 * string can be provided for a custom ID.
+	 */
+	versionFromPrototools?: ToolchainPluginVersionFrom | null;
 }
 
 export interface PartialPipConfig {

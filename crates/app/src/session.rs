@@ -1,6 +1,5 @@
 use crate::app::{Cli, Commands};
 use crate::app_error::AppError;
-use crate::commands::docker::DockerCommands;
 use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
@@ -235,15 +234,7 @@ impl MoonSession {
     }
 
     pub fn requires_toolchain_installed(&self) -> bool {
-        matches!(
-            self.cli.command,
-            Commands::Bin(_)
-                | Commands::Docker {
-                    command: DockerCommands::Prune
-                }
-                | Commands::Node { .. }
-                | Commands::Teardown
-        )
+        matches!(self.cli.command, Commands::Bin(_) | Commands::Node { .. })
     }
 
     async fn load_workspace_graph(&self) -> miette::Result<()> {
@@ -365,7 +356,9 @@ impl AppSession for MoonSession {
             .await?;
 
             if self.requires_toolchain_installed() {
-                analyze::load_toolchain().await?;
+                let toolchain_registry = self.get_toolchain_registry().await?;
+
+                analyze::load_toolchain(&toolchain_registry, &self.toolchain_config).await?;
             }
         }
 

@@ -1,4 +1,8 @@
 tasks:
+  script:
+    script: 'bin --flag'
+    toolchain: tc-tier2
+
   env:
     script: 'bin --flag'
     toolchain: tc-tier2

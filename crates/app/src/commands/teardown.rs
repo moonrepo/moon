@@ -21,7 +21,7 @@ pub async fn teardown(session: MoonSession) -> AppResult {
     session
         .get_toolchain_registry()
         .await?
-        .teardown_all(|registry, toolchain| TeardownToolchainInput {
+        .teardown_toolchain_all(|registry, toolchain| TeardownToolchainInput {
             configured_version: session
                 .toolchain_config
                 .plugins

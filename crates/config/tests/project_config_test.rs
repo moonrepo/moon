@@ -677,10 +677,9 @@ toolchain:
             assert_eq!(
                 config.toolchain.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                    disabled: false,
-                    plugin: None,
                     version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                     config: BTreeMap::from_iter([("custom".into(), serde_json::Value::Bool(true))]),
+                    ..Default::default()
                 })
             );
         }
@@ -794,13 +793,11 @@ workspace:
                         plugins: FxHashMap::from_iter([(
                             Id::raw("typescript"),
                             ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                                disabled: false,
-                                plugin: None,
-                                version: None,
                                 config: BTreeMap::from_iter([(
                                     "includeSharedTypes".into(),
                                     serde_json::Value::Bool(true)
                                 )]),
+                                ..Default::default()
                             })
                         )]),
                         ..Default::default()

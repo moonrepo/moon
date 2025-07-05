@@ -1,12 +1,12 @@
 # Changelog
 
-## 1.38.3
+## Unreleased
 
 #### 🚀 Updates
 
-- Updated MCP (Model Context Protocol) implementation to use protocol version `2025-06-18` from `2025-03-26`.
-  - Updated `rust-mcp-sdk` dependency from 0.4.5 to 0.5.0.
-  - Updated API calls to handle breaking changes in `CallToolResult::text_content` and `TextContent`.
+- Updated MCP (Model Context Protocol) implementation to use protocol version `2025-06-18` from `2025-03-26` - in turn, allowing Claude Code to use the MCP.
+
+## 1.38.3
 
 #### 🐞 Fixes
 

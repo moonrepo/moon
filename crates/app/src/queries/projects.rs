@@ -55,24 +55,23 @@ fn load_with_regex(
         // Include tasks for JSON output
         let project = workspace_graph.get_project_with_tasks(project_id)?;
 
-        if let Some(regex) = &id_regex {
-            if !regex.is_match(&project.id) {
-                continue;
-            }
+        if let Some(regex) = &id_regex
+            && !regex.is_match(&project.id)
+        {
+            continue;
         }
 
-        if let Some(regex) = &alias_regex {
-            if let Some(alias) = &project.alias {
-                if !regex.is_match(alias) {
-                    continue;
-                }
-            }
+        if let Some(regex) = &alias_regex
+            && let Some(alias) = &project.alias
+            && !regex.is_match(alias)
+        {
+            continue;
         }
 
-        if let Some(regex) = &source_regex {
-            if !regex.is_match(project.source.as_str()) {
-                continue;
-            }
+        if let Some(regex) = &source_regex
+            && !regex.is_match(project.source.as_str())
+        {
+            continue;
         }
 
         if let Some(regex) = &tags_regex {
@@ -94,22 +93,22 @@ fn load_with_regex(
             }
         }
 
-        if let Some(regex) = &language_regex {
-            if !regex.is_match(&project.language.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &language_regex
+            && !regex.is_match(&project.language.to_string())
+        {
+            continue;
         }
 
-        if let Some(regex) = &stack_regex {
-            if !regex.is_match(&project.stack.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &stack_regex
+            && !regex.is_match(&project.stack.to_string())
+        {
+            continue;
         }
 
-        if let Some(regex) = &layer_regex {
-            if !regex.is_match(&project.layer.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &layer_regex
+            && !regex.is_match(&project.layer.to_string())
+        {
+            continue;
         }
 
         filtered.push(Arc::new(project));

@@ -112,9 +112,9 @@ impl<'app> HooksGenerator<'app> {
 
     fn create_internal_hook_path(&self, hook_name: &str) -> PathBuf {
         self.output_dir.join(if self.is_bash_format() {
-            format!("{}.sh", hook_name)
+            format!("{hook_name}.sh")
         } else {
-            format!("{}.ps1", hook_name)
+            format!("{hook_name}.ps1")
         })
     }
 

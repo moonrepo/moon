@@ -30,7 +30,7 @@ impl Id {
 
         // The @ is to support npm package scopes!
         let pattern =
-            ID_PATTERN.get_or_init(|| Regex::new(format!("^(@?{})$", ID_CHARS).as_str()).unwrap());
+            ID_PATTERN.get_or_init(|| Regex::new(format!("^(@?{ID_CHARS})$").as_str()).unwrap());
 
         if !pattern.is_match(id) {
             return Err(IdError(id.to_owned()));

@@ -191,8 +191,7 @@ impl Launchpad {
         &self,
         toolchains: BTreeMap<String, String>,
     ) -> miette::Result<()> {
-        if !is_ci() {
-            // } || is_test_env() || proto_core::is_offline() {
+        if !is_ci() || is_test_env() || proto_core::is_offline() {
             return Ok(());
         }
 

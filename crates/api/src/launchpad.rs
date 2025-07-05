@@ -1,19 +1,20 @@
 use miette::IntoDiagnostic;
 use moon_cache::{CacheEngine, cache_item};
-use moon_common::{Id, consts::CONFIG_DIRNAME, is_ci, is_test_env};
+use moon_common::{consts::CONFIG_DIRNAME, is_ci, is_test_env};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_time::now_millis;
-use proto_core::PluginLocator;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
 use std::env::consts;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tracing::{debug, instrument};
 use uuid::Uuid;
+
+static INSTANCE: OnceLock<Arc<Launchpad>> = OnceLock::new();
 
 const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(43200); // 12 hours
 
@@ -71,7 +72,7 @@ pub struct Launchpad {
 }
 
 impl Launchpad {
-    pub fn new(moon_env: Arc<MoonEnvironment>) -> miette::Result<Self> {
+    pub fn register(moon_env: Arc<MoonEnvironment>) -> miette::Result<()> {
         let user_id = load_or_create_anonymous_uid(&moon_env.id_file)?;
 
         let repo_id = fs::find_upwards(CONFIG_DIRNAME, &moon_env.working_dir)
@@ -81,12 +82,18 @@ impl Launchpad {
             .get("MOON_VERSION")
             .unwrap_or_default();
 
-        Ok(Self {
+        let _ = INSTANCE.set(Arc::new(Self {
             moon_env,
             moon_version,
             user_id,
             repo_id,
-        })
+        }));
+
+        Ok(())
+    }
+
+    pub fn instance() -> Arc<Launchpad> {
+        Arc::clone(INSTANCE.get().unwrap())
     }
 
     #[instrument(skip_all)]
@@ -155,7 +162,7 @@ impl Launchpad {
         };
 
         let data: CurrentVersion = json::parse(text)?;
-        let local_version = Version::parse(&version).into_diagnostic()?;
+        let local_version = Version::parse(version).into_diagnostic()?;
         let remote_version = Version::parse(&data.current_version).into_diagnostic()?;
         let update_available = remote_version > local_version;
 
@@ -174,19 +181,15 @@ impl Launchpad {
         }))
     }
 
-    pub async fn track_toolchain_usage(
-        &self,
-        id: &Id,
-        plugin: &PluginLocator,
-    ) -> miette::Result<()> {
+    pub async fn track_toolchain_usage(&self, id: String, plugin: String) -> miette::Result<()> {
         if !is_ci() || is_test_env() || proto_core::is_offline() {
             return Ok(());
         }
 
         let request = self
             .create_request("https://launch.moonrepo.app/moon/toolchain_usage")?
-            .header("X-Moon-ToolchainId", id.to_string())
-            .header("X-Moon-ToolchainPlugin", plugin.to_string());
+            .header("X-Moon-ToolchainId", id)
+            .header("X-Moon-ToolchainPlugin", plugin);
 
         let _response = request.send().await.into_diagnostic()?;
 

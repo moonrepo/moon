@@ -4,6 +4,7 @@ use crate::session::MoonSession;
 use bytes::Buf;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
+use moon_api::Launchpad;
 use moon_common::consts::BIN_NAME;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
@@ -31,8 +32,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         return Err(AppError::UpgradeRequiresInternet.into());
     }
 
-    let remote_version = match session
-        .get_launchpad()?
+    let remote_version = match Launchpad::instance()
         .check_version_without_cache(&session.toolchain_config.moon.manifest_url)
         .await
     {

@@ -47,7 +47,6 @@ pub struct MoonSession {
     // Lazy components
     cache_engine: OnceLock<Arc<CacheEngine>>,
     extension_registry: OnceLock<Arc<ExtensionRegistry>>,
-    launchpad: OnceLock<Arc<Launchpad>>,
     project_graph: OnceLock<Arc<ProjectGraph>>,
     task_graph: OnceLock<Arc<TaskGraph>>,
     toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
@@ -75,7 +74,6 @@ impl MoonSession {
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
             extension_registry: OnceLock::new(),
-            launchpad: OnceLock::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceLock::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
@@ -159,16 +157,6 @@ impl MoonSession {
         });
 
         Ok(Arc::clone(item))
-    }
-
-    pub fn get_launchpad(&self) -> miette::Result<Arc<Launchpad>> {
-        if self.launchpad.get().is_none() {
-            let _ = self
-                .launchpad
-                .set(Arc::new(Launchpad::new(self.moon_env.clone())?));
-        }
-
-        Ok(self.launchpad.get().map(Arc::clone).unwrap())
     }
 
     pub async fn get_project_graph(&self) -> miette::Result<Arc<ProjectGraph>> {
@@ -330,10 +318,11 @@ impl AppSession for MoonSession {
             self.tasks_config = tasks_config;
         }
 
-        // Load components
+        // Load singleton components
 
         startup::register_feature_flags(&self.workspace_config)?;
 
+        Launchpad::register(self.moon_env.clone())?;
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 
         Ok(None)
@@ -385,12 +374,10 @@ impl AppSession for MoonSession {
                 Commands::Ci(_) | Commands::Check(_) | Commands::Run(_) | Commands::Sync { .. }
             )
         {
-            let launchpad = self.get_launchpad()?;
             let cache_engine = self.get_cache_engine()?;
 
             execute::check_for_new_version(
                 &self.console,
-                &launchpad,
                 &cache_engine,
                 &self.toolchain_config.moon.manifest_url,
             )

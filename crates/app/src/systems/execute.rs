@@ -8,7 +8,6 @@ use tracing::{debug, instrument};
 #[instrument(skip_all)]
 pub async fn check_for_new_version(
     console: &Console,
-    launchpad: &Launchpad,
     cache_engine: &CacheEngine,
     manifest_url: &str,
 ) -> AppResult {
@@ -16,7 +15,7 @@ pub async fn check_for_new_version(
         return Ok(None);
     }
 
-    match launchpad
+    match Launchpad::instance()
         .check_version(cache_engine, false, manifest_url)
         .await
     {

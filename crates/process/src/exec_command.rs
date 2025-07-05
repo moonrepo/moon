@@ -11,6 +11,7 @@ use moon_env_var::GlobalEnvBag;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
+use std::io::{BufRead, pipe};
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::{Arc, RwLock};
@@ -226,6 +227,117 @@ impl Command {
     }
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
+        let registry = ProcessRegistry::instance();
+        let (mut command, line, instant) = self.create_async_command();
+        let (stderr_rx, stderr_tx) = pipe().into_diagnostic()?;
+        let (stdout_rx, stdout_tx) = pipe().into_diagnostic()?;
+
+        command
+            .stdin(if self.should_pass_stdin() {
+                Stdio::piped()
+            } else {
+                Stdio::inherit()
+            })
+            .stderr(stderr_tx)
+            .stdout(stdout_tx);
+
+        let mut child = command
+            .spawn()
+            .map_err(|error| ProcessError::StreamCapture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            })?;
+
+        if self.should_pass_stdin() {
+            self.write_input_to_child(&mut child, &line).await?;
+        }
+
+        let shared_child = registry.add_running(child).await;
+
+        let prefix = Arc::new(self.get_prefix().map(|prefix| prefix.to_owned()));
+        let stderr_prefix = Arc::clone(&prefix);
+        let stdout_prefix = Arc::clone(&prefix);
+
+        let console = self
+            .console
+            .as_ref()
+            .expect("A console is required when streaming output!");
+        let stderr_stream = Arc::new(console.stderr().to_owned());
+        let stdout_stream = Arc::new(console.stdout().to_owned());
+
+        let stderr_handle = std::thread::spawn(move || {
+            let lines = std::io::BufReader::new(stderr_rx).lines();
+            let mut captured_lines = vec![];
+
+            for line in lines {
+                let Ok(line) = line else {
+                    continue;
+                };
+
+                let _ = if let Some(prefix) = &*stderr_prefix {
+                    stderr_stream.write_line_with_prefix(&line, prefix)
+                } else {
+                    stderr_stream.write_line(&line)
+                };
+
+                captured_lines.push(line);
+            }
+
+            captured_lines
+        });
+
+        let stdout_handle = std::thread::spawn(move || {
+            let lines = std::io::BufReader::new(stdout_rx).lines();
+            let mut captured_lines = vec![];
+
+            for line in lines {
+                let Ok(line) = line else {
+                    continue;
+                };
+
+                let _ = if let Some(prefix) = &*stdout_prefix {
+                    stdout_stream.write_line_with_prefix(&line, prefix)
+                } else {
+                    stdout_stream.write_line(&line)
+                };
+
+                captured_lines.push(line);
+            }
+
+            captured_lines
+        });
+
+        self.pre_log_command(&line, &shared_child);
+
+        // Attempt to create the child output
+        let result = shared_child
+            .wait()
+            .await
+            .map_err(|error| ProcessError::StreamCapture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            });
+
+        let stderr = stderr_handle.join().unwrap_or_default();
+        let stdout = stdout_handle.join().unwrap_or_default();
+
+        self.post_log_command(instant, &shared_child);
+
+        registry.remove_running(shared_child).await;
+
+        let exit = result?;
+        let output = Output {
+            exit,
+            stdout: stderr.join("\n").into_bytes(),
+            stderr: stdout.join("\n").into_bytes(),
+        };
+
+        self.handle_nonzero_status(&output, true)?;
+
+        Ok(output)
+    }
+
+    pub async fn exec_stream_and_capture_output_old(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
         let (mut command, line, instant) = self.create_async_command();
 

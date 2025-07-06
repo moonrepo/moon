@@ -1,23 +1,16 @@
 use crate::app_error::AppError;
-use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
-use moon_cache::CacheEngine;
-use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_config::{BunConfig, PlatformType, ToolchainConfig};
-use moon_console::{Checkpoint, Console};
+use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
 use moon_env_var::GlobalEnvBag;
 use moon_node_platform::NodePlatform;
-use moon_pdk_api::SetupToolchainInput;
 use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use moon_toolchain::is_using_global_toolchains;
-use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
-use proto_core::{ProtoEnvironment, flow::install::ProtoInstallError, is_offline};
-use proto_installer::*;
+use proto_core::ProtoEnvironment;
 use semver::{Version, VersionReq};
 use starbase::AppResult;
 use std::path::Path;
@@ -46,96 +39,6 @@ pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -
         }
         .into());
     }
-
-    Ok(None)
-}
-
-#[instrument(skip_all)]
-pub async fn install_proto(
-    console: &Console,
-    proto_env: &Arc<ProtoEnvironment>,
-    cache_engine: &CacheEngine,
-    toolchain_config: &ToolchainConfig,
-) -> AppResult {
-    let bin_name = exe_name("proto");
-    let install_dir = proto_env
-        .store
-        .inventory_dir
-        .join("proto")
-        .join(PROTO_CLI_VERSION);
-
-    debug!(proto = ?install_dir.join(&bin_name), "Checking if proto is installed");
-
-    // Set the version so that proto lookup paths take it into account
-    let bag = GlobalEnvBag::instance();
-    bag.set("PROTO_VERSION", PROTO_CLI_VERSION);
-    bag.set("PROTO_IGNORE_MIGRATE_WARNING", "true");
-    bag.set("PROTO_VERSION_CHECK", "false");
-    bag.set("PROTO_LOOKUP_DIR", &install_dir);
-
-    // This causes a ton of issues when running the test suite,
-    // so just avoid it and assume proto exists!
-    if install_dir.exists()
-        || is_test_env()
-        || is_using_global_toolchains(bag)
-        || !toolchain_config.should_install_proto()
-    {
-        return Ok(None);
-    }
-
-    debug!("Installing proto");
-
-    console.print_checkpoint(
-        Checkpoint::Setup,
-        format!("installing proto {PROTO_CLI_VERSION}"),
-    )?;
-
-    // If offline but a primary proto binary exists,
-    // use that instead of failing, even if a different version!
-    if is_offline() {
-        let existing_bin = proto_env.store.bin_dir.join(&bin_name);
-
-        if existing_bin.exists() {
-            debug!(
-                proto = ?existing_bin,
-                "No internet connection, but using existing {} binary",
-                bin_name
-            );
-
-            return Ok(None);
-        } else {
-            return Err(ProtoInstallError::RequiredInternetConnection.into());
-        }
-    }
-
-    let _lock = cache_engine.create_lock("proto-install")?;
-
-    let target_triple = determine_triple()?;
-
-    debug!("Downloading proto archive ({})", target_triple);
-
-    let result = download_release(
-        &target_triple,
-        PROTO_CLI_VERSION,
-        proto_env.store.temp_dir.join("proto"),
-        |_, _| {},
-    )
-    .await?;
-
-    debug!("Unpacking archive and installing proto");
-
-    install_release(
-        result,
-        install_dir,
-        proto_env
-            .store
-            .temp_dir
-            .join("proto")
-            .join(PROTO_CLI_VERSION),
-        false,
-    )?;
-
-    debug!("Successfully installed proto!");
 
     Ok(None)
 }
@@ -248,35 +151,6 @@ pub async fn register_platforms(
             Arc::clone(&console),
         )),
     );
-
-    Ok(None)
-}
-
-#[instrument]
-pub async fn load_toolchain(
-    toolchain_registry: &ToolchainRegistry,
-    toolchain_config: &ToolchainConfig,
-) -> AppResult {
-    // This isn't an action but we should also support skipping here!
-    if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
-        return Ok(None);
-    }
-
-    for platform in PlatformManager::write().list_mut() {
-        platform.setup_toolchain().await?;
-    }
-
-    toolchain_registry
-        .setup_toolchain_all(|registry, toolchain| SetupToolchainInput {
-            configured_version: toolchain_config
-                .plugins
-                .get(toolchain.id.as_str())
-                .and_then(|plugin| plugin.version.clone()),
-            context: registry.create_context(),
-            toolchain_config: registry.create_config(&toolchain.id, toolchain_config),
-            version: None,
-        })
-        .await?;
 
     Ok(None)
 }

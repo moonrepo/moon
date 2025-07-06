@@ -148,6 +148,7 @@ export type ActionNode =
 	| ActionNodeInstallWorkspaceDeps
 	| ActionNodeRunTask
 	| ActionNodeSetupEnvironment
+	| ActionNodeSetupProto
 	| ActionNodeSetupToolchain
 	| ActionNodeSetupToolchainLegacy
 	| ActionNodeSyncProject
@@ -205,6 +206,11 @@ export interface ActionNodeSetupToolchainLegacy {
 	params: {
 		runtime: Runtime;
 	};
+}
+
+export interface ActionNodeSetupProto {
+	action: 'setup-proto';
+	params: {};
 }
 
 export interface ActionNodeSetupToolchain {

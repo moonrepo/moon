@@ -469,6 +469,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(),
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         toolchain: spec.clone()
                     }),

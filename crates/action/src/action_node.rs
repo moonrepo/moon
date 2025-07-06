@@ -1,6 +1,6 @@
-use moon_common::Id;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{Id, is_test_env};
 use moon_target::Target;
 use moon_toolchain::{Runtime, ToolchainSpec};
 use rustc_hash::{FxHashMap, FxHasher};
@@ -292,7 +292,14 @@ impl ActionNode {
                 }
             }
             Self::SetupProto(_) => {
-                format!("SetupProto({})", PROTO_CLI_VERSION)
+                format!(
+                    "SetupProto({})",
+                    if is_test_env() {
+                        "1.2.3"
+                    } else {
+                        PROTO_CLI_VERSION
+                    }
+                )
             }
             Self::SetupToolchainLegacy(inner) => {
                 if inner.runtime.is_system() {

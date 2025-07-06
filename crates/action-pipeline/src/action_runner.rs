@@ -117,9 +117,7 @@ pub async fn run_action(
             result
         }
 
-        ActionNode::SetupProto(_) => {
-            todo!()
-        }
+        ActionNode::SetupProto(_) => setup_proto(action, action_context, app_context).await,
 
         ActionNode::SetupToolchainLegacy(inner) => {
             emitter

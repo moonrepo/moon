@@ -3870,8 +3870,10 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_console",
+ "moon_env",
  "moon_toolchain_plugin",
  "moon_vcs",
+ "proto_core",
 ]
 
 [[package]]

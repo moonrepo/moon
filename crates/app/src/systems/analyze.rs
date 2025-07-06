@@ -1,17 +1,14 @@
 use crate::app_error::AppError;
-use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
 use moon_config::{BunConfig, PlatformType, ToolchainConfig};
 use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
 use moon_env_var::GlobalEnvBag;
 use moon_node_platform::NodePlatform;
-use moon_pdk_api::SetupToolchainInput;
 use moon_platform::PlatformManager;
 use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
 use semver::{Version, VersionReq};
@@ -154,35 +151,6 @@ pub async fn register_platforms(
             Arc::clone(&console),
         )),
     );
-
-    Ok(None)
-}
-
-#[instrument]
-pub async fn load_toolchain(
-    toolchain_registry: &ToolchainRegistry,
-    toolchain_config: &ToolchainConfig,
-) -> AppResult {
-    // This isn't an action but we should also support skipping here!
-    if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
-        return Ok(None);
-    }
-
-    for platform in PlatformManager::write().list_mut() {
-        platform.setup_toolchain().await?;
-    }
-
-    toolchain_registry
-        .setup_toolchain_all(|registry, toolchain| SetupToolchainInput {
-            configured_version: toolchain_config
-                .plugins
-                .get(toolchain.id.as_str())
-                .and_then(|plugin| plugin.version.clone()),
-            context: registry.create_context(),
-            toolchain_config: registry.create_config(&toolchain.id, toolchain_config),
-            version: None,
-        })
-        .await?;
 
     Ok(None)
 }

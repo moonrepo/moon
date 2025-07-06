@@ -236,10 +236,6 @@ impl MoonSession {
         )
     }
 
-    pub fn requires_toolchain_installed(&self) -> bool {
-        matches!(self.cli.command, Commands::Bin(_) | Commands::Node { .. })
-    }
-
     async fn load_workspace_graph(&self) -> miette::Result<()> {
         let _lock = self.workspace_lock.lock().await;
 
@@ -348,12 +344,6 @@ impl AppSession for MoonSession {
                 &self.workspace_root,
             )
             .await?;
-
-            if self.requires_toolchain_installed() {
-                let toolchain_registry = self.get_toolchain_registry().await?;
-
-                analyze::load_toolchain(&toolchain_registry, &self.toolchain_config).await?;
-            }
         }
 
         Ok(None)

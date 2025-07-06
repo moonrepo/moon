@@ -73,6 +73,7 @@ pub async fn run_mcp(
             name: "moon MCP Server".to_string(),
             version: env::var("MOON_VERSION")
                 .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").to_string()),
+            title: Some("Moon MCP Server".to_string()),
         },
         capabilities: ServerCapabilities {
             tools: Some(ServerCapabilitiesTools { list_changed: None }),

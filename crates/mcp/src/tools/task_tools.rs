@@ -5,7 +5,7 @@ use moon_task::{Target, Task};
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
-    schema::{CallToolResult, schema_utils::CallToolError},
+    schema::{CallToolResult, TextContent, schema_utils::CallToolError},
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -40,14 +40,15 @@ impl GetTaskTool {
             }
         }
 
-        Ok(CallToolResult::text_content(
+        Ok(CallToolResult::text_content(vec![TextContent::new(
             serde_json::to_string_pretty(&GetTaskResponse {
                 task,
                 task_dependencies,
             })
             .map_err(CallToolError::new)?,
             None,
-        ))
+            None,
+        )]))
     }
 }
 
@@ -82,11 +83,12 @@ impl GetTasksTool {
 
         tasks.sort_by(|a, d| a.target.cmp(&d.target));
 
-        Ok(CallToolResult::text_content(
+        Ok(CallToolResult::text_content(vec![TextContent::new(
             serde_json::to_string_pretty(&GetTasksResponse { tasks })
                 .map_err(CallToolError::new)?,
             None,
-        ))
+            None,
+        )]))
     }
 }
 

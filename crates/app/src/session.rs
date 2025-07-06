@@ -341,16 +341,6 @@ impl AppSession for MoonSession {
         analyze::extract_repo_info(&vcs).await?;
 
         if self.requires_workspace_configured() {
-            let cache_engine = self.get_cache_engine()?;
-
-            analyze::install_proto(
-                &self.console,
-                &self.proto_env,
-                &cache_engine,
-                &self.toolchain_config,
-            )
-            .await?;
-
             analyze::register_platforms(
                 &self.console,
                 &self.proto_env,

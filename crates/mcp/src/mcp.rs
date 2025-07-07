@@ -70,10 +70,10 @@ pub async fn run_mcp(
     // STEP 1: Define server details and capabilities
     let server_details = InitializeResult {
         server_info: Implementation {
-            name: "moon MCP Server".to_string(),
+            name: "moon_mcp_server".to_string(),
             version: env::var("MOON_VERSION")
                 .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").to_string()),
-            title: Some("Moon MCP Server".to_string()),
+            title: Some("moon MCP Server".to_string()),
         },
         capabilities: ServerCapabilities {
             tools: Some(ServerCapabilitiesTools { list_changed: None }),

@@ -84,7 +84,7 @@ impl SyncWorkspaceTool {
 
 #[mcp_tool(
     name = "sync_projects",
-    description = "Sync one or many moon projects by `id`."
+    description = "Sync one, many, or all moon projects by `id`."
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct SyncProjectsTool {
@@ -108,13 +108,24 @@ impl SyncProjectsTool {
         )
         .map_err(map_miette_error)?;
 
-        for id in &self.ids {
-            let project = workspace_graph.get_project(id).map_err(map_miette_error)?;
+        if self.ids.is_empty() {
+            let projects = workspace_graph.get_projects().map_err(map_miette_error)?;
 
-            action_graph
-                .sync_project(&project)
-                .await
-                .map_err(map_miette_error)?;
+            for project in projects {
+                action_graph
+                    .sync_project(&project)
+                    .await
+                    .map_err(map_miette_error)?;
+            }
+        } else {
+            for id in &self.ids {
+                let project = workspace_graph.get_project(id).map_err(map_miette_error)?;
+
+                action_graph
+                    .sync_project(&project)
+                    .await
+                    .map_err(map_miette_error)?;
+            }
         }
 
         let actions = run_pipeline(

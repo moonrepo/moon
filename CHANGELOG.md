@@ -4,7 +4,13 @@
 
 #### 🚀 Updates
 
-- Updated MCP (Model Context Protocol) implementation to use protocol version `2025-06-18` from `2025-03-26` - in turn, allowing Claude Code to use the MCP.
+- Updated MCP (Model Context Protocol) implementation to use protocol version `2025-06-18` from
+  `2025-03-26` - in turn, allowing Claude Code to use the MCP.
+  - Updated `sync_projects` tool to sync all projects if no IDs provided.
+
+#### 📚 Documentation
+
+- Added Claude Code to MCP documentation.
 
 ## 1.38.3
 

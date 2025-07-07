@@ -13459,6 +13459,31 @@ directly.
 
 ## Setup
 
+### Claude Code
+
+To use [MCP servers in Claude Code](https://docs.anthropic.com/en/docs/claude-code/mcp), run the
+following command in your terminal:
+
+```shell
+claude mcp add moon -s project -e MOON_WORKSPACE_ROOT=/absolute/path/to/your/moon/workspace -- moon mcp
+```
+
+Or create an `.mcp.json` file in your project directory.
+
+```json
+{
+  "mcpServers": {
+    "moon": {
+      "command": "moon",
+      "args": ["mcp"],
+      "env": {
+        "MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
+      }
+    }
+  }
+}
+```
+
 ### Cursor
 
 To use [MCP servers in Cursor](https://docs.cursor.com/context/model-context-protocol), create a

@@ -36,6 +36,7 @@ semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yml = { workspace = true }
+url = { workspace = true }
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 

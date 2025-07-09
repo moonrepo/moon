@@ -1,0 +1,39 @@
+# Example workspace configuration for Jujutsu VCS
+$schema: 'https://moonrepo.dev/schemas/workspace.json'
+
+# Configure Jujutsu as the VCS
+vcs:
+  manager: 'jj'
+  defaultBranch: 'main'
+  provider: 'github'
+  remoteCandidates:
+    - 'origin'
+    - 'upstream'
+
+# Projects configuration
+projects:
+  globs:
+    - 'apps/*'
+    - 'packages/*'
+    - 'tools/*'
+
+# Standard moon configuration continues as normal
+runner:
+  archivableTargets:
+    - ':build'
+    - ':test'
+    - ':lint'
+
+pipeline:
+  installDependencies: true
+  syncProjects: true
+
+# Enable telemetry for better insights
+telemetry: true
+
+# Node configuration (if using Node.js)
+node:
+  version: '20.0.0'
+  packageManager: 'pnpm'
+  pnpm:
+    version: '8.0.0'

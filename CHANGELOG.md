@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🎉 Release
+
+- Added support for [Jujutsu](https://github.com/martinvonz/jj) as a new VCS backend alongside Git.
+  - Configure with `vcs.manager: 'jj'` in workspace configuration.
+  - Full support for Jujutsu workspaces, enabling parallel development across multiple working copies.
+  - Automatic detection of `.jj` directories.
+  - Compatible with Jujutsu's Git backend for seamless integration.
+  - Supports all moon VCS operations: touched files detection, file hashing, and change tracking.
+
 ## 1.38.4
 
 #### 🚀 Updates

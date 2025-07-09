@@ -18,7 +18,7 @@ use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::gitx::Gitx;
-use moon_vcs::{BoxedVcs, Git};
+use moon_vcs::{BoxedVcs, Git, Jujutsu};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
@@ -194,21 +194,32 @@ impl MoonSession {
         if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
 
-            let git: BoxedVcs = if FeatureFlags::instance().is_enabled(Flag::GitV2) {
-                Box::new(Gitx::load(
-                    &self.workspace_root,
-                    &config.default_branch,
-                    &config.remote_candidates,
-                )?)
-            } else {
-                Box::new(Git::load(
-                    &self.workspace_root,
-                    &config.default_branch,
-                    &config.remote_candidates,
-                )?)
+            let vcs: BoxedVcs = match config.manager {
+                moon_config::VcsManager::Git => {
+                    if FeatureFlags::instance().is_enabled(Flag::GitV2) {
+                        Box::new(Gitx::load(
+                            &self.workspace_root,
+                            &config.default_branch,
+                            &config.remote_candidates,
+                        )?)
+                    } else {
+                        Box::new(Git::load(
+                            &self.workspace_root,
+                            &config.default_branch,
+                            &config.remote_candidates,
+                        )?)
+                    }
+                }
+                moon_config::VcsManager::Jujutsu => {
+                    Box::new(Jujutsu::load(
+                        &self.workspace_root,
+                        &config.default_branch,
+                        &config.remote_candidates,
+                    )?)
+                }
             };
 
-            let _ = self.vcs_adapter.set(Arc::new(git));
+            let _ = self.vcs_adapter.set(Arc::new(vcs));
         }
 
         Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())

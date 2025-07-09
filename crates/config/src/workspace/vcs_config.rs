@@ -8,6 +8,9 @@ config_unit_enum!(
     pub enum VcsManager {
         #[default]
         Git,
+        
+        #[serde(rename = "jj")]
+        Jujutsu,
     }
 );
 

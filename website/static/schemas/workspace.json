@@ -959,7 +959,8 @@
       "description": "The VCS being utilized by the repository.",
       "type": "string",
       "enum": [
-        "git"
+        "git",
+        "jj"
       ]
     },
     "VcsProvider": {

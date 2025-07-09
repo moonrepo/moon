@@ -1005,13 +1005,25 @@ vcs:
 
 <HeadingApiLink to="/api/types/interface/VcsConfig#manager" />
 
-Defines the VCS tool/binary that is being used for managing the repository. Accepts "git" (default).
-Expect more version control systems in the future!
+Defines the VCS tool/binary that is being used for managing the repository. Accepts "git" (default) or "jj" (Jujutsu).
 
 ```yaml title=".moon/workspace.yml" {2}
 vcs:
   manager: 'git'
 ```
+
+To use Jujutsu:
+
+```yaml title=".moon/workspace.yml" {2}
+vcs:
+  manager: 'jj'
+```
+
+:::info
+
+Jujutsu support includes multi-workspace capabilities, allowing you to run tasks across multiple Jujutsu workspaces simultaneously.
+
+:::
 
 ### `provider`<VersionLabel version="1.8.0" />
 

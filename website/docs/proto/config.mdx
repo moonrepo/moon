@@ -181,13 +181,22 @@ file = ".env"
 
 #### `auto-install`
 
-When enabled, will automatically installing missing tools when [`proto run`](./commands/run) is ran,
-instead of erroring. Defaults to `false` or `PROTO_AUTO_INSTALL`.
+When enabled, will automatically install a missin version of a tool when
+[`proto run`](./commands/run) is ran, instead of erroring. Defaults to `false` or
+`PROTO_AUTO_INSTALL`.
 
 ```toml title=".prototools"
 [settings]
 auto-install = true
 ```
+
+:::warning
+
+This functionality requires shims (not activation) and will only work after a tool has been
+installed at least once. This is because the shim executable handles the interception and the shim
+is created after a tool is installed.
+
+:::
 
 #### `auto-clean`
 
@@ -213,6 +222,15 @@ builtin-plugins = false
 builtin-plugins = ["node", "bun"]
 ```
 
+#### `cache-duration`<VersionLabel version="0.50.1" />
+
+The duration in seconds in which to cache downloaded plugins. Defaults to 30 days.
+
+```toml title=".prototools"
+[settings]
+cache-duration = 3600
+```
+
 #### `detect-strategy`
 
 The strategy to use when [detecting versions](./detection). Defaults to `first-available` or
@@ -231,7 +249,7 @@ detect-strategy = "prefer-prototools"
 
 #### `pin-latest`
 
-When defined and a tool is installed with the "latest" version, will automatically pin the resolved
+When defined and a tool is installed with the "latest" alias, will automatically pin the resolved
 version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 
 - `global` - Pins globally to `~/.proto/.prototools`.

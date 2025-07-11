@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a `bun.lock` parsing error.
+
 ## 1.38.4
 
 #### 🚀 Updates

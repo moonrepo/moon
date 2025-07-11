@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated project locating to log the glob results for debugging purposes.
+
 #### 🐞 Fixes
 
 - Fixed a `bun.lock` parsing error.

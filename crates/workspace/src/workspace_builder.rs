@@ -722,7 +722,7 @@ impl<'app> WorkspaceBuilder<'app> {
         for file in glob_walk_with_options(
             context.workspace_root.join(consts::CONFIG_DIRNAME),
             ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
-            GlobWalkOptions::default().cache(),
+            GlobWalkOptions::default().cache().log_results(),
         )? {
             self.config_paths
                 .push(file.relative_to(context.workspace_root).into_diagnostic()?);

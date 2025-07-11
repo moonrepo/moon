@@ -18,14 +18,20 @@ pub struct BunLockPackageJson {
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum BunLockPackage {
-    Dependency(
+    Dependency1(
         String,             // identifier
         String,             // ???
         BunLockPackageJson, // dependencies
         String,             // sha
     ),
 
-    DependencyAlt(
+    Dependency2(
+        String,             // identifier
+        BunLockPackageJson, // dependencies
+        String,             // sha
+    ),
+
+    Dependency3(
         String,             // identifier
         BunLockPackageJson, // dependencies
     ),
@@ -53,15 +59,7 @@ pub fn load_text_lockfile_dependencies(
     for (_name, package) in lockfile.packages {
         match package {
             BunLockPackage::Workspace(_) => {}
-            BunLockPackage::DependencyAlt(id, _data) => {
-                let Some((name, version)) = id.rsplit_once('@') else {
-                    continue;
-                };
-
-                let dep = deps.entry(name.to_owned()).or_default();
-                dep.push(version.to_owned());
-            }
-            BunLockPackage::Dependency(id, _unknown, _data, integrity) => {
+            BunLockPackage::Dependency1(id, _unknown, _data, integrity) => {
                 let Some((name, version)) = id.rsplit_once('@') else {
                     continue;
                 };
@@ -69,6 +67,22 @@ pub fn load_text_lockfile_dependencies(
                 let dep = deps.entry(name.to_owned()).or_default();
                 dep.push(version.to_owned());
                 dep.push(integrity);
+            }
+            BunLockPackage::Dependency2(id, _data, integrity) => {
+                let Some((name, _version)) = id.rsplit_once('@') else {
+                    continue;
+                };
+
+                let dep = deps.entry(name.to_owned()).or_default();
+                dep.push(integrity);
+            }
+            BunLockPackage::Dependency3(id, _data) => {
+                let Some((name, version)) = id.rsplit_once('@') else {
+                    continue;
+                };
+
+                let dep = deps.entry(name.to_owned()).or_default();
+                dep.push(version.to_owned());
             }
         }
     }

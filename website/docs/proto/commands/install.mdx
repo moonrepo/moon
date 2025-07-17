@@ -29,12 +29,12 @@ exit early.
 
 The command is also smart enough to resolve partial versions, so 1, 1.2, and 1.2.3 are all
 acceptable. It even supports aliases when applicable, like `latest`, `next`, `beta`, etc. To install
-a canary release, use `--canary`.
+a canary release, use `canary`.
 
 ```shell
 $ proto install deno
 $ proto install deno 1.31
-$ proto install deno --canary
+$ proto install deno canary
 ```
 
 #### Pinning the version
@@ -73,10 +73,11 @@ $ proto install go -- --no-gobin
 
 ### Options
 
-- `force` - Force install, even if already installed.
+- `--force` - Force install, even if already installed.
+- `--update-lockfile` - Don't inherit a version from the lockfile and update the existing record.
+  <VersionLabel version="0.51.0" />
 - One tool
   - `--build` - Build from source if available. <VersionLabel version="0.45.0" />
   - `--no-build` - Download a pre-built if available. <VersionLabel version="0.45.0" />
-  - `--canary` - Install a canary (next, nightly, etc) version.
   - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean
     (pins locally by default), or the string "global", or the string "local".

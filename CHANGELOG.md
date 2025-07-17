@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.50.5](https://github.com/moonrepo/proto/releases/tag/v0.50.5) (from 0.50.1)
+  to resolve an "unknown field `spec`" error. This is triggered when the global `proto` binary is
+  using v0.51, and moon is using proto < v0.50.5.
+
 ## 1.38.5
 
 #### 🚀 Updates

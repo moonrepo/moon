@@ -17970,22 +17970,6 @@ version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 pin-latest = "local"
 ```
 
-#### `registries`
-
-A list of OCI registries to query for plugins by
-[reference](https://oras.land/docs/concepts/reference). Registries will be queried in the order they
-are configured. Each registry object supports the following fields:
-
-- `registry` - The registry host, e.g. `ghcr.io`.
-- `namespace` - The namespace (or organization) that the plugin belongs to.
-
-```toml title=".prototools"
-[settings]
-registries = [
-  { registry: "ghcr.io", namespace: "moonrepo" }
-]
-```
-
 #### `telemetry`
 
 When enabled, we collect anonymous usage statistics for tool installs and uninstalls. This helps us
@@ -18009,6 +17993,22 @@ consistency across machines, and reliability.
 ```toml title=".prototools"
 [settings]
 unstable-lockfile = true
+```
+
+#### `unstable-registries`
+
+A list of OCI registries to query for plugins by
+[reference](https://oras.land/docs/concepts/reference). Registries will be queried in the order they
+are configured. Each registry object supports the following fields:
+
+- `registry` - The registry host, e.g. `ghcr.io`.
+- `namespace` - The namespace (or organization) that the plugin belongs to.
+
+```toml title=".prototools"
+[settings]
+unstable-registries = [
+  { registry: "ghcr.io", namespace: "moonrepo" }
+]
 ```
 
 #### `url-rewrites`
@@ -30332,12 +30332,12 @@ unfamiliar with OCI registries, they are a standard for storing and distributing
 [artifacts](https://oras.land/docs/concepts/artifact), in this case, WASM plugins.
 
 To support registries, we have introduced a new
-[`settings.registries`](/docs/proto/config#registries) setting in `.prototools`, which allows you to
-configure a list of registries to query for applicable plugins. For example:
+[`settings.unstable-registries`](/docs/proto/config#unstable-registries) setting in `.prototools`,
+which allows you to configure a list of registries to query for applicable plugins. For example:
 
 ```toml title=".prototools"
 [settings]
-registries = [
+unstable-registries = [
   { registry: "ghcr.io", namespace: "moonrepo" }
 ]
 ```

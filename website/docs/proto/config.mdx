@@ -292,6 +292,17 @@ telemetry = false
 > The data we track is publicly available and
 > [can be found here](https://github.com/moonrepo/proto/blob/master/legacy/cli/src/telemetry.rs).
 
+#### `unstable-lockfile`<VersionLabel version="0.51.0" />
+
+When enabled, will create a `.protolock` file relative to this configuration file. The lockfile will
+record and lock all tools, their versions, and checksums from the configuration file, ensuring
+consistency across machines, and reliability.
+
+```toml title=".prototools"
+[settings]
+unstable-lockfile = true
+```
+
 #### `url-rewrites`<VersionLabel version="0.50.0" />
 
 Provides a mechanism for rewriting most URLs used by proto, such as those used for downloading

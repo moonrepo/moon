@@ -124,7 +124,7 @@ impl ToolchainConfig {
                 url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.2.0/typescript_toolchain.wasm".into()
             }))),
             "unstable_go" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/go_toolchain-v0.1.0/go_toolchain.wasm".into()
+                url: "https://github.com/moonrepo/plugins/releases/download/go_toolchain-v0.1.1/go_toolchain.wasm".into()
             }))),
             "unstable_rust" => Some(PluginLocator::Url(Box::new(UrlLocator {
                 url: "https://github.com/moonrepo/plugins/releases/download/rust_toolchain-v0.2.0/rust_toolchain.wasm".into()

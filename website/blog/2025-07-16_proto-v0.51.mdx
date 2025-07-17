@@ -102,12 +102,12 @@ unfamiliar with OCI registries, they are a standard for storing and distributing
 [artifacts](https://oras.land/docs/concepts/artifact), in this case, WASM plugins.
 
 To support registries, we have introduced a new
-[`settings.registries`](/docs/proto/config#registries) setting in `.prototools`, which allows you to
-configure a list of registries to query for applicable plugins. For example:
+[`settings.unstable-registries`](/docs/proto/config#unstable-registries) setting in `.prototools`,
+which allows you to configure a list of registries to query for applicable plugins. For example:
 
 ```toml title=".prototools"
 [settings]
-registries = [
+unstable-registries = [
   { registry: "ghcr.io", namespace: "moonrepo" }
 ]
 ```

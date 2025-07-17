@@ -262,22 +262,6 @@ version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 pin-latest = "local"
 ```
 
-#### `registries`<VersionLabel version="0.51.0" />
-
-A list of OCI registries to query for plugins by
-[reference](https://oras.land/docs/concepts/reference). Registries will be queried in the order they
-are configured. Each registry object supports the following fields:
-
-- `registry` - The registry host, e.g. `ghcr.io`.
-- `namespace` - The namespace (or organization) that the plugin belongs to.
-
-```toml title=".prototools"
-[settings]
-registries = [
-  { registry: "ghcr.io", namespace: "moonrepo" }
-]
-```
-
 #### `telemetry`
 
 When enabled, we collect anonymous usage statistics for tool installs and uninstalls. This helps us
@@ -301,6 +285,22 @@ consistency across machines, and reliability.
 ```toml title=".prototools"
 [settings]
 unstable-lockfile = true
+```
+
+#### `unstable-registries`<VersionLabel version="0.51.0" />
+
+A list of OCI registries to query for plugins by
+[reference](https://oras.land/docs/concepts/reference). Registries will be queried in the order they
+are configured. Each registry object supports the following fields:
+
+- `registry` - The registry host, e.g. `ghcr.io`.
+- `namespace` - The namespace (or organization) that the plugin belongs to.
+
+```toml title=".prototools"
+[settings]
+unstable-registries = [
+  { registry: "ghcr.io", namespace: "moonrepo" }
+]
 ```
 
 #### `url-rewrites`<VersionLabel version="0.50.0" />

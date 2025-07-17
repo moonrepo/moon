@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed `go.*` parsing failures when there was no trailing newline.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.50.5](https://github.com/moonrepo/proto/releases/tag/v0.50.5) (from 0.50.1)

@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.56df6c6d.js" defer="defer"></script>
-<script src="/assets/js/main.13b347ea.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.4e99e596.js" defer="defer"></script>
+<script src="/assets/js/main.00cca2f2.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -38,8 +38,8 @@ their archive to <code>~/.proto/tools/&lt;tool&gt;</code>. If the tool has alrea
 exit early.</p>
 <p>The command is also smart enough to resolve partial versions, so 1, 1.2, and 1.2.3 are all
 acceptable. It even supports aliases when applicable, like <code>latest</code>, <code>next</code>, <code>beta</code>, etc. To install
-a canary release, use <code>--canary</code>.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> deno</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> deno </span><span class="token number" style="color:#94dded">1.31</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> deno </span><span class="token parameter variable" style="color:#fef9c3">--canary</span><br></span></code></pre></div></div>
+a canary release, use <code>canary</code>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> deno</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> deno </span><span class="token number" style="color:#94dded">1.31</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> deno canary</span><br></span></code></pre></div></div>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="pinning-the-version">Pinning the version<a href="#pinning-the-version" class="hash-link" aria-label="Direct link to Pinning the version" title="Direct link to Pinning the version">​</a></h4>
 <p>By default this command will only install the tool into <code>~/.proto/tools</code> but will not make the
 binary available. If you would like to also pin the resolved version to a <code>.prototools</code> file, use
@@ -61,12 +61,14 @@ after <code>--</code>.</p>
 </ul>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="options">Options<a href="#options" class="hash-link" aria-label="Direct link to Options" title="Direct link to Options">​</a></h3>
 <ul>
-<li><code>force</code> - Force install, even if already installed.</li>
+<li><code>--force</code> - Force install, even if already installed.</li>
+<li><code>--update-lockfile</code> - Don&#x27;t inherit a version from the lockfile and update the existing record.<!-- -->
+<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.51.0</span>
+</li>
 <li>One tool<!-- -->
 <ul>
 <li><code>--build</code> - Build from source if available. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.45.0</span></li>
 <li><code>--no-build</code> - Download a pre-built if available. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.45.0</span></li>
-<li><code>--canary</code> - Install a canary (next, nightly, etc) version.</li>
 <li><code>--pin</code> - Pin the resolved version and create a symlink in <code>~/.proto/bin</code>. Accepts a boolean
 (pins locally by default), or the string &quot;global&quot;, or the string &quot;local&quot;.</li>
 </ul>

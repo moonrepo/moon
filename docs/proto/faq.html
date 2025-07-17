@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.56df6c6d.js" defer="defer"></script>
-<script src="/assets/js/main.13b347ea.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.4e99e596.js" defer="defer"></script>
+<script src="/assets/js/main.00cca2f2.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -59,8 +59,8 @@ you can create a <a href="/docs/proto/plugins">plugin</a> to support other kinds
 <p>As of version 0.45, we do! Simple pass <code>--build</code> to <code>proto install</code>. However, building from source
 is a complicated process and is unique per tool, so not all tools support it.</p>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="how-to-run-a-canary-release-after-installing-it">How to run a canary release after installing it?<a href="#how-to-run-a-canary-release-after-installing-it" class="hash-link" aria-label="Direct link to How to run a canary release after installing it?" title="Direct link to How to run a canary release after installing it?">​</a></h3>
-<p>Once a tool has been installed with <code>--canary</code>, the canary version can be explicitly referenced
-using our <a href="/docs/proto/detection">version detection rules</a>. The easiest approach is to prefix the shim with an
+<p>Once a tool has been installed with <code>canary</code>, the canary version can be explicitly referenced using
+our <a href="/docs/proto/detection">version detection rules</a>. The easiest approach is to prefix the shim with an
 environment variable:</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token assign-left variable" style="color:#fef9c3">PROTO_BUN_VERSION</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">canary bun ./index.ts</span><br></span></code></pre></div></div>
 <p>Or to explicitly configure the version in <a href="/docs/proto/config"><code>.prototools</code></a>:</p>

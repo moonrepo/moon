@@ -255,3 +255,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v1.37 - Rust WASM toolchain and MCP support](https://moonrepo.dev/blog/2025-06-03_moon-v1.37): In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI
 - [proto v0.50 - URL rewrites, on-init activation, preserved comments, and more](https://moonrepo.dev/blog/2025-06-11_proto-v0.50): In this release, we're landing a handful of quality of life improvements that have been requested by
 - [moon v1.38 - Go WASM toolchain, MCP tools, terminal notifications, and more!](https://moonrepo.dev/blog/2025-06-24_moon-v1.38): In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!
+- [proto v0.51 - Unstable lockfiles and plugin registries](https://moonrepo.dev/blog/2025-07-16_proto-v0.51): With this release, we're excited to introduce two major features that pave the way for proto's

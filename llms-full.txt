@@ -30391,3 +30391,9 @@ View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.51
 of changes.
 
 - Removed `--canary` from `proto install`, just use `canary` as the version specifier instead.
+
+## Looking for contributors
+
+We have a lot of cool stuff planned for proto, like backend plugins, more official tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!

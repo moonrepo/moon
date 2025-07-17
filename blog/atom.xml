@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2025-07-16T00:00:00.000Z</updated>
+    <updated>2025-07-17T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
@@ -11,7 +11,7 @@
         <title type="html"><![CDATA[proto v0.51 - Unstable lockfiles and plugin registries]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.51</id>
         <link href="https://moonrepo.dev/blog/proto-v0.51"/>
-        <updated>2025-07-16T00:00:00.000Z</updated>
+        <updated>2025-07-17T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[With this release, we're excited to introduce two major features that pave the way for proto's]]></summary>
         <content type="html"><![CDATA[<p>With this release, we're excited to introduce two major features that pave the way for proto's
 future!</p>
@@ -88,7 +88,11 @@ the process of investigating solutions to this and will provide more details soo
 of changes.</p>
 <ul>
 <li>Removed <code>--canary</code> from <code>proto install</code>, just use <code>canary</code> as the version specifier instead.</li>
-</ul>]]></content>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="looking-for-contributors">Looking for contributors<a href="https://moonrepo.dev/blog/proto-v0.51#looking-for-contributors" class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors">​</a></h2>
+<p>We have a lot of cool stuff planned for proto, like backend plugins, more official tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!</p>]]></content>
         <author>
             <name>Miles Johnson</name>
             <uri>https://github.com/milesj</uri>

@@ -4,7 +4,7 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Wed, 16 Jul 2025 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 17 Jul 2025 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
@@ -12,7 +12,7 @@
             <title><![CDATA[proto v0.51 - Unstable lockfiles and plugin registries]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.51</link>
             <guid>https://moonrepo.dev/blog/proto-v0.51</guid>
-            <pubDate>Wed, 16 Jul 2025 00:00:00 GMT</pubDate>
+            <pubDate>Thu, 17 Jul 2025 00:00:00 GMT</pubDate>
             <description><![CDATA[With this release, we're excited to introduce two major features that pave the way for proto's]]></description>
             <content:encoded><![CDATA[<p>With this release, we're excited to introduce two major features that pave the way for proto's
 future!</p>
@@ -89,7 +89,11 @@ the process of investigating solutions to this and will provide more details soo
 of changes.</p>
 <ul>
 <li>Removed <code>--canary</code> from <code>proto install</code>, just use <code>canary</code> as the version specifier instead.</li>
-</ul>]]></content:encoded>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="looking-for-contributors">Looking for contributors<a href="https://moonrepo.dev/blog/proto-v0.51#looking-for-contributors" class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors">​</a></h2>
+<p>We have a lot of cool stuff planned for proto, like backend plugins, more official tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!</p>]]></content:encoded>
             <category>lockfile</category>
             <category>record</category>
             <category>registry</category>

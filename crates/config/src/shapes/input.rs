@@ -4,12 +4,12 @@ use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
 use moon_common::path::standardize_separators;
 use schematic::{Config, ConfigEnum, ParseError};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt::Display;
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use std::fmt;
 use std::str::FromStr;
 use url::Url;
 
-fn map_parse_error<T: Display>(error: T) -> ParseError {
+fn map_parse_error<T: fmt::Display>(error: T) -> ParseError {
     ParseError::new(error.to_string())
 }
 
@@ -158,8 +158,10 @@ impl GlobInput {
             } else {
                 &path[1..]
             }
+        } else if self.is_negated() {
+            &path[1..]
         } else {
-            if self.is_negated() { &path[1..] } else { path }
+            path
         }
     }
 
@@ -174,15 +176,8 @@ impl GlobInput {
     }
 
     pub fn from_uri(uri: Url) -> Result<Self, ParseError> {
-        let mut value = create_path_from_uri(&uri);
-
-        // Fix invalid negated workspace paths
-        if value.starts_with("/!") {
-            value = format!("!/{}", &value[2..]);
-        }
-
         let mut input = Self {
-            glob: GlobPath::parse(&value)?,
+            glob: GlobPath::parse(create_path_from_uri(&uri).as_str())?,
             ..Default::default()
         };
 
@@ -363,28 +358,26 @@ impl FromStr for Input {
 
                 validate_child_relative_path(file.get_path()).map_err(map_parse_error)?;
 
-                return Ok(if is_workspace_relative {
+                Ok(if is_workspace_relative {
                     Self::WorkspaceFile(file)
                 } else {
                     Self::ProjectFile(file)
-                });
+                })
             }
             "glob" => {
                 let glob = GlobInput::from_uri(uri)?;
 
                 validate_child_relative_path(glob.get_path()).map_err(map_parse_error)?;
 
-                return Ok(if is_workspace_relative {
+                Ok(if is_workspace_relative {
                     Self::WorkspaceGlob(glob)
                 } else {
                     Self::ProjectGlob(glob)
-                });
+                })
             }
-            other => {
-                return Err(ParseError::new(format!(
-                    "input protocol `{other}://` is not supported"
-                )));
-            }
+            other => Err(ParseError::new(format!(
+                "input protocol `{other}://` is not supported"
+            ))),
         }
     }
 }
@@ -410,11 +403,32 @@ impl Serialize for Input {
     }
 }
 
-// impl<'de> Deserialize<'de> for Input {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         deserializer.deserialize_any(visitor)
-//     }
-// }
+impl<'de> Deserialize<'de> for Input {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let base = InputBase::deserialize(deserializer)?;
+
+        match base {
+            InputBase::Raw(input) => Self::parse(input).map_err(de::Error::custom),
+            InputBase::File(input) => Ok(if input.is_workspace_relative() {
+                Self::WorkspaceFile(input)
+            } else {
+                Self::ProjectFile(input)
+            }),
+            InputBase::Glob(input) => Ok(if input.is_workspace_relative() {
+                Self::WorkspaceGlob(input)
+            } else {
+                Self::ProjectGlob(input)
+            }),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+enum InputBase {
+    Raw(String),
+    File(FileInput),
+    Glob(GlobInput),
+}

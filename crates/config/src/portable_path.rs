@@ -117,6 +117,14 @@ impl FromStr for GlobPath {
     type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, ParseError> {
+        let mut value = value.to_owned();
+
+        // Fix invalid negated workspace paths
+        if value.starts_with("/!") {
+            value = format!("!/{}", &value[2..]);
+        }
+
+        // Remove ./ leading parts
         let value = if let Some(suffix) = value.strip_prefix('!') {
             format!("!{}", suffix.trim_start_matches("./"))
         } else {
@@ -142,6 +150,7 @@ impl FromStr for FilePath {
             ));
         }
 
+        // Remove ./ leading parts
         Ok(FilePath(value.trim_start_matches("./").into()))
     }
 }

@@ -405,7 +405,7 @@ generator:
                         path: FilePath("custom/path".into())
                     },
                     TemplateLocator::File {
-                        path: FilePath("./rel/path".into())
+                        path: FilePath("rel/path".into())
                     },
                     TemplateLocator::File {
                         path: FilePath("../parent/path".into())
@@ -515,7 +515,7 @@ generator:
                 config.generator.templates,
                 vec![
                     TemplateLocator::Glob {
-                        glob: GlobPath("./templates/*".into())
+                        glob: GlobPath("templates/*".into())
                     },
                     TemplateLocator::Glob {
                         glob: GlobPath("common/*/templates/*".into())

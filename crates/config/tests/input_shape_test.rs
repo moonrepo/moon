@@ -1,67 +1,346 @@
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, FileInput, GlobInput, ManifestDepsInput,
+    FileGroupInput, FileGroupInputFormat, FileInput, GlobInput, Input, ManifestDepsInput,
     ProjectSourcesInput,
 };
 use url::Url;
 
+fn create_file_input(path: &str) -> FileInput {
+    FileInput::from_uri(Url::parse(&format!("file://{path}")).unwrap()).unwrap()
+}
+
+fn create_glob_input(path: &str) -> GlobInput {
+    GlobInput::from_uri(Url::parse(&format!("glob://{path}")).unwrap()).unwrap()
+}
+
 mod input_shape {
     use super::*;
+
+    mod parse_str {
+        use super::*;
+
+        #[test]
+        fn converts_backward_slashes() {
+            assert_eq!(
+                Input::parse("some\\file.txt").unwrap(),
+                Input::ProjectFile(create_file_input("some/file.txt"))
+            );
+        }
+
+        #[test]
+        fn env_vars() {
+            assert_eq!(Input::parse("$VAR").unwrap(), Input::EnvVar("VAR".into()));
+            assert_eq!(
+                Input::parse("$VAR_*").unwrap(),
+                Input::EnvVarGlob("VAR_*".into())
+            );
+            assert_eq!(
+                Input::parse("$VAR_*_SUFFIX").unwrap(),
+                Input::EnvVarGlob("VAR_*_SUFFIX".into())
+            );
+            assert_eq!(
+                Input::parse("$*_SUFFIX").unwrap(),
+                Input::EnvVarGlob("*_SUFFIX".into())
+            );
+        }
+
+        #[test]
+        fn token_funcs() {
+            assert_eq!(
+                Input::parse("@group(name)").unwrap(),
+                Input::TokenFunc("@group(name)".into())
+            );
+            assert_eq!(
+                Input::parse("@dirs(name)").unwrap(),
+                Input::TokenFunc("@dirs(name)".into())
+            );
+            assert_eq!(
+                Input::parse("@files(name)").unwrap(),
+                Input::TokenFunc("@files(name)".into())
+            );
+            assert_eq!(
+                Input::parse("@globs(name)").unwrap(),
+                Input::TokenFunc("@globs(name)".into())
+            );
+            assert_eq!(
+                Input::parse("@root(name)").unwrap(),
+                Input::TokenFunc("@root(name)".into())
+            );
+        }
+
+        #[test]
+        fn token_vars() {
+            assert_eq!(
+                Input::parse("$workspaceRoot").unwrap(),
+                Input::TokenVar("$workspaceRoot".into())
+            );
+            assert_eq!(
+                Input::parse("$projectType").unwrap(),
+                Input::TokenVar("$projectType".into())
+            );
+        }
+
+        #[test]
+        fn file_protocol() {
+            let mut input = create_file_input("file.txt");
+            input.optional = true;
+
+            assert_eq!(
+                Input::parse("file://file.txt?optional").unwrap(),
+                Input::ProjectFile(input)
+            );
+
+            let mut input = create_file_input("/file.txt");
+            input.optional = false;
+
+            assert_eq!(
+                Input::parse("file:///file.txt?optional=false").unwrap(),
+                Input::WorkspaceFile(input)
+            );
+        }
+
+        #[test]
+        fn file_project_relative() {
+            assert_eq!(
+                Input::parse("file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("file.rs"))
+            );
+            assert_eq!(
+                Input::parse("dir/file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("dir/file.rs"))
+            );
+            assert_eq!(
+                Input::parse("./file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("file.rs"))
+            );
+            assert_eq!(
+                Input::parse("././dir/file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("dir/file.rs"))
+            );
+        }
+
+        #[test]
+        fn file_project_relative_protocol() {
+            assert_eq!(
+                Input::parse("file://file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("file.rs"))
+            );
+            assert_eq!(
+                Input::parse("file://dir/file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("dir/file.rs"))
+            );
+            assert_eq!(
+                Input::parse("file://./file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("file.rs"))
+            );
+            assert_eq!(
+                Input::parse("file://././dir/file.rs").unwrap(),
+                Input::ProjectFile(create_file_input("dir/file.rs"))
+            );
+        }
+
+        #[test]
+        fn file_workspace_relative() {
+            assert_eq!(
+                Input::parse("/file.rs").unwrap(),
+                Input::WorkspaceFile(create_file_input("/file.rs"))
+            );
+            assert_eq!(
+                Input::parse("/dir/file.rs").unwrap(),
+                Input::WorkspaceFile(create_file_input("/dir/file.rs"))
+            );
+
+            // With tokens
+            assert_eq!(
+                Input::parse("/.cache/$projectSource").unwrap(),
+                Input::WorkspaceFile(create_file_input("/.cache/$projectSource"))
+            );
+        }
+
+        #[test]
+        fn file_workspace_relative_protocol() {
+            assert_eq!(
+                Input::parse("file:///file.rs").unwrap(),
+                Input::WorkspaceFile(create_file_input("/file.rs"))
+            );
+            assert_eq!(
+                Input::parse("file:///dir/file.rs").unwrap(),
+                Input::WorkspaceFile(create_file_input("/dir/file.rs"))
+            );
+
+            // With tokens
+            assert_eq!(
+                Input::parse("file:///.cache/$projectSource").unwrap(),
+                Input::WorkspaceFile(create_file_input("/.cache/$projectSource"))
+            );
+        }
+
+        #[test]
+        fn glob_protocol() {
+            let mut input = create_glob_input("file.*");
+            input.cache = true;
+
+            assert_eq!(
+                Input::parse("glob://file.*?cache").unwrap(),
+                Input::ProjectGlob(input)
+            );
+
+            let mut input = create_glob_input("/file.*");
+            input.cache = false;
+
+            assert_eq!(
+                Input::parse("glob:///file.*?cache=false").unwrap(),
+                Input::WorkspaceGlob(input)
+            );
+        }
+
+        #[test]
+        fn glob_project_relative() {
+            assert_eq!(
+                Input::parse("!file.*").unwrap(),
+                Input::ProjectGlob(create_glob_input("!file.*"))
+            );
+            assert_eq!(
+                Input::parse("dir/**/*").unwrap(),
+                Input::ProjectGlob(create_glob_input("dir/**/*"))
+            );
+            assert_eq!(
+                Input::parse("./dir/**/*").unwrap(),
+                Input::ProjectGlob(create_glob_input("dir/**/*"))
+            );
+
+            // With tokens
+            assert_eq!(
+                Input::parse("$projectSource/**/*").unwrap(),
+                Input::ProjectGlob(create_glob_input("$projectSource/**/*"))
+            );
+        }
+
+        #[test]
+        fn glob_project_relative_protocol() {
+            assert_eq!(
+                Input::parse("glob://!file.*").unwrap(),
+                Input::ProjectGlob(create_glob_input("!file.*"))
+            );
+            assert_eq!(
+                Input::parse("glob://dir/**/*").unwrap(),
+                Input::ProjectGlob(create_glob_input("dir/**/*"))
+            );
+            assert_eq!(
+                Input::parse("glob://./dir/**/*").unwrap(),
+                Input::ProjectGlob(create_glob_input("dir/**/*"))
+            );
+
+            // With tokens
+            assert_eq!(
+                Input::parse("glob://$projectSource/**/*").unwrap(),
+                Input::ProjectGlob(create_glob_input("$projectSource/**/*"))
+            );
+        }
+
+        #[test]
+        fn glob_workspace_relative() {
+            assert_eq!(
+                Input::parse("/!file.*").unwrap(),
+                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+            );
+            assert_eq!(
+                Input::parse("!/file.*").unwrap(),
+                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+            );
+            assert_eq!(
+                Input::parse("/dir/**/*").unwrap(),
+                Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+            );
+        }
+
+        #[test]
+        fn glob_workspace_relative_protocol() {
+            assert_eq!(
+                Input::parse("glob:///!file.*").unwrap(),
+                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+            );
+            assert_eq!(
+                Input::parse("glob://!/file.*").unwrap(),
+                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+            );
+            assert_eq!(
+                Input::parse("glob:///dir/**/*").unwrap(),
+                Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "input protocol `unknown://` is not supported")]
+        fn errors_for_unknown_protocol() {
+            Input::parse("unknown://test").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "parent relative paths are not supported")]
+        fn errors_for_parent_relative_from_project() {
+            Input::parse("../test").unwrap();
+        }
+
+        // #[test]
+        // #[should_panic(expected = "parent relative paths are not supported")]
+        // fn errors_for_parent_relative_from_workspace() {
+        //     Input::parse("/../test").unwrap();
+        // }
+    }
 
     mod file {
         use super::*;
 
         #[test]
         fn project_relative() {
-            let input =
-                FileInput::from_uri(Url::parse("file://project/file.txt").unwrap()).unwrap();
+            let input = create_file_input("project/file.txt");
 
             assert_eq!(input.file, "project/file.txt");
+            assert_eq!(input.get_path(), "project/file.txt");
+            assert!(!input.is_workspace_relative());
 
-            let input =
-                FileInput::from_uri(Url::parse("file://./project/file.txt").unwrap()).unwrap();
+            let input = create_file_input("./project/file.txt");
 
             assert_eq!(input.file, "project/file.txt");
+            assert_eq!(input.get_path(), "project/file.txt");
+            assert!(!input.is_workspace_relative());
         }
 
         #[test]
         fn workspace_relative() {
-            let input = FileInput::from_uri(Url::parse("file:///root/file.txt").unwrap()).unwrap();
+            let input = create_file_input("/root/file.txt");
 
             assert_eq!(input.file, "/root/file.txt");
+            assert_eq!(input.get_path(), "root/file.txt");
+            assert!(input.is_workspace_relative());
         }
 
         #[test]
         fn supports_matches_field() {
-            let input =
-                FileInput::from_uri(Url::parse("file://file.txt?matches=abc").unwrap()).unwrap();
+            let input = create_file_input("file.txt?matches=abc");
 
             assert_eq!(input.matches.unwrap(), "abc");
 
-            let input =
-                FileInput::from_uri(Url::parse("file://file.txt?match=abc").unwrap()).unwrap();
+            let input = create_file_input("file.txt?match=abc");
 
             assert_eq!(input.matches.unwrap(), "abc");
 
-            let input =
-                FileInput::from_uri(Url::parse("file://file.txt?matches").unwrap()).unwrap();
+            let input = create_file_input("file.txt?matches");
 
             assert!(input.matches.is_none());
         }
 
         #[test]
         fn supports_optional_field() {
-            let input =
-                FileInput::from_uri(Url::parse("file://file.txt?optional").unwrap()).unwrap();
+            let input = create_file_input("file.txt?optional");
 
             assert!(input.optional);
 
-            let input =
-                FileInput::from_uri(Url::parse("file://file.txt?optional=true").unwrap()).unwrap();
+            let input = create_file_input("file.txt?optional=true");
 
             assert!(input.optional);
 
-            let input =
-                FileInput::from_uri(Url::parse("file://file.txt?optional=false").unwrap()).unwrap();
+            let input = create_file_input("file.txt?optional=false");
 
             assert!(!input.optional);
         }
@@ -69,19 +348,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "globs are not supported")]
         fn errors_for_glob() {
-            FileInput::from_uri(Url::parse("file://file.*").unwrap()).unwrap();
+            create_file_input("file.*");
         }
 
         #[test]
         #[should_panic(expected = "unsupported value for `optional`")]
         fn errors_invalid_optional_field() {
-            FileInput::from_uri(Url::parse("file://file.txt?optional=invalid").unwrap()).unwrap();
+            create_file_input("file.txt?optional=invalid");
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            FileInput::from_uri(Url::parse("file://file.txt?unknown").unwrap()).unwrap();
+            create_file_input("file.txt?unknown");
         }
     }
 
@@ -139,43 +418,90 @@ mod input_shape {
 
         #[test]
         fn default_cache_enabled() {
-            let input = GlobInput::from_uri(Url::parse("glob://file.*").unwrap()).unwrap();
+            let input = create_glob_input("file.*");
 
             assert!(input.cache);
         }
 
         #[test]
         fn project_relative() {
-            let input = GlobInput::from_uri(Url::parse("glob://project/file.*").unwrap()).unwrap();
+            let input = create_glob_input("project/file.*");
 
             assert_eq!(input.glob, "project/file.*");
+            assert_eq!(input.get_path(), "project/file.*");
+            assert!(!input.is_workspace_relative());
+            assert!(!input.is_negated());
 
-            let input =
-                GlobInput::from_uri(Url::parse("glob://./project/file.*").unwrap()).unwrap();
+            let input = create_glob_input("./project/file.*");
 
             assert_eq!(input.glob, "project/file.*");
+            assert_eq!(input.get_path(), "project/file.*");
+            assert!(!input.is_workspace_relative());
+            assert!(!input.is_negated());
+        }
+
+        #[test]
+        fn project_relative_negated() {
+            let input = create_glob_input("!project/file.*");
+
+            assert_eq!(input.glob, "!project/file.*");
+            assert_eq!(input.get_path(), "project/file.*");
+            assert!(!input.is_workspace_relative());
+            assert!(input.is_negated());
+
+            let input = create_glob_input("!./project/file.*");
+
+            assert_eq!(input.glob, "!project/file.*");
+            assert_eq!(input.get_path(), "project/file.*");
+            assert!(!input.is_workspace_relative());
+            assert!(input.is_negated());
+
+            let input = create_glob_input("./!project/file.*");
+
+            assert_eq!(input.glob, "!project/file.*");
+            assert_eq!(input.get_path(), "project/file.*");
+            assert!(!input.is_workspace_relative());
+            assert!(input.is_negated());
         }
 
         #[test]
         fn workspace_relative() {
-            let input = GlobInput::from_uri(Url::parse("glob:///root/file.*").unwrap()).unwrap();
+            let input = create_glob_input("/root/file.*");
 
             assert_eq!(input.glob, "/root/file.*");
+            assert_eq!(input.get_path(), "root/file.*");
+            assert!(input.is_workspace_relative());
+            assert!(!input.is_negated());
+        }
+
+        #[test]
+        fn workspace_relative_negated() {
+            let input = create_glob_input("!/root/file.*");
+
+            assert_eq!(input.glob, "!/root/file.*");
+            assert_eq!(input.get_path(), "root/file.*");
+            assert!(input.is_workspace_relative());
+            assert!(input.is_negated());
+
+            let input = create_glob_input("/!root/file.*");
+
+            assert_eq!(input.glob, "!/root/file.*");
+            assert_eq!(input.get_path(), "root/file.*");
+            assert!(input.is_workspace_relative());
+            assert!(input.is_negated());
         }
 
         #[test]
         fn supports_optional_field() {
-            let input = GlobInput::from_uri(Url::parse("glob://file.*?cache").unwrap()).unwrap();
+            let input = create_glob_input("file.*?cache");
 
             assert!(input.cache);
 
-            let input =
-                GlobInput::from_uri(Url::parse("glob://file.*?cache=true").unwrap()).unwrap();
+            let input = create_glob_input("file.*?cache=true");
 
             assert!(input.cache);
 
-            let input =
-                GlobInput::from_uri(Url::parse("glob://file.*?cache=false").unwrap()).unwrap();
+            let input = create_glob_input("file.*?cache=false");
 
             assert!(!input.cache);
         }
@@ -183,13 +509,13 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "unsupported value for `cache`")]
         fn errors_invalid_cache_field() {
-            GlobInput::from_uri(Url::parse("glob://file.*?cache=invalid").unwrap()).unwrap();
+            create_glob_input("file.*?cache=invalid");
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            GlobInput::from_uri(Url::parse("glob://file.*?unknown").unwrap()).unwrap();
+            create_glob_input("file.*?unknown");
         }
     }
 

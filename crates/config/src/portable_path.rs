@@ -117,7 +117,13 @@ impl FromStr for GlobPath {
     type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, ParseError> {
-        Ok(GlobPath(value.trim_start_matches("./").into()))
+        let value = if let Some(suffix) = value.strip_prefix('!') {
+            format!("!{}", suffix.trim_start_matches("./"))
+        } else {
+            value.trim_start_matches("./").to_owned()
+        };
+
+        Ok(GlobPath(value))
     }
 }
 

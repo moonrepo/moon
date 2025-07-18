@@ -15,7 +15,7 @@ fn create_glob_input(path: &str) -> GlobInput {
 mod input_shape {
     use super::*;
 
-    mod parse_str {
+    mod parse_string {
         use super::*;
 
         #[test]
@@ -286,6 +286,71 @@ mod input_shape {
         // fn errors_for_parent_relative_from_workspace() {
         //     Input::parse("/../test").unwrap();
         // }
+    }
+
+    mod parse_object {
+        use super::*;
+
+        #[test]
+        fn files() {
+            let input: Input = serde_json::from_str(r#""file.txt""#).unwrap();
+
+            assert_eq!(input, Input::ProjectFile(create_file_input("file.txt")));
+
+            let input: Input = serde_json::from_str(r#"{ "file": "file.txt" }"#).unwrap();
+
+            assert_eq!(input, Input::ProjectFile(create_file_input("file.txt")));
+
+            let input: Input =
+                serde_json::from_str(r#"{ "file": "dir/file.txt", "optional": true }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectFile({
+                    let mut inner = create_file_input("dir/file.txt");
+                    inner.optional = true;
+                    inner
+                })
+            );
+
+            let input: Input = serde_json::from_str(
+                r#"{ "file": "/root/file.txt", "optional": true, "matches": "a|b|c" }"#,
+            )
+            .unwrap();
+
+            assert_eq!(
+                input,
+                Input::WorkspaceFile({
+                    let mut inner = create_file_input("/root/file.txt");
+                    inner.optional = true;
+                    inner.matches = Some("a|b|c".into());
+                    inner
+                })
+            );
+        }
+
+        #[test]
+        fn globs() {
+            let input: Input = serde_json::from_str(r#""file.*""#).unwrap();
+
+            assert_eq!(input, Input::ProjectGlob(create_glob_input("file.*")));
+
+            let input: Input = serde_json::from_str(r#"{ "glob": "file.*" }"#).unwrap();
+
+            assert_eq!(input, Input::ProjectGlob(create_glob_input("file.*")));
+
+            let input: Input =
+                serde_json::from_str(r#"{ "glob": "/dir/file.*", "cache": false }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::WorkspaceGlob({
+                    let mut inner = create_glob_input("/dir/file.*");
+                    inner.cache = false;
+                    inner
+                })
+            );
+        }
     }
 
     mod file {
@@ -596,7 +661,7 @@ mod input_shape {
 
         #[test]
         fn supports_file_group_field() {
-            for key in ["fileGroup", "file-group", "group"] {
+            for key in ["fileGroup", "group"] {
                 let input = ProjectSourcesInput::from_uri(
                     Url::parse(format!("project://app?{key}").as_str()).unwrap(),
                 )

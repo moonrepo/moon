@@ -13,6 +13,10 @@ fn map_parse_error<T: fmt::Display>(error: T) -> ParseError {
     ParseError::new(error.to_string())
 }
 
+fn default_true() -> bool {
+    true
+}
+
 fn parse_bool_field(key: &str, value: &str) -> Result<bool, ParseError> {
     if value.is_empty() || value == "true" {
         Ok(true)
@@ -40,9 +44,10 @@ config_struct!(
     pub struct FileInput {
         pub file: FilePath,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "match", skip_serializing_if = "Option::is_none")]
         pub matches: Option<String>,
 
+        #[serde(default)]
         pub optional: bool,
     }
 );
@@ -107,6 +112,8 @@ config_struct!(
     #[derive(Config)]
     pub struct FileGroupInput {
         pub group: Id,
+
+        #[serde(default, alias = "as")]
         pub format: FileGroupInputFormat,
     }
 );
@@ -143,6 +150,7 @@ config_struct!(
     pub struct GlobInput {
         pub glob: GlobPath,
 
+        #[serde(default = "default_true")]
         #[setting(default = true)]
         pub cache: bool,
     }
@@ -202,7 +210,12 @@ config_struct!(
     pub struct ManifestDepsInput {
         pub manifest: Id, // toolchain
 
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            alias = "dep",
+            alias = "dependencies",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub deps: Vec<String>,
     }
 );
@@ -242,10 +255,10 @@ config_struct!(
     pub struct ProjectSourcesInput {
         pub project: Id,
 
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<String>,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, alias = "fileGroup", skip_serializing_if = "Option::is_none")]
         pub group: Option<Id>,
     }
 );
@@ -267,7 +280,7 @@ impl ProjectSourcesInput {
                         input.filter.push(value.to_string());
                     }
                 }
-                "fileGroup" | "file-group" | "group" => {
+                "fileGroup" | "group" => {
                     if !value.is_empty() {
                         input.group = Some(Id::new(&value).map_err(map_parse_error)?);
                     }
@@ -282,6 +295,7 @@ impl ProjectSourcesInput {
     }
 }
 
+/// The different patterns a task input can be defined.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Input {
     EnvVar(String),
@@ -427,6 +441,10 @@ impl<'de> Deserialize<'de> for Input {
 }
 
 #[derive(Deserialize)]
+#[serde(
+    untagged,
+    expecting = "expected a file path, glob pattern, URI, or object"
+)]
 enum InputBase {
     Raw(String),
     File(FileInput),

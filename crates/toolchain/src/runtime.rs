@@ -30,7 +30,7 @@ impl fmt::Display for RuntimeReq {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Global => write!(f, "global"),
-            Self::Toolchain(spec) => write!(f, "{}", spec),
+            Self::Toolchain(spec) => write!(f, "{spec}"),
         }
     }
 }

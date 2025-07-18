@@ -4,6 +4,7 @@ use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
+use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
@@ -119,9 +120,11 @@ impl MoonSession {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
             console: self.get_console()?,
-            vcs: self.get_vcs_adapter()?,
+            moon_env: Arc::clone(&self.moon_env),
+            proto_env: Arc::clone(&self.proto_env),
             toolchain_config: Arc::clone(&self.toolchain_config),
             toolchain_registry: self.get_toolchain_registry().await?,
+            vcs: self.get_vcs_adapter()?,
             workspace_config: Arc::clone(&self.workspace_config),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
@@ -233,10 +236,6 @@ impl MoonSession {
         )
     }
 
-    pub fn requires_toolchain_installed(&self) -> bool {
-        matches!(self.cli.command, Commands::Bin(_) | Commands::Node { .. })
-    }
-
     async fn load_workspace_graph(&self) -> miette::Result<()> {
         let _lock = self.workspace_lock.lock().await;
 
@@ -317,10 +316,11 @@ impl AppSession for MoonSession {
             self.tasks_config = tasks_config;
         }
 
-        // Load components
+        // Load singleton components
 
         startup::register_feature_flags(&self.workspace_config)?;
 
+        Launchpad::register(self.moon_env.clone())?;
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 
         Ok(None)
@@ -337,16 +337,6 @@ impl AppSession for MoonSession {
         analyze::extract_repo_info(&vcs).await?;
 
         if self.requires_workspace_configured() {
-            let cache_engine = self.get_cache_engine()?;
-
-            analyze::install_proto(
-                &self.console,
-                &self.proto_env,
-                &cache_engine,
-                &self.toolchain_config,
-            )
-            .await?;
-
             analyze::register_platforms(
                 &self.console,
                 &self.proto_env,
@@ -354,12 +344,6 @@ impl AppSession for MoonSession {
                 &self.workspace_root,
             )
             .await?;
-
-            if self.requires_toolchain_installed() {
-                let toolchain_registry = self.get_toolchain_registry().await?;
-
-                analyze::load_toolchain(&toolchain_registry, &self.toolchain_config).await?;
-            }
         }
 
         Ok(None)
@@ -376,7 +360,6 @@ impl AppSession for MoonSession {
 
             execute::check_for_new_version(
                 &self.console,
-                &self.moon_env,
                 &cache_engine,
                 &self.toolchain_config.moon.manifest_url,
             )

@@ -202,12 +202,12 @@ pub fn parse_args_into_variables(
                     TemplateVariable::Boolean(_) => {
                         // Booleans always have a value when matched, so only extract
                         // the value when it was actually passed on the command line
-                        if let Some(ValueSource::CommandLine) = matches.value_source(arg_name) {
-                            if let Some(value) = matches.get_one::<bool>(arg_name) {
-                                debug!(name, value, "Setting boolean variable");
+                        if let Some(ValueSource::CommandLine) = matches.value_source(arg_name)
+                            && let Some(value) = matches.get_one::<bool>(arg_name)
+                        {
+                            debug!(name, value, "Setting boolean variable");
 
-                                vars.insert(name, value);
-                            }
+                            vars.insert(name, value);
                         }
                     }
                     TemplateVariable::Enum(inner) => {

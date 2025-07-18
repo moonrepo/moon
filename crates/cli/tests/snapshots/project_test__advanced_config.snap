@@ -9,7 +9,7 @@ About ──────────────────
   Toolchains: node, typescript
   Language: typescript
   Stack: frontend
-  Type: application
+  Layer: application
   Depends on: —
 
 Configuration ──────────

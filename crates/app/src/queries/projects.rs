@@ -16,12 +16,12 @@ pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub id: Option<String>,
     pub language: Option<String>,
+    #[serde(alias = "type")]
+    pub layer: Option<String>,
     pub stack: Option<String>,
     pub source: Option<String>,
     pub tags: Option<String>,
     pub tasks: Option<String>,
-    #[serde(rename = "type")]
-    pub type_of: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -44,35 +44,34 @@ fn load_with_regex(
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
+    let layer_regex = convert_to_regex("layer", &options.layer)?;
     let stack_regex = convert_to_regex("stack", &options.stack)?;
     let source_regex = convert_to_regex("source", &options.source)?;
     let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
-    let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
     for project_id in workspace_graph.projects.get_node_keys() {
         // Include tasks for JSON output
         let project = workspace_graph.get_project_with_tasks(project_id)?;
 
-        if let Some(regex) = &id_regex {
-            if !regex.is_match(&project.id) {
-                continue;
-            }
+        if let Some(regex) = &id_regex
+            && !regex.is_match(&project.id)
+        {
+            continue;
         }
 
-        if let Some(regex) = &alias_regex {
-            if let Some(alias) = &project.alias {
-                if !regex.is_match(alias) {
-                    continue;
-                }
-            }
+        if let Some(regex) = &alias_regex
+            && let Some(alias) = &project.alias
+            && !regex.is_match(alias)
+        {
+            continue;
         }
 
-        if let Some(regex) = &source_regex {
-            if !regex.is_match(project.source.as_str()) {
-                continue;
-            }
+        if let Some(regex) = &source_regex
+            && !regex.is_match(project.source.as_str())
+        {
+            continue;
         }
 
         if let Some(regex) = &tags_regex {
@@ -94,22 +93,22 @@ fn load_with_regex(
             }
         }
 
-        if let Some(regex) = &language_regex {
-            if !regex.is_match(&project.language.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &language_regex
+            && !regex.is_match(&project.language.to_string())
+        {
+            continue;
         }
 
-        if let Some(regex) = &stack_regex {
-            if !regex.is_match(&project.stack.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &stack_regex
+            && !regex.is_match(&project.stack.to_string())
+        {
+            continue;
         }
 
-        if let Some(regex) = &type_regex {
-            if !regex.is_match(&project.type_of.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &layer_regex
+            && !regex.is_match(&project.layer.to_string())
+        {
+            continue;
         }
 
         filtered.push(Arc::new(project));

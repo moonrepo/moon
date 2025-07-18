@@ -350,10 +350,10 @@ impl AffectedTracker {
             let bag = GlobalEnvBag::instance();
 
             for var_name in &task.input_env {
-                if let Some(var) = bag.get(var_name) {
-                    if !var.is_empty() {
-                        return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
-                    }
+                if let Some(var) = bag.get(var_name)
+                    && !var.is_empty()
+                {
+                    return Ok(Some(AffectedBy::EnvironmentVariable(var_name.to_owned())));
                 }
             }
         }

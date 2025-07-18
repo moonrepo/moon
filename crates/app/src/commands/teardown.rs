@@ -11,7 +11,7 @@ use tracing::instrument;
 pub async fn teardown(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
-        "Tearing down and uninstalling tools...",
+        "Tearing down and uninstalling toolchains...",
     );
 
     for platform in PlatformManager::write().list_mut() {
@@ -38,7 +38,7 @@ pub async fn teardown(session: MoonSession) -> AppResult {
     session.console.render(element! {
         Container {
             Notice(variant: Variant::Success) {
-                StyledText(content: "Toolchain has been torn down!")
+                StyledText(content: "Toolchains have been torn down!")
             }
         }
     })?;

@@ -148,6 +148,7 @@ impl Action {
             | ActionNode::InstallWorkspaceDeps(_) => "install-dependencies",
             ActionNode::RunTask(_) => "run-task",
             ActionNode::SetupEnvironment(_) => "setup-environment",
+            ActionNode::SetupProto(_) => "setup-proto",
             ActionNode::SetupToolchainLegacy(_) | ActionNode::SetupToolchain(_) => {
                 "setup-toolchain"
             }

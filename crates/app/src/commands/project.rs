@@ -156,8 +156,8 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                     content: project.stack.to_string(),
                 )
                 Entry(
-                    name: "Type",
-                    content: project.type_of.to_string(),
+                    name: "Layer",
+                    content: project.layer.to_string(),
                 )
                  Entry(
                     name: "Depends on",

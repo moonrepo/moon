@@ -52,7 +52,7 @@ impl CodeownersGenerator {
         self.write("")?;
 
         // Render the header
-        self.write(format!("# {}", id))?;
+        self.write(format!("# {id}"))?;
 
         let required_approvals = config
             .required_approvals
@@ -63,10 +63,7 @@ impl CodeownersGenerator {
             VcsProvider::Bitbucket => {
                 if required_approvals > 0 {
                     if let Some(default_owner) = &config.default_owner {
-                        self.write(format!(
-                            "Check({} >= {})",
-                            default_owner, required_approvals
-                        ))?;
+                        self.write(format!("Check({default_owner} >= {required_approvals})"))?;
                     }
                 }
             }
@@ -79,7 +76,7 @@ impl CodeownersGenerator {
                 }
 
                 if required_approvals > 0 {
-                    header = format!("{header}[{}]", required_approvals);
+                    header = format!("{header}[{required_approvals}]");
                 }
 
                 if matches!(config.paths, OwnersPaths::List(_)) {

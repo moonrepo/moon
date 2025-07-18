@@ -422,6 +422,8 @@ string.
 - `$projectChannel` - The discussion channel for the project, as defined with
   [`project.channel`](../config/project#channel).
   <VersionLabel version="1.28.0" />
+- `$projectLayer` - The project layer, as defined with [`layer`](../config/project#layer).
+  <VersionLabel version="1.39.0" />
 - `$projectName` - The human-readable name of the project, as defined with
   [`project.name`](../config/project#name).
   <VersionLabel version="1.28.0" />
@@ -433,7 +435,8 @@ string.
   [`.moon/workspace.yml`](../config/workspace).
 - `$projectStack` - The stack of the project, as defined with [`stack`](../config/project#stack).
   <VersionLabel version="1.22.0" />
-- `$projectType` - The type of project, as defined with [`type`](../config/project#type).
+- `$projectType` - The type of project, as defined with [`type`](../config/project#layer).
+  Deprecated, use `$projectLayer` instead.
 
 ```yaml
 # Configured as

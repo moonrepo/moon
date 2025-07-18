@@ -5,7 +5,7 @@ project:
   owner: '@infra'
   maintainers: ['@user1', '@user2']
 
-type: 'configuration'
+layer: 'configuration'
 stack: 'infrastructure'
 
 tasks:

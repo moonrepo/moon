@@ -210,25 +210,25 @@ impl ToolchainRegistry {
         for toolchain_id in toolchain_ids {
             let toolchain_id = toolchain_id.as_ref();
 
-            if let Ok(toolchain) = self.load(toolchain_id).await {
-                if toolchain.has_func(func_name).await {
-                    let mut operation = Operation::new(func_name);
-                    let id = toolchain.id.clone();
-                    let input = input_factory(self, &toolchain);
-                    let future = output_factory(toolchain.clone(), input);
+            if let Ok(toolchain) = self.load(toolchain_id).await
+                && toolchain.has_func(func_name).await
+            {
+                let mut operation = Operation::new(func_name);
+                let id = toolchain.id.clone();
+                let input = input_factory(self, &toolchain);
+                let future = output_factory(toolchain.clone(), input);
 
-                    futures.push_back(tokio::spawn(async move {
-                        let result = future.await;
-                        operation.finish_with_result(&result);
+                futures.push_back(tokio::spawn(async move {
+                    let result = future.await;
+                    operation.finish_with_result(&result);
 
-                        Ok::<_, miette::Report>(CallResult {
-                            id,
-                            operation,
-                            output: result?,
-                            toolchain,
-                        })
-                    }));
-                }
+                    Ok::<_, miette::Report>(CallResult {
+                        id,
+                        operation,
+                        output: result?,
+                        toolchain,
+                    })
+                }));
             }
         }
 

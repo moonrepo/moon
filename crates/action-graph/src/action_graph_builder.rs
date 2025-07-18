@@ -629,7 +629,7 @@ impl<'query> ActionGraphBuilder<'query> {
             TargetScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
-                    .query_projects(build_query(format!("tag={}", tag).as_str())?)?;
+                    .query_projects(build_query(format!("tag={tag}").as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist
@@ -905,6 +905,12 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
+    pub async fn setup_proto(&mut self) -> miette::Result<Option<NodeIndex>> {
+        let index = insert_node_or_exit!(self, ActionNode::setup_proto());
+
+        Ok(Some(index))
+    }
+
     #[instrument(skip_all)]
     pub async fn setup_toolchain_legacy(
         &mut self,
@@ -917,6 +923,12 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let sync_workspace_index = self.sync_workspace().await?;
 
+        let setup_proto_index = if !runtime.requirement.is_global() {
+            self.setup_proto().await?
+        } else {
+            None
+        };
+
         let index = insert_node_or_exit!(
             self,
             ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
@@ -924,7 +936,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_optional_requirements(index, vec![sync_workspace_index]);
+        self.link_optional_requirements(index, vec![sync_workspace_index, setup_proto_index]);
 
         Ok(Some(index))
     }
@@ -947,6 +959,11 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
+        let setup_proto_index = if spec.req.is_some() {
+            self.setup_proto().await?
+        } else {
+            None
+        };
 
         let index = insert_node_or_exit!(
             self,
@@ -955,7 +972,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_optional_requirements(index, vec![sync_workspace_index]);
+        self.link_optional_requirements(index, vec![sync_workspace_index, setup_proto_index]);
 
         Ok(Some(index))
     }
@@ -977,10 +994,10 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Return early if not affected
-        if let Some(affected) = &mut self.affected {
-            if !affected.is_project_marked(project) {
-                return Ok(None);
-            }
+        if let Some(affected) = &mut self.affected
+            && !affected.is_project_marked(project)
+        {
+            return Ok(None);
         }
 
         // Insert the node and edges

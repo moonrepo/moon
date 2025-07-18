@@ -350,7 +350,7 @@
         "manifestUrl": {
           "title": "manifestUrl",
           "description": "A secure URL to lookup the latest version.",
-          "default": "https://launch.moonrepo.app/versions/cli/current",
+          "default": "https://launch.moonrepo.app/moon/check_version",
           "type": "string"
         }
       },

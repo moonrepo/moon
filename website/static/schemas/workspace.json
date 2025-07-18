@@ -225,12 +225,12 @@
       "description": "Configures boundaries and constraints between projects.",
       "type": "object",
       "properties": {
-        "enforceProjectTypeRelationships": {
-          "title": "enforceProjectTypeRelationships",
-          "description": "Enforces relationships between projects based on each project's type setting.",
+        "enforceLayerRelationships": {
+          "title": "enforceLayerRelationships",
+          "description": "Enforces relationships between projects based on each project's layer setting.",
           "default": true,
           "type": "boolean",
-          "markdownDescription": "Enforces relationships between projects based on each project's `type` setting."
+          "markdownDescription": "Enforces relationships between projects based on each project's `layer` setting."
         },
         "tagRelationships": {
           "title": "tagRelationships",

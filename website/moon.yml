@@ -1,7 +1,7 @@
 # Bump 6
 
 language: typescript
-type: application
+layer: application
 
 project:
   description: 'A static website powered by Docusaurus.'

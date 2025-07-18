@@ -23,7 +23,7 @@ moon_task = { path = "../task" }
 moon_task_args = { path = "../task-args" }
 moon_query = { path = "../query" }
 moon_workspace_graph = { path = "../workspace-graph" }
-graph-cycles = "0.2.0"
+graph-cycles = "0.3.0"
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

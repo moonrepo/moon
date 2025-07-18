@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- The automatic proto install has moved into a new `SetupProto` action, which is now part of the
+  action graph, and does not run on every command. It's also a bit smarter and will only install
+  when a toolchain requires it.
+- Renamed project `type` to `layer`, as it better reflects what it does, a layer of access within
+  the project `stack`. For backwards compatibility, the `type` name will still be supported until
+  v2. The following changes have been made:
+  - `type` -> `layer` in `moon.yml`
+  - `--type` -> `--layer` in `moon query projects`
+  - `projectType` -> `projectLayer` for MQL
+  - `$projectType` -> `$projectLayer` for task tokens
+  - `enforceProjectTypeRelationships` -> `enforceLayerRelationships` in `.moon/workspace.yml`
+
+#### ⚙️ Internal
+
+- Added telemetry for toolchain usage.
+- Updated Rust to v1.88.0.
+- Updated proto to [v0.50.3](https://github.com/moonrepo/proto/releases/tag/v0.50.3) (from 0.50.1).
+
 ## 1.38.6
 
 #### 🧰 Toolchains

@@ -1,7 +1,7 @@
 use crate::parser::{AstNode, ComparisonOperator, LogicalOperator, parse_query};
 use crate::query_error::QueryError;
 use moon_common::color;
-use moon_config::{LanguageType, ProjectType, StackType, TaskType};
+use moon_config::{LanguageType, LayerType, StackType, TaskType};
 use starbase_utils::glob::GlobSet;
 use std::borrow::Cow;
 use std::cmp::PartialEq;
@@ -16,10 +16,11 @@ pub enum Field<'l> {
     Language(Vec<LanguageType>),
     Project(FieldValues<'l>),
     ProjectAlias(FieldValues<'l>),
+    ProjectLayer(Vec<LayerType>),
     ProjectName(FieldValues<'l>),
     ProjectSource(FieldValues<'l>),
     ProjectStack(Vec<StackType>),
-    ProjectType(Vec<ProjectType>),
+    ProjectType(Vec<LayerType>),
     Tag(FieldValues<'l>),
     Task(FieldValues<'l>),
     TaskPlatform(FieldValues<'l>),
@@ -122,13 +123,16 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     }
                     "project" => Field::Project(value),
                     "projectAlias" => Field::ProjectAlias(value),
+                    "projectLayer" => {
+                        Field::ProjectLayer(build_criteria_enum::<LayerType>(&field, &op, value)?)
+                    }
                     "projectName" => Field::ProjectName(value),
                     "projectSource" => Field::ProjectSource(value),
                     "projectStack" => {
                         Field::ProjectStack(build_criteria_enum::<StackType>(&field, &op, value)?)
                     }
                     "projectType" => {
-                        Field::ProjectType(build_criteria_enum::<ProjectType>(&field, &op, value)?)
+                        Field::ProjectType(build_criteria_enum::<LayerType>(&field, &op, value)?)
                     }
                     "tag" => Field::Tag(value),
                     "task" => Field::Task(value),

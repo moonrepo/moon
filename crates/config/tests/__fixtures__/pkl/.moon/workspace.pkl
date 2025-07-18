@@ -8,7 +8,7 @@ codeowners {
 }
 
 constraints {
-	enforceProjectTypeRelationships = false
+	enforceLayerRelationships = false
 	tagRelationships = Map("a", List("b", "c"))
 }
 

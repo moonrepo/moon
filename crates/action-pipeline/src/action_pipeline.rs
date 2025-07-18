@@ -7,6 +7,7 @@ use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
 use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
+use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionNode, ActionPipelineStatus};
@@ -389,6 +390,8 @@ impl ActionPipeline {
                 .await;
         }
 
+        debug!("Subscribing remote services");
+
         self.emitter.subscribe(RemoteSubscriber).await;
 
         debug!("Subscribing run reports and estimates");
@@ -452,6 +455,16 @@ impl ActionPipeline {
                     Arc::clone(&self.app_context.cache_engine),
                     lifetime,
                 ))
+                .await;
+        }
+
+        if self.app_context.workspace_config.telemetry {
+            debug!("Subscribing telemetry");
+
+            self.emitter
+                .subscribe(TelemetrySubscriber::new(Arc::clone(
+                    &self.app_context.toolchain_config,
+                )))
                 .await;
         }
     }

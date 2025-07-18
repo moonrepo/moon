@@ -4,9 +4,11 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupToolchain(node:20.0.0)" ]
-    2 [ label="InstallWorkspaceDeps(node:20.0.0)" ]
-    1 -> 0 [ ]
+    1 [ label="SetupProto(1.2.3)" ]
+    2 [ label="SetupToolchain(node:20.0.0)" ]
+    3 [ label="InstallWorkspaceDeps(node:20.0.0)" ]
     2 -> 0 [ ]
     2 -> 1 [ ]
+    3 -> 0 [ ]
+    3 -> 2 [ ]
 }

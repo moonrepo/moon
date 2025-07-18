@@ -26,7 +26,10 @@ config_struct!(
     #[derive(Config)]
     pub struct FileInput {
         pub file: FilePath,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub matches: Option<String>,
+
         pub optional: bool,
     }
 );
@@ -69,7 +72,7 @@ impl FileInput {
 config_unit_enum!(
     /// Format to resolve the file group into.
     #[derive(ConfigEnum)]
-    pub enum FileGroupFormat {
+    pub enum FileGroupInputFormat {
         #[default]
         Static,
         Dirs,
@@ -85,7 +88,7 @@ config_struct!(
     #[derive(Config)]
     pub struct FileGroupInput {
         pub group: Id,
-        pub format: FileGroupFormat,
+        pub format: FileGroupInputFormat,
     }
 );
 
@@ -102,7 +105,8 @@ impl FileGroupInput {
         for (key, value) in uri.query_pairs() {
             match &*key {
                 "as" | "format" => {
-                    input.format = FileGroupFormat::from_str(&value).map_err(map_parse_error)?
+                    input.format =
+                        FileGroupInputFormat::from_str(&value).map_err(map_parse_error)?
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown field `{key}`")));
@@ -160,6 +164,8 @@ config_struct!(
     #[derive(Config)]
     pub struct ManifestDepsInput {
         pub manifest: Id, // toolchain
+
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub deps: Vec<String>,
     }
 );
@@ -198,7 +204,11 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectSourcesInput {
         pub project: Id,
+
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub group: Option<Id>,
     }
 );
@@ -221,7 +231,9 @@ impl ProjectSourcesInput {
                     }
                 }
                 "fileGroup" | "file-group" | "group" => {
-                    input.group = Some(Id::new(&value).map_err(map_parse_error)?);
+                    if !value.is_empty() {
+                        input.group = Some(Id::new(&value).map_err(map_parse_error)?);
+                    }
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown field `{key}`")));

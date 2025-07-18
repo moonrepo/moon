@@ -117,7 +117,7 @@ impl FromStr for GlobPath {
     type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, ParseError> {
-        Ok(GlobPath(value.into()))
+        Ok(GlobPath(value.trim_start_matches("./").into()))
     }
 }
 
@@ -136,7 +136,7 @@ impl FromStr for FilePath {
             ));
         }
 
-        Ok(FilePath(value.into()))
+        Ok(FilePath(value.trim_start_matches("./").into()))
     }
 }
 
@@ -172,6 +172,6 @@ impl FromStr for ProjectFilePath {
 
         validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
-        Ok(ProjectFilePath(value.into()))
+        Ok(ProjectFilePath(value.trim_start_matches("./").into()))
     }
 }

@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { Input, PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type {
 	PartialToolchainPluginConfig,
 	ToolchainPluginConfig,
@@ -71,22 +71,6 @@ export interface ProjectDockerConfig {
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold: ProjectDockerScaffoldConfig;
 }
-
-/** A file path input. */
-export interface FileInput {
-	file: string;
-	matches?: string | null;
-	optional?: boolean;
-}
-
-/** A glob path input. */
-export interface GlobInput {
-	/** @default true */
-	cache?: boolean;
-	glob: string;
-}
-
-export type Input = string | FileInput | GlobInput;
 
 /** Supported programming languages that each project can be written in. */
 export type LanguageType =

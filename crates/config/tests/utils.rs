@@ -1,6 +1,6 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
-use moon_config::{FileInput, GlobInput, Uri};
+pub use moon_config::test_utils::*;
 use schematic::{Config, ConfigError};
 use starbase_sandbox::create_empty_sandbox;
 use std::path::Path;
@@ -44,28 +44,4 @@ where
     F: FnOnce(&str) -> miette::Result<T>,
 {
     unwrap_config_result(callback(code))
-}
-
-pub fn create_file_input(path: &str) -> FileInput {
-    FileInput::from_uri(
-        Uri::parse(if path.starts_with("file://") {
-            path.to_owned()
-        } else {
-            format!("file://{path}")
-        })
-        .unwrap(),
-    )
-    .unwrap()
-}
-
-pub fn create_glob_input(path: &str) -> GlobInput {
-    GlobInput::from_uri(
-        Uri::parse(if path.starts_with("glob://") {
-            path.to_owned()
-        } else {
-            format!("glob://{path}")
-        })
-        .unwrap(),
-    )
-    .unwrap()
 }

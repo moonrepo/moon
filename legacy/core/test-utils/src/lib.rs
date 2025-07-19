@@ -13,7 +13,7 @@ pub use sandbox::*;
 
 use clean_path::Clean;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{Input, InputPath};
+use moon_config::Input;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -43,16 +43,6 @@ where
 {
     list.into_iter()
         .map(|path| Input::from_str(path.as_ref()).unwrap())
-        .collect()
-}
-
-pub fn create_input_paths<I, V>(list: I) -> Vec<InputPath>
-where
-    I: IntoIterator<Item = V>,
-    V: AsRef<str>,
-{
-    list.into_iter()
-        .map(|path| InputPath::from_str(path.as_ref()).unwrap())
         .collect()
 }
 

@@ -790,7 +790,7 @@ impl<'proj> TasksBuilder<'proj> {
             .map(|dep| (*dep).to_owned())
             .collect::<Vec<_>>();
 
-        global_inputs.push(Input::parse(".moon/*.{pkl,yml}").unwrap());
+        global_inputs.push(Input::parse("/.moon/*.{pkl,yml}").unwrap());
 
         if let Some(env_files) = &options.env_files {
             global_inputs.extend(env_files.to_owned());

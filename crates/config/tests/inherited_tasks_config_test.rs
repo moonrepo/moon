@@ -490,7 +490,7 @@ mod task_manager {
 
         if command != "global" {
             // No .moon prefix since the fixture is contrived
-            global_inputs.push(Input::WorkspaceFile(create_file_input(&format!(
+            global_inputs.push(Input::WorkspaceFile(create_file_input(format!(
                 "/tasks/{command}.yml"
             ))));
         }

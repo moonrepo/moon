@@ -42,24 +42,3 @@ pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
 
     Ok(())
 }
-
-// Validate the value is a valid child relative file system path or root path.
-// Will fail on parent relative paths ("../") and absolute paths.
-#[allow(dead_code)]
-pub fn validate_child_or_root_path<T: AsRef<str>>(value: T) -> Result<(), ValidateError> {
-    let path = Path::new(value.as_ref());
-
-    if (path.has_root() || path.is_absolute()) && !path.starts_with("/") {
-        return Err(ValidateError::new(
-            "absolute paths are not supported (workspace relative paths must start with \"/\")",
-        ));
-    }
-
-    if path.starts_with("..") {
-        return Err(ValidateError::new(
-            "parent relative paths are not supported",
-        ));
-    }
-
-    Ok(())
-}

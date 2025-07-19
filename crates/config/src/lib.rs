@@ -17,6 +17,7 @@ mod template;
 mod template_config;
 #[cfg(feature = "template")]
 mod templates;
+pub mod test_utils;
 mod toolchain;
 mod toolchain_config;
 mod types;

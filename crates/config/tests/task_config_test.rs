@@ -4,7 +4,7 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FilePath, InputPath, OneOrMany, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
+    FilePath, Input, OneOrMany, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
@@ -260,12 +260,12 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    InputPath::WorkspaceFile("ws/path".into()),
-                    InputPath::WorkspaceGlob("ws/glob/**/*".into()),
-                    InputPath::WorkspaceGlob("!ws/glob/**/*".into()),
-                    InputPath::ProjectFile("proj/path".into()),
-                    InputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
-                    InputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
+                    Input::WorkspaceFile(create_file_input("/ws/path")),
+                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
+                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
+                    Input::ProjectFile(create_file_input("proj/path")),
+                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::ProjectGlob(create_glob_input("!proj/glob/{a,b,c}")),
                 ]
             );
         }
@@ -285,9 +285,9 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    InputPath::EnvVar("FOO_BAR".into()),
-                    InputPath::EnvVarGlob("FOO_*".into()),
-                    InputPath::ProjectFile("file/path".into()),
+                    Input::EnvVar("FOO_BAR".into()),
+                    Input::EnvVarGlob("FOO_*".into()),
+                    Input::ProjectFile(create_file_input("file/path")),
                 ]
             );
         }
@@ -705,13 +705,13 @@ options:
                     ]),
                     env: Some(FxHashMap::from_iter([("ENV".into(), "development".into())])),
                     inputs: Some(vec![
-                        InputPath::EnvVar("ENV".into()),
-                        InputPath::EnvVarGlob("ENV_*".into()),
-                        InputPath::ProjectFile("file.txt".into()),
-                        InputPath::ProjectGlob("file.*".into()),
-                        InputPath::WorkspaceFile("file.txt".into()),
-                        InputPath::WorkspaceGlob("file.*".into()),
-                        InputPath::TokenFunc("@dirs(name)".into())
+                        Input::EnvVar("ENV".into()),
+                        Input::EnvVarGlob("ENV_*".into()),
+                        Input::ProjectFile(create_file_input("file.txt")),
+                        Input::ProjectGlob(create_glob_input("file.*")),
+                        Input::WorkspaceFile(create_file_input("/file.txt")),
+                        Input::WorkspaceGlob(create_glob_input("/file.*")),
+                        Input::TokenFunc("@dirs(name)".into())
                     ]),
                     local: Some(true),
                     outputs: Some(vec![

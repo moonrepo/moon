@@ -1,7 +1,7 @@
 use crate::task_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::TaskArgs;
+use moon_config::{Input, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
@@ -152,9 +152,12 @@ impl<'graph> TaskExpander<'graph> {
         if let Some(env_files) = &task.options.env_files {
             let env_paths = env_files
                 .iter()
-                .map(|file| {
-                    file.to_workspace_relative(self.project.source.as_str())
-                        .to_path(&self.context.workspace_root)
+                .filter_map(|input| match input {
+                    Input::ProjectFile(file) | Input::WorkspaceFile(file) => Some(
+                        file.to_workspace_relative(self.project.source.as_str())
+                            .to_path(&self.context.workspace_root),
+                    ),
+                    _ => None,
                 })
                 .collect::<Vec<_>>();
 

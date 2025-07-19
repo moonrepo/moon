@@ -3,7 +3,7 @@ use crate::project::{
     PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps,
 };
 use crate::project_config::{LayerType, StackType};
-use crate::shapes::InputPath;
+use crate::shapes::Input;
 use moon_common::{Id, cacheable};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
@@ -53,7 +53,7 @@ config_struct!(
         /// A mapping of group IDs to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
         #[setting(merge = merge_fxhashmap)]
-        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
+        pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Task dependencies that'll automatically be injected into every
         /// task that inherits this configuration.
@@ -63,7 +63,7 @@ config_struct!(
         /// Task inputs that'll automatically be injected into every
         /// task that inherits this configuration.
         #[setting(merge = merge::append_vec)]
-        pub implicit_inputs: Vec<InputPath>,
+        pub implicit_inputs: Vec<Input>,
 
         /// A mapping of tasks by ID to parameters required for running the task.
         #[setting(nested, merge = merge::merge_btreemap)]
@@ -240,7 +240,7 @@ impl InheritedTasksManager {
                             // Automatically set this source as an input
                             task.global_inputs
                                 .get_or_insert(vec![])
-                                .push(InputPath::WorkspaceFile(source_path.clone()));
+                                .push(Input::parse(format!("/{source_path}"))?);
 
                             // Automatically set the toolchain
                             if task.toolchain.is_none() {

@@ -1,5 +1,5 @@
 use moon_common::path::RelativePathBuf;
-use moon_config::InputPath;
+use moon_config::Input;
 use moon_file_group::FileGroup;
 use starbase_sandbox::locate_fixture;
 
@@ -38,7 +38,7 @@ mod file_group {
         let mut file_group = FileGroup::new("id").unwrap();
 
         file_group
-            .add(&InputPath::TokenFunc("@group(name)".into()), "")
+            .add(&Input::TokenFunc("@group(name)".into()), "")
             .unwrap();
 
         assert_eq!(file_group.env, ["FOO_BAR"]);
@@ -49,9 +49,7 @@ mod file_group {
     fn errors_for_token_vars() {
         let mut file_group = FileGroup::new("id").unwrap();
 
-        file_group
-            .add(&InputPath::TokenVar("$var".into()), "")
-            .unwrap();
+        file_group.add(&Input::TokenVar("$var".into()), "").unwrap();
 
         assert_eq!(file_group.env, ["FOO_BAR"]);
     }
@@ -61,7 +59,7 @@ mod file_group {
         let mut file_group = FileGroup::new("id").unwrap();
 
         file_group
-            .add(&InputPath::EnvVar("FOO_BAR".into()), "")
+            .add(&Input::EnvVar("FOO_BAR".into()), "")
             .unwrap();
 
         assert_eq!(file_group.env, ["FOO_BAR"]);
@@ -72,11 +70,11 @@ mod file_group {
         let mut file_group = FileGroup::new("id").unwrap();
 
         file_group
-            .add(&InputPath::ProjectFile("file.js".into()), "test-source")
+            .add(&Input::parse("file.js").unwrap(), "test-source")
             .unwrap();
 
         file_group
-            .add(&InputPath::WorkspaceFile("root.js".into()), "test-source")
+            .add(&Input::parse("/root.js").unwrap(), "test-source")
             .unwrap();
 
         assert_eq!(file_group.files, ["test-source/file.js", "root.js"]);
@@ -87,11 +85,11 @@ mod file_group {
         let mut file_group = FileGroup::new("id").unwrap();
 
         file_group
-            .add(&InputPath::ProjectGlob("*.js".into()), "test-source")
+            .add(&Input::parse("*.js").unwrap(), "test-source")
             .unwrap();
 
         file_group
-            .add(&InputPath::WorkspaceGlob("root.*".into()), "test-source")
+            .add(&Input::parse("/root.*").unwrap(), "test-source")
             .unwrap();
 
         assert_eq!(file_group.globs, ["test-source/*.js", "root.*"]);

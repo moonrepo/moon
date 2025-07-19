@@ -1,5 +1,6 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
+pub use moon_config::test_utils::*;
 use schematic::{Config, ConfigError};
 use starbase_sandbox::create_empty_sandbox;
 use std::path::Path;

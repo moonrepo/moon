@@ -117,7 +117,21 @@ impl FromStr for GlobPath {
     type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, ParseError> {
-        Ok(GlobPath(value.into()))
+        let mut value = value.to_owned();
+
+        // Fix invalid negated workspace paths
+        if value.starts_with("/!") {
+            value = format!("!/{}", &value[2..]);
+        }
+
+        // Remove ./ leading parts
+        let value = if let Some(suffix) = value.strip_prefix('!') {
+            format!("!{}", suffix.trim_start_matches("./"))
+        } else {
+            value.trim_start_matches("./").to_owned()
+        };
+
+        Ok(GlobPath(value))
     }
 }
 
@@ -136,7 +150,8 @@ impl FromStr for FilePath {
             ));
         }
 
-        Ok(FilePath(value.into()))
+        // Remove ./ leading parts
+        Ok(FilePath(value.trim_start_matches("./").into()))
     }
 }
 
@@ -172,6 +187,6 @@ impl FromStr for ProjectFilePath {
 
         validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
-        Ok(ProjectFilePath(value.into()))
+        Ok(ProjectFilePath(value.trim_start_matches("./").into()))
     }
 }

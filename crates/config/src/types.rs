@@ -1,11 +1,11 @@
 use crate::project::TaskConfig;
-use crate::shapes::InputPath;
+use crate::shapes::Input;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
-pub type FileGroupsMap = FxHashMap<Id, Vec<InputPath>>;
+pub type FileGroupsMap = FxHashMap<Id, Vec<Input>>;
 
 pub type ProjectSourceEntry = (Id, WorkspaceRelativePathBuf);
 

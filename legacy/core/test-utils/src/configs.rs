@@ -1,4 +1,4 @@
-use crate::create_input_paths;
+use crate::create_inputs;
 use moon_common::Id;
 use moon_config::*;
 use rustc_hash::FxHashMap;
@@ -137,12 +137,9 @@ pub fn get_projects_fixture_configs() -> (
         file_groups: Some(FxHashMap::from_iter([
             (
                 "sources".try_into().unwrap(),
-                create_input_paths(["src/**/*", "types/**/*"]),
+                create_inputs(["src/**/*", "types/**/*"]),
             ),
-            (
-                "tests".try_into().unwrap(),
-                create_input_paths(["tests/**/*"]),
-            ),
+            ("tests".try_into().unwrap(), create_inputs(["tests/**/*"])),
         ])),
         ..PartialInheritedTasksConfig::default()
     };
@@ -254,7 +251,7 @@ pub fn get_tasks_fixture_configs() -> (
         file_groups: Some(FxHashMap::from_iter([
             (
                 "static".try_into().unwrap(),
-                create_input_paths([
+                create_inputs([
                     "file.ts",
                     "dir",
                     "dir/other.tsx",
@@ -262,22 +259,16 @@ pub fn get_tasks_fixture_configs() -> (
                     "dir/subdir/another.ts",
                 ]),
             ),
-            (
-                "dirs_glob".try_into().unwrap(),
-                create_input_paths(["**/*"]),
-            ),
+            ("dirs_glob".try_into().unwrap(), create_inputs(["**/*"])),
             (
                 "files_glob".try_into().unwrap(),
-                create_input_paths(["**/*.{ts,tsx}"]),
+                create_inputs(["**/*.{ts,tsx}"]),
             ),
             (
                 "globs".try_into().unwrap(),
-                create_input_paths(["**/*.{ts,tsx}", "*.js"]),
+                create_inputs(["**/*.{ts,tsx}", "*.js"]),
             ),
-            (
-                "no_globs".try_into().unwrap(),
-                create_input_paths(["config.js"]),
-            ),
+            ("no_globs".try_into().unwrap(), create_inputs(["config.js"])),
         ])),
         tasks: Some(BTreeMap::from_iter([
             (
@@ -304,8 +295,8 @@ pub fn get_tasks_fixture_configs() -> (
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
-                        InputPath::from_str("rel/file.*").unwrap(),
-                        InputPath::from_str("/root.*").unwrap(),
+                        Input::from_str("rel/file.*").unwrap(),
+                        Input::from_str("/root.*").unwrap(),
                     ]),
                     ..PartialTaskConfig::default()
                 },
@@ -315,8 +306,8 @@ pub fn get_tasks_fixture_configs() -> (
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
-                        InputPath::from_str("lib").unwrap(),
-                        InputPath::from_str("/build").unwrap(),
+                        Input::from_str("lib").unwrap(),
+                        Input::from_str("/build").unwrap(),
                     ]),
                     ..PartialTaskConfig::default()
                 },

@@ -3,8 +3,12 @@ use crate::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use crate::validate::validate_child_relative_path;
 use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
-use moon_common::path::standardize_separators;
-use schematic::{Config, ConfigEnum, ParseError};
+use moon_common::path::{
+    RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
+};
+use schematic::{
+    Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, schema::UnionType,
+};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::fmt;
 use std::str::FromStr;
@@ -42,20 +46,6 @@ config_struct!(
 );
 
 impl FileInput {
-    pub fn get_path(&self) -> &str {
-        let path = self.file.as_str();
-
-        if self.is_workspace_relative() {
-            &path[1..]
-        } else {
-            path
-        }
-    }
-
-    pub fn is_workspace_relative(&self) -> bool {
-        self.file.as_str().starts_with('/')
-    }
-
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
             file: FilePath::parse(&uri.path)?,
@@ -79,6 +69,34 @@ impl FileInput {
         }
 
         Ok(input)
+    }
+
+    pub fn get_path(&self) -> &str {
+        let path = self.file.as_str();
+
+        if self.is_workspace_relative() {
+            &path[1..]
+        } else {
+            path
+        }
+    }
+
+    pub fn is_workspace_relative(&self) -> bool {
+        self.file.as_str().starts_with('/')
+    }
+
+    pub fn to_workspace_relative(
+        &self,
+        project_source: impl AsRef<str>,
+    ) -> WorkspaceRelativePathBuf {
+        if self.is_workspace_relative() {
+            expand_to_workspace_relative(RelativeFrom::Workspace, self.get_path())
+        } else {
+            expand_to_workspace_relative(
+                RelativeFrom::Project(project_source.as_ref()),
+                self.get_path(),
+            )
+        }
     }
 }
 
@@ -147,6 +165,26 @@ config_struct!(
 );
 
 impl GlobInput {
+    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
+        let mut input = Self {
+            glob: GlobPath::parse(&uri.path)?,
+            ..Default::default()
+        };
+
+        for (key, value) in uri.query {
+            match key.as_str() {
+                "cache" => {
+                    input.cache = parse_bool_field(&key, &value)?;
+                }
+                _ => {
+                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                }
+            };
+        }
+
+        Ok(input)
+    }
+
     pub fn get_path(&self) -> &str {
         let path = self.glob.as_str();
 
@@ -173,24 +211,18 @@ impl GlobInput {
         path.starts_with('/') || path.starts_with("!/")
     }
 
-    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
-        let mut input = Self {
-            glob: GlobPath::parse(&uri.path)?,
-            ..Default::default()
-        };
-
-        for (key, value) in uri.query {
-            match key.as_str() {
-                "cache" => {
-                    input.cache = parse_bool_field(&key, &value)?;
-                }
-                _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
-                }
-            };
+    pub fn to_workspace_relative(
+        &self,
+        project_source: impl AsRef<str>,
+    ) -> WorkspaceRelativePathBuf {
+        if self.is_workspace_relative() {
+            expand_to_workspace_relative(RelativeFrom::Workspace, self.get_path())
+        } else {
+            expand_to_workspace_relative(
+                RelativeFrom::Project(project_source.as_ref()),
+                self.get_path(),
+            )
         }
-
-        Ok(input)
     }
 }
 
@@ -326,6 +358,18 @@ impl Input {
         Self::from_str(value.as_ref())
     }
 
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::EnvVar(value)
+            | Self::EnvVarGlob(value)
+            | Self::TokenFunc(value)
+            | Self::TokenVar(value) => value,
+            // TODO
+            Self::ProjectFile(value) | Self::WorkspaceFile(value) => value.get_path(),
+            Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.get_path(),
+        }
+    }
+
     pub fn is_glob(&self) -> bool {
         matches!(
             self,
@@ -384,6 +428,20 @@ impl FromStr for Input {
                 "input protocol `{other}://` is not supported"
             ))),
         }
+    }
+}
+
+impl Schematic for Input {
+    fn schema_name() -> Option<String> {
+        Some("Input".into())
+    }
+
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.union(UnionType::new_any([
+            schema.infer::<String>(),
+            schema.infer::<FileInput>(),
+            schema.infer::<GlobInput>(),
+        ]))
     }
 }
 

@@ -6,7 +6,7 @@ use moon_common::{
     path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
-    InheritedTasksConfig, InputPath, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
+    InheritedTasksConfig, Input, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
     TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
     TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
 };
@@ -86,7 +86,7 @@ pub struct TasksBuilder<'proj> {
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
-    implicit_inputs: Vec<&'proj InputPath>,
+    implicit_inputs: Vec<&'proj Input>,
 
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
@@ -441,14 +441,14 @@ impl<'proj> TasksBuilder<'proj> {
                     color::file("**/*"),
                 );
 
-                task.inputs.push(InputPath::ProjectGlob("**/*".into()));
+                task.inputs.push(Input::parse("**/*").unwrap());
                 task.state.default_inputs = true;
             }
         } else if configured_inputs == 1
             && task
                 .inputs
                 .first()
-                .is_some_and(|first| first == &InputPath::ProjectGlob("**/*".into()))
+                .is_some_and(|first| first.as_str() == "**/*")
         {
             task.state.default_inputs = true;
         }
@@ -619,7 +619,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env_file) = &config.env_file {
-                options.env_files = env_file.to_input_paths();
+                options.env_files = env_file.to_inputs();
             }
 
             if let Some(infer_inputs) = &config.infer_inputs {
@@ -783,14 +783,14 @@ impl<'proj> TasksBuilder<'proj> {
         &self,
         target: &Target,
         options: &TaskOptions,
-    ) -> miette::Result<Vec<InputPath>> {
+    ) -> miette::Result<Vec<Input>> {
         let mut global_inputs = self
             .implicit_inputs
             .iter()
             .map(|dep| (*dep).to_owned())
             .collect::<Vec<_>>();
 
-        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.{pkl,yml}".into()));
+        global_inputs.push(Input::parse(".moon/*.{pkl,yml}").unwrap());
 
         if let Some(env_files) = &options.env_files {
             global_inputs.extend(env_files.to_owned());

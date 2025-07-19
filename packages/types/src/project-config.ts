@@ -72,6 +72,22 @@ export interface ProjectDockerConfig {
 	scaffold: ProjectDockerScaffoldConfig;
 }
 
+/** A file path input. */
+export interface FileInput {
+	file: string;
+	matches?: string | null;
+	optional?: boolean;
+}
+
+/** A glob path input. */
+export interface GlobInput {
+	/** @default true */
+	cache?: boolean;
+	glob: string;
+}
+
+export type Input = string | FileInput | GlobInput;
+
 /** Supported programming languages that each project can be written in. */
 export type LanguageType =
 	| 'bash'
@@ -220,7 +236,7 @@ export interface ProjectConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<string, string[]>;
+	fileGroups: Record<string, Input[]>;
 	/**
 	 * Overrides the ID within the project graph, as defined in
 	 * the workspace `projects` setting.
@@ -445,7 +461,7 @@ export interface PartialProjectConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<string, string[]> | null;
+	fileGroups?: Record<string, Input[]> | null;
 	/**
 	 * Overrides the ID within the project graph, as defined in
 	 * the workspace `projects` setting.

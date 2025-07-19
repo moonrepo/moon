@@ -4,6 +4,22 @@
 
 import type { ExtendsFrom } from './common';
 
+/** A file path input. */
+export interface FileInput {
+	file: string;
+	matches?: string | null;
+	optional?: boolean;
+}
+
+/** A glob path input. */
+export interface GlobInput {
+	/** @default true */
+	cache?: boolean;
+	glob: string;
+}
+
+export type Input = string | FileInput | GlobInput;
+
 export type TaskArgs = null | string | string[];
 
 /** Expanded information about a task dependency. */
@@ -238,7 +254,7 @@ export interface TaskConfig {
 	 * are considered an input. When an empty list, no files are considered.
 	 * Otherwise, an explicit list of inputs are considered.
 	 */
-	inputs: string[] | null;
+	inputs: Input[] | null;
 	/**
 	 * Marks the task as local only. Local tasks do not run in CI, do not have
 	 * `options.cache` enabled, and are marked as `options.persistent`.
@@ -302,7 +318,7 @@ export interface InheritedTasksConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<string, string[]>;
+	fileGroups: Record<string, Input[]>;
 	/**
 	 * Task dependencies that'll automatically be injected into every
 	 * task that inherits this configuration.
@@ -312,7 +328,7 @@ export interface InheritedTasksConfig {
 	 * Task inputs that'll automatically be injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitInputs: string[];
+	implicitInputs: Input[];
 	/** Default task options for all inherited tasks. */
 	taskOptions: TaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
@@ -515,7 +531,7 @@ export interface PartialTaskConfig {
 	 * are considered an input. When an empty list, no files are considered.
 	 * Otherwise, an explicit list of inputs are considered.
 	 */
-	inputs?: string[] | null;
+	inputs?: Input[] | null;
 	/**
 	 * Marks the task as local only. Local tasks do not run in CI, do not have
 	 * `options.cache` enabled, and are marked as `options.persistent`.
@@ -578,7 +594,7 @@ export interface PartialInheritedTasksConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<string, string[]> | null;
+	fileGroups?: Record<string, Input[]> | null;
 	/**
 	 * Task dependencies that'll automatically be injected into every
 	 * task that inherits this configuration.
@@ -588,7 +604,7 @@ export interface PartialInheritedTasksConfig {
 	 * Task inputs that'll automatically be injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitInputs?: string[] | null;
+	implicitInputs?: Input[] | null;
 	/** Default task options for all inherited tasks. */
 	taskOptions?: PartialTaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */

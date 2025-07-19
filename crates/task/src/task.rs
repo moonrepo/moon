@@ -1,8 +1,6 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
-use moon_config::{
-    InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType,
-};
+use moon_config::{Input, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType};
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -47,7 +45,7 @@ cacheable!(
 
         pub id: Id,
 
-        pub inputs: Vec<InputPath>,
+        pub inputs: Vec<Input>,
 
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_env: FxHashSet<String>,

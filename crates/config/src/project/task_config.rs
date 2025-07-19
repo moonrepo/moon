@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::shapes::{InputPath, OneOrMany, OutputPath};
+use crate::shapes::{Input, OneOrMany, OutputPath};
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use moon_target::{Target, TargetScope};
@@ -199,13 +199,13 @@ config_struct!(
         pub env: Option<FxHashMap<String, String>>,
 
         #[setting(skip, merge = merge::append_vec)]
-        pub global_inputs: Vec<InputPath>,
+        pub global_inputs: Vec<Input>,
 
         /// Inputs and sources that will mark the task as affected when comparing
         /// against touched files. When not provided, all files within the project
         /// are considered an input. When an empty list, no files are considered.
         /// Otherwise, an explicit list of inputs are considered.
-        pub inputs: Option<Vec<InputPath>>,
+        pub inputs: Option<Vec<Input>>,
 
         /// Marks the task as local only. Local tasks do not run in CI, do not have
         /// `options.cache` enabled, and are marked as `options.persistent`.

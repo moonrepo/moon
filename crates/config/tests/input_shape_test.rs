@@ -1,15 +1,14 @@
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, FileInput, GlobInput, Input, ManifestDepsInput,
-    ProjectSourcesInput,
+    ProjectSourcesInput, Uri,
 };
-use url::Url;
 
 fn create_file_input(path: &str) -> FileInput {
-    FileInput::from_uri(Url::parse(&format!("file://{path}")).unwrap()).unwrap()
+    FileInput::from_uri(Uri::parse(format!("file://{path}")).unwrap()).unwrap()
 }
 
 fn create_glob_input(path: &str) -> GlobInput {
-    GlobInput::from_uri(Url::parse(&format!("glob://{path}")).unwrap()).unwrap()
+    GlobInput::from_uri(Uri::parse(format!("glob://{path}")).unwrap()).unwrap()
 }
 
 mod input_shape {
@@ -191,6 +190,38 @@ mod input_shape {
                 Input::parse("glob:///file.*?cache=false").unwrap(),
                 Input::WorkspaceGlob(input)
             );
+        }
+
+        #[test]
+        fn glob_protocol_supports_all_syntax() {
+            for pat in [
+                "*.png",
+                "fo$.txt",
+                "**/{*.{go,rs}}",
+                "**/*.{md,txt}",
+                "pkg/**/PKGBUILD",
+                // "dir/{a?c,x?z,foo}",
+                "lib/[qa-cX-Z]/*",
+                // "(?-i)photos/**/*.(?i){jpg,jpeg}",
+                "a/<b/**:1,>",
+                "file.tsx?",
+            ] {
+                let mut input = create_glob_input(pat);
+                input.cache = true;
+
+                assert_eq!(
+                    Input::parse(format!("glob://{pat}")).unwrap(),
+                    Input::ProjectGlob(input)
+                );
+
+                let mut input = create_glob_input(pat);
+                input.cache = false;
+
+                assert_eq!(
+                    Input::parse(format!("glob://{pat}?cache=false")).unwrap(),
+                    Input::ProjectGlob(input)
+                );
+            }
         }
 
         #[test]
@@ -434,7 +465,7 @@ mod input_shape {
 
         #[test]
         fn id() {
-            let input = FileGroupInput::from_uri(Url::parse("group://sources").unwrap()).unwrap();
+            let input = FileGroupInput::from_uri(Uri::parse("group://sources").unwrap()).unwrap();
 
             assert_eq!(input.group, "sources");
         }
@@ -442,13 +473,13 @@ mod input_shape {
         #[test]
         fn supports_format_field() {
             let input =
-                FileGroupInput::from_uri(Url::parse("group://sources?format=dirs").unwrap())
+                FileGroupInput::from_uri(Uri::parse("group://sources?format=dirs").unwrap())
                     .unwrap();
 
             assert_eq!(input.format, FileGroupInputFormat::Dirs);
 
             let input =
-                FileGroupInput::from_uri(Url::parse("group://sources?as=root").unwrap()).unwrap();
+                FileGroupInput::from_uri(Uri::parse("group://sources?as=root").unwrap()).unwrap();
 
             assert_eq!(input.format, FileGroupInputFormat::Root);
         }
@@ -456,25 +487,25 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "a file group identifier is required")]
         fn errors_no_id() {
-            FileGroupInput::from_uri(Url::parse("group://").unwrap()).unwrap();
+            FileGroupInput::from_uri(Uri::parse("group://").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Invalid format")]
         fn errors_invalid_id() {
-            FileGroupInput::from_uri(Url::parse("group://@&n3k(").unwrap()).unwrap();
+            FileGroupInput::from_uri(Uri::parse("group://@&n3k(").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Unknown enum variant")]
         fn errors_invalid_format_field() {
-            FileGroupInput::from_uri(Url::parse("group://id?format=unknown").unwrap()).unwrap();
+            FileGroupInput::from_uri(Uri::parse("group://id?format=unknown").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            FileGroupInput::from_uri(Url::parse("group://id?unknown").unwrap()).unwrap();
+            FileGroupInput::from_uri(Uri::parse("group://id?unknown").unwrap()).unwrap();
         }
     }
 
@@ -590,7 +621,7 @@ mod input_shape {
         #[test]
         fn id() {
             let input =
-                ManifestDepsInput::from_uri(Url::parse("manifest://node").unwrap()).unwrap();
+                ManifestDepsInput::from_uri(Uri::parse("manifest://node").unwrap()).unwrap();
 
             assert_eq!(input.manifest, "node");
         }
@@ -599,28 +630,28 @@ mod input_shape {
         fn supports_deps_field() {
             for key in ["dep", "deps", "dependencies"] {
                 let input = ManifestDepsInput::from_uri(
-                    Url::parse(format!("manifest://node?{key}").as_str()).unwrap(),
+                    Uri::parse(format!("manifest://node?{key}").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert!(input.deps.is_empty());
 
                 let input = ManifestDepsInput::from_uri(
-                    Url::parse(format!("manifest://node?{key}=a").as_str()).unwrap(),
+                    Uri::parse(format!("manifest://node?{key}=a").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert_eq!(input.deps, ["a"]);
 
                 let input = ManifestDepsInput::from_uri(
-                    Url::parse(format!("manifest://node?{key}=a,b,c").as_str()).unwrap(),
+                    Uri::parse(format!("manifest://node?{key}=a,b,c").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert_eq!(input.deps, ["a", "b", "c"]);
 
                 let input = ManifestDepsInput::from_uri(
-                    Url::parse(format!("manifest://node?{key}=a&{key}=b,c&{key}=d").as_str())
+                    Uri::parse(format!("manifest://node?{key}=a&{key}=b,c&{key}=d").as_str())
                         .unwrap(),
                 )
                 .unwrap();
@@ -632,19 +663,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "a toolchain identifier is required")]
         fn errors_no_id() {
-            ManifestDepsInput::from_uri(Url::parse("manifest://").unwrap()).unwrap();
+            ManifestDepsInput::from_uri(Uri::parse("manifest://").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Invalid format")]
         fn errors_invalid_id() {
-            ManifestDepsInput::from_uri(Url::parse("manifest://@&n3k(").unwrap()).unwrap();
+            ManifestDepsInput::from_uri(Uri::parse("manifest://@&n3k(").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            ManifestDepsInput::from_uri(Url::parse("manifest://id?unknown").unwrap()).unwrap();
+            ManifestDepsInput::from_uri(Uri::parse("manifest://id?unknown").unwrap()).unwrap();
         }
     }
 
@@ -654,7 +685,7 @@ mod input_shape {
         #[test]
         fn id() {
             let input =
-                ProjectSourcesInput::from_uri(Url::parse("project://app").unwrap()).unwrap();
+                ProjectSourcesInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
 
             assert_eq!(input.project, "app");
         }
@@ -663,14 +694,14 @@ mod input_shape {
         fn supports_file_group_field() {
             for key in ["fileGroup", "group"] {
                 let input = ProjectSourcesInput::from_uri(
-                    Url::parse(format!("project://app?{key}").as_str()).unwrap(),
+                    Uri::parse(format!("project://app?{key}").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert!(input.group.is_none());
 
                 let input = ProjectSourcesInput::from_uri(
-                    Url::parse(format!("project://app?{key}=a").as_str()).unwrap(),
+                    Uri::parse(format!("project://app?{key}=a").as_str()).unwrap(),
                 )
                 .unwrap();
 
@@ -681,12 +712,12 @@ mod input_shape {
         #[test]
         fn supports_filter_field() {
             let input =
-                ProjectSourcesInput::from_uri(Url::parse("project://app?filter").unwrap()).unwrap();
+                ProjectSourcesInput::from_uri(Uri::parse("project://app?filter").unwrap()).unwrap();
 
             assert!(input.filter.is_empty());
 
             let input = ProjectSourcesInput::from_uri(
-                Url::parse("project://app?filter=a&filter=b").unwrap(),
+                Uri::parse("project://app?filter=a&filter=b").unwrap(),
             )
             .unwrap();
 
@@ -696,19 +727,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "a project identifier is required")]
         fn errors_no_id() {
-            ProjectSourcesInput::from_uri(Url::parse("project://").unwrap()).unwrap();
+            ProjectSourcesInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Invalid format")]
         fn errors_invalid_id() {
-            ProjectSourcesInput::from_uri(Url::parse("project://@&n3k(").unwrap()).unwrap();
+            ProjectSourcesInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            ProjectSourcesInput::from_uri(Url::parse("project://id?unknown").unwrap()).unwrap();
+            ProjectSourcesInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
         }
     }
 }

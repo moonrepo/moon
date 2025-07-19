@@ -1,3 +1,4 @@
+use super::Uri;
 use crate::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use crate::validate::validate_child_relative_path;
 use crate::{config_struct, config_unit_enum, patterns};
@@ -7,7 +8,6 @@ use schematic::{Config, ConfigEnum, ParseError};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::fmt;
 use std::str::FromStr;
-use url::Url;
 
 fn map_parse_error<T: fmt::Display>(error: T) -> ParseError {
     ParseError::new(error.to_string())
@@ -24,17 +24,6 @@ fn parse_bool_field(key: &str, value: &str) -> Result<bool, ParseError> {
         Ok(false)
     } else {
         Err(ParseError::new(format!("unsupported value for `{key}`")))
-    }
-}
-
-fn create_path_from_uri(uri: &Url) -> String {
-    let path = uri.path();
-
-    match uri.host_str() {
-        // The first segment in a project relative is the host
-        Some(host) => format!("{host}{}", if path == "/" { "" } else { path }),
-        // While workspace relative does not have a host
-        None => path.to_owned(),
     }
 }
 
@@ -67,17 +56,17 @@ impl FileInput {
         self.file.as_str().starts_with('/')
     }
 
-    pub fn from_uri(uri: Url) -> Result<Self, ParseError> {
+    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
-            file: FilePath::parse(create_path_from_uri(&uri).as_str())?,
+            file: FilePath::parse(&uri.path)?,
             ..Default::default()
         };
 
-        for (key, value) in uri.query_pairs() {
-            match &*key {
+        for (key, value) in uri.query {
+            match key.as_str() {
                 "match" | "matches" => {
                     if !value.is_empty() {
-                        input.matches = Some(value.to_string());
+                        input.matches = Some(value);
                     }
                 }
                 "optional" => {
@@ -119,17 +108,18 @@ config_struct!(
 );
 
 impl FileGroupInput {
-    pub fn from_uri(uri: Url) -> Result<Self, ParseError> {
+    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
-            group: match uri.host_str() {
-                Some(host) => Id::new(host).map_err(map_parse_error)?,
-                None => return Err(ParseError::new("a file group identifier is required")),
+            group: if uri.path.is_empty() {
+                return Err(ParseError::new("a file group identifier is required"));
+            } else {
+                Id::new(&uri.path).map_err(map_parse_error)?
             },
             ..Default::default()
         };
 
-        for (key, value) in uri.query_pairs() {
-            match &*key {
+        for (key, value) in uri.query {
+            match key.as_str() {
                 "as" | "format" => {
                     input.format =
                         FileGroupInputFormat::from_str(&value).map_err(map_parse_error)?
@@ -183,14 +173,14 @@ impl GlobInput {
         path.starts_with('/') || path.starts_with("!/")
     }
 
-    pub fn from_uri(uri: Url) -> Result<Self, ParseError> {
+    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
-            glob: GlobPath::parse(create_path_from_uri(&uri).as_str())?,
+            glob: GlobPath::parse(&uri.path)?,
             ..Default::default()
         };
 
-        for (key, value) in uri.query_pairs() {
-            match &*key {
+        for (key, value) in uri.query {
+            match key.as_str() {
                 "cache" => {
                     input.cache = parse_bool_field(&key, &value)?;
                 }
@@ -221,17 +211,18 @@ config_struct!(
 );
 
 impl ManifestDepsInput {
-    pub fn from_uri(uri: Url) -> Result<Self, ParseError> {
+    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
-            manifest: match uri.host_str() {
-                Some(host) => Id::new(host).map_err(map_parse_error)?,
-                None => return Err(ParseError::new("a toolchain identifier is required")),
+            manifest: if uri.path.is_empty() {
+                return Err(ParseError::new("a toolchain identifier is required"));
+            } else {
+                Id::new(&uri.path).map_err(map_parse_error)?
             },
             ..Default::default()
         };
 
-        for (key, value) in uri.query_pairs() {
-            match &*key {
+        for (key, value) in uri.query {
+            match key.as_str() {
                 "dep" | "deps" | "dependencies" => {
                     for val in value.split(',') {
                         if !val.is_empty() {
@@ -264,20 +255,21 @@ config_struct!(
 );
 
 impl ProjectSourcesInput {
-    pub fn from_uri(uri: Url) -> Result<Self, ParseError> {
+    pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
-            project: match uri.host_str() {
-                Some(host) => Id::new(host).map_err(map_parse_error)?,
-                None => return Err(ParseError::new("a project identifier is required")),
+            project: if uri.path.is_empty() {
+                return Err(ParseError::new("a project identifier is required"));
+            } else {
+                Id::new(&uri.path).map_err(map_parse_error)?
             },
             ..Default::default()
         };
 
-        for (key, value) in uri.query_pairs() {
-            match &*key {
+        for (key, value) in uri.query {
+            match key.as_str() {
                 "filter" => {
                     if !value.is_empty() {
-                        input.filter.push(value.to_string());
+                        input.filter.push(value);
                     }
                 }
                 "fileGroup" | "group" => {
@@ -314,7 +306,7 @@ pub enum Input {
 }
 
 impl Input {
-    pub fn create_uri(value: &str) -> Result<Url, ParseError> {
+    pub fn create_uri(value: &str) -> Result<Uri, ParseError> {
         // Always use forward slashes
         let mut value = standardize_separators(value);
 
@@ -327,7 +319,7 @@ impl Input {
             }
         }
 
-        Url::parse(&value).map_err(map_parse_error)
+        Uri::parse(&value)
     }
 
     pub fn parse(value: impl AsRef<str>) -> Result<Self, ParseError> {
@@ -364,15 +356,14 @@ impl FromStr for Input {
 
         // URI formats
         let uri = Self::create_uri(value)?;
-        let is_workspace_relative = uri.host_str().is_none_or(|host| host == "!");
 
-        match uri.scheme() {
+        match uri.protocol.as_str() {
             "file" => {
                 let file = FileInput::from_uri(uri)?;
 
                 validate_child_relative_path(file.get_path()).map_err(map_parse_error)?;
 
-                Ok(if is_workspace_relative {
+                Ok(if file.is_workspace_relative() {
                     Self::WorkspaceFile(file)
                 } else {
                     Self::ProjectFile(file)
@@ -383,7 +374,7 @@ impl FromStr for Input {
 
                 validate_child_relative_path(glob.get_path()).map_err(map_parse_error)?;
 
-                Ok(if is_workspace_relative {
+                Ok(if glob.is_workspace_relative() {
                     Self::WorkspaceGlob(glob)
                 } else {
                     Self::ProjectGlob(glob)

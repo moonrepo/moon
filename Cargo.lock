@@ -4157,7 +4157,6 @@ dependencies = [
  "serial_test",
  "starbase_sandbox",
  "tracing",
- "url",
  "version_spec",
  "warpgate_api",
 ]

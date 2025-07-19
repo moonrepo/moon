@@ -1,6 +1,5 @@
 use super::Uri;
 use crate::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
-use crate::validate::validate_child_relative_path;
 use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
 use moon_common::path::{
@@ -71,13 +70,13 @@ impl FileInput {
         Ok(input)
     }
 
-    pub fn get_path(&self) -> &str {
+    pub fn get_path(&self) -> String {
         let path = self.file.as_str();
 
         if self.is_workspace_relative() {
-            &path[1..]
+            path[1..].into()
         } else {
-            path
+            path.into()
         }
     }
 
@@ -89,14 +88,14 @@ impl FileInput {
         &self,
         project_source: impl AsRef<str>,
     ) -> WorkspaceRelativePathBuf {
-        if self.is_workspace_relative() {
-            expand_to_workspace_relative(RelativeFrom::Workspace, self.get_path())
-        } else {
-            expand_to_workspace_relative(
-                RelativeFrom::Project(project_source.as_ref()),
-                self.get_path(),
-            )
-        }
+        expand_to_workspace_relative(
+            if self.is_workspace_relative() {
+                RelativeFrom::Workspace
+            } else {
+                RelativeFrom::Project(project_source.as_ref())
+            },
+            self.get_path(),
+        )
     }
 }
 
@@ -185,19 +184,17 @@ impl GlobInput {
         Ok(input)
     }
 
-    pub fn get_path(&self) -> &str {
+    pub fn get_path(&self) -> String {
         let path = self.glob.as_str();
 
         if self.is_workspace_relative() {
             if self.is_negated() {
-                &path[2..]
+                format!("!{}", &path[2..])
             } else {
-                &path[1..]
+                path[1..].into()
             }
-        } else if self.is_negated() {
-            &path[1..]
         } else {
-            path
+            path.into()
         }
     }
 
@@ -215,14 +212,14 @@ impl GlobInput {
         &self,
         project_source: impl AsRef<str>,
     ) -> WorkspaceRelativePathBuf {
-        if self.is_workspace_relative() {
-            expand_to_workspace_relative(RelativeFrom::Workspace, self.get_path())
-        } else {
-            expand_to_workspace_relative(
-                RelativeFrom::Project(project_source.as_ref()),
-                self.get_path(),
-            )
-        }
+        expand_to_workspace_relative(
+            if self.is_workspace_relative() {
+                RelativeFrom::Workspace
+            } else {
+                RelativeFrom::Project(project_source.as_ref())
+            },
+            self.get_path(),
+        )
     }
 }
 
@@ -365,8 +362,8 @@ impl Input {
             | Self::TokenFunc(value)
             | Self::TokenVar(value) => value,
             // TODO
-            Self::ProjectFile(value) | Self::WorkspaceFile(value) => value.get_path(),
-            Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.get_path(),
+            Self::ProjectFile(value) | Self::WorkspaceFile(value) => value.file.as_str(),
+            Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.glob.as_str(),
         }
     }
 
@@ -405,8 +402,6 @@ impl FromStr for Input {
             "file" => {
                 let file = FileInput::from_uri(uri)?;
 
-                validate_child_relative_path(file.get_path()).map_err(map_parse_error)?;
-
                 Ok(if file.is_workspace_relative() {
                     Self::WorkspaceFile(file)
                 } else {
@@ -415,8 +410,6 @@ impl FromStr for Input {
             }
             "glob" => {
                 let glob = GlobInput::from_uri(uri)?;
-
-                validate_child_relative_path(glob.get_path()).map_err(map_parse_error)?;
 
                 Ok(if glob.is_workspace_relative() {
                     Self::WorkspaceGlob(glob)

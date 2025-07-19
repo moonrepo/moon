@@ -240,7 +240,7 @@ impl InheritedTasksManager {
                             // Automatically set this source as an input
                             task.global_inputs
                                 .get_or_insert(vec![])
-                                .push(Input::parse(&source_path)?);
+                                .push(Input::parse(format!("/{source_path}"))?);
 
                             // Automatically set the toolchain
                             if task.toolchain.is_none() {

@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, LayerType,
-    OwnersPaths, PlatformType, ProjectConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
+    ConfigLoader, DependencyConfig, DependencyScope, Input, LanguageType, LayerType, OwnersPaths,
+    PlatformType, ProjectConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
     ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
@@ -62,7 +62,7 @@ tasks:
         assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
         );
 
         let start = config.tasks.get("start").unwrap();
@@ -71,7 +71,7 @@ tasks:
         assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
         assert_eq!(
             start.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
         );
     }
 
@@ -102,7 +102,7 @@ tasks:
         assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
         );
 
         let start = config.tasks.get("start").unwrap();
@@ -111,7 +111,7 @@ tasks:
         assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
         assert_eq!(
             start.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
         );
     }
 
@@ -231,17 +231,17 @@ fileGroups:
                     (
                         Id::raw("files"),
                         vec![
-                            InputPath::WorkspaceFile("ws/relative".into()),
-                            InputPath::ProjectFile("proj/relative".into())
+                            Input::WorkspaceFile(create_file_input("/ws/relative")),
+                            Input::ProjectFile(create_file_input("proj/relative"))
                         ]
                     ),
                     (
                         Id::raw("globs"),
                         vec![
-                            InputPath::WorkspaceGlob("ws/**/*".into()),
-                            InputPath::WorkspaceGlob("!ws/**/*".into()),
-                            InputPath::ProjectGlob("proj/**/*".into()),
-                            InputPath::ProjectGlob("!proj/**/*".into()),
+                            Input::WorkspaceGlob(create_glob_input("/ws/**/*")),
+                            Input::WorkspaceGlob(create_glob_input("!/ws/**/*")),
+                            Input::ProjectGlob(create_glob_input("proj/**/*")),
+                            Input::ProjectGlob(create_glob_input("!proj/**/*")),
                         ]
                     ),
                 ])
@@ -755,11 +755,11 @@ workspace:
                     file_groups: FxHashMap::from_iter([
                         (
                             Id::raw("sources"),
-                            vec![InputPath::ProjectGlob("src/**/*".into())]
+                            vec![Input::ProjectGlob(create_glob_input("src/**/*"))]
                         ),
                         (
                             Id::raw("tests"),
-                            vec![InputPath::WorkspaceGlob("**/*.test.*".into())]
+                            vec![Input::WorkspaceGlob(create_glob_input("/**/*.test.*"))]
                         )
                     ]),
                     id: Some(Id::raw("custom-id")),

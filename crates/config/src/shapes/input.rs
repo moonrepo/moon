@@ -8,7 +8,7 @@ use moon_common::path::{
 use schematic::{
     Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, schema::UnionType,
 };
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 use std::str::FromStr;
 
@@ -322,7 +322,8 @@ impl ProjectSourcesInput {
 }
 
 /// The different patterns a task input can be defined.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
+#[serde(try_from = "InputBase")]
 pub enum Input {
     EnvVar(String),
     EnvVarGlob(String),
@@ -366,7 +367,6 @@ impl Input {
             | Self::EnvVarGlob(value)
             | Self::TokenFunc(value)
             | Self::TokenVar(value) => value,
-            // TODO
             Self::ProjectFile(value) | Self::WorkspaceFile(value) => value.file.as_str(),
             Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.glob.as_str(),
         }
@@ -429,6 +429,26 @@ impl FromStr for Input {
     }
 }
 
+impl TryFrom<InputBase> for Input {
+    type Error = ParseError;
+
+    fn try_from(base: InputBase) -> Result<Self, Self::Error> {
+        match base {
+            InputBase::Raw(input) => Self::parse(input),
+            InputBase::File(input) => Ok(if input.is_workspace_relative() {
+                Self::WorkspaceFile(input)
+            } else {
+                Self::ProjectFile(input)
+            }),
+            InputBase::Glob(input) => Ok(if input.is_workspace_relative() {
+                Self::WorkspaceGlob(input)
+            } else {
+                Self::ProjectGlob(input)
+            }),
+        }
+    }
+}
+
 impl Schematic for Input {
     fn schema_name() -> Option<String> {
         Some("Input".into())
@@ -460,29 +480,6 @@ impl Serialize for Input {
             // Input::ProjectSources(input) => ProjectSourcesInput::serialize(input, serializer),
             Input::WorkspaceFile(input) => FileInput::serialize(input, serializer),
             Input::WorkspaceGlob(input) => GlobInput::serialize(input, serializer),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for Input {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let base = InputBase::deserialize(deserializer)?;
-
-        match base {
-            InputBase::Raw(input) => Self::parse(input).map_err(de::Error::custom),
-            InputBase::File(input) => Ok(if input.is_workspace_relative() {
-                Self::WorkspaceFile(input)
-            } else {
-                Self::ProjectFile(input)
-            }),
-            InputBase::Glob(input) => Ok(if input.is_workspace_relative() {
-                Self::WorkspaceGlob(input)
-            } else {
-                Self::ProjectGlob(input)
-            }),
         }
     }
 }

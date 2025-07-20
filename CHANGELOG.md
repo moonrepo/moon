@@ -24,7 +24,7 @@
 
 - Added telemetry for toolchain usage.
 - Updated Rust to v1.88.0.
-- Updated proto to [v0.50.3](https://github.com/moonrepo/proto/releases/tag/v0.50.3) (from 0.50.1).
+- Updated proto to [v0.51.3](https://github.com/moonrepo/proto/releases/tag/v0.51.3) (from 0.50.1).
 
 ## 1.38.6
 

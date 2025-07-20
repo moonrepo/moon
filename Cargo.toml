@@ -98,16 +98,16 @@ url = "2.5.4"
 uuid = { version = "1.17.0", features = ["v4"] }
 
 # proto/plugin related
-extism = "=1.11.1"
+extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.50.4"
-proto_pdk_api = "0.28.1"
-proto_pdk_test_utils = "0.38.1"
+proto_core = "0.51.3"
+proto_pdk_api = "0.29.0"
+proto_pdk_test_utils = "0.39.0"
 system_env = "0.8.1"
-version_spec = "0.9.2"
-warpgate = "0.25.5"
-warpgate_api = "0.15.2"
-warpgate_pdk = "0.14.1"
+version_spec = "0.9.3"
+warpgate = "0.26.0"
+warpgate_api = "0.16.0"
+warpgate_pdk = "0.15.0"
 
 # proto_core = { path = "../proto/crates/core" }
 # system_env = { path = "../proto/crates/system-env" }

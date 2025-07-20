@@ -1,6 +1,6 @@
 #![allow(clippy::from_over_into)]
 
-use crate::validate::validate_child_relative_path;
+use crate::validate::{validate_child_relative_path, validate_relative_path};
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -28,9 +28,13 @@ pub fn is_glob_like(value: &str) -> bool {
     value.contains('?')
 }
 
-pub trait PortablePath: FromStr {
-    fn parse(path: &str) -> Result<Self, Self::Err> {
-        Self::from_str(path)
+pub trait PortablePath: Sized {
+    fn parse(path: &str) -> Result<Self, ParseError>;
+
+    fn parse_relative(path: &str) -> Result<Self, ParseError> {
+        validate_relative_path(path).map_err(|error| ParseError::new(error.to_string()))?;
+
+        Self::parse(path)
     }
 }
 
@@ -68,7 +72,7 @@ macro_rules! path_type {
             type Error = ParseError;
 
             fn try_from(value: String) -> Result<Self, Self::Error> {
-                $name::from_str(&value)
+                $name::parse(&value)
             }
         }
 
@@ -76,7 +80,7 @@ macro_rules! path_type {
             type Error = ParseError;
 
             fn try_from(value: &String) -> Result<Self, Self::Error> {
-                $name::from_str(value)
+                $name::parse(value)
             }
         }
 
@@ -84,7 +88,15 @@ macro_rules! path_type {
             type Error = ParseError;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                $name::from_str(value)
+                $name::parse(value)
+            }
+        }
+
+        impl FromStr for $name {
+            type Err = ParseError;
+
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                $name::parse(value)
             }
         }
 
@@ -111,12 +123,10 @@ macro_rules! path_type {
 // Represents any file glob pattern.
 path_type!(GlobPath);
 
-impl PortablePath for GlobPath {}
+impl PortablePath for GlobPath {
+    fn parse(value: &str) -> Result<Self, ParseError> {
+        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
-impl FromStr for GlobPath {
-    type Err = ParseError;
-
-    fn from_str(value: &str) -> Result<Self, ParseError> {
         let mut value = value.to_owned();
 
         // Fix invalid negated workspace paths
@@ -138,12 +148,10 @@ impl FromStr for GlobPath {
 // Represents any file system path.
 path_type!(FilePath);
 
-impl PortablePath for FilePath {}
+impl PortablePath for FilePath {
+    fn parse(value: &str) -> Result<Self, ParseError> {
+        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
-impl FromStr for FilePath {
-    type Err = ParseError;
-
-    fn from_str(value: &str) -> Result<Self, ParseError> {
         if is_glob_like(value) {
             return Err(ParseError::new(
                 "globs are not supported, expected a literal file path",
@@ -152,41 +160,5 @@ impl FromStr for FilePath {
 
         // Remove ./ leading parts
         Ok(FilePath(value.trim_start_matches("./").into()))
-    }
-}
-
-// Represents a project-relative file glob pattern.
-path_type!(ProjectGlobPath);
-
-impl PortablePath for ProjectGlobPath {}
-
-impl FromStr for ProjectGlobPath {
-    type Err = ParseError;
-
-    fn from_str(value: &str) -> Result<Self, ParseError> {
-        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
-
-        Ok(ProjectGlobPath(value.into()))
-    }
-}
-
-// Represents a project-relative file system path.
-path_type!(ProjectFilePath);
-
-impl PortablePath for ProjectFilePath {}
-
-impl FromStr for ProjectFilePath {
-    type Err = ParseError;
-
-    fn from_str(value: &str) -> Result<Self, ParseError> {
-        if is_glob_like(value) {
-            return Err(ParseError::new(
-                "globs are not supported, expected a literal file path",
-            ));
-        }
-
-        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
-
-        Ok(ProjectFilePath(value.trim_start_matches("./").into()))
     }
 }

@@ -25,18 +25,20 @@ pub fn check_yml_extension(path: &Path) -> std::path::PathBuf {
     path.to_path_buf()
 }
 
-// Validate the value is a valid child relative file system path.
-// Will fail on absolute paths ("/"), and parent relative paths ("../").
-pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
+pub fn validate_relative_path(value: &str) -> Result<(), ValidateError> {
     let path = Path::new(value);
 
     if path.has_root() || path.is_absolute() {
         return Err(ValidateError::new("absolute paths are not supported"));
     }
 
-    if path.starts_with("..") {
+    Ok(())
+}
+
+pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
+    if value.contains("..") {
         return Err(ValidateError::new(
-            "parent relative paths are not supported",
+            "parent directory traversal (..) is not supported",
         ));
     }
 

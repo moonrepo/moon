@@ -1,4 +1,4 @@
-use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
+use crate::portable_path::{FilePath, GlobPath, PortablePath};
 use crate::{config_enum, config_struct, workspace::*};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
@@ -17,7 +17,7 @@ fn validate_projects<D, C>(
         PartialWorkspaceProjects::Both(cfg) => {
             if let Some(globs) = &cfg.globs {
                 for (i, g) in globs.iter().enumerate() {
-                    ProjectGlobPath::parse(g).map_err(|error| {
+                    GlobPath::parse_relative(g).map_err(|error| {
                         ValidateError::with_segments(
                             error.to_string(),
                             [PathSegment::Key("globs".to_owned()), PathSegment::Index(i)],
@@ -28,7 +28,7 @@ fn validate_projects<D, C>(
 
             if let Some(sources) = &cfg.sources {
                 for (k, v) in sources {
-                    ProjectFilePath::parse(v).map_err(|error| {
+                    FilePath::parse_relative(v).map_err(|error| {
                         ValidateError::with_segments(
                             error.to_string(),
                             [
@@ -42,14 +42,14 @@ fn validate_projects<D, C>(
         }
         PartialWorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
-                ProjectGlobPath::parse(g).map_err(|error| {
+                GlobPath::parse_relative(g).map_err(|error| {
                     ValidateError::with_segments(error.to_string(), [PathSegment::Index(i)])
                 })?;
             }
         }
         PartialWorkspaceProjects::Sources(sources) => {
             for (k, v) in sources {
-                ProjectFilePath::parse(v).map_err(|error| {
+                FilePath::parse_relative(v).map_err(|error| {
                     ValidateError::with_segments(
                         error.to_string(),
                         [PathSegment::Key(k.to_string())],

@@ -1,15 +1,7 @@
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, FileInput, GlobInput, Input, ManifestDepsInput,
-    ProjectSourcesInput, Uri,
+    FileGroupInput, FileGroupInputFormat, Input, ManifestDepsInput, ProjectSourcesInput, Uri,
+    test_utils::*,
 };
-
-fn create_file_input(path: &str) -> FileInput {
-    FileInput::from_uri(Uri::parse(format!("file://{path}")).unwrap()).unwrap()
-}
-
-fn create_glob_input(path: &str) -> GlobInput {
-    GlobInput::from_uri(Uri::parse(format!("glob://{path}")).unwrap()).unwrap()
-}
 
 mod input_shape {
     use super::*;
@@ -305,6 +297,18 @@ mod input_shape {
         fn errors_for_unknown_protocol() {
             Input::parse("unknown://test").unwrap();
         }
+
+        #[test]
+        #[should_panic(expected = "parent directory traversal (..) is not supported")]
+        fn errors_for_parent_traversal() {
+            Input::parse("../../file.txt").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "parent directory traversal (..) is not supported")]
+        fn errors_for_parent_traversal_inner() {
+            Input::parse("dir/../../file.txt").unwrap();
+        }
     }
 
     mod parse_object {
@@ -369,6 +373,18 @@ mod input_shape {
                     inner
                 })
             );
+        }
+
+        #[test]
+        #[should_panic] // Swallowed by enum expecting message
+        fn errors_for_parent_traversal() {
+            let _: Input = serde_json::from_str(r#"{ "glob": "../../file.*" }"#).unwrap();
+        }
+
+        #[test]
+        #[should_panic] // Swallowed by enum expecting message
+        fn errors_for_parent_traversal_inner() {
+            let _: Input = serde_json::from_str(r#"{ "glob": "dir/../../file.*" }"#).unwrap();
         }
     }
 

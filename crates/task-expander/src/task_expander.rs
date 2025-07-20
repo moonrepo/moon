@@ -228,6 +228,7 @@ impl<'graph> TaskExpander<'graph> {
 
         task.input_env.extend(result.env);
 
+        task.input_files.extend(result.files_for_input);
         task.input_files.extend(
             result
                 .files

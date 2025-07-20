@@ -23,6 +23,7 @@ use tracing::{debug, instrument, warn};
 pub struct ExpandedResult {
     pub env: Vec<String>,
     pub files: Vec<WorkspaceRelativePathBuf>,
+    pub files_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
     pub globs: Vec<WorkspaceRelativePathBuf>,
     pub token: Option<String>,
     pub value: Option<String>,
@@ -280,7 +281,13 @@ impl<'graph> TokenExpander<'graph> {
                         inner.to_workspace_relative(&self.project.source),
                     )?;
 
-                    result.files.push(file);
+                    result.files_for_input.insert(
+                        file,
+                        TaskFileInput {
+                            content: inner.content.clone(),
+                            optional: inner.optional,
+                        },
+                    );
                 }
                 Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
                     let glob = self.create_path_for_task(

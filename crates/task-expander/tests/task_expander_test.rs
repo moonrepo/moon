@@ -7,18 +7,12 @@ use moon_task::{Target, TaskFileInput};
 use moon_task_expander::TaskExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
-use utils::{create_context, create_project, create_project_with_tasks, create_task};
+use utils::{
+    create_context, create_file_input_map, create_project, create_project_with_tasks, create_task,
+};
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
-}
-
-fn create_path_map(inputs: Vec<&str>) -> FxHashMap<WorkspaceRelativePathBuf, TaskFileInput> {
-    FxHashMap::from_iter(
-        inputs
-            .into_iter()
-            .map(|s| (s.into(), TaskFileInput::default())),
-    )
 }
 
 mod task_expander {
@@ -741,6 +735,52 @@ mod task_expander {
         use super::*;
 
         #[test]
+        fn inherits_file_input_settings() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.inputs
+                .push(Input::parse("file://a.txt?optional").unwrap());
+            task.inputs
+                .push(Input::parse("file://b.txt?content=a|b|c").unwrap());
+            task.inputs
+                .push(Input::parse("file://c.txt?optional&content=a|b|c").unwrap());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_inputs(&mut task)
+                .unwrap();
+
+            assert_eq!(
+                task.input_files,
+                FxHashMap::from_iter([
+                    (
+                        "project/source/a.txt".into(),
+                        TaskFileInput {
+                            optional: true,
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        "project/source/b.txt".into(),
+                        TaskFileInput {
+                            content: Some("a|b|c".into()),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        "project/source/c.txt".into(),
+                        TaskFileInput {
+                            content: Some("a|b|c".into()),
+                            optional: true,
+                        }
+                    ),
+                ])
+            );
+        }
+
+        #[test]
         fn extracts_env_var() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -775,7 +815,7 @@ mod task_expander {
             assert_eq!(task.input_globs, FxHashSet::default());
             assert_eq!(
                 task.input_files,
-                create_path_map(vec![
+                create_file_input_map(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
                     "project/source/docs.md",
@@ -805,7 +845,7 @@ mod task_expander {
             );
             assert_eq!(
                 task.input_files,
-                create_path_map(vec![
+                create_file_input_map(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
                     "project/source/config.yml",
@@ -832,7 +872,10 @@ mod task_expander {
                 task.input_globs,
                 create_path_set(vec!["project/source/task/**/*"])
             );
-            assert_eq!(task.input_files, create_path_map(vec!["project/index.js"]));
+            assert_eq!(
+                task.input_files,
+                create_file_input_map(vec!["project/index.js"])
+            );
         }
     }
 

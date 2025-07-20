@@ -1,10 +1,12 @@
 mod input;
 mod output_path;
 mod poly;
+mod portable_path;
 
 pub use input::*;
 pub use output_path::*;
 pub use poly::*;
+pub use portable_path::*;
 
 use schematic::ParseError;
 

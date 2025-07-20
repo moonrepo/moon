@@ -1,6 +1,6 @@
 #![allow(clippy::from_over_into)]
 
-use crate::portable_path::is_glob_like;
+use super::portable_path::is_glob_like;
 use crate::validate::validate_child_relative_path;
 use crate::{config_enum, patterns};
 use moon_common::path::{

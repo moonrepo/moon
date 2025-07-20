@@ -1,4 +1,4 @@
-use crate::portable_path::{FilePath, GlobPath, PortablePath};
+use crate::shapes::{FilePath, GlobPath, PortablePath};
 use crate::{config_enum, config_struct, workspace::*};
 use moon_common::Id;
 use rustc_hash::FxHashMap;

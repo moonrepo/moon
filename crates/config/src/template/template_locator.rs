@@ -1,5 +1,5 @@
 use crate::is_glob_like;
-use crate::portable_path::{FilePath, GlobPath};
+use crate::shapes::{FilePath, GlobPath};
 use regex::Regex;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic, derive_enum};
 use semver::Version;

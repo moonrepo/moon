@@ -1,5 +1,5 @@
 use super::Uri;
-use crate::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
+use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
 use moon_common::path::{

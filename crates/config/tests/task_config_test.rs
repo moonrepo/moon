@@ -662,7 +662,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(FilePath(".env.file".to_owned())))
+                    Some(TaskOptionEnvFile::File(FilePath(".env.file".into())))
                 );
             }
 
@@ -678,7 +678,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(FilePath("/.env.file".to_owned())))
+                    Some(TaskOptionEnvFile::File(FilePath("/.env.file".into())))
                 );
             }
 
@@ -695,8 +695,8 @@ options:
                 assert_eq!(
                     config.options.env_file,
                     Some(TaskOptionEnvFile::Files(vec![
-                        FilePath(".env.file".to_owned()),
-                        FilePath("/.env.shared".to_owned())
+                        FilePath(".env.file".into()),
+                        FilePath("/.env.shared".into())
                     ]))
                 );
             }

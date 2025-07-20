@@ -76,9 +76,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clap"
-version = "4.5.40"
+version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40b6887a1d8685cebccf115538db5c0efe625ccac9696ad45c409d96566e910f"
+checksum = "be92d32e80243a54711e5d7ce823c35c41c9d929dc4ab58e1276f625841aadf9"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -86,9 +86,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.40"
+version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0c66c08ce9f0c698cbce5c0279d0bb6ac936d8674174fe48f736533b964f59e"
+checksum = "707eab41e9622f9139419d573eca0900137718000c517d47da73045f54331c3d"
 dependencies = [
  "anstyle",
  "clap_lex",
@@ -96,9 +96,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.40"
+version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2c7947ae4cc3d851207c1adb5b5e260ff0cca11446b1d6d1423788e442257ce"
+checksum = "ef4f52386a59ca4c860f7393bcf8abd8dfd91ecccc0f774635ff68e92eeef491"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -304,9 +304,9 @@ dependencies = [
 
 [[package]]
 name = "derive_setters"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9c848e86c87e5cc305313041c5677d4d95d60baa71cf95e5f6ea2554bb629ff"
+checksum = "ae5c625eda104c228c06ecaf988d1c60e542176bd7a490e60eeda3493244c0c9"
 dependencies = [
  "darling 0.20.11",
  "proc-macro2",
@@ -1016,9 +1016,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.28.0"
+version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b68a213ef67af372513e408d5ee5a685b1eb52c54aebf235ba4cbabb5c4a0d9"
+checksum = "6a27b067d0b1efe09670c70ae9ea9046c366bc66dcfb8575e93ff828a852799c"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -1275,9 +1275,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.140"
+version = "1.0.141"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
+checksum = "30b9eff21ebe718216c6ec64e1d9ac57087aad11efc64e32002bce4a0d4c03d3"
 dependencies = [
  "indexmap",
  "itoa",
@@ -1403,9 +1403,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f60b548ebbe199dd0f63f80aa38fd407dee3bffbb47c28c1c86ce72503893ca"
+checksum = "9525c909d2d8096ebb6ee5cc2010996d8b5b90507f86fed5b74a971c7b260e5d"
 dependencies = [
  "regex",
  "schematic",
@@ -1622,9 +1622,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "version_spec"
-version = "0.9.1"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86b9dffc0289b04866050671dd4df9f30ecdc2093323247b49e17bf062855595"
+checksum = "00b93a161952636ca3027fbe7c3438b8d7c347855976bb740eaa4ce468547d59"
 dependencies = [
  "compact_str 0.9.0",
  "human-sort",
@@ -1647,9 +1647,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.15.1"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b4c169176dd21533b7e97a999535dfc1ce1c4b05793f5d79b2a26b1e65e74eb"
+checksum = "0fe8cbd30698fb046d8376fc3e4d57bf9b629a73b0d60ad61c8e9be09d0cece8"
 dependencies = [
  "anyhow",
  "derive_setters",
@@ -1663,9 +1663,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1d0c324c297c311c894c4408491f7255a163dfa529dd0662fb65f3bae0616fb"
+checksum = "7959e1629705710d4a8d79be96fc3c25ad4aab865064c95dbdecd72960911aeb"
 dependencies = [
  "extism-pdk",
  "serde",

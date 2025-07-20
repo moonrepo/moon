@@ -11,6 +11,7 @@
   https://github.com/moonrepo/moon/issues/1985
   - Added URI support for files (`file://`) and globs (`glob://`).
   - Added object support for files and globs.
+- Updated the `@moonrepo/cli` npm package to no longer rely on postinstall scripts.
 - Renamed project `type` to `layer`, as it better reflects what it does, a layer of access within
   the project `stack`. For backwards compatibility, the `type` name will still be supported until
   v2. The following changes have been made:

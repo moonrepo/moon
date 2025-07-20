@@ -1,16 +1,12 @@
 #!/usr/bin/env node
 
 const cp = require('child_process');
-const path = require('path');
+const { findMoonExe } = require('./utils');
 
-const result = cp.spawnSync(
-	path.join(__dirname, process.platform === 'win32' ? 'moon.exe' : 'moon'),
-	process.argv.slice(2),
-	{
-		shell: false,
-		stdio: 'inherit',
-	},
-);
+const result = cp.spawnSync(findMoonExe(), process.argv.slice(2), {
+	shell: false,
+	stdio: 'inherit',
+});
 
 if (result.error) {
 	throw result.error;

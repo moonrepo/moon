@@ -361,7 +361,7 @@ impl AffectedTracker {
         let globset = task.create_globset()?;
 
         for file in self.touched_files.iter() {
-            if task.input_files.contains(file) || globset.matches(file.as_str()) {
+            if task.input_files.contains_key(file) || globset.matches(file.as_str()) {
                 return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
             }
         }

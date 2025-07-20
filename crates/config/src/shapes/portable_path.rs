@@ -5,6 +5,7 @@ use moon_common::path::RelativePathBuf;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::ops::Deref;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -45,12 +46,6 @@ macro_rules! path_type {
         #[serde(into = "String", try_from = "String")]
         pub struct $name(pub RelativePathBuf);
 
-        impl $name {
-            pub fn as_str(&self) -> &str {
-                self.0.as_str()
-            }
-        }
-
         impl AsRef<str> for $name {
             fn as_ref(&self) -> &str {
                 self.as_str()
@@ -66,6 +61,12 @@ macro_rules! path_type {
         impl PartialEq<&str> for $name {
             fn eq(&self, other: &&str) -> bool {
                 &self.0 == other
+            }
+        }
+
+        impl PartialEq<&RelativePathBuf> for $name {
+            fn eq(&self, other: &&RelativePathBuf) -> bool {
+                &self.0 == *other
             }
         }
 
@@ -116,6 +117,14 @@ macro_rules! path_type {
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "{}", self.0)
+            }
+        }
+
+        impl Deref for $name {
+            type Target = RelativePathBuf;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
             }
         }
     };

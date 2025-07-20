@@ -3,7 +3,7 @@ mod utils;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{Input, OutputPath, TaskArgs, TaskDependencyConfig};
 use moon_env_var::GlobalEnvBag;
-use moon_task::Target;
+use moon_task::{Target, TaskFileInput};
 use moon_task_expander::TaskExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
@@ -11,6 +11,14 @@ use utils::{create_context, create_project, create_project_with_tasks, create_ta
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
+}
+
+fn create_path_map(inputs: Vec<&str>) -> FxHashMap<WorkspaceRelativePathBuf, TaskFileInput> {
+    FxHashMap::from_iter(
+        inputs
+            .into_iter()
+            .map(|s| (s.into(), TaskFileInput::default())),
+    )
 }
 
 mod task_expander {
@@ -23,7 +31,8 @@ mod task_expander {
 
         let mut task = create_task();
         task.outputs.push(OutputPath::ProjectFile("out".into()));
-        task.input_files.insert("project/source/out".into());
+        task.input_files
+            .insert("project/source/out".into(), TaskFileInput::default());
 
         let context = create_context(sandbox.path());
         let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
@@ -746,7 +755,7 @@ mod task_expander {
 
             assert_eq!(task.input_env, FxHashSet::from_iter(["FOO_BAR".into()]));
             assert_eq!(task.input_globs, FxHashSet::default());
-            assert_eq!(task.input_files, FxHashSet::default());
+            assert_eq!(task.input_files, FxHashMap::default());
         }
 
         #[test]
@@ -766,7 +775,7 @@ mod task_expander {
             assert_eq!(task.input_globs, FxHashSet::default());
             assert_eq!(
                 task.input_files,
-                create_path_set(vec![
+                create_path_map(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
                     "project/source/docs.md",
@@ -796,7 +805,7 @@ mod task_expander {
             );
             assert_eq!(
                 task.input_files,
-                create_path_set(vec![
+                create_path_map(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
                     "project/source/config.yml",
@@ -823,7 +832,7 @@ mod task_expander {
                 task.input_globs,
                 create_path_set(vec!["project/source/task/**/*"])
             );
-            assert_eq!(task.input_files, create_path_set(vec!["project/index.js"]));
+            assert_eq!(task.input_files, create_path_map(vec!["project/index.js"]));
         }
     }
 

@@ -1,5 +1,5 @@
-use super::Uri;
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
+use super::{Uri, is_false};
 use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
 use moon_common::path::{
@@ -44,7 +44,7 @@ config_struct!(
         )]
         pub content: Option<String>,
 
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub optional: bool,
     }
 );
@@ -162,7 +162,7 @@ config_struct!(
     pub struct GlobInput {
         pub glob: GlobPath,
 
-        #[serde(default = "default_true")]
+        #[serde(default = "default_true", skip_serializing_if = "is_false")]
         #[setting(default = true)]
         pub cache: bool,
     }

@@ -3,6 +3,7 @@ mod utils;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{Input, LanguageType, LayerType, OutputPath};
 use moon_env_var::GlobalEnvBag;
+use moon_task::TaskFileInput;
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
@@ -696,9 +697,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    "project/source/config.yml".into(),
-                    "project/source/dir/subdir".into()
+                FxHashMap::from_iter([
+                    ("project/source/config.yml".into(), TaskFileInput::default()),
+                    ("project/source/dir/subdir".into(), TaskFileInput::default()),
                 ])
             );
             assert_eq!(
@@ -824,9 +825,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    "project/source/config.yml".into(),
-                    "project/source/dir/subdir".into()
+                FxHashMap::from_iter([
+                    ("project/source/config.yml".into(), TaskFileInput::default()),
+                    ("project/source/dir/subdir".into(), TaskFileInput::default()),
                 ])
             );
             assert_eq!(
@@ -1701,9 +1702,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    "project/source/config.yml".into(),
-                    "project/source/dir/subdir".into()
+                FxHashMap::from_iter([
+                    ("project/source/config.yml".into(), TaskFileInput::default()),
+                    ("project/source/dir/subdir".into(), TaskFileInput::default()),
                 ])
             );
             assert_eq!(

@@ -1,6 +1,8 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
-use moon_config::{Input, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType};
+use moon_config::{
+    Input, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType, is_false,
+};
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -10,21 +12,39 @@ use std::path::{Path, PathBuf};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
     pub struct TaskState {
         // Inputs are using defaults `**/*`
+        #[serde(skip_serializing_if = "is_false")]
         pub default_inputs: bool,
 
         // Inputs were configured explicitly as `[]`
+        #[serde(skip_serializing_if = "is_false")]
         pub empty_inputs: bool,
 
         // Has the task (and parent project) been expanded
+        #[serde(skip_serializing_if = "is_false")]
         pub expanded: bool,
 
         // Was configured as a local running task
+        #[serde(skip_serializing_if = "is_false")]
         pub local_only: bool,
 
         // Is task defined in a root-level project
+        #[serde(skip_serializing_if = "is_false")]
         pub root_level: bool,
+    }
+);
+
+cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
+    pub struct TaskFileInput {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub content: Option<String>,
+
+        #[serde(skip_serializing_if = "is_false")]
+        pub optional: bool,
     }
 );
 
@@ -50,8 +70,8 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_env: FxHashSet<String>,
 
-        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
-        pub input_files: FxHashSet<WorkspaceRelativePathBuf>,
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub input_files: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
 
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
@@ -123,7 +143,7 @@ impl Task {
         for file in touched_files {
             // Don't run on files outside of the project
             if file.starts_with(project_source)
-                && (self.input_files.contains(file) || globset.matches(file.as_str()))
+                && (self.input_files.contains_key(file) || globset.matches(file.as_str()))
             {
                 files.push(file.to_logical_path(workspace_root));
             }
@@ -144,7 +164,7 @@ impl Task {
     pub fn get_input_files(&self, workspace_root: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut list = FxHashSet::default();
 
-        for path in &self.input_files {
+        for path in self.input_files.keys() {
             let file = path.to_logical_path(workspace_root);
 
             // Detect if file actually exists
@@ -270,7 +290,7 @@ impl Default for Task {
             id: Id::default(),
             inputs: vec![],
             input_env: FxHashSet::default(),
-            input_files: FxHashSet::default(),
+            input_files: FxHashMap::default(),
             input_globs: FxHashSet::default(),
             options: TaskOptions::default(),
             outputs: vec![],

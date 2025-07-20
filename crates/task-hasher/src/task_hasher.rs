@@ -100,8 +100,8 @@ impl<'task> TaskHasher<'task> {
         let vcs_enabled = self.vcs.is_enabled();
 
         if !self.task.input_files.is_empty() {
-            for input in &self.task.input_files {
-                files.insert(input.to_logical_path(self.workspace_root));
+            for file in self.task.input_files.keys() {
+                files.insert(file.to_logical_path(self.workspace_root));
             }
         }
 
@@ -190,7 +190,7 @@ impl<'task> TaskHasher<'task> {
         }
 
         // Filter inputs second
-        self.task.input_files.contains(workspace_relative_path)
+        self.task.input_files.contains_key(workspace_relative_path)
             || sources_globset.matches(workspace_relative_path.as_str())
     }
 

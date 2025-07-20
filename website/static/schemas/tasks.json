@@ -93,12 +93,8 @@
       "description": "A file path input.",
       "type": "object",
       "properties": {
-        "file": {
-          "title": "file",
-          "type": "string"
-        },
-        "matches": {
-          "title": "matches",
+        "content": {
+          "title": "content",
           "anyOf": [
             {
               "type": "string"
@@ -107,6 +103,10 @@
               "type": "null"
             }
           ]
+        },
+        "file": {
+          "title": "file",
+          "type": "string"
         },
         "optional": {
           "title": "optional",

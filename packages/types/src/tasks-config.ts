@@ -6,8 +6,8 @@ import type { ExtendsFrom } from './common';
 
 /** A file path input. */
 export interface FileInput {
+	content: string | null;
 	file: string;
-	matches?: string | null;
 	optional?: boolean;
 }
 

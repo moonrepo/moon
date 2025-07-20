@@ -271,6 +271,131 @@ inputs:
         }
 
         #[test]
+        fn supports_path_protocols() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - file:///ws/path?match=a|b|c
+  - 'glob:///ws/glob/**/*'
+  - 'glob:///!ws/glob/**/*'
+  - file://proj/path?optional
+  - 'glob://proj/glob/{a,b,c}'
+  - 'glob://!proj/glob/{a,b,c}?cache=false'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::WorkspaceFile({
+                        let mut inner = create_file_input("/ws/path");
+                        inner.content = Some("a|b|c".into());
+                        inner
+                    }),
+                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
+                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
+                    Input::ProjectFile({
+                        let mut inner = create_file_input("proj/path");
+                        inner.optional = true;
+                        inner
+                    }),
+                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::ProjectGlob({
+                        let mut inner = create_glob_input("!proj/glob/{a,b,c}");
+                        inner.cache = false;
+                        inner
+                    }),
+                ]
+            );
+        }
+
+        #[test]
+        fn supports_path_objects() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - file: '/ws/path'
+    content: 'a|b|c'
+  - glob: '/ws/glob/**/*'
+  - glob: '/!ws/glob/**/*'
+  - file:  proj/path
+    optional: true
+  - glob: 'proj/glob/{a,b,c}'
+  - glob: '!proj/glob/{a,b,c}'
+    cache: false
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::WorkspaceFile({
+                        let mut inner = create_file_input("/ws/path");
+                        inner.content = Some("a|b|c".into());
+                        inner
+                    }),
+                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
+                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
+                    Input::ProjectFile({
+                        let mut inner = create_file_input("proj/path");
+                        inner.optional = true;
+                        inner
+                    }),
+                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::ProjectGlob({
+                        let mut inner = create_glob_input("!proj/glob/{a,b,c}");
+                        inner.cache = false;
+                        inner
+                    }),
+                ]
+            );
+        }
+
+        #[test]
+        fn supports_mixing_path_formats() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - file: '/ws/path'
+    content: 'a|b|c'
+  - '/ws/glob/**/*'
+  - 'glob:///!ws/glob/**/*'
+  - 'file://proj/path?optional'
+  - 'proj/glob/{a,b,c}'
+  - glob: '!proj/glob/{a,b,c}'
+    cache: false
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::WorkspaceFile({
+                        let mut inner = create_file_input("/ws/path");
+                        inner.content = Some("a|b|c".into());
+                        inner
+                    }),
+                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
+                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
+                    Input::ProjectFile({
+                        let mut inner = create_file_input("proj/path");
+                        inner.optional = true;
+                        inner
+                    }),
+                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::ProjectGlob({
+                        let mut inner = create_glob_input("!proj/glob/{a,b,c}");
+                        inner.cache = false;
+                        inner
+                    }),
+                ]
+            );
+        }
+
+        #[test]
         fn supports_env_vars() {
             let config = test_parse_config(
                 r"

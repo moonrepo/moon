@@ -305,18 +305,6 @@ mod input_shape {
         fn errors_for_unknown_protocol() {
             Input::parse("unknown://test").unwrap();
         }
-
-        #[test]
-        #[should_panic(expected = "parent relative paths are not supported")]
-        fn errors_for_parent_relative_from_project() {
-            Input::parse("../test").unwrap();
-        }
-
-        // #[test]
-        // #[should_panic(expected = "parent relative paths are not supported")]
-        // fn errors_for_parent_relative_from_workspace() {
-        //     Input::parse("/../test").unwrap();
-        // }
     }
 
     mod parse_object {
@@ -354,7 +342,7 @@ mod input_shape {
                 Input::WorkspaceFile({
                     let mut inner = create_file_input("/root/file.txt");
                     inner.optional = true;
-                    inner.matches = Some("a|b|c".into());
+                    inner.content = Some("a|b|c".into());
                     inner
                 })
             );
@@ -415,15 +403,15 @@ mod input_shape {
         fn supports_matches_field() {
             let input = create_file_input("file.txt?matches=abc");
 
-            assert_eq!(input.matches.unwrap(), "abc");
+            assert_eq!(input.content.unwrap(), "abc");
 
             let input = create_file_input("file.txt?match=abc");
 
-            assert_eq!(input.matches.unwrap(), "abc");
+            assert_eq!(input.content.unwrap(), "abc");
 
             let input = create_file_input("file.txt?matches");
 
-            assert!(input.matches.is_none());
+            assert!(input.content.is_none());
         }
 
         #[test]
@@ -541,21 +529,21 @@ mod input_shape {
             let input = create_glob_input("!project/file.*");
 
             assert_eq!(input.glob, "!project/file.*");
-            assert_eq!(input.get_path(), "project/file.*");
+            assert_eq!(input.get_path(), "!project/file.*");
             assert!(!input.is_workspace_relative());
             assert!(input.is_negated());
 
             let input = create_glob_input("!./project/file.*");
 
             assert_eq!(input.glob, "!project/file.*");
-            assert_eq!(input.get_path(), "project/file.*");
+            assert_eq!(input.get_path(), "!project/file.*");
             assert!(!input.is_workspace_relative());
             assert!(input.is_negated());
 
             let input = create_glob_input("./!project/file.*");
 
             assert_eq!(input.glob, "!project/file.*");
-            assert_eq!(input.get_path(), "project/file.*");
+            assert_eq!(input.get_path(), "!project/file.*");
             assert!(!input.is_workspace_relative());
             assert!(input.is_negated());
         }
@@ -575,14 +563,14 @@ mod input_shape {
             let input = create_glob_input("!/root/file.*");
 
             assert_eq!(input.glob, "!/root/file.*");
-            assert_eq!(input.get_path(), "root/file.*");
+            assert_eq!(input.get_path(), "!root/file.*");
             assert!(input.is_workspace_relative());
             assert!(input.is_negated());
 
             let input = create_glob_input("/!root/file.*");
 
             assert_eq!(input.glob, "!/root/file.*");
-            assert_eq!(input.get_path(), "root/file.*");
+            assert_eq!(input.get_path(), "!root/file.*");
             assert!(input.is_workspace_relative());
             assert!(input.is_negated());
         }

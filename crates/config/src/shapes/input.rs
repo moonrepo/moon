@@ -36,8 +36,13 @@ config_struct!(
     pub struct FileInput {
         pub file: FilePath,
 
-        #[serde(default, alias = "match", skip_serializing_if = "Option::is_none")]
-        pub matches: Option<String>,
+        #[serde(
+            default,
+            alias = "match",
+            alias = "matches",
+            skip_serializing_if = "Option::is_none"
+        )]
+        pub content: Option<String>,
 
         #[serde(default)]
         pub optional: bool,
@@ -53,9 +58,9 @@ impl FileInput {
 
         for (key, value) in uri.query {
             match key.as_str() {
-                "match" | "matches" => {
+                "content" | "match" | "matches" => {
                     if !value.is_empty() {
-                        input.matches = Some(value);
+                        input.content = Some(value);
                     }
                 }
                 "optional" => {

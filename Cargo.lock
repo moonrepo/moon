@@ -6274,9 +6274,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.51.3"
+version = "0.51.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3892281db38a6130c154b867ab5f8bd59bdcc88f682b6bd01ba153a856cc80"
+checksum = "3493dcdd50f6b89ab86d8046a1bc73a47e1b7a699a6f07797dbd1ec90956eb0d"
 dependencies = [
  "convert_case",
  "docker_credential",

@@ -2,7 +2,7 @@ use crate::file_group_error::FileGroupError;
 use common_path::common_path_all;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::InputPath;
+use moon_config::Input;
 use moon_feature_flags::glob_walk_with_options;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
@@ -53,22 +53,19 @@ impl FileGroup {
 
     /// Add inputs (file paths, globs, or env) to the file group, while expanding to a
     /// workspace relative path based on the provided project source.
-    pub fn add(&mut self, input: &InputPath, project_source: &str) -> miette::Result<()> {
+    pub fn add(&mut self, input: &Input, project_source: &str) -> miette::Result<()> {
         match input {
-            InputPath::EnvVar(var) | InputPath::EnvVarGlob(var) => {
+            Input::EnvVar(var) | Input::EnvVarGlob(var) => {
                 self.env.push(var.to_owned());
             }
-            InputPath::TokenFunc(_) | InputPath::TokenVar(_) => {
+            Input::TokenFunc(_) | Input::TokenVar(_) => {
                 return Err(FileGroupError::NoTokens(self.id.clone()).into());
             }
-            _ => {
-                let path = input.to_workspace_relative(project_source);
-
-                if input.is_glob() {
-                    self.globs.push(path);
-                } else {
-                    self.files.push(path);
-                }
+            Input::ProjectFile(file) | Input::WorkspaceFile(file) => {
+                self.files.push(file.to_workspace_relative(project_source));
+            }
+            Input::ProjectGlob(glob) | Input::WorkspaceGlob(glob) => {
+                self.globs.push(glob.to_workspace_relative(project_source));
             }
         };
 
@@ -76,7 +73,7 @@ impl FileGroup {
     }
 
     /// Add multiple inputs into the input group.
-    pub fn add_many(&mut self, inputs: &[InputPath], project_source: &str) -> miette::Result<()> {
+    pub fn add_many(&mut self, inputs: &[Input], project_source: &str) -> miette::Result<()> {
         for input in inputs {
             self.add(input, project_source)?;
         }

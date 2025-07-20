@@ -16,6 +16,9 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
         out_dir.join("project-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
             exclude_references: vec![
+                "Input".into(),
+                "FileInput".into(),
+                "GlobInput".into(),
                 "PartialTaskArgs".into(),
                 "PartialTaskConfig".into(),
                 "PartialTaskDependency".into(),
@@ -47,6 +50,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 (
                     "./tasks-config".into(),
                     vec![
+                        "Input".into(),
                         "PlatformType".into(),
                         "PartialTaskConfig".into(),
                         "TaskConfig".into(),

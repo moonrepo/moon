@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{InputPath, OutputPath, TaskArgs, TaskDependencyConfig};
+use moon_config::{Input, OutputPath, TaskArgs, TaskDependencyConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_task_expander::TaskExpander;
@@ -65,7 +65,7 @@ mod task_expander {
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
-        task.inputs = vec![InputPath::ProjectFile("dir".into())];
+        task.inputs = vec![Input::parse("dir").unwrap()];
 
         let context = create_context(sandbox.path());
         let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
@@ -257,7 +257,7 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env".into())]);
+            task.options.env_files = Some(vec![Input::parse("/.env").unwrap()]);
             task.args = vec![
                 "a".into(),
                 "$FOO_BAR".into(),
@@ -551,7 +551,7 @@ mod task_expander {
             let mut task = create_task();
             task.env.insert("KEY1".into(), "value1".into());
             task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_files = Some(vec![InputPath::ProjectFile(".env".into())]);
+            task.options.env_files = Some(vec![Input::parse(".env").unwrap()]);
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -576,7 +576,7 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
+            task.options.env_files = Some(vec![Input::parse("/.env-shared").unwrap()]);
 
             // dotenvy operates on actual env
             unsafe { env::set_var("EXTERNAL", "external-value") };
@@ -606,7 +606,7 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
+            task.options.env_files = Some(vec![Input::parse("/.env-shared").unwrap()]);
             task.env.insert("TOP_LEVEL".into(), "$BASE".into());
 
             let context = create_context(sandbox.path());
@@ -663,8 +663,8 @@ mod task_expander {
             task.env.insert("KEY1".into(), "value1".into());
             task.env.insert("KEY2".into(), "value2".into());
             task.options.env_files = Some(vec![
-                InputPath::ProjectFile(".env".into()),
-                InputPath::WorkspaceFile(".env-shared".into()),
+                Input::parse(".env").unwrap(),
+                Input::parse("/.env-shared").unwrap(),
             ]);
 
             let context = create_context(sandbox.path());
@@ -696,7 +696,7 @@ mod task_expander {
             let mut task = create_task();
             task.env.insert("KEY1".into(), "value1".into());
             task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_files = Some(vec![InputPath::ProjectFile(".env-missing".into())]);
+            task.options.env_files = Some(vec![Input::parse(".env-missing").unwrap()]);
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -719,7 +719,7 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_files = Some(vec![InputPath::ProjectFile(".env-invalid".into())]);
+            task.options.env_files = Some(vec![Input::parse(".env-invalid").unwrap()]);
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -737,7 +737,7 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.inputs.push(InputPath::EnvVar("FOO_BAR".into()));
+            task.inputs.push(Input::EnvVar("FOO_BAR".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -755,8 +755,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.inputs.push(InputPath::ProjectFile("file.txt".into()));
-            task.inputs.push(InputPath::TokenFunc("@files(all)".into()));
+            task.inputs.push(Input::parse("file.txt").unwrap());
+            task.inputs.push(Input::TokenFunc("@files(all)".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -782,8 +782,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.inputs.push(InputPath::ProjectFile("file.txt".into()));
-            task.inputs.push(InputPath::TokenFunc("@group(all)".into()));
+            task.inputs.push(Input::parse("file.txt").unwrap());
+            task.inputs.push(Input::TokenFunc("@group(all)".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -810,10 +810,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
+            task.inputs.push(Input::parse("$task/**/*").unwrap());
             task.inputs
-                .push(InputPath::ProjectGlob("$task/**/*".into()));
-            task.inputs
-                .push(InputPath::WorkspaceFile("$project/index.js".into()));
+                .push(Input::parse("/$project/index.js").unwrap());
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)

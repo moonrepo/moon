@@ -3888,7 +3888,7 @@ __metadata:
     "@moonrepo/core-macos-arm64": "npm:1.38.6"
     "@moonrepo/core-macos-x64": "npm:1.38.6"
     "@moonrepo/core-windows-x64-msvc": "npm:1.38.6"
-    detect-libc: "npm:^2.0.3"
+    detect-libc: "npm:^2.0.4"
   dependenciesMeta:
     "@moonrepo/core-linux-arm64-gnu":
       optional: true
@@ -8042,10 +8042,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"detect-libc@npm:^2.0.3":
-  version: 2.0.3
-  resolution: "detect-libc@npm:2.0.3"
-  checksum: 10/b4ea018d623e077bd395f168a9e81db77370dde36a5b01d067f2ad7989924a81d31cb547ff764acb2aa25d50bb7fdde0b0a93bec02212b0cb430621623246d39
+"detect-libc@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "detect-libc@npm:2.0.4"
+  checksum: 10/136e995f8c5ffbc515955b0175d441b967defd3d5f2268e89fa695e9c7170d8bed17993e31a34b04f0fad33d844a3a598e0fd519a8e9be3cad5f67662d96fee0
   languageName: node
   linkType: hard
 

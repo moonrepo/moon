@@ -137,10 +137,8 @@ pub async fn load_toolchain_config(
     let root = workspace_root.to_owned();
     let cwd = working_dir.to_owned();
     let config = load_config_blocking(move || {
-        config_loader.load_toolchain_config(
-            root,
-            proto_env.load_config_manager()?.get_local_config(&cwd)?,
-        )
+        config_loader
+            .load_toolchain_config(root, proto_env.load_file_manager()?.get_local_config(&cwd)?)
     })
     .await
     .into_diagnostic()??;

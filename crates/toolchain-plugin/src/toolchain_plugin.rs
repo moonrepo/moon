@@ -486,7 +486,7 @@ impl ToolchainPlugin {
 
             input.version = Some(tool.resolve_version(&spec, false).await?);
 
-            tool.teardown().await?;
+            tool.teardown(&spec).await?;
         }
 
         self.plugin

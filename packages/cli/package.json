@@ -12,7 +12,8 @@
   "files": [
     "moon.js",
     "moonx.js",
-    "postinstall.js"
+    "utils.js",
+    "postinstall-old.js"
   ],
   "author": "Miles Johnson",
   "license": "MIT",
@@ -25,10 +26,10 @@
     "directory": "packages/cli"
   },
   "scripts": {
-    "postinstall": "node ./postinstall.js"
+    "__postinstall__": "node ./postinstall-old.js"
   },
   "dependencies": {
-    "detect-libc": "^2.0.3"
+    "detect-libc": "^2.0.4"
   },
   "optionalDependencies": {
     "@moonrepo/core-linux-arm64-gnu": "1.38.6",

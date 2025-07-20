@@ -152,7 +152,9 @@ impl Tool for DenoTool {
     }
 
     async fn teardown(&mut self) -> miette::Result<()> {
-        self.tool.teardown().await?;
+        if let Some(version) = self.config.version.clone() {
+            self.tool.teardown(&ToolSpec::new(version)).await?;
+        }
 
         Ok(())
     }

@@ -11,6 +11,7 @@
   https://github.com/moonrepo/moon/issues/1985
   - Added URI support for files (`file://`) and globs (`glob://`).
   - Added object support for files and globs.
+- Updated the `@moonrepo/cli` npm package to no longer rely on postinstall scripts.
 - Renamed project `type` to `layer`, as it better reflects what it does, a layer of access within
   the project `stack`. For backwards compatibility, the `type` name will still be supported until
   v2. The following changes have been made:
@@ -24,7 +25,8 @@
 
 - Added telemetry for toolchain usage.
 - Updated Rust to v1.88.0.
-- Updated proto to [v0.50.3](https://github.com/moonrepo/proto/releases/tag/v0.50.3) (from 0.50.1).
+- Updated proto to [v0.51.3](https://github.com/moonrepo/proto/releases/tag/v0.51.3) (from 0.50.1).
+- Updated dependencies.
 
 ## 1.38.6
 

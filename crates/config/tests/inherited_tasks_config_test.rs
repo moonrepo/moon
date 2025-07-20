@@ -84,7 +84,7 @@ tasks:
                     Id::raw("inputs"),
                     TaskConfig {
                         command: TaskArgs::String("d".to_owned()),
-                        inputs: Some(vec![InputPath::ProjectGlob("src/**/*".into())]),
+                        inputs: Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))]),
                         ..TaskConfig::default()
                     },
                 ),
@@ -114,11 +114,11 @@ tasks:
                 FxHashMap::from_iter([
                     (
                         Id::raw("tests"),
-                        vec![InputPath::ProjectGlob("tests/**/*".into())]
+                        vec![Input::ProjectGlob(create_glob_input("tests/**/*"))]
                     ),
                     (
                         Id::raw("sources"),
-                        vec![InputPath::ProjectGlob("sources/**/*".into())]
+                        vec![Input::ProjectGlob(create_glob_input("sources/**/*"))]
                     ),
                 ])
             );
@@ -177,15 +177,15 @@ fileGroups:
                 FxHashMap::from_iter([
                     (
                         Id::raw("tests"),
-                        vec![InputPath::ProjectGlob("tests/**/*".into())]
+                        vec![Input::ProjectGlob(create_glob_input("tests/**/*"))]
                     ),
                     (
                         Id::raw("sources"),
-                        vec![InputPath::ProjectGlob("sources/**/*".into())]
+                        vec![Input::ProjectGlob(create_glob_input("sources/**/*"))]
                     ),
                     (
                         Id::raw("configs"),
-                        vec![InputPath::WorkspaceGlob("*.js".into())]
+                        vec![Input::WorkspaceGlob(create_glob_input("/*.js"))]
                     ),
                 ])
             );
@@ -229,15 +229,15 @@ fileGroups:
                 FxHashMap::from_iter([
                     (
                         Id::raw("tests"),
-                        vec![InputPath::ProjectGlob("tests/**/*".into())]
+                        vec![Input::ProjectGlob(create_glob_input("tests/**/*"))]
                     ),
                     (
                         Id::raw("sources"),
-                        vec![InputPath::ProjectGlob("sources/**/*".into())]
+                        vec![Input::ProjectGlob(create_glob_input("sources/**/*"))]
                     ),
                     (
                         Id::raw("configs"),
-                        vec![InputPath::WorkspaceGlob("*.js".into())]
+                        vec![Input::WorkspaceGlob(create_glob_input("/*.js"))]
                     ),
                 ])
             );
@@ -302,17 +302,17 @@ fileGroups:
                     (
                         Id::raw("files"),
                         vec![
-                            InputPath::WorkspaceFile("ws/relative".into()),
-                            InputPath::ProjectFile("proj/relative".into())
+                            Input::WorkspaceFile(create_file_input("/ws/relative")),
+                            Input::ProjectFile(create_file_input("proj/relative"))
                         ]
                     ),
                     (
                         Id::raw("globs"),
                         vec![
-                            InputPath::WorkspaceGlob("ws/**/*".into()),
-                            InputPath::WorkspaceGlob("!ws/**/*".into()),
-                            InputPath::ProjectGlob("proj/**/*".into()),
-                            InputPath::ProjectGlob("!proj/**/*".into()),
+                            Input::WorkspaceGlob(create_glob_input("/ws/**/*")),
+                            Input::WorkspaceGlob(create_glob_input("!/ws/**/*")),
+                            Input::ProjectGlob(create_glob_input("proj/**/*")),
+                            Input::ProjectGlob(create_glob_input("!proj/**/*")),
                         ]
                     ),
                 ])
@@ -449,12 +449,12 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    InputPath::WorkspaceFile("ws/path".into()),
-                    InputPath::WorkspaceGlob("ws/glob/**/*".into()),
-                    InputPath::WorkspaceGlob("!ws/glob/**/*".into()),
-                    InputPath::ProjectFile("proj/path".into()),
-                    InputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
-                    InputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
+                    Input::WorkspaceFile(create_file_input("/ws/path")),
+                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
+                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
+                    Input::ProjectFile(create_file_input("proj/path")),
+                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::ProjectGlob(create_glob_input("!proj/glob/{a,b,c}")),
                 ]
             );
         }
@@ -474,8 +474,8 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    InputPath::EnvVar("FOO_BAR".into()),
-                    InputPath::ProjectFile("file/path".into()),
+                    Input::EnvVar("FOO_BAR".into()),
+                    Input::ProjectFile(create_file_input("file/path")),
                 ]
             );
         }
@@ -490,7 +490,9 @@ mod task_manager {
 
         if command != "global" {
             // No .moon prefix since the fixture is contrived
-            global_inputs.push(InputPath::WorkspaceFile(format!("tasks/{command}.yml")));
+            global_inputs.push(Input::WorkspaceFile(create_file_input(format!(
+                "/tasks/{command}.yml"
+            ))));
         }
 
         TaskConfig {
@@ -1030,7 +1032,7 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("node-library", vec![Id::raw("node"), Id::raw("javascript")]);
-            task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
+            task.inputs = Some(vec![Input::ProjectFile(create_file_input("c"))]);
 
             let config = manager
                 .get_inherited_config(
@@ -1056,7 +1058,7 @@ mod task_manager {
                 "dotnet-application",
                 vec![Id::raw("dotnet"), Id::raw("system")],
             );
-            task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
+            task.inputs = Some(vec![Input::ProjectFile(create_file_input("c"))]);
 
             let config = manager
                 .get_inherited_config(
@@ -1137,13 +1139,13 @@ mod task_manager {
                     file_groups: FxHashMap::from_iter([
                         (
                             Id::raw("sources"),
-                            vec![InputPath::ProjectGlob("src/**/*".into())]
+                            vec![Input::ProjectGlob(create_glob_input("src/**/*"))]
                         ),
                         (
                             Id::raw("tests"),
                             vec![
-                                InputPath::ProjectGlob("*.test.ts".into()),
-                                InputPath::ProjectGlob("*.test.tsx".into())
+                                Input::ProjectGlob(create_glob_input("*.test.ts")),
+                                Input::ProjectGlob(create_glob_input("*.test.tsx"))
                             ]
                         ),
                     ]),
@@ -1163,12 +1165,12 @@ mod task_manager {
                         }),
                     ],
                     implicit_inputs: vec![
-                        InputPath::EnvVar("ENV".into()),
-                        InputPath::EnvVarGlob("ENV_*".into()),
-                        InputPath::ProjectFile("file.txt".into()),
-                        InputPath::ProjectGlob("file.*".into()),
-                        InputPath::WorkspaceFile("file.txt".into()),
-                        InputPath::WorkspaceGlob("file.*".into()),
+                        Input::EnvVar("ENV".into()),
+                        Input::EnvVarGlob("ENV_*".into()),
+                        Input::ProjectFile(create_file_input("file.txt")),
+                        Input::ProjectGlob(create_glob_input("file.*")),
+                        Input::WorkspaceFile(create_file_input("/file.txt")),
+                        Input::WorkspaceGlob(create_glob_input("/file.*")),
                     ],
                     task_options: Some(TaskOptionsConfig {
                         affected_files: Some(TaskOptionAffectedFiles::Args),
@@ -1268,8 +1270,8 @@ mod task_manager {
                             Id::raw("lint"),
                             TaskConfig {
                                 inputs: Some(vec![
-                                    InputPath::ProjectGlob("**/*.graphql".into()),
-                                    InputPath::ProjectGlob("src/**/*".into()),
+                                    Input::ProjectGlob(create_glob_input("**/*.graphql")),
+                                    Input::ProjectGlob(create_glob_input("src/**/*")),
                                 ]),
                                 ..Default::default()
                             }
@@ -1278,8 +1280,8 @@ mod task_manager {
                             Id::raw("test"),
                             TaskConfig {
                                 inputs: Some(vec![
-                                    InputPath::ProjectGlob("src/**/*".into()),
-                                    InputPath::ProjectGlob("tests/**/*".into()),
+                                    Input::ProjectGlob(create_glob_input("src/**/*")),
+                                    Input::ProjectGlob(create_glob_input("tests/**/*")),
                                 ]),
                                 ..Default::default()
                             }

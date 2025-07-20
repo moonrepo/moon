@@ -7,6 +7,10 @@
 - The automatic proto install has moved into a new `SetupProto` action, which is now part of the
   action graph, and does not run on every command. It's also a bit smarter and will only install
   when a toolchain requires it.
+- Added support for new task input formats based on the RFC:
+  https://github.com/moonrepo/moon/issues/1985
+  - Added URI support for files (`file://`) and globs (`glob://`).
+  - Added object support for files and globs.
 - Renamed project `type` to `layer`, as it better reflects what it does, a layer of access within
   the project `stack`. For backwards compatibility, the `type` name will still be supported until
   v2. The following changes have been made:

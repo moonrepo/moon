@@ -1,10 +1,9 @@
 use crate::portable_path::FilePath;
-use crate::shapes::{InputPath, OneOrMany};
+use crate::shapes::{Input, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
 use std::env::consts;
-use std::str::FromStr;
 
 fn validate_interactive<C>(
     enabled: &bool,
@@ -54,17 +53,15 @@ config_enum!(
 );
 
 impl TaskOptionEnvFile {
-    pub fn to_input_paths(&self) -> Option<Vec<InputPath>> {
+    pub fn to_inputs(&self) -> Option<Vec<Input>> {
         match self {
-            TaskOptionEnvFile::Enabled(true) => Some(vec![InputPath::ProjectFile(".env".into())]),
+            TaskOptionEnvFile::Enabled(true) => Some(vec![Input::parse(".env").unwrap()]),
             TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => {
-                InputPath::from_str(path.as_str()).ok().map(|p| vec![p])
-            }
+            TaskOptionEnvFile::File(path) => Input::parse(path.as_str()).ok().map(|p| vec![p]),
             TaskOptionEnvFile::Files(paths) => Some(
                 paths
                     .iter()
-                    .flat_map(|p| InputPath::from_str(p.as_str()).ok())
+                    .flat_map(|p| Input::parse(p.as_str()).ok())
                     .collect(),
             ),
         }

@@ -1,6 +1,6 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
-use crate::shapes::InputPath;
+use crate::shapes::Input;
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
@@ -118,7 +118,7 @@ config_struct!(
 
         /// A mapping of group IDs to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
-        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
+        pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Overrides the ID within the project graph, as defined in
         /// the workspace `projects` setting.

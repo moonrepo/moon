@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { Input, PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type {
 	PartialToolchainPluginConfig,
 	ToolchainPluginConfig,
@@ -220,7 +220,7 @@ export interface ProjectConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<string, string[]>;
+	fileGroups: Record<string, Input[]>;
 	/**
 	 * Overrides the ID within the project graph, as defined in
 	 * the workspace `projects` setting.
@@ -445,7 +445,7 @@ export interface PartialProjectConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<string, string[]> | null;
+	fileGroups?: Record<string, Input[]> | null;
 	/**
 	 * Overrides the ID within the project graph, as defined in
 	 * the workspace `projects` setting.

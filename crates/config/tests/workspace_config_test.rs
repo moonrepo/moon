@@ -190,7 +190,7 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "parent relative paths are not supported")]
+        #[should_panic(expected = "parent directory traversal (..) is not supported")]
         fn errors_on_parent_sources() {
             test_load_config(
                 FILENAME,
@@ -257,7 +257,7 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "parent relative paths are not supported")]
+        #[should_panic(expected = "parent directory traversal (..) is not supported")]
         fn errors_on_parent_globs() {
             test_load_config(
                 FILENAME,
@@ -392,7 +392,6 @@ generator:
   templates:
     - custom/path
     - ./rel/path
-    - ../parent/path
     - /abs/path
 ",
                 load_config_from_root,
@@ -405,11 +404,11 @@ generator:
                         path: FilePath("custom/path".into())
                     },
                     TemplateLocator::File {
-                        path: FilePath("./rel/path".into())
+                        path: FilePath("rel/path".into())
                     },
-                    TemplateLocator::File {
-                        path: FilePath("../parent/path".into())
-                    },
+                    // TemplateLocator::File {
+                    //     path: FilePath("../parent/path".into())
+                    // },
                     TemplateLocator::File {
                         path: FilePath("/abs/path".into())
                     }
@@ -515,7 +514,7 @@ generator:
                 config.generator.templates,
                 vec![
                     TemplateLocator::Glob {
-                        glob: GlobPath("./templates/*".into())
+                        glob: GlobPath("templates/*".into())
                     },
                     TemplateLocator::Glob {
                         glob: GlobPath("common/*/templates/*".into())

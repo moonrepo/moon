@@ -4,7 +4,7 @@ use moon_common::{
     color,
     path::{self, WorkspaceRelativePathBuf},
 };
-use moon_config::{InputPath, OutputPath, ProjectMetadataConfig, patterns};
+use moon_config::{Input, OutputPath, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
@@ -243,10 +243,10 @@ impl<'graph> TokenExpander<'graph> {
 
         for input in &task.inputs {
             match input {
-                InputPath::EnvVar(var) => {
+                Input::EnvVar(var) => {
                     result.env.push(var.to_owned());
                 }
-                InputPath::EnvVarGlob(var_glob) => {
+                Input::EnvVarGlob(var_glob) => {
                     let pattern =
                         Regex::new(format!("^{}$", var_glob.replace('*', "[A-Z0-9_]+")).as_str())
                             .unwrap();
@@ -259,7 +259,7 @@ impl<'graph> TokenExpander<'graph> {
                         }
                     });
                 }
-                InputPath::TokenFunc(func) => {
+                Input::TokenFunc(func) => {
                     let inner_result = self.replace_function(task, func)?;
 
                     result.env.extend(inner_result.env);
@@ -267,25 +267,25 @@ impl<'graph> TokenExpander<'graph> {
                     result.globs.extend(inner_result.globs);
                     result.value = inner_result.value;
                 }
-                InputPath::TokenVar(var) => {
+                Input::TokenVar(var) => {
                     result.files.push(
                         self.project
                             .source
                             .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
                 }
-                InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
+                Input::ProjectFile(inner) | Input::WorkspaceFile(inner) => {
                     let file = self.create_path_for_task(
                         task,
-                        input.to_workspace_relative(&self.project.source),
+                        inner.to_workspace_relative(&self.project.source),
                     )?;
 
                     result.files.push(file);
                 }
-                InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
+                Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
                     let glob = self.create_path_for_task(
                         task,
-                        input.to_workspace_relative(&self.project.source),
+                        inner.to_workspace_relative(&self.project.source),
                     )?;
 
                     result.globs.push(glob);
@@ -416,19 +416,19 @@ impl<'graph> TokenExpander<'graph> {
                         })?;
 
                 match input {
-                    InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
+                    Input::ProjectFile(inner) | Input::WorkspaceFile(inner) => {
                         result.files.push(self.create_path_for_task(
                             task,
-                            input.to_workspace_relative(&self.project.source),
+                            inner.to_workspace_relative(&self.project.source),
                         )?);
                     }
-                    InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
+                    Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
                         result.globs.push(self.create_path_for_task(
                             task,
-                            input.to_workspace_relative(&self.project.source),
+                            inner.to_workspace_relative(&self.project.source),
                         )?);
                     }
-                    InputPath::TokenFunc(func) => {
+                    Input::TokenFunc(func) => {
                         let inner_result = self.replace_function(task, func)?;
                         result.files.extend(inner_result.files);
                         result.globs.extend(inner_result.globs);

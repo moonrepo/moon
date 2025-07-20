@@ -2,7 +2,7 @@
 
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::InputPath;
+use moon_config::Input;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::{Target, Task};
@@ -54,7 +54,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
             ),
             (Id::raw("envs"), {
                 let mut group = FileGroup::new("envs").unwrap();
-                group.add(&InputPath::EnvVar("FOO_BAR".into()), "").unwrap();
+                group.add(&Input::EnvVar("FOO_BAR".into()), "").unwrap();
                 group
             }),
         ]),

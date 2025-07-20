@@ -43,7 +43,7 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
+          "$ref": "#/definitions/Input"
         }
       },
       "propertyNames": {
@@ -231,6 +231,61 @@
       "enum": [
         "explicit",
         "implicit"
+      ]
+    },
+    "FileInput": {
+      "description": "A file path input.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "title": "content",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "file": {
+          "title": "file",
+          "type": "string"
+        },
+        "optional": {
+          "title": "optional",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GlobInput": {
+      "description": "A glob path input.",
+      "type": "object",
+      "properties": {
+        "cache": {
+          "title": "cache",
+          "default": true,
+          "type": "boolean"
+        },
+        "glob": {
+          "title": "glob",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Input": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/FileInput"
+        },
+        {
+          "$ref": "#/definitions/GlobInput"
+        }
       ]
     },
     "LanguageType": {
@@ -883,7 +938,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Input"
               }
             },
             {

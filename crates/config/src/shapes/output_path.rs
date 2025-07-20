@@ -262,13 +262,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "parent relative paths are not supported")]
+    #[should_panic(expected = "parent directory traversal (..) is not supported")]
     fn errors_for_parent_relative_from_project() {
         OutputPath::from_str("../test").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "parent relative paths are not supported")]
+    #[should_panic(expected = "parent directory traversal (..) is not supported")]
     fn errors_for_parent_relative_from_workspace() {
         OutputPath::from_str("/../test").unwrap();
     }

@@ -44,8 +44,8 @@ config_struct!(
         )]
         pub content: Option<String>,
 
-        #[serde(default, skip_serializing_if = "is_false")]
-        pub optional: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub optional: Option<bool>,
     }
 );
 
@@ -64,7 +64,7 @@ impl FileInput {
                     }
                 }
                 "optional" => {
-                    input.optional = parse_bool_field(&key, &value)?;
+                    input.optional = Some(parse_bool_field(&key, &value)?);
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown field `{key}`")));

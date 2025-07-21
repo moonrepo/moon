@@ -59,9 +59,7 @@ pub async fn hash_common_task_contents(
         deps
     });
 
-    if app_context.vcs.is_enabled() {
-        task_hasher.hash_inputs().await?;
-    }
+    task_hasher.hash_inputs().await?;
 
     if let ActionNode::RunTask(inner) = node {
         task_hasher.hash_args(&inner.args);

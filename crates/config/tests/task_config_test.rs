@@ -297,7 +297,7 @@ inputs:
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
                     Input::ProjectFile({
                         let mut inner = create_file_input("proj/path");
-                        inner.optional = true;
+                        inner.optional = Some(true);
                         inner
                     }),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
@@ -340,7 +340,7 @@ inputs:
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
                     Input::ProjectFile({
                         let mut inner = create_file_input("proj/path");
-                        inner.optional = true;
+                        inner.optional = Some(true);
                         inner
                     }),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
@@ -382,7 +382,7 @@ inputs:
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
                     Input::ProjectFile({
                         let mut inner = create_file_input("proj/path");
-                        inner.optional = true;
+                        inner.optional = Some(true);
                         inner
                     }),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),

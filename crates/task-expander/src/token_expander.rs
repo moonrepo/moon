@@ -742,6 +742,7 @@ impl<'graph> TokenExpander<'graph> {
 
     fn infer_inputs_from_result(&self, task: &mut Task, result: &ExpandedResult) {
         if task.options.infer_inputs {
+            task.input_files.extend(result.files_for_input.clone());
             task.input_files.extend(
                 result
                     .files

@@ -745,7 +745,7 @@ mod task_expander {
             task.inputs
                 .push(Input::parse("file://b.txt?content=a|b|c").unwrap());
             task.inputs
-                .push(Input::parse("file://c.txt?optional&content=a|b|c").unwrap());
+                .push(Input::parse("file://c.txt?optional=false&content=a|b|c").unwrap());
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -758,7 +758,7 @@ mod task_expander {
                     (
                         "project/source/a.txt".into(),
                         TaskFileInput {
-                            optional: true,
+                            optional: Some(true),
                             ..Default::default()
                         }
                     ),
@@ -773,7 +773,7 @@ mod task_expander {
                         "project/source/c.txt".into(),
                         TaskFileInput {
                             content: Some("a|b|c".into()),
-                            optional: true,
+                            optional: Some(false),
                         }
                     ),
                 ])

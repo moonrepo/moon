@@ -5077,6 +5077,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
+ "thiserror 2.0.12",
  "tokio",
  "tracing",
 ]

@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{Input, OutputPath, TaskArgs, TaskDependencyConfig};
+use moon_config::{Input, OutputPath, RegexSetting, TaskArgs, TaskDependencyConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput};
 use moon_task_expander::TaskExpander;
@@ -765,14 +765,14 @@ mod task_expander {
                     (
                         "project/source/b.txt".into(),
                         TaskFileInput {
-                            content: Some("a|b|c".into()),
+                            content: Some(RegexSetting::try_from("a|b|c".to_owned()).unwrap()),
                             ..Default::default()
                         }
                     ),
                     (
                         "project/source/c.txt".into(),
                         TaskFileInput {
-                            content: Some("a|b|c".into()),
+                            content: Some(RegexSetting::try_from("a|b|c".to_owned()).unwrap()),
                             optional: Some(false),
                         }
                     ),

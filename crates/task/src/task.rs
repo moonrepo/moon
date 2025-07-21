@@ -1,7 +1,8 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType, is_false,
+    Input, OutputPath, PlatformType, RegexSetting, TaskDependencyConfig, TaskPreset, TaskType,
+    is_false,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
@@ -41,7 +42,7 @@ cacheable!(
     #[serde(default)]
     pub struct TaskFileInput {
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub content: Option<String>,
+        pub content: Option<RegexSetting>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,

@@ -31,6 +31,8 @@ pub use inherited_tasks_config::*;
 pub use language_platform::*;
 pub use project::*;
 pub use project_config::*;
+#[cfg(feature = "loader")]
+pub use proto_core::RegexSetting;
 pub use schematic;
 pub use semver::{Version, VersionReq};
 pub use shapes::*;

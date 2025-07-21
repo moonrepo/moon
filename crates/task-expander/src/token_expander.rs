@@ -1,10 +1,11 @@
 use crate::token_expander_error::TokenExpanderError;
+use miette::IntoDiagnostic;
 use moon_args::join_args;
 use moon_common::{
     color,
     path::{self, WorkspaceRelativePathBuf},
 };
-use moon_config::{Input, OutputPath, ProjectMetadataConfig, patterns};
+use moon_config::{Input, OutputPath, ProjectMetadataConfig, RegexSetting, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
@@ -284,7 +285,12 @@ impl<'graph> TokenExpander<'graph> {
                     result.files_for_input.insert(
                         file,
                         TaskFileInput {
-                            content: inner.content.clone(),
+                            content: match inner.content.clone() {
+                                Some(pattern) => {
+                                    Some(RegexSetting::try_from(pattern).into_diagnostic()?)
+                                }
+                                None => None,
+                            },
                             optional: inner.optional,
                         },
                     );

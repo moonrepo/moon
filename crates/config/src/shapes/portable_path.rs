@@ -1,9 +1,11 @@
 #![allow(clippy::from_over_into)]
 
 use crate::validate::{validate_child_relative_path, validate_relative_path};
+use moon_common::path::RelativePathBuf;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::ops::Deref;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -42,13 +44,7 @@ macro_rules! path_type {
     ($name:ident) => {
         #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
         #[serde(into = "String", try_from = "String")]
-        pub struct $name(pub String);
-
-        impl $name {
-            pub fn as_str(&self) -> &str {
-                &self.0
-            }
-        }
+        pub struct $name(pub RelativePathBuf);
 
         impl AsRef<str> for $name {
             fn as_ref(&self) -> &str {
@@ -58,13 +54,19 @@ macro_rules! path_type {
 
         impl AsRef<Path> for $name {
             fn as_ref(&self) -> &Path {
-                self.0.as_ref()
+                self.0.as_str().as_ref()
             }
         }
 
         impl PartialEq<&str> for $name {
             fn eq(&self, other: &&str) -> bool {
                 &self.0 == other
+            }
+        }
+
+        impl PartialEq<&RelativePathBuf> for $name {
+            fn eq(&self, other: &&RelativePathBuf) -> bool {
+                &self.0 == *other
             }
         }
 
@@ -102,7 +104,7 @@ macro_rules! path_type {
 
         impl Into<String> for $name {
             fn into(self) -> String {
-                self.0
+                self.0.to_string()
             }
         }
 
@@ -115,6 +117,14 @@ macro_rules! path_type {
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "{}", self.0)
+            }
+        }
+
+        impl Deref for $name {
+            type Target = RelativePathBuf;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
             }
         }
     };
@@ -141,7 +151,7 @@ impl PortablePath for GlobPath {
             value.trim_start_matches("./").to_owned()
         };
 
-        Ok(GlobPath(value))
+        Ok(GlobPath(value.into()))
     }
 }
 

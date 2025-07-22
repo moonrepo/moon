@@ -8,7 +8,7 @@ use moon_config::{Input, OutputPath, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
-use moon_task::Task;
+use moon_task::{Task, TaskFileInput};
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
@@ -23,6 +23,7 @@ use tracing::{debug, instrument, warn};
 pub struct ExpandedResult {
     pub env: Vec<String>,
     pub files: Vec<WorkspaceRelativePathBuf>,
+    pub files_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
     pub globs: Vec<WorkspaceRelativePathBuf>,
     pub token: Option<String>,
     pub value: Option<String>,
@@ -280,7 +281,13 @@ impl<'graph> TokenExpander<'graph> {
                         inner.to_workspace_relative(&self.project.source),
                     )?;
 
-                    result.files.push(file);
+                    result.files_for_input.insert(
+                        file,
+                        TaskFileInput {
+                            content: inner.content.clone(),
+                            optional: inner.optional,
+                        },
+                    );
                 }
                 Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
                     let glob = self.create_path_for_task(
@@ -735,7 +742,14 @@ impl<'graph> TokenExpander<'graph> {
 
     fn infer_inputs_from_result(&self, task: &mut Task, result: &ExpandedResult) {
         if task.options.infer_inputs {
-            task.input_files.extend(result.files.clone());
+            task.input_files.extend(result.files_for_input.clone());
+            task.input_files.extend(
+                result
+                    .files
+                    .iter()
+                    .map(|file| (file.to_owned(), TaskFileInput::default())),
+            );
+
             task.input_globs.extend(result.globs.clone());
         }
     }

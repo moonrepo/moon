@@ -6,7 +6,7 @@ use moon_config::{
 use moon_project::{FileGroup, Project};
 use moon_project_graph::*;
 use moon_query::build_query;
-use moon_task::Target;
+use moon_task::{Target, TaskFileInput};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
 use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
@@ -707,7 +707,10 @@ mod project_graph {
 
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([WorkspaceRelativePathBuf::from("project/local.txt")])
+                FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("project/local.txt"),
+                    TaskFileInput::default()
+                )])
             );
 
             assert_eq!(
@@ -767,9 +770,15 @@ mod project_graph {
 
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    WorkspaceRelativePathBuf::from("tasks/config.json"),
-                    WorkspaceRelativePathBuf::from("other.yaml"),
+                FxHashMap::from_iter([
+                    (
+                        WorkspaceRelativePathBuf::from("tasks/config.json"),
+                        TaskFileInput::default()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("other.yaml"),
+                        TaskFileInput::default()
+                    ),
                 ])
             );
 

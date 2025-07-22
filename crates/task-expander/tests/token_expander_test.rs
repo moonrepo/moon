@@ -3,12 +3,13 @@ mod utils;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{Input, LanguageType, LayerType, OutputPath};
 use moon_env_var::GlobalEnvBag;
+use moon_task::TaskFileInput;
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
 use std::env;
-use utils::{create_context, create_project, create_task};
+use utils::{create_context, create_file_input_map, create_project, create_task};
 
 mod token_expander {
     use super::*;
@@ -696,9 +697,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    "project/source/config.yml".into(),
-                    "project/source/dir/subdir".into()
+                FxHashMap::from_iter([
+                    ("project/source/config.yml".into(), TaskFileInput::default()),
+                    ("project/source/dir/subdir".into(), TaskFileInput::default()),
                 ])
             );
             assert_eq!(
@@ -824,9 +825,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    "project/source/config.yml".into(),
-                    "project/source/dir/subdir".into()
+                FxHashMap::from_iter([
+                    ("project/source/config.yml".into(), TaskFileInput::default()),
+                    ("project/source/dir/subdir".into(), TaskFileInput::default()),
                 ])
             );
             assert_eq!(
@@ -1324,10 +1325,10 @@ mod token_expander {
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
                 ExpandedResult {
-                    files: vec![
-                        WorkspaceRelativePathBuf::from("project/source/task/file.txt"),
-                        WorkspaceRelativePathBuf::from("cache/project:task/file.txt"),
-                    ],
+                    files_for_input: create_file_input_map(vec![
+                        "project/source/task/file.txt",
+                        "cache/project:task/file.txt",
+                    ]),
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/task/files/**/*"),
                         WorkspaceRelativePathBuf::from("cache/project:task/files/**/*"),
@@ -1701,9 +1702,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_files,
-                FxHashSet::from_iter([
-                    "project/source/config.yml".into(),
-                    "project/source/dir/subdir".into()
+                FxHashMap::from_iter([
+                    ("project/source/config.yml".into(), TaskFileInput::default()),
+                    ("project/source/dir/subdir".into(), TaskFileInput::default()),
                 ])
             );
             assert_eq!(

@@ -2,6 +2,7 @@ use moon_config::{
     FileGroupInput, FileGroupInputFormat, Input, ManifestDepsInput, ProjectSourcesInput, Uri,
     test_utils::*,
 };
+use schematic::RegexSetting;
 
 mod input_shape {
     use super::*;
@@ -73,7 +74,7 @@ mod input_shape {
         #[test]
         fn file_protocol() {
             let mut input = create_file_input("file.txt");
-            input.optional = true;
+            input.optional = Some(true);
 
             assert_eq!(
                 Input::parse("file://file.txt?optional").unwrap(),
@@ -81,7 +82,7 @@ mod input_shape {
             );
 
             let mut input = create_file_input("/file.txt");
-            input.optional = false;
+            input.optional = Some(false);
 
             assert_eq!(
                 Input::parse("file:///file.txt?optional=false").unwrap(),
@@ -331,7 +332,7 @@ mod input_shape {
                 input,
                 Input::ProjectFile({
                     let mut inner = create_file_input("dir/file.txt");
-                    inner.optional = true;
+                    inner.optional = Some(true);
                     inner
                 })
             );
@@ -345,8 +346,8 @@ mod input_shape {
                 input,
                 Input::WorkspaceFile({
                     let mut inner = create_file_input("/root/file.txt");
-                    inner.optional = true;
-                    inner.content = Some("a|b|c".into());
+                    inner.optional = Some(true);
+                    inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                     inner
                 })
             );
@@ -419,11 +420,11 @@ mod input_shape {
         fn supports_matches_field() {
             let input = create_file_input("file.txt?matches=abc");
 
-            assert_eq!(input.content.unwrap(), "abc");
+            assert_eq!(input.content.unwrap().as_str(), "abc");
 
             let input = create_file_input("file.txt?match=abc");
 
-            assert_eq!(input.content.unwrap(), "abc");
+            assert_eq!(input.content.unwrap().as_str(), "abc");
 
             let input = create_file_input("file.txt?matches");
 
@@ -434,15 +435,15 @@ mod input_shape {
         fn supports_optional_field() {
             let input = create_file_input("file.txt?optional");
 
-            assert!(input.optional);
+            assert!(input.optional.unwrap());
 
             let input = create_file_input("file.txt?optional=true");
 
-            assert!(input.optional);
+            assert!(input.optional.unwrap());
 
             let input = create_file_input("file.txt?optional=false");
 
-            assert!(!input.optional);
+            assert!(!input.optional.unwrap());
         }
 
         #[test]

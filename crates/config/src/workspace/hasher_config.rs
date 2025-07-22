@@ -1,4 +1,4 @@
-use crate::portable_path::GlobPath;
+use crate::shapes::GlobPath;
 use crate::{config_struct, config_unit_enum};
 use schematic::{Config, ConfigEnum};
 

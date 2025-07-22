@@ -5,7 +5,8 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::Input;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
-use moon_task::{Target, Task};
+use moon_task::{Target, Task, TaskFileInput};
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -99,4 +100,14 @@ pub fn create_task() -> Task {
         target: Target::new("project", "task").unwrap(),
         ..Task::default()
     }
+}
+
+pub fn create_file_input_map(
+    inputs: Vec<&str>,
+) -> FxHashMap<WorkspaceRelativePathBuf, TaskFileInput> {
+    FxHashMap::from_iter(
+        inputs
+            .into_iter()
+            .map(|input| (input.into(), TaskFileInput::default())),
+    )
 }

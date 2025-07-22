@@ -27,6 +27,7 @@ schematic = { workspace = true, features = [
 	"pkl",
 	"schema",
 	"type_indexmap",
+	"type_regex",
 	"type_semver",
 	"validate",
 	"validate_url",

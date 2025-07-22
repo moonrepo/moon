@@ -1,5 +1,4 @@
-use crate::portable_path::FilePath;
-use crate::shapes::{Input, OneOrMany};
+use crate::shapes::{FilePath, Input, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};

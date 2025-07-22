@@ -9,6 +9,7 @@ import type {
 } from './project-config';
 import type {
 	InheritedTasksConfig,
+	Input,
 	PartialInheritedTasksConfig,
 	PlatformType,
 	TaskDependencyConfig,
@@ -60,11 +61,16 @@ export interface TaskOptions {
 }
 
 export interface TaskState {
-	defaultInputs: boolean;
-	emptyInputs: boolean;
-	expanded: boolean;
-	localOnly: boolean;
-	rootLevel: boolean;
+	defaultInputs?: boolean;
+	emptyInputs?: boolean;
+	expanded?: boolean;
+	localOnly?: boolean;
+	rootLevel?: boolean;
+}
+
+export interface TaskFileInput {
+	content?: string | null;
+	optional?: boolean;
 }
 
 export interface Task {
@@ -74,9 +80,9 @@ export interface Task {
 	description: string | null;
 	env: Record<string, string>;
 	id: string;
-	inputs: string[];
+	inputs: Input[];
 	inputEnv: string[];
-	inputFiles: string[];
+	inputFiles: Record<string, TaskFileInput>;
 	inputGlobs: string[];
 	options: TaskOptions;
 	outputs: string[];

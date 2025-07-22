@@ -1,4 +1,5 @@
 use crate::task_hash::TaskHash;
+use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci};
@@ -10,7 +11,6 @@ use moon_task::{Target, Task};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_utils::glob::{GlobSet, GlobWalkOptions};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::{trace, warn};
 
@@ -73,13 +73,10 @@ impl<'task> TaskHasher<'task> {
         let absolute_inputs = self.aggregate_inputs().await?;
         let processed_inputs = self.process_inputs(absolute_inputs)?;
 
-        if !processed_inputs.is_empty() {
-            let mut hashed_inputs = BTreeMap::default();
+        if !processed_inputs.is_empty() && self.vcs.is_enabled() {
             let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
-            hashed_inputs.extend(self.vcs.get_file_hashes(&files, true).await?);
-
-            self.content.inputs = hashed_inputs;
+            self.content.inputs = self.vcs.get_file_hashes(&files, true).await?;
         }
 
         if !self.task.input_env.is_empty() {
@@ -100,8 +97,8 @@ impl<'task> TaskHasher<'task> {
         let vcs_enabled = self.vcs.is_enabled();
 
         if !self.task.input_files.is_empty() {
-            for input in &self.task.input_files {
-                files.insert(input.to_logical_path(self.workspace_root));
+            for file in self.task.input_files.keys() {
+                files.insert(file.to_logical_path(self.workspace_root));
             }
         }
 
@@ -190,7 +187,7 @@ impl<'task> TaskHasher<'task> {
         }
 
         // Filter inputs second
-        self.task.input_files.contains(workspace_relative_path)
+        self.task.input_files.contains_key(workspace_relative_path)
             || sources_globset.matches(workspace_relative_path.as_str())
     }
 
@@ -215,10 +212,24 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            // `git hash-object` will fail if you pass an unknown file
-            if !abs_path.exists() && self.hasher_config.warn_on_missing_inputs {
-                if self.hasher_config.ignore_missing_patterns.is_empty()
-                    || !ignore_missing.is_match(abs_path)
+            if !abs_path.exists() {
+                if let Some(params) = self.task.input_files.get(&rel_path) {
+                    match params.optional {
+                        Some(true) => continue,
+                        Some(false) => {
+                            return Err(TaskHasherError::MissingInputFile {
+                                path: rel_path.to_string(),
+                                target: self.task.target.clone(),
+                            }
+                            .into());
+                        }
+                        _ => {}
+                    };
+                }
+
+                if self.hasher_config.warn_on_missing_inputs
+                    && (self.hasher_config.ignore_missing_patterns.is_empty()
+                        || !ignore_missing.is_match(abs_path))
                 {
                     warn!(
                         "Attempted to hash input {} but it does not exist, skipping",

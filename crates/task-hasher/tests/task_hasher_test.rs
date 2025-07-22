@@ -329,6 +329,33 @@ mod task_hasher {
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["moon.yml"]);
         }
+
+        #[tokio::test]
+        #[should_panic(expected = "task_hasher::missing_input_file")]
+        async fn errors_if_optional_false_and_file_missing() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, _) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "filesRequired").unwrap();
+
+            generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
+        }
+
+        #[tokio::test]
+        async fn doesnt_error_if_optional_true_and_file_missing() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+
+            let (wg, vcs) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, _) = create_hasher_configs();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "filesOptional").unwrap();
+
+            let _ = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
+        }
     }
 
     mod output_filtering {

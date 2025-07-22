@@ -740,11 +740,10 @@ root-level tasks.
 
 Inputs support the following source types:
 
-- Environment variables (must start with a `$`)
-- Environment variable wildcards (must start with a `$` and contain `*`)
+- Environment variables
+- Environment variable wildcards
   <VersionLabel version="1.22.0" />
 - Files, folders, and globs
-  ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 - [Token functions and variables](../concepts/token)
 
 ```yaml title="moon.yml" {4-12}
@@ -758,12 +757,22 @@ tasks:
       # Config files at the workspace root
       - '/.eslintignore'
       - '/.eslintrc.js'
-      # Environment variables
-      - '$ESLINT_CACHE'
-      - '$ESLINT_*'
       # Tokens
       - '$projectRoot'
       - '@group(sources)'
+```
+
+#### Environment variables
+
+Environment variables can be used as inputs and must start with a `$`. Wildcard variables can use
+`*` to match any character.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      - '$FOO_CACHE'
+      - '$FOO_*'
 ```
 
 :::caution
@@ -773,6 +782,39 @@ affected state when it _is_ defined. If the environment variable always exists, 
 always run and bypass the cache.
 
 :::
+
+#### File paths
+
+File paths support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `file://` URI <VersionLabel inline version="1.39.0" />,
+or as an object with a `file` property <VersionLabel inline version="1.39.0" />. Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `content` (`string`) - When determining affected state, will match against the file's content
+  using the defined regex pattern, instead of relying on file existence.
+- `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
+  warning. When set to `false` and the file is missing, will fail with an error. When not defined,
+  does nothing (default).
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Literal paths
+      - 'project/relative/file.js'
+      - '/workspace/relative/file.js'
+      # Using file protocol
+      - 'file://project/relative/file.js?optional'
+      - 'file:///workspace/relative/file.js?content=a|b|c'
+      # Using an object
+      - file: 'project/relative/file.js'
+        optional: true
+      - file: '/workspace/relative/file.js'
+        content: 'a|b|c'
+```
+
+#### Glob patterns
 
 :::danger
 

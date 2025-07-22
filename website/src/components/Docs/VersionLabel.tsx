@@ -12,7 +12,7 @@ export default function VersionLabel({ header, inline, updated, version }: Versi
 		<Label
 			text={`v${version}`}
 			variant={updated ? 'success' : 'info'}
-			className={header ? 'absolute right-0 top-1.5' : inline ? 'inline-block' : 'ml-2'}
+			className={header ? 'absolute right-0 top-1.5' : inline ? 'inline-block ml-1' : 'ml-2'}
 		/>
 	);
 }

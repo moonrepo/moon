@@ -5,12 +5,11 @@ use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf
 use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_env_var::GlobalEnvBag;
-use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use moon_vcs::BoxedVcs;
-use rustc_hash::FxHashSet;
-use starbase_utils::glob::{GlobSet, GlobWalkOptions};
+use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::glob::GlobSet;
 use std::path::{Path, PathBuf};
 use tracing::{trace, warn};
 
@@ -109,10 +108,9 @@ impl<'task> TaskHasher<'task> {
 
             // Collect inputs by walking and globbing the file system
             if use_globs {
-                files.extend(glob_walk_with_options(
+                files.extend(self.task.get_input_files_with_globs(
                     self.workspace_root,
-                    self.task.input_globs.keys(),
-                    GlobWalkOptions::default().cache().files(),
+                    self.task.input_globs.iter().collect(),
                 )?);
             }
             // Collect inputs by querying VCS which is faster than globbing
@@ -126,16 +124,15 @@ impl<'task> TaskHasher<'task> {
                 let workspace_globs = self
                     .task
                     .input_globs
-                    .keys()
-                    .filter(|g| !g.as_str().starts_with(self.project.source.as_str()))
-                    .collect::<Vec<_>>();
+                    .iter()
+                    .filter(|(glob, _)| !glob.as_str().starts_with(self.project.source.as_str()))
+                    .collect::<FxHashMap<_, _>>();
 
                 if !workspace_globs.is_empty() {
-                    files.extend(glob_walk_with_options(
-                        self.workspace_root,
-                        workspace_globs,
-                        GlobWalkOptions::default().cache().files(),
-                    )?);
+                    files.extend(
+                        self.task
+                            .get_input_files_with_globs(self.workspace_root, workspace_globs)?,
+                    );
                 }
             }
         }

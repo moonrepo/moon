@@ -189,10 +189,44 @@ impl Task {
             }
         }
 
-        if !self.input_globs.is_empty() {
+        list.extend(
+            self.get_input_files_with_globs(workspace_root, self.input_globs.iter().collect())?,
+        );
+
+        Ok(list.into_iter().collect())
+    }
+
+    /// Return a list of all workspace-relative input files based
+    /// on the provided globs and their params.
+    pub fn get_input_files_with_globs(
+        &self,
+        workspace_root: &Path,
+        globs: FxHashMap<&WorkspaceRelativePathBuf, &TaskGlobInput>,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut list = FxHashSet::default();
+        let mut cached_globs = vec![];
+        let mut non_cached_globs = vec![];
+
+        for (glob, params) in globs {
+            if params.cache {
+                cached_globs.push(glob);
+            } else {
+                non_cached_globs.push(glob);
+            }
+        }
+
+        if !cached_globs.is_empty() {
             list.extend(glob_walk_with_options(
                 workspace_root,
-                self.input_globs.keys(),
+                cached_globs,
+                GlobWalkOptions::default().cache().files(),
+            )?);
+        }
+
+        if !non_cached_globs.is_empty() {
+            list.extend(glob_walk_with_options(
+                workspace_root,
+                non_cached_globs,
                 GlobWalkOptions::default().files(),
             )?);
         }

@@ -50,12 +50,19 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskGlobInput {
+        #[serde(skip_serializing_if = "is_false")]
         pub cache: bool,
     }
 );
+
+impl Default for TaskGlobInput {
+    fn default() -> Self {
+        Self { cache: true }
+    }
+}
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]

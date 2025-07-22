@@ -738,7 +738,7 @@ mod task_expander {
         use super::*;
 
         #[test]
-        fn inherits_file_input_settings() {
+        fn inherits_file_input_params() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
 
@@ -746,9 +746,9 @@ mod task_expander {
             task.inputs
                 .push(Input::parse("file://a.txt?optional").unwrap());
             task.inputs
-                .push(Input::parse("file://b.txt?content=a|b|c").unwrap());
+                .push(Input::parse("file://dir/b.txt?content=a|b|c").unwrap());
             task.inputs
-                .push(Input::parse("file://c.txt?optional=false&content=a|b|c").unwrap());
+                .push(Input::parse("file:///root/c.txt?optional=false&content=a|b|c").unwrap());
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -766,19 +766,49 @@ mod task_expander {
                         }
                     ),
                     (
-                        "project/source/b.txt".into(),
+                        "project/source/dir/b.txt".into(),
                         TaskFileInput {
                             content: Some(RegexSetting::try_from("a|b|c".to_owned()).unwrap()),
                             ..Default::default()
                         }
                     ),
                     (
-                        "project/source/c.txt".into(),
+                        "root/c.txt".into(),
                         TaskFileInput {
                             content: Some(RegexSetting::try_from("a|b|c".to_owned()).unwrap()),
                             optional: Some(false),
                         }
                     ),
+                ])
+            );
+        }
+
+        #[test]
+        fn inherits_glob_input_params() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.inputs.push(Input::parse("glob://a.*?cache").unwrap());
+            task.inputs
+                .push(Input::parse("glob://dir/b.*?cache=false").unwrap());
+            task.inputs
+                .push(Input::parse("glob:///root/c.*?cache=true").unwrap());
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project, &context)
+                .expand_inputs(&mut task)
+                .unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                FxHashMap::from_iter([
+                    ("project/source/a.*".into(), TaskGlobInput { cache: true }),
+                    (
+                        "project/source/dir/b.*".into(),
+                        TaskGlobInput { cache: false }
+                    ),
+                    ("root/c.*".into(), TaskGlobInput { cache: true }),
                 ])
             );
         }

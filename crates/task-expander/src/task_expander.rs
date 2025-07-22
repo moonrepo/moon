@@ -236,6 +236,7 @@ impl<'graph> TaskExpander<'graph> {
                 .map(|file| (file, TaskFileInput::default())),
         );
 
+        task.input_globs.extend(result.globs_for_input);
         task.input_globs.extend(
             result
                 .globs

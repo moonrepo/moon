@@ -25,6 +25,7 @@ pub struct ExpandedResult {
     pub files: Vec<WorkspaceRelativePathBuf>,
     pub files_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
     pub globs: Vec<WorkspaceRelativePathBuf>,
+    pub globs_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
     pub token: Option<String>,
     pub value: Option<String>,
 }
@@ -295,7 +296,9 @@ impl<'graph> TokenExpander<'graph> {
                         inner.to_workspace_relative(&self.project.source),
                     )?;
 
-                    result.globs.push(glob);
+                    result
+                        .globs_for_input
+                        .insert(glob, TaskGlobInput { cache: inner.cache });
                 }
             };
         }
@@ -750,6 +753,7 @@ impl<'graph> TokenExpander<'graph> {
                     .map(|file| (file.to_owned(), TaskFileInput::default())),
             );
 
+            task.input_globs.extend(result.globs_for_input.clone());
             task.input_globs.extend(
                 result
                     .globs

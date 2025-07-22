@@ -9,7 +9,7 @@ use moon_config::{
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{ConfigLoader as BaseLoader, Format};
+use schematic::{ConfigLoader as BaseLoader, Format, RegexSetting};
 use std::path::Path;
 use utils::*;
 
@@ -290,7 +290,7 @@ inputs:
                 vec![
                     Input::WorkspaceFile({
                         let mut inner = create_file_input("/ws/path");
-                        inner.content = Some("a|b|c".into());
+                        inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
@@ -333,7 +333,7 @@ inputs:
                 vec![
                     Input::WorkspaceFile({
                         let mut inner = create_file_input("/ws/path");
-                        inner.content = Some("a|b|c".into());
+                        inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
@@ -375,7 +375,7 @@ inputs:
                 vec![
                     Input::WorkspaceFile({
                         let mut inner = create_file_input("/ws/path");
-                        inner.content = Some("a|b|c".into());
+                        inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),

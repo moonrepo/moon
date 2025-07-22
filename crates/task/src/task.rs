@@ -1,8 +1,8 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, OutputPath, PlatformType, RegexSetting, TaskDependencyConfig, TaskPreset, TaskType,
-    is_false,
+    Input, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType, is_false,
+    schematic::RegexSetting,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;

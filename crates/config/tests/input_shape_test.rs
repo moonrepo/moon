@@ -2,6 +2,7 @@ use moon_config::{
     FileGroupInput, FileGroupInputFormat, Input, ManifestDepsInput, ProjectSourcesInput, Uri,
     test_utils::*,
 };
+use schematic::RegexSetting;
 
 mod input_shape {
     use super::*;
@@ -346,7 +347,7 @@ mod input_shape {
                 Input::WorkspaceFile({
                     let mut inner = create_file_input("/root/file.txt");
                     inner.optional = Some(true);
-                    inner.content = Some("a|b|c".into());
+                    inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                     inner
                 })
             );
@@ -419,11 +420,11 @@ mod input_shape {
         fn supports_matches_field() {
             let input = create_file_input("file.txt?matches=abc");
 
-            assert_eq!(input.content.unwrap(), "abc");
+            assert_eq!(input.content.unwrap().as_str(), "abc");
 
             let input = create_file_input("file.txt?match=abc");
 
-            assert_eq!(input.content.unwrap(), "abc");
+            assert_eq!(input.content.unwrap().as_str(), "abc");
 
             let input = create_file_input("file.txt?matches");
 

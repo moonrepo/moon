@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{Input, OutputPath, RegexSetting, TaskArgs, TaskDependencyConfig};
+use moon_config::{Input, OutputPath, TaskArgs, TaskDependencyConfig, schematic::RegexSetting};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput};
 use moon_task_expander::TaskExpander;

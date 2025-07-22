@@ -6,7 +6,8 @@ use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
 use schematic::{
-    Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, schema::UnionType,
+    Config, ConfigEnum, ParseError, RegexSetting, Schema, SchemaBuilder, Schematic,
+    schema::UnionType,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
@@ -42,7 +43,7 @@ config_struct!(
             alias = "matches",
             skip_serializing_if = "Option::is_none"
         )]
-        pub content: Option<String>,
+        pub content: Option<RegexSetting>,
 
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
@@ -60,7 +61,7 @@ impl FileInput {
             match key.as_str() {
                 "content" | "match" | "matches" => {
                     if !value.is_empty() {
-                        input.content = Some(value);
+                        input.content = Some(RegexSetting::new(value).map_err(map_parse_error)?);
                     }
                 }
                 "optional" => {

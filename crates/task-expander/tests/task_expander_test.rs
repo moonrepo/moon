@@ -7,17 +7,13 @@ use moon_task::{Target, TaskFileInput, TaskGlobInput};
 use moon_task_expander::TaskExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
-use utils::{
-    create_context, create_file_input_map, create_project, create_project_with_tasks, create_task,
-};
+use utils::*;
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
 }
 
 mod task_expander {
-    use crate::utils::create_glob_input_map;
-
     use super::*;
 
     #[test]

@@ -8,7 +8,7 @@ import type { ExtendsFrom } from './common';
 export interface FileInput {
 	content: string | null;
 	file: string;
-	optional?: boolean;
+	optional?: boolean | null;
 }
 
 /** A glob path input. */

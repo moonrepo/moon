@@ -5,7 +5,7 @@ use moon_config::{Input, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
-use moon_task::{Task, TaskFileInput};
+use moon_task::{Task, TaskFileInput, TaskGlobInput};
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -236,7 +236,12 @@ impl<'graph> TaskExpander<'graph> {
                 .map(|file| (file, TaskFileInput::default())),
         );
 
-        task.input_globs.extend(result.globs);
+        task.input_globs.extend(
+            result
+                .globs
+                .into_iter()
+                .map(|glob| (glob, TaskGlobInput::default())),
+        );
 
         Ok(())
     }
@@ -278,7 +283,9 @@ impl<'graph> TaskExpander<'graph> {
             let abs_file = file.to_path(&self.context.workspace_root);
 
             if abs_file.exists() && abs_file.is_dir() {
-                task.input_globs.insert(file.join("**/*"));
+                task.input_globs
+                    .insert(file.join("**/*"), TaskGlobInput::default());
+
                 to_remove.push(file.to_owned());
             }
         }

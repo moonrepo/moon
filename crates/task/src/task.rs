@@ -50,6 +50,14 @@ cacheable!(
 );
 
 cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
+    pub struct TaskGlobInput {
+        pub cache: bool,
+    }
+);
+
+cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct Task {
@@ -74,8 +82,8 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub input_files: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
 
-        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
-        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub input_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
 
         pub options: TaskOptions,
 
@@ -112,7 +120,7 @@ impl Task {
     pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
-        let (gi, ni) = split_patterns(&self.input_globs);
+        let (gi, ni) = split_patterns(self.input_globs.keys());
         let (go, no) = split_patterns(&self.output_globs);
 
         // We then only match against non-negated inputs
@@ -177,7 +185,7 @@ impl Task {
         if !self.input_globs.is_empty() {
             list.extend(glob_walk_with_options(
                 workspace_root,
-                &self.input_globs,
+                self.input_globs.keys(),
                 GlobWalkOptions::default().files(),
             )?);
         }
@@ -292,7 +300,7 @@ impl Default for Task {
             inputs: vec![],
             input_env: FxHashSet::default(),
             input_files: FxHashMap::default(),
-            input_globs: FxHashSet::default(),
+            input_globs: FxHashMap::default(),
             options: TaskOptions::default(),
             outputs: vec![],
             output_files: FxHashSet::default(),

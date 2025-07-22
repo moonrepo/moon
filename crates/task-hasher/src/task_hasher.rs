@@ -111,7 +111,7 @@ impl<'task> TaskHasher<'task> {
             if use_globs {
                 files.extend(glob_walk_with_options(
                     self.workspace_root,
-                    &self.task.input_globs,
+                    self.task.input_globs.keys(),
                     GlobWalkOptions::default().cache().files(),
                 )?);
             }
@@ -126,7 +126,7 @@ impl<'task> TaskHasher<'task> {
                 let workspace_globs = self
                     .task
                     .input_globs
-                    .iter()
+                    .keys()
                     .filter(|g| !g.as_str().starts_with(self.project.source.as_str()))
                     .collect::<Vec<_>>();
 

@@ -3,7 +3,7 @@ mod utils;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{Input, LanguageType, LayerType, OutputPath};
 use moon_env_var::GlobalEnvBag;
-use moon_task::TaskFileInput;
+use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
@@ -704,9 +704,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_globs,
-                FxHashSet::from_iter([
-                    "project/source/**/*.json".into(),
-                    "project/source/*.md".into()
+                FxHashMap::from_iter([
+                    ("project/source/**/*.json".into(), TaskGlobInput::default()),
+                    ("project/source/*.md".into(), TaskGlobInput::default()),
                 ])
             );
         }
@@ -832,9 +832,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_globs,
-                FxHashSet::from_iter([
-                    "project/source/**/*.json".into(),
-                    "project/source/*.md".into()
+                FxHashMap::from_iter([
+                    ("project/source/**/*.json".into(), TaskGlobInput::default()),
+                    ("project/source/*.md".into(), TaskGlobInput::default()),
                 ])
             );
         }
@@ -1709,9 +1709,9 @@ mod token_expander {
             );
             assert_eq!(
                 task.input_globs,
-                FxHashSet::from_iter([
-                    "project/source/**/*.json".into(),
-                    "project/source/*.md".into()
+                FxHashMap::from_iter([
+                    ("project/source/**/*.json".into(), TaskGlobInput::default()),
+                    ("project/source/*.md".into(), TaskGlobInput::default()),
                 ])
             );
         }

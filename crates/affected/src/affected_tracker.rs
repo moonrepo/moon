@@ -6,6 +6,7 @@ use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::fs;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{debug, trace};
@@ -361,7 +362,25 @@ impl AffectedTracker {
         let globset = task.create_globset()?;
 
         for file in self.touched_files.iter() {
-            if task.input_files.contains_key(file) || globset.matches(file.as_str()) {
+            let mut affected = false;
+
+            if let Some(params) = task.input_files.get(file) {
+                affected = match &params.content {
+                    Some(matcher) => {
+                        let content =
+                            fs::read_file(file.to_logical_path(&self.workspace_graph.root))?;
+
+                        matcher.is_match(&content)
+                    }
+                    None => true,
+                };
+            }
+
+            if !affected {
+                affected = globset.matches(file.as_str());
+            }
+
+            if affected {
                 return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
             }
         }

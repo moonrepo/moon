@@ -4,17 +4,24 @@ use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_sandbox::create_sandbox;
+use starbase_sandbox::{Sandbox, create_sandbox};
 
-async fn build_graph(fixture: &str) -> WorkspaceGraph {
+async fn build_graph_with_sandbox(fixture: &str) -> (WorkspaceGraph, Sandbox) {
     let sandbox = create_sandbox(fixture);
 
-    WorkspaceMocker::new(sandbox.path())
-        .with_default_projects()
-        .with_global_envs()
-        .with_inherited_tasks()
-        .mock_workspace_graph()
-        .await
+    (
+        WorkspaceMocker::new(sandbox.path())
+            .with_default_projects()
+            .with_global_envs()
+            .with_inherited_tasks()
+            .mock_workspace_graph()
+            .await,
+        sandbox,
+    )
+}
+
+async fn build_graph(fixture: &str) -> WorkspaceGraph {
+    build_graph_with_sandbox(fixture).await.0
 }
 
 mod affected_projects {
@@ -452,6 +459,44 @@ mod affected_tasks {
                 create_state_from_file("base/file.txt")
             )])
         );
+    }
+
+    #[tokio::test]
+    async fn affected_by_file_if_content_matches() {
+        let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
+        sandbox.create_file("base/file.txt", "bar");
+
+        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .unwrap();
+        let affected = tracker.build();
+
+        assert_eq!(
+            affected.tasks,
+            FxHashMap::from_iter([(
+                Target::parse("base:by-file-match").unwrap(),
+                create_state_from_file("base/file.txt")
+            )])
+        );
+    }
+
+    #[tokio::test]
+    async fn not_affected_by_file_if_content_doesnt_match() {
+        let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
+        sandbox.create_file("base/file.txt", "foo");
+
+        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        tracker
+            .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .unwrap();
+        let affected = tracker.build();
+
+        assert!(affected.tasks.is_empty());
     }
 
     #[tokio::test]

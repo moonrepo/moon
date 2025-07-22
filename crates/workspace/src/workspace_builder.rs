@@ -273,7 +273,11 @@ impl<'app> WorkspaceBuilder<'app> {
             Arc::clone(&project_graph),
         ));
 
-        Ok(WorkspaceGraph::new(project_graph, task_graph))
+        Ok(WorkspaceGraph::new(
+            project_graph,
+            task_graph,
+            context.workspace_root.to_path_buf(),
+        ))
     }
 
     /// Load a single project by ID or alias into the graph.

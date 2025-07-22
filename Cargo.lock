@@ -3886,6 +3886,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "serde",
  "starbase_sandbox",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

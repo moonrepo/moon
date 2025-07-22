@@ -5,6 +5,7 @@ use moon_common::Id;
 use moon_project_graph::{Project, ProjectGraph};
 use moon_task_graph::{Target, Task, TaskGraph};
 use scc::HashMap;
+use std::path::PathBuf;
 use std::{path::Path, sync::Arc};
 
 pub use moon_graph_utils::*;
@@ -15,6 +16,7 @@ pub use moon_task_graph as tasks;
 pub struct WorkspaceGraph {
     pub projects: Arc<ProjectGraph>,
     pub tasks: Arc<TaskGraph>,
+    pub root: PathBuf,
 
     /// Cache of query results, mapped by query input to project IDs.
     project_query_cache: HashMap<String, Arc<Vec<Id>>>,
@@ -24,10 +26,11 @@ pub struct WorkspaceGraph {
 }
 
 impl WorkspaceGraph {
-    pub fn new(projects: Arc<ProjectGraph>, tasks: Arc<TaskGraph>) -> Self {
+    pub fn new(projects: Arc<ProjectGraph>, tasks: Arc<TaskGraph>, root: PathBuf) -> Self {
         Self {
             projects,
             tasks,
+            root,
             project_query_cache: HashMap::default(),
             task_query_cache: HashMap::default(),
         }

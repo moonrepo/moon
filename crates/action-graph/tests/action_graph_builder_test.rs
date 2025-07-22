@@ -10,7 +10,7 @@ use moon_config::{
     UnresolvedVersionSpec, Version,
 };
 use moon_platform::{Runtime, RuntimeReq, ToolchainSpec};
-use moon_task::{Target, TargetLocator, Task};
+use moon_task::{Target, TargetLocator, Task, TaskFileInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::ActionGraphContainer;
@@ -1399,7 +1399,8 @@ mod action_graph_builder {
                 let file = WorkspaceRelativePathBuf::from("bar/file.js");
 
                 let mut task = create_task("bar", "build");
-                task.input_files.insert(file.clone());
+                task.input_files
+                    .insert(file.clone(), TaskFileInput::default());
 
                 let touched_files = FxHashSet::from_iter([file]);
                 builder.set_touched_files(touched_files).unwrap();

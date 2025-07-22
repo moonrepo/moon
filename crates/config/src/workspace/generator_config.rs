@@ -1,5 +1,5 @@
 use crate::config_struct;
-use crate::portable_path::FilePath;
+use crate::shapes::FilePath;
 use crate::template::TemplateLocator;
 use schematic::{Config, DefaultValueResult, validate};
 

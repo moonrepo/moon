@@ -1,4 +1,4 @@
-use crate::portable_path::FilePath;
+use crate::shapes::FilePath;
 use crate::{config_struct, config_unit_enum};
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, env};

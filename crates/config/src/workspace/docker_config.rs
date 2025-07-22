@@ -1,5 +1,5 @@
 use crate::config_struct;
-use crate::portable_path::GlobPath;
+use crate::shapes::GlobPath;
 use schematic::Config;
 
 config_struct!(

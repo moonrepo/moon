@@ -9,6 +9,10 @@ tasks:
   by-file:
     inputs:
       - 'file.txt'
+  by-file-match:
+    inputs:
+      - file: 'file.txt'
+        content: 'ba(r|z)'
   by-glob:
     inputs:
       - '*.txt'

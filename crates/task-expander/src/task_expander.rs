@@ -5,7 +5,7 @@ use moon_config::{Input, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Task, TaskFileInput};
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -227,7 +227,15 @@ impl<'graph> TaskExpander<'graph> {
         let result = self.token.expand_inputs(task)?;
 
         task.input_env.extend(result.env);
-        task.input_files.extend(result.files);
+
+        task.input_files.extend(result.files_for_input);
+        task.input_files.extend(
+            result
+                .files
+                .into_iter()
+                .map(|file| (file, TaskFileInput::default())),
+        );
+
         task.input_globs.extend(result.globs);
 
         Ok(())
@@ -259,7 +267,7 @@ impl<'graph> TaskExpander<'graph> {
     pub fn move_input_dirs_to_globs(&mut self, task: &mut Task) {
         let mut to_remove = vec![];
 
-        for file in &task.input_files {
+        for file in task.input_files.keys() {
             // If this dir is actually an output dir, just remove it
             if task.output_files.contains(file) {
                 to_remove.push(file.to_owned());

@@ -1,12 +1,13 @@
-use super::Uri;
-use crate::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
+use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
+use super::{Uri, is_false};
 use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
 use schematic::{
-    Config, ConfigEnum, ParseError, Schema, SchemaBuilder, Schematic, schema::UnionType,
+    Config, ConfigEnum, ParseError, RegexSetting, Schema, SchemaBuilder, Schematic,
+    schema::UnionType,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
@@ -42,10 +43,10 @@ config_struct!(
             alias = "matches",
             skip_serializing_if = "Option::is_none"
         )]
-        pub content: Option<String>,
+        pub content: Option<RegexSetting>,
 
-        #[serde(default)]
-        pub optional: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub optional: Option<bool>,
     }
 );
 
@@ -60,11 +61,11 @@ impl FileInput {
             match key.as_str() {
                 "content" | "match" | "matches" => {
                     if !value.is_empty() {
-                        input.content = Some(value);
+                        input.content = Some(RegexSetting::new(value).map_err(map_parse_error)?);
                     }
                 }
                 "optional" => {
-                    input.optional = parse_bool_field(&key, &value)?;
+                    input.optional = Some(parse_bool_field(&key, &value)?);
                 }
                 _ => {
                     return Err(ParseError::new(format!("unknown field `{key}`")));
@@ -162,7 +163,7 @@ config_struct!(
     pub struct GlobInput {
         pub glob: GlobPath,
 
-        #[serde(default = "default_true")]
+        #[serde(default = "default_true", skip_serializing_if = "is_false")]
         #[setting(default = true)]
         pub cache: bool,
     }

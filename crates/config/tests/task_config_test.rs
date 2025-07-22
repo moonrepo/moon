@@ -9,7 +9,7 @@ use moon_config::{
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{ConfigLoader as BaseLoader, Format};
+use schematic::{ConfigLoader as BaseLoader, Format, RegexSetting};
 use std::path::Path;
 use utils::*;
 
@@ -290,14 +290,14 @@ inputs:
                 vec![
                     Input::WorkspaceFile({
                         let mut inner = create_file_input("/ws/path");
-                        inner.content = Some("a|b|c".into());
+                        inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
                     Input::ProjectFile({
                         let mut inner = create_file_input("proj/path");
-                        inner.optional = true;
+                        inner.optional = Some(true);
                         inner
                     }),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
@@ -333,14 +333,14 @@ inputs:
                 vec![
                     Input::WorkspaceFile({
                         let mut inner = create_file_input("/ws/path");
-                        inner.content = Some("a|b|c".into());
+                        inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
                     Input::ProjectFile({
                         let mut inner = create_file_input("proj/path");
-                        inner.optional = true;
+                        inner.optional = Some(true);
                         inner
                     }),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
@@ -375,14 +375,14 @@ inputs:
                 vec![
                     Input::WorkspaceFile({
                         let mut inner = create_file_input("/ws/path");
-                        inner.content = Some("a|b|c".into());
+                        inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
                     Input::ProjectFile({
                         let mut inner = create_file_input("proj/path");
-                        inner.optional = true;
+                        inner.optional = Some(true);
                         inner
                     }),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
@@ -662,7 +662,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(FilePath(".env.file".to_owned())))
+                    Some(TaskOptionEnvFile::File(FilePath(".env.file".into())))
                 );
             }
 
@@ -678,7 +678,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(FilePath("/.env.file".to_owned())))
+                    Some(TaskOptionEnvFile::File(FilePath("/.env.file".into())))
                 );
             }
 
@@ -695,8 +695,8 @@ options:
                 assert_eq!(
                     config.options.env_file,
                     Some(TaskOptionEnvFile::Files(vec![
-                        FilePath(".env.file".to_owned()),
-                        FilePath("/.env.shared".to_owned())
+                        FilePath(".env.file".into()),
+                        FilePath("/.env.shared".into())
                     ]))
                 );
             }

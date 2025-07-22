@@ -16,6 +16,18 @@ tasks:
       - '2.txt'
       - 'dir/abc.txt'
 
+  filesOptional:
+    command: noop
+    inputs:
+      - file: '4.txt'
+        optional: true
+
+  filesRequired:
+    command: noop
+    inputs:
+      - file: '4.txt'
+        optional: false
+
   dirs:
     command: noop
     inputs:

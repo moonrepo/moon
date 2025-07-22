@@ -54,7 +54,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
 
     let mut inputs = vec![];
     inputs.extend(task.input_globs.iter().map(|i| i.to_string()));
-    inputs.extend(task.input_files.iter().map(|i| i.to_string()));
+    inputs.extend(task.input_files.keys().map(|i| i.to_string()));
     inputs.extend(task.input_env.iter().map(|i| format!("${i}")));
     inputs.sort();
 

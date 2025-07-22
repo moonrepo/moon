@@ -1,5 +1,5 @@
 use crate::config_struct;
-use crate::portable_path::GlobPath;
+use crate::shapes::GlobPath;
 use moon_common::Id;
 use schematic::Config;
 

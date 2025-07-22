@@ -60,7 +60,7 @@ mod codegen {
                 sandbox.path(),
                 &GeneratorConfig {
                     templates: vec![TemplateLocator::File {
-                        path: FilePath("./scaffolding".to_owned()),
+                        path: FilePath("./scaffolding".into()),
                     }],
                 },
                 MoonEnvironment::new_testing(sandbox.path()).into(),

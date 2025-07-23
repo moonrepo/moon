@@ -52,6 +52,21 @@ cacheable!(
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
+    pub struct TaskGlobInput {
+        #[serde(skip_serializing_if = "is_false")]
+        pub cache: bool,
+    }
+);
+
+impl Default for TaskGlobInput {
+    fn default() -> Self {
+        Self { cache: true }
+    }
+}
+
+cacheable!(
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    #[serde(default)]
     pub struct Task {
         pub args: Vec<String>,
 
@@ -74,8 +89,8 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub input_files: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
 
-        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
-        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub input_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
 
         pub options: TaskOptions,
 
@@ -112,7 +127,7 @@ impl Task {
     pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
-        let (gi, ni) = split_patterns(&self.input_globs);
+        let (gi, ni) = split_patterns(self.input_globs.keys());
         let (go, no) = split_patterns(&self.output_globs);
 
         // We then only match against non-negated inputs
@@ -174,10 +189,44 @@ impl Task {
             }
         }
 
-        if !self.input_globs.is_empty() {
+        list.extend(
+            self.get_input_files_with_globs(workspace_root, self.input_globs.iter().collect())?,
+        );
+
+        Ok(list.into_iter().collect())
+    }
+
+    /// Return a list of all workspace-relative input files based
+    /// on the provided globs and their params.
+    pub fn get_input_files_with_globs(
+        &self,
+        workspace_root: &Path,
+        globs: FxHashMap<&WorkspaceRelativePathBuf, &TaskGlobInput>,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut list = FxHashSet::default();
+        let mut cached_globs = vec![];
+        let mut non_cached_globs = vec![];
+
+        for (glob, params) in globs {
+            if params.cache {
+                cached_globs.push(glob);
+            } else {
+                non_cached_globs.push(glob);
+            }
+        }
+
+        if !cached_globs.is_empty() {
             list.extend(glob_walk_with_options(
                 workspace_root,
-                &self.input_globs,
+                cached_globs,
+                GlobWalkOptions::default().cache().files(),
+            )?);
+        }
+
+        if !non_cached_globs.is_empty() {
+            list.extend(glob_walk_with_options(
+                workspace_root,
+                non_cached_globs,
                 GlobWalkOptions::default().files(),
             )?);
         }
@@ -292,7 +341,7 @@ impl Default for Task {
             inputs: vec![],
             input_env: FxHashSet::default(),
             input_files: FxHashMap::default(),
-            input_globs: FxHashSet::default(),
+            input_globs: FxHashMap::default(),
             options: TaskOptions::default(),
             outputs: vec![],
             output_files: FxHashSet::default(),

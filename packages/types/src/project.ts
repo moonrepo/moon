@@ -73,6 +73,10 @@ export interface TaskFileInput {
 	optional?: boolean;
 }
 
+export interface TaskGlobInput {
+	cache?: boolean;
+}
+
 export interface Task {
 	args: string[];
 	command: string;
@@ -83,7 +87,7 @@ export interface Task {
 	inputs: Input[];
 	inputEnv: string[];
 	inputFiles: Record<string, TaskFileInput>;
-	inputGlobs: string[];
+	inputGlobs: Record<string, TaskGlobInput>;
 	options: TaskOptions;
 	outputs: string[];
 	outputFiles: string[];

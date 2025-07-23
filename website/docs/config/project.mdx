@@ -816,10 +816,54 @@ tasks:
 
 #### Glob patterns
 
+Glob patterns support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `glob://` URI <VersionLabel inline version="1.39.0" />,
+or as an object with a `glob` property <VersionLabel inline version="1.39.0" />. Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `cache` (`boolean`) - When gathering inputs for hashing, determines whether the globs results
+  should be cached for the duration of the moon process. Defaults to `true`.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Literal paths
+      - 'project/relative/file.*'
+      - '/workspace/relative/**/*'
+      # Using glob protocol
+      - 'glob://project/relative/file.*?cache=false'
+      - 'glob:///workspace/relative/**/*?cache'
+      # Using an object
+      - glob: 'project/relative/file.*'
+        cache: false
+      - glob: '/workspace/relative/**/*'
+```
+
+Globs can also be negated by prefixing the path with `!`, which will exclude all files that match
+the glob.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      - '!**/*.md'
+      - 'glob://!/workspace/relative/**/*'
+      - glob: '!/workspace/relative/**/*'
+```
+
+:::warning
+
+Glob patterns that contain `?`, for example `*.tsx?`, cannot be used in URI format, as it conflicts
+with the query string syntax. Use the path or object format instead.
+
+:::
+
 :::danger
 
-When using globs, be aware that files that match the glob, but are ignored via `.gitignore` (or
-similar), will _not_ be considered an input. To work around this, use explicit file inputs.
+Be aware that files that match the glob, but are ignored via `.gitignore` (or similar), will _not_
+be considered an input. To work around this, use explicit file inputs.
 
 :::
 

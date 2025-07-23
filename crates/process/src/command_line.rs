@@ -43,7 +43,7 @@ impl CommandLine {
             // appears after a "-" argument (should come from shell).
             else {
                 command_line.push(if command.escape_args {
-                    join_args_os(main_line)
+                    shell.join_args(main_line)
                 } else {
                     main_line.join(OsStr::new(" "))
                 });

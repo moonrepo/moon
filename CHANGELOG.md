@@ -19,6 +19,7 @@
 - Updated task input globs:
   - Added a `cache` param, which controls whether the glob results should be cached or not.
 - Updated the `@moonrepo/cli` npm package to no longer rely on postinstall scripts.
+- Improved argument quoting for commands and scripts.
 - Renamed project `type` to `layer`, as it better reflects what it does, a layer of access within
   the project `stack`. For backwards compatibility, the `type` name will still be supported until
   v2. The following changes have been made:

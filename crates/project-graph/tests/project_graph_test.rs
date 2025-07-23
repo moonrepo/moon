@@ -6,7 +6,7 @@ use moon_config::{
 use moon_project::{FileGroup, Project};
 use moon_project_graph::*;
 use moon_query::build_query;
-use moon_task::{Target, TaskFileInput};
+use moon_task::{Target, TaskFileInput, TaskGlobInput};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
 use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
@@ -715,9 +715,15 @@ mod project_graph {
 
             assert_eq!(
                 task.input_globs,
-                FxHashSet::from_iter([
-                    WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
-                    WorkspaceRelativePathBuf::from("project/global.*")
+                FxHashMap::from_iter([
+                    (
+                        WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
+                        TaskGlobInput::default()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("project/global.*"),
+                        TaskGlobInput::default()
+                    )
                 ])
             );
         }
@@ -784,9 +790,15 @@ mod project_graph {
 
             assert_eq!(
                 task.input_globs,
-                FxHashSet::from_iter([
-                    WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
-                    WorkspaceRelativePathBuf::from("tasks/file.*"),
+                FxHashMap::from_iter([
+                    (
+                        WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
+                        TaskGlobInput::default()
+                    ),
+                    (
+                        WorkspaceRelativePathBuf::from("tasks/file.*"),
+                        TaskGlobInput::default()
+                    ),
                 ])
             );
 

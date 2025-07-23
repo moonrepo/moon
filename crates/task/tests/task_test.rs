@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_task::{Task, TaskFileInput};
-use rustc_hash::{FxHashMap, FxHashSet};
+use moon_task::{Task, TaskFileInput, TaskGlobInput};
+use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 
 mod task {
@@ -15,7 +15,10 @@ mod task {
                 WorkspaceRelativePathBuf::from("c.jsx"),
                 TaskFileInput::default(),
             )]),
-            input_globs: FxHashSet::from_iter([WorkspaceRelativePathBuf::from("*.js")]),
+            input_globs: FxHashMap::from_iter([(
+                WorkspaceRelativePathBuf::from("*.js"),
+                TaskGlobInput::default(),
+            )]),
             ..Default::default()
         };
 
@@ -37,7 +40,10 @@ mod task {
                 WorkspaceRelativePathBuf::from("nonexistent.jsx"),
                 TaskFileInput::default(),
             )]),
-            input_globs: FxHashSet::from_iter([WorkspaceRelativePathBuf::from("*.py")]),
+            input_globs: FxHashMap::from_iter([(
+                WorkspaceRelativePathBuf::from("*.py"),
+                TaskGlobInput::default(),
+            )]),
             ..Default::default()
         };
 

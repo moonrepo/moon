@@ -8,7 +8,7 @@ use moon_config::{Input, OutputPath, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
-use moon_task::{Task, TaskFileInput};
+use moon_task::{Task, TaskFileInput, TaskGlobInput};
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
@@ -25,6 +25,7 @@ pub struct ExpandedResult {
     pub files: Vec<WorkspaceRelativePathBuf>,
     pub files_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
     pub globs: Vec<WorkspaceRelativePathBuf>,
+    pub globs_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
     pub token: Option<String>,
     pub value: Option<String>,
 }
@@ -295,7 +296,9 @@ impl<'graph> TokenExpander<'graph> {
                         inner.to_workspace_relative(&self.project.source),
                     )?;
 
-                    result.globs.push(glob);
+                    result
+                        .globs_for_input
+                        .insert(glob, TaskGlobInput { cache: inner.cache });
                 }
             };
         }
@@ -750,7 +753,13 @@ impl<'graph> TokenExpander<'graph> {
                     .map(|file| (file.to_owned(), TaskFileInput::default())),
             );
 
-            task.input_globs.extend(result.globs.clone());
+            task.input_globs.extend(result.globs_for_input.clone());
+            task.input_globs.extend(
+                result
+                    .globs
+                    .iter()
+                    .map(|glob| (glob.to_owned(), TaskGlobInput::default())),
+            );
         }
     }
 

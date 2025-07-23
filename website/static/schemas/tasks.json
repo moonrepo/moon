@@ -97,7 +97,8 @@
           "title": "content",
           "anyOf": [
             {
-              "type": "string"
+              "type": "string",
+              "format": "regex"
             },
             {
               "type": "null"
@@ -110,7 +111,14 @@
         },
         "optional": {
           "title": "optional",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false

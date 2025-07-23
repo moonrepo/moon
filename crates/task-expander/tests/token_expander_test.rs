@@ -1329,10 +1329,10 @@ mod token_expander {
                         "project/source/task/file.txt",
                         "cache/project:task/file.txt",
                     ]),
-                    globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/task/files/**/*"),
-                        WorkspaceRelativePathBuf::from("cache/project:task/files/**/*"),
-                    ],
+                    globs_for_input: create_glob_input_map(vec![
+                        "project/source/task/files/**/*",
+                        "cache/project:task/files/**/*",
+                    ]),
                     ..ExpandedResult::default()
                 }
             );

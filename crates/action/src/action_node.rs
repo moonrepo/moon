@@ -1,8 +1,7 @@
-use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_test_env};
 use moon_target::Target;
-use moon_toolchain::{Runtime, ToolchainSpec};
+use moon_toolchain::{Runtime, ToolchainSpec, VersionSpec};
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -48,7 +47,9 @@ pub struct SetupEnvironmentNode {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
-pub struct SetupProtoNode {}
+pub struct SetupProtoNode {
+    pub version: VersionSpec,
+}
 
 // DEPRECATED
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -169,8 +170,8 @@ impl ActionNode {
         Self::SetupEnvironment(Box::new(node))
     }
 
-    pub fn setup_proto() -> Self {
-        Self::SetupProto(Box::new(SetupProtoNode {}))
+    pub fn setup_proto(version: VersionSpec) -> Self {
+        Self::SetupProto(Box::new(SetupProtoNode { version }))
     }
 
     pub fn setup_toolchain_legacy(node: SetupToolchainLegacyNode) -> Self {
@@ -291,13 +292,13 @@ impl ActionNode {
                     format!("SetupEnvironment({}, {})", inner.toolchain_id, inner.root)
                 }
             }
-            Self::SetupProto(_) => {
+            Self::SetupProto(inner) => {
                 format!(
                     "SetupProto({})",
                     if is_test_env() {
-                        "1.2.3"
+                        "1.2.3".to_string()
                     } else {
-                        PROTO_CLI_VERSION
+                        inner.version.to_string()
                     }
                 )
             }

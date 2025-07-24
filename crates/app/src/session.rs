@@ -179,11 +179,14 @@ impl MoonSession {
 
     pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
         let item = self.toolchain_registry.get_or_init(|| {
-            let mut registry = ToolchainRegistry::new(PluginHostData {
-                moon_env: Arc::clone(&self.moon_env),
-                proto_env: Arc::clone(&self.proto_env),
-                workspace_graph: Arc::new(OnceLock::new()),
-            });
+            let mut registry = ToolchainRegistry::new(
+                PluginHostData {
+                    moon_env: Arc::clone(&self.moon_env),
+                    proto_env: Arc::clone(&self.proto_env),
+                    workspace_graph: Arc::new(OnceLock::new()),
+                },
+                self.toolchain_config.clone(),
+            );
 
             registry.inherit_configs(&self.toolchain_config.plugins);
 

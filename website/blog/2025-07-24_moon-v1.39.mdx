@@ -3,10 +3,11 @@ slug: moon-v1.39
 title: moon v1.39 - Improved task inputs, better proto integration, and project layers
 authors: [milesj]
 tags: [task, input, uri, object, proto, project, layer]
-# image: ./img/moon/v1.39.png
+image: ./img/moon/v1.39.png
 ---
 
-This is a rather small release, but it does include some important changes to task inputs.
+This is a rather small release, but it does include some important changes to task inputs, and
+proto's integration.
 
 <!--truncate-->
 
@@ -26,7 +27,8 @@ format, both of which support custom parameters.
 
 URIs should be rather familiar, as they are a string prefixed with a scheme (`://`), followed by a
 value, and an optional list of query parameters (`?`). Currently files can be specified using the
-`file://` scheme, and globs with the `glob://` scheme. Environment variables do not support URIs.
+[`file://` scheme](/docs/config/project#file-paths), and globs with the
+[`glob://` scheme](/docs/config/project#glob-patterns). Environment variables do not support URIs.
 
 ```yml title="moon.yml"
 tasks:
@@ -47,8 +49,9 @@ customizing parameters!
 #### Objects
 
 Objects provide an alternative to strings, allowing you to customize parameters in a standard and
-familiar format. Files can be specified using the `file` key, and globs with the `glob` key.
-Environment variables do not support objects.
+familiar format. Files can be specified using the [`file` key](/docs/config/project#file-paths), and
+globs with the [`glob` key](/docs/config/project#glob-patterns). Environment variables do not
+support objects.
 
 ```yml title="moon.yml"
 tasks:
@@ -88,21 +91,36 @@ To improve this, we have integrated proto into the action pipeline through a new
 `SetupProto`, which runs before any `SetupToolchain` action. With this, proto is only installed when
 required by that specific toolchain, and not for every command.
 
-Additionally, proto has been upgrade to
-[v0.51](https://github.com/moonrepo/proto/releases/tag/v0.51.0), which includes 2 major features:
-lockfiles and custom registries. However, we have yet to test these features thoroughly in moon, so
-they are not "officially" supported yet, but you can still use them if you wish. We will be adding
-support for these features in the future.
+### New `proto` setting
+
+Additionally, we are introducing a [`proto`](/docs/config/toolchain#proto) setting in
+[`.moon/toolchain.yml`](/docs/config/toolchain), which can be used to control the integration of
+proto in moon. To start, you can now customize the proto version! This is extremely useful if you
+want to test new proto features, or need to rollback to an older version.
+
+```yml title=".moon/toolchain.yml"
+proto:
+  version: '0.51.4'
+```
+
+### Other changes
+
+Lastly, proto has been upgrade to [v0.51](https://github.com/moonrepo/proto/releases/tag/v0.51.0),
+which includes 2 major features: lockfiles and custom registries. However, we have yet to test these
+features thoroughly in moon, so they are not "officially" supported yet, but you can still use them
+if you wish. We will be adding support for these features in the future.
 
 ## Project layers
 
 Project layers may sound like a new feature, but they are simply a rename of the project type. Going
-forward, the `type` setting in `moon.yml` has been renamed to `layer`, but backwards compatibility
-will be maintained until v2. Why the rename?
+forward, the `type` setting in [`moon.yml`](/docs/config/project) has been renamed to
+[`layer`](/docs/config/project#layer), but backwards compatibility will be maintained until v2. Why
+the rename?
 
 The term "layer" better reflects the purpose and functionality of this concept, as it defines a
-layer (the `layer` setting) within the development stack (the `stack` setting), and helps to enforce
-proper relationships. This change aims to improve clarity and consistency in our configuration.
+layer (the [`layer`](/docs/config/project#layer) setting) within the development stack (the
+[`stack`](/docs/config/project#stack) setting), and helps to enforce proper relationships. This
+change aims to improve clarity and consistency in our configuration.
 
 For example, the following layers are available, from highest to lowest. Layers can then depend on
 lower layers, but not higher layers. Except for automations and applications, they can also depend

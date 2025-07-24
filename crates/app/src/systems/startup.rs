@@ -143,6 +143,8 @@ pub async fn load_toolchain_config(
     .await
     .into_diagnostic()??;
 
+    GlobalEnvBag::instance().set("PROTO_CLI_VERSION", config.proto.version.to_string());
+
     Ok(Arc::new(config))
 }
 

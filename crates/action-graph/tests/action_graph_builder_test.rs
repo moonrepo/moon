@@ -7,7 +7,7 @@ use moon_affected::AffectedBy;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     PipelineActionSwitch, SemVer, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
-    UnresolvedVersionSpec, Version,
+    UnresolvedVersionSpec, Version, VersionSpec,
 };
 use moon_platform::{Runtime, RuntimeReq, ToolchainSpec};
 use moon_task::{Target, TargetLocator, Task, TaskFileInput};
@@ -22,6 +22,10 @@ fn create_task(project: &str, id: &str) -> Task {
         toolchains: vec![Id::raw("node")],
         ..Task::default()
     }
+}
+
+fn create_proto_version() -> VersionSpec {
+    VersionSpec::parse("0.51.4").unwrap()
 }
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {
@@ -122,7 +126,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: runtime.clone(),
                     }),
@@ -164,7 +168,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: runtime.clone(),
                     }),
@@ -205,7 +209,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: runtime.clone(),
                     }),
@@ -260,7 +264,7 @@ mod action_graph_builder {
                         runtime: node.clone(),
                         root: WorkspaceRelativePathBuf::new(),
                     }),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: bun.clone(),
                     }),
@@ -286,7 +290,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: bun }),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: node.clone()
@@ -390,7 +394,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime()
                     }),
@@ -475,7 +479,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         toolchain: spec.clone()
                     }),
@@ -2446,7 +2450,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
@@ -2488,7 +2492,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node1 }),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node2 }),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node3 }),
@@ -2515,7 +2519,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
@@ -2618,7 +2622,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode { runtime: node }),
                 ]
             );
@@ -2688,7 +2692,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
                 ]
             );
@@ -2727,7 +2731,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node1 }),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node2 }),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node3 }),
@@ -2754,7 +2758,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
                 ]
             );
@@ -2857,7 +2861,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_proto(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
                 ]
             );

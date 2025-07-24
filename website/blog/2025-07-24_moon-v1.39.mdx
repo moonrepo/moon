@@ -1,0 +1,101 @@
+---
+slug: moon-v1.39
+title: moon v1.39 - ???
+authors: [milesj]
+tags: [toolchain, wasm, plugin, go, mcp, ai, webhooks, terminal, notifications]
+# image: ./img/moon/v1.39.png
+---
+
+???
+
+<!--truncate-->
+
+## Improved task inputs
+
+A few months ago we introduced an
+[RFC for improving task inputs](https://github.com/moonrepo/moon/issues/1985) that introduces new
+syntax, functionality, and input types. In this release, we have implemented a portion of the RFC
+for testing before we implement the rest. Continue reading for more details!
+
+### New formats
+
+To start, we are introducing 2 new formats for configuring task inputs, a URI format and an object
+format, both of which support custom parameters.
+
+#### URIs
+
+URIs should be rather familiar, as they are a string prefixed with a protocol (`://`), followed by a
+value, and an optional list of query parameters (`?`). Currently files can be specified using the
+`file://` protocol, and globs with the `glob://` protocol. Environment variables do not support
+URIs.
+
+```yml title="moon.yml"
+tasks:
+  build:
+    # ...
+    inputs:
+      - 'file:///*.config.js?optional'
+      - 'glob://src/**/*.ts'
+```
+
+:::info
+
+Files and globs can still be configured using literal strings. The URI format can be used when
+customizing parameters!
+
+:::
+
+#### Objects
+
+Objects provide an alternative to strings, allowing you to customize parameters in a standard and
+familiar format. Files can be specified using the `file` key, and globs with the `glob` key.
+Environment variables do not support objects.
+
+```yml title="moon.yml"
+tasks:
+  build:
+    # ...
+    inputs:
+      - file: '/*.config.js'
+        optional: true
+      - glob: 'src/**/*.ts'
+```
+
+### New parameters
+
+As mentioned above, file and glob inputs now support parameters, which can be customized using URI
+and object formats. The following parameters are available:
+
+#### Files
+
+- `content` (`string`) - When determining affected state, will match against the file's content
+  using the defined regex pattern, instead of relying on file existence.
+- `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
+  warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
+  a warning.
+
+#### Globs
+
+- `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
+  be cached for the duration of the moon process. Defaults to `true`.
+
+## Improved proto integration
+
+## Project layers
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.39.0) for a full list
+of changes.
+
+- Updated the `@moonrepo/cli` npm package to no longer rely on postinstall scripts.
+- Improved argument quoting for commands and scripts.
+- Updated proto to [v0.51.4](https://github.com/moonrepo/proto/releases/tag/v0.51.0) (from 0.50.1).
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Better command line argument parsing/joining (especially for task `args`)
+- Pkl configuration improvements
+- WASM toolchain documentation

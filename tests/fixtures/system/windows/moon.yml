@@ -65,8 +65,7 @@ tasks:
 
   # Shell syntax
   syntaxVar:
-    command:
-      'Write-Output "$VAR_NAME", "in $VAR_NAME quotes", "prefixed-$VAR_NAME", "$VAR_NAME-suffixed"'
+    command: 'Write-Output $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME "$VAR_NAME-suffixed"'
     platform: system
     env:
       VAR_NAME: substituted-value

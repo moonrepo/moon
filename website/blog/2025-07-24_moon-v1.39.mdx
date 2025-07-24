@@ -24,10 +24,9 @@ format, both of which support custom parameters.
 
 #### URIs
 
-URIs should be rather familiar, as they are a string prefixed with a protocol (`://`), followed by a
+URIs should be rather familiar, as they are a string prefixed with a scheme (`://`), followed by a
 value, and an optional list of query parameters (`?`). Currently files can be specified using the
-`file://` protocol, and globs with the `glob://` protocol. Environment variables do not support
-URIs.
+`file://` scheme, and globs with the `glob://` scheme. Environment variables do not support URIs.
 
 ```yml title="moon.yml"
 tasks:

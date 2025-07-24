@@ -404,7 +404,7 @@ impl FromStr for Input {
         // URI formats
         let uri = Self::create_uri(value)?;
 
-        match uri.protocol.as_str() {
+        match uri.scheme.as_str() {
             "file" => {
                 let file = FileInput::from_uri(uri)?;
 

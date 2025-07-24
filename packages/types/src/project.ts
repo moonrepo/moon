@@ -16,6 +16,7 @@ import type {
 	TaskMergeStrategy,
 	TaskOperatingSystem,
 	TaskOutputStyle,
+	TaskPreset,
 	TaskPriority,
 	TaskType,
 	TaskUnixShell,
@@ -93,7 +94,7 @@ export interface Task {
 	outputFiles: string[];
 	outputGlobs: string[];
 	platform: PlatformType;
-	preset: 'server' | 'watcher' | null;
+	preset: TaskPreset | null;
 	script: string | null;
 	state: TaskState;
 	target: string;

@@ -29,6 +29,10 @@
   - `$projectType` -> `$projectLayer` for task tokens
   - `enforceProjectTypeRelationships` -> `enforceLayerRelationships` in `.moon/workspace.yml`
 
+#### 🐞 Fixes
+
+- Fixed `moon query touched-files --defaultBranch` requiring a "true" or "false" explicit value.
+
 #### ⚙️ Internal
 
 - Added telemetry for toolchain usage.

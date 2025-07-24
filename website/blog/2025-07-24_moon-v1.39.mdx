@@ -1,12 +1,12 @@
 ---
 slug: moon-v1.39
-title: moon v1.39 - ???
+title: moon v1.39 - Improved task inputs, proto integration, and project layers
 authors: [milesj]
-tags: [toolchain, wasm, plugin, go, mcp, ai, webhooks, terminal, notifications]
+tags: [task, input, uri, object, proto, project, layer]
 # image: ./img/moon/v1.39.png
 ---
 
-???
+This is a rather small release, but it does include some important changes to task inputs.
 
 <!--truncate-->
 
@@ -91,8 +91,8 @@ layer (the `layer` setting) within the development stack (the `stack` setting), 
 proper relationships. This change aims to improve clarity and consistency in our configuration.
 
 For example, the following layers are available, from highest to lowest. Layers can then depend on
-lower layers, but not higher layers. They can also depend on themself, excluding automations and
-applications.
+lower layers, but not higher layers. Except for automations and applications, they can also depend
+on themself.
 
 | Layer           | Description                                                         |
 | --------------- | ------------------------------------------------------------------- |

@@ -35,6 +35,8 @@ export type EventType =
 	| 'action.started'
 	| 'dependencies.installed'
 	| 'dependencies.installing'
+	| 'environment.initializing'
+	| 'environment.initialized'
 	| 'pipeline.completed'
 	| 'pipeline.started'
 	| 'project.synced'
@@ -88,6 +90,30 @@ export interface EventDependenciesInstalled {
 export type PayloadDependenciesInstalled = WebhookPayload<
 	'dependencies.installed',
 	EventDependenciesInstalled
+>;
+
+
+export interface EventEnvironmentInitializing {
+	project: Project | null;
+	root: string;
+	toolchain: string;
+}
+
+export type PayloadEnvironmentInitializing = WebhookPayload<
+	'environment.initializing',
+	EventEnvironmentInitializing
+>;
+
+export interface EventEnvironmentInitialized {
+	error: string | null;
+	project: Project | null;
+	root: string;
+	toolchain: string;
+}
+
+export type PayloadEnvironmentInitialized = WebhookPayload<
+	'environment.initialized',
+	EventEnvironmentInitialized
 >;
 
 export interface EventProjectSyncing {

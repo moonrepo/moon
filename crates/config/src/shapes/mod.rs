@@ -22,7 +22,7 @@ impl Uri {
         let mut uri = Self::default();
 
         let Some((scheme, suffix)) = value.as_ref().split_once("://") else {
-            return Err(ParseError::new("missing scheme (before ://)"));
+            return Err(ParseError::new("missing scheme (protocol before ://)"));
         };
 
         uri.scheme = scheme.into();

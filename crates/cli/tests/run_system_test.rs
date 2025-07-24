@@ -608,10 +608,8 @@ mod windows {
 
         let output = assert.output();
 
-        dbg!(&output);
-
         assert!(
-            predicate::str::contains("substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed")
+            predicate::str::contains("substituted-value\nin\nsubstituted-value\nquotes\nprefixed-substituted-value\nsubstituted-value-suffixed")
                 .eval(&output)
         );
     }

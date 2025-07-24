@@ -269,7 +269,10 @@ mod unix {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("value").eval(&output));
+        assert!(
+            predicate::str::contains("substituted-value in substituted-value quotes prefixed-substituted-value substituted-value-suffixed")
+                .eval(&output)
+        );
     }
 
     // Works on macOS but not Linux
@@ -593,6 +596,22 @@ mod windows {
             assert!(predicate::str::contains("windows:bar | bar").eval(&output));
             assert!(predicate::str::contains("windows:baz | baz").eval(&output));
         }
+    }
+
+    #[test]
+    fn supports_inline_vars() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:syntaxVar");
+        });
+
+        let output = assert.output();
+
+        assert!(
+            predicate::str::contains("substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed")
+                .eval(&output)
+        );
     }
 
     mod caching {

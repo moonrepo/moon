@@ -92,7 +92,6 @@ export type PayloadDependenciesInstalled = WebhookPayload<
 	EventDependenciesInstalled
 >;
 
-
 export interface EventEnvironmentInitializing {
 	project: Project | null;
 	root: string;

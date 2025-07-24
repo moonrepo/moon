@@ -1,6 +1,6 @@
 ---
 slug: moon-v1.39
-title: moon v1.39 - Improved task inputs, proto integration, and project layers
+title: moon v1.39 - Improved task inputs, better proto integration, and project layers
 authors: [milesj]
 tags: [task, input, uri, object, proto, project, layer]
 # image: ./img/moon/v1.39.png
@@ -78,7 +78,21 @@ and object formats. The following parameters are available:
 - `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
   be cached for the duration of the moon process. Defaults to `true`.
 
-## Improved proto integration
+## Better proto integration
+
+In previous versions of moon, we would automatically install [proto](/proto) for you based on
+certain conditions. This logic was applied to all `moon` sub-commands, which was not necessary, as
+it was only required for task running related commands.
+
+To improve this, we have integrated proto into the action pipeline through a new action,
+`SetupProto`, which runs before any `SetupToolchain` action. With this, proto is only installed when
+required by that specific toolchain, and not for every command.
+
+Additionally, proto has been upgrade to
+[v0.51](https://github.com/moonrepo/proto/releases/tag/v0.51.0), which includes 2 major features:
+lockfiles and custom registries. However, we have yet to test these features thoroughly in moon, so
+they are not "officially" supported yet, but you can still use them if you wish. We will be adding
+support for these features in the future.
 
 ## Project layers
 

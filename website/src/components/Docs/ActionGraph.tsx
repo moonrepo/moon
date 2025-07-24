@@ -84,14 +84,14 @@ export default function ActionGraph() {
 						data: {
 							source: 'node-toolchain',
 							target: 'setup-proto',
-						}
+						},
 					},
 					{
 						data: {
 							source: 'setup-proto',
 							target: 'sync-workspace',
-						}
-					}
+						},
+					},
 				],
 				nodes: [
 					{

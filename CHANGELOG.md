@@ -36,6 +36,7 @@
 #### ⚙️ Internal
 
 - Added telemetry for toolchain usage.
+- Added unstable support for bubbling up logs from WASM plugins.
 - Updated Rust to v1.88.0.
 - Updated proto to [v0.51.4](https://github.com/moonrepo/proto/releases/tag/v0.51.0) (from 0.50.1).
 - Updated dependencies.

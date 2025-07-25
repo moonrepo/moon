@@ -1,7 +1,6 @@
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
-use moon_common::consts::PROTO_CLI_VERSION;
 use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
@@ -251,7 +250,10 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("PROTO_AUTO_INSTALL", "false");
         self.command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
         self.command.env("PROTO_NO_PROGRESS", "true");
-        self.command.env("PROTO_VERSION", PROTO_CLI_VERSION);
+        self.command.env(
+            "PROTO_VERSION",
+            self.app.toolchain_config.proto.version.to_string(),
+        );
 
         for (key, value) in self.app.toolchain_config.get_version_env_vars() {
             // Don't overwrite proto version variables inherited from toolchains

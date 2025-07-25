@@ -18,14 +18,16 @@ use tracing::{debug, trace};
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {
-    pub configs: FxHashMap<PluginId, ToolchainPluginConfig>,
+    pub config: Arc<ToolchainConfig>,
+    pub plugins: FxHashMap<PluginId, ToolchainPluginConfig>,
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 
 impl Default for ToolchainRegistry {
     fn default() -> Self {
         Self {
-            configs: FxHashMap::default(),
+            config: Default::default(),
+            plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(
                 PluginType::Toolchain,
                 PluginHostData::default(),
@@ -35,9 +37,10 @@ impl Default for ToolchainRegistry {
 }
 
 impl ToolchainRegistry {
-    pub fn new(host_data: PluginHostData) -> Self {
+    pub fn new(host_data: PluginHostData, config: Arc<ToolchainConfig>) -> Self {
         Self {
-            configs: FxHashMap::default(),
+            config,
+            plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
         }
     }
@@ -45,7 +48,7 @@ impl ToolchainRegistry {
     pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ToolchainPluginConfig>) {
         for (id, config) in configs {
             // Convert moon IDs to plugin IDs
-            self.configs.insert(PluginId::raw(id), config.to_owned());
+            self.plugins.insert(PluginId::raw(id), config.to_owned());
         }
     }
 
@@ -77,11 +80,11 @@ impl ToolchainRegistry {
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&PluginId> {
-        self.configs.keys().collect()
+        self.plugins.keys().collect()
     }
 
     pub fn has_plugins(&self) -> bool {
-        !self.configs.is_empty()
+        !self.plugins.is_empty()
     }
 
     pub async fn load<Id>(&self, id: Id) -> miette::Result<Arc<ToolchainPlugin>>
@@ -91,7 +94,7 @@ impl ToolchainRegistry {
         let id = PluginId::raw(id.as_ref());
 
         if !self.is_registered(&id) {
-            if !self.configs.contains_key(&id) {
+            if !self.plugins.contains_key(&id) {
                 return Err(PluginError::UnknownId {
                     id: id.to_string(),
                     ty: PluginType::Toolchain,
@@ -131,7 +134,7 @@ impl ToolchainRegistry {
                 continue;
             }
 
-            let Some(config) = self.configs.get(&id) else {
+            let Some(config) = self.plugins.get(&id) else {
                 continue;
             };
 

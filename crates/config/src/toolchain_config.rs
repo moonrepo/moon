@@ -42,6 +42,10 @@ config_struct!(
         #[setting(nested)]
         pub node: Option<NodeConfig>,
 
+        /// Configures how moon integrates with proto.
+        #[setting(nested)]
+        pub proto: ProtoConfig,
+
         /// Configures and enables the Python platform.
         #[setting(nested)]
         pub python: Option<PythonConfig>,

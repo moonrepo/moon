@@ -61,6 +61,12 @@ the development environment can be setup and configured. This includes operation
 a manifest (`package.json`, etc), updating configuration files, initializing venv's (Python), so on
 and so forth.
 
+### Setup proto<VersionLabel version="1.39.0" />
+
+This action runs before all toolchain related actions and ensures that [proto](/proto) has been
+installed and is available for use. This is required for toolchains that will be downloaded and
+installed.
+
 ### Install dependencies
 
 Before we run a task, we ensure that all language dependencies (`node_modules` for example) have

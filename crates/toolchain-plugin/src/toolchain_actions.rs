@@ -1,7 +1,6 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
-use moon_common::consts::PROTO_CLI_VERSION;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectGraphInput,
@@ -203,16 +202,17 @@ impl ToolchainRegistry {
     pub fn prepare_process_command(&self, command: &mut Command, bag: &GlobalEnvBag) {
         let moon = &self.host_data.moon_env;
         let proto = &self.host_data.proto_env;
+        let proto_version = self.config.proto.version.to_string();
 
         // Inherit env vars
         command.env("PROTO_AUTO_INSTALL", "false");
         command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
         command.env("PROTO_NO_PROGRESS", "true");
-        command.env("PROTO_VERSION", PROTO_CLI_VERSION);
+        command.env("PROTO_VERSION", &proto_version);
         command.env("STARBASE_FORCE_TTY", "true");
 
         // Inherit versions for each toolchain
-        for (id, config) in &self.configs {
+        for (id, config) in &self.plugins {
             if let Some(version) = &config.version {
                 command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
             }
@@ -227,11 +227,7 @@ impl ToolchainRegistry {
         // Inherit lookup paths
         command.prepend_paths([
             // Always use a versioned proto first
-            proto
-                .store
-                .inventory_dir
-                .join("proto")
-                .join(PROTO_CLI_VERSION),
+            proto.store.inventory_dir.join("proto").join(proto_version),
             // Then fallback to shims/bins
             proto.store.shims_dir.clone(),
             proto.store.bin_dir.clone(),

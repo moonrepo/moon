@@ -9,7 +9,6 @@ use rustc_hash::FxHashMap;
 use tokio::sync::{Mutex, RwLock};
 pub use tool::*;
 
-use moon_common::consts::PROTO_CLI_VERSION;
 use proto_core::{
     Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, inject_proto_manifest_config,
 };
@@ -58,7 +57,7 @@ pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
             .store
             .inventory_dir
             .join("proto")
-            .join(PROTO_CLI_VERSION),
+            .join(env::var("PROTO_CLI_VERSION").unwrap_or_default()),
         // Then fallback to shims/bins
         proto.store.shims_dir.clone(),
         proto.store.bin_dir.clone(),
@@ -88,7 +87,10 @@ pub fn get_proto_env_vars() -> FxHashMap<String, String> {
         ("PROTO_IGNORE_MIGRATE_WARNING".into(), "true".into()),
         ("PROTO_NO_PROGRESS".into(), "true".into()),
         // ("PROTO_LOG".into(), "trace".into()),
-        ("PROTO_VERSION".into(), PROTO_CLI_VERSION.into()),
+        (
+            "PROTO_VERSION".into(),
+            env::var("PROTO_CLI_VERSION").unwrap_or_default(),
+        ),
         ("STARBASE_FORCE_TTY".into(), "true".into()),
     ])
 }

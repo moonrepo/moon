@@ -63,6 +63,17 @@ tasks:
     inputs:
       - '*.bat'
 
+  # Shell syntax
+  syntaxVar:
+    command:
+      'Write-Output $env:VAR_NAME "in $env:VAR_NAME quotes" prefixed-$env:VAR_NAME
+      "$env:VAR_NAME-suffixed"'
+    platform: system
+    env:
+      VAR_NAME: substituted-value
+    inputs:
+      - '*.sh'
+
   # Misc
   foo:
     command: powershell -c "./echo.ps1 'foo'"

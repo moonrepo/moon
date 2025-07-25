@@ -4,7 +4,7 @@ pub use crate::queries::projects::*;
 pub use crate::queries::tasks::*;
 pub use crate::queries::touched_files::*;
 use crate::session::MoonSession;
-use clap::{Args, Subcommand};
+use clap::{ArgAction, Args, Subcommand};
 use iocraft::prelude::{Size, element};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::is_ci;
@@ -543,7 +543,8 @@ pub struct QueryTouchedFilesArgs {
 
     #[arg(
         long = "defaultBranch",
-        help = "When on the default branch, compare against the previous revision"
+        help = "When on the default branch, compare against the previous revision",
+        action = ArgAction::SetTrue
     )]
     default_branch: Option<bool>,
 

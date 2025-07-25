@@ -381,11 +381,14 @@ impl WorkspaceMocker {
     }
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
-        let mut registry = ToolchainRegistry::new(PluginHostData {
-            moon_env: Arc::new(self.moon_env.clone()),
-            proto_env: Arc::new(self.proto_env.clone()),
-            workspace_graph: Arc::new(OnceLock::new()),
-        });
+        let mut registry = ToolchainRegistry::new(
+            PluginHostData {
+                moon_env: Arc::new(self.moon_env.clone()),
+                proto_env: Arc::new(self.proto_env.clone()),
+                workspace_graph: Arc::new(OnceLock::new()),
+            },
+            Arc::new(self.toolchain_config.clone()),
+        );
         registry.inherit_configs(&self.toolchain_config.plugins);
         registry
     }

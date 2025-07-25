@@ -12,7 +12,7 @@ use schematic::ParseError;
 
 #[derive(Default)]
 pub struct Uri {
-    pub protocol: String,
+    pub scheme: String,
     pub path: String,
     pub query: Vec<(String, String)>,
 }
@@ -21,11 +21,11 @@ impl Uri {
     pub fn parse(value: impl AsRef<str>) -> Result<Self, ParseError> {
         let mut uri = Self::default();
 
-        let Some((protocol, suffix)) = value.as_ref().split_once("://") else {
-            return Err(ParseError::new("missing protocol"));
+        let Some((scheme, suffix)) = value.as_ref().split_once("://") else {
+            return Err(ParseError::new("missing scheme (protocol before ://)"));
         };
 
-        uri.protocol = protocol.into();
+        uri.scheme = scheme.into();
 
         if let Some(index) = suffix.rfind('?')
             && index != suffix.len() - 1

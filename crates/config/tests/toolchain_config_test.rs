@@ -1521,7 +1521,7 @@ plugin:
         #[test]
         fn loads_pkl() {
             let mut config = test_config(locate_fixture("pkl"), |path| {
-                let proto = ProtoConfig::default();
+                let proto = proto_core::ProtoConfig::default();
                 ConfigLoader::default().load_toolchain_config(path, &proto)
             });
 

@@ -794,8 +794,8 @@ following parameters are supported as a URI query or as object fields:
 - `content` (`string`) - When determining affected state, will match against the file's content
   using the defined regex pattern, instead of relying on file existence.
 - `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
-  warning. When set to `false` and the file is missing, will fail with an error. When not defined,
-  does nothing (default).
+  warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
+  a warning.
 
 ```yaml title="moon.yml"
 tasks:
@@ -822,8 +822,8 @@ They can be defined as a literal path, or a `glob://` URI <VersionLabel inline v
 or as an object with a `glob` property <VersionLabel inline version="1.39.0" />. Additionally, the
 following parameters are supported as a URI query or as object fields:
 
-- `cache` (`boolean`) - When gathering inputs for hashing, determines whether the globs results
-  should be cached for the duration of the moon process. Defaults to `true`.
+- `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
+  be cached for the duration of the moon process. Defaults to `true`.
 
 ```yaml title="moon.yml"
 tasks:

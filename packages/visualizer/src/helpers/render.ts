@@ -97,7 +97,7 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#d7dfe9 #bdc9db #97a1af',
 					color: '#fff',
-					height: 60,
+					height: 65,
 					label: 'data(label)',
 					'overlay-color': '#99aab7',
 					'overlay-shape': 'ellipse',
@@ -107,7 +107,7 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 					'text-margin-y': 6,
 					'text-valign': 'bottom',
 					'underlay-shape': 'ellipse',
-					width: 60,
+					width: 65,
 				},
 			},
 			{
@@ -131,8 +131,8 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
-					height: 100,
-					width: 100,
+					height: 80,
+					width: 80,
 				},
 			},
 			{
@@ -140,8 +140,8 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#c9e166 #b7d733 #a5cd00',
-					height: 100,
-					width: 100,
+					height: 90,
+					width: 90,
 				},
 			},
 			{
@@ -149,8 +149,17 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',
-					height: 120,
-					width: 120,
+					height: 100,
+					width: 100,
+				},
+			},
+			{
+				selector: 'node[type="setup-proto"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#ffafff #ff79ff #cc61cc',
+					height: 110,
+					width: 110,
 				},
 			},
 			{

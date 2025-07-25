@@ -75,6 +75,24 @@ moon:
   downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
 ```
 
+## `proto`<VersionLabel version="1.39.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#proto" />
+
+Configures how moon integrates with and utilizes [proto](/proto).
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/ProtoConfig#version" />
+
+The version of proto to install and run toolchains with. If proto or this version of proto has not
+been installed yet, it will be installed automatically when running a task.
+
+```yaml title=".moon/toolchain.yml" {2}
+proto:
+  version: '0.51.0'
+```
+
 ## Go
 
 ## `unstable_go`<VersionLabel version="1.38.0" />

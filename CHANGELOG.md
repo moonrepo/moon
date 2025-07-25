@@ -19,6 +19,7 @@
 - Updated task input globs:
   - Added a `cache` param, which controls whether the glob results should be cached or not.
 - Updated the `@moonrepo/cli` npm package to no longer rely on postinstall scripts.
+- Improved argument quoting for commands and scripts.
 - Renamed project `type` to `layer`, as it better reflects what it does, a layer of access within
   the project `stack`. For backwards compatibility, the `type` name will still be supported until
   v2. The following changes have been made:
@@ -28,11 +29,15 @@
   - `$projectType` -> `$projectLayer` for task tokens
   - `enforceProjectTypeRelationships` -> `enforceLayerRelationships` in `.moon/workspace.yml`
 
+#### 🐞 Fixes
+
+- Fixed `moon query touched-files --defaultBranch` requiring a "true" or "false" explicit value.
+
 #### ⚙️ Internal
 
 - Added telemetry for toolchain usage.
 - Updated Rust to v1.88.0.
-- Updated proto to [v0.51.3](https://github.com/moonrepo/proto/releases/tag/v0.51.3) (from 0.50.1).
+- Updated proto to [v0.51.4](https://github.com/moonrepo/proto/releases/tag/v0.51.0) (from 0.50.1).
 - Updated dependencies.
 
 ## 1.38.6

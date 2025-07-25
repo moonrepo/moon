@@ -55,21 +55,21 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				},
 			},
 			{
-				selector: 'node[type="run-task"], node[type="sm"]',
+				selector: 'node[type="run-task"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',
 				},
 			},
 			{
-				selector: 'node[type="run-target"], node[type="sm"]',
+				selector: 'node[type="run-target"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',
 				},
 			},
 			{
-				selector: 'node[type="sync-project"], node[type="md"]',
+				selector: 'node[type="sync-project"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ffafff #ff79ff #cc61cc',
@@ -78,12 +78,12 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				},
 			},
 			{
-				selector: 'node[type="install-dependencies"], node[type="lg"]',
+				selector: 'node[type="install-dependencies"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
-					height: 100,
-					width: 100,
+					height: 90,
+					width: 90,
 				},
 			},
 			{
@@ -91,17 +91,26 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#c9e166 #b7d733 #a5cd00',
+					height: 90,
+					width: 90,
+				},
+			},
+			{
+				selector: 'node[type="setup-toolchain"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',
 					height: 100,
 					width: 100,
 				},
 			},
 			{
-				selector: 'node[type="setup-toolchain"], node[type="xl"]',
+				selector: 'node[type="setup-proto"]',
 				style: {
 					// @ts-expect-error Types incorrect
-					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',
-					height: 120,
-					width: 120,
+					'background-gradient-stop-colors': '#ffafff #ff79ff #cc61cc',
+					height: 110,
+					width: 110,
 				},
 			},
 			{

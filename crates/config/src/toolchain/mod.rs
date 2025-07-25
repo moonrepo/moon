@@ -4,6 +4,7 @@ mod deno_config;
 mod moon_config;
 mod node_config;
 mod plugin_config;
+mod proto_config;
 mod python_config;
 mod rust_config;
 
@@ -13,6 +14,7 @@ pub use deno_config::*;
 pub use moon_config::*;
 pub use node_config::*;
 pub use plugin_config::*;
+pub use proto_config::*;
 pub use python_config::*;
 pub use rust_config::*;
 

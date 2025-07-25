@@ -11,7 +11,7 @@ export default function ActionGraph() {
 					{
 						data: {
 							source: 'node-toolchain',
-							target: 'sync-workspace',
+							target: 'setup-proto',
 						},
 					},
 					{
@@ -80,12 +80,32 @@ export default function ActionGraph() {
 							target: 'sync-project',
 						},
 					},
+					{
+						data: {
+							source: 'node-toolchain',
+							target: 'setup-proto',
+						},
+					},
+					{
+						data: {
+							source: 'setup-proto',
+							target: 'sync-workspace',
+						},
+					},
 				],
 				nodes: [
 					{
 						data: {
 							id: 'sync-workspace',
 							label: 'SyncWorkspace',
+							type: 'sync-workspace',
+						},
+					},
+					{
+						data: {
+							id: 'setup-proto',
+							label: 'SetupProto',
+							type: 'setup-proto',
 						},
 					},
 					// Toolchain
@@ -93,7 +113,7 @@ export default function ActionGraph() {
 						data: {
 							id: 'node-toolchain',
 							label: 'SetupToolchain(node:18.0.0)',
-							type: 'xl',
+							type: 'setup-toolchain',
 						},
 					},
 					// Setup env
@@ -109,7 +129,7 @@ export default function ActionGraph() {
 						data: {
 							id: 'node-deps',
 							label: 'InstallWorkspaceDeps(node)',
-							type: 'lg',
+							type: 'install-dependencies',
 						},
 					},
 					// Sync project
@@ -117,7 +137,7 @@ export default function ActionGraph() {
 						data: {
 							id: 'sync-project',
 							label: 'SyncProject(example)',
-							type: 'md',
+							type: 'sync-project',
 						},
 					},
 					// Run target
@@ -125,21 +145,21 @@ export default function ActionGraph() {
 						data: {
 							id: 'target-clean',
 							label: 'RunTask(example:clean)',
-							type: 'sm',
+							type: 'run-task',
 						},
 					},
 					{
 						data: {
 							id: 'target-build',
 							label: 'RunTask(example:build)',
-							type: 'sm',
+							type: 'run-task',
 						},
 					},
 					{
 						data: {
 							id: 'target-package',
 							label: 'RunTask(example:package)',
-							type: 'sm',
+							type: 'run-task',
 						},
 					},
 				],

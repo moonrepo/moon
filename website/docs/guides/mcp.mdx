@@ -74,6 +74,9 @@ Once installed, create a `.vscode/mcp.json` file with the following content:
       "type": "stdio",
       "command": "moon",
       "args": ["mcp"],
+      // >= 1.102 (June 2025)
+      "cwd": "${workspaceFolder}",
+      // Older versions
       "env": {
         "MOON_WORKSPACE_ROOT": "${workspaceFolder}"
       }

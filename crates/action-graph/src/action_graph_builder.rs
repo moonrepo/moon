@@ -906,7 +906,10 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     pub async fn setup_proto(&mut self) -> miette::Result<Option<NodeIndex>> {
-        let index = insert_node_or_exit!(self, ActionNode::setup_proto());
+        let index = insert_node_or_exit!(
+            self,
+            ActionNode::setup_proto(self.app_context.toolchain_config.proto.version.clone())
+        );
 
         Ok(Some(index))
     }

@@ -57,7 +57,7 @@ pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
             .store
             .inventory_dir
             .join("proto")
-            .join(env::var("PROTO_CLI_VERSION").unwrap()),
+            .join(env::var("PROTO_CLI_VERSION").unwrap_or_default()),
         // Then fallback to shims/bins
         proto.store.shims_dir.clone(),
         proto.store.bin_dir.clone(),
@@ -89,7 +89,7 @@ pub fn get_proto_env_vars() -> FxHashMap<String, String> {
         // ("PROTO_LOG".into(), "trace".into()),
         (
             "PROTO_VERSION".into(),
-            env::var("PROTO_CLI_VERSION").unwrap(),
+            env::var("PROTO_CLI_VERSION").unwrap_or_default(),
         ),
         ("STARBASE_FORCE_TTY".into(), "true".into()),
     ])

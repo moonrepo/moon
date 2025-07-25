@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a path error for `@moonrepo/cli` package.
+
 ## 1.39.0
 
 #### 🚀 Updates

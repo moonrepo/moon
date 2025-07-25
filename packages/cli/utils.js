@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 const isLinux = process.platform === 'linux';
 const isMacos = process.platform === 'darwin';

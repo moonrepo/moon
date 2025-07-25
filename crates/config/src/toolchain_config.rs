@@ -125,17 +125,17 @@ impl ToolchainConfig {
 
         match id.as_str() {
             "typescript" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.2.0/typescript_toolchain.wasm".into()
+                url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.2.1/typescript_toolchain.wasm".into()
             }))),
             "unstable_go" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/go_toolchain-v0.1.1/go_toolchain.wasm".into()
+                url: "https://github.com/moonrepo/plugins/releases/download/go_toolchain-v0.1.3/go_toolchain.wasm".into()
             }))),
             "unstable_rust" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/rust_toolchain-v0.2.0/rust_toolchain.wasm".into()
+                url: "https://github.com/moonrepo/plugins/releases/download/rust_toolchain-v0.2.2/rust_toolchain.wasm".into()
             }))),
             // "typescript" => Some(PluginLocator::File(Box::new(FileLocator {
             //     file: "".into(),
-            //     path: Some("...".into()),
+            //     path: Some("target/wasm32-wasip1/release/typescript_toolchain.wasm".into()),
             // }))),
             _ => None,
         }

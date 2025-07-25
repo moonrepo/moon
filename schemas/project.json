@@ -43,7 +43,7 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
+          "$ref": "#/definitions/Input"
         }
       },
       "propertyNames": {
@@ -70,6 +70,16 @@
       "allOf": [
         {
           "$ref": "#/definitions/LanguageType"
+        }
+      ]
+    },
+    "layer": {
+      "title": "layer",
+      "description": "The layer within the project stack, for categorizing.",
+      "default": "unknown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/LayerType"
         }
       ]
     },
@@ -147,16 +157,6 @@
       ],
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
-    "type": {
-      "title": "type",
-      "description": "The type of project.",
-      "default": "unknown",
-      "allOf": [
-        {
-          "$ref": "#/definitions/ProjectType"
-        }
-      ]
-    },
     "workspace": {
       "title": "workspace",
       "description": "Overrides top-level workspace settings, scoped to this project.",
@@ -233,6 +233,69 @@
         "implicit"
       ]
     },
+    "FileInput": {
+      "description": "A file path input.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "title": "content",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "regex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "file": {
+          "title": "file",
+          "type": "string"
+        },
+        "optional": {
+          "title": "optional",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "GlobInput": {
+      "description": "A glob path input.",
+      "type": "object",
+      "properties": {
+        "cache": {
+          "title": "cache",
+          "default": true,
+          "type": "boolean"
+        },
+        "glob": {
+          "title": "glob",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Input": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/FileInput"
+        },
+        {
+          "$ref": "#/definitions/GlobInput"
+        }
+      ]
+    },
     "LanguageType": {
       "description": "Supported programming languages that each project can be written in.",
       "anyOf": [
@@ -282,6 +345,19 @@
           "description": "An unsupported language.",
           "type": "string"
         }
+      ]
+    },
+    "LayerType": {
+      "description": "The layer within the project stack, for categorizing.",
+      "type": "string",
+      "enum": [
+        "application",
+        "automation",
+        "configuration",
+        "library",
+        "scaffolding",
+        "tool",
+        "unknown"
       ]
     },
     "OwnersConfig": {
@@ -698,19 +774,6 @@
         }
       ]
     },
-    "ProjectType": {
-      "description": "The type of project, for categorizing.",
-      "type": "string",
-      "enum": [
-        "application",
-        "automation",
-        "configuration",
-        "library",
-        "scaffolding",
-        "tool",
-        "unknown"
-      ]
-    },
     "ProjectWorkspaceConfig": {
       "description": "Overrides top-level workspace settings, scoped to this project.",
       "type": "object",
@@ -883,7 +946,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Input"
               }
             },
             {

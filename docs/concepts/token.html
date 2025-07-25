@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.ba7c8905.js" defer="defer"></script>
-<script src="/assets/js/main.389b52d7.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.7f1f5712.js" defer="defer"></script>
+<script src="/assets/js/main.24aca8ae.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -151,6 +151,9 @@ string.</p>
 <a href="/docs/config/project#channel"><code>project.channel</code></a>.<!-- -->
 <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.28.0</span>
 </li>
+<li><code>$projectLayer</code> - The project layer, as defined with <a href="/docs/config/project#layer"><code>layer</code></a>.<!-- -->
+<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.39.0</span>
+</li>
 <li><code>$projectName</code> - The human-readable name of the project, as defined with
 <a href="/docs/config/project#name"><code>project.name</code></a>.<!-- -->
 <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.28.0</span>
@@ -165,7 +168,8 @@ string.</p>
 <li><code>$projectStack</code> - The stack of the project, as defined with <a href="/docs/config/project#stack"><code>stack</code></a>.<!-- -->
 <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.22.0</span>
 </li>
-<li><code>$projectType</code> - The type of project, as defined with <a href="/docs/config/project#type"><code>type</code></a>.</li>
+<li><code>$projectType</code> - The type of project, as defined with <a href="/docs/config/project#layer"><code>type</code></a>.
+Deprecated, use <code>$projectLayer</code> instead.</li>
 </ul>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Configured as</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;example debug $language&#x27;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Resolves to</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;example&#x27;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;debug&#x27;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;node&#x27;</span><br></span></code></pre></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="task">Task<a href="#task" class="hash-link" aria-label="Direct link to Task" title="Direct link to Task">​</a></h3>

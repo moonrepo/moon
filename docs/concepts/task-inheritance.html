@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.ba7c8905.js" defer="defer"></script>
-<script src="/assets/js/main.389b52d7.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.7f1f5712.js" defer="defer"></script>
+<script src="/assets/js/main.24aca8ae.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -34,7 +34,7 @@ approach works well when a monorepo is comprised of a single programming languag
 quickly in multi-language setups.</p>
 <p>To support these complex repositories, we support scoped tasks with <a href="/docs/config/tasks"><code>.moon/tasks/**/*.yml</code></a>,
 where <code>*.yml</code> maps to a project based on a combination of its <a href="/docs/config/project#language">language</a>, <a href="/docs/config/project#stack">stack</a>,
-<a href="/docs/config/project#type">type</a>, or <a href="/docs/config/project#tags">tags</a>. This enables you to easily declare tasks for &quot;JavaScript projects&quot;,
+<a href="/docs/config/project#layer">layer</a>, or <a href="/docs/config/project#tags">tags</a>. This enables you to easily declare tasks for &quot;JavaScript projects&quot;,
 &quot;Go applications&quot;, &quot;Ruby libraries&quot;, so on and so forth.</p>
 <p>When resolving configuration files, moon will locate and <em>shallow</em> merge files in the following
 order, from widest scope to narrowest scope:</p>
@@ -46,12 +46,12 @@ order, from widest scope to narrowest scope:</p>
 </li>
 <li><code>.moon/tasks/&lt;language&gt;-&lt;stack&gt;.yml</code> - Projects with a matching <a href="/docs/config/project#language"><code>language</code></a> and
 <a href="/docs/config/project#stack"><code>stack</code></a> settings. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.23.0</span></li>
-<li><code>.moon/tasks/&lt;stack&gt;-&lt;type&gt;.yml</code> - Projects with matching <a href="/docs/config/project#stack"><code>stack</code></a> and <a href="/docs/config/project#type"><code>type</code></a>
+<li><code>.moon/tasks/&lt;stack&gt;-&lt;layer&gt;.yml</code> - Projects with matching <a href="/docs/config/project#stack"><code>stack</code></a> and <a href="/docs/config/project#layer"><code>layer</code></a>
 settings. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.23.0</span></li>
-<li><code>.moon/tasks/&lt;language&gt;-&lt;type&gt;.yml</code> - Projects with matching <a href="/docs/config/project#language"><code>language</code></a> and
-<a href="/docs/config/project#type"><code>type</code></a> settings.</li>
-<li><code>.moon/tasks/&lt;language&gt;-&lt;stack&gt;-&lt;type&gt;.yml</code> - Projects with matching <a href="/docs/config/project#language"><code>language</code></a>,
-<a href="/docs/config/project#stack"><code>stack</code></a>, and <a href="/docs/config/project#type"><code>type</code></a> settings. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.23.0</span></li>
+<li><code>.moon/tasks/&lt;language&gt;-&lt;layer&gt;.yml</code> - Projects with matching <a href="/docs/config/project#language"><code>language</code></a> and
+<a href="/docs/config/project#layer"><code>layer</code></a> settings.</li>
+<li><code>.moon/tasks/&lt;language&gt;-&lt;stack&gt;-&lt;layer&gt;.yml</code> - Projects with matching <a href="/docs/config/project#language"><code>language</code></a>,
+<a href="/docs/config/project#stack"><code>stack</code></a>, and <a href="/docs/config/project#layer"><code>layer</code></a> settings. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.23.0</span></li>
 <li><code>.moon/tasks/tag-&lt;name&gt;.yml</code> - Projects with a matching <a href="/docs/config/project#tags"><code>tag</code></a>.<!-- -->
 <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.2.0</span>
 </li>
@@ -70,8 +70,8 @@ TypeScript) based projects have the following additional lookups using
 <ul>
 <li><code>.moon/tasks/&lt;toolchain&gt;.yml</code></li>
 <li><code>.moon/tasks/&lt;toolchain&gt;-&lt;stack&gt;.yml</code></li>
-<li><code>.moon/tasks/&lt;toolchain&gt;-&lt;type&gt;.yml</code></li>
-<li><code>.moon/tasks/&lt;toolchain&gt;-&lt;stack&gt;-&lt;type&gt;.yml</code></li>
+<li><code>.moon/tasks/&lt;toolchain&gt;-&lt;layer&gt;.yml</code></li>
+<li><code>.moon/tasks/&lt;toolchain&gt;-&lt;stack&gt;-&lt;layer&gt;.yml</code></li>
 </ul>
 <p>For example, <code>node.yml</code> would be inherited for Node.js projects, <code>bun-library.yml</code> for Bun
 libraries, and <code>deno-application.yml</code> for Deno applications. While <code>javascript.yml</code>,

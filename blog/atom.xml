@@ -2,11 +2,123 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2025-07-17T00:00:00.000Z</updated>
+    <updated>2025-07-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.39 - Improved task inputs, better proto integration, and project layers]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.39</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.39"/>
+        <updated>2025-07-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This is a rather small release, but it does include some important changes to task inputs, and]]></summary>
+        <content type="html"><![CDATA[<p>This is a rather small release, but it does include some important changes to task inputs, and
+proto's integration.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-task-inputs">Improved task inputs<a href="https://moonrepo.dev/blog/moon-v1.39#improved-task-inputs" class="hash-link" aria-label="Direct link to Improved task inputs" title="Direct link to Improved task inputs">​</a></h2>
+<p>A few months ago we introduced an
+<a href="https://github.com/moonrepo/moon/issues/1985" target="_blank" rel="noopener noreferrer">RFC for improving task inputs</a> that introduces new
+syntax, functionality, and input types. In this release, we have implemented a portion of the RFC
+for testing before we implement the rest. Continue reading for more details!</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-formats">New formats<a href="https://moonrepo.dev/blog/moon-v1.39#new-formats" class="hash-link" aria-label="Direct link to New formats" title="Direct link to New formats">​</a></h3>
+<p>To start, we are introducing 2 new formats for configuring task inputs, a URI format and an object
+format, both of which support custom parameters.</p>
+<h4 class="anchor anchorWithStickyNavbar_JmGV" id="uris">URIs<a href="https://moonrepo.dev/blog/moon-v1.39#uris" class="hash-link" aria-label="Direct link to URIs" title="Direct link to URIs">​</a></h4>
+<p>URIs should be rather familiar, as they are a string prefixed with a scheme (<code>://</code>), followed by a
+value, and an optional list of query parameters (<code>?</code>). Currently files can be specified using the
+<a href="https://moonrepo.dev/docs/config/project#file-paths"><code>file://</code> scheme</a>, and globs with the
+<a href="https://moonrepo.dev/docs/config/project#glob-patterns"><code>glob://</code> scheme</a>. Environment variables do not support URIs.</p>
+<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'file:///*.config.js?optional'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'glob://src/**/*.ts'</span><br></span></code></pre></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Files and globs can still be configured using literal strings. The URI format can be used when
+customizing parameters!</p></div></div>
+<h4 class="anchor anchorWithStickyNavbar_JmGV" id="objects">Objects<a href="https://moonrepo.dev/blog/moon-v1.39#objects" class="hash-link" aria-label="Direct link to Objects" title="Direct link to Objects">​</a></h4>
+<p>Objects provide an alternative to strings, allowing you to customize parameters in a standard and
+familiar format. Files can be specified using the <a href="https://moonrepo.dev/docs/config/project#file-paths"><code>file</code> key</a>, and
+globs with the <a href="https://moonrepo.dev/docs/config/project#glob-patterns"><code>glob</code> key</a>. Environment variables do not
+support objects.</p>
+<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">file</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'/*.config.js'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">optional</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">glob</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'src/**/*.ts'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-parameters">New parameters<a href="https://moonrepo.dev/blog/moon-v1.39#new-parameters" class="hash-link" aria-label="Direct link to New parameters" title="Direct link to New parameters">​</a></h3>
+<p>As mentioned above, file and glob inputs now support parameters, which can be customized using URI
+and object formats. The following parameters are available:</p>
+<h4 class="anchor anchorWithStickyNavbar_JmGV" id="files">Files<a href="https://moonrepo.dev/blog/moon-v1.39#files" class="hash-link" aria-label="Direct link to Files" title="Direct link to Files">​</a></h4>
+<ul>
+<li><code>content</code> (<code>string</code>) - When determining affected state, will match against the file's content
+using the defined regex pattern, instead of relying on file existence.</li>
+<li><code>optional</code> (<code>boolean</code>) - When hashing and set to <code>true</code> and the file is missing, will not log a
+warning. When set to <code>false</code> and the file is missing, will fail with an error. Defaults to logging
+a warning.</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_JmGV" id="globs">Globs<a href="https://moonrepo.dev/blog/moon-v1.39#globs" class="hash-link" aria-label="Direct link to Globs" title="Direct link to Globs">​</a></h4>
+<ul>
+<li><code>cache</code> (<code>boolean</code>) - When gathering inputs for hashing, defines whether the glob results should
+be cached for the duration of the moon process. Defaults to <code>true</code>.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="better-proto-integration">Better proto integration<a href="https://moonrepo.dev/blog/moon-v1.39#better-proto-integration" class="hash-link" aria-label="Direct link to Better proto integration" title="Direct link to Better proto integration">​</a></h2>
+<p>In previous versions of moon, we would automatically install <a href="https://moonrepo.dev/proto">proto</a> for you based on
+certain conditions. This logic was applied to all <code>moon</code> sub-commands, which was not necessary, as
+it was only required for task running related commands.</p>
+<p>To improve this, we have integrated proto into the action pipeline through a new action,
+<code>SetupProto</code>, which runs before any <code>SetupToolchain</code> action. With this, proto is only installed when
+required by that specific toolchain, and not for every command.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-setting">New <code>proto</code> setting<a href="https://moonrepo.dev/blog/moon-v1.39#new-proto-setting" class="hash-link" aria-label="Direct link to new-proto-setting" title="Direct link to new-proto-setting">​</a></h3>
+<p>Additionally, we are introducing a <a href="https://moonrepo.dev/docs/config/toolchain#proto"><code>proto</code></a> setting in
+<a href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a>, which can be used to control the integration of
+proto in moon. To start, you can now customize the proto version! This is extremely useful if you
+want to test new proto features, or need to rollback to an older version.</p>
+<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">proto</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'0.51.4'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.39#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h3>
+<p>Lastly, proto has been upgrade to <a href="https://github.com/moonrepo/proto/releases/tag/v0.51.0" target="_blank" rel="noopener noreferrer">v0.51</a>,
+which includes 2 major features: lockfiles and custom registries. However, we have yet to test these
+features thoroughly in moon, so they are not "officially" supported yet, but you can still use them
+if you wish. We will be adding support for these features in the future.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="project-layers">Project layers<a href="https://moonrepo.dev/blog/moon-v1.39#project-layers" class="hash-link" aria-label="Direct link to Project layers" title="Direct link to Project layers">​</a></h2>
+<p>Project layers may sound like a new feature, but they are simply a rename of the project type. Going
+forward, the <code>type</code> setting in <a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a> has been renamed to
+<a href="https://moonrepo.dev/docs/config/project#layer"><code>layer</code></a>, but backwards compatibility will be maintained until v2. Why
+the rename?</p>
+<p>The term "layer" better reflects the purpose and functionality of this concept, as it defines a
+layer (the <a href="https://moonrepo.dev/docs/config/project#layer"><code>layer</code></a> setting) within the development stack (the
+<a href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a> setting), and helps to enforce proper relationships. This
+change aims to improve clarity and consistency in our configuration.</p>
+<p>For example, the following layers are available, from highest to lowest. Layers can then depend on
+lower layers, but not higher layers. Except for automations and applications, they can also depend
+on themself.</p>
+<table><thead><tr><th>Layer</th><th>Description</th></tr></thead><tbody><tr><td><code>automation</code></td><td>An automated testing suite, like E2E, integration, or visual tests.</td></tr><tr><td><code>application</code></td><td>An application of any kind.</td></tr><tr><td><code>tool</code></td><td>An internal tool, CLI, one-off script, etc.</td></tr><tr><td><code>library</code></td><td>A self-contained, shareable, and publishable set of code.</td></tr><tr><td><code>scaffolding</code></td><td>Templates or generators for scaffolding.</td></tr><tr><td><code>configuration</code></td><td>Configuration files or infrastructure.</td></tr><tr><td><code>unknown</code></td><td>When not configured.</td></tr></tbody></table>
+<p>Because of this rename, the following changes have been made:</p>
+<ul>
+<li><code>type</code> --&gt; <code>layer</code> in <code>moon.yml</code></li>
+<li><code>--type</code> --&gt; <code>--layer</code> in <code>moon query projects</code></li>
+<li><code>projectType</code> --&gt; <code>projectLayer</code> for MQL</li>
+<li><code>$projectType</code> --&gt; <code>$projectLayer</code> for task tokens</li>
+<li><code>enforceProjectTypeRelationships</code> --&gt; <code>enforceLayerRelationships</code> in <code>.moon/workspace.yml</code></li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes-1">Other changes<a href="https://moonrepo.dev/blog/moon-v1.39#other-changes-1" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.39.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added unstable support for bubbling up logs from WASM plugins.</li>
+<li>Updated the <code>@moonrepo/cli</code> npm package to no longer rely on postinstall scripts.</li>
+<li>Improved argument quoting for commands and scripts.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.39#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h2>
+<p>With toolchains plugins being stabilized more, we'd like to focus on some other areas.</p>
+<ul>
+<li>Better command line argument parsing/joining (especially for task <code>args</code>)</li>
+<li>Pkl configuration improvements</li>
+<li>WASM toolchain documentation</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="task" term="task"/>
+        <category label="input" term="input"/>
+        <category label="uri" term="uri"/>
+        <category label="object" term="object"/>
+        <category label="proto" term="proto"/>
+        <category label="project" term="project"/>
+        <category label="layer" term="layer"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.51 - Unstable lockfiles and plugin registries]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.51</id>
@@ -1858,63 +1970,5 @@ of changes.</p>
         <category label="http" term="http"/>
         <category label="request" term="request"/>
         <category label="fetch" term="fetch"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.39 - Mid-year quality of life improvements]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.39</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.39"/>
-        <updated>2024-07-26T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This is a small release that includes many quality of life improvements.]]></summary>
-        <content type="html"><![CDATA[<p>This is a small release that includes many quality of life improvements.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-proto-activate-performance">Improved <code>proto activate</code> performance<a href="https://moonrepo.dev/blog/proto-v0.39#improved-proto-activate-performance" class="hash-link" aria-label="Direct link to improved-proto-activate-performance" title="Direct link to improved-proto-activate-performance">​</a></h2>
-<p>In <a href="https://moonrepo.dev/blog/proto-v0.38">v0.38</a> we released the <a href="https://moonrepo.dev/docs/proto/commands/activate"><code>proto activate</code></a> command
-as a means of bootstrapping your shell with necessary paths and variables. Since then, we've fixed a
-handful of bugs and focused on performance for this release.</p>
-<p>In this release, we've reduced the time it took to execute activation from 200-300ms down to
-10-20ms. We've also fixed some syntax issues around Bash and Zsh shells.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="merged-proto-install-and-proto-use-commands">Merged <code>proto install</code> and <code>proto use</code> commands<a href="https://moonrepo.dev/blog/proto-v0.39#merged-proto-install-and-proto-use-commands" class="hash-link" aria-label="Direct link to merged-proto-install-and-proto-use-commands" title="Direct link to merged-proto-install-and-proto-use-commands">​</a></h2>
-<p>When proto was first built we had separate commands for installing all tools
-(<a href="https://moonrepo.dev/docs/proto/commands/use"><code>proto use</code></a>), and installing a single tool
-(<a href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a>). For historical reasons, this was loosely based
-off of nvm, but we have diverged heavily since then.</p>
-<p>Going forward, the <code>proto use</code> command is now deprecated, and all of its functionality has been
-merged into <code>proto install</code>. To install all tools, simply don't pass arguments to the command!</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Install all tools</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Install a single tool</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><br></span></code></pre></div></div>
-<p>We like this change, as it aligns with package/dependency manager based workflows.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-built-in-tools">Customize built-in tools<a href="https://moonrepo.dev/blog/proto-v0.39#customize-built-in-tools" class="hash-link" aria-label="Direct link to Customize built-in tools" title="Direct link to Customize built-in tools">​</a></h2>
-<p>proto ships with a handful of <a href="https://moonrepo.dev/docs/proto/tools#built-in">official built-in plugins</a> for popular
-tools like Node.js, Go, and more. While this is great as it reduces configuration boilerplate, it
-may cause an inconvenience for adoption or migration related reasons. To support these workflows,
-we're introducing a new setting, <a href="https://moonrepo.dev/docs/proto/config#builtin-plugins"><code>settings.builtin-plugins</code></a>,
-that can be used to disable all built-in plugins, or only allow a few select plugins.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Disable all</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">builtin-plugins</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Enable some</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">builtin-plugins</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"node"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"bun"</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="pin-proto-itself">Pin proto itself<a href="https://moonrepo.dev/blog/proto-v0.39#pin-proto-itself" class="hash-link" aria-label="Direct link to Pin proto itself" title="Direct link to Pin proto itself">​</a></h2>
-<p>proto has yet to reach an official v1 release, as we're constantly fine-tuning and reworking APIs.
-Because of this, we may accidentally introduce unexpected changes, or introduce breaking changes
-that you were relying on. To help mitigate these issues, you can now
-<a href="https://moonrepo.dev/docs/proto/config#lock-proto-version">pin the version of proto itself</a> in <code>.prototools</code>.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">proto</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.39.0"</span><br></span></code></pre></div></div>
-<p>When this pin exists, all proto shims will attempt to execute proto using that exact version. This
-allows for the global <code>proto</code> binary to differ in version from what is executed.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.39#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.39.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added <code>PROTO_NO_MODIFY_PROFILE</code> and <code>PROTO_NO_MODIFY_PATH</code> environment variables to <code>proto setup</code>
-(for automated workflows).</li>
-<li>Updated <code>proto status</code> to display and include versions from ecosystem files (<code>.nvmrc</code>, etc).</li>
-<li>Updated <code>github://</code> plugin locators to support monorepos. Append the project name (that tags are
-prefixed with) to the path: <code>github://moonrepo/plugins/node_tool</code></li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="activate" term="activate"/>
-        <category label="install" term="install"/>
-        <category label="github" term="github"/>
-        <category label="locator" term="locator"/>
-        <category label="pin" term="pin"/>
-        <category label="builtin" term="builtin"/>
     </entry>
 </feed>

@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.ba7c8905.js" defer="defer"></script>
-<script src="/assets/js/main.389b52d7.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.7f1f5712.js" defer="defer"></script>
+<script src="/assets/js/main.24aca8ae.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -89,16 +89,16 @@ organization. With this structure, applications and libraries can be nested at a
 <p>Applications are runnable or executable, like an HTTP server, and are pieced together with packages
 and its own encapsulated code. They represent the whole, while packages are the pieces. Applications
 can import and depend on packages, but they <em>must not</em> import and depend on other applications.</p>
-<p>In moon, you can denote a project as an application using the <a href="/docs/config/project#type"><code>type</code></a>
+<p>In moon, you can denote a project as an application using the <a href="/docs/config/project#layer"><code>layer</code></a>
 setting in <a href="/docs/config/project"><code>moon.yml</code></a>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;application&#x27;</span><br></span></code></pre></div></div>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">layer</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;application&#x27;</span><br></span></code></pre></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="packages">Packages<a href="#packages" class="hash-link" aria-label="Direct link to Packages" title="Direct link to Packages">​</a></h3>
 <p>Packages (also known as a libraries) are self-contained reusable pieces of code, and are the
 suggested pattern for <a href="#code-sharing">code sharing</a>. Packages can import and depend on other
 packages, but they <em>must not</em> import and depend on applications!</p>
-<p>In moon, you can denote a project as a library using the <a href="/docs/config/project#type"><code>type</code></a> setting
-in <a href="/docs/config/project"><code>moon.yml</code></a>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;library&#x27;</span><br></span></code></pre></div></div>
+<p>In moon, you can denote a project as a library using the <a href="/docs/config/project#layer"><code>layer</code></a>
+setting in <a href="/docs/config/project"><code>moon.yml</code></a>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">layer</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;library&#x27;</span><br></span></code></pre></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="configuration">Configuration<a href="#configuration" class="hash-link" aria-label="Direct link to Configuration" title="Direct link to Configuration">​</a></h3>
 <p>Every tool that you&#x27;ll utilize in a repository will have its own configuration file. This will be a
 lot of config files, but regardless of what tool it is, where the config file should go will fall

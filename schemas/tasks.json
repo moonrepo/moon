@@ -27,7 +27,7 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
+          "$ref": "#/definitions/Input"
         }
       },
       "propertyNames": {
@@ -47,7 +47,7 @@
       "description": "Task inputs that'll automatically be injected into every task that inherits this configuration.",
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/Input"
       }
     },
     "taskOptions": {
@@ -86,6 +86,69 @@
           "items": {
             "type": "string"
           }
+        }
+      ]
+    },
+    "FileInput": {
+      "description": "A file path input.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "title": "content",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "regex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "file": {
+          "title": "file",
+          "type": "string"
+        },
+        "optional": {
+          "title": "optional",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "GlobInput": {
+      "description": "A glob path input.",
+      "type": "object",
+      "properties": {
+        "cache": {
+          "title": "cache",
+          "default": true,
+          "type": "boolean"
+        },
+        "glob": {
+          "title": "glob",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Input": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/FileInput"
+        },
+        {
+          "$ref": "#/definitions/GlobInput"
         }
       ]
     },
@@ -205,7 +268,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Input"
               }
             },
             {

@@ -1389,11 +1389,11 @@ All option values are case-insensitive regex patterns.
 - `--alias ` - Filter projects that match this alias.
 - `--id ` - Filter projects that match this ID/name.
 - `--language ` - Filter projects of this programming language.
+- `--layer ` - Filter project of this layer.
 - `--source ` - Filter projects that match this source path.
 - `--stack ` - Filter projects of the tech stack.
 - `--tags ` - Filter projects that have the following tags.
 - `--tasks ` - Filter projects that have the following tasks.
-- `--type ` - Filter project of this type.
 
 ### Configuration
 
@@ -2517,18 +2517,19 @@ A project is a library, application, package, binary, tool, etc, that contains s
 files, assets, resources, and more. A project must exist and be configured within a
 [workspace](./workspace).
 
-## Names
+## IDs
 
-A project name (or identifier) is a unique resource for locating a project. The name is explicitly
+A project identifier (or name) is a unique resource for locating a project. The ID is explicitly
 configured within [`.moon/workspace.yml`](../config/workspace), as a key within the
 [`projects`](../config/workspace#projects) setting, and can be written in camel/kebab/snake case.
-Names support `a-z`, `A-Z`, `0-9`, `_`, `-`, `/`, `.`, and must start with a character.
+IDs support alphabetic unicode characters, `0-9`, `_`, `-`, `/`, `.`, and must start with a
+character.
 
-Names are used heavily by configuration and the command line to link and reference everything.
-They're also a much easier concept for remembering projects than file system paths, and they
-typically can be written with less key strokes.
+IDs are used heavily by configuration and the command line to link and reference everything. They're
+also a much easier concept for remembering projects than file system paths, and they typically can
+be written with less key strokes.
 
-Lastly, a project name can be paired with a task name to create a [target](./target).
+Lastly, a project ID can be paired with a task ID to create a [target](./target).
 
 ## Aliases
 
@@ -2662,6 +2663,14 @@ Alias of the project. For example, the `package.json` name.
 projectAlias~@scope/*
 ```
 
+### `projectLayer`
+
+The project layer, as defined in [`moon.yml`](../config/project#layer).
+
+```
+projectLayer=application
+```
+
 ### `projectName`
 
 Name of the project, as defined in [`.moon/workspace.yml`](../config/workspace), or `id` in
@@ -2682,7 +2691,7 @@ projectSource~packages/*
 
 ### `projectStack`
 
-The stack of the project, as defined in [`moon.yml`](../config/project#stack).
+The project stack, as defined in [`moon.yml`](../config/project#stack).
 
 ```
 projectStack=frontend
@@ -2690,7 +2699,9 @@ projectStack=frontend
 
 ### `projectType`
 
-The type of project, as defined in [`moon.yml`](../config/project#type).
+> This field is deprecated, use `projectLayer` instead.
+
+The type of project, as defined in [`moon.yml`](../config/project#layer).
 
 ```
 projectType=application
@@ -2892,7 +2903,7 @@ quickly in multi-language setups.
 
 To support these complex repositories, we support scoped tasks with [`.moon/tasks/**/*.yml`][tasks],
 where `*.yml` maps to a project based on a combination of its [language][language], [stack][stack],
-[type][type], or [tags][tags]. This enables you to easily declare tasks for "JavaScript projects",
+[layer][layer], or [tags][tags]. This enables you to easily declare tasks for "JavaScript projects",
 "Go applications", "Ruby libraries", so on and so forth.
 
 When resolving configuration files, moon will locate and _shallow_ merge files in the following
@@ -2904,12 +2915,12 @@ order, from widest scope to narrowest scope:
   
 - `.moon/tasks/-.yml` - Projects with a matching [`language`][language] and
   [`stack`][stack] settings. 
-- `.moon/tasks/-.yml` - Projects with matching [`stack`][stack] and [`type`][type]
+- `.moon/tasks/-.yml` - Projects with matching [`stack`][stack] and [`layer`][layer]
   settings. 
 - `.moon/tasks/-.yml` - Projects with matching [`language`][language] and
-  [`type`][type] settings.
+  [`layer`][layer] settings.
 - `.moon/tasks/--.yml` - Projects with matching [`language`][language],
-  [`stack`][stack], and [`type`][type] settings. 
+  [`stack`][stack], and [`layer`][layer] settings. 
 - `.moon/tasks/tag-.yml` - Projects with a matching [`tag`][tags].
   
 
@@ -3019,7 +3030,7 @@ tasks:
 [tasks]: ../config/tasks
 [language]: ../config/project#language
 [stack]: ../config/project#stack
-[type]: ../config/project#type
+[layer]: ../config/project#layer
 
 ---
 
@@ -3030,14 +3041,14 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 Tasks are commands that are ran in the context of a [project](./project). Underneath the hood, a
 task is simply a binary or system command that is ran as a child process.
 
-## Names
+## IDs
 
-A task name (or identifier) is a unique resource for locating a task _within_ a project. The name is
+A task identifier (or name) is a unique resource for locating a task _within_ a project. The ID is
 explicitly configured as a key within the [`tasks`](../config/project#tasks) setting, and can be
-written in camel/kebab/snake case. Names support `a-z`, `A-Z`, `0-9`, `_`, `-`, `/`, `.`, and must
-start with a character.
+written in camel/kebab/snake case. IDs support alphabetic unicode characters, `0-9`, `_`, `-`, `/`,
+`.`, and must start with a character.
 
-A task name can be paired with a scope to create a [target](./target).
+A task ID can be paired with a scope to create a [target](./target).
 
 ## Types
 
@@ -3588,6 +3599,8 @@ string.
 - `$projectChannel` - The discussion channel for the project, as defined with
   [`project.channel`](../config/project#channel).
   
+- `$projectLayer` - The project layer, as defined with [`layer`](../config/project#layer).
+  
 - `$projectName` - The human-readable name of the project, as defined with
   [`project.name`](../config/project#name).
   
@@ -3599,7 +3612,8 @@ string.
   [`.moon/workspace.yml`](../config/workspace).
 - `$projectStack` - The stack of the project, as defined with [`stack`](../config/project#stack).
   
-- `$projectType` - The type of project, as defined with [`type`](../config/project#type).
+- `$projectType` - The type of project, as defined with [`type`](../config/project#layer).
+  Deprecated, use `$projectLayer` instead.
 
 ```yaml
 # Configured as
@@ -3771,6 +3785,11 @@ The following tools are currently managed by the toolchain.
 - Configured with: [`deno`](../config/toolchain#deno)
 - Installed to: `~/.proto/tools/deno/x.x.x`
 
+### Go
+
+- Configured with: [`unstable_go`](../config/toolchain#unstable_go)
+- Installed to: `~/.proto/tools/go/x.x.x`
+
 ### Node.js
 
 - View the [Node.js handbook](../guides/javascript/node-handbook)
@@ -3781,7 +3800,7 @@ The following tools are currently managed by the toolchain.
 ### Rust
 
 - View the [Rust handbook](../guides/rust/handbook)
-- Configured with: [`rust`](../config/toolchain#rust)
+- Configured with: [`unstable_rust`](../config/toolchain#unstable_rust)
 - Installed to: `~/.rustup/toolchains/x.x.x`
 
 [pm]: ../config/toolchain#npm-pnpm-yarn-bun
@@ -3989,6 +4008,34 @@ owners:
   requiredApprovals: 2
 ```
 
+## `layer`
+
+> This was previously known as `type` and was renamed to `layer` in v1.39.
+
+The layer within a [stack](#stack). Supports the following values:
+
+- `application` - An application of any kind.
+- `automation` - An automated testing suite, like E2E, integration, or visual tests.
+  
+- `configuration` - Configuration files or infrastructure.
+  
+- `library` - A self-contained, shareable, and publishable set of code.
+- `scaffolding` - Templates or generators for scaffolding.
+  
+- `tool` - An internal tool, CLI, one-off script, etc.
+- `unknown` (default) - When not configured.
+
+```yaml title="moon.yml"
+layer: 'application'
+```
+
+:::info
+
+The project layer is used in [task inheritance](../concepts/task-inheritance),
+[constraints and boundaries](./workspace#constraints), editor extensions, and more!
+
+:::
+
 ## `project`
 
 The `project` setting defines metadata about the project itself.
@@ -4074,32 +4121,6 @@ tags:
   - 'react'
   - 'prisma'
 ```
-
-## `type`
-
-The type of project. Supports the following values:
-
-- `application` - An application of any kind.
-- `automation` - An automated testing suite, like E2E, integration, or visual tests.
-  
-- `configuration` - Configuration files or infrastructure.
-  
-- `library` - A self-contained, shareable, and publishable set of code.
-- `scaffolding` - Templates or generators for scaffolding.
-  
-- `tool` - An internal tool, one-off script, etc.
-- `unknown` (default) - When not configured.
-
-```yaml title="moon.yml"
-type: 'application'
-```
-
-:::info
-
-The project type is used in [task inheritance](../concepts/task-inheritance),
-[constraints and boundaries](./workspace#constraints), editor extensions, and more!
-
-:::
 
 ## Integrations
 
@@ -4466,11 +4487,10 @@ root-level tasks.
 
 Inputs support the following source types:
 
-- Environment variables (must start with a `$`)
-- Environment variable wildcards (must start with a `$` and contain `*`)
+- Environment variables
+- Environment variable wildcards
   
 - Files, folders, and globs
-  ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 - [Token functions and variables](../concepts/token)
 
 ```yaml title="moon.yml" {4-12}
@@ -4484,12 +4504,22 @@ tasks:
       # Config files at the workspace root
       - '/.eslintignore'
       - '/.eslintrc.js'
-      # Environment variables
-      - '$ESLINT_CACHE'
-      - '$ESLINT_*'
       # Tokens
       - '$projectRoot'
       - '@group(sources)'
+```
+
+#### Environment variables
+
+Environment variables can be used as inputs and must start with a `$`. Wildcard variables can use
+`*` to match any character.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      - '$FOO_CACHE'
+      - '$FOO_*'
 ```
 
 :::caution
@@ -4500,10 +4530,87 @@ always run and bypass the cache.
 
 :::
 
+#### File paths
+
+File paths support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `file://` URI ,
+or as an object with a `file` property . Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `content` (`string`) - When determining affected state, will match against the file's content
+  using the defined regex pattern, instead of relying on file existence.
+- `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
+  warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
+  a warning.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Literal paths
+      - 'project/relative/file.js'
+      - '/workspace/relative/file.js'
+      # Using file protocol
+      - 'file://project/relative/file.js?optional'
+      - 'file:///workspace/relative/file.js?content=a|b|c'
+      # Using an object
+      - file: 'project/relative/file.js'
+        optional: true
+      - file: '/workspace/relative/file.js'
+        content: 'a|b|c'
+```
+
+#### Glob patterns
+
+Glob patterns support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `glob://` URI ,
+or as an object with a `glob` property . Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
+  be cached for the duration of the moon process. Defaults to `true`.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Literal paths
+      - 'project/relative/file.*'
+      - '/workspace/relative/**/*'
+      # Using glob protocol
+      - 'glob://project/relative/file.*?cache=false'
+      - 'glob:///workspace/relative/**/*?cache'
+      # Using an object
+      - glob: 'project/relative/file.*'
+        cache: false
+      - glob: '/workspace/relative/**/*'
+```
+
+Globs can also be negated by prefixing the path with `!`, which will exclude all files that match
+the glob.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      - '!**/*.md'
+      - 'glob://!/workspace/relative/**/*'
+      - glob: '!/workspace/relative/**/*'
+```
+
+:::warning
+
+Glob patterns that contain `?`, for example `*.tsx?`, cannot be used in URI format, as it conflicts
+with the query string syntax. Use the path or object format instead.
+
+:::
+
 :::danger
 
-When using globs, be aware that files that match the glob, but are ignored via `.gitignore` (or
-similar), will _not_ be considered an input. To work around this, use explicit file inputs.
+Be aware that files that match the glob, but are ignored via `.gitignore` (or similar), will _not_
+be considered an input. To work around this, use explicit file inputs.
 
 :::
 
@@ -5917,6 +6024,20 @@ moon:
   downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
 ```
 
+## `proto`
+
+Configures how moon integrates with and utilizes [proto](/proto).
+
+### `version`
+
+The version of proto to install and run toolchains with. If proto or this version of proto has not
+been installed yet, it will be installed automatically when running a task.
+
+```yaml title=".moon/toolchain.yml" {2}
+proto:
+  version: '0.51.0'
+```
+
 ## Go
 
 ## `unstable_go`
@@ -6950,18 +7071,29 @@ codeowners:
 Configures constraints between projects that are enforced during project graph generation. This is
 also known as project boundaries.
 
-### `enforceProjectTypeRelationships`
+### `enforceLayerRelationships`
 
-Enforces allowed relationships between a project its dependencies based on the project's
-[`type`](./project#type) and [`stack`](./project#stack) settings. When a project depends on another
-project of an invalid type, an error will be thrown when attempting to run a task. The following
-relationships are enforced when this setting is enabled, which defaults to `true`.
+> This was previously known as `enforceProjectTypeRelationships` and was renamed to
+> `enforceLayerRelationships` in v1.39.
 
-- Applications can depend on all types _except other_ applications or automation.
-- Automation can depend on all types _except other_ automation.
-- Libraries can _only_ depend on other libraries, configuration, or scaffolding.
-- Tools can _only_ depend on libraries, configuration, or scaffolding.
-- Configuration and scaffolding can _only_ depend on other configuration and scaffolding.
+Enforces allowed relationships between a project and its dependencies based on the project's
+[`layer`](./project#layer) and [`stack`](./project#stack) settings. When a project depends on
+another project of an invalid layer, a layering violation error will be thrown when attempting to
+run a task.
+
+Layers are allowed to depend on lower layers in the same stack, but not higher layers. Additionally,
+layers may depend on itself, excluding automations and applications. The following layers are
+stacked as such:
+
+| Layer           | Description                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `automation`    | An automated testing suite, like E2E, integration, or visual tests. |
+| `application`   | An application of any kind.                                         |
+| `tool`          | An internal tool, CLI, one-off script, etc.                         |
+| `library`       | A self-contained, shareable, and publishable set of code.           |
+| `scaffolding`   | Templates or generators for scaffolding.                            |
+| `configuration` | Configuration files or infrastructure.                              |
+| `unknown`       | When not configured.                                                |
 
 When the project `stack` setting is defined, it alters these rules to allow these kinds of
 relationships. For example, a frontend application can depend on a backend application, but not
@@ -6969,17 +7101,16 @@ another frontend application.
 
 ```yaml title=".moon/workspace.yml" {2}
 constraints:
-  enforceProjectTypeRelationships: false
+  enforceLayerRelationships: false
 ```
 
-> Projects with an unconfigured or unknown type are ignored during enforcement.
+> Projects with an unconfigured or unknown layer are ignored during enforcement.
 
 ### `tagRelationships`
 
 Enforces allowed relationships between a project and its dependencies based on the project's
-[`tags`](./project#tags) setting. This works in a similar fashion to
-`enforceProjectTypeRelationships`, but gives you far more control over what these relationships look
-like.
+[`tags`](./project#tags) setting. This works in a similar fashion to `enforceLayerRelationships`,
+but gives you far more control over what these relationships look like.
 
 For example, let's enforce that Next.js projects using the `next` tag can only depend on React
 projects using the `react` tag. If a dependency does not have one of the configured required tags,
@@ -7826,12 +7957,12 @@ This field is _optional_ by default, but when defined it provides metadata about
 specifically around team ownership, which developers maintain the project, where to discuss it, and
 more!
 
-Furthermore, we also support the [`type`](./config/project#type) and
+Furthermore, we also support the [`layer`](./config/project#layer) and
 [`language`](./config/project#language) settings for a more granular breakdown of what exists in the
 repository.
 
 ```yaml title="/moon.yml"
-type: 'tool'
+layer: 'tool'
 language: 'typescript'
 
 project:
@@ -8143,8 +8274,8 @@ bar!
 ### Projects
 
 The backbone of moon is the projects view. In this view, all moon configured projects will be
-listed, categorized by their [`type`](../config/project#type), and designated with their
-[`language`](../config/project#language).
+listed, categorized by their [`layer`](../config/project#layer), [`stack`](../config/project#stack),
+and designated with their [`language`](../config/project#language).
 
 Each project can then be expanded to view all available tasks. Tasks can be ran by clicking the `▶`
 icon, or using the command palette.
@@ -10470,7 +10601,7 @@ Since NestJS is per-project, the associated moon tasks should be defined in each
 [`moon.yml`](../../config/project) file.
 
 ```yaml title="/moon.yml"
-type: 'application'
+layer: 'application'
 
 fileGroups:
   app:
@@ -12398,11 +12529,11 @@ Applications are runnable or executable, like an HTTP server, and are pieced tog
 and its own encapsulated code. They represent the whole, while packages are the pieces. Applications
 can import and depend on packages, but they _must not_ import and depend on other applications.
 
-In moon, you can denote a project as an application using the [`type`](../../config/project#type)
+In moon, you can denote a project as an application using the [`layer`](../../config/project#layer)
 setting in [`moon.yml`](../../config/project).
 
 ```yaml title="moon.yml"
-type: 'application'
+layer: 'application'
 ```
 
 ### Packages
@@ -12411,11 +12542,11 @@ Packages (also known as a libraries) are self-contained reusable pieces of code,
 suggested pattern for [code sharing](#code-sharing). Packages can import and depend on other
 packages, but they _must not_ import and depend on applications!
 
-In moon, you can denote a project as a library using the [`type`](../../config/project#type) setting
-in [`moon.yml`](../../config/project).
+In moon, you can denote a project as a library using the [`layer`](../../config/project#layer)
+setting in [`moon.yml`](../../config/project).
 
 ```yaml title="moon.yml"
-type: 'library'
+layer: 'library'
 ```
 
 ### Configuration
@@ -13520,6 +13651,9 @@ Once installed, create a `.vscode/mcp.json` file with the following content:
       "type": "stdio",
       "command": "moon",
       "args": ["mcp"],
+      // >= 1.102 (June 2025)
+      "cwd": "${workspaceFolder}",
+      // Older versions
       "env": {
         "MOON_WORKSPACE_ROOT": "${workspaceFolder}"
       }
@@ -14423,7 +14557,7 @@ The following configuration represents a base that covers most Rust projects.
 
 ```yaml title="/moon.yml"
 language: 'rust'
-type: 'application'
+layer: 'application'
 
 env:
   CARGO_TERM_COLOR: 'always'
@@ -14465,7 +14599,7 @@ tasks:
 
 ```yaml title="/moon.yml"
 language: 'rust'
-type: 'application'
+layer: 'application'
 
 env:
   CARGO_TERM_COLOR: 'always'
@@ -15903,6 +16037,12 @@ This action runs after the toolchain has been setup, but before dependencies are
 the development environment can be setup and configured. This includes operations such as modifying
 a manifest (`package.json`, etc), updating configuration files, initializing venv's (Python), so on
 and so forth.
+
+### Setup proto
+
+This action runs before all toolchain related actions and ensures that [proto](/proto) has been
+installed and is available for use. This is required for toolchains that will be downloaded and
+installed.
 
 ### Install dependencies
 
@@ -30397,3 +30537,160 @@ of changes.
 We have a lot of cool stuff planned for proto, like backend plugins, more official tools, improved
 workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
 and appreciate your help. Feel free to ping us on Discord!
+
+---
+
+## moon v1.39 - Improved task inputs, better proto integration, and project layers
+
+This is a rather small release, but it does include some important changes to task inputs, and
+proto's integration.
+
+## Improved task inputs
+
+A few months ago we introduced an
+[RFC for improving task inputs](https://github.com/moonrepo/moon/issues/1985) that introduces new
+syntax, functionality, and input types. In this release, we have implemented a portion of the RFC
+for testing before we implement the rest. Continue reading for more details!
+
+### New formats
+
+To start, we are introducing 2 new formats for configuring task inputs, a URI format and an object
+format, both of which support custom parameters.
+
+#### URIs
+
+URIs should be rather familiar, as they are a string prefixed with a scheme (`://`), followed by a
+value, and an optional list of query parameters (`?`). Currently files can be specified using the
+[`file://` scheme](/docs/config/project#file-paths), and globs with the
+[`glob://` scheme](/docs/config/project#glob-patterns). Environment variables do not support URIs.
+
+```yml title="moon.yml"
+tasks:
+  build:
+    # ...
+    inputs:
+      - 'file:///*.config.js?optional'
+      - 'glob://src/**/*.ts'
+```
+
+:::info
+
+Files and globs can still be configured using literal strings. The URI format can be used when
+customizing parameters!
+
+:::
+
+#### Objects
+
+Objects provide an alternative to strings, allowing you to customize parameters in a standard and
+familiar format. Files can be specified using the [`file` key](/docs/config/project#file-paths), and
+globs with the [`glob` key](/docs/config/project#glob-patterns). Environment variables do not
+support objects.
+
+```yml title="moon.yml"
+tasks:
+  build:
+    # ...
+    inputs:
+      - file: '/*.config.js'
+        optional: true
+      - glob: 'src/**/*.ts'
+```
+
+### New parameters
+
+As mentioned above, file and glob inputs now support parameters, which can be customized using URI
+and object formats. The following parameters are available:
+
+#### Files
+
+- `content` (`string`) - When determining affected state, will match against the file's content
+  using the defined regex pattern, instead of relying on file existence.
+- `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
+  warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
+  a warning.
+
+#### Globs
+
+- `cache` (`boolean`) - When gathering inputs for hashing, defines whether the glob results should
+  be cached for the duration of the moon process. Defaults to `true`.
+
+## Better proto integration
+
+In previous versions of moon, we would automatically install [proto](/proto) for you based on
+certain conditions. This logic was applied to all `moon` sub-commands, which was not necessary, as
+it was only required for task running related commands.
+
+To improve this, we have integrated proto into the action pipeline through a new action,
+`SetupProto`, which runs before any `SetupToolchain` action. With this, proto is only installed when
+required by that specific toolchain, and not for every command.
+
+### New `proto` setting
+
+Additionally, we are introducing a [`proto`](/docs/config/toolchain#proto) setting in
+[`.moon/toolchain.yml`](/docs/config/toolchain), which can be used to control the integration of
+proto in moon. To start, you can now customize the proto version! This is extremely useful if you
+want to test new proto features, or need to rollback to an older version.
+
+```yml title=".moon/toolchain.yml"
+proto:
+  version: '0.51.4'
+```
+
+### Other changes
+
+Lastly, proto has been upgrade to [v0.51](https://github.com/moonrepo/proto/releases/tag/v0.51.0),
+which includes 2 major features: lockfiles and custom registries. However, we have yet to test these
+features thoroughly in moon, so they are not "officially" supported yet, but you can still use them
+if you wish. We will be adding support for these features in the future.
+
+## Project layers
+
+Project layers may sound like a new feature, but they are simply a rename of the project type. Going
+forward, the `type` setting in [`moon.yml`](/docs/config/project) has been renamed to
+[`layer`](/docs/config/project#layer), but backwards compatibility will be maintained until v2. Why
+the rename?
+
+The term "layer" better reflects the purpose and functionality of this concept, as it defines a
+layer (the [`layer`](/docs/config/project#layer) setting) within the development stack (the
+[`stack`](/docs/config/project#stack) setting), and helps to enforce proper relationships. This
+change aims to improve clarity and consistency in our configuration.
+
+For example, the following layers are available, from highest to lowest. Layers can then depend on
+lower layers, but not higher layers. Except for automations and applications, they can also depend
+on themself.
+
+| Layer           | Description                                                         |
+| --------------- | ------------------------------------------------------------------- |
+| `automation`    | An automated testing suite, like E2E, integration, or visual tests. |
+| `application`   | An application of any kind.                                         |
+| `tool`          | An internal tool, CLI, one-off script, etc.                         |
+| `library`       | A self-contained, shareable, and publishable set of code.           |
+| `scaffolding`   | Templates or generators for scaffolding.                            |
+| `configuration` | Configuration files or infrastructure.                              |
+| `unknown`       | When not configured.                                                |
+
+Because of this rename, the following changes have been made:
+
+- `type` --> `layer` in `moon.yml`
+- `--type` --> `--layer` in `moon query projects`
+- `projectType` --> `projectLayer` for MQL
+- `$projectType` --> `$projectLayer` for task tokens
+- `enforceProjectTypeRelationships` --> `enforceLayerRelationships` in `.moon/workspace.yml`
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.39.0) for a full list
+of changes.
+
+- Added unstable support for bubbling up logs from WASM plugins.
+- Updated the `@moonrepo/cli` npm package to no longer rely on postinstall scripts.
+- Improved argument quoting for commands and scripts.
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Better command line argument parsing/joining (especially for task `args`)
+- Pkl configuration improvements
+- WASM toolchain documentation

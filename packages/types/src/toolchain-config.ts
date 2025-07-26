@@ -282,6 +282,17 @@ export interface ToolchainPluginConfig {
 	versionFromPrototools: ToolchainPluginVersionFrom;
 }
 
+export type VersionSpec = string;
+
+/** Configures how moon integrates with proto. */
+export interface ProtoConfig {
+	/**
+	 * The version of proto to download and install,
+	 * and to use for installing and running other toolchains.
+	 */
+	version?: VersionSpec;
+}
+
 /** The available package managers for Python. */
 export type PythonPackageManager = 'pip' | 'uv';
 
@@ -316,6 +327,11 @@ export interface PythonConfig {
 	pip: PipConfig;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin: PluginLocator | null;
+	/**
+	 * Assumes a workspace root virtual environment is used for dependencies.
+	 * Can be used to support the "one version policy" pattern.
+	 */
+	rootRequirementsOnly?: boolean;
 	/**
 	 * Assumes a workspace root virtual environment is used for dependencies.
 	 * Can be used to support the "one version policy" pattern.
@@ -385,6 +401,8 @@ export interface ToolchainConfig {
 	node: NodeConfig | null;
 	/** All configured toolchains by unique ID. */
 	plugins: Record<string, ToolchainPluginConfig>;
+	/** Configures how moon integrates with proto. */
+	proto: ProtoConfig;
 	/** Configures and enables the Python platform. */
 	python: PythonConfig | null;
 	/** Configures and enables the Rust platform. */
@@ -642,6 +660,15 @@ export interface PartialToolchainPluginConfig {
 	versionFromPrototools?: ToolchainPluginVersionFrom | null;
 }
 
+/** Configures how moon integrates with proto. */
+export interface PartialProtoConfig {
+	/**
+	 * The version of proto to download and install,
+	 * and to use for installing and running other toolchains.
+	 */
+	version?: VersionSpec | null;
+}
+
 export interface PartialPipConfig {
 	/** List of arguments to append to `pip install` commands. */
 	installArgs?: string[] | null;
@@ -672,6 +699,11 @@ export interface PartialPythonConfig {
 	pip?: PartialPipConfig | null;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin?: PluginLocator | null;
+	/**
+	 * Assumes a workspace root virtual environment is used for dependencies.
+	 * Can be used to support the "one version policy" pattern.
+	 */
+	rootRequirementsOnly?: boolean | null;
 	/**
 	 * Assumes a workspace root virtual environment is used for dependencies.
 	 * Can be used to support the "one version policy" pattern.
@@ -741,6 +773,8 @@ export interface PartialToolchainConfig {
 	node?: PartialNodeConfig | null;
 	/** All configured toolchains by unique ID. */
 	plugins?: Record<string, PartialToolchainPluginConfig> | null;
+	/** Configures how moon integrates with proto. */
+	proto?: PartialProtoConfig | null;
 	/** Configures and enables the Python platform. */
 	python?: PartialPythonConfig | null;
 	/** Configures and enables the Rust platform. */

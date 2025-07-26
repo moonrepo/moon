@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed JSON schemas not including property aliases (project `type` for `layer`).
+
 ## 1.39.1
 
 #### 🐞 Fixes

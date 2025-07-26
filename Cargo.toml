@@ -55,7 +55,7 @@ reqwest = { version = "0.12.22", default-features = false, features = [
 ] }
 rustc-hash = "2.1.1"
 scc = "2.3.4"
-schematic = { version = "0.18.11", default-features = false, features = [
+schematic = { version = "0.18.12", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
@@ -82,7 +82,7 @@ starbase_utils = { version = "0.11.13", default-features = false, features = [
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
 thiserror = "2.0.12"
-tokio = { version = "1.46.1", default-features = false, features = [
+tokio = { version = "1.47.0", default-features = false, features = [
     "macros",
     "process",
     "rt-multi-thread",

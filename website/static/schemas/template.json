@@ -115,6 +115,21 @@
             ]
           }
         },
+        "defaultValue": {
+          "title": "defaultValue",
+          "description": "The default value of the variable if none was provided.",
+          "type": "array",
+          "items": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          }
+        },
         "internal": {
           "title": "internal",
           "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
@@ -169,6 +184,11 @@
       "properties": {
         "default": {
           "title": "default",
+          "description": "The default value of the variable if none was provided.",
+          "type": "boolean"
+        },
+        "defaultValue": {
+          "title": "defaultValue",
           "description": "The default value of the variable if none was provided.",
           "type": "boolean"
         },
@@ -337,6 +357,11 @@
           "description": "The default value of the variable if none was provided.",
           "type": "number"
         },
+        "defaultValue": {
+          "title": "defaultValue",
+          "description": "The default value of the variable if none was provided.",
+          "type": "number"
+        },
         "internal": {
           "title": "internal",
           "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
@@ -407,6 +432,24 @@
             "type": "string"
           }
         },
+        "defaultValue": {
+          "title": "defaultValue",
+          "description": "The default value of the variable if none was provided.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "internal": {
           "title": "internal",
           "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
@@ -461,6 +504,11 @@
       "properties": {
         "default": {
           "title": "default",
+          "description": "The default value of the variable if none was provided.",
+          "type": "string"
+        },
+        "defaultValue": {
+          "title": "defaultValue",
           "description": "The default value of the variable if none was provided.",
           "type": "string"
         },

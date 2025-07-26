@@ -76,6 +76,15 @@
         "type": "string"
       }
     },
+    "proto": {
+      "title": "proto",
+      "description": "Configures how moon integrates with proto.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProtoConfig"
+        }
+      ]
+    },
     "python": {
       "title": "python",
       "description": "Configures and enables the Python platform.",
@@ -650,6 +659,22 @@
       },
       "additionalProperties": false
     },
+    "ProtoConfig": {
+      "description": "Configures how moon integrates with proto.",
+      "type": "object",
+      "properties": {
+        "version": {
+          "title": "version",
+          "description": "The version of proto to download and install, and to use for installing and running other toolchains.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VersionSpec"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PythonConfig": {
       "type": "object",
       "properties": {
@@ -683,6 +708,11 @@
               "type": "null"
             }
           ]
+        },
+        "rootRequirementsOnly": {
+          "title": "rootRequirementsOnly",
+          "description": "Assumes a workspace root virtual environment is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "type": "boolean"
         },
         "rootVenvOnly": {
           "title": "rootVenvOnly",
@@ -926,6 +956,10 @@
         }
       },
       "additionalProperties": false
+    },
+    "VersionSpec": {
+      "description": "Represents a resolved version or alias.",
+      "type": "string"
     },
     "YarnConfig": {
       "description": "Options for Yarn, when used as a package manager.",

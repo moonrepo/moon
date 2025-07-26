@@ -6784,9 +6784,9 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.4.2"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f84152323834592fd7810b57f0bf524e6b6af8619656694fcdfdf492abbc30b8"
+checksum = "e2126df50e5bd715fd3c96d04676d5c927c979512395db457637fc201fcb2f5a"
 dependencies = [
  "dunce",
  "rmp-serde",
@@ -7056,9 +7056,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.11"
+version = "0.18.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d780f975c2a9de7893586994cf99032ac25b028b65ba1949f93ebef498988eac"
+checksum = "fe968b13534878e9c8b42013520b926430f45d1823fff8feaaef542e7dc49969"
 dependencies = [
  "garde",
  "indexmap",
@@ -7070,6 +7070,7 @@ dependencies = [
  "schemars",
  "schematic_macros",
  "schematic_types",
+ "semver",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -7082,9 +7083,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.18.8"
+version = "0.18.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b09d80b88bacc5bb333cee03f05ae0e8a8aec09fab7e34c825db57eb81af5f5"
+checksum = "8dad8ec65bab250820fa9616523d9216a1d9f37092293d9223f6ccc3e6f9b301"
 dependencies = [
  "convert_case",
  "darling 0.21.0",
@@ -7095,9 +7096,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.10.5"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52e37ae4048b74daa61d5eccd094afe1caef3452a815e68735b498ad59670fc1"
+checksum = "9bedeb0ba9745d6271e7c0dbac7a225a8bd915c23f293acb8ba345e3bf031ed0"
 dependencies = [
  "indexmap",
  "regex",
@@ -8114,9 +8115,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.46.1"
+version = "1.47.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0cc3a2344dafbe23a245241fe8b09735b521110d30fcefbbd5feb1797ca35d17"
+checksum = "43864ed400b6043a4757a25c7a64a8efde741aed79a056a2fb348a406701bb35"
 dependencies = [
  "backtrace",
  "bytes",
@@ -8127,10 +8128,10 @@ dependencies = [
  "pin-project-lite",
  "signal-hook-registry",
  "slab",
- "socket2 0.5.10",
+ "socket2 0.6.0",
  "tokio-macros",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

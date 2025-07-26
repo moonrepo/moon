@@ -23,6 +23,8 @@ export interface PartialTemplateFrontmatterConfig {
 /** Configuration for a template variable. */
 export interface TemplateVariableArraySetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: unknown[];
+	/** The default value of the variable if none was provided. */
 	default: unknown[];
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal: boolean;
@@ -37,6 +39,8 @@ export interface TemplateVariableArraySetting {
 
 /** Configuration for a template variable. */
 export interface TemplateVariableBoolSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: boolean;
 	/** The default value of the variable if none was provided. */
 	default: boolean;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
@@ -80,6 +84,8 @@ export interface TemplateVariableEnumSetting {
 /** Configuration for a template variable. */
 export interface TemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: number;
+	/** The default value of the variable if none was provided. */
 	default: number;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal: boolean;
@@ -95,6 +101,8 @@ export interface TemplateVariableNumberSetting {
 /** Configuration for a template variable. */
 export interface TemplateVariableObjectSetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: Record<string, unknown>;
+	/** The default value of the variable if none was provided. */
 	default: Record<string, unknown>;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal: boolean;
@@ -109,6 +117,8 @@ export interface TemplateVariableObjectSetting {
 
 /** Configuration for a template variable. */
 export interface TemplateVariableStringSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: string;
 	/** The default value of the variable if none was provided. */
 	default: string;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
@@ -160,6 +170,8 @@ export interface TemplateConfig {
 /** Configuration for a template variable. */
 export interface PartialTemplateVariableArraySetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: unknown[] | null;
+	/** The default value of the variable if none was provided. */
 	default?: unknown[] | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal?: boolean | null;
@@ -174,6 +186,8 @@ export interface PartialTemplateVariableArraySetting {
 
 /** Configuration for a template variable. */
 export interface PartialTemplateVariableBoolSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: boolean | null;
 	/** The default value of the variable if none was provided. */
 	default?: boolean | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
@@ -217,6 +231,8 @@ export interface PartialTemplateVariableEnumSetting {
 /** Configuration for a template variable. */
 export interface PartialTemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: number | null;
+	/** The default value of the variable if none was provided. */
 	default?: number | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal?: boolean | null;
@@ -232,6 +248,8 @@ export interface PartialTemplateVariableNumberSetting {
 /** Configuration for a template variable. */
 export interface PartialTemplateVariableObjectSetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: Record<string, unknown> | null;
+	/** The default value of the variable if none was provided. */
 	default?: Record<string, unknown> | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal?: boolean | null;
@@ -246,6 +264,8 @@ export interface PartialTemplateVariableObjectSetting {
 
 /** Configuration for a template variable. */
 export interface PartialTemplateVariableStringSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: string | null;
 	/** The default value of the variable if none was provided. */
 	default?: string | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */

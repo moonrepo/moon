@@ -42,6 +42,13 @@ export interface ConstraintsConfig {
 	 *
 	 * @default true
 	 */
+	enforceProjectTypeRelationships?: boolean;
+	/**
+	 * Enforces relationships between projects based on each project's
+	 * `layer` setting.
+	 *
+	 * @default true
+	 */
 	enforceLayerRelationships?: boolean;
 	/**
 	 * Enforces relationships between projects based on each project's
@@ -519,6 +526,8 @@ export interface WorkspaceConfig {
 	/** Configures how and where notifications are sent. */
 	notifier: NotifierConfig;
 	/** Configures aspects of the action pipeline. */
+	runner?: PipelineConfig;
+	/** Configures aspects of the action pipeline. */
 	pipeline: PipelineConfig;
 	/**
 	 * Configures all projects within the workspace to create a project graph.
@@ -567,6 +576,13 @@ export interface PartialCodeownersConfig {
 
 /** Configures boundaries and constraints between projects. */
 export interface PartialConstraintsConfig {
+	/**
+	 * Enforces relationships between projects based on each project's
+	 * `layer` setting.
+	 *
+	 * @default true
+	 */
+	enforceProjectTypeRelationships?: boolean | null;
 	/**
 	 * Enforces relationships between projects based on each project's
 	 * `layer` setting.
@@ -1018,6 +1034,8 @@ export interface PartialWorkspaceConfig {
 	hasher?: PartialHasherConfig | null;
 	/** Configures how and where notifications are sent. */
 	notifier?: PartialNotifierConfig | null;
+	/** Configures aspects of the action pipeline. */
+	runner?: PartialPipelineConfig | null;
 	/** Configures aspects of the action pipeline. */
 	pipeline?: PartialPipelineConfig | null;
 	/**

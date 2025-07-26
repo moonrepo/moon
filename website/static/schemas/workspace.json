@@ -232,6 +232,13 @@
           "type": "boolean",
           "markdownDescription": "Enforces relationships between projects based on each project's `layer` setting."
         },
+        "enforceProjectTypeRelationships": {
+          "title": "enforceProjectTypeRelationships",
+          "description": "Enforces relationships between projects based on each project's layer setting.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Enforces relationships between projects based on each project's `layer` setting."
+        },
         "tagRelationships": {
           "title": "tagRelationships",
           "description": "Enforces relationships between projects based on each project's tags setting. Requires a mapping of tags, to acceptable tags.",

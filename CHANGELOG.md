@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a glob input parsing issue when the pattern contained a `?` and wasn't in URI format.
+- Fixed JSON schemas not including property aliases (project `type` for `layer`, etc).
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.39.1
 
 #### 🐞 Fixes

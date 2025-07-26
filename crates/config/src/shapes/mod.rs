@@ -10,7 +10,7 @@ pub use portable_path::*;
 
 use schematic::ParseError;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Uri {
     pub scheme: String,
     pub path: String,

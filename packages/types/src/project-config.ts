@@ -239,6 +239,13 @@ export interface ProjectConfig {
 	 * @default 'unknown'
 	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
 	 */
+	type?: LayerType;
+	/**
+	 * The layer within the project stack, for categorizing.
+	 *
+	 * @default 'unknown'
+	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
+	 */
 	layer: LayerType;
 	/**
 	 * Defines ownership of source code within the current project, by mapping
@@ -457,6 +464,12 @@ export interface PartialProjectConfig {
 	 * @default 'unknown'
 	 */
 	language?: LanguageType | null;
+	/**
+	 * The layer within the project stack, for categorizing.
+	 *
+	 * @default 'unknown'
+	 */
+	type?: LayerType | null;
 	/**
 	 * The layer within the project stack, for categorizing.
 	 *

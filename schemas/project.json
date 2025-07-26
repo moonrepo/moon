@@ -157,6 +157,16 @@
       ],
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
+    "type": {
+      "title": "type",
+      "description": "The layer within the project stack, for categorizing.",
+      "default": "unknown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/LayerType"
+        }
+      ]
+    },
     "workspace": {
       "title": "workspace",
       "description": "Overrides top-level workspace settings, scoped to this project.",

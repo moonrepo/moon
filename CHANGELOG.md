@@ -4,7 +4,11 @@
 
 #### 🐞 Fixes
 
-- Fixed JSON schemas not including property aliases (project `type` for `layer`).
+- Fixed JSON schemas not including property aliases (project `type` for `layer`, etc).
+
+#### ⚙️ Internal
+
+- Updated dependencies.
 
 ## 1.39.1
 

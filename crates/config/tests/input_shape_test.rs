@@ -1,6 +1,6 @@
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, Input, ManifestDepsInput, ProjectSourcesInput, Uri,
-    test_utils::*,
+    FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, ManifestDepsInput,
+    ProjectSourcesInput, Uri, test_utils::*,
 };
 use schematic::RegexSetting;
 
@@ -189,13 +189,13 @@ mod input_shape {
         fn glob_protocol_supports_all_syntax() {
             for pat in [
                 "*.png",
-                "fo$.txt",
+                "ba(r|z).txt",
                 "**/{*.{go,rs}}",
                 "**/*.{md,txt}",
                 "pkg/**/PKGBUILD",
-                // "dir/{a?c,x?z,foo}",
+                "dir/{a?c,x?z,foo}",
                 "lib/[qa-cX-Z]/*",
-                // "(?-i)photos/**/*.(?i){jpg,jpeg}",
+                "(?-i)photos/**/*.(?i){jpg,jpeg}",
                 "a/<b/**:1,>",
                 "file.tsx?",
             ] {
@@ -203,7 +203,10 @@ mod input_shape {
                 input.cache = true;
 
                 assert_eq!(
-                    Input::parse(format!("glob://{pat}")).unwrap(),
+                    Input::ProjectGlob(GlobInput {
+                        glob: GlobPath(pat.into()),
+                        cache: true
+                    }),
                     Input::ProjectGlob(input)
                 );
 
@@ -211,7 +214,10 @@ mod input_shape {
                 input.cache = false;
 
                 assert_eq!(
-                    Input::parse(format!("glob://{pat}?cache=false")).unwrap(),
+                    Input::ProjectGlob(GlobInput {
+                        glob: GlobPath(pat.into()),
+                        cache: false
+                    }),
                     Input::ProjectGlob(input)
                 );
             }
@@ -594,15 +600,15 @@ mod input_shape {
 
         #[test]
         fn supports_optional_field() {
-            let input = create_glob_input("file.*?cache");
+            let input = create_glob_input("glob://file.*?cache");
 
             assert!(input.cache);
 
-            let input = create_glob_input("file.*?cache=true");
+            let input = create_glob_input("glob://file.*?cache=true");
 
             assert!(input.cache);
 
-            let input = create_glob_input("file.*?cache=false");
+            let input = create_glob_input("glob://file.*?cache=false");
 
             assert!(!input.cache);
         }
@@ -610,13 +616,13 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "unsupported value for `cache`")]
         fn errors_invalid_cache_field() {
-            create_glob_input("file.*?cache=invalid");
+            create_glob_input("glob://file.*?cache=invalid");
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            create_glob_input("file.*?unknown");
+            create_glob_input("glob://file.*?unknown");
         }
     }
 

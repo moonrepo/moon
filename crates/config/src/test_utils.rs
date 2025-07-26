@@ -21,7 +21,7 @@ pub fn create_glob_input(path: impl AsRef<str>) -> GlobInput {
         Uri::parse(if path.starts_with("glob://") {
             path.to_owned()
         } else {
-            format!("glob://{path}")
+            format!("glob://{}", path.replace("?", "__QM__"))
         })
         .unwrap(),
     )

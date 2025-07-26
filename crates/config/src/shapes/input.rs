@@ -172,7 +172,7 @@ config_struct!(
 impl GlobInput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
-            glob: GlobPath::parse(&uri.path)?,
+            glob: GlobPath::parse(uri.path.replace("__QM__", "?"))?,
             ..Default::default()
         };
 
@@ -349,7 +349,7 @@ impl Input {
         // Convert literal paths to a URI
         if !value.contains("://") {
             if is_glob_like(&value) {
-                value = format!("glob://{value}");
+                value = format!("glob://{}", value.replace("?", "__QM__"));
             } else {
                 value = format!("file://{value}");
             }

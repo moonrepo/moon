@@ -73,6 +73,11 @@ pub fn enforce_layer_relationships(
         return Ok(());
     }
 
+    // Unknown layers can depend on anything, since we don't know what it is!
+    if source.layer == LayerType::Unknown {
+        return Ok(());
+    }
+
     let mut allowed = vec![];
     let mut found_layer = false;
 

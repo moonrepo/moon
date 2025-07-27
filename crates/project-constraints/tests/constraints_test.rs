@@ -1,4 +1,5 @@
 use moon_common::Id;
+use moon_config::schematic::ConfigEnum;
 use moon_config::{DependencyScope, StackType};
 use moon_project::{LayerType, Project, ProjectConfig};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
@@ -436,6 +437,18 @@ mod by_layer {
             &DependencyScope::Production,
         )
         .unwrap();
+    }
+
+    #[test]
+    fn unknown_can_use_everything() {
+        for layer in LayerType::variants() {
+            enforce_layer_relationships(
+                &create_project("foo", LayerType::Unknown),
+                &create_project("bar", layer),
+                &DependencyScope::Production,
+            )
+            .unwrap();
+        }
     }
 
     mod config {

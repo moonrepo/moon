@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a regression where an unknown/unconfigured `layer` would trigger a violation error.
+
 ## 1.39.2
 
 #### 🐞 Fixes

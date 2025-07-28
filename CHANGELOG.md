@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.39.3
 
 #### 🐞 Fixes
 

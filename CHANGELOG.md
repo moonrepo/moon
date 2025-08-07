@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed task input inferrence to not include the `$HOME`, `$USER`, and `$PWD` environment variables.
+
 ## 1.39.3
 
 #### 🐞 Fixes

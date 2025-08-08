@@ -3982,7 +3982,7 @@ dependencies = [
  "starbase",
  "starbase_events",
  "starbase_sandbox",
- "starbase_shell",
+ "starbase_shell 0.10.1",
  "starbase_styles",
  "starbase_utils",
  "tera",
@@ -4653,7 +4653,7 @@ dependencies = [
  "moon_console",
  "moon_env_var",
  "rustc-hash 2.1.1",
- "starbase_shell",
+ "starbase_shell 0.10.1",
  "system_env",
  "thiserror 2.0.12",
  "tokio",
@@ -7628,6 +7628,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "starbase_shell"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11a641524078c8d4928da6091be54b8c2e2ab6a7d31420d2ad158b2bd024ff94"
+dependencies = [
+ "regex",
+ "shell-quote",
+ "sysinfo",
+ "thiserror 2.0.12",
+ "tracing",
+]
+
+[[package]]
 name = "starbase_styles"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8784,7 +8797,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "starbase_archive",
- "starbase_shell",
+ "starbase_shell 0.9.2",
  "starbase_styles",
  "starbase_utils",
  "system_env",

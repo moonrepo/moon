@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed task input inferrence to not include the `$HOME`, `$USER`, and `$PWD` environment variables.
+- Fixed some arg/shell quoting issues.
 
 ## 1.39.3
 

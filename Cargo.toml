@@ -73,7 +73,7 @@ starbase_archive = { version = "0.11.3", default-features = false, features = [
 starbase_console = { version = "0.6.13", features = ["miette"] }
 starbase_events = "0.7.3"
 starbase_sandbox = "0.9.4"
-starbase_shell = "0.9.1"
+starbase_shell = "0.10.1"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
 starbase_utils = { version = "0.11.13", default-features = false, features = [
     "editor-config",

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue with `moon setup` failing when proto is not available.
+- Fixed task input inferrence to not include the `$HOME`, `$USER`, and `$PWD` environment variables.
+- Fixed some arg/shell quoting issues.
+
 ## 1.39.3
 
 #### 🐞 Fixes

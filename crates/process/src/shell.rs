@@ -1,6 +1,5 @@
 use cached::proc_macro::cached;
-use moon_args::join_args_os;
-use starbase_shell::BoxedShell;
+use starbase_shell::{BoxedShell, join_args};
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 
@@ -51,34 +50,11 @@ impl Shell {
         }
     }
 
-    pub fn is_quoted(&self, arg: &str) -> bool {
-        arg.starts_with("$'") || arg.starts_with("'") || arg.starts_with('"')
-    }
-
     pub fn join_args(&self, args: Vec<OsString>) -> OsString {
-        let mut line = OsString::new();
-        let last_index = args.len() - 1;
-
-        for (index, arg) in args.into_iter().enumerate() {
-            let quoted_arg = match arg.to_str() {
-                Some(inner) => {
-                    if self.is_quoted(inner) {
-                        arg
-                    } else {
-                        OsString::from(self.instance.quote(inner))
-                    }
-                }
-                None => join_args_os([arg]),
-            };
-
-            line.push(&quoted_arg);
-
-            if index != last_index {
-                line.push(OsStr::new(" "));
-            }
-        }
-
-        line
+        OsString::from(join_args(
+            &self.instance,
+            args.iter().filter_map(|arg| arg.to_str()),
+        ))
     }
 }
 

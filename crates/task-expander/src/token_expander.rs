@@ -765,6 +765,9 @@ impl<'graph> TokenExpander<'graph> {
 
     fn infer_inputs_from_set(&self, task: &mut Task, mut set: FxHashSet<String>) {
         let mut blacklist = vec![
+            "HOME",
+            "USER",
+            "PWD",
             "CI_",
             "GIT_",
             "BUILD_",

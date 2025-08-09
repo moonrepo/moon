@@ -1,3 +1,4 @@
+use moon_project::ProjectFragment;
 use std::time::{Duration, Instant, SystemTime};
 use warpgate_api::{AnyResult, VirtualPath, api_enum, api_struct};
 
@@ -24,6 +25,11 @@ impl MoonContext {
         }
 
         self.working_dir.join(path)
+    }
+
+    /// Return an absolute path for the provided project's root.
+    pub fn get_project_root(&self, project: &ProjectFragment) -> VirtualPath {
+        self.workspace_root.join(&project.source)
     }
 }
 

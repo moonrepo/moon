@@ -1,5 +1,6 @@
 use crate::context::MoonContext;
 use moon_config::{DependencyScope, PartialTaskConfig};
+use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -105,6 +106,9 @@ api_struct!(
         /// for the current toolchain.
         pub globals_dir: Option<VirtualPath>,
 
+        /// Fragment of the project that the task belongs to.
+        pub project: ProjectFragment,
+
         /// Fragment of the owning task.
         pub task: TaskFragment,
 
@@ -154,6 +158,9 @@ api_struct!(
         /// Virtual path to a global executables directory
         /// for the current toolchain.
         pub globals_dir: Option<VirtualPath>,
+
+        /// Fragment of the project that the task belongs to.
+        pub project: ProjectFragment,
 
         /// The current script.
         pub script: String,

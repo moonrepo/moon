@@ -5,8 +5,9 @@
 #### 🧩 Plugins
 
 - WASM API
-  - Added `ExtendTaskCommandInput.toolchain_config` field.
-  - Added `ExtendTaskScriptInput.toolchain_config` field.
+  - Added `MoonContext.get_project_root` method.
+  - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
+  - Added `ExtendTaskScriptInput.toolchain_config` and `project` fields.
 
 ## 1.39.4
 

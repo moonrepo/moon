@@ -92,21 +92,19 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn build_command(&mut self, context: &ActionContext) -> miette::Result<Command> {
+        let project = self.project;
         let task = self.task;
-        let toolchain_ids = self.project.get_enabled_toolchains_for_task(task);
+        let toolchain_ids = project.get_enabled_toolchains_for_task(task);
 
-        let mut command = match self
-            .platform_manager
-            .get_by_toolchains(&self.task.toolchains)
-        {
+        let mut command = match self.platform_manager.get_by_toolchains(&task.toolchains) {
             Ok(platform) => {
                 self.using_platform = true;
 
                 platform
                     .create_run_target_command(
                         context,
-                        self.project,
-                        self.task,
+                        project,
+                        task,
                         self.node.get_runtime(),
                         self.working_dir,
                     )
@@ -138,11 +136,12 @@ impl<'task> CommandBuilder<'task> {
                         ExtendTaskScriptInput {
                             context: registry.create_context(),
                             script: script.clone(),
+                            project: project.to_fragment(),
                             task: task.to_fragment(),
                             toolchain_config: registry.create_merged_config(
                                 &toolchain.id,
                                 &self.app.toolchain_config,
-                                &self.project.config,
+                                &project.config,
                             ),
                             ..Default::default()
                         }
@@ -166,11 +165,12 @@ impl<'task> CommandBuilder<'task> {
                             context: registry.create_context(),
                             command: task.command.clone(),
                             args: task.args.clone(),
+                            project: project.to_fragment(),
                             task: task.to_fragment(),
                             toolchain_config: registry.create_merged_config(
                                 &toolchain.id,
                                 &self.app.toolchain_config,
-                                &self.project.config,
+                                &project.config,
                             ),
                             ..Default::default()
                         }

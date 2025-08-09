@@ -107,6 +107,10 @@ api_struct!(
 
         /// Fragment of the owning task.
         pub task: TaskFragment,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -156,6 +160,10 @@ api_struct!(
 
         /// Fragment of the owning task.
         pub task: TaskFragment,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🧩 Plugins
+
+- WASM API
+  - Added `ExtendTaskCommandInput.toolchain_config` field.
+  - Added `ExtendTaskScriptInput.toolchain_config` field.
+
 ## 1.39.4
 
 #### 🐞 Fixes

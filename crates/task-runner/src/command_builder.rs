@@ -134,11 +134,18 @@ impl<'task> CommandBuilder<'task> {
                 for params in self
                     .app
                     .toolchain_registry
-                    .extend_task_script_many(toolchain_ids, |registry, _| ExtendTaskScriptInput {
-                        context: registry.create_context(),
-                        script: script.clone(),
-                        task: task.to_fragment(),
-                        ..Default::default()
+                    .extend_task_script_many(toolchain_ids, |registry, toolchain| {
+                        ExtendTaskScriptInput {
+                            context: registry.create_context(),
+                            script: script.clone(),
+                            task: task.to_fragment(),
+                            toolchain_config: registry.create_merged_config(
+                                &toolchain.id,
+                                &self.app.toolchain_config,
+                                &self.project.config,
+                            ),
+                            ..Default::default()
+                        }
                     })
                     .await?
                 {
@@ -154,12 +161,19 @@ impl<'task> CommandBuilder<'task> {
                 for params in self
                     .app
                     .toolchain_registry
-                    .extend_task_command_many(toolchain_ids, |registry, _| ExtendTaskCommandInput {
-                        context: registry.create_context(),
-                        command: task.command.clone(),
-                        args: task.args.clone(),
-                        task: task.to_fragment(),
-                        ..Default::default()
+                    .extend_task_command_many(toolchain_ids, |registry, toolchain| {
+                        ExtendTaskCommandInput {
+                            context: registry.create_context(),
+                            command: task.command.clone(),
+                            args: task.args.clone(),
+                            task: task.to_fragment(),
+                            toolchain_config: registry.create_merged_config(
+                                &toolchain.id,
+                                &self.app.toolchain_config,
+                                &self.project.config,
+                            ),
+                            ..Default::default()
+                        }
                     })
                     .await?
                 {

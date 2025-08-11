@@ -12,7 +12,7 @@ use tracing::{instrument, trace};
 use warpgate::host::{HostData, create_host_functions as create_shared_host_functions};
 
 #[derive(Clone, Default)]
-pub struct PluginHostData {
+pub struct MoonHostData {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
     pub toolchain_config: Arc<ToolchainConfig>,
@@ -20,9 +20,9 @@ pub struct PluginHostData {
     pub workspace_graph: Arc<OnceLock<Arc<WorkspaceGraph>>>,
 }
 
-impl fmt::Debug for PluginHostData {
+impl fmt::Debug for MoonHostData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PluginHostData")
+        f.debug_struct("MoonHostData")
             .field("moon_env", &self.moon_env)
             .field("proto_env", &self.proto_env)
             .field("toolchain_config", &self.toolchain_config)
@@ -31,7 +31,7 @@ impl fmt::Debug for PluginHostData {
     }
 }
 
-pub fn create_host_functions(data: PluginHostData, shared_data: HostData) -> Vec<Function> {
+pub fn create_host_functions(data: MoonHostData, shared_data: HostData) -> Vec<Function> {
     let mut functions = vec![];
     functions.extend(create_shared_host_functions(shared_data));
     functions.extend(vec![
@@ -83,7 +83,7 @@ fn load_project(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],
     outputs: &mut [Val],
-    user_data: UserData<PluginHostData>,
+    user_data: UserData<MoonHostData>,
 ) -> Result<(), Error> {
     let id_raw: String = plugin.memory_get_val(&inputs[0])?;
     let id = Id::new(id_raw)?;
@@ -122,7 +122,7 @@ fn load_projects(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],
     outputs: &mut [Val],
-    user_data: UserData<PluginHostData>,
+    user_data: UserData<MoonHostData>,
 ) -> Result<(), Error> {
     let ids_raw: String = plugin.memory_get_val(&inputs[0])?;
     let ids: Vec<String> = serde_json::from_str(&ids_raw)?;
@@ -164,7 +164,7 @@ fn load_task(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],
     outputs: &mut [Val],
-    user_data: UserData<PluginHostData>,
+    user_data: UserData<MoonHostData>,
 ) -> Result<(), Error> {
     let target_raw: String = plugin.memory_get_val(&inputs[0])?;
     let target = Target::parse(&target_raw).map_err(map_error)?;
@@ -209,7 +209,7 @@ fn load_tasks(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],
     outputs: &mut [Val],
-    user_data: UserData<PluginHostData>,
+    user_data: UserData<MoonHostData>,
 ) -> Result<(), Error> {
     let targets_raw: String = plugin.memory_get_val(&inputs[0])?;
     let targets: Vec<String> = serde_json::from_str(&targets_raw)?;
@@ -258,7 +258,7 @@ fn load_toolchain_config_by_id(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],
     outputs: &mut [Val],
-    user_data: UserData<PluginHostData>,
+    user_data: UserData<MoonHostData>,
 ) -> Result<(), Error> {
     let id_raw: String = plugin.memory_get_val(&inputs[0])?;
     let id = Id::new(id_raw)?;

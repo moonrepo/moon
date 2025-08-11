@@ -13,7 +13,7 @@ use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_feature_flags::{FeatureFlags, Flag};
-use moon_plugin::PluginHostData;
+use moon_plugin::MoonHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
@@ -147,7 +147,7 @@ impl MoonSession {
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
         let item = self.extension_registry.get_or_init(|| {
-            let mut registry = ExtensionRegistry::new(PluginHostData {
+            let mut registry = ExtensionRegistry::new(MoonHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
                 toolchain_config: Arc::clone(&self.toolchain_config),
@@ -182,7 +182,7 @@ impl MoonSession {
     pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
         let item = self.toolchain_registry.get_or_init(|| {
             let mut registry = ToolchainRegistry::new(
-                PluginHostData {
+                MoonHostData {
                     moon_env: Arc::clone(&self.moon_env),
                     proto_env: Arc::clone(&self.proto_env),
                     toolchain_config: Arc::clone(&self.toolchain_config),

@@ -5,7 +5,7 @@ use moon_common::Id;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
 use moon_plugin::{
-    PluginError, PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config,
+    PluginError, MoonHostData, PluginId, PluginRegistry, PluginType, serialize_config,
 };
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
@@ -30,14 +30,14 @@ impl Default for ToolchainRegistry {
             plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(
                 PluginType::Toolchain,
-                PluginHostData::default(),
+                MoonHostData::default(),
             )),
         }
     }
 }
 
 impl ToolchainRegistry {
-    pub fn new(host_data: PluginHostData, config: Arc<ToolchainConfig>) -> Self {
+    pub fn new(host_data: MoonHostData, config: Arc<ToolchainConfig>) -> Self {
         Self {
             config,
             plugins: FxHashMap::default(),

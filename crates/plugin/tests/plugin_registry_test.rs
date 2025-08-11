@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use moon_config::{ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_plugin::{
-    Plugin, PluginHostData, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry,
+    MoonHostData, Plugin, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry,
     PluginType,
 };
 use proto_core::{ProtoEnvironment, warpgate::FileLocator};
@@ -28,7 +28,7 @@ impl Plugin for TestPlugin {
 fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
     let registry = PluginRegistry::new(
         PluginType::Extension,
-        PluginHostData {
+        MoonHostData {
             moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
             proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
             toolchain_config: Arc::new(ToolchainConfig::default()),

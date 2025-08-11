@@ -385,6 +385,8 @@ impl WorkspaceMocker {
             PluginHostData {
                 moon_env: Arc::new(self.moon_env.clone()),
                 proto_env: Arc::new(self.proto_env.clone()),
+                toolchain_config: Arc::new(self.toolchain_config.clone()),
+                workspace_config: Arc::new(self.workspace_config.clone()),
                 workspace_graph: Arc::new(OnceLock::new()),
             },
             Arc::new(self.toolchain_config.clone()),

@@ -310,7 +310,7 @@ api_struct!(
         pub context: MoonContext,
 
         /// List of packages to only install dependencies for.
-        pub packages: Option<Vec<String>>,
+        pub packages: Vec<String>,
 
         /// Only install production dependencies.
         pub production: bool,

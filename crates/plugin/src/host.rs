@@ -1,5 +1,6 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
 use moon_common::{Id, color};
+use moon_config::{ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_target::Target;
 use moon_workspace_graph::WorkspaceGraph;
@@ -14,14 +15,18 @@ use warpgate::host::{HostData, create_host_functions as create_shared_host_funct
 pub struct PluginHostData {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
+    pub toolchain_config: Arc<ToolchainConfig>,
+    pub workspace_config: Arc<WorkspaceConfig>,
     pub workspace_graph: Arc<OnceLock<Arc<WorkspaceGraph>>>,
 }
 
 impl fmt::Debug for PluginHostData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("PluginRegistry")
+        f.debug_struct("PluginHostData")
             .field("moon_env", &self.moon_env)
             .field("proto_env", &self.proto_env)
+            .field("toolchain_config", &self.toolchain_config)
+            .field("workspace_config", &self.workspace_config)
             .finish()
     }
 }
@@ -55,8 +60,15 @@ pub fn create_host_functions(data: PluginHostData, shared_data: HostData) -> Vec
             "load_tasks_by_target",
             [ValType::I64],
             [ValType::I64],
-            UserData::new(data),
+            UserData::new(data.clone()),
             load_tasks,
+        ),
+        Function::new(
+            "load_toolchain_config_by_id",
+            [ValType::I64],
+            [ValType::I64],
+            UserData::new(data),
+            load_toolchain_config_by_id,
         ),
     ]);
     functions
@@ -237,6 +249,51 @@ fn load_tasks(
     );
 
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&tasks)?)?;
+
+    Ok(())
+}
+
+#[instrument(name = "host_load_toolchain_config_by_id", skip_all)]
+fn load_toolchain_config_by_id(
+    plugin: &mut CurrentPlugin,
+    inputs: &[Val],
+    outputs: &mut [Val],
+    user_data: UserData<PluginHostData>,
+) -> Result<(), Error> {
+    let id_raw: String = plugin.memory_get_val(&inputs[0])?;
+    let id = Id::new(id_raw)?;
+    let unstable_id = Id::new(format!("unstable_{id}"))?;
+    let uuid = plugin.id().to_string();
+
+    trace!(
+        plugin = &uuid,
+        toolchain_id = id.as_str(),
+        "Calling host function {}",
+        color::label("load_toolchain_config_by_id"),
+    );
+
+    let data = user_data.get()?;
+    let data = data.lock().unwrap();
+
+    let config = data
+        .toolchain_config
+        .plugins
+        .get(&id)
+        .or_else(|| data.toolchain_config.plugins.get(&unstable_id))
+        .ok_or_else(|| {
+            Error::msg(format!(
+                "Unable to load toolchain configuration. Toolchain {id} does not exist."
+            ))
+        })?;
+
+    trace!(
+        plugin = &uuid,
+        toolchain_id = id.as_str(),
+        "Called host function {}",
+        color::label("load_toolchain_config_by_id"),
+    );
+
+    plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
 
     Ok(())
 }

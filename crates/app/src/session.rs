@@ -150,6 +150,8 @@ impl MoonSession {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
+                toolchain_config: Arc::clone(&self.toolchain_config),
+                workspace_config: Arc::clone(&self.workspace_config),
                 workspace_graph: Arc::new(OnceLock::new()),
             });
 
@@ -183,6 +185,8 @@ impl MoonSession {
                 PluginHostData {
                     moon_env: Arc::clone(&self.moon_env),
                     proto_env: Arc::clone(&self.proto_env),
+                    toolchain_config: Arc::clone(&self.toolchain_config),
+                    workspace_config: Arc::clone(&self.workspace_config),
                     workspace_graph: Arc::new(OnceLock::new()),
                 },
                 self.toolchain_config.clone(),

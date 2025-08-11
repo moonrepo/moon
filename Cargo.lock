@@ -4623,6 +4623,7 @@ dependencies = [
  "extism",
  "miette 7.6.0",
  "moon_common",
+ "moon_config",
  "moon_env",
  "moon_pdk_api",
  "moon_target",
@@ -8732,9 +8733,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "version_spec"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b1925476832e6f4c08d2d8eeb5f26cd43c6bb34147fafd5ff9b4c4d323908ac"
+checksum = "dc7f86cf857fb2d4fa385435d6b930cfa2770adf811c12ddee83a91ed52f6974"
 dependencies = [
  "compact_str 0.9.0",
  "human-sort",

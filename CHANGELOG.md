@@ -8,6 +8,7 @@
   - Added `MoonContext.get_project_root` method.
   - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
   - Added `ExtendTaskScriptInput.toolchain_config` and `project` fields.
+  - Added `load_toolchain_config_by_id` host function.
 
 ## 1.39.4
 

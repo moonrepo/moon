@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moon_config::{ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_plugin::{
     Plugin, PluginHostData, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry,
@@ -30,6 +31,8 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
         PluginHostData {
             moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
             proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
+            toolchain_config: Arc::new(ToolchainConfig::default()),
+            workspace_config: Arc::new(WorkspaceConfig::default()),
             workspace_graph: Arc::new(OnceLock::new()),
         },
     );

@@ -4,6 +4,7 @@ use moon_pdk_api::AnyResult;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use rustc_hash::FxHashMap;
+use serde::de::DeserializeOwned;
 
 #[host_fn]
 extern "ExtismHost" {
@@ -11,6 +12,7 @@ extern "ExtismHost" {
     fn load_projects_by_id(ids: Json<Vec<String>>) -> Json<FxHashMap<Id, Project>>;
     fn load_task_by_target(target: String) -> Json<Task>;
     fn load_tasks_by_target(targets: Json<Vec<String>>) -> Json<FxHashMap<Target, Task>>;
+    fn load_toolchain_config_by_id<T: DeserializeOwned>(id: String) -> Json<T>;
 }
 
 /// Load a single project by ID.
@@ -60,4 +62,11 @@ where
     };
 
     Ok(tasks.0)
+}
+
+/// Load configuration for a toolchain by ID.
+pub fn load_toolchain_config<T: DeserializeOwned>(id: impl AsRef<str>) -> AnyResult<T> {
+    let config = unsafe { load_toolchain_config_by_id(id.as_ref().into())? };
+
+    Ok(config.0)
 }

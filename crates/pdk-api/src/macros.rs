@@ -12,7 +12,7 @@ macro_rules! config_struct {
 #[macro_export]
 macro_rules! shared_config {
     ($container:ident, $model:ident) => {
-        #[derive(Default)]
+        #[derive(Debug, Default)]
         pub struct $container {
             pub data: $model,
             pub dirty: Vec<String>,

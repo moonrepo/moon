@@ -2,6 +2,7 @@ use extism::{CurrentPlugin, Error, UserData, Val};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
+#[allow(clippy::enum_variant_names)]
 pub enum MoonHostFunction {
     LoadProject,
     LoadProjects,

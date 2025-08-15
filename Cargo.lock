@@ -3914,7 +3914,6 @@ dependencies = [
  "clap",
  "clap_complete",
  "clap_complete_nushell",
- "clean-path",
  "convert_case",
  "diff",
  "iocraft",
@@ -5119,7 +5118,6 @@ version = "0.0.1"
 dependencies = [
  "assert_cmd",
  "assert_fs",
- "clean-path",
  "insta",
  "moon_common",
  "moon_config",
@@ -5231,7 +5229,6 @@ dependencies = [
  "async-trait",
  "cached",
  "chrono",
- "clean-path",
  "dunce",
  "humantime",
  "md5",

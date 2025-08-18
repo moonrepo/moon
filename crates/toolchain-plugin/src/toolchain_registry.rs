@@ -53,7 +53,7 @@ impl ToolchainRegistry {
     }
 
     pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> JsonValue {
-        if let Some(config) = toolchain_config.plugins.get(id) {
+        if let Some(config) = toolchain_config.get_plugin_config(id) {
             return config.to_json();
         }
 
@@ -69,7 +69,7 @@ impl ToolchainRegistry {
         let mut data = self.create_config(id, toolchain_config);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
-            project_config.toolchain.plugins.get(id)
+            project_config.toolchain.get_plugin_config(id)
         {
             let next = leaf_config.to_json();
 

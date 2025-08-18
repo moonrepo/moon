@@ -1,6 +1,6 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
 use moon_common::{Id, color};
-use moon_config::{ToolchainConfig, WorkspaceConfig};
+use moon_config::{ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_target::Target;
 use moon_workspace_graph::WorkspaceGraph;
@@ -260,14 +260,18 @@ fn load_toolchain_config_by_id(
     outputs: &mut [Val],
     user_data: UserData<MoonHostData>,
 ) -> Result<(), Error> {
-    let id_raw: String = plugin.memory_get_val(&inputs[0])?;
-    let id = Id::new(id_raw)?;
-    let unstable_id = Id::new(format!("unstable_{id}"))?;
     let uuid = plugin.id().to_string();
+    let toolchain_id = Id::new(plugin.memory_get_val::<String>(&inputs[0])?)?;
+    let mut project_id = None;
+
+    if let Some(input) = inputs.get(1) {
+        project_id.replace(Id::new(plugin.memory_get_val::<String>(input)?)?);
+    }
 
     trace!(
         plugin = &uuid,
-        toolchain_id = id.as_str(),
+        project_id = project_id.as_ref().map(|id| id.as_str()),
+        toolchain_id = toolchain_id.as_str(),
         "Calling host function {}",
         color::label("load_toolchain_config_by_id"),
     );
@@ -275,25 +279,45 @@ fn load_toolchain_config_by_id(
     let data = user_data.get()?;
     let data = data.lock().unwrap();
 
-    let config = data
-        .toolchain_config
-        .plugins
-        .get(&id)
-        .or_else(|| data.toolchain_config.plugins.get(&unstable_id))
-        .ok_or_else(|| {
-            Error::msg(format!(
-                "Unable to load toolchain configuration. Toolchain {id} does not exist."
-            ))
-        })?;
+    match &project_id {
+        Some(project_id) => {
+            let workspace_graph = data.workspace_graph.get().unwrap();
+            let project = workspace_graph.get_project(project_id).map_err(map_error)?;
+
+            let default_config = ToolchainPluginConfig::default();
+            let config = project
+                .config
+                .toolchain
+                .get_plugin_config(&toolchain_id)
+                .and_then(|entry| match entry {
+                    ProjectToolchainEntry::Config(cfg) => Some(cfg),
+                    _ => None,
+                })
+                .unwrap_or(&default_config);
+
+            plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
+        }
+        None => {
+            let config = data
+                .toolchain_config
+                .get_plugin_config(&toolchain_id)
+                .ok_or_else(|| {
+                    Error::msg(format!(
+                        "Unable to load toolchain configuration. Toolchain {toolchain_id} does not exist."
+                    ))
+                })?;
+
+            plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
+        }
+    };
 
     trace!(
         plugin = &uuid,
-        toolchain_id = id.as_str(),
+        project_id = project_id.as_ref().map(|id| id.as_str()),
+        toolchain_id = toolchain_id.as_str(),
         "Called host function {}",
         color::label("load_toolchain_config_by_id"),
     );
-
-    plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
 
     Ok(())
 }

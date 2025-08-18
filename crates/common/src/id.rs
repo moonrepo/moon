@@ -54,6 +54,32 @@ impl Id {
         Id(CompactString::new(id))
     }
 
+    pub fn stable<S: AsRef<str>>(id: S) -> Id {
+        let id = id.as_ref();
+
+        if let Some(suffix) = id.strip_prefix("unstable_") {
+            Id::raw(suffix)
+        } else {
+            Id::raw(id)
+        }
+    }
+
+    pub fn unstable<S: AsRef<str>>(id: S) -> Id {
+        let id = id.as_ref();
+
+        if id.starts_with("unstable_") {
+            Id::raw(id)
+        } else {
+            Id::raw(format!("unstable_{id}"))
+        }
+    }
+
+    pub fn stable_and_unstable<S: AsRef<str>>(id: S) -> (Id, Id) {
+        let id = id.as_ref();
+
+        (Id::stable(id), Id::unstable(id))
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }

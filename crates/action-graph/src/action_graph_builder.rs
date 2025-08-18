@@ -167,7 +167,7 @@ impl<'query> ActionGraphBuilder<'query> {
         toolchain_id: &Id,
         allow_override: bool,
     ) -> Option<ToolchainSpec> {
-        if let Some(config) = project.config.toolchain.plugins.get(toolchain_id) {
+        if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
             }
@@ -182,7 +182,11 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        if let Some(config) = self.app_context.toolchain_config.plugins.get(toolchain_id) {
+        if let Some(config) = self
+            .app_context
+            .toolchain_config
+            .get_plugin_config(toolchain_id)
+        {
             return Some(match &config.version {
                 Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
                 None => ToolchainSpec::new_global(toolchain_id.to_owned()),

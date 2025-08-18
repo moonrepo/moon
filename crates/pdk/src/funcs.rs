@@ -12,7 +12,10 @@ extern "ExtismHost" {
     fn load_projects_by_id(ids: Json<Vec<String>>) -> Json<FxHashMap<Id, Project>>;
     fn load_task_by_target(target: String) -> Json<Task>;
     fn load_tasks_by_target(targets: Json<Vec<String>>) -> Json<FxHashMap<Target, Task>>;
-    fn load_toolchain_config_by_id<T: DeserializeOwned>(id: String) -> Json<T>;
+    fn load_toolchain_config_by_id<T: DeserializeOwned>(
+        toolchain_id: String,
+        project_id: Option<String>,
+    ) -> Json<T>;
 }
 
 /// Load a single project by ID.
@@ -65,8 +68,23 @@ where
 }
 
 /// Load configuration for a toolchain by ID.
-pub fn load_toolchain_config<T: DeserializeOwned>(id: impl AsRef<str>) -> AnyResult<T> {
-    let config = unsafe { load_toolchain_config_by_id(id.as_ref().into())? };
+pub fn load_toolchain_config<T: DeserializeOwned>(toolchain_id: impl AsRef<str>) -> AnyResult<T> {
+    let config = unsafe { load_toolchain_config_by_id(toolchain_id.as_ref().into(), None)? };
+
+    Ok(config.0)
+}
+
+/// Load project-specific configuration for a toolchain by ID.
+pub fn load_project_toolchain_config<T: DeserializeOwned>(
+    project_id: impl AsRef<str>,
+    toolchain_id: impl AsRef<str>,
+) -> AnyResult<T> {
+    let config = unsafe {
+        load_toolchain_config_by_id(
+            toolchain_id.as_ref().into(),
+            Some(project_id.as_ref().into()),
+        )?
+    };
 
     Ok(config.0)
 }

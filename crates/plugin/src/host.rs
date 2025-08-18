@@ -65,7 +65,7 @@ pub fn create_host_functions(data: MoonHostData, shared_data: HostData) -> Vec<F
         ),
         Function::new(
             "load_toolchain_config_by_id",
-            [ValType::I64],
+            [ValType::I64, ValType::I64],
             [ValType::I64],
             UserData::new(data),
             load_toolchain_config_by_id,

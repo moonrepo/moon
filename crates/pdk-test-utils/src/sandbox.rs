@@ -211,7 +211,11 @@ impl MoonWasmSandbox {
         ] {
             funcs.push(Function::new(
                 func_type.as_str().to_string(),
-                [ValType::I64],
+                if func_type == MoonHostFunction::LoadToolchainConfig {
+                    vec![ValType::I64, ValType::I64]
+                } else {
+                    vec![ValType::I64]
+                },
                 [ValType::I64],
                 UserData::new((func_type, self.host_funcs.clone())),
                 mocked_host_func_impl,

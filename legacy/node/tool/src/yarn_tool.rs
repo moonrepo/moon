@@ -138,10 +138,11 @@ impl Tool for YarnTool {
             return Ok(count);
         }
 
-        if let Some(last) = last_versions.get("yarn") {
-            if last == version && self.tool.get_product_dir().exists() {
-                return Ok(count);
-            }
+        if let Some(last) = last_versions.get("yarn")
+            && last == version
+            && self.tool.get_product_dir().exists()
+        {
+            return Ok(count);
         }
 
         self.console

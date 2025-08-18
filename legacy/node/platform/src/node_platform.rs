@@ -81,15 +81,14 @@ impl Platform for NodePlatform {
     }
 
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
-        if let Some(config) = &project_config {
-            if let Some(node_config) = &config.toolchain.node {
-                if let Some(version) = &node_config.version {
-                    return Runtime::new_override(
-                        Id::raw("node"),
-                        RuntimeReq::Toolchain(version.to_owned()),
-                    );
-                }
-            }
+        if let Some(config) = &project_config
+            && let Some(node_config) = &config.toolchain.node
+            && let Some(version) = &node_config.version
+        {
+            return Runtime::new_override(
+                Id::raw("node"),
+                RuntimeReq::Toolchain(version.to_owned()),
+            );
         }
 
         if let Some(version) = &self.config.version {
@@ -174,14 +173,13 @@ impl Platform for NodePlatform {
         for (project_id, project_source) in projects_list {
             if let Some(package_json) =
                 PackageJsonCache::read(project_source.to_path(&self.workspace_root))?
+                && let Some(package_name) = package_json.data.name
             {
-                if let Some(package_name) = package_json.data.name {
-                    self.package_names
-                        .insert(package_name.clone(), project_id.to_owned());
+                self.package_names
+                    .insert(package_name.clone(), project_id.to_owned());
 
-                    if package_name != project_id.as_str() {
-                        aliases_list.push((project_id.to_owned(), package_name.clone()));
-                    }
+                if package_name != project_id.as_str() {
+                    aliases_list.push((project_id.to_owned(), package_name.clone()));
                 }
             }
         }
@@ -466,28 +464,28 @@ impl Platform for NodePlatform {
                 command.env("PROTO_NODE_VERSION", version);
             }
 
-            if let Ok(npm) = node.get_npm() {
-                if let Some(version) = get_proto_version_env(&npm.tool) {
-                    command.env("PROTO_NPM_VERSION", version);
-                }
+            if let Ok(npm) = node.get_npm()
+                && let Some(version) = get_proto_version_env(&npm.tool)
+            {
+                command.env("PROTO_NPM_VERSION", version);
             }
 
-            if let Ok(pnpm) = node.get_pnpm() {
-                if let Some(version) = get_proto_version_env(&pnpm.tool) {
-                    command.env("PROTO_PNPM_VERSION", version);
-                }
+            if let Ok(pnpm) = node.get_pnpm()
+                && let Some(version) = get_proto_version_env(&pnpm.tool)
+            {
+                command.env("PROTO_PNPM_VERSION", version);
             }
 
-            if let Ok(yarn) = node.get_yarn() {
-                if let Some(version) = get_proto_version_env(&yarn.tool) {
-                    command.env("PROTO_YARN_VERSION", version);
-                }
+            if let Ok(yarn) = node.get_yarn()
+                && let Some(version) = get_proto_version_env(&yarn.tool)
+            {
+                command.env("PROTO_YARN_VERSION", version);
             }
 
-            if let Ok(bun) = node.get_bun() {
-                if let Some(version) = get_proto_version_env(&bun.tool) {
-                    command.env("PROTO_BUN_VERSION", version);
-                }
+            if let Ok(bun) = node.get_bun()
+                && let Some(version) = get_proto_version_env(&bun.tool)
+            {
+                command.env("PROTO_BUN_VERSION", version);
             }
         }
 

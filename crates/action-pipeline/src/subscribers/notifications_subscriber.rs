@@ -54,28 +54,27 @@ impl Subscriber for NotificationsSubscriber {
                 if matches!(
                     self.toast,
                     NotifierEventType::Always | NotifierEventType::Failure
-                ) {
-                    if let Some(error) = error {
-                        notify_terminal(
-                            match status {
-                                ActionPipelineStatus::Aborted => "Pipeline aborted",
-                                ActionPipelineStatus::Interrupted => "Pipeline interrupted",
-                                ActionPipelineStatus::Terminated => "Pipeline terminated",
-                                _ => "Pipeline failed",
-                            },
-                            self.ansi.replace_all(error, ""),
-                        )?;
-                    }
+                ) && let Some(error) = error
+                {
+                    notify_terminal(
+                        match status {
+                            ActionPipelineStatus::Aborted => "Pipeline aborted",
+                            ActionPipelineStatus::Interrupted => "Pipeline interrupted",
+                            ActionPipelineStatus::Terminated => "Pipeline terminated",
+                            _ => "Pipeline failed",
+                        },
+                        self.ansi.replace_all(error, ""),
+                    )?;
                 }
             }
             Event::TaskRan { error, target, .. } => {
-                if matches!(self.toast, NotifierEventType::TaskFailure) {
-                    if let Some(error) = error {
-                        notify_terminal(
-                            format!("Task {target} failed"),
-                            self.ansi.replace_all(error, ""),
-                        )?;
-                    }
+                if matches!(self.toast, NotifierEventType::TaskFailure)
+                    && let Some(error) = error
+                {
+                    notify_terminal(
+                        format!("Task {target} failed"),
+                        self.ansi.replace_all(error, ""),
+                    )?;
                 }
             }
             _ => {}

@@ -405,24 +405,24 @@ impl ActionPipeline {
             .await;
 
         // For security and privacy purposes, only send webhooks from a CI environment
-        if is_ci() || is_test_env() {
-            if let Some(webhook_url) = &self.app_context.workspace_config.notifier.webhook_url {
-                let require_acknowledge = self
-                    .app_context
-                    .workspace_config
-                    .notifier
-                    .webhook_acknowledge;
+        if (is_ci() || is_test_env())
+            && let Some(webhook_url) = &self.app_context.workspace_config.notifier.webhook_url
+        {
+            let require_acknowledge = self
+                .app_context
+                .workspace_config
+                .notifier
+                .webhook_acknowledge;
 
-                debug!(
-                    url = webhook_url,
-                    "Subscribing webhook events ({} enabled)",
-                    color::property("notifier.webhookUrl"),
-                );
+            debug!(
+                url = webhook_url,
+                "Subscribing webhook events ({} enabled)",
+                color::property("notifier.webhookUrl"),
+            );
 
-                self.emitter
-                    .subscribe(WebhooksSubscriber::new(webhook_url, require_acknowledge))
-                    .await;
-            }
+            self.emitter
+                .subscribe(WebhooksSubscriber::new(webhook_url, require_acknowledge))
+                .await;
         }
 
         if let Some(toast) = self

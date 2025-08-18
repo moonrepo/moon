@@ -64,40 +64,40 @@ fn load_with_regex(
     }
 
     for task in workspace_graph.get_tasks()? {
-        if let Some(regex) = &id_regex {
-            if !regex.is_match(&task.id) {
-                continue;
-            }
+        if let Some(regex) = &id_regex
+            && !regex.is_match(&task.id)
+        {
+            continue;
         }
 
-        if let (Some(regex), Ok(project_id)) = (&project_regex, task.target.get_project_id()) {
-            if !regex.is_match(project_id.as_str()) {
-                continue;
-            }
+        if let (Some(regex), Ok(project_id)) = (&project_regex, task.target.get_project_id())
+            && !regex.is_match(project_id.as_str())
+        {
+            continue;
         }
 
-        if let Some(regex) = &command_regex {
-            if !regex.is_match(&task.command) {
-                continue;
-            }
+        if let Some(regex) = &command_regex
+            && !regex.is_match(&task.command)
+        {
+            continue;
         }
 
-        if let (Some(regex), Some(script)) = (&script_regex, &task.script) {
-            if !regex.is_match(script) {
-                continue;
-            }
+        if let (Some(regex), Some(script)) = (&script_regex, &task.script)
+            && !regex.is_match(script)
+        {
+            continue;
         }
 
-        if let Some(regex) = &toolchain_regex {
-            if !task.toolchains.iter().any(|tc| regex.is_match(tc)) {
-                continue;
-            }
+        if let Some(regex) = &toolchain_regex
+            && !task.toolchains.iter().any(|tc| regex.is_match(tc))
+        {
+            continue;
         }
 
-        if let Some(regex) = &type_regex {
-            if !regex.is_match(&task.type_of.to_string()) {
-                continue;
-            }
+        if let Some(regex) = &type_regex
+            && !regex.is_match(&task.type_of.to_string())
+        {
+            continue;
         }
 
         filtered.push(task);

@@ -102,10 +102,11 @@ impl Tool for PnpmTool {
             return Ok(count);
         }
 
-        if let Some(last) = last_versions.get("pnpm") {
-            if last == version && self.tool.get_product_dir().exists() {
-                return Ok(count);
-            }
+        if let Some(last) = last_versions.get("pnpm")
+            && last == version
+            && self.tool.get_product_dir().exists()
+        {
+            return Ok(count);
         }
 
         self.console

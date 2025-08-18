@@ -75,10 +75,10 @@ impl RustPlatform {
     fn get_globals_dir(&self, tool: Option<&RustTool>) -> PathBuf {
         let mut globals_dir = get_cargo_home().join("bin");
 
-        if let Some(tool) = tool {
-            if let Some(new_globals_dir) = tool.tool.get_globals_dir() {
-                globals_dir = new_globals_dir.to_path_buf();
-            }
+        if let Some(tool) = tool
+            && let Some(new_globals_dir) = tool.tool.get_globals_dir()
+        {
+            globals_dir = new_globals_dir.to_path_buf();
         }
 
         globals_dir
@@ -92,15 +92,14 @@ impl Platform for RustPlatform {
     }
 
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
-        if let Some(config) = &project_config {
-            if let Some(rust_config) = &config.toolchain.rust {
-                if let Some(version) = &rust_config.version {
-                    return Runtime::new_override(
-                        Id::raw("rust"),
-                        RuntimeReq::Toolchain(version.to_owned()),
-                    );
-                }
-            }
+        if let Some(config) = &project_config
+            && let Some(rust_config) = &config.toolchain.rust
+            && let Some(version) = &rust_config.version
+        {
+            return Runtime::new_override(
+                Id::raw("rust"),
+                RuntimeReq::Toolchain(version.to_owned()),
+            );
         }
 
         if let Some(version) = &self.config.version {
@@ -135,12 +134,11 @@ impl Platform for RustPlatform {
         .map(|lockfile| lockfile.parent().unwrap().to_path_buf())
         .unwrap_or(self.workspace_root.clone());
 
-        if let Some(cargo_toml) = CargoTomlCache::read(root.clone())? {
-            if cargo_toml.workspace.is_some() {
-                if let Ok(root) = root.strip_prefix(&self.workspace_root) {
-                    return WorkspaceRelativePathBuf::from_path(root).into_diagnostic();
-                }
-            }
+        if let Some(cargo_toml) = CargoTomlCache::read(root.clone())?
+            && cargo_toml.workspace.is_some()
+            && let Ok(root) = root.strip_prefix(&self.workspace_root)
+        {
+            return WorkspaceRelativePathBuf::from_path(root).into_diagnostic();
         }
 
         Ok(WorkspaceRelativePathBuf::default())
@@ -188,21 +186,21 @@ impl Platform for RustPlatform {
         for (id, source) in projects_list {
             let project_root = source.to_path(&self.workspace_root);
 
-            if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
-                if let Some(package) = cargo_toml.package {
-                    self.package_names
-                        .insert(package.name.clone(), id.to_owned());
+            if let Some(cargo_toml) = CargoTomlCache::read(project_root)?
+                && let Some(package) = cargo_toml.package
+            {
+                self.package_names
+                    .insert(package.name.clone(), id.to_owned());
 
-                    if package.name != id.as_str() {
-                        debug!(
-                            target: LOG_TARGET,
-                            "Inheriting alias {} for project {}",
-                            color::label(&package.name),
-                            color::id(id)
-                        );
+                if package.name != id.as_str() {
+                    debug!(
+                        target: LOG_TARGET,
+                        "Inheriting alias {} for project {}",
+                        color::label(&package.name),
+                        color::id(id)
+                    );
 
-                        aliases_list.push((id.to_owned(), package.name));
-                    }
+                    aliases_list.push((id.to_owned(), package.name));
                 }
             }
         }
@@ -228,15 +226,15 @@ impl Platform for RustPlatform {
             let mut find_implicit_relations = |package_deps: &DepsSet, scope: &DependencyScope| {
                 for (dep_name, dep) in package_deps {
                     // Only inherit if the dependency is using the local `path = "..."` syntax
-                    if dep.detail().is_some_and(|d| d.path.is_some()) {
-                        if let Some(dep_project_id) = self.package_names.get(dep_name) {
-                            implicit_deps.push(DependencyConfig {
-                                id: dep_project_id.to_owned(),
-                                scope: *scope,
-                                source: DependencySource::Implicit,
-                                via: Some(format!("crate {dep_name}")),
-                            });
-                        }
+                    if dep.detail().is_some_and(|d| d.path.is_some())
+                        && let Some(dep_project_id) = self.package_names.get(dep_name)
+                    {
+                        implicit_deps.push(DependencyConfig {
+                            id: dep_project_id.to_owned(),
+                            scope: *scope,
+                            source: DependencySource::Implicit,
+                            via: Some(format!("crate {dep_name}")),
+                        });
                     }
                 }
             };

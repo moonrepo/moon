@@ -1,5 +1,46 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added new JavaScript ecosystem toolchain WASM plugins. This was a large feature that required
+  extensive work, as the JavaScript ecosystem is quite unique. The following plugins are being
+  introduced:
+  - `unstable_javascript`
+    - A new JavaScript specific plugin that is a superset of all JavaScript runtimes (Deno coming
+      soon).
+    - Implements tier 1 and 2 features, and is now in charge of defining the package manager,
+      installing dependencies, extending the project graph (aliases and tasks), parsing
+      lockfiles/manifests, and much more.
+    - Supports multiple lockfiles for each package manager.
+  - `unstable_bun` and `unstable_node`
+    - The JavaScript runtimes only implement tier 1 and 3 features, and only exist for installing
+      the tool into the proto toolchain. Most functionality is now in the `unstable_javascript`
+      plugin.
+    - Supports settings for Bun/Node execution.
+  - `unstable_npm`, `unstable_pnpm`, and `unstable_yarn`
+    - The JavaScript package managers only implement tier 1 and 3 features, and only exist for
+      installing the tool into the proto toolchain. Most functionality is now in the
+      `unstable_javascript` plugin.
+    - Supports settings for package installation.
+    - npm now supports `npm-shrinkwrap.json`.
+    - Is no longer configured within `node`, and is now configured at the top-level within
+      `.moon/toolchain.yml`.
+- Deprecated the `moon run --profile` option.
+  - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
+    toolchain.
+
+#### 🧩 Plugins
+
+- WASM API
+  - Added `MoonContext.get_project_root` and `get_project_root_from_source` methods.
+  - Added `ExtendProjectGraphInput.toolchain_config` field.
+  - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
+  - Added `ExtendTaskScriptInput.toolchain_config` and `project` fields.
+  - Added `load_toolchain_config` and `load_project_toolchain_config` functions.
+  - Added `load_toolchain_config_by_id` host function.
+
 ## 1.39.4
 
 #### 🐞 Fixes

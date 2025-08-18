@@ -67,17 +67,7 @@ pub fn is_project_toolchain_enabled_for(project: &ProjectFragment, id: impl AsRe
 /// Locate the root directory that contains the provided file name,
 /// by traversing upwards from the starting directory.
 pub fn locate_root(starting_dir: &VirtualPath, file_name: &str) -> Option<VirtualPath> {
-    let mut current_dir = Some(starting_dir.to_owned());
-
-    while let Some(dir) = current_dir {
-        if dir.join(file_name).exists() {
-            return Some(dir);
-        }
-
-        current_dir = dir.parent();
-    }
-
-    None
+    locate_root_many(starting_dir, &[file_name])
 }
 
 /// Locate the root directory that contains the provided file name,
@@ -87,13 +77,48 @@ pub fn locate_root(starting_dir: &VirtualPath, file_name: &str) -> Option<Virtua
 pub fn locate_root_with_check(
     starting_dir: &VirtualPath,
     file_name: &str,
+    check: impl FnMut(&VirtualPath) -> AnyResult<bool>,
+) -> AnyResult<()> {
+    locate_root_many_with_check(starting_dir, &[file_name], check)
+}
+
+/// Locate the root directory that contains the provided file name(s),
+/// by traversing upwards from the starting directory.
+pub fn locate_root_many<T: AsRef<str>>(
+    starting_dir: &VirtualPath,
+    file_names: &[T],
+) -> Option<VirtualPath> {
+    let mut current_dir = Some(starting_dir.to_owned());
+
+    while let Some(dir) = current_dir {
+        for file_name in file_names {
+            if dir.join(file_name.as_ref()).exists() {
+                return Some(dir);
+            }
+        }
+
+        current_dir = dir.parent();
+    }
+
+    None
+}
+
+/// Locate the root directory that contains the provided file name(s),
+/// by traversing upwards from the starting directory and running
+/// the check function on each directory. If the check returns true,
+/// the traversal will stop.
+pub fn locate_root_many_with_check<T: AsRef<str>>(
+    starting_dir: &VirtualPath,
+    file_names: &[T],
     mut check: impl FnMut(&VirtualPath) -> AnyResult<bool>,
 ) -> AnyResult<()> {
     let mut current_dir = Some(starting_dir.to_owned());
 
     while let Some(dir) = current_dir {
-        if dir.join(file_name).exists() && check(&dir)? {
-            return Ok(());
+        for file_name in file_names {
+            if dir.join(file_name.as_ref()).exists() && check(&dir)? {
+                return Ok(());
+            }
         }
 
         current_dir = dir.parent();

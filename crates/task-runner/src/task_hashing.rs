@@ -155,8 +155,7 @@ async fn apply_toolchain(
     // Has a version override
     if let Some(version) = project_config
         .toolchain
-        .plugins
-        .get(toolchain.id.as_str())
+        .get_plugin_config(toolchain.id.as_str())
         .and_then(|config| config.get_version())
     {
         content.version = Some(version.to_owned());
@@ -165,8 +164,7 @@ async fn apply_toolchain(
     // Or an inherited version
     else if let Some(version) = app_context
         .toolchain_config
-        .plugins
-        .get(toolchain.id.as_str())
+        .get_plugin_config(toolchain.id.as_str())
         .and_then(|config| config.version.as_ref())
     {
         content.version = Some(version.to_owned());

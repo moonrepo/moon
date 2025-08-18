@@ -10,8 +10,9 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_config = { path = "../config" }
 moon_env = { path = "../env" }
-moon_pdk_api = { version = "0.3.0", path = "../pdk-api" }
+moon_pdk_api = { path = "../pdk-api" }
 moon_target = { path = "../target" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }

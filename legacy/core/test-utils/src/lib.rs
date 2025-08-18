@@ -11,8 +11,7 @@ pub use predicates;
 pub use pretty_assertions;
 pub use sandbox::*;
 
-use clean_path::Clean;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{WorkspaceRelativePathBuf, clean_components};
 use moon_config::Input;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -20,7 +19,7 @@ use std::str::FromStr;
 pub fn get_fixtures_root() -> PathBuf {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.push("../../../tests/fixtures");
-    root.clean()
+    clean_components(root)
 }
 
 pub fn get_fixtures_path<T: AsRef<str>>(name: T) -> PathBuf {

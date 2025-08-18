@@ -78,6 +78,16 @@ config_struct!(
     }
 );
 
+impl ProjectToolchainConfig {
+    pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ProjectToolchainEntry> {
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        self.plugins
+            .get(&stable_id)
+            .or_else(|| self.plugins.get(&unstable_id))
+    }
+}
+
 config_struct!(
     /// Controls how tasks are inherited.
     #[derive(Config)]

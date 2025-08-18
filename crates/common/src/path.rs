@@ -3,7 +3,7 @@ pub use relative_path::*;
 use rustc_hash::FxHasher;
 use starbase_styles::color;
 use std::hash::Hasher;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // Named types for better readability
 pub type ProjectRelativePath = RelativePath;
@@ -140,4 +140,58 @@ pub fn hash_component(value: impl AsRef<str>) -> String {
     hasher.write(value.as_ref().as_bytes());
 
     format!("{}", hasher.finish())
+}
+
+pub fn clean_components<T: AsRef<Path>>(path: T) -> PathBuf {
+    use std::path::Component;
+
+    // Based on https://gitlab.com/foo-jin/clean-path
+    let mut components = path.as_ref().components().peekable();
+
+    let mut cleaned = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+        components.next();
+
+        PathBuf::from(c.as_os_str())
+    } else {
+        PathBuf::new()
+    };
+
+    let mut leading_parent_dots = 0;
+    let mut component_count = 0;
+
+    for component in components {
+        match component {
+            Component::Prefix(_) | Component::CurDir => {}
+            Component::RootDir => {
+                cleaned.push(component.as_os_str());
+                component_count += 1;
+            }
+            Component::ParentDir => {
+                if component_count == 1 && cleaned.is_absolute() {
+                    // Nothing
+                } else if component_count == leading_parent_dots {
+                    cleaned.push("..");
+                    leading_parent_dots += 1;
+                    component_count += 1;
+                } else {
+                    cleaned.pop();
+                    component_count -= 1;
+                }
+            }
+            Component::Normal(c) => {
+                cleaned.push(c);
+                component_count += 1;
+            }
+        }
+    }
+
+    if component_count == 0 {
+        cleaned.push(".");
+    }
+
+    cleaned
+}
+
+pub fn paths_are_equal<L: AsRef<Path>, R: AsRef<Path>>(left: L, right: R) -> bool {
+    clean_components(left) == clean_components(right)
 }

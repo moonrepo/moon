@@ -1,5 +1,7 @@
 use crate::extension_wrapper::*;
+use crate::host_func_mocker::*;
 use crate::toolchain_wrapper::*;
+use extism::{Function, UserData, ValType};
 use moon_pdk_api::{
     RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
@@ -21,6 +23,7 @@ use warpgate::{
 pub struct MoonWasmSandbox {
     pub sandbox: Sandbox,
     pub home_dir: PathBuf,
+    pub host_funcs: MockedHostFuncs,
     pub moon_dir: PathBuf,
     pub proto: Arc<ProtoEnvironment>,
     pub proto_dir: PathBuf,
@@ -53,6 +56,7 @@ impl MoonWasmSandbox {
             root,
             sandbox,
             wasm_file,
+            host_funcs: MockedHostFuncs::default(),
         }
     }
 
@@ -151,14 +155,16 @@ impl MoonWasmSandbox {
         }
     }
 
+    pub fn enable_logging(&self) {
+        enable_wasm_logging(&self.wasm_file);
+    }
+
     fn create_plugin_container(
         &self,
         id: Id,
         mut manifest: PluginManifest,
         with_proto: bool,
     ) -> PluginContainer {
-        let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));
-
         let virtual_paths = BTreeMap::<PathBuf, PathBuf>::from_iter([
             (self.root.clone(), "/cwd".into()),
             (self.root.clone(), "/workspace".into()),
@@ -181,18 +187,38 @@ impl MoonWasmSandbox {
             inject_proto_manifest_config(&id, &self.proto, &mut manifest).unwrap();
         }
 
-        let funcs = create_host_functions(HostData {
+        PluginContainer::new(id, manifest, self.create_host_funcs(virtual_paths)).unwrap()
+    }
+
+    fn create_host_funcs(&self, virtual_paths: BTreeMap<PathBuf, PathBuf>) -> Vec<Function> {
+        let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));
+
+        let host_data = HostData {
             cache_dir: self.moon_dir.join("cache"),
             http_client: loader.get_http_client().unwrap().clone(),
             virtual_paths,
             working_dir: self.root.clone(),
-        });
+        };
 
-        PluginContainer::new(id, manifest, funcs).unwrap()
-    }
+        let mut funcs = create_host_functions(host_data.clone());
 
-    pub fn enable_logging(&self) {
-        enable_wasm_logging(&self.wasm_file);
+        for func_type in [
+            MoonHostFunction::LoadProject,
+            MoonHostFunction::LoadProjects,
+            MoonHostFunction::LoadTask,
+            MoonHostFunction::LoadTasks,
+            MoonHostFunction::LoadToolchainConfig,
+        ] {
+            funcs.push(Function::new(
+                func_type.as_str().to_string(),
+                [ValType::I64],
+                [ValType::I64],
+                UserData::new((func_type, self.host_funcs.clone())),
+                mocked_host_func_impl,
+            ));
+        }
+
+        funcs
     }
 }
 

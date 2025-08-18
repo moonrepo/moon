@@ -119,6 +119,14 @@ impl ToolchainConfig {
         tools
     }
 
+    pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ToolchainPluginConfig> {
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        self.plugins
+            .get(&stable_id)
+            .or_else(|| self.plugins.get(&unstable_id))
+    }
+
     #[cfg(feature = "proto")]
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
         use proto_core::warpgate::{PluginLocator, UrlLocator};

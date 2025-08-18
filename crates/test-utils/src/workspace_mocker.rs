@@ -8,7 +8,7 @@ use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
 use moon_platform::PlatformManager;
-use moon_plugin::PluginHostData;
+use moon_plugin::MoonHostData;
 use moon_project_builder::*;
 use moon_project_graph::Project;
 use moon_task_builder::*;
@@ -382,9 +382,11 @@ impl WorkspaceMocker {
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
         let mut registry = ToolchainRegistry::new(
-            PluginHostData {
+            MoonHostData {
                 moon_env: Arc::new(self.moon_env.clone()),
                 proto_env: Arc::new(self.proto_env.clone()),
+                toolchain_config: Arc::new(self.toolchain_config.clone()),
+                workspace_config: Arc::new(self.workspace_config.clone()),
                 workspace_graph: Arc::new(OnceLock::new()),
             },
             Arc::new(self.toolchain_config.clone()),

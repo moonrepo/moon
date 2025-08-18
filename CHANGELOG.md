@@ -41,6 +41,10 @@
   - Added `load_toolchain_config` and `load_project_toolchain_config` functions.
   - Added `load_toolchain_config_by_id` host function.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.88.0.
+
 ## 1.39.4
 
 #### 🐞 Fixes

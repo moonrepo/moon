@@ -5,7 +5,7 @@ use moon_common::Id;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
 use moon_plugin::{
-    PluginError, MoonHostData, PluginId, PluginRegistry, PluginType, serialize_config,
+    MoonHostData, PluginError, PluginId, PluginRegistry, PluginType, serialize_config,
 };
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;

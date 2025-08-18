@@ -18,6 +18,9 @@ api_struct!(
         /// Map of project IDs to their source location,
         /// relative from the workspace root.
         pub project_sources: BTreeMap<String, String>,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

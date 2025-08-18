@@ -192,10 +192,10 @@ impl CacheEngine {
     }
 
     fn get_mode(&self) -> CacheMode {
-        if let Ok(lock) = self.forced_mode.read() {
-            if let Some(mode) = &*lock {
-                return *mode;
-            }
+        if let Ok(lock) = self.forced_mode.read()
+            && let Some(mode) = &*lock
+        {
+            return *mode;
         }
 
         self.mode

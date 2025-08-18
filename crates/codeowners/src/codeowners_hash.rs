@@ -11,7 +11,7 @@ hash_content!(
 );
 
 impl<'cfg> CodeownersHash<'cfg> {
-    pub fn new(workspace: &CodeownersConfig) -> CodeownersHash {
+    pub fn new(workspace: &CodeownersConfig) -> CodeownersHash<'_> {
         CodeownersHash {
             file_exists: false,
             projects: BTreeMap::new(),

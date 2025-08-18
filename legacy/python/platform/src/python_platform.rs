@@ -68,15 +68,14 @@ impl Platform for PythonPlatform {
     }
 
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
-        if let Some(config) = &project_config {
-            if let Some(python_config) = &config.toolchain.python {
-                if let Some(version) = &python_config.version {
-                    return Runtime::new_override(
-                        Id::raw("python"),
-                        RuntimeReq::Toolchain(version.to_owned()),
-                    );
-                }
-            }
+        if let Some(config) = &project_config
+            && let Some(python_config) = &config.toolchain.python
+            && let Some(version) = &python_config.version
+        {
+            return Runtime::new_override(
+                Id::raw("python"),
+                RuntimeReq::Toolchain(version.to_owned()),
+            );
         }
 
         if let Some(version) = &self.config.version {
@@ -132,25 +131,24 @@ impl Platform for PythonPlatform {
             for (project_id, project_source) in projects_list {
                 if let Some(data) =
                     uv::PyProjectTomlCache::read(project_source.to_path(&self.workspace_root))?
+                    && let Some(project) = data.project
                 {
-                    if let Some(project) = data.project {
-                        let package_name = project.name;
+                    let package_name = project.name;
 
-                        self.package_names
-                            .insert(package_name.clone(), project_id.to_owned());
+                    self.package_names
+                        .insert(package_name.clone(), project_id.to_owned());
 
-                        if package_name == project_id.as_str() {
-                            continue;
-                        }
-
-                        debug!(
-                            "Inheriting alias {} for project {}",
-                            color::label(&package_name),
-                            color::id(project_id)
-                        );
-
-                        aliases_list.push((project_id.to_owned(), package_name.clone()));
+                    if package_name == project_id.as_str() {
+                        continue;
                     }
+
+                    debug!(
+                        "Inheriting alias {} for project {}",
+                        color::label(&package_name),
+                        color::id(project_id)
+                    );
+
+                    aliases_list.push((project_id.to_owned(), package_name.clone()));
                 }
             }
         }
@@ -175,26 +173,23 @@ impl Platform for PythonPlatform {
             // TODO: support parsing `tool.uv` sections
             if let Some(data) =
                 uv::PyProjectTomlCache::read(self.workspace_root.join(project_source))?
+                && let Some(project) = data.project
+                && let Some(deps) = project.dependencies
             {
-                if let Some(project) = data.project {
-                    if let Some(deps) = project.dependencies {
-                        for dep in deps {
-                            let dep_name = dep.name.to_string();
+                for dep in deps {
+                    let dep_name = dep.name.to_string();
 
-                            if dep.extras.is_empty()
-                                && dep.version_or_url.is_none()
-                                && dep.origin.is_none()
-                            {
-                                if let Some(dep_project_id) = self.package_names.get(&dep_name) {
-                                    implicit_deps.push(DependencyConfig {
-                                        id: dep_project_id.to_owned(),
-                                        scope: DependencyScope::Production,
-                                        source: DependencySource::Implicit,
-                                        via: Some(format!("package {dep_name}")),
-                                    });
-                                }
-                            }
-                        }
+                    if dep.extras.is_empty()
+                        && dep.version_or_url.is_none()
+                        && dep.origin.is_none()
+                        && let Some(dep_project_id) = self.package_names.get(&dep_name)
+                    {
+                        implicit_deps.push(DependencyConfig {
+                            id: dep_project_id.to_owned(),
+                            scope: DependencyScope::Production,
+                            source: DependencySource::Implicit,
+                            via: Some(format!("package {dep_name}")),
+                        });
                     }
                 }
             }
@@ -340,20 +335,20 @@ impl Platform for PythonPlatform {
                 }
             }
             PythonPackageManager::Uv => {
-                if let Some(data) = uv::PyProjectTomlCache::read(manifest_path)? {
-                    if let Some(project) = data.project {
-                        let mut hash = DepsHash::new(project.name);
-                        let mut project_deps = BTreeMap::default();
+                if let Some(data) = uv::PyProjectTomlCache::read(manifest_path)?
+                    && let Some(project) = data.project
+                {
+                    let mut hash = DepsHash::new(project.name);
+                    let mut project_deps = BTreeMap::default();
 
-                        if let Some(deps) = project.dependencies {
-                            for dep in deps {
-                                project_deps.insert(dep.name.to_string(), dep.to_string());
-                            }
+                    if let Some(deps) = project.dependencies {
+                        for dep in deps {
+                            project_deps.insert(dep.name.to_string(), dep.to_string());
                         }
-
-                        hash.add_deps(&project_deps);
-                        hasher.hash_content(hash)?;
                     }
+
+                    hash.add_deps(&project_deps);
+                    hasher.hash_content(hash)?;
                 }
             }
         };
@@ -400,20 +395,19 @@ impl Platform for PythonPlatform {
                 content.dependencies.extend(resolved_dependencies);
             }
             PythonPackageManager::Uv => {
-                if let Some(data) = uv::PyProjectTomlCache::read(&project.root)? {
-                    if let Some(project) = data.project {
-                        if let Some(deps) = project.dependencies {
-                            for dep in deps {
-                                let name = dep.name.to_string();
+                if let Some(data) = uv::PyProjectTomlCache::read(&project.root)?
+                    && let Some(project) = data.project
+                    && let Some(deps) = project.dependencies
+                {
+                    for dep in deps {
+                        let name = dep.name.to_string();
 
-                                if let Some(resolved_versions) = resolved_dependencies.get(&name) {
-                                    let mut sorted_deps = resolved_versions.to_owned().clone();
-                                    sorted_deps.sort();
-                                    content.dependencies.insert(name, sorted_deps);
-                                } else {
-                                    content.dependencies.insert(name, vec![dep.to_string()]);
-                                }
-                            }
+                        if let Some(resolved_versions) = resolved_dependencies.get(&name) {
+                            let mut sorted_deps = resolved_versions.to_owned().clone();
+                            sorted_deps.sort();
+                            content.dependencies.insert(name, sorted_deps);
+                        } else {
+                            content.dependencies.insert(name, vec![dep.to_string()]);
                         }
                     }
                 }

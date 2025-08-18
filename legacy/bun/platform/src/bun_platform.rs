@@ -83,15 +83,14 @@ impl Platform for BunPlatform {
     }
 
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
-        if let Some(config) = &project_config {
-            if let Some(bun_config) = &config.toolchain.bun {
-                if let Some(version) = &bun_config.version {
-                    return Runtime::new_override(
-                        Id::raw("bun"),
-                        RuntimeReq::Toolchain(version.to_owned()),
-                    );
-                }
-            }
+        if let Some(config) = &project_config
+            && let Some(bun_config) = &config.toolchain.bun
+            && let Some(version) = &bun_config.version
+        {
+            return Runtime::new_override(
+                Id::raw("bun"),
+                RuntimeReq::Toolchain(version.to_owned()),
+            );
         }
 
         if let Some(version) = &self.config.version {
@@ -171,14 +170,13 @@ impl Platform for BunPlatform {
         for (project_id, project_source) in projects_list {
             if let Some(package_json) =
                 PackageJsonCache::read(project_source.to_path(&self.workspace_root))?
+                && let Some(package_name) = package_json.data.name
             {
-                if let Some(package_name) = package_json.data.name {
-                    self.package_names
-                        .insert(package_name.clone(), project_id.to_owned());
+                self.package_names
+                    .insert(package_name.clone(), project_id.to_owned());
 
-                    if package_name != project_id.as_str() {
-                        aliases_list.push((project_id.to_owned(), package_name.clone()));
-                    }
+                if package_name != project_id.as_str() {
+                    aliases_list.push((project_id.to_owned(), package_name.clone()));
                 }
             }
         }
@@ -452,10 +450,10 @@ impl Platform for BunPlatform {
         command.args(&task.args);
         command.envs_if_not_global(&task.env);
 
-        if let Ok(bun) = self.toolchain.get_for_version(&runtime.requirement) {
-            if let Some(version) = get_proto_version_env(&bun.tool) {
-                command.env("PROTO_BUN_VERSION", version);
-            }
+        if let Ok(bun) = self.toolchain.get_for_version(&runtime.requirement)
+            && let Some(version) = get_proto_version_env(&bun.tool)
+        {
+            command.env("PROTO_BUN_VERSION", version);
         }
 
         let mut paths = vec![];

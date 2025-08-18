@@ -1,4 +1,3 @@
-mod manifest_hash;
 mod rust_platform;
 mod target_hash;
 mod toolchain_hash;

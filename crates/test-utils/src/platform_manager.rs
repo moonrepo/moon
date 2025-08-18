@@ -71,24 +71,24 @@ pub async fn generate_platform_manager(
         );
 
         // TODO fix in 2.0
-        if config.bun.is_none() {
-            if let Some(bunpm_config) = &node_config.bun {
-                let bun_config = BunConfig {
-                    plugin: bunpm_config.plugin.clone(),
-                    version: bunpm_config.version.clone(),
-                    ..Default::default()
-                };
+        if config.bun.is_none()
+            && let Some(bunpm_config) = &node_config.bun
+        {
+            let bun_config = BunConfig {
+                plugin: bunpm_config.plugin.clone(),
+                version: bunpm_config.version.clone(),
+                ..Default::default()
+            };
 
-                manager.register(
-                    PlatformType::Bun.get_toolchain_id(),
-                    Box::new(BunPlatform::new(
-                        &bun_config,
-                        root,
-                        proto.clone(),
-                        console.clone(),
-                    )),
-                );
-            }
+            manager.register(
+                PlatformType::Bun.get_toolchain_id(),
+                Box::new(BunPlatform::new(
+                    &bun_config,
+                    root,
+                    proto.clone(),
+                    console.clone(),
+                )),
+            );
         }
     }
 

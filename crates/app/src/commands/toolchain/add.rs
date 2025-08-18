@@ -151,29 +151,28 @@ pub async fn init_toolchain(
     }
 
     if toolchain.supports_tier_3().await {
-        if toolchain.has_func("detect_version_files").await {
-            if let Some(version) = toolchain.detect_version(&session.working_dir).await? {
-                settings.insert(
-                    YamlValue::String("version".into()),
-                    YamlValue::String(version.to_string()),
-                );
-            }
+        if toolchain.has_func("detect_version_files").await
+            && let Some(version) = toolchain.detect_version(&session.working_dir).await?
+        {
+            settings.insert(
+                YamlValue::String("version".into()),
+                YamlValue::String(version.to_string()),
+            );
         }
 
-        if !settings.contains_key("version") {
-            if let Some(version) = render_version_prompt(
+        if !settings.contains_key("version")
+            && let Some(version) = render_version_prompt(
                 &session.console,
                 args.yes || args.minimal,
                 &toolchain.metadata.name,
                 || Ok(None),
             )
             .await?
-            {
-                settings.insert(
-                    YamlValue::String("version".into()),
-                    YamlValue::String(version.to_string()),
-                );
-            }
+        {
+            settings.insert(
+                YamlValue::String("version".into()),
+                YamlValue::String(version.to_string()),
+            );
         }
     }
 

@@ -27,7 +27,7 @@ pub type LoadProjectHostFunc = Arc<dyn Fn(String) -> Value>;
 pub type LoadProjectsHostFunc = Arc<dyn Fn(Vec<String>) -> Value>;
 pub type LoadTaskHostFunc = Arc<dyn Fn(String) -> Value>;
 pub type LoadTasksHostFunc = Arc<dyn Fn(Vec<String>) -> Value>;
-pub type LoadToolchainConfigHostFunc = Arc<dyn Fn(String) -> Value>;
+pub type LoadToolchainConfigHostFunc = Arc<dyn Fn(String, Option<String>) -> Value>;
 
 #[derive(Clone, Default)]
 pub struct MockedHostFuncs {
@@ -55,7 +55,10 @@ impl MockedHostFuncs {
         self.load_tasks = Some(Arc::new(func));
     }
 
-    pub fn mock_load_toolchain_config(&mut self, func: impl Fn(String) -> Value + 'static) {
+    pub fn mock_load_toolchain_config(
+        &mut self,
+        func: impl Fn(String, Option<String>) -> Value + 'static,
+    ) {
         self.load_toolchain_config = Some(Arc::new(func));
     }
 }
@@ -106,12 +109,16 @@ pub fn mocked_host_func_impl(
                 .map_or(json!({}), |func| func(ids))
         }
         MoonHostFunction::LoadToolchainConfig => {
-            let id: String = plugin.memory_get_val(&inputs[0])?;
+            let toolchain_id: String = plugin.memory_get_val(&inputs[0])?;
+            let project_id = match inputs.get(1) {
+                Some(input) => Some(plugin.memory_get_val::<String>(input)?),
+                None => None,
+            };
 
             mocked_funcs
                 .load_toolchain_config
                 .as_ref()
-                .map_or(json!({}), |func| func(id))
+                .map_or(json!({}), |func| func(toolchain_id, project_id))
         }
     };
 

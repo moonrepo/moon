@@ -386,8 +386,8 @@ fn apply_toolchain_dependencies_by_scope(
         };
 
         // Try and find a resolved version from the lock file
-        if let Some(lock_deps) = locked_deps.get(name) {
-            if let Some(lock_dep) =
+        if let Some(lock_deps) = locked_deps.get(name)
+            && let Some(lock_dep) =
                 // By exact version first
                 lock_deps
                     .iter()
@@ -398,20 +398,19 @@ fn apply_toolchain_dependencies_by_scope(
                             .iter()
                             .find(|ld| ld.req.as_ref().is_some_and(|r| req == r))
                     })
+        {
+            // Found, so record a value
+            if let Some(hash) = lock_dep
+                .hash
+                .clone()
+                .or_else(|| lock_dep.version.as_ref().map(|v| v.to_string()))
+                .or_else(|| lock_dep.meta.clone())
             {
-                // Found, so record a value
-                if let Some(hash) = lock_dep
-                    .hash
-                    .clone()
-                    .or_else(|| lock_dep.version.as_ref().map(|v| v.to_string()))
-                    .or_else(|| lock_dep.meta.clone())
-                {
-                    hash_content.dependencies.insert(name.to_owned(), hash);
-                    inject = true;
+                hash_content.dependencies.insert(name.to_owned(), hash);
+                inject = true;
 
-                    continue;
-                };
-            }
+                continue;
+            };
         }
 
         // None found, so just record the requirement

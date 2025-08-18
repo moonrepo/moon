@@ -23,10 +23,10 @@ fn configure_application(_notification: &mut Notification) {
         });
 
         // Finder is already the default
-        if id != "com.apple.Finder" {
-            if let Err(error) = set_application(&id) {
-                debug!("Failed to set terminal source application: {error}");
-            }
+        if id != "com.apple.Finder"
+            && let Err(error) = set_application(&id)
+        {
+            debug!("Failed to set terminal source application: {error}");
         }
     });
 }

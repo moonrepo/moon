@@ -15,16 +15,16 @@ pub fn is_glob_like(value: &str) -> bool {
         return true;
     }
 
-    if let (Some(l), Some(r)) = (value.find('{'), value.find('}')) {
-        if l < r {
-            return true;
-        }
+    if let (Some(l), Some(r)) = (value.find('{'), value.find('}'))
+        && l < r
+    {
+        return true;
     }
 
-    if let (Some(l), Some(r)) = (value.find('['), value.find(']')) {
-        if l < r {
-            return true;
-        }
+    if let (Some(l), Some(r)) = (value.find('['), value.find(']'))
+        && l < r
+    {
+        return true;
     }
 
     value.contains('?') || value.contains('|')

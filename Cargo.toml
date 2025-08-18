@@ -17,17 +17,17 @@ default-members = ["crates/cli"]
 
 [workspace.dependencies]
 async-recursion = "1.1.1"
-async-trait = "0.1.88"
+async-trait = "0.1.89"
 cached = "0.56.0"
 chrono = { version = "0.4.41", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.41", default-features = false, features = [
+clap = { version = "4.5.45", default-features = false, features = [
     "derive",
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.55"
+clap_complete = "4.5.57"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
@@ -47,41 +47,41 @@ regex = { version = "1.11.1", default-features = false, features = [
     "std",
     "perf",
 ] }
-reqwest = { version = "0.12.22", default-features = false, features = [
+reqwest = { version = "0.12.23", default-features = false, features = [
     "rustls-tls-native-roots",
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "2.3.4"
+scc = "2.4.0"
 schematic = { version = "0.18.12", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
 semver = "1.0.26"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.141"
+serde_json = "1.0.142"
 serde_yml = "0.0.12"
 sha2 = "0.10.9"
 starbase = { version = "0.10.5" }
-starbase_archive = { version = "0.11.3", default-features = false, features = [
+starbase_archive = { version = "0.11.5", default-features = false, features = [
     "miette",
     "tar-all",
     "zip-all",
 ] }
 starbase_console = { version = "0.6.13", features = ["miette"] }
 starbase_events = "0.7.3"
-starbase_sandbox = "0.9.4"
+starbase_sandbox = "0.9.5"
 starbase_shell = "0.10.1"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.11.13", default-features = false, features = [
+starbase_utils = { version = "0.11.15", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
-thiserror = "2.0.12"
-tokio = { version = "1.47.0", default-features = false, features = [
+thiserror = "2.0.15"
+tokio = { version = "1.47.1", default-features = false, features = [
     "macros",
     "process",
     "rt-multi-thread",
@@ -90,23 +90,23 @@ tokio = { version = "1.47.0", default-features = false, features = [
     "time",
     "tracing",
 ] }
-tokio-util = "0.7.15"
+tokio-util = "0.7.16"
 typescript_tsconfig_json = { version = "0.5.0", features = ["serialize"] }
 tracing = "0.1.41"
 url = "2.5.4"
-uuid = { version = "1.17.0", features = ["v4"] }
+uuid = { version = "1.18.0", features = ["v4"] }
 
 # proto/plugin related
 extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.51.5"
-proto_pdk_api = "0.29.1"
-proto_pdk_test_utils = "0.39.1"
+proto_core = "0.51.8"
+proto_pdk_api = "0.29.2"
+proto_pdk_test_utils = "0.39.2"
 system_env = "0.8.2"
 version_spec = "0.9.5"
-warpgate = "0.26.1"
+warpgate = "0.26.3"
 warpgate_api = "0.16.1"
-warpgate_pdk = "0.15.1"
+warpgate_pdk = "0.15.3"
 
 # proto_core = { path = "../proto/crates/core" }
 # system_env = { path = "../proto/crates/system-env" }

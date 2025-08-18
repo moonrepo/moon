@@ -62,12 +62,12 @@ impl Cacher for ConfigCache {
             let now = SystemTime::now();
             let ttl = Duration::from_secs(86400); // 24 hours
 
-            if last_used > (now - ttl) {
-                if let Ok(contents) = fs::read_to_string(&file) {
-                    self.memory.insert(url.to_owned(), contents.to_owned());
+            if last_used > (now - ttl)
+                && let Ok(contents) = fs::read_to_string(&file)
+            {
+                self.memory.insert(url.to_owned(), contents.to_owned());
 
-                    return Ok(Some(contents));
-                }
+                return Ok(Some(contents));
             }
 
             let _ = fs::remove_file(&file);
@@ -80,10 +80,10 @@ impl Cacher for ConfigCache {
         if !self.memory.contains_key(url) {
             let file = self.get_temp_path(url);
 
-            if let Some(parent) = file.parent() {
-                if !parent.exists() {
-                    let _ = fs::create_dir_all(parent);
-                }
+            if let Some(parent) = file.parent()
+                && !parent.exists()
+            {
+                let _ = fs::create_dir_all(parent);
             }
 
             let _ = fs::write(file, contents);

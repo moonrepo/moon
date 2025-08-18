@@ -528,17 +528,17 @@ impl<'task> TaskRunner<'task> {
         }
 
         // If our last task execution was a failure, return a hard error
-        if let Some(last_attempt) = self.operations.get_last_execution() {
-            if last_attempt.has_failed() {
-                return Err(TaskRunnerError::RunFailed {
-                    target: self.task.target.clone(),
-                    error: Box::new(ProcessError::ExitNonZero {
-                        bin: self.task.command.clone(),
-                        status: last_attempt.get_exec_output_status(),
-                    }),
-                }
-                .into());
+        if let Some(last_attempt) = self.operations.get_last_execution()
+            && last_attempt.has_failed()
+        {
+            return Err(TaskRunnerError::RunFailed {
+                target: self.task.target.clone(),
+                error: Box::new(ProcessError::ExitNonZero {
+                    bin: self.task.command.clone(),
+                    status: last_attempt.get_exec_output_status(),
+                }),
             }
+            .into());
         }
 
         Ok(())

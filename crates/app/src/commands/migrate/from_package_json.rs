@@ -39,10 +39,10 @@ pub async fn from_package_json(session: MoonSession, args: FromPackageJsonArgs) 
     let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
     for project in project_graph.get_all_unexpanded() {
-        if let Some(package_json) = PackageJsonCache::read(&project.root)? {
-            if let Some(package_name) = package_json.data.name {
-                package_map.insert(package_name, project.id.to_owned());
-            }
+        if let Some(package_json) = PackageJsonCache::read(&project.root)?
+            && let Some(package_name) = package_json.data.name
+        {
+            package_map.insert(package_name, project.id.to_owned());
         }
     }
 

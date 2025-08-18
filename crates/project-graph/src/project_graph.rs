@@ -254,13 +254,13 @@ impl ProjectGraph {
         })
     }
 
-    fn read_cache(&self) -> RwLockReadGuard<ProjectsCache> {
+    fn read_cache(&self) -> RwLockReadGuard<'_, ProjectsCache> {
         self.projects
             .read()
             .expect("Failed to acquire read access to project graph!")
     }
 
-    fn write_cache(&self) -> RwLockWriteGuard<ProjectsCache> {
+    fn write_cache(&self) -> RwLockWriteGuard<'_, ProjectsCache> {
         self.projects
             .write()
             .expect("Failed to acquire write access to project graph!")

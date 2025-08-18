@@ -119,25 +119,22 @@ async fn main() -> MainResult {
     }
 
     // Detect if we've been installed globally
-    if let (Some(home_dir), Ok(current_dir)) = (dirs::home_dir(), env::current_dir()) {
-        if is_globally_installed(&home_dir) {
-            if let Some(local_bin) = has_locally_installed(&home_dir, &current_dir) {
-                debug!(
-                    "Binary is running from a global path, but we found a local binary to use instead"
-                );
-                debug!("Will now execute the local binary and replace this running process");
+    if let (Some(home_dir), Ok(current_dir)) = (dirs::home_dir(), env::current_dir())
+        && is_globally_installed(&home_dir)
+        && let Some(local_bin) = has_locally_installed(&home_dir, &current_dir)
+    {
+        debug!("Binary is running from a global path, but we found a local binary to use instead");
+        debug!("Will now execute the local binary and replace this running process");
 
-                let start_index = if has_executable { 1 } else { 0 };
+        let start_index = if has_executable { 1 } else { 0 };
 
-                let mut command = Command::new(local_bin);
-                command.args(&args[start_index..]);
-                command.current_dir(current_dir);
+        let mut command = Command::new(local_bin);
+        command.args(&args[start_index..]);
+        command.current_dir(current_dir);
 
-                let exit_code = exec_local_bin(command).into_diagnostic()?;
+        let exit_code = exec_local_bin(command).into_diagnostic()?;
 
-                return Ok(ExitCode::from(exit_code));
-            }
-        }
+        return Ok(ExitCode::from(exit_code));
     }
 
     // Otherwise just run the CLI

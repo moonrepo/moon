@@ -16,12 +16,11 @@ impl Subscriber for RemoteSubscriber {
                 status: ActionPipelineStatus::Completed,
                 ..
             }
-        ) {
-            if let Some(session) = RemoteService::session() {
-                debug!("Waiting for in-flight remote service requests to finish");
+        ) && let Some(session) = RemoteService::session()
+        {
+            debug!("Waiting for in-flight remote service requests to finish");
 
-                session.wait_for_requests().await;
-            }
+            session.wait_for_requests().await;
         }
 
         Ok(())

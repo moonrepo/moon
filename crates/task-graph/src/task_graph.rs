@@ -164,13 +164,13 @@ impl TaskGraph {
         Ok(task)
     }
 
-    fn read_cache(&self) -> RwLockReadGuard<TasksCache> {
+    fn read_cache(&self) -> RwLockReadGuard<'_, TasksCache> {
         self.tasks
             .read()
             .expect("Failed to acquire read access to task graph!")
     }
 
-    fn write_cache(&self) -> RwLockWriteGuard<TasksCache> {
+    fn write_cache(&self) -> RwLockWriteGuard<'_, TasksCache> {
         self.tasks
             .write()
             .expect("Failed to acquire write access to task graph!")

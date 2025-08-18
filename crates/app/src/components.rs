@@ -59,7 +59,7 @@ pub async fn run_action_pipeline(
 
 pub async fn create_workspace_graph_context(
     session: &MoonSession,
-) -> miette::Result<WorkspaceBuilderContext> {
+) -> miette::Result<WorkspaceBuilderContext<'_>> {
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
         enabled_toolchains: session.toolchain_config.get_enabled(),

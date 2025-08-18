@@ -96,7 +96,7 @@ impl Sandbox {
         self
     }
 
-    pub fn run_moon<C>(&self, handler: C) -> SandboxAssert
+    pub fn run_moon<C>(&self, handler: C) -> SandboxAssert<'_>
     where
         C: FnOnce(&mut Command),
     {

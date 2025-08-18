@@ -328,7 +328,7 @@ impl WorkspaceMocker {
         builder.build().await.unwrap()
     }
 
-    pub async fn create_action_graph(&self) -> ActionGraphBuilder {
+    pub async fn create_action_graph(&self) -> ActionGraphBuilder<'_> {
         ActionGraphBuilder::new(
             self.mock_app_context().into(),
             self.mock_workspace_graph().await.into(),
@@ -406,7 +406,7 @@ impl WorkspaceMocker {
         )
     }
 
-    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext {
+    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext<'_> {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchain_config.get_enabled(),

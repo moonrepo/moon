@@ -158,10 +158,11 @@ impl Tool for BunTool {
             return Ok(count);
         }
 
-        if let Some(last) = last_versions.get("bun") {
-            if last == version && self.tool.get_product_dir().exists() {
-                return Ok(count);
-            }
+        if let Some(last) = last_versions.get("bun")
+            && last == version
+            && self.tool.get_product_dir().exists()
+        {
+            return Ok(count);
         }
 
         self.console

@@ -140,10 +140,10 @@ impl<'bag> EnvSubstitutor<'bag> {
         let mut get_replacement_value = || {
             substituted.insert(name.to_owned());
 
-            if base_key.is_none() || base_key.is_some_and(|base_name| base_name != name) {
-                if let Some(value) = local_vars.and_then(|bag| bag.get(name)) {
-                    return Some(value.to_owned());
-                }
+            if (base_key.is_none() || base_key.is_some_and(|base_name| base_name != name))
+                && let Some(value) = local_vars.and_then(|bag| bag.get(name))
+            {
+                return Some(value.to_owned());
             }
 
             global_vars.and_then(|bag| bag.get(name))

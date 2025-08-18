@@ -67,8 +67,8 @@ api_struct!(
 
         /// Other toolchains that this toolchain requires. Identifiers must
         /// be in stable format (not prefixed with "unstable_").
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub requires: Vec<String>,
+        // #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        // pub requires: Vec<String>,
 
         /// The name of the directory that contains installed dependencies.
         /// Will be used for detection.

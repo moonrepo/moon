@@ -38,7 +38,6 @@
   - Added `ExtendProjectGraphInput.toolchain_config` field.
   - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
   - Added `ExtendTaskScriptInput.toolchain_config` and `project` fields.
-  - Added `RegisterToolchainOutput.requires` field.
   - Added `load_toolchain_config` and `load_project_toolchain_config` functions.
   - Added `load_toolchain_config_by_id` host function.
 

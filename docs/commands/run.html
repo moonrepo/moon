@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.2857357d.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.1614dfab.js" defer="defer"></script>
 <script src="/assets/js/main.24aca8ae.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -47,14 +47,9 @@ behavior for <code>moon ci</code>, and is also useful for pre-commit hooks.</p><
 <li><code>-f</code>, <code>--force</code> - Force run and ignore touched files and affected status. Will not query VCS.</li>
 <li><code>--dependents</code> - Run downstream dependent targets (of the same task name) as well.</li>
 <li><code>-i</code>, <code>--interactive</code> - Run the target in an interactive mode.</li>
-<li><code>--profile &lt;type&gt;</code> - Record and <a href="/docs/guides/profile">generate a profile</a> for ran tasks.<!-- -->
-<ul>
-<li>Types: <code>cpu</code>, <code>heap</code></li>
-</ul>
-</li>
 <li><code>--query</code> - Filter projects to run targets against using
 <a href="/docs/concepts/query-lang">a query statement</a>. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.3.0</span></li>
-<li><code>--summary</code> - Display a summary and stats of the current run. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.25.0</span></li>
+<li><code>-s</code>, <code>--summary</code> - Display a summary and stats of the current run. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.25.0</span></li>
 <li><code>-u</code>, <code>--updateCache</code> - Bypass cache and force update any existing items.</li>
 <li><code>--no-actions</code> - Run the task without running <a href="/docs/how-it-works/action-graph">other actions</a> in the
 pipeline.<!-- -->
@@ -62,6 +57,14 @@ pipeline.<!-- -->
 </li>
 <li><code>-n</code>, <code>--no-bail</code> - When a task fails, continue executing other tasks instead of aborting
 immediately</li>
+</ul>
+<h4 class="anchor anchorWithStickyNavbar_JmGV" id="debugging">Debugging<a href="#debugging" class="hash-link" aria-label="Direct link to Debugging" title="Direct link to Debugging">​</a></h4>
+<ul>
+<li><code>--profile &lt;type&gt;</code> - Record and <a href="/docs/guides/profile">generate a profile</a> for ran tasks.<!-- -->
+<ul>
+<li>Types: <code>cpu</code>, <code>heap</code></li>
+</ul>
+</li>
 </ul>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="affected">Affected<a href="#affected" class="hash-link" aria-label="Direct link to Affected" title="Direct link to Affected">​</a></h4>
 <ul>

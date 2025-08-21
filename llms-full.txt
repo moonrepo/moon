@@ -1603,17 +1603,20 @@ behavior for `moon ci`, and is also useful for pre-commit hooks.
 - `-f`, `--force` - Force run and ignore touched files and affected status. Will not query VCS.
 - `--dependents` - Run downstream dependent targets (of the same task name) as well.
 - `-i`, `--interactive` - Run the target in an interactive mode.
-- `--profile ` - Record and [generate a profile](../guides/profile) for ran tasks.
-  - Types: `cpu`, `heap`
 - `--query` - Filter projects to run targets against using
   [a query statement](../concepts/query-lang). 
-- `--summary` - Display a summary and stats of the current run. 
+- `-s`, `--summary` - Display a summary and stats of the current run. 
 - `-u`, `--updateCache` - Bypass cache and force update any existing items.
 - `--no-actions` - Run the task without running [other actions](../how-it-works/action-graph) in the
   pipeline.
   
 - `-n`, `--no-bail` - When a task fails, continue executing other tasks instead of aborting
   immediately
+
+#### Debugging
+
+- `--profile ` - Record and [generate a profile](../guides/profile) for ran tasks.
+  - Types: `cpu`, `heap`
 
 #### Affected
 

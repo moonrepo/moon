@@ -4192,7 +4192,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "httpmock",
  "indexmap",
@@ -4541,7 +4541,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -4557,7 +4557,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "derive_setters",
  "moon_common",
@@ -4574,7 +4574,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "extism",
  "moon_pdk_api",

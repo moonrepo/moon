@@ -25,7 +25,7 @@ fn create_task(project: &str, id: &str) -> Task {
 }
 
 fn create_proto_version() -> VersionSpec {
-    VersionSpec::parse("0.52.0").unwrap()
+    VersionSpec::parse("0.52.1").unwrap()
 }
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {
@@ -2863,6 +2863,73 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_require_other_toolchains() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let node = ToolchainSpec::new(
+                Id::raw("tc-tier3-reqs"),
+                create_unresolved_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&node).await.unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::new(
+                            Id::raw("tc-tier3"),
+                            create_unresolved_version(Version::new(1, 2, 3)),
+                        )
+                    }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: node }),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_require_other_toolchains_when_no_setup_toolchain_itself() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let node = ToolchainSpec::new(
+                Id::raw("tc-tier2-reqs"),
+                create_unresolved_version(Version::new(1, 2, 3)),
+            );
+
+            builder.setup_toolchain(&node).await.unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::new(
+                            Id::raw("tc-tier3"),
+                            create_unresolved_version(Version::new(1, 2, 3)),
+                        )
+                    }),
                 ]
             );
         }

@@ -1,4 +1,5 @@
 use crate::action_graph::ActionGraph;
+use crate::action_graph_error::ActionGraphError;
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, InstallProjectDepsNode, InstallWorkspaceDepsNode,
@@ -20,6 +21,7 @@ use moon_task_args::parse_task_args;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -956,10 +958,9 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
-
-        let mut edges = vec![];
         let toolchain_registry = &self.app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
+        let mut edges = vec![];
 
         // Toolchain may depend on others
         if toolchain.has_func("define_requirements").await {
@@ -979,6 +980,12 @@ impl<'query> ActionGraphBuilder<'query> {
                         && let Some(dep_spec) = self.get_root_spec(&require_id)
                     {
                         edges.push(Box::pin(self.setup_toolchain(&dep_spec)).await?);
+                    } else {
+                        return Err(ActionGraphError::MissingToolchainRequirement {
+                            id: spec.id.to_string(),
+                            dep_id: require_id.to_string(),
+                        }
+                        .into());
                     }
                 }
             }
@@ -986,7 +993,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Toolchain does not support tier 3
         if !toolchain.supports_tier_3().await {
-            return Ok(None);
+            return Ok(self.link_chain_requirements(edges));
         }
 
         edges.push(self.sync_workspace().await?);
@@ -1093,6 +1100,21 @@ impl<'query> ActionGraphBuilder<'query> {
 
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
         self.nodes.get(node).cloned()
+    }
+
+    fn link_chain_requirements(&mut self, edges: Vec<Option<NodeIndex>>) -> Option<NodeIndex> {
+        let mut queue = VecDeque::from_iter(edges.into_iter().flatten());
+        let mut index = None;
+
+        while let Some(next_index) = queue.pop_front() {
+            if let Some(prev_index) = index {
+                self.link_requirements(prev_index, vec![next_index]);
+            }
+
+            index = Some(next_index);
+        }
+
+        index
     }
 
     fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {

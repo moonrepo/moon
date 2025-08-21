@@ -167,8 +167,10 @@ impl ToolchainPlugin {
         &self,
         input: DefineRequirementsInput,
     ) -> miette::Result<DefineRequirementsOutput> {
-        let output: DefineRequirementsOutput =
-            self.plugin.cache_func("define_requirements").await?;
+        let output: DefineRequirementsOutput = self
+            .plugin
+            .cache_func_with("define_requirements", input)
+            .await?;
 
         Ok(output)
     }

@@ -9,6 +9,29 @@ use std::path::PathBuf;
 use warpgate_api::{VirtualPath, api_enum, api_struct};
 
 api_struct!(
+    /// Input passed to the `define_requirements` function.
+    pub struct DefineRequirementsInput {
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `define_requirements` function.
+    #[serde(default)]
+    pub struct DefineRequirementsOutput {
+        /// Other toolchains that this toolchain requires and must be setup before hand.
+        /// If targeting an unstable toolchain, the identifier must be prefixed with "unstable_".
+        /// When the toolchain is stable, both identifiers will continue to work.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub requires: Vec<String>,
+    }
+);
+
+api_struct!(
     /// Input passed to the `setup_environment` function.
     pub struct SetupEnvironmentInput {
         /// Current moon context.

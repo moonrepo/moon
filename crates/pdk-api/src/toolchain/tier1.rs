@@ -58,17 +58,6 @@ api_struct!(
         /// Version of the plugin.
         pub plugin_version: String,
 
-        /// The identifier to use when instantiating a proto tool instance
-        /// to support tier 3 functionality. This is only required if the
-        /// moon toolchain ID differs from the proto tool ID.
-        // #[serde(skip_serializing_if = "Option::is_none")]
-        // pub proto_tool_id: Option<String>,
-
-        /// Other toolchains that this toolchain requires. Identifiers must
-        /// be in stable format (not prefixed with "unstable_").
-        // #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        // pub requires: Vec<String>,
-
         /// The name of the directory that contains installed dependencies.
         /// Will be used for detection.
         #[serde(skip_serializing_if = "Option::is_none")]

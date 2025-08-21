@@ -34,6 +34,8 @@
 #### 🧩 Plugins
 
 - WASM API
+  - Added a new `define_requirements` plugin API for tier 2.
+  - Added `DefineRequirementsInput` and `DefineRequirementsOutput` types.
   - Added `MoonContext.get_project_root` and `get_project_root_from_source` methods.
   - Added `ExtendProjectGraphInput.toolchain_config` field.
   - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
@@ -43,7 +45,8 @@
 
 #### ⚙️ Internal
 
-- Updated Rust to v1.88.0.
+- Updated proto to [v0.52.0](https://github.com/moonrepo/proto/releases/tag/v0.52.0) (from 0.51.4).
+- Updated Rust to v1.89.0.
 
 ## 1.39.4
 

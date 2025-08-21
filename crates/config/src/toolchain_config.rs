@@ -288,6 +288,7 @@ impl ToolchainConfig {
         proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<()> {
         use moon_common::color;
+        use proto_core::ToolContext;
         use tracing::trace;
 
         for (id, config) in &mut self.plugins {
@@ -305,8 +306,9 @@ impl ToolchainConfig {
                 }
                 ToolchainPluginVersionFrom::Id(custom_id) => custom_id,
             };
+            let proto_context = ToolContext::parse(proto_id).unwrap();
 
-            if let Some(version) = proto_config.versions.get(proto_id) {
+            if let Some(version) = proto_config.versions.get(&proto_context) {
                 trace!(
                     "Inheriting {} version {} from .prototools",
                     color::id(id),

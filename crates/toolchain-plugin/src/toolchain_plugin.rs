@@ -3,7 +3,10 @@ use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
-use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec, locate_tool};
+use proto_core::{
+    PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
+    UnresolvedVersionSpec, locate_plugin,
+};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
@@ -45,7 +48,7 @@ impl Plugin for ToolchainPlugin {
             tool: if plugin.has_func("register_tool").await {
                 Some(RwLock::new(
                     Tool::new(
-                        registration.id_stable,
+                        ToolContext::new(registration.id_stable),
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )
@@ -155,6 +158,17 @@ impl ToolchainPlugin {
         if let Some(name) = &self.metadata.vendor_dir_name {
             add_globs(&[format!("!{name}/**/*")]);
         }
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn define_requirements(
+        &self,
+        input: DefineRequirementsInput,
+    ) -> miette::Result<DefineRequirementsOutput> {
+        let output: DefineRequirementsOutput =
+            self.plugin.cache_func("define_requirements").await?;
 
         Ok(output)
     }
@@ -434,12 +448,11 @@ impl ToolchainPlugin {
             // Pre-load the tool plugin so that task executions
             // avoid network race conditions and collisions
             if let Ok(loader) = tool.proto.get_plugin_loader()
-                && let Some(locator) = tool
-                    .locator
-                    .clone()
-                    .or_else(|| locate_tool(&tool.id, &tool.proto).ok())
+                && let Some(locator) = tool.locator.clone().or_else(|| {
+                    locate_plugin(&tool.context.id, &tool.proto, ProtoPluginType::Tool).ok()
+                })
             {
-                let _ = loader.load_plugin(&tool.id, &locator).await;
+                let _ = loader.load_plugin(&tool.context.id, &locator).await;
             }
         }
 

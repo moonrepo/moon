@@ -70,15 +70,14 @@ impl Platform for DenoPlatform {
     }
 
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
-        if let Some(config) = &project_config {
-            if let Some(deno_config) = &config.toolchain.deno {
-                if let Some(version) = &deno_config.version {
-                    return Runtime::new_override(
-                        Id::raw("deno"),
-                        RuntimeReq::Toolchain(version.to_owned()),
-                    );
-                }
-            }
+        if let Some(config) = &project_config
+            && let Some(deno_config) = &config.toolchain.deno
+            && let Some(version) = &deno_config.version
+        {
+            return Runtime::new_override(
+                Id::raw("deno"),
+                RuntimeReq::Toolchain(version.to_owned()),
+            );
         }
 
         if let Some(version) = &self.config.version {
@@ -367,12 +366,11 @@ impl Platform for DenoPlatform {
                 deps_hash.dependencies.extend(imports);
             }
 
-            if let Some(import_map_path) = &deno_json.import_map {
-                if let Ok(Some(import_map)) = DenoJson::read(project_root.join(import_map_path)) {
-                    if let Some(imports) = import_map.imports {
-                        deps_hash.dependencies.extend(imports);
-                    }
-                }
+            if let Some(import_map_path) = &deno_json.import_map
+                && let Ok(Some(import_map)) = DenoJson::read(project_root.join(import_map_path))
+                && let Some(imports) = import_map.imports
+            {
+                deps_hash.dependencies.extend(imports);
             }
 
             if let Some(scopes) = deno_json.scopes {
@@ -427,13 +425,13 @@ impl Platform for DenoPlatform {
 
         hasher.hash_content(target_hash)?;
 
-        if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
-            if let Some(compiler_options) = &deno_json.compiler_options {
-                let mut ts_hash = TypeScriptTargetHash::default();
-                ts_hash.hash_compiler_options(compiler_options);
+        if let Ok(Some(deno_json)) = DenoJson::read(&project.root)
+            && let Some(compiler_options) = &deno_json.compiler_options
+        {
+            let mut ts_hash = TypeScriptTargetHash::default();
+            ts_hash.hash_compiler_options(compiler_options);
 
-                hasher.hash_content(ts_hash)?;
-            }
+            hasher.hash_content(ts_hash)?;
         }
 
         Ok(())
@@ -452,10 +450,10 @@ impl Platform for DenoPlatform {
         command.args(&task.args);
         command.envs_if_not_global(&task.env);
 
-        if let Ok(deno) = self.toolchain.get_for_version(&runtime.requirement) {
-            if let Some(version) = get_proto_version_env(&deno.tool) {
-                command.env("PROTO_DENO_VERSION", version);
-            }
+        if let Ok(deno) = self.toolchain.get_for_version(&runtime.requirement)
+            && let Some(version) = get_proto_version_env(&deno.tool)
+        {
+            command.env("PROTO_DENO_VERSION", version);
         }
 
         if !runtime.requirement.is_global() {

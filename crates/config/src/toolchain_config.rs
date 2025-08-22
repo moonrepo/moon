@@ -119,6 +119,14 @@ impl ToolchainConfig {
         tools
     }
 
+    pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ToolchainPluginConfig> {
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        self.plugins
+            .get(&stable_id)
+            .or_else(|| self.plugins.get(&unstable_id))
+    }
+
     #[cfg(feature = "proto")]
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
         use proto_core::warpgate::{PluginLocator, UrlLocator};
@@ -149,16 +157,16 @@ impl ToolchainConfig {
                 .or_insert_with(|| version.to_string());
         };
 
-        if let Some(bun_config) = &self.bun {
-            if let Some(version) = &bun_config.version {
-                inject("PROTO_BUN_VERSION", version);
-            }
+        if let Some(bun_config) = &self.bun
+            && let Some(version) = &bun_config.version
+        {
+            inject("PROTO_BUN_VERSION", version);
         }
 
-        if let Some(deno_config) = &self.deno {
-            if let Some(version) = &deno_config.version {
-                inject("PROTO_DENO_VERSION", version);
-            }
+        if let Some(deno_config) = &self.deno
+            && let Some(version) = &deno_config.version
+        {
+            inject("PROTO_DENO_VERSION", version);
         }
 
         if let Some(node_config) = &self.node {
@@ -170,22 +178,22 @@ impl ToolchainConfig {
                 inject("PROTO_NPM_VERSION", version);
             }
 
-            if let Some(pnpm_config) = &node_config.pnpm {
-                if let Some(version) = &pnpm_config.version {
-                    inject("PROTO_PNPM_VERSION", version);
-                }
+            if let Some(pnpm_config) = &node_config.pnpm
+                && let Some(version) = &pnpm_config.version
+            {
+                inject("PROTO_PNPM_VERSION", version);
             }
 
-            if let Some(yarn_config) = &node_config.yarn {
-                if let Some(version) = &yarn_config.version {
-                    inject("PROTO_YARN_VERSION", version);
-                }
+            if let Some(yarn_config) = &node_config.yarn
+                && let Some(version) = &yarn_config.version
+            {
+                inject("PROTO_YARN_VERSION", version);
             }
 
-            if let Some(bunpm_config) = &node_config.bun {
-                if let Some(version) = &bunpm_config.version {
-                    inject("PROTO_BUN_VERSION", version);
-                }
+            if let Some(bunpm_config) = &node_config.bun
+                && let Some(version) = &bunpm_config.version
+            {
+                inject("PROTO_BUN_VERSION", version);
             }
         }
 
@@ -194,10 +202,10 @@ impl ToolchainConfig {
                 inject("PROTO_PYTHON_VERSION", version);
             }
 
-            if let Some(uv_config) = &python_config.uv {
-                if let Some(version) = &uv_config.version {
-                    inject("PROTO_UV_VERSION", version);
-                }
+            if let Some(uv_config) = &python_config.uv
+                && let Some(version) = &uv_config.version
+            {
+                inject("PROTO_UV_VERSION", version);
             }
         }
 

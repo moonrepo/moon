@@ -254,10 +254,10 @@ impl<'graph> TokenExpander<'graph> {
                             .unwrap();
 
                     bag.list(|var_name, _| {
-                        if let Some(var_name) = var_name.to_str() {
-                            if pattern.is_match(var_name) {
-                                result.env.push(var_name.to_owned());
-                            }
+                        if let Some(var_name) = var_name.to_str()
+                            && pattern.is_match(var_name)
+                        {
+                            result.env.push(var_name.to_owned());
                         }
                     });
                 }

@@ -27,10 +27,10 @@ impl ToolchainRegistry {
         let mut detected = vec![];
 
         for id in self.get_plugin_ids() {
-            if let Ok(toolchain) = self.load(id).await {
-                if toolchain.detect_project_usage(dir)? {
-                    detected.push(Id::raw(id));
-                }
+            if let Ok(toolchain) = self.load(id).await
+                && toolchain.detect_project_usage(dir)?
+            {
+                detected.push(Id::raw(id));
             }
         }
 

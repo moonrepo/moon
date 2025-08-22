@@ -852,13 +852,14 @@ impl<'app> WorkspaceBuilder<'app> {
         // From toolchains
         for output in context
             .toolchain_registry
-            .extend_project_graph_all(|registry, _| ExtendProjectGraphInput {
+            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
                 context: registry.create_context(),
                 project_sources: self
                     .project_data
                     .iter()
                     .map(|(id, build_data)| (id.to_string(), build_data.source.to_string()))
                     .collect(),
+                toolchain_config: registry.create_config(&toolchain.id, context.toolchain_config),
             })
             .await?
         {

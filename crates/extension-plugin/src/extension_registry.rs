@@ -2,7 +2,7 @@ use crate::extension_plugin::ExtensionPlugin;
 use moon_common::Id;
 use moon_config::ExtensionConfig;
 use moon_plugin::{
-    PluginError, PluginHostData, PluginId, PluginRegistry, PluginType, serialize_config,
+    MoonHostData, PluginError, PluginId, PluginRegistry, PluginType, serialize_config,
 };
 use rustc_hash::FxHashMap;
 use std::ops::Deref;
@@ -21,14 +21,14 @@ impl Default for ExtensionRegistry {
             configs: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(
                 PluginType::Extension,
-                PluginHostData::default(),
+                MoonHostData::default(),
             )),
         }
     }
 }
 
 impl ExtensionRegistry {
-    pub fn new(host_data: PluginHostData) -> Self {
+    pub fn new(host_data: MoonHostData) -> Self {
         Self {
             configs: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Extension, host_data)),

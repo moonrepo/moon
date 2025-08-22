@@ -6,10 +6,9 @@ mod rust;
 use crate::session::MoonSession;
 use bun::init_bun;
 use clap::Args;
-use clean_path::Clean;
 use iocraft::prelude::{FlexDirection, View, element};
 use miette::IntoDiagnostic;
-use moon_common::{Id, consts::CONFIG_DIRNAME, is_test_env};
+use moon_common::{Id, consts::CONFIG_DIRNAME, is_test_env, path::clean_components};
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_console::{
     Console,
@@ -205,7 +204,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     };
 
     let options = InitOptions {
-        dir: dest_dir.clean(),
+        dir: clean_components(dest_dir),
         force: args.force,
         minimal: args.minimal,
         yes: args.yes,

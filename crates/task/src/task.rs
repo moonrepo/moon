@@ -124,7 +124,7 @@ cacheable!(
 
 impl Task {
     /// Create a globset of all input globs to match with.
-    pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
+    pub fn create_globset(&self) -> miette::Result<glob::GlobSet<'_>> {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
         let (gi, ni) = split_patterns(self.input_globs.keys());

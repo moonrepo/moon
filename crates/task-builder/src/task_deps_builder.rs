@@ -107,8 +107,8 @@ impl TaskDepsBuilder<'_> {
                 let task_dep =
                     self.check_and_create_dep(dep_task_target, dep_task_options, &dep_config)?;
 
-                if link_implicit_project_deps {
-                    if let Some(project_dep) = create_project_dep_from_task_dep(
+                if link_implicit_project_deps
+                    && let Some(project_dep) = create_project_dep_from_task_dep(
                         &task_dep,
                         &project.id,
                         self.root_project_id,
@@ -122,9 +122,9 @@ impl TaskDepsBuilder<'_> {
                                     .iter()
                                     .any(|pd| &pd.id == dep_project_id)
                         },
-                    ) {
-                        project.dependencies.push(project_dep);
-                    }
+                    )
+                {
+                    project.dependencies.push(project_dep);
                 }
 
                 if !deps.contains(&task_dep) {

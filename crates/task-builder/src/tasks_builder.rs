@@ -858,7 +858,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok((command, args))
     }
 
-    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
+    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain<'_>>> {
         let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
         stack.reverse();
 

@@ -130,15 +130,15 @@ impl RemoteService {
                 );
             }
 
-            if let Some(ac_cap) = &cap.action_cache_update_capabilities {
-                if !ac_cap.update_enabled {
-                    enabled = false;
+            if let Some(ac_cap) = &cap.action_cache_update_capabilities
+                && !ac_cap.update_enabled
+            {
+                enabled = false;
 
-                    warn!(
-                        host,
-                        "Remote service does not support caching of actions, which is required by moon"
-                    );
-                }
+                warn!(
+                    host,
+                    "Remote service does not support caching of actions, which is required by moon"
+                );
             }
         } else {
             enabled = false;
@@ -311,16 +311,18 @@ impl RemoteService {
         // so we need to fetch them manually
         let mut stdio_digests = vec![];
 
-        if let Some(stderr_digest) = &result.stderr_digest {
-            if result.stderr_raw.is_empty() && stderr_digest.size_bytes > 0 {
-                stdio_digests.push(stderr_digest.to_owned());
-            }
+        if let Some(stderr_digest) = &result.stderr_digest
+            && result.stderr_raw.is_empty()
+            && stderr_digest.size_bytes > 0
+        {
+            stdio_digests.push(stderr_digest.to_owned());
         }
 
-        if let Some(stdout_digest) = &result.stdout_digest {
-            if result.stdout_raw.is_empty() && stdout_digest.size_bytes > 0 {
-                stdio_digests.push(stdout_digest.to_owned());
-            }
+        if let Some(stdout_digest) = &result.stdout_digest
+            && result.stdout_raw.is_empty()
+            && stdout_digest.size_bytes > 0
+        {
+            stdio_digests.push(stdout_digest.to_owned());
         }
 
         if !stdio_digests.is_empty() {
@@ -519,10 +521,10 @@ async fn batch_download_blobs(
 
     // // TODO support directories
     for file in &result.output_files {
-        if file.contents.is_empty() {
-            if let Some(digest) = &file.digest {
-                blob_digests.push(digest.to_owned());
-            }
+        if file.contents.is_empty()
+            && let Some(digest) = &file.digest
+        {
+            blob_digests.push(digest.to_owned());
         }
     }
 

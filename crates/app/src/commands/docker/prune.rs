@@ -128,13 +128,11 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                 let output = toolchain
                     .install_dependencies(InstallDependenciesInput {
                         context: toolchain_registry.create_context(),
-                        packages: Some(
-                            instance
-                                .projects
-                                .iter()
-                                .flat_map(|project| project.alias.clone())
-                                .collect(),
-                        ),
+                        packages: instance
+                            .projects
+                            .iter()
+                            .flat_map(|project| project.alias.clone())
+                            .collect(),
                         production: true,
                         project: in_project.as_ref().map(|project| project.to_fragment()),
                         root: toolchain.to_virtual_path(&instance.deps_root),

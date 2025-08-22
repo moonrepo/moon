@@ -162,12 +162,12 @@ pub fn create_task(
         }
 
         // Detect possible outputs
-        if ARG_OUTPUT_FLAG.is_match(arg) {
-            if let Some(output) = script_args.get(index + 1) {
-                outputs.push(OutputPath::ProjectFile(clean_output_path(
-                    target_id, output,
-                )?));
-            }
+        if ARG_OUTPUT_FLAG.is_match(arg)
+            && let Some(output) = script_args.get(index + 1)
+        {
+            outputs.push(OutputPath::ProjectFile(clean_output_path(
+                target_id, output,
+            )?));
         }
 
         if !is_wrapping {
@@ -516,14 +516,14 @@ impl<'a> ScriptParser<'a> {
                 },
                 script,
             )? {
-                if !previous_task_id.is_empty() {
-                    if let Some(task) = self.tasks.get_mut(&task_id) {
-                        task.deps
-                            .get_or_insert(vec![])
-                            .push(PartialTaskDependency::Target(Target::new_self(
-                                previous_task_id,
-                            )?));
-                    }
+                if !previous_task_id.is_empty()
+                    && let Some(task) = self.tasks.get_mut(&task_id)
+                {
+                    task.deps
+                        .get_or_insert(vec![])
+                        .push(PartialTaskDependency::Target(Target::new_self(
+                            previous_task_id,
+                        )?));
                 }
 
                 previous_task_id = task_id;
@@ -566,14 +566,14 @@ impl<'a> ScriptParser<'a> {
         if self.pre.contains_key(script_name) {
             let pre = self.pre.swap_remove(script_name).unwrap();
 
-            if let Some(pre_task_id) = self.parse_script(format!("pre{script_name}"), pre)? {
-                if let Some(task) = self.tasks.get_mut(task_id) {
-                    task.deps
-                        .get_or_insert(vec![])
-                        .push(PartialTaskDependency::Target(Target::new_self(
-                            pre_task_id,
-                        )?));
-                }
+            if let Some(pre_task_id) = self.parse_script(format!("pre{script_name}"), pre)?
+                && let Some(task) = self.tasks.get_mut(task_id)
+            {
+                task.deps
+                    .get_or_insert(vec![])
+                    .push(PartialTaskDependency::Target(Target::new_self(
+                        pre_task_id,
+                    )?));
             }
         }
 
@@ -581,12 +581,12 @@ impl<'a> ScriptParser<'a> {
         if self.post.contains_key(script_name) {
             let post = self.post.swap_remove(script_name).unwrap();
 
-            if let Some(post_task_id) = self.parse_script(format!("post{script_name}"), post)? {
-                if let Some(task) = self.tasks.get_mut(&post_task_id) {
-                    task.deps
-                        .get_or_insert(vec![])
-                        .push(PartialTaskDependency::Target(Target::new_self(task_id)?));
-                }
+            if let Some(post_task_id) = self.parse_script(format!("post{script_name}"), post)?
+                && let Some(task) = self.tasks.get_mut(&post_task_id)
+            {
+                task.deps
+                    .get_or_insert(vec![])
+                    .push(PartialTaskDependency::Target(Target::new_self(task_id)?));
             }
         }
 

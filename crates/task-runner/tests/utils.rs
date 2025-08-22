@@ -81,7 +81,7 @@ impl TaskRunnerContainer {
         Self::new_for_project(fixture, "project", task_id).await
     }
 
-    pub fn create_archiver(&self) -> OutputArchiver {
+    pub fn create_archiver(&self) -> OutputArchiver<'_> {
         OutputArchiver {
             app: &self.app_context,
             project: &self.project,
@@ -89,7 +89,7 @@ impl TaskRunnerContainer {
         }
     }
 
-    pub fn create_hydrator(&self) -> OutputHydrater {
+    pub fn create_hydrator(&self) -> OutputHydrater<'_> {
         OutputHydrater {
             app: &self.app_context,
             task: &self.task,
@@ -113,7 +113,7 @@ impl TaskRunnerContainer {
         self.internal_create_command(&context, &task, &node).await
     }
 
-    pub async fn create_command_executor(&self, context: &ActionContext) -> CommandExecutor {
+    pub async fn create_command_executor(&self, context: &ActionContext) -> CommandExecutor<'_> {
         let node = create_node(&self.task);
 
         CommandExecutor::new(
@@ -126,7 +126,7 @@ impl TaskRunnerContainer {
         )
     }
 
-    pub fn create_runner(&self) -> TaskRunner {
+    pub fn create_runner(&self) -> TaskRunner<'_> {
         let mut runner = TaskRunner::new(&self.app_context, &self.project, &self.task).unwrap();
         runner.set_platform_manager(&self.platform_manager);
         runner

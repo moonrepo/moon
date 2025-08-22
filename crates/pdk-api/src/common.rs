@@ -1,5 +1,6 @@
 use crate::context::MoonContext;
 use moon_config::{DependencyScope, PartialTaskConfig};
+use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -17,6 +18,9 @@ api_struct!(
         /// Map of project IDs to their source location,
         /// relative from the workspace root.
         pub project_sources: BTreeMap<String, String>,
+
+        /// Workspace toolchain configuration.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -105,8 +109,15 @@ api_struct!(
         /// for the current toolchain.
         pub globals_dir: Option<VirtualPath>,
 
+        /// Fragment of the project that the task belongs to.
+        pub project: ProjectFragment,
+
         /// Fragment of the owning task.
         pub task: TaskFragment,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -151,11 +162,18 @@ api_struct!(
         /// for the current toolchain.
         pub globals_dir: Option<VirtualPath>,
 
+        /// Fragment of the project that the task belongs to.
+        pub project: ProjectFragment,
+
         /// The current script.
         pub script: String,
 
         /// Fragment of the owning task.
         pub task: TaskFragment,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
+        pub toolchain_config: serde_json::Value,
     }
 );
 

@@ -1,6 +1,7 @@
 #![allow(clippy::disallowed_types)]
 
 mod extension_wrapper;
+mod host_func_mocker;
 mod sandbox;
 mod toolchain_wrapper;
 

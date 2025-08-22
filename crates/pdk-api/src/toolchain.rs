@@ -65,6 +65,11 @@ api_struct!(
         // #[serde(skip_serializing_if = "Option::is_none")]
         // pub proto_tool_id: Option<String>,
 
+        /// Other toolchains that this toolchain requires. Identifiers must
+        /// be in stable format (not prefixed with "unstable_").
+        // #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        // pub requires: Vec<String>,
+
         /// The name of the directory that contains installed dependencies.
         /// Will be used for detection.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -310,7 +315,7 @@ api_struct!(
         pub context: MoonContext,
 
         /// List of packages to only install dependencies for.
-        pub packages: Option<Vec<String>>,
+        pub packages: Vec<String>,
 
         /// Only install production dependencies.
         pub production: bool,
@@ -393,6 +398,32 @@ api_struct!(
     }
 );
 
+api_struct!(
+    /// Represents a dependency in a manifest file.
+    #[serde(default)]
+    pub struct ManifestDependencyConfig {
+        /// The version is inherited from the workspace.
+        #[serde(skip_serializing_if = "is_false")]
+        pub inherited: bool,
+
+        /// List of features enabled for this dependency.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub features: Vec<String>,
+
+        /// Relative path to the dependency on the local file system.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub path: Option<PathBuf>,
+
+        /// URL of the remote dependency.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub url: Option<String>,
+
+        /// The defined version or requirement.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub version: Option<UnresolvedVersionSpec>,
+    }
+);
+
 api_enum!(
     /// Represents a dependency definition in a manifest file.
     #[serde(untagged)]
@@ -404,19 +435,7 @@ api_enum!(
         Version(UnresolvedVersionSpec),
 
         /// Full configuration.
-        Config {
-            /// The version is inherited from the workspace.
-            #[serde(default, skip_serializing_if = "is_false")]
-            inherited: bool,
-
-            /// List of features enabled for this dependency.
-            #[serde(default, skip_serializing_if = "Vec::is_empty")]
-            features: Vec<String>,
-
-            /// The defined version or requirement.
-            #[serde(default, skip_serializing_if = "Option::is_none")]
-            version: Option<UnresolvedVersionSpec>,
-        },
+        Config(ManifestDependencyConfig),
     }
 );
 
@@ -431,11 +450,27 @@ impl ManifestDependency {
         Self::Inherited(true)
     }
 
+    /// Defines an explicit local path.
+    pub fn path(path: PathBuf) -> Self {
+        Self::Config(ManifestDependencyConfig {
+            path: Some(path),
+            ..Default::default()
+        })
+    }
+
+    /// Defines an explicit remote URL.
+    pub fn url(url: String) -> Self {
+        Self::Config(ManifestDependencyConfig {
+            url: Some(url),
+            ..Default::default()
+        })
+    }
+
     /// Return an applicable version.
     pub fn get_version(&self) -> Option<&UnresolvedVersionSpec> {
         match self {
             ManifestDependency::Version(version) => Some(version),
-            ManifestDependency::Config { version, .. } => version.as_ref(),
+            ManifestDependency::Config(cfg) => cfg.version.as_ref(),
             _ => None,
         }
     }
@@ -444,7 +479,7 @@ impl ManifestDependency {
     pub fn is_inherited(&self) -> bool {
         match self {
             ManifestDependency::Inherited(state) => *state,
-            ManifestDependency::Config { inherited, .. } => *inherited,
+            ManifestDependency::Config(cfg) => cfg.inherited,
             _ => false,
         }
     }

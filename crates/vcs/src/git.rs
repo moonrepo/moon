@@ -265,10 +265,9 @@ impl Git {
             .process
             .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
             .await
+            && let Some(branch) = extract_branch(result)
         {
-            if let Some(branch) = extract_branch(result) {
-                return Ok(branch);
-            }
+            return Ok(branch);
         };
 
         if let Ok(result) = self
@@ -278,10 +277,9 @@ impl Git {
                 true,
             )
             .await
+            && let Some(branch) = extract_branch(result)
         {
-            if let Some(branch) = extract_branch(result) {
-                return Ok(branch);
-            }
+            return Ok(branch);
         };
 
         Ok(self.default_branch.clone())
@@ -542,10 +540,10 @@ impl Git {
         let file = WorkspaceRelativePathBuf::from(value);
 
         // Convert the prefixed path back to a workspace relative one...
-        if let Some(prefix) = &self.root_prefix {
-            if let Ok(rel_file) = file.strip_prefix(prefix) {
-                return rel_file.to_owned();
-            }
+        if let Some(prefix) = &self.root_prefix
+            && let Ok(rel_file) = file.strip_prefix(prefix)
+        {
+            return rel_file.to_owned();
         }
 
         file

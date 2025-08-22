@@ -167,22 +167,24 @@ impl<'query> ActionGraphBuilder<'query> {
         toolchain_id: &Id,
         allow_override: bool,
     ) -> Option<ToolchainSpec> {
-        if let Some(config) = project.config.toolchain.plugins.get(toolchain_id) {
+        if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
             }
 
-            if allow_override {
-                if let Some(version) = config.get_version() {
-                    return Some(ToolchainSpec::new_override(
-                        toolchain_id.to_owned(),
-                        version.to_owned(),
-                    ));
-                }
+            if allow_override && let Some(version) = config.get_version() {
+                return Some(ToolchainSpec::new_override(
+                    toolchain_id.to_owned(),
+                    version.to_owned(),
+                ));
             }
         }
 
-        if let Some(config) = self.app_context.toolchain_config.plugins.get(toolchain_id) {
+        if let Some(config) = self
+            .app_context
+            .toolchain_config
+            .get_plugin_config(toolchain_id)
+        {
             return Some(match &config.version {
                 Some(version) => ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned()),
                 None => ToolchainSpec::new_global(toolchain_id.to_owned()),
@@ -772,10 +774,11 @@ impl<'query> ActionGraphBuilder<'query> {
         };
 
         // Abort early if not affected
-        if let Some(affected) = &mut self.affected {
-            if !reqs.skip_affected && !affected.is_task_marked(task) {
-                return Ok(None);
-            }
+        if let Some(affected) = &mut self.affected
+            && !reqs.skip_affected
+            && !affected.is_task_marked(task)
+        {
+            return Ok(None);
         }
 
         // These tasks shouldn't actually run, so filter them out
@@ -1030,10 +1033,9 @@ impl<'query> ActionGraphBuilder<'query> {
 
                 if let Some(dep_project_index) =
                     Box::pin(self.internal_sync_project(&dep_project, cycle)).await?
+                    && index != dep_project_index
                 {
-                    if index != dep_project_index {
-                        edges.push(dep_project_index);
-                    }
+                    edges.push(dep_project_index);
                 }
             }
         }

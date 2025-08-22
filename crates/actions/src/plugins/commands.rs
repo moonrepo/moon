@@ -267,14 +267,14 @@ async fn gather_cache_inputs(
     let get_file = |virtual_path: &VirtualPath,
                     workspace_root: &Path|
      -> Option<(PathBuf, WorkspaceRelativePathBuf)> {
-        if let Some(abs_path) = virtual_path.real_path() {
-            if let Ok(rel_path) = abs_path.relative_to(workspace_root) {
-                if abs_path.exists() {
-                    return Some((abs_path, rel_path));
-                } else {
-                    // Don't warn for missing files
-                    return None;
-                }
+        if let Some(abs_path) = virtual_path.real_path()
+            && let Ok(rel_path) = abs_path.relative_to(workspace_root)
+        {
+            if abs_path.exists() {
+                return Some((abs_path, rel_path));
+            } else {
+                // Don't warn for missing files
+                return None;
             }
         }
 

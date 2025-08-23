@@ -78,8 +78,19 @@ impl Gitx {
                         "Found a .git file (submodule or worktree root)"
                     );
 
+                    // Check if this .git file represents a worktree
+                    let git_content = std::fs::read_to_string(&git_check)
+                        .map_err(|e| miette::miette!("Failed to read .git file: {}", e))?;
+
                     worktree_root = Some(current_dir.to_path_buf());
-                    // Don't break and continue searching for the actual root
+
+                    // If this is a worktree, stop traversal here
+                    if git_content.starts_with("gitdir:") {
+                        repository_root = current_dir.to_path_buf();
+                        break;
+                    }
+
+                    // Continue searching for the repository root
                 } else {
                     debug!(
                         git = ?git_check,

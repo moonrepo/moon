@@ -60,7 +60,7 @@ async fn build_lang_project(id: &str) -> Project {
 mod project_builder {
     use super::*;
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn sets_common_fields() {
         let sandbox = create_sandbox("builder");
         let project = build_project_without_inherited("baz", sandbox.path()).await;
@@ -70,7 +70,7 @@ mod project_builder {
         assert_eq!(project.root, sandbox.path().join("baz"));
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn builds_depends_on() {
         let sandbox = create_sandbox("builder");
         let project = build_project_without_inherited("baz", sandbox.path()).await;
@@ -110,7 +110,7 @@ mod project_builder {
     mod file_groups {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_from_global_when_no_local() {
             let sandbox = create_sandbox("builder");
             let project = build_project("foo", sandbox.path()).await;
@@ -146,7 +146,7 @@ mod project_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_from_global_but_local_overrides() {
             let sandbox = create_sandbox("builder");
             let project = build_project("bar", sandbox.path()).await;
@@ -187,7 +187,7 @@ mod project_builder {
     mod language_detect {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_from_config() {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("bar", sandbox.path()).await;
@@ -195,7 +195,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::Rust);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_from_env() {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("qux", sandbox.path()).await;
@@ -203,7 +203,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::TypeScript);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_bash() {
             let project = build_lang_project("bash").await;
 
@@ -211,7 +211,7 @@ mod project_builder {
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_batch() {
             let project = build_lang_project("batch").await;
 
@@ -219,25 +219,34 @@ mod project_builder {
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_bun() {
             let project = build_lang_project("bun").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("bun")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("unstable_javascript"), Id::raw("unstable_bun")]
+            );
 
             let project = build_lang_project("bun-config").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("bun")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("unstable_javascript"), Id::raw("unstable_bun")]
+            );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_deno() {
             let project = build_lang_project("deno").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("deno")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("deno"), Id::raw("unstable_javascript")]
+            );
 
             let project = build_lang_project("deno-config").await;
 
@@ -248,33 +257,44 @@ mod project_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_go() {
             let project = build_lang_project("go").await;
 
             assert_eq!(project.language, LanguageType::Go);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_go")]);
 
             let project = build_lang_project("go-config").await;
 
             assert_eq!(project.language, LanguageType::Go);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_go")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_js() {
             let project = build_lang_project("js").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("node")]);
+            assert_eq!(
+                project.toolchains,
+                vec![Id::raw("unstable_javascript"), Id::raw("unstable_node")]
+            );
 
             let project = build_lang_project("js-config").await;
 
             assert_eq!(project.language, LanguageType::JavaScript);
-            assert_eq!(project.toolchains, vec![Id::raw("node")]);
+            assert_eq!(
+                project.toolchains,
+                vec![
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_npm"),
+                    Id::raw("unstable_node"),
+                    Id::raw("unstable_bun")
+                ]
+            );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_other() {
             let project = build_lang_project("other").await;
 
@@ -285,7 +305,7 @@ mod project_builder {
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_php() {
             let project = build_lang_project("php").await;
 
@@ -298,7 +318,7 @@ mod project_builder {
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_python() {
             let project = build_lang_project("python").await;
 
@@ -311,7 +331,7 @@ mod project_builder {
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_ruby() {
             let project = build_lang_project("ruby").await;
 
@@ -324,20 +344,20 @@ mod project_builder {
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_rust() {
             let project = build_lang_project("rust").await;
 
             assert_eq!(project.language, LanguageType::Rust);
-            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_rust")]);
 
             let project = build_lang_project("rust-config").await;
 
             assert_eq!(project.language, LanguageType::Rust);
-            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_rust")]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn detects_ts() {
             let project = build_lang_project("ts").await;
 
@@ -367,42 +387,68 @@ mod project_builder {
     mod detect_toolchain {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_from_config() {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("baz", sandbox.path()).await;
 
-            assert_eq!(project.toolchains, vec![Id::raw("node")]);
+            assert_eq!(
+                project.toolchains,
+                vec![
+                    Id::raw("unstable_bun"),
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_node"),
+                    Id::raw("unstable_npm"),
+                ]
+            );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn infers_from_config_lang() {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("bar", sandbox.path()).await;
 
-            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_rust"),]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn infers_from_detected_lang() {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("foo", sandbox.path()).await;
 
-            assert_eq!(project.toolchains, vec![Id::raw("node")]);
+            assert_eq!(
+                project.toolchains,
+                vec![
+                    Id::raw("unstable_bun"),
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_npm"),
+                    Id::raw("unstable_node"),
+                ]
+            );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn fallsback_to_project() {
             let project = build_lang_project("project-platform").await;
 
             assert_eq!(
                 project.tasks.get("node-a").unwrap().toolchains,
-                vec![Id::raw("node")]
+                vec![
+                    Id::raw("unstable_bun"),
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_node"),
+                    Id::raw("unstable_npm"),
+                ]
             );
 
             assert_eq!(
                 project.tasks.get("node-b").unwrap().toolchains,
-                vec![Id::raw("node")]
+                vec![
+                    Id::raw("unstable_bun"),
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_node"),
+                    Id::raw("unstable_npm"),
+                ]
             );
 
             assert_eq!(
@@ -415,7 +461,7 @@ mod project_builder {
     mod graph_extending {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_dep() {
             let sandbox = create_sandbox("builder");
             let container = ProjectBuilderContainer::new(sandbox.path());
@@ -441,7 +487,7 @@ mod project_builder {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_task() {
             let sandbox = create_sandbox("builder");
             let container = ProjectBuilderContainer::new(sandbox.path());

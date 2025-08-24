@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- The legacy toolchains (bun/node/rust) will no longer automatically enable if there's a version
+  defined in `.prototools`.
+
 #### 🚀 Updates
 
 - Added new JavaScript ecosystem toolchain WASM plugins. This was a large feature that required

@@ -403,9 +403,10 @@ impl ToolchainConfig {
             "unstable_javascript",
             "unstable_node",
             "unstable_npm",
-            "unstable_pnpm",
             "unstable_rust",
-            "unstable_yarn",
+            // We only need 1 package manager while testing!
+            // "unstable_pnpm",
+            // "unstable_yarn",
         ] {
             if !self.plugins.contains_key(id) {
                 self.plugins

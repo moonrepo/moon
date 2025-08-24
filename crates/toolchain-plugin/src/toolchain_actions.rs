@@ -3,16 +3,16 @@ use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
-    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, ExtendProjectGraphInput,
-    ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskCommandOutput,
-    ExtendTaskScriptInput, ExtendTaskScriptOutput, HashTaskContentsInput,
-    LocateDependenciesRootInput, LocateDependenciesRootOutput, ScaffoldDockerInput,
-    ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput, SyncOutput, SyncProjectInput,
-    SyncWorkspaceInput, TeardownToolchainInput,
+    ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
+    DefineRequirementsOutput, ExtendProjectGraphInput, ExtendProjectGraphOutput,
+    ExtendTaskCommandInput, ExtendTaskCommandOutput, ExtendTaskScriptInput, ExtendTaskScriptOutput,
+    HashTaskContentsInput, LocateDependenciesRootInput, LocateDependenciesRootOutput,
+    ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
+    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_process::Command;
 use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchains};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json::JsonValue;
 use std::path::Path;
 
@@ -23,37 +23,86 @@ use std::path::Path;
 // TODO: Remove the Ok(toolchain) checks once everything is on the registry!
 
 impl ToolchainRegistry {
-    pub async fn detect_project_usage(&self, dir: &Path) -> miette::Result<Vec<Id>> {
-        let mut detected = vec![];
+    pub async fn detect_project_usage<InFn>(
+        &self,
+        dir: &Path,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<Id>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let mut detected = FxHashSet::default();
 
         for id in self.get_plugin_ids() {
             if let Ok(toolchain) = self.load(id).await
                 && toolchain.detect_project_usage(dir)?
             {
-                detected.push(Id::raw(id));
+                detected.insert(Id::raw(id));
             }
         }
 
-        Ok(detected)
+        for output in self
+            .define_requirements_many(detected.iter().collect(), input_factory)
+            .await?
+        {
+            for require_id in output.requires {
+                detected.insert(Id::new(require_id)?);
+            }
+        }
+
+        Ok(detected.into_iter().collect())
     }
 
-    pub async fn detect_task_usage(
+    pub async fn detect_task_usage<InFn>(
         &self,
         ids: Vec<&Id>,
         command: &String,
         args: &[String],
-    ) -> miette::Result<Vec<Id>> {
-        let mut detected = vec![];
+        input_factory: InFn,
+    ) -> miette::Result<Vec<Id>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let mut detected = FxHashSet::default();
 
         for id in ids {
             if let Ok(toolchain) = self.load(id).await
                 && toolchain.detect_task_usage(command, args)?
             {
-                detected.push(Id::raw(id));
+                detected.insert(Id::raw(id));
             }
         }
 
-        Ok(detected)
+        for output in self
+            .define_requirements_many(detected.iter().collect(), input_factory)
+            .await?
+        {
+            for require_id in output.requires {
+                detected.insert(Id::new(require_id)?);
+            }
+        }
+
+        Ok(detected.into_iter().collect())
+    }
+
+    pub async fn define_requirements_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<DefineRequirementsOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let results = self
+            .call_func_all(
+                "define_requirements",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.define_requirements(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
     }
 
     pub async fn define_toolchain_config_all(

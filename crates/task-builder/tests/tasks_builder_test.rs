@@ -395,11 +395,11 @@ mod tasks_builder {
 
             let task = tasks.get("bun").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_bun")]);
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_node")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -411,7 +411,10 @@ mod tasks_builder {
 
             let task = tasks.get("bun-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
+            assert_eq!(
+                task.toolchains,
+                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
+            );
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
@@ -419,11 +422,18 @@ mod tasks_builder {
 
             let task = tasks.get("node-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+            assert_eq!(
+                task.toolchains,
+                vec![
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_node"),
+                    Id::raw("unstable_npm")
+                ]
+            );
 
             let task = tasks.get("rust-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -459,11 +469,11 @@ mod tasks_builder {
 
             let task = tasks.get("unknown").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
 
             let task = tasks.get("unknown-implicit").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -475,7 +485,7 @@ mod tasks_builder {
 
             let task = tasks.get("global-build").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
         }
     }
 
@@ -495,11 +505,11 @@ mod tasks_builder {
 
             let task = tasks.get("bun").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_bun")]);
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_node")]);
 
             let task = tasks.get("typescript").unwrap();
 
@@ -515,7 +525,10 @@ mod tasks_builder {
 
             let task = tasks.get("bun-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
+            assert_eq!(
+                task.toolchains,
+                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
+            );
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
@@ -523,15 +536,22 @@ mod tasks_builder {
 
             let task = tasks.get("node-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+            assert_eq!(
+                task.toolchains,
+                vec![
+                    Id::raw("unstable_javascript"),
+                    Id::raw("unstable_node"),
+                    Id::raw("unstable_npm")
+                ]
+            );
 
             let task = tasks.get("rust-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
 
-            // let task = tasks.get("typescript-via-cmd").unwrap();
+            let task = tasks.get("typescript-via-cmd").unwrap();
 
-            // assert_eq!(task.toolchains, vec![Id::raw("typescript")]);
+            assert_eq!(task.toolchains, vec![Id::raw("typescript")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -571,11 +591,11 @@ mod tasks_builder {
 
             let task = tasks.get("unknown").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
 
             let task = tasks.get("unknown-implicit").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -587,7 +607,7 @@ mod tasks_builder {
 
             let task = tasks.get("global-build").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
         }
     }
 

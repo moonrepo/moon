@@ -46,9 +46,9 @@ macro_rules! inherit_tool {
 
             let context = ToolContext::parse($key).unwrap();
 
-            if let Some(version) = proto_config.versions.get(&context) {
-                let config = self.$tool.get_or_insert_with($config::default);
-
+            if let Some(version) = proto_config.versions.get(&context)
+                && let Some(config) = &mut self.$tool
+            {
                 if config.version.is_none() {
                     trace!(
                         "Inheriting {} version {} from .prototools",

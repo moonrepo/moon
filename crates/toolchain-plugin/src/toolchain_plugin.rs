@@ -206,6 +206,15 @@ impl ToolchainPlugin {
             return Ok(true);
         }
 
+        // Support proto binaries like `node-20.1` or `python-3`
+        for exe in &self.metadata.exe_names {
+            if let Some((name, version)) = exe.split_once('-') {
+                if name == exe && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.') {
+                    return Ok(true);
+                }
+            }
+        }
+
         Ok(false)
     }
 

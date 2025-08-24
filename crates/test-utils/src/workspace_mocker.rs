@@ -137,10 +137,10 @@ impl WorkspaceMocker {
 
     pub fn with_all_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
-            config.bun = Some(BunConfig::default());
+            // config.bun = Some(BunConfig::default());
             config.deno = Some(DenoConfig::default());
-            config.node = Some(NodeConfig::default());
-            config.rust = Some(RustConfig::default());
+            // config.node = Some(NodeConfig::default());
+            // config.rust = Some(RustConfig::default());
             config.inherit_default_plugins().unwrap();
         })
     }
@@ -289,10 +289,17 @@ impl WorkspaceMocker {
 
         builder.load_local_tasks(&project.config);
 
+        // Note: this list isn't accurate for a real world scenario!
+        let stable_toolchains = project
+            .toolchains
+            .iter()
+            .map(Id::stable)
+            .collect::<Vec<_>>();
+
         let global_config = self
             .inherited_tasks
             .get_inherited_config(
-                &project.toolchains,
+                &stable_toolchains,
                 &project.config.stack,
                 &project.config.layer,
                 &project.config.tags,

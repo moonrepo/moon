@@ -5189,6 +5189,7 @@ dependencies = [
  "moon_config",
  "moon_env_var",
  "regex",
+ "rustc-hash 2.1.1",
  "serde",
 ]
 

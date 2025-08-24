@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  WARPGATE_PLUGINS_DIR: ${{ github.workspace }}/wasm
   # RUST_LOG: trace
   # setup-rust
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -733,11 +733,10 @@ impl<'proj> TasksBuilder<'proj> {
 
         // If still nothing, detect it automatically
         if toolchains.is_empty() {
-            toolchains = self.detect_task_toolchains(&task).await?;
+            toolchains = self.detect_task_toolchains(task).await?;
         }
 
-        // Resolve again since we gathered more toolchains
-        // that may be inaccurate
+        // Resolve again since we gathered more toolchains that may be inaccurate
         toolchains =
             filter_and_resolve_toolchain_ids(self.context.enabled_toolchains, toolchains, true);
         toolchains.sort();

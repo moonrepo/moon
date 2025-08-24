@@ -7,7 +7,7 @@ pub use spec::*;
 
 use moon_common::Id;
 use moon_env_var::{GlobalEnvBag, as_bool};
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 pub fn is_using_global_toolchains(bag: &GlobalEnvBag) -> bool {
     bag.get_as("MOON_TOOLCHAIN_FORCE_GLOBALS", as_bool)
@@ -59,7 +59,7 @@ pub fn filter_and_resolve_toolchain_ids(
     in_list: Vec<Id>,
     fallback_system: bool,
 ) -> Vec<Id> {
-    let mut out_list = HashSet::new();
+    let mut out_list = FxHashSet::default();
 
     for id in in_list {
         if id == "system" {

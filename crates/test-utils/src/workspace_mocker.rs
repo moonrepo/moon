@@ -145,6 +145,15 @@ impl WorkspaceMocker {
         })
     }
 
+    pub fn with_legacy_toolchains(self) -> Self {
+        self.update_toolchain_config(|config| {
+            config.bun = Some(BunConfig::default());
+            config.deno = Some(DenoConfig::default());
+            config.node = Some(NodeConfig::default());
+            config.rust = Some(RustConfig::default());
+        })
+    }
+
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
             for id in [

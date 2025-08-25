@@ -4,8 +4,11 @@
 
 #### 💥 Breaking
 
-- The legacy toolchains (bun/node/rust) will no longer automatically enable if there's a version
-  defined in `.prototools`.
+- The legacy toolchains (bun, node, python, etc) will no longer automatically enable if there's a
+  version defined in `.prototools`, as there's no way to differentiate between the legacy and modern
+  toolchains.
+- The `task.toolchain` setting now merges with detected toolchains, instead of entirely overriding
+  it. This change was made to properly support how toolchain plugins function going forward.
 
 #### 🚀 Updates
 

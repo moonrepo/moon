@@ -549,9 +549,10 @@ mod tasks_builder {
 
             assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
 
-            let task = tasks.get("typescript-via-cmd").unwrap();
+            // TODO: temp disabled in the typescript plugin
+            // let task = tasks.get("typescript-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("typescript")]);
+            // assert_eq!(task.toolchains, vec![Id::raw("typescript")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -591,7 +592,7 @@ mod tasks_builder {
 
             let task = tasks.get("unknown").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("system")]);
 
             let task = tasks.get("unknown-implicit").unwrap();
 

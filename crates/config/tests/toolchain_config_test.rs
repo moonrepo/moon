@@ -182,24 +182,24 @@ deno: {{}}
         //     assert!(cfg.plugin.is_some());
         // }
 
-        #[test]
-        fn enables_via_proto() {
-            let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ProtoConfig::default();
-                proto.versions.insert(
-                    ToolContext::new(Id::raw("bun")),
-                    UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
-                );
+        // #[test]
+        // fn enables_via_proto() {
+        //     let config = test_load_config(FILENAME, "{}", |path| {
+        //         let mut proto = ProtoConfig::default();
+        //         proto.versions.insert(
+        //             ToolContext::new(Id::raw("bun")),
+        //             UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
+        //         );
 
-                load_config_from_root(path, &proto)
-            });
+        //         load_config_from_root(path, &proto)
+        //     });
 
-            assert!(config.bun.is_some());
-            assert_eq!(
-                config.bun.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.0.0").unwrap()
-            );
-        }
+        //     assert!(config.bun.is_some());
+        //     assert_eq!(
+        //         config.bun.unwrap().version.unwrap(),
+        //         UnresolvedVersionSpec::parse("1.0.0").unwrap()
+        //     );
+        // }
 
         #[test]
         fn inherits_plugin_locator() {
@@ -383,21 +383,21 @@ deno:
             );
         }
 
-        #[test]
-        fn enables_via_proto() {
-            let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ProtoConfig::default();
-                proto.versions.insert(
-                    ToolContext::new(Id::raw("deno")),
-                    UnresolvedVersionSpec::parse("1.30.0").unwrap().into(),
-                );
+        // #[test]
+        // fn enables_via_proto() {
+        //     let config = test_load_config(FILENAME, "{}", |path| {
+        //         let mut proto = ProtoConfig::default();
+        //         proto.versions.insert(
+        //             ToolContext::new(Id::raw("deno")),
+        //             UnresolvedVersionSpec::parse("1.30.0").unwrap().into(),
+        //         );
 
-                load_config_from_root(path, &proto)
-            });
+        //         load_config_from_root(path, &proto)
+        //     });
 
-            assert!(config.deno.is_some());
-            // assert_eq!(config.deno.unwrap().version.unwrap(), "1.30.0");
-        }
+        //     assert!(config.deno.is_some());
+        //     // assert_eq!(config.deno.unwrap().version.unwrap(), "1.30.0");
+        // }
 
         #[test]
         fn inherits_plugin_locator() {
@@ -502,24 +502,24 @@ node:
             assert!(cfg.infer_tasks_from_scripts);
         }
 
-        #[test]
-        fn enables_via_proto() {
-            let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ProtoConfig::default();
-                proto.versions.insert(
-                    ToolContext::new(Id::raw("node")),
-                    UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
-                );
+        // #[test]
+        // fn enables_via_proto() {
+        //     let config = test_load_config(FILENAME, "{}", |path| {
+        //         let mut proto = ProtoConfig::default();
+        //         proto.versions.insert(
+        //             ToolContext::new(Id::raw("node")),
+        //             UnresolvedVersionSpec::parse("18.0.0").unwrap().into(),
+        //         );
 
-                load_config_from_root(path, &proto)
-            });
+        //         load_config_from_root(path, &proto)
+        //     });
 
-            assert!(config.node.is_some());
-            assert_eq!(
-                config.node.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("18.0.0").unwrap()
-            );
-        }
+        //     assert!(config.node.is_some());
+        //     assert_eq!(
+        //         config.node.unwrap().version.unwrap(),
+        //         UnresolvedVersionSpec::parse("18.0.0").unwrap()
+        //     );
+        // }
 
         #[test]
         fn inherits_plugin_locator() {
@@ -1099,24 +1099,24 @@ node:
     mod python {
         use super::*;
 
-        #[test]
-        fn enables_via_proto() {
-            let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ProtoConfig::default();
-                proto.versions.insert(
-                    ToolContext::new(Id::raw("python")),
-                    UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
-                );
+        // #[test]
+        // fn enables_via_proto() {
+        //     let config = test_load_config(FILENAME, "{}", |path| {
+        //         let mut proto = ProtoConfig::default();
+        //         proto.versions.insert(
+        //             ToolContext::new(Id::raw("python")),
+        //             UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
+        //         );
 
-                load_config_from_root(path, &proto)
-            });
+        //         load_config_from_root(path, &proto)
+        //     });
 
-            assert!(config.python.is_some());
-            assert_eq!(
-                config.python.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.0.0").unwrap()
-            );
-        }
+        //     assert!(config.python.is_some());
+        //     assert_eq!(
+        //         config.python.unwrap().version.unwrap(),
+        //         UnresolvedVersionSpec::parse("1.0.0").unwrap()
+        //     );
+        // }
 
         #[test]
         fn inherits_plugin_locator() {
@@ -1259,24 +1259,24 @@ rust:
             assert!(cfg.sync_toolchain_config);
         }
 
-        #[test]
-        fn enables_via_proto() {
-            let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ProtoConfig::default();
-                proto.versions.insert(
-                    ToolContext::new(Id::raw("rust")),
-                    UnresolvedVersionSpec::parse("1.69.0").unwrap().into(),
-                );
+        // #[test]
+        // fn enables_via_proto() {
+        //     let config = test_load_config(FILENAME, "{}", |path| {
+        //         let mut proto = ProtoConfig::default();
+        //         proto.versions.insert(
+        //             ToolContext::new(Id::raw("rust")),
+        //             UnresolvedVersionSpec::parse("1.69.0").unwrap().into(),
+        //         );
 
-                load_config_from_root(path, &proto)
-            });
+        //         load_config_from_root(path, &proto)
+        //     });
 
-            assert!(config.rust.is_some());
-            assert_eq!(
-                config.rust.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.69.0").unwrap()
-            );
-        }
+        //     assert!(config.rust.is_some());
+        //     assert_eq!(
+        //         config.rust.unwrap().version.unwrap(),
+        //         UnresolvedVersionSpec::parse("1.69.0").unwrap()
+        //     );
+        // }
 
         #[test]
         fn inherits_plugin_locator() {

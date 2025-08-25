@@ -703,25 +703,15 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {
-        // Resolve first since user configured can be anything
-        let mut toolchains = filter_and_resolve_toolchain_ids(
-            self.context.enabled_toolchains,
-            task.toolchains.clone(),
-            false,
-        );
-
-        if !toolchains.is_empty() {
-            task.toolchains = toolchains;
-
-            return Ok(());
-        }
+        // Inherit user provided toolchains first
+        let mut toolchains = FxHashSet::from_iter(task.toolchains.clone());
 
         // Backwards compat for when the user has explicitly configured
         // the deprecated `platform` setting
         // TODO: Remove in 2.0
         #[allow(deprecated)]
-        if !task.platform.is_unknown() {
-            toolchains = vec![task.platform.get_toolchain_id()];
+        if !task.platform.is_unknown() && toolchains.is_empty() {
+            toolchains.insert(task.platform.get_toolchain_id());
 
             debug!(
                 task_target = task.target.as_str(),
@@ -731,14 +721,21 @@ impl<'proj> TasksBuilder<'proj> {
             );
         }
 
-        // If still nothing, detect it automatically
+        // Then inherit detected toolchains
+        toolchains.extend(self.detect_task_toolchains(task).await?);
+
+        // If none inherited, then the toolchains from the project
         if toolchains.is_empty() {
-            toolchains = self.detect_task_toolchains(task).await?;
+            toolchains.extend(self.project_toolchains.to_owned());
         }
 
-        // Resolve again since we gathered more toolchains that may be inaccurate
-        toolchains =
-            filter_and_resolve_toolchain_ids(self.context.enabled_toolchains, toolchains, true);
+        // Resolve them to valid identifiers
+        let mut toolchains = filter_and_resolve_toolchain_ids(
+            self.context.enabled_toolchains,
+            toolchains.into_iter().collect(),
+            true,
+        );
+
         toolchains.sort();
 
         task.toolchains = toolchains;
@@ -748,10 +745,7 @@ impl<'proj> TasksBuilder<'proj> {
 
     async fn detect_task_toolchains(&self, task: &Task) -> miette::Result<Vec<Id>> {
         // Detect using legacy first
-        let mut toolchains = FxHashSet::from_iter(detect_task_toolchains(
-            &task.command,
-            self.context.enabled_toolchains,
-        ));
+        let mut toolchains = detect_task_toolchains(&task.command, self.context.enabled_toolchains);
 
         // Detect using the registry first
         toolchains.extend(
@@ -770,16 +764,7 @@ impl<'proj> TasksBuilder<'proj> {
                 .await?,
         );
 
-        // Or inherit the toolchain from the project's language
-        if toolchains.is_empty() {
-            for id in self.project_toolchains {
-                if self.context.enabled_toolchains.contains(id) {
-                    toolchains.insert(id.to_owned());
-                }
-            }
-        }
-
-        Ok(toolchains.into_iter().collect())
+        Ok(toolchains)
     }
 
     fn inherit_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {

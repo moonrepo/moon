@@ -286,10 +286,10 @@ mod project_builder {
             assert_eq!(
                 project.toolchains,
                 vec![
+                    Id::raw("unstable_bun"),
                     Id::raw("unstable_javascript"),
-                    Id::raw("unstable_npm"),
                     Id::raw("unstable_node"),
-                    Id::raw("unstable_bun")
+                    Id::raw("unstable_npm"),
                 ]
             );
         }
@@ -421,8 +421,8 @@ mod project_builder {
                 vec![
                     Id::raw("unstable_bun"),
                     Id::raw("unstable_javascript"),
-                    Id::raw("unstable_npm"),
                     Id::raw("unstable_node"),
+                    Id::raw("unstable_npm"),
                 ]
             );
         }

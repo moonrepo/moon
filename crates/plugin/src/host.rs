@@ -265,7 +265,12 @@ fn load_toolchain_config_by_id(
     let mut project_id = None;
 
     if let Some(input) = inputs.get(1) {
-        project_id.replace(Id::new(plugin.memory_get_val::<String>(input)?)?);
+        let id = plugin.memory_get_val::<String>(input)?;
+
+        // Extism passes it through as empty
+        if !id.is_empty() {
+            project_id.replace(Id::new(id)?);
+        }
     }
 
     trace!(

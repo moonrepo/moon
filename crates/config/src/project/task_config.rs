@@ -235,9 +235,9 @@ config_struct!(
         /// arguments, merging, or inheritance.
         pub script: Option<String>,
 
-        /// The toolchain(s) in which the task will be ran in. The toolchain determines
-        /// available binaries, lookup paths, and more. When not provided, will
-        /// be automatically detected.
+        /// List of additional toolchain(s) in which the task will be ran in.
+        /// The toolchain determines available binaries, lookup paths, and more.
+        /// This list will be merged with detected toolchains.
         pub toolchain: OneOrMany<Id>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,

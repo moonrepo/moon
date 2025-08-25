@@ -1,4 +1,5 @@
 use crate::action_graph::ActionGraph;
+use crate::action_graph_error::ActionGraphError;
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, InstallProjectDepsNode, InstallWorkspaceDepsNode,
@@ -11,7 +12,7 @@ use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
-use moon_pdk_api::LocateDependenciesRootInput;
+use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_platform::{PlatformManager, Runtime, ToolchainSpec};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
@@ -20,6 +21,7 @@ use moon_task_args::parse_task_args;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -161,18 +163,13 @@ impl<'query> ActionGraphBuilder<'query> {
         None
     }
 
-    pub fn get_spec(
-        &self,
-        project: &Project,
-        toolchain_id: &Id,
-        allow_override: bool,
-    ) -> Option<ToolchainSpec> {
+    pub fn get_spec(&self, project: &Project, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
             }
 
-            if allow_override && let Some(version) = config.get_version() {
+            if let Some(version) = config.get_version() {
                 return Some(ToolchainSpec::new_override(
                     toolchain_id.to_owned(),
                     version.to_owned(),
@@ -180,6 +177,10 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
+        self.get_root_spec(toolchain_id)
+    }
+
+    pub fn get_root_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = self
             .app_context
             .toolchain_config
@@ -443,7 +444,7 @@ impl<'query> ActionGraphBuilder<'query> {
         for toolchain_id in toolchains {
             #[allow(clippy::collapsible_else_if)]
             if self.app_context.toolchain_config.is_plugin(toolchain_id) {
-                if let Some(spec) = self.get_spec(project, toolchain_id, true) {
+                if let Some(spec) = self.get_spec(project, toolchain_id) {
                     indexes.push(self.install_dependencies(&spec, project).await?);
                 }
             } else {
@@ -957,19 +958,49 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
+        let toolchain_registry = &self.app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
+        let mut edges = vec![];
+
+        // Toolchain may depend on others
+        if toolchain.has_func("define_requirements").await {
+            let output = toolchain
+                .define_requirements(DefineRequirementsInput {
+                    context: toolchain_registry.create_context(),
+                    toolchain_config: toolchain_registry
+                        .create_config(&toolchain.id, &self.app_context.toolchain_config),
+                })
+                .await?;
+
+            if !output.requires.is_empty() {
+                for require_id in output.requires {
+                    let require_id = Id::new(require_id)?;
+
+                    if require_id != spec.id
+                        && let Some(dep_spec) = self.get_root_spec(&require_id)
+                    {
+                        edges.push(Box::pin(self.setup_toolchain(&dep_spec)).await?);
+                    } else {
+                        return Err(ActionGraphError::MissingToolchainRequirement {
+                            id: spec.id.to_string(),
+                            dep_id: require_id.to_string(),
+                        }
+                        .into());
+                    }
+                }
+            }
+        }
 
         // Toolchain does not support tier 3
         if !toolchain.supports_tier_3().await {
-            return Ok(None);
+            return Ok(self.link_chain_requirements(edges));
         }
 
-        let sync_workspace_index = self.sync_workspace().await?;
-        let setup_proto_index = if spec.req.is_some() {
-            self.setup_proto().await?
-        } else {
-            None
-        };
+        edges.push(self.sync_workspace().await?);
+
+        if spec.req.is_some() {
+            edges.push(self.setup_proto().await?);
+        }
 
         let index = insert_node_or_exit!(
             self,
@@ -978,7 +1009,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_optional_requirements(index, vec![sync_workspace_index, setup_proto_index]);
+        self.link_optional_requirements(index, edges);
 
         Ok(Some(index))
     }
@@ -1069,6 +1100,21 @@ impl<'query> ActionGraphBuilder<'query> {
 
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
         self.nodes.get(node).cloned()
+    }
+
+    fn link_chain_requirements(&mut self, edges: Vec<Option<NodeIndex>>) -> Option<NodeIndex> {
+        let mut queue = VecDeque::from_iter(edges.into_iter().flatten());
+        let mut index = None;
+
+        while let Some(next_index) = queue.pop_front() {
+            if let Some(prev_index) = index {
+                self.link_requirements(prev_index, vec![next_index]);
+            }
+
+            index = Some(next_index);
+        }
+
+        index
     }
 
     fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {

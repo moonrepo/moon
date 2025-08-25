@@ -20,8 +20,6 @@ tasks:
     command: npm
   rust-via-cmd:
     command: cargo
-
-  # WASM plugins
   typescript:
     toolchain: typescript
   typescript-via-cmd:

@@ -6,7 +6,7 @@ use moon_pdk_api::{
     RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
 };
-use proto_core::{ProtoEnvironment, Tool, inject_proto_manifest_config};
+use proto_core::{ProtoEnvironment, Tool, ToolContext, inject_proto_manifest_config};
 use proto_pdk_test_utils::WasmTestWrapper as ToolTestWrapper;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
@@ -145,9 +145,13 @@ impl MoonWasmSandbox {
             root: self.root.clone(),
             tool: if plugin.has_func("register_tool").await {
                 Some(ToolTestWrapper {
-                    tool: Tool::new(plugin.id.clone(), self.proto.clone(), plugin)
-                        .await
-                        .unwrap(),
+                    tool: Tool::new(
+                        ToolContext::new(plugin.id.clone()),
+                        self.proto.clone(),
+                        plugin,
+                    )
+                    .await
+                    .unwrap(),
                 })
             } else {
                 None
@@ -211,7 +215,11 @@ impl MoonWasmSandbox {
         ] {
             funcs.push(Function::new(
                 func_type.as_str().to_string(),
-                [ValType::I64],
+                if func_type == MoonHostFunction::LoadToolchainConfig {
+                    vec![ValType::I64, ValType::I64]
+                } else {
+                    vec![ValType::I64]
+                },
                 [ValType::I64],
                 UserData::new((func_type, self.host_funcs.clone())),
                 mocked_host_func_impl,

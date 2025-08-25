@@ -10,7 +10,8 @@ use tokio::sync::{Mutex, RwLock};
 pub use tool::*;
 
 use proto_core::{
-    Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, inject_proto_manifest_config,
+    Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, ToolContext,
+    inject_proto_manifest_config,
 };
 use std::env;
 use std::path::{Path, PathBuf};
@@ -108,7 +109,7 @@ pub async fn load_tool_plugin(
     inject_default_manifest_config(id, &proto.home_dir, &mut manifest)?;
     inject_proto_manifest_config(id, proto, &mut manifest)?;
 
-    Ok(ProtoTool::load_from_manifest(id, proto, manifest).await?)
+    Ok(ProtoTool::load_from_manifest(ToolContext::new(id.to_owned()), proto, manifest).await?)
 }
 
 static LOCKS: OnceLock<RwLock<FxHashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();

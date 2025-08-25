@@ -65,7 +65,7 @@ pub fn create_host_functions(data: MoonHostData, shared_data: HostData) -> Vec<F
         ),
         Function::new(
             "load_toolchain_config_by_id",
-            [ValType::I64],
+            [ValType::I64, ValType::I64],
             [ValType::I64],
             UserData::new(data),
             load_toolchain_config_by_id,
@@ -265,7 +265,12 @@ fn load_toolchain_config_by_id(
     let mut project_id = None;
 
     if let Some(input) = inputs.get(1) {
-        project_id.replace(Id::new(plugin.memory_get_val::<String>(input)?)?);
+        let id = plugin.memory_get_val::<String>(input)?;
+
+        // Extism passes it through as empty
+        if !id.is_empty() {
+            project_id.replace(Id::new(id)?);
+        }
     }
 
     trace!(

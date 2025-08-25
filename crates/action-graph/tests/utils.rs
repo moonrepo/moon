@@ -20,6 +20,17 @@ impl ActionGraphContainer {
         }
     }
 
+    pub fn new_legacy(root: &Path) -> Self {
+        Self {
+            mocker: WorkspaceMocker::new(root)
+                .load_default_configs()
+                .with_legacy_toolchains()
+                .with_test_toolchains()
+                .with_default_projects()
+                .with_global_envs(),
+        }
+    }
+
     pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
         self.mocker = self.mocker.set_working_dir(dir);
         self

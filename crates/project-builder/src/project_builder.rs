@@ -11,7 +11,8 @@ use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_fr
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
 };
-use moon_toolchain_plugin::ToolchainRegistry;
+use moon_toolchain::filter_and_resolve_toolchain_ids;
+use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -45,11 +46,11 @@ pub struct ProjectBuilder<'app> {
 
     // Toolchains that will be used as the fallback for tasks.
     // These are filtered based on enabled.
-    pub toolchains_tasks: Vec<Id>,
+    pub toolchains: Vec<Id>,
 
     // Toolchains that will be used for task/config inheritance.
     // These are *not* filtered based on enabled.
-    pub toolchains_config: Vec<Id>,
+    pub toolchains_inheritance: Vec<Id>,
 
     // Inherited from the workspace-level enabled list,
     // but then also filtered further based on the project config
@@ -79,8 +80,8 @@ impl<'app> ProjectBuilder<'app> {
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
-            toolchains_tasks: vec![],
-            toolchains_config: vec![],
+            toolchains: vec![],
+            toolchains_inheritance: vec![],
         })
     }
 
@@ -96,7 +97,7 @@ impl<'app> ProjectBuilder<'app> {
             .expect("Local config must be loaded before global config!");
 
         let global_config = tasks_manager.get_inherited_config(
-            &self.toolchains_config,
+            &self.toolchains_inheritance,
             &local_config.stack,
             &local_config.layer,
             &local_config.tags,
@@ -174,7 +175,11 @@ impl<'app> ProjectBuilder<'app> {
         toolchains.extend(
             self.context
                 .toolchain_registry
-                .detect_project_usage(&self.root)
+                .detect_project_usage(&self.root, |registry, toolchain| DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: registry
+                        .create_config(&toolchain.id, self.context.toolchain_config),
+                })
                 .await?,
         );
 
@@ -187,12 +192,18 @@ impl<'app> ProjectBuilder<'app> {
             }
         }
 
-        self.toolchains_config = toolchains.clone().into_iter().collect();
+        // Task inheritance relies entirely on stable IDs as the file
+        // names are in the format of `tasks/node.yml`, etc
+        self.toolchains_inheritance =
+            Vec::from_iter(toolchains.iter().map(Id::stable).collect::<FxHashSet<_>>());
 
-        self.toolchains_tasks = toolchains
-            .into_iter()
-            .filter(|id| self.enabled_toolchains.contains(id))
-            .collect();
+        // While the toolchains within a task use their literal
+        // stable or unstable IDs based on what's configured/enabled
+        self.toolchains = filter_and_resolve_toolchain_ids(
+            &self.enabled_toolchains,
+            toolchains.into_iter().collect(),
+            true,
+        );
 
         self.local_config = Some(config.to_owned());
 
@@ -262,12 +273,7 @@ impl<'app> ProjectBuilder<'app> {
             language: self.language,
             root: self.root,
             source: self.source.to_owned(),
-            // Should this be the config one?
-            toolchains: if self.toolchains_tasks.is_empty() {
-                vec![Id::raw("system")]
-            } else {
-                self.toolchains_tasks
-            },
+            toolchains: self.toolchains,
             ..Project::default()
         };
 
@@ -278,6 +284,7 @@ impl<'app> ProjectBuilder<'app> {
         project.stack = config.stack;
         project.layer = config.layer;
         project.config = config;
+        project.toolchains.sort();
 
         Ok(project)
     }
@@ -393,7 +400,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut tasks_builder = TasksBuilder::new(
             self.id,
             self.source,
-            &self.toolchains_tasks,
+            &self.toolchains,
             TasksBuilderContext {
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,

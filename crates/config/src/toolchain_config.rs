@@ -134,15 +134,15 @@ impl ToolchainConfig {
         match id.as_str() {
             "typescript" => Some(find_debug_locator_with_url_fallback(
                 "typescript_toolchain",
-                "0.2.1",
+                "0.2.2",
             )),
             "unstable_bun" => Some(find_debug_locator_with_url_fallback(
                 "bun_toolchain",
-                "0.0.1",
+                "0.1.0",
             )),
             "unstable_javascript" => Some(find_debug_locator_with_url_fallback(
                 "javascript_toolchain",
-                "0.0.1",
+                "0.1.0",
             )),
             "unstable_go" => Some(find_debug_locator_with_url_fallback(
                 "go_toolchain",
@@ -150,23 +150,23 @@ impl ToolchainConfig {
             )),
             "unstable_node" => Some(find_debug_locator_with_url_fallback(
                 "node_toolchain",
-                "0.0.1",
+                "0.1.0",
             )),
             "unstable_npm" => Some(find_debug_locator_with_url_fallback(
                 "node_depman_toolchain",
-                "0.0.1",
+                "0.1.0",
             )),
             "unstable_pnpm" => Some(find_debug_locator_with_url_fallback(
                 "node_depman_toolchain",
-                "0.0.1",
+                "0.1.0",
             )),
             "unstable_rust" => Some(find_debug_locator_with_url_fallback(
                 "rust_toolchain",
-                "0.2.2",
+                "0.2.3",
             )),
             "unstable_yarn" => Some(find_debug_locator_with_url_fallback(
                 "node_depman_toolchain",
-                "0.0.1",
+                "0.1.0",
             )),
             _ => None,
         }

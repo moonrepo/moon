@@ -226,7 +226,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("unstable_javascript"), Id::raw("unstable_bun")]
+                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
             );
 
             let project = build_lang_project("bun-config").await;
@@ -234,7 +234,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("unstable_javascript"), Id::raw("unstable_bun")]
+                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
             );
         }
 
@@ -374,7 +374,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::Unknown);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("typescript"), Id::raw("system")]
+                vec![Id::raw("system"), Id::raw("typescript")]
             );
 
             let project = build_lang_project("ts-disabled").await;

@@ -120,11 +120,17 @@ impl WorkspaceGraph {
                             .get_all_for_project(&project.id, false)?
                             .iter()
                             .any(|task| {
-                                let toolchains = task
-                                    .toolchains
-                                    .iter()
-                                    .map(|t| t.as_str())
-                                    .collect::<Vec<_>>();
+                                let mut toolchains = vec![];
+
+                                // Support stable and unstable IDs
+                                for id in &task.toolchains {
+                                    let (stable_id, unstable_id) = Id::stable_and_unstable(&id);
+                                    toolchains.push(stable_id);
+                                    toolchains.push(unstable_id);
+                                }
+
+                                let toolchains =
+                                    toolchains.iter().map(|t| t.as_str()).collect::<Vec<_>>();
 
                                 condition.matches_list(ids, &toolchains).unwrap_or_default()
                             })),

@@ -16,8 +16,8 @@
   extensive work, as the JavaScript ecosystem is quite unique. The following plugins are being
   introduced:
   - `unstable_javascript`
-    - A new JavaScript specific plugin that is a superset of all JavaScript runtimes (Deno coming
-      soon).
+    - A new JavaScript specific plugin that is a superset of all JavaScript runtimes (Bun & Node,
+      with Deno coming soon).
     - Implements tier 1 and 2 features, and is now in charge of defining the package manager,
       installing dependencies, extending the project graph (aliases and tasks), parsing
       lockfiles/manifests, and much more.

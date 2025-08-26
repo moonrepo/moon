@@ -2930,6 +2930,12 @@ mod action_graph_builder {
                             create_unresolved_version(Version::new(1, 2, 3)),
                         )
                     }),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::new(
+                            Id::raw("tc-tier2-reqs"),
+                            create_unresolved_version(Version::new(1, 2, 3)),
+                        )
+                    }),
                 ]
             );
         }

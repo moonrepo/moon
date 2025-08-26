@@ -21,7 +21,6 @@ use moon_task_args::parse_task_args;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::VecDeque;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -1005,9 +1004,9 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        // Toolchain does not support tier 3
-        if !toolchain.supports_tier_3().await {
-            return Ok(self.link_chain_requirements(edges));
+        // Toolchain does not support tier 3 and does not require other toolchains
+        if !toolchain.supports_tier_3().await && edges.is_empty() {
+            return Ok(None);
         }
 
         edges.push(self.sync_workspace().await?);
@@ -1016,7 +1015,7 @@ impl<'query> ActionGraphBuilder<'query> {
             edges.push(self.setup_proto().await?);
         }
 
-        let index = insert_node_or_exit!(self, node);
+        let index = self.insert_node(node);
 
         self.link_optional_requirements(index, edges);
 
@@ -1109,21 +1108,6 @@ impl<'query> ActionGraphBuilder<'query> {
 
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
         self.nodes.get(node).cloned()
-    }
-
-    fn link_chain_requirements(&mut self, edges: Vec<Option<NodeIndex>>) -> Option<NodeIndex> {
-        let mut queue = VecDeque::from_iter(edges.into_iter().flatten());
-        let mut index = None;
-
-        while let Some(next_index) = queue.pop_back() {
-            if let Some(prev_index) = index {
-                self.link_requirements(prev_index, vec![next_index]);
-            }
-
-            index = Some(next_index);
-        }
-
-        index
     }
 
     fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {

@@ -416,6 +416,11 @@ impl<'query> ActionGraphBuilder<'query> {
 
             // Otherwise pass through to setup environment
             if let Some(setup_env_index) = setup_env_index {
+                self.link_first_requirement(
+                    setup_env_index,
+                    vec![setup_toolchain_index, sync_workspace_index],
+                );
+
                 return Ok(Some(setup_env_index));
             }
         }
@@ -958,6 +963,15 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
+            toolchain: spec.to_owned(),
+        });
+
+        // Check if the node exists to avoid all the overhead below
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Ok(Some(index));
+        }
+
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut edges = vec![];
@@ -1002,12 +1016,7 @@ impl<'query> ActionGraphBuilder<'query> {
             edges.push(self.setup_proto().await?);
         }
 
-        let index = insert_node_or_exit!(
-            self,
-            ActionNode::setup_toolchain(SetupToolchainNode {
-                toolchain: spec.to_owned(),
-            })
-        );
+        let index = insert_node_or_exit!(self, node);
 
         self.link_optional_requirements(index, edges);
 
@@ -1106,7 +1115,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut queue = VecDeque::from_iter(edges.into_iter().flatten());
         let mut index = None;
 
-        while let Some(next_index) = queue.pop_front() {
+        while let Some(next_index) = queue.pop_back() {
             if let Some(prev_index) = index {
                 self.link_requirements(prev_index, vec![next_index]);
             }

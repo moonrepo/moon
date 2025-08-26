@@ -124,7 +124,7 @@ impl WorkspaceGraph {
 
                                 // Support stable and unstable IDs
                                 for id in &task.toolchains {
-                                    let (stable_id, unstable_id) = Id::stable_and_unstable(&id);
+                                    let (stable_id, unstable_id) = Id::stable_and_unstable(id);
                                     toolchains.push(stable_id);
                                     toolchains.push(unstable_id);
                                 }

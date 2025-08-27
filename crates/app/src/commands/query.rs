@@ -554,8 +554,21 @@ pub struct QueryTouchedFilesArgs {
     #[arg(long, help = "Print the files in JSON format")]
     json: bool,
 
-    #[arg(long, help = "Gather files from you local state instead of the remote")]
-    local: bool,
+    #[arg(
+        long,
+        help = "Gather files from your local state instead of the remote",
+        action = ArgAction::SetTrue,
+        group = "local-remote",
+    )]
+    local: Option<bool>,
+
+    #[arg(
+        long,
+        help = "Gather files from the remote state instead of your local",
+        action = ArgAction::SetTrue,
+        group = "local-remote",
+    )]
+    remote: Option<bool>,
 
     #[arg(long, help = "Filter files based on a touched status")]
     status: Vec<TouchedStatus>,
@@ -565,13 +578,18 @@ pub struct QueryTouchedFilesArgs {
 pub async fn touched_files(session: MoonSession, args: QueryTouchedFilesArgs) -> AppResult {
     let console = &session.console;
     let vcs = session.get_vcs_adapter()?;
+    let ci = is_ci();
 
     let options = QueryTouchedFilesOptions {
         base: args.base,
         default_branch: args.default_branch.unwrap_or_else(is_ci),
         head: args.head,
         json: args.json,
-        local: args.local,
+        local: match (args.local, args.remote) {
+            (Some(local), None) => local,
+            (None, Some(remote)) => !remote,
+            _ => !ci,
+        },
         status: args.status,
         stdin: false,
     };

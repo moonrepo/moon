@@ -9,6 +9,9 @@
   toolchains.
 - The `task.toolchain` setting now merges with detected toolchains, instead of entirely overriding
   it. This change was made to properly support how toolchain plugins function going forward.
+- Updated `moon query touched-files` to default to comparing against remote branches when in CI, and
+  local when not in CI. This aligns with the other `moon query` commands.
+  - This can be overridden with the `--local` and `--remote` flags.
 
 #### 🚀 Updates
 

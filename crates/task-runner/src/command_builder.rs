@@ -340,11 +340,13 @@ impl<'task> CommandBuilder<'task> {
 
         abs_files.sort();
 
-        // Convert to project relative paths
+        // Convert to relative paths
         let rel_files = abs_files
             .into_iter()
             .filter_map(|abs_file| {
-                if abs_file.starts_with(&self.project.root) {
+                if self.working_dir == self.app.workspace_root
+                    || abs_file.starts_with(&self.project.root)
+                {
                     abs_file.relative_to(self.working_dir).ok()
                 } else {
                     None
@@ -379,17 +381,25 @@ impl<'task> CommandBuilder<'task> {
             if rel_files.is_empty() {
                 self.command.arg_if_missing(".");
             } else {
-                // Mimic relative from ("./")
-                self.command.args(rel_files.iter().map(|file| {
-                    let arg = format!("./{file}");
+                let args = rel_files
+                    .into_iter()
+                    .map(|file| {
+                        // Mimic relative from ("./")
+                        let arg = format!("./{file}");
 
-                    // Escape files with special characters
-                    if arg.contains(['*', '$', '+', '[', ']']) {
-                        format!("\"{arg}\"")
-                    } else {
-                        arg
-                    }
-                }));
+                        // Escape files with special characters
+                        if arg.contains(['*', '$', '+', '[', ']']) {
+                            format!("\"{arg}\"")
+                        } else {
+                            match &self.command.shell {
+                                Some(shell) => shell.instance.quote(&arg),
+                                None => arg,
+                            }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                self.command.args(args);
             }
         }
 

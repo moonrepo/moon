@@ -184,7 +184,7 @@ impl Task {
             let file = path.to_logical_path(workspace_root);
 
             // Detect if file actually exists
-            if file.is_file() {
+            if file.is_file() && file.exists() {
                 list.insert(file);
             }
         }

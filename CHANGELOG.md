@@ -52,13 +52,18 @@
 
 - Fixed an issue where proto shim/bin directories were always included in task command `PATH`, even
   when proto is not required.
+- Fixed an issue with task options `affectedFiles` and `runFromWorkspaceRoot` generating invalid
+  paths.
 
 #### 🧰 Toolchains
 
 - **Python**
-  - When running `uv venv`, we now include the `--no-managed-python` flag
-  - When running `uv sync`, we now include the `--no-managed-python` flag unless
-    `python.uv.syncArgs` is defined.
+  - When running `uv venv`, we now include the `--no-managed-python` flag when the `python.version`
+    setting is defined. This _should_ ensure that moon/proto's Python managed version is used.
+  - When running `uv sync`, we now include the `--no-managed-python` flag unless the
+    `python.uv.syncArgs` setting is defined.
+- **Rust**
+  - Updated manifest parsing to extract `path` and `git` values.
 
 #### 🧩 Plugins
 

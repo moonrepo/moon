@@ -338,7 +338,7 @@ impl<'task> TaskRunner<'task> {
     pub fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
-        self.task.options.cache && self.app.vcs.is_enabled()
+        self.task.options.cache.is_enabled() && self.app.vcs.is_enabled()
     }
 
     #[instrument(skip_all)]

@@ -36,6 +36,22 @@ config_enum!(
 generate_switch!(TaskOptionAffectedFiles, ["args", "env"]);
 
 config_enum!(
+    /// The mode in which to apply task caching.
+    #[serde(expecting = "expected `local`, `remote`, or a boolean")]
+    pub enum TaskOptionCache {
+        /// Only cache locally.
+        Local,
+        /// Only cache remotely.
+        Remote,
+        /// Cache both locally and remotely.
+        #[serde(untagged)]
+        Enabled(bool),
+    }
+);
+
+generate_switch!(TaskOptionCache, ["local", "remote"]);
+
+config_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
     #[serde(
         untagged,
@@ -216,7 +232,7 @@ config_struct!(
 
         /// Caches the `outputs` of the task. Defaults to `true` if outputs
         /// are configured for the task.
-        pub cache: Option<bool>,
+        pub cache: Option<TaskOptionCache>,
 
         /// A custom key to include in the cache hashing process. Can be
         /// used to invalidate local and remote caches.

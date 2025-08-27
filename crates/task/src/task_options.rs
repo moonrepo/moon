@@ -1,7 +1,7 @@
 use moon_common::cacheable;
 use moon_config::{
-    Input, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOptionRunInCI,
-    TaskOutputStyle, TaskPriority, TaskUnixShell, TaskWindowsShell,
+    Input, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOptionCache,
+    TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell, TaskWindowsShell,
 };
 
 cacheable!(
@@ -15,7 +15,7 @@ cacheable!(
 
         pub allow_failure: bool,
 
-        pub cache: bool,
+        pub cache: TaskOptionCache,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub cache_key: Option<String>,
@@ -84,7 +84,7 @@ impl Default for TaskOptions {
             affected_files: None,
             affected_pass_inputs: false,
             allow_failure: false,
-            cache: true,
+            cache: TaskOptionCache::Enabled(true),
             cache_key: None,
             cache_lifetime: None,
             env_files: None,

@@ -35,6 +35,9 @@
     - npm now supports `npm-shrinkwrap.json`.
     - Is no longer configured within `node`, and is now configured at the top-level within
       `.moon/toolchain.yml`.
+- Added new values to the task `cache` option, alongside the existing boolean.
+  - `local` to only use the local cache.
+  - `remote` to only use the remote cache.
 - Updated task commands (child processes) to utilize toolchain executables directly, instead of
   relying entirely on proto shims. It achieves this by locating the executables, and prepending
   their directory onto `PATH`.

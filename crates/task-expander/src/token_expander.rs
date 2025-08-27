@@ -779,6 +779,7 @@ impl<'graph> TokenExpander<'graph> {
             "HEAD",
             "BASE",
             "BRANCH",
+            "_SHA",
         ];
         let ci = ci_env::get_environment();
         let cd = cd_env::get_environment();
@@ -794,7 +795,7 @@ impl<'graph> TokenExpander<'graph> {
         set.retain(|key| {
             blacklist
                 .iter()
-                .all(|prefix| key != prefix && !key.starts_with(prefix))
+                .all(|item| key != item && !key.starts_with(item) && !key.ends_with(item))
         });
 
         task.input_env.extend(set);

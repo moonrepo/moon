@@ -471,7 +471,12 @@ impl<'task> TaskRunner<'task> {
         let mut builder = CommandBuilder::new(self.app, self.project, self.task, node);
         builder.set_platform_manager(self.platform_manager);
 
-        let command = builder.build(context).await?;
+        let command = builder
+            .build(
+                context,
+                self.report_item.hash.as_deref().unwrap_or_default(),
+            )
+            .await?;
 
         // Execute the command and gather all attempts made
         let executor = CommandExecutor::new(self.app, self.project, self.task, node, command);

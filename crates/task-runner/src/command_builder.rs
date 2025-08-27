@@ -63,7 +63,7 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(name = "build_command", skip_all)]
-    pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
+    pub async fn build(mut self, context: &ActionContext, hash: &str) -> miette::Result<Command> {
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
@@ -79,7 +79,7 @@ impl<'task> CommandBuilder<'task> {
 
         // Order is important!
         self.inject_args(context);
-        self.inject_env();
+        self.inject_env(hash);
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
@@ -224,7 +224,7 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(skip_all)]
-    fn inject_env(&mut self) {
+    fn inject_env(&mut self, hash: &str) {
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node
             && !inner.env.is_empty()
@@ -248,6 +248,8 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("MOON_PROJECT_ROOT", &self.project.root);
         self.command
             .env("MOON_PROJECT_SOURCE", self.project.source.as_str());
+        self.command.env("MOON_TASK_ID", self.task.id.as_str());
+        self.command.env("MOON_TASK_HASH", hash);
         self.command.env("MOON_TARGET", self.task.target.as_str());
         self.command
             .env("MOON_WORKSPACE_ROOT", &self.app.workspace_root);

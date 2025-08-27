@@ -47,6 +47,8 @@
 - Deprecated the `moon run --profile` option.
   - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
     toolchain.
+- When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
+  which can be read from child processes.
 
 #### 🐞 Fixes
 

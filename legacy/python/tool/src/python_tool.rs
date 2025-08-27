@@ -182,6 +182,7 @@ impl PythonTool {
                         "venv",
                         venv_root.to_str().unwrap_or_default(),
                         "--no-python-downloads",
+                        "--no-managed-python",
                     ])
                     .cwd(working_dir)
                     .exec_stream_output()

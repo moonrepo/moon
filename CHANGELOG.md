@@ -53,6 +53,13 @@
 - Fixed an issue where proto shim/bin directories were always included in task command `PATH`, even
   when proto is not required.
 
+#### 🧰 Toolchains
+
+- **Python**
+  - When running `uv venv`, we now include the `--no-managed-python` flag
+  - When running `uv sync`, we now include the `--no-managed-python` flag unless
+    `python.uv.syncArgs` is defined.
+
 #### 🧩 Plugins
 
 - WASM API

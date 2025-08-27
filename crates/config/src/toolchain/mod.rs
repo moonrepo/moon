@@ -41,11 +41,14 @@ macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
         pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
             use moon_common::color;
+            use proto_core::{PluginType, ToolContext};
             use tracing::trace;
 
-            if let Some(version) = proto_config.versions.get($key) {
-                let config = self.$tool.get_or_insert_with($config::default);
+            let context = ToolContext::parse($key).unwrap();
 
+            if let Some(version) = proto_config.versions.get(&context)
+                && let Some(config) = &mut self.$tool
+            {
                 if config.version.is_none() {
                     trace!(
                         "Inheriting {} version {} from .prototools",
@@ -59,7 +62,10 @@ macro_rules! inherit_tool {
 
             if let Some(config) = &mut self.$tool {
                 if config.plugin.is_none() {
-                    config.plugin = proto_config.plugins.get($key).cloned();
+                    config.plugin = proto_config
+                        .plugins
+                        .get(&context.id, PluginType::Tool)
+                        .cloned();
 
                     if let Some(plugin) = &config.plugin {
                         trace!(
@@ -82,9 +88,12 @@ macro_rules! inherit_tool_required {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
         pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
             use moon_common::color;
+            use proto_core::{PluginType, ToolContext};
             use tracing::trace;
 
-            if let Some(version) = proto_config.versions.get($key) {
+            let context = ToolContext::parse($key).unwrap();
+
+            if let Some(version) = proto_config.versions.get(&context) {
                 if self.$tool.version.is_none() {
                     trace!(
                         "Inheriting {} version {} from .prototools",
@@ -97,7 +106,10 @@ macro_rules! inherit_tool_required {
             }
 
             if self.$tool.plugin.is_none() {
-                self.$tool.plugin = proto_config.plugins.get($key).cloned();
+                self.$tool.plugin = proto_config
+                    .plugins
+                    .get(&context.id, PluginType::Tool)
+                    .cloned();
 
                 if let Some(plugin) = &self.$tool.plugin {
                     trace!(

@@ -1,4 +1,5 @@
 use crate::action_graph::ActionGraph;
+use crate::action_graph_error::ActionGraphError;
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, InstallProjectDepsNode, InstallWorkspaceDepsNode,
@@ -11,7 +12,7 @@ use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
-use moon_pdk_api::LocateDependenciesRootInput;
+use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_platform::{PlatformManager, Runtime, ToolchainSpec};
 use moon_project::Project;
 use moon_query::{Criteria, build_query};
@@ -161,18 +162,13 @@ impl<'query> ActionGraphBuilder<'query> {
         None
     }
 
-    pub fn get_spec(
-        &self,
-        project: &Project,
-        toolchain_id: &Id,
-        allow_override: bool,
-    ) -> Option<ToolchainSpec> {
+    pub fn get_spec(&self, project: &Project, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
             }
 
-            if allow_override && let Some(version) = config.get_version() {
+            if let Some(version) = config.get_version() {
                 return Some(ToolchainSpec::new_override(
                     toolchain_id.to_owned(),
                     version.to_owned(),
@@ -180,6 +176,10 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
+        self.get_root_spec(toolchain_id)
+    }
+
+    pub fn get_root_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = self
             .app_context
             .toolchain_config
@@ -415,6 +415,11 @@ impl<'query> ActionGraphBuilder<'query> {
 
             // Otherwise pass through to setup environment
             if let Some(setup_env_index) = setup_env_index {
+                self.link_first_requirement(
+                    setup_env_index,
+                    vec![setup_toolchain_index, sync_workspace_index],
+                );
+
                 return Ok(Some(setup_env_index));
             }
         }
@@ -443,7 +448,7 @@ impl<'query> ActionGraphBuilder<'query> {
         for toolchain_id in toolchains {
             #[allow(clippy::collapsible_else_if)]
             if self.app_context.toolchain_config.is_plugin(toolchain_id) {
-                if let Some(spec) = self.get_spec(project, toolchain_id, true) {
+                if let Some(spec) = self.get_spec(project, toolchain_id) {
                     indexes.push(self.install_dependencies(&spec, project).await?);
                 }
             } else {
@@ -957,28 +962,62 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
+            toolchain: spec.to_owned(),
+        });
 
-        // Toolchain does not support tier 3
-        if !toolchain.supports_tier_3().await {
+        // Check if the node exists to avoid all the overhead below
+        if let Some(index) = self.get_index_from_node(&node) {
+            return Ok(Some(index));
+        }
+
+        let toolchain_registry = &self.app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
+        let mut edges = vec![];
+
+        // Toolchain may depend on others
+        if toolchain.has_func("define_requirements").await {
+            let output = toolchain
+                .define_requirements(DefineRequirementsInput {
+                    context: toolchain_registry.create_context(),
+                    toolchain_config: toolchain_registry
+                        .create_config(&toolchain.id, &self.app_context.toolchain_config),
+                })
+                .await?;
+
+            if !output.requires.is_empty() {
+                for require_id in output.requires {
+                    let require_id = Id::new(require_id)?;
+
+                    if require_id != spec.id
+                        && let Some(dep_spec) = self.get_root_spec(&require_id)
+                    {
+                        edges.push(Box::pin(self.setup_toolchain(&dep_spec)).await?);
+                    } else {
+                        return Err(ActionGraphError::MissingToolchainRequirement {
+                            id: spec.id.to_string(),
+                            dep_id: require_id.to_string(),
+                        }
+                        .into());
+                    }
+                }
+            }
+        }
+
+        // Toolchain does not support tier 3 and does not require other toolchains
+        if !toolchain.supports_tier_3().await && edges.is_empty() {
             return Ok(None);
         }
 
-        let sync_workspace_index = self.sync_workspace().await?;
-        let setup_proto_index = if spec.req.is_some() {
-            self.setup_proto().await?
-        } else {
-            None
-        };
+        edges.push(self.sync_workspace().await?);
 
-        let index = insert_node_or_exit!(
-            self,
-            ActionNode::setup_toolchain(SetupToolchainNode {
-                toolchain: spec.to_owned(),
-            })
-        );
+        if spec.req.is_some() {
+            edges.push(self.setup_proto().await?);
+        }
 
-        self.link_optional_requirements(index, vec![sync_workspace_index, setup_proto_index]);
+        let index = self.insert_node(node);
+
+        self.link_optional_requirements(index, edges);
 
         Ok(Some(index))
     }

@@ -7,6 +7,7 @@ pub use spec::*;
 
 use moon_common::Id;
 use moon_env_var::{GlobalEnvBag, as_bool};
+use rustc_hash::FxHashSet;
 
 pub fn is_using_global_toolchains(bag: &GlobalEnvBag) -> bool {
     bag.get_as("MOON_TOOLCHAIN_FORCE_GLOBALS", as_bool)
@@ -51,4 +52,34 @@ pub fn get_version_env_value(version: &UnresolvedVersionSpec) -> String {
     }
 
     version.to_string()
+}
+
+pub fn filter_and_resolve_toolchain_ids(
+    enabled_list: &[Id],
+    in_list: Vec<Id>,
+    fallback_system: bool,
+) -> Vec<Id> {
+    let mut out_list = FxHashSet::default();
+
+    for id in in_list {
+        if id == "system" {
+            out_list.insert(id);
+            continue;
+        }
+
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        if enabled_list.contains(&unstable_id) {
+            out_list.insert(unstable_id);
+        } else if enabled_list.contains(&stable_id) {
+            out_list.insert(stable_id);
+        }
+    }
+
+    // And always have something
+    if out_list.is_empty() && fallback_system {
+        out_list.insert(Id::raw("system"));
+    }
+
+    out_list.into_iter().collect()
 }

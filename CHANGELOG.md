@@ -2,14 +2,22 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- The legacy toolchains (bun, node, python, etc) will no longer automatically enable if there's a
+  version defined in `.prototools`, as there's no way to differentiate between the legacy and modern
+  toolchains.
+- The `task.toolchain` setting now merges with detected toolchains, instead of entirely overriding
+  it. This change was made to properly support how toolchain plugins function going forward.
+
 #### 🚀 Updates
 
 - Added new JavaScript ecosystem toolchain WASM plugins. This was a large feature that required
   extensive work, as the JavaScript ecosystem is quite unique. The following plugins are being
   introduced:
   - `unstable_javascript`
-    - A new JavaScript specific plugin that is a superset of all JavaScript runtimes (Deno coming
-      soon).
+    - A new JavaScript specific plugin that is a superset of all JavaScript runtimes (Bun & Node,
+      with Deno coming soon).
     - Implements tier 1 and 2 features, and is now in charge of defining the package manager,
       installing dependencies, extending the project graph (aliases and tasks), parsing
       lockfiles/manifests, and much more.
@@ -34,6 +42,8 @@
 #### 🧩 Plugins
 
 - WASM API
+  - Added a new `define_requirements` plugin API for tier 2.
+  - Added `DefineRequirementsInput` and `DefineRequirementsOutput` types.
   - Added `MoonContext.get_project_root` and `get_project_root_from_source` methods.
   - Added `ExtendProjectGraphInput.toolchain_config` field.
   - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
@@ -43,7 +53,8 @@
 
 #### ⚙️ Internal
 
-- Updated Rust to v1.88.0.
+- Updated proto to [v0.52.1](https://github.com/moonrepo/proto/releases/tag/v0.52.0) (from 0.51.4).
+- Updated Rust to v1.89.0.
 
 ## 1.39.4
 

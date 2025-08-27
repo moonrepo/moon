@@ -69,7 +69,14 @@ mod sync_workspace {
 
         assert_eq!(
             ids,
-            ["tc-tier1", "tc-tier2", "tc-tier2-setup-env", "tc-tier3"]
+            [
+                "tc-tier1",
+                "tc-tier2",
+                "tc-tier2-reqs",
+                "tc-tier2-setup-env",
+                "tc-tier3",
+                "tc-tier3-reqs"
+            ]
         );
 
         // Verify operation and changed files

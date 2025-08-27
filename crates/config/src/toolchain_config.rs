@@ -129,22 +129,45 @@ impl ToolchainConfig {
 
     #[cfg(feature = "proto")]
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
-        use proto_core::warpgate::{PluginLocator, UrlLocator};
+        use proto_core::warpgate::find_debug_locator_with_url_fallback;
 
         match id.as_str() {
-            "typescript" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/typescript_toolchain-v0.2.1/typescript_toolchain.wasm".into()
-            }))),
-            "unstable_go" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/go_toolchain-v0.1.3/go_toolchain.wasm".into()
-            }))),
-            "unstable_rust" => Some(PluginLocator::Url(Box::new(UrlLocator {
-                url: "https://github.com/moonrepo/plugins/releases/download/rust_toolchain-v0.2.2/rust_toolchain.wasm".into()
-            }))),
-            // "typescript" => Some(PluginLocator::File(Box::new(FileLocator {
-            //     file: "".into(),
-            //     path: Some("target/wasm32-wasip1/release/typescript_toolchain.wasm".into()),
-            // }))),
+            "typescript" => Some(find_debug_locator_with_url_fallback(
+                "typescript_toolchain",
+                "0.2.2",
+            )),
+            "unstable_bun" => Some(find_debug_locator_with_url_fallback(
+                "bun_toolchain",
+                "0.1.0",
+            )),
+            "unstable_javascript" => Some(find_debug_locator_with_url_fallback(
+                "javascript_toolchain",
+                "0.1.0",
+            )),
+            "unstable_go" => Some(find_debug_locator_with_url_fallback(
+                "go_toolchain",
+                "0.1.3",
+            )),
+            "unstable_node" => Some(find_debug_locator_with_url_fallback(
+                "node_toolchain",
+                "0.1.0",
+            )),
+            "unstable_npm" => Some(find_debug_locator_with_url_fallback(
+                "node_depman_toolchain",
+                "0.1.0",
+            )),
+            "unstable_pnpm" => Some(find_debug_locator_with_url_fallback(
+                "node_depman_toolchain",
+                "0.1.0",
+            )),
+            "unstable_rust" => Some(find_debug_locator_with_url_fallback(
+                "rust_toolchain",
+                "0.2.3",
+            )),
+            "unstable_yarn" => Some(find_debug_locator_with_url_fallback(
+                "node_depman_toolchain",
+                "0.1.0",
+            )),
             _ => None,
         }
     }
@@ -265,6 +288,7 @@ impl ToolchainConfig {
         proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<()> {
         use moon_common::color;
+        use proto_core::ToolContext;
         use tracing::trace;
 
         for (id, config) in &mut self.plugins {
@@ -282,8 +306,9 @@ impl ToolchainConfig {
                 }
                 ToolchainPluginVersionFrom::Id(custom_id) => custom_id,
             };
+            let proto_context = ToolContext::parse(proto_id).unwrap();
 
-            if let Some(version) = proto_config.versions.get(proto_id) {
+            if let Some(version) = proto_config.versions.get(&proto_context) {
                 trace!(
                     "Inheriting {} version {} from .prototools",
                     color::id(id),
@@ -298,6 +323,8 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
+        use tracing::warn;
+
         self.inherit_proto_for_plugins(proto_config)?;
         self.inherit_proto_bun(proto_config)?;
         self.inherit_proto_deno(proto_config)?;
@@ -335,13 +362,33 @@ impl ToolchainConfig {
 
         self.inherit_plugin_locators()?;
 
+        if self.bun.is_some()
+            && (self.plugins.contains_key("bun")
+                || self.plugins.contains_key("unstable_bun")
+                || self.plugins.contains_key("javascript")
+                || self.plugins.contains_key("unstable_javascript"))
+        {
+            warn!(
+                "The legacy Bun platform and WASM based JavaScript/Bun toolchains must not be used together!"
+            );
+        }
+
+        if self.node.is_some()
+            && (self.plugins.contains_key("node")
+                || self.plugins.contains_key("unstable_node")
+                || self.plugins.contains_key("javascript")
+                || self.plugins.contains_key("unstable_javascript"))
+        {
+            warn!(
+                "The legacy Node.js platform and WASM based JavaScript/Node.js toolchains must not be used together!"
+            );
+        }
+
         if self.rust.is_some()
             && (self.plugins.contains_key("rust") || self.plugins.contains_key("unstable_rust"))
         {
-            use tracing::warn;
-
             warn!(
-                "The legacy Rust toolchain and WASM based Rust toolchain must not be used together!"
+                "The legacy Rust platform and WASM based Rust toolchain must not be used together!"
             );
         }
 
@@ -349,7 +396,18 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {
-        for id in ["typescript", "unstable_go", "unstable_rust"] {
+        for id in [
+            "typescript",
+            "unstable_bun",
+            "unstable_go",
+            "unstable_javascript",
+            "unstable_node",
+            "unstable_npm",
+            "unstable_rust",
+            // We only need 1 package manager while testing!
+            // "unstable_pnpm",
+            // "unstable_yarn",
+        ] {
             if !self.plugins.contains_key(id) {
                 self.plugins
                     .insert(Id::raw(id), ToolchainPluginConfig::default());
@@ -368,7 +426,15 @@ impl ToolchainConfig {
             }
 
             match id.as_str() {
-                "typescript" | "unstable_go" | "unstable_rust" => {
+                "typescript"
+                | "unstable_bun"
+                | "unstable_go"
+                | "unstable_javascript"
+                | "unstable_node"
+                | "unstable_npm"
+                | "unstable_pnpm"
+                | "unstable_rust"
+                | "unstable_yarn" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 other => {

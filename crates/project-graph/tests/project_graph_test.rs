@@ -1594,10 +1594,10 @@ mod project_graph {
             let graph = build_graph_from_fixture("query").await;
 
             let projects = graph
-                .query_projects(build_query("task=build && taskToolchain=deno").unwrap())
+                .query_projects(build_query("task=build && taskToolchain=system").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids_from_projects(projects), vec!["d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a", "d"]);
         }
 
         #[tokio::test]

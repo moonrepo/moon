@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 
 #[allow(clippy::enum_variant_names)]
+#[derive(PartialEq)]
 pub enum MoonHostFunction {
     LoadProject,
     LoadProjects,

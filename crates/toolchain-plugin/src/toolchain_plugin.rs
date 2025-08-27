@@ -3,7 +3,10 @@ use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
-use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec, locate_tool};
+use proto_core::{
+    PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
+    UnresolvedVersionSpec, locate_plugin,
+};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
@@ -45,7 +48,7 @@ impl Plugin for ToolchainPlugin {
             tool: if plugin.has_func("register_tool").await {
                 Some(RwLock::new(
                     Tool::new(
-                        registration.id_stable,
+                        ToolContext::new(registration.id_stable),
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )
@@ -160,6 +163,19 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn define_requirements(
+        &self,
+        input: DefineRequirementsInput,
+    ) -> miette::Result<DefineRequirementsOutput> {
+        let output: DefineRequirementsOutput = self
+            .plugin
+            .cache_func_with("define_requirements", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
     pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
         // Do simple checks first to avoid glob overhead
         for file in &self.metadata.manifest_file_names {
@@ -188,6 +204,16 @@ impl ToolchainPlugin {
     pub fn detect_task_usage(&self, command: &String, _args: &[String]) -> miette::Result<bool> {
         if self.metadata.exe_names.contains(command) {
             return Ok(true);
+        }
+
+        // Support proto binaries like `node-20.1` or `python-3`
+        for exe in &self.metadata.exe_names {
+            if let Some((name, version)) = exe.split_once('-')
+                && name == exe
+                && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.')
+            {
+                return Ok(true);
+            }
         }
 
         Ok(false)
@@ -434,12 +460,11 @@ impl ToolchainPlugin {
             // Pre-load the tool plugin so that task executions
             // avoid network race conditions and collisions
             if let Ok(loader) = tool.proto.get_plugin_loader()
-                && let Some(locator) = tool
-                    .locator
-                    .clone()
-                    .or_else(|| locate_tool(&tool.id, &tool.proto).ok())
+                && let Some(locator) = tool.locator.clone().or_else(|| {
+                    locate_plugin(&tool.context.id, &tool.proto, ProtoPluginType::Tool).ok()
+                })
             {
-                let _ = loader.load_plugin(&tool.id, &locator).await;
+                let _ = loader.load_plugin(&tool.context.id, &locator).await;
             }
         }
 

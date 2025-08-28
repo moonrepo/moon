@@ -41,6 +41,8 @@
 - Added new values to the task `cache` option, alongside the existing boolean.
   - `local` to only use the local cache.
   - `remote` to only use the remote cache.
+- Added a new `unstable_remote.cache.localReadOnly` setting, which turns local development caching
+  into a read-only mode (only downloads, doesn't upload).
 - Updated task commands (child processes) to utilize toolchain executables directly, instead of
   relying entirely on proto shims. It achieves this by locating the executables, and prepending
   their directory onto `PATH`.

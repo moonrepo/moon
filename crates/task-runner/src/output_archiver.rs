@@ -156,7 +156,9 @@ impl OutputArchiver<'_> {
     #[instrument(skip(self, state))]
     async fn upload_to_remote_service(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
-            state.compute_outputs(&self.app.workspace_root)?;
+            if remote.can_upload() {
+                state.compute_outputs(&self.app.workspace_root)?;
+            }
 
             match remote.save_action(state).await {
                 Ok(saved) => {

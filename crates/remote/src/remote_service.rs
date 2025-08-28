@@ -156,6 +156,15 @@ impl RemoteService {
         Ok(())
     }
 
+    pub fn can_download(&self) -> bool {
+        self.cache_enabled
+    }
+
+    pub fn can_upload(&self) -> bool {
+        self.cache_enabled
+            && (!self.config.cache.local_read_only || self.config.cache.local_read_only && is_ci())
+    }
+
     pub fn get_max_batch_size(&self) -> i64 {
         self.capabilities
             .cache_capabilities
@@ -176,7 +185,7 @@ impl RemoteService {
         &self,
         state: &ActionState<'_>,
     ) -> miette::Result<Option<ActionResult>> {
-        if !self.cache_enabled {
+        if !self.can_download() {
             return Ok(None);
         }
 
@@ -185,7 +194,7 @@ impl RemoteService {
 
     #[instrument(skip(self, state))]
     pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
-        if !self.cache_enabled {
+        if !self.can_upload() {
             return Ok(false);
         }
 
@@ -213,7 +222,7 @@ impl RemoteService {
 
     #[instrument(skip(self, state))]
     pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
-        if !self.cache_enabled {
+        if !self.can_upload() {
             return Ok(false);
         }
 
@@ -273,7 +282,7 @@ impl RemoteService {
 
     #[instrument(skip(self, state))]
     pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
-        if !self.cache_enabled {
+        if !self.can_download() {
             return Ok(false);
         }
 

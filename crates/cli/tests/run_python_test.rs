@@ -80,7 +80,7 @@ mod python {
                     version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
                     package_manager: Some(PythonPackageManager::Uv),
                     uv: Some(PartialUvConfig {
-                        version: Some(UnresolvedVersionSpec::parse("0.5.26").unwrap()),
+                        version: Some(UnresolvedVersionSpec::parse("0.8.13").unwrap()),
                         ..PartialUvConfig::default()
                     }),
                     ..PartialPythonConfig::default()
@@ -93,7 +93,7 @@ mod python {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("uv 0.5.26").eval(&output));
+            assert!(predicate::str::contains("uv 0.8.13").eval(&output));
             assert!(predicate::str::contains("Creating virtual environment").eval(&output));
         }
     }

@@ -431,9 +431,7 @@ impl<'task> CommandBuilder<'task> {
             }
         }
 
-        if is_using_global_toolchains(self.env_bag)
-            || !self.app.toolchain_config.should_install_proto()
-        {
+        if is_using_global_toolchains(self.env_bag) || !self.app.toolchain_config.requires_proto() {
             return Ok(());
         }
 

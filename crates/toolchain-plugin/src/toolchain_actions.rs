@@ -293,7 +293,7 @@ impl ToolchainRegistry {
         }
 
         // Abort early if using globals
-        if is_using_global_toolchains(bag) || !self.config.should_install_proto() {
+        if is_using_global_toolchains(bag) || !self.config.requires_proto() {
             command.prepend_paths([moon.store_root.join("bin")]);
             return;
         }

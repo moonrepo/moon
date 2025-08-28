@@ -56,6 +56,7 @@
   when proto is not required.
 - Fixed an issue with task options `affectedFiles` and `runFromWorkspaceRoot` generating invalid
   paths.
+- Fixed `moon docker file` generating invalid `Dockerfile`s after the recent proto install changes.
 
 #### 🧰 Toolchains
 

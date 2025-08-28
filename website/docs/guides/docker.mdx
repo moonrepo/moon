@@ -57,6 +57,14 @@ document them below):
 - Using multi-staged or non-staged (standard) builds.
 - Something else unique to your setup!
 
+:::warning
+
+This guide and our Docker approach is merely a suggestion and is not a requirement for using moon
+with Docker! Feel free to use this as a starting point, or not at all. Choose the approach that
+works best for you!
+
+:::
+
 ### What we're trying to avoid
 
 Before we dive into writing a perfect `Dockerfile`, we'll briefly talk about the pain points we're
@@ -171,9 +179,6 @@ RUN moon docker scaffold <project>
 
 #### BUILD
 FROM base AS build
-
-# Copy toolchain
-COPY --from=skeleton /root/.proto /root/.proto
 
 # Copy workspace skeleton
 COPY --from=skeleton /app/.moon/docker/workspace .

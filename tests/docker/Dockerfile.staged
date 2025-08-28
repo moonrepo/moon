@@ -19,9 +19,6 @@ RUN moon docker scaffold website --log debug
 FROM base AS build
 WORKDIR /app
 
-# Copy toolchain
-COPY --from=workspace /root/.proto /root/.proto
-# COPY --from=workspace /root/.rustup /root/.rustup
 
 # Copy workspace skeleton
 COPY --from=workspace /app/.moon/docker/workspace .

@@ -5,7 +5,7 @@ use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
-use moon_platform::PlatformManager;
+use moon_platform::{PlatformManager, is_using_global_toolchains};
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
@@ -83,7 +83,7 @@ impl<'task> CommandBuilder<'task> {
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
-        self.inherit_proto();
+        self.inherit_proto().await?;
 
         // Must be last!
         self.command.inherit_path()?;
@@ -408,10 +408,10 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
-    fn inherit_proto(&mut self) {
+    async fn inherit_proto(&mut self) -> miette::Result<()> {
         // The values below were inherited by the platform already
         if self.using_platform {
-            return;
+            return Ok(());
         }
 
         // Inherit common parameters
@@ -430,6 +430,38 @@ impl<'task> CommandBuilder<'task> {
                     .env(get_version_env_key(id), get_version_env_value(version));
             }
         }
+
+        if is_using_global_toolchains(self.env_bag)
+            || !self.app.toolchain_config.should_install_proto()
+        {
+            return Ok(());
+        }
+
+        // Inherit toolchain directories
+        let toolchain_ids = self
+            .project
+            .get_enabled_toolchains_for_task(self.task)
+            .into_iter()
+            .filter(|id| !is_using_global_toolchain(self.env_bag, id))
+            .collect::<Vec<_>>();
+
+        if !toolchain_ids.is_empty() {
+            let paths = self
+                .app
+                .toolchain_registry
+                .get_command_paths(toolchain_ids, |registry, toolchain| {
+                    registry.get_configured_version(
+                        &toolchain.id,
+                        &self.app.toolchain_config,
+                        &self.project.config,
+                    )
+                })
+                .await?;
+
+            self.command.prepend_paths(paths);
+        }
+
+        Ok(())
     }
 
     fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {

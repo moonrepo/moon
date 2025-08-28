@@ -7,7 +7,7 @@ use moon_pdk_api::Operation;
 use moon_plugin::{
     MoonHostData, PluginError, PluginId, PluginRegistry, PluginType, serialize_config,
 };
-use proto_core::inject_proto_manifest_config;
+use proto_core::{UnresolvedVersionSpec, inject_proto_manifest_config};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue};
 use std::future::Future;
@@ -77,6 +77,27 @@ impl ToolchainRegistry {
         }
 
         data
+    }
+
+    pub fn get_configured_version(
+        &self,
+        id: &str,
+        toolchain_config: &ToolchainConfig,
+        project_config: &ProjectConfig,
+    ) -> Option<UnresolvedVersionSpec> {
+        if let Some(config) = project_config.toolchain.get_plugin_config(id)
+            && let Some(version) = config.get_version()
+        {
+            return Some(version.to_owned());
+        }
+
+        if let Some(config) = toolchain_config.get_plugin_config(id)
+            && let Some(version) = &config.version
+        {
+            return Some(version.to_owned());
+        }
+
+        None
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&PluginId> {
@@ -194,6 +215,32 @@ impl ToolchainRegistry {
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
         Out: Send + 'static,
     {
+        self.call_func_all_with_check(
+            func_name,
+            toolchain_ids,
+            input_factory,
+            output_factory,
+            false,
+        )
+        .await
+    }
+
+    pub(crate) async fn call_func_all_with_check<I, Id, InFn, In, OutFn, OutFut, Out>(
+        &self,
+        func_name: &str,
+        toolchain_ids: I,
+        input_factory: InFn,
+        output_factory: OutFn,
+        skip_func_check: bool,
+    ) -> miette::Result<Vec<CallResult<Out>>>
+    where
+        I: IntoIterator<Item = Id>,
+        Id: AsRef<str> + Clone,
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
+        OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
+        OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
+        Out: Send + 'static,
+    {
         let mut results = vec![];
 
         if !self.has_plugins() {
@@ -211,10 +258,8 @@ impl ToolchainRegistry {
         let mut futures = FuturesOrdered::new();
 
         for toolchain_id in toolchain_ids {
-            let toolchain_id = toolchain_id.as_ref();
-
             if let Ok(toolchain) = self.load(toolchain_id).await
-                && toolchain.has_func(func_name).await
+                && (skip_func_check || toolchain.has_func(func_name).await)
             {
                 let mut operation = Operation::new(func_name);
                 let id = toolchain.id.clone();

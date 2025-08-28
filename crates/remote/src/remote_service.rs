@@ -161,8 +161,7 @@ impl RemoteService {
     }
 
     pub fn can_upload(&self) -> bool {
-        self.cache_enabled
-            && (!self.config.cache.local_read_only || self.config.cache.local_read_only && is_ci())
+        self.cache_enabled && (is_ci() || !self.config.cache.local_read_only)
     }
 
     pub fn get_max_batch_size(&self) -> i64 {

@@ -42,6 +42,11 @@
   - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
     toolchain.
 
+#### 🐞 Fixes
+
+- Fixed an issue where proto shim/bin directories were always included in task command `PATH`, even
+  when proto is not required.
+
 #### 🧩 Plugins
 
 - WASM API

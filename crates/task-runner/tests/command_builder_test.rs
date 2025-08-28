@@ -435,7 +435,14 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(get_args(&command), vec!["arg", "--opt", "./file.txt"]);
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./file.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./file.txt"]
+                }
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -455,7 +462,11 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                vec!["arg", "--opt", "./project/file.txt"]
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./project/file.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./project/file.txt"]
+                }
             );
         }
 
@@ -523,7 +534,14 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(get_args(&command), vec!["arg", "--opt", "./input.txt"]);
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./input.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./input.txt"]
+                }
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -552,15 +570,27 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                vec![
-                    "arg",
-                    "--opt",
-                    "./file.txt",
-                    "\"./routes/$slug.tsx\"",
-                    "\"./routes/*.ts\"",
-                    "\"./routes/+page.svelte\"",
-                    "\"./routes/[id].ts\""
-                ]
+                if cfg!(windows) {
+                    vec![
+                        "arg",
+                        "--opt",
+                        "'./file.txt'",
+                        "\"./routes/$slug.tsx\"",
+                        "\"./routes/*.ts\"",
+                        "\"./routes/+page.svelte\"",
+                        "\"./routes/[id].ts\"",
+                    ]
+                } else {
+                    vec![
+                        "arg",
+                        "--opt",
+                        "./file.txt",
+                        "\"./routes/$slug.tsx\"",
+                        "\"./routes/*.ts\"",
+                        "\"./routes/+page.svelte\"",
+                        "\"./routes/[id].ts\"",
+                    ]
+                }
             );
         }
     }

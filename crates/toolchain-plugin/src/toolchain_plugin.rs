@@ -330,7 +330,7 @@ impl ToolchainPlugin {
     ) -> miette::Result<HashTaskContentsOutput> {
         let output: HashTaskContentsOutput = self
             .plugin
-            .call_func_with("hash_task_contents", input)
+            .cache_func_with("hash_task_contents", input)
             .await?;
 
         Ok(output)
@@ -381,7 +381,7 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub async fn parse_lock(&self, input: ParseLockInput) -> miette::Result<ParseLockOutput> {
-        let output: ParseLockOutput = self.plugin.call_func_with("parse_lock", input).await?;
+        let output: ParseLockOutput = self.plugin.cache_func_with("parse_lock", input).await?;
 
         Ok(output)
     }
@@ -392,7 +392,7 @@ impl ToolchainPlugin {
         input: ParseManifestInput,
     ) -> miette::Result<ParseManifestOutput> {
         let output: ParseManifestOutput =
-            self.plugin.call_func_with("parse_manifest", input).await?;
+            self.plugin.cache_func_with("parse_manifest", input).await?;
 
         Ok(output)
     }
@@ -436,7 +436,7 @@ impl ToolchainPlugin {
 
         let mut output: SetupEnvironmentOutput = self
             .plugin
-            .call_func_with("setup_environment", input)
+            .cache_func_with("setup_environment", input)
             .await?;
 
         self.handle_output_files(&mut output.changed_files);

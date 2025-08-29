@@ -435,7 +435,39 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(get_args(&command), vec!["arg", "--opt", "./file.txt"]);
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./file.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./file.txt"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_touched_in_args_run_from_workspace_root() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.touched_files.insert("project/file.txt".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.run_from_workspace_root = true;
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./project/file.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./project/file.txt"]
+                }
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -502,7 +534,14 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(get_args(&command), vec!["arg", "--opt", "./input.txt"]);
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./input.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./input.txt"]
+                }
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -531,15 +570,27 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                vec![
-                    "arg",
-                    "--opt",
-                    "./file.txt",
-                    "\"./routes/$slug.tsx\"",
-                    "\"./routes/*.ts\"",
-                    "\"./routes/+page.svelte\"",
-                    "\"./routes/[id].ts\""
-                ]
+                if cfg!(windows) {
+                    vec![
+                        "arg",
+                        "--opt",
+                        "'./file.txt'",
+                        "\"./routes/$slug.tsx\"",
+                        "\"./routes/*.ts\"",
+                        "\"./routes/+page.svelte\"",
+                        "\"./routes/[id].ts\"",
+                    ]
+                } else {
+                    vec![
+                        "arg",
+                        "--opt",
+                        "./file.txt",
+                        "\"./routes/$slug.tsx\"",
+                        "\"./routes/*.ts\"",
+                        "\"./routes/+page.svelte\"",
+                        "\"./routes/[id].ts\"",
+                    ]
+                }
             );
         }
     }

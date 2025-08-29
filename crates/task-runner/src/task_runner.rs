@@ -338,7 +338,7 @@ impl<'task> TaskRunner<'task> {
     pub fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
-        self.task.options.cache && self.app.vcs.is_enabled()
+        self.task.options.cache.is_enabled() && self.app.vcs.is_enabled()
     }
 
     #[instrument(skip_all)]
@@ -471,7 +471,12 @@ impl<'task> TaskRunner<'task> {
         let mut builder = CommandBuilder::new(self.app, self.project, self.task, node);
         builder.set_platform_manager(self.platform_manager);
 
-        let command = builder.build(context).await?;
+        let command = builder
+            .build(
+                context,
+                self.report_item.hash.as_deref().unwrap_or_default(),
+            )
+            .await?;
 
         // Execute the command and gather all attempts made
         let executor = CommandExecutor::new(self.app, self.project, self.task, node, command);
@@ -528,17 +533,17 @@ impl<'task> TaskRunner<'task> {
         }
 
         // If our last task execution was a failure, return a hard error
-        if let Some(last_attempt) = self.operations.get_last_execution() {
-            if last_attempt.has_failed() {
-                return Err(TaskRunnerError::RunFailed {
-                    target: self.task.target.clone(),
-                    error: Box::new(ProcessError::ExitNonZero {
-                        bin: self.task.command.clone(),
-                        status: last_attempt.get_exec_output_status(),
-                    }),
-                }
-                .into());
+        if let Some(last_attempt) = self.operations.get_last_execution()
+            && last_attempt.has_failed()
+        {
+            return Err(TaskRunnerError::RunFailed {
+                target: self.task.target.clone(),
+                error: Box::new(ProcessError::ExitNonZero {
+                    bin: self.task.command.clone(),
+                    status: last_attempt.get_exec_output_status(),
+                }),
             }
+            .into());
         }
 
         Ok(())

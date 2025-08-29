@@ -9,7 +9,6 @@ moon_common = { path = "../../../crates/common" }
 async-trait = { workspace = true }
 cached = { workspace = true }
 chrono = { workspace = true }
-clean-path = { workspace = true }
 dunce = "1.0.5"
 humantime = "2.2.0"
 md5 = { workspace = true }

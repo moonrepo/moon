@@ -8,7 +8,7 @@ use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
 use moon_platform::PlatformManager;
-use moon_plugin::PluginHostData;
+use moon_plugin::MoonHostData;
 use moon_project_builder::*;
 use moon_project_graph::Project;
 use moon_task_builder::*;
@@ -17,8 +17,7 @@ use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 pub use moon_workspace_graph::WorkspaceGraph;
-use proto_core::warpgate::FileLocator;
-use proto_core::{PluginLocator, ProtoConfig, ProtoEnvironment};
+use proto_core::{ProtoConfig, ProtoEnvironment, warpgate::find_debug_locator};
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -138,53 +137,44 @@ impl WorkspaceMocker {
 
     pub fn with_all_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
-            config.bun = Some(BunConfig::default());
+            // config.bun = Some(BunConfig::default());
             config.deno = Some(DenoConfig::default());
-            config.node = Some(NodeConfig::default());
-            config.rust = Some(RustConfig::default());
+            // config.node = Some(NodeConfig::default());
+            // config.rust = Some(RustConfig::default());
             config.inherit_default_plugins().unwrap();
         })
     }
 
-    pub fn with_test_toolchains(self) -> Self {
-        let target_dir = match std::env::var("CARGO_TARGET_DIR") {
-            Ok(dir) => PathBuf::from(dir),
-            Err(_) => {
-                let start_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-                let mut current_dir = Some(start_dir.as_path());
-
-                while let Some(dir) = current_dir {
-                    if dir.join("Cargo.lock").exists() {
-                        break;
-                    }
-
-                    match dir.parent() {
-                        Some(parent) => current_dir = Some(parent),
-                        None => {
-                            panic!("Unable to find the Cargo workspace root!");
-                        }
-                    }
-                }
-
-                current_dir.unwrap().join("wasm").join("target")
-            }
-        };
-
+    pub fn with_legacy_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
-            for id in ["tc-tier1", "tc-tier2", "tc-tier2-setup-env", "tc-tier3"] {
+            config.bun = Some(BunConfig::default());
+            config.deno = Some(DenoConfig::default());
+            config.node = Some(NodeConfig::default());
+            config.rust = Some(RustConfig::default());
+        })
+    }
+
+    pub fn with_test_toolchains(self) -> Self {
+        self.update_toolchain_config(|config| {
+            for id in [
+                "tc-tier1",
+                "tc-tier2",
+                "tc-tier2-reqs",
+                "tc-tier2-setup-env",
+                "tc-tier3",
+                "tc-tier3-reqs",
+            ] {
+                let file_name = id.replace("-", "_");
+
                 config.plugins.insert(
                     Id::raw(id),
                     ToolchainPluginConfig {
-                        plugin: Some(PluginLocator::File(Box::new(FileLocator {
-                            file: "".into(),
-                            path: Some(
-                                target_dir
-                                    .join("wasm32-wasip1")
-                                    .join("release")
-                                    .join(format!("{}.wasm", id.replace("-", "_"))),
+                        plugin: Some(
+                            find_debug_locator(&file_name).expect(
+                                "Development plugins missing, build with `just build-wasm`!",
                             ),
-                        }))),
-                        version: if id == "tc-tier3" {
+                        ),
+                        version: if id.contains("tc-tier3") {
                             Some(UnresolvedVersionSpec::parse("1.2.3").unwrap())
                         } else {
                             None
@@ -308,10 +298,17 @@ impl WorkspaceMocker {
 
         builder.load_local_tasks(&project.config);
 
+        // Note: this list isn't accurate for a real world scenario!
+        let stable_toolchains = project
+            .toolchains
+            .iter()
+            .map(Id::stable)
+            .collect::<Vec<_>>();
+
         let global_config = self
             .inherited_tasks
             .get_inherited_config(
-                &project.toolchains,
+                &stable_toolchains,
                 &project.config.stack,
                 &project.config.layer,
                 &project.config.tags,
@@ -328,7 +325,7 @@ impl WorkspaceMocker {
         builder.build().await.unwrap()
     }
 
-    pub async fn create_action_graph(&self) -> ActionGraphBuilder {
+    pub async fn create_action_graph(&self) -> ActionGraphBuilder<'_> {
         ActionGraphBuilder::new(
             self.mock_app_context().into(),
             self.mock_workspace_graph().await.into(),
@@ -382,9 +379,11 @@ impl WorkspaceMocker {
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
         let mut registry = ToolchainRegistry::new(
-            PluginHostData {
+            MoonHostData {
                 moon_env: Arc::new(self.moon_env.clone()),
                 proto_env: Arc::new(self.proto_env.clone()),
+                toolchain_config: Arc::new(self.toolchain_config.clone()),
+                workspace_config: Arc::new(self.workspace_config.clone()),
                 workspace_graph: Arc::new(OnceLock::new()),
             },
             Arc::new(self.toolchain_config.clone()),
@@ -404,7 +403,7 @@ impl WorkspaceMocker {
         )
     }
 
-    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext {
+    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext<'_> {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchain_config.get_enabled(),

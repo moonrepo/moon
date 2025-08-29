@@ -61,65 +61,64 @@ impl<'app> JavaScriptSyncer<'app> {
             // Update dependencies within this project's `package.json`.
             // Only add if the dependent project has a `package.json`,
             // and this `package.json` has not already declared the dep.
-            if let Some(dep_package_json) = PackageJsonCache::read(&dep_project.root)? {
-                if let Some(dep_package_name) = &dep_package_json.data.name {
-                    let dep_package_version = dep_package_json.data.version.unwrap_or_default();
-                    let dep_version = match &self.dependency_version_format {
-                        NodeVersionFormat::File | NodeVersionFormat::Link => {
-                            format!(
-                                "{}{}",
-                                version_prefix,
-                                // https://bun.sh/docs/cli/link
-                                if self.bun
-                                    && self.dependency_version_format == NodeVersionFormat::Link
-                                {
-                                    dep_package_name.to_owned()
-                                } else {
-                                    path::to_relative_virtual_string(
-                                        &dep_project.root,
-                                        &self.project.root,
-                                    )?
-                                }
-                            )
-                        }
-                        NodeVersionFormat::Version
-                        | NodeVersionFormat::VersionCaret
-                        | NodeVersionFormat::VersionTilde => {
-                            format!("{version_prefix}{dep_package_version}")
-                        }
-                        _ => version_prefix.clone(),
-                    };
-
-                    match dep_config.scope {
-                        DependencyScope::Build | DependencyScope::Root => {
-                            // Not supported
-                        }
-                        DependencyScope::Production => {
-                            package_prod_deps.insert(dep_package_name.to_owned(), dep_version);
-                        }
-                        DependencyScope::Development => {
-                            package_dev_deps.insert(dep_package_name.to_owned(), dep_version);
-                        }
-                        DependencyScope::Peer => {
-                            // Peers are unique, so lets handle this manually here for now.
-                            // Perhaps we can wrap this in a new setting in the future.
-                            package_peer_deps.insert(
-                                dep_package_name.to_owned(),
-                                format!(
-                                    "^{}.0.0",
-                                    semver::extract_major_version(dep_package_version)
-                                ),
-                            );
-                        }
+            if let Some(dep_package_json) = PackageJsonCache::read(&dep_project.root)?
+                && let Some(dep_package_name) = &dep_package_json.data.name
+            {
+                let dep_package_version = dep_package_json.data.version.unwrap_or_default();
+                let dep_version = match &self.dependency_version_format {
+                    NodeVersionFormat::File | NodeVersionFormat::Link => {
+                        format!(
+                            "{}{}",
+                            version_prefix,
+                            // https://bun.sh/docs/cli/link
+                            if self.bun && self.dependency_version_format == NodeVersionFormat::Link
+                            {
+                                dep_package_name.to_owned()
+                            } else {
+                                path::to_relative_virtual_string(
+                                    &dep_project.root,
+                                    &self.project.root,
+                                )?
+                            }
+                        )
                     }
+                    NodeVersionFormat::Version
+                    | NodeVersionFormat::VersionCaret
+                    | NodeVersionFormat::VersionTilde => {
+                        format!("{version_prefix}{dep_package_version}")
+                    }
+                    _ => version_prefix.clone(),
+                };
 
-                    debug!(
-                        scope = ?dep_config.scope,
-                        "Syncing {} as a dependency to {}'s package.json",
-                        color::id(&dep_project.id),
-                        color::id(&self.project.id),
-                    );
+                match dep_config.scope {
+                    DependencyScope::Build | DependencyScope::Root => {
+                        // Not supported
+                    }
+                    DependencyScope::Production => {
+                        package_prod_deps.insert(dep_package_name.to_owned(), dep_version);
+                    }
+                    DependencyScope::Development => {
+                        package_dev_deps.insert(dep_package_name.to_owned(), dep_version);
+                    }
+                    DependencyScope::Peer => {
+                        // Peers are unique, so lets handle this manually here for now.
+                        // Perhaps we can wrap this in a new setting in the future.
+                        package_peer_deps.insert(
+                            dep_package_name.to_owned(),
+                            format!(
+                                "^{}.0.0",
+                                semver::extract_major_version(dep_package_version)
+                            ),
+                        );
+                    }
                 }
+
+                debug!(
+                    scope = ?dep_config.scope,
+                    "Syncing {} as a dependency to {}'s package.json",
+                    color::id(&dep_project.id),
+                    color::id(&self.project.id),
+                );
             }
         }
 

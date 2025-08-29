@@ -1,5 +1,92 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- The legacy toolchains (bun, node, python, etc) will no longer automatically enable if there's a
+  version defined in `.prototools`, as there's no way to differentiate between the legacy and modern
+  toolchains.
+- The `task.toolchain` setting now merges with detected toolchains, instead of entirely overriding
+  it. This change was made to properly support how toolchain plugins function going forward.
+- Updated `moon query touched-files` to default to comparing against remote branches when in CI, and
+  local when not in CI. This aligns with the other `moon query` commands.
+  - This can be overridden with the `--local` and `--remote` flags.
+
+#### 🚀 Updates
+
+- Added new JavaScript ecosystem toolchain WASM plugins. This was a large feature that required
+  extensive work, as the JavaScript ecosystem is quite unique. The following plugins are being
+  introduced:
+  - `unstable_javascript`
+    - A new JavaScript specific plugin that is a superset of all JavaScript runtimes (Bun & Node,
+      with Deno coming soon).
+    - Implements tier 1 and 2 features, and is now in charge of defining the package manager,
+      installing dependencies, extending the project graph (aliases and tasks), parsing
+      lockfiles/manifests, and much more.
+    - Supports multiple lockfiles for each package manager.
+  - `unstable_bun` and `unstable_node`
+    - The JavaScript runtimes only implement tier 1 and 3 features, and only exist for installing
+      the tool into the proto toolchain. Most functionality is now in the `unstable_javascript`
+      plugin.
+    - Supports settings for Bun/Node execution.
+  - `unstable_npm`, `unstable_pnpm`, and `unstable_yarn`
+    - The JavaScript package managers only implement tier 1 and 3 features, and only exist for
+      installing the tool into the proto toolchain. Most functionality is now in the
+      `unstable_javascript` plugin.
+    - Supports settings for package installation.
+    - npm now supports `npm-shrinkwrap.json`.
+    - Is no longer configured within `node`, and is now configured at the top-level within
+      `.moon/toolchain.yml`.
+- Added new values to the task `cache` option, alongside the existing boolean.
+  - `local` to only use the local cache.
+  - `remote` to only use the remote cache.
+- Added a new `unstable_remote.cache.localReadOnly` setting, which turns local development caching
+  into a read-only mode (only downloads, doesn't upload).
+- Updated task commands (child processes) to utilize toolchain executables directly, instead of
+  relying entirely on proto shims. It achieves this by locating the executables, and prepending
+  their directory onto `PATH`.
+- Deprecated the `moon run --profile` option.
+  - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
+    toolchain.
+- When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
+  which can be read from child processes.
+
+#### 🐞 Fixes
+
+- Fixed an issue where proto shim/bin directories were always included in task command `PATH`, even
+  when proto is not required.
+- Fixed an issue with task options `affectedFiles` and `runFromWorkspaceRoot` generating invalid
+  paths.
+- Fixed `moon docker file` generating invalid `Dockerfile`s after the recent proto install changes.
+
+#### 🧰 Toolchains
+
+- **Python**
+  - When running `uv venv`, we now include the `--no-managed-python` flag when the `python.version`
+    setting is defined. This _should_ ensure that moon/proto's Python managed version is used.
+  - When running `uv sync`, we now include the `--no-managed-python` flag unless the
+    `python.uv.syncArgs` setting is defined.
+- **Rust**
+  - Updated manifest parsing to extract `path` and `git` values.
+
+#### 🧩 Plugins
+
+- WASM API
+  - Added a new `define_requirements` plugin API for tier 2.
+  - Added `DefineRequirementsInput` and `DefineRequirementsOutput` types.
+  - Added `MoonContext.get_project_root` and `get_project_root_from_source` methods.
+  - Added `ExtendProjectGraphInput.toolchain_config` field.
+  - Added `ExtendTaskCommandInput.toolchain_config` and `project` fields.
+  - Added `ExtendTaskScriptInput.toolchain_config` and `project` fields.
+  - Added `load_toolchain_config` and `load_project_toolchain_config` functions.
+  - Added `load_toolchain_config_by_id` host function.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.52.2](https://github.com/moonrepo/proto/releases/tag/v0.52.0) (from 0.51.4).
+- Updated Rust to v1.89.0.
+
 ## 1.39.4
 
 #### 🐞 Fixes

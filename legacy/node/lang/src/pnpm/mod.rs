@@ -60,25 +60,25 @@ pub struct PnpmLock {
 pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
-    if let Some(lockfile) = PnpmLock::read(path)? {
-        if let Some(packages) = lockfile.packages {
-            for (package_name, details) in packages {
-                let parsed_dependency = PnpmDependencyPath::parse(&package_name);
-                let entry = deps
-                    .entry(parsed_dependency.name.unwrap_or_default())
-                    .or_default();
+    if let Some(lockfile) = PnpmLock::read(path)?
+        && let Some(packages) = lockfile.packages
+    {
+        for (package_name, details) in packages {
+            let parsed_dependency = PnpmDependencyPath::parse(&package_name);
+            let entry = deps
+                .entry(parsed_dependency.name.unwrap_or_default())
+                .or_default();
 
-                if let Some(ver) = details.resolution.integrity {
-                    entry.push(ver.clone());
-                }
+            if let Some(ver) = details.resolution.integrity {
+                entry.push(ver.clone());
+            }
 
-                if let Some(ver) = details.resolution.tarball {
-                    entry.push(ver.clone());
-                }
+            if let Some(ver) = details.resolution.tarball {
+                entry.push(ver.clone());
+            }
 
-                if let Some(ver) = details.resolution.commit {
-                    entry.push(ver.clone());
-                }
+            if let Some(ver) = details.resolution.commit {
+                entry.push(ver.clone());
             }
         }
     }

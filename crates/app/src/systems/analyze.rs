@@ -21,10 +21,11 @@ use tracing::{debug, instrument};
 pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
     let bag = GlobalEnvBag::instance();
 
-    if vcs.is_enabled() && !bag.has("MOON_VCS_REPO_SLUG") {
-        if let Ok(slug) = vcs.get_repository_slug().await {
-            bag.set("MOON_VCS_REPO_SLUG", slug.as_str());
-        }
+    if vcs.is_enabled()
+        && !bag.has("MOON_VCS_REPO_SLUG")
+        && let Ok(slug) = vcs.get_repository_slug().await
+    {
+        bag.set("MOON_VCS_REPO_SLUG", slug.as_str());
     }
 
     Ok(())
@@ -97,24 +98,24 @@ pub async fn register_platforms(
         );
 
         // TODO fix in 2.0
-        if toolchain_config.bun.is_none() {
-            if let Some(bunpm_config) = &node_config.bun {
-                let bun_config = BunConfig {
-                    plugin: bunpm_config.plugin.clone(),
-                    version: bunpm_config.version.clone(),
-                    ..Default::default()
-                };
+        if toolchain_config.bun.is_none()
+            && let Some(bunpm_config) = &node_config.bun
+        {
+            let bun_config = BunConfig {
+                plugin: bunpm_config.plugin.clone(),
+                version: bunpm_config.version.clone(),
+                ..Default::default()
+            };
 
-                registry.register(
-                    PlatformType::Bun.get_toolchain_id(),
-                    Box::new(BunPlatform::new(
-                        &bun_config,
-                        workspace_root,
-                        Arc::clone(proto_env),
-                        Arc::clone(&console),
-                    )),
-                );
-            }
+            registry.register(
+                PlatformType::Bun.get_toolchain_id(),
+                Box::new(BunPlatform::new(
+                    &bun_config,
+                    workspace_root,
+                    Arc::clone(proto_env),
+                    Arc::clone(&console),
+                )),
+            );
         }
     }
 

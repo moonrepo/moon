@@ -1,5 +1,5 @@
-use clean_path::Clean;
 use miette::IntoDiagnostic;
+use moon_common::path::clean_components;
 use relative_path::PathExt;
 use std::path::{Path, PathBuf};
 
@@ -32,7 +32,7 @@ where
 
 #[inline]
 pub fn normalize<T: AsRef<Path>>(path: T) -> PathBuf {
-    path.as_ref().clean()
+    clean_components(path.as_ref())
 }
 
 #[cfg(not(windows))]

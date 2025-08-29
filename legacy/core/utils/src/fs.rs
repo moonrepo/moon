@@ -25,14 +25,14 @@ pub mod temp {
             return Ok(None);
         }
 
-        if let Ok(metadata) = file.metadata() {
-            if let Ok(filetime) = metadata.created() {
-                // Temp files only last for 4 hours (half a workday)
-                if is_stale(to_millis(filetime), Duration::from_secs(60 * 60 * 4)) {
-                    fs::remove_file(file)?;
+        if let Ok(metadata) = file.metadata()
+            && let Ok(filetime) = metadata.created()
+        {
+            // Temp files only last for 4 hours (half a workday)
+            if is_stale(to_millis(filetime), Duration::from_secs(60 * 60 * 4)) {
+                fs::remove_file(file)?;
 
-                    return Ok(None);
-                }
+                return Ok(None);
             }
         }
 

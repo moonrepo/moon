@@ -176,13 +176,14 @@ impl PythonTool {
             }
             PythonPackageManager::Uv => {
                 let uv = self.get_uv()?;
+                let mut args = vec!["venv", venv_root.to_str().unwrap_or_default()];
+
+                if self.config.version.is_some() {
+                    args.extend(["--no-python-downloads", "--no-managed-python"]);
+                }
 
                 uv.create_command(self)?
-                    .args([
-                        "venv",
-                        venv_root.to_str().unwrap_or_default(),
-                        "--no-python-downloads",
-                    ])
+                    .args(args)
                     .cwd(working_dir)
                     .exec_stream_output()
                     .await?;

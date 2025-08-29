@@ -1,9 +1,9 @@
 use cached::proc_macro::cached;
-use starbase_shell::{BoxedShell, join_args};
+use starbase_shell::join_args;
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 
-pub use starbase_shell::{ShellCommand, ShellType};
+pub use starbase_shell::{BoxedShell, ShellCommand, ShellType};
 
 #[cached]
 pub fn find_command_on_path(name: String) -> Option<PathBuf> {

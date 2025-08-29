@@ -63,18 +63,17 @@ fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJsonC
 
 /// Add `engines` constraint to `package.json`.
 fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJsonCache) -> bool {
-    if let Some(node_version) = &node_config.version {
-        if node_config.add_engines_constraint
-            && package_json.add_engine("node", node_version.to_string())
-        {
-            debug!(
-                target: LOG_TARGET,
-                "Adding engines version constraint to {}",
-                color::file("package.json")
-            );
+    if let Some(node_version) = &node_config.version
+        && node_config.add_engines_constraint
+        && package_json.add_engine("node", node_version.to_string())
+    {
+        debug!(
+            target: LOG_TARGET,
+            "Adding engines version constraint to {}",
+            color::file("package.json")
+        );
 
-            return true;
-        }
+        return true;
     }
 
     false
@@ -102,22 +101,22 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Resul
     })?;
 
     // Create nvm/nodenv version file
-    if let Some(version_manager) = &node.config.sync_version_manager_config {
-        if let Some(node_version) = &node.config.version {
-            let rc_name = match version_manager {
-                NodeVersionManager::Nodenv => ".node-version".to_string(),
-                NodeVersionManager::Nvm => ".nvmrc".to_string(),
-            };
-            let rc_path = packages_root.join(rc_name);
+    if let Some(version_manager) = &node.config.sync_version_manager_config
+        && let Some(node_version) = &node.config.version
+    {
+        let rc_name = match version_manager {
+            NodeVersionManager::Nodenv => ".node-version".to_string(),
+            NodeVersionManager::Nvm => ".nvmrc".to_string(),
+        };
+        let rc_path = packages_root.join(rc_name);
 
-            fs::write_file(&rc_path, node_version.to_string())?;
+        fs::write_file(&rc_path, node_version.to_string())?;
 
-            debug!(
-                target: LOG_TARGET,
-                "Syncing Node.js version to {}",
-                color::path(&rc_path)
-            );
-        }
+        debug!(
+            target: LOG_TARGET,
+            "Syncing Node.js version to {}",
+            color::path(&rc_path)
+        );
     }
 
     Ok(())

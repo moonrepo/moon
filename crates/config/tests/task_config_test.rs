@@ -5,7 +5,7 @@ mod utils;
 use moon_common::Id;
 use moon_config::{
     FilePath, Input, OneOrMany, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -527,7 +527,7 @@ options:
             );
             let opts = config.options;
 
-            assert_eq!(opts.cache, Some(false));
+            assert_eq!(opts.cache, Some(TaskOptionCache::Enabled(false)));
             assert_eq!(opts.run_deps_in_parallel, Some(false));
             assert_eq!(opts.merge_deps, Some(TaskMergeStrategy::Replace));
             assert_eq!(opts.output_style, Some(TaskOutputStyle::Stream));
@@ -611,6 +611,38 @@ options:
 ",
                     load_config_from_code,
                 );
+            }
+        }
+
+        mod cache {
+            use super::*;
+
+            #[test]
+            fn can_set_local() {
+                let config = test_parse_config(
+                    r"
+options:
+  cache: local
+",
+                    load_config_from_code,
+                );
+                let opts = config.options;
+
+                assert_eq!(opts.cache, Some(TaskOptionCache::Local));
+            }
+
+            #[test]
+            fn can_set_remote() {
+                let config = test_parse_config(
+                    r"
+options:
+  cache: remote
+",
+                    load_config_from_code,
+                );
+                let opts = config.options;
+
+                assert_eq!(opts.cache, Some(TaskOptionCache::Remote));
             }
         }
 
@@ -847,7 +879,7 @@ options:
                         OutputPath::WorkspaceGlob("file.*".into()),
                     ]),
                     options: TaskOptionsConfig {
-                        cache: Some(false),
+                        cache: Some(TaskOptionCache::Enabled(false)),
                         retry_count: Some(3),
                         ..Default::default()
                     },

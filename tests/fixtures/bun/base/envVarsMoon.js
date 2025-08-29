@@ -4,6 +4,7 @@ Object.entries(process.env)
 		if (
 			key.startsWith('MOON_') &&
 			!key.startsWith('MOON_TEST') &&
+			key !== 'MOON_TASK_HASH' &&
 			key !== 'MOON_VERSION' &&
 			key !== 'MOON_APP_LOG'
 		) {

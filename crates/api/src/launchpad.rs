@@ -114,10 +114,11 @@ impl Launchpad {
             .load_state::<CurrentVersionCacheState>("moonVersionCheck.json")?;
         let now = now_millis();
 
-        if let Some(last_check) = state.data.last_check_time {
-            if (last_check + ALERT_PAUSE_DURATION.as_millis()) > now && !bypass_cache {
-                return Ok(None);
-            }
+        if let Some(last_check) = state.data.last_check_time
+            && (last_check + ALERT_PAUSE_DURATION.as_millis()) > now
+            && !bypass_cache
+        {
+            return Ok(None);
         }
 
         if let Some(result) = self.check_version_without_cache(manifest_url).await? {

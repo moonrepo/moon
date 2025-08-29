@@ -242,10 +242,10 @@ impl MoonReporter {
 
         // Do not include the hash while testing, as the hash
         // constantly changes and breaks our local snapshots
-        if !is_test_env() {
-            if let Some(hash) = &item.hash {
-                comments.push(self.get_short_hash(hash));
-            }
+        if !is_test_env()
+            && let Some(hash) = &item.hash
+        {
+            comments.push(self.get_short_hash(hash));
         }
 
         self.print_checkpoint_with_comments(

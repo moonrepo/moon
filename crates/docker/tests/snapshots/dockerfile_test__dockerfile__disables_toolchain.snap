@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Install moon binary
 RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
-ENV PATH="/root/.moon/bin:$PATH"
+ENV PATH="/root/.moon/bin:/root/.proto/bin:$PATH"
 
 # Disable toolchain and rely on system binaries
 ENV MOON_TOOLCHAIN_FORCE_GLOBALS=1
@@ -28,9 +28,6 @@ RUN moon docker scaffold app
 #### Builds the project.
 
 FROM base AS build
-
-# Copy toolchain
-COPY --from=skeleton /root/.proto /root/.proto
 
 # Copy workspace configs
 COPY --from=skeleton /app/.moon/docker/workspace .

@@ -60,10 +60,10 @@ impl TemplateFile {
     pub fn is_mergeable(&self) -> Option<MergeType> {
         let mut ext = self.name.as_str();
 
-        if let Some(cfg) = &self.config {
-            if let Some(to) = &cfg.to {
-                ext = to;
-            }
+        if let Some(cfg) = &self.config
+            && let Some(to) = &cfg.to
+        {
+            ext = to;
         }
 
         if ext.ends_with(".json") {

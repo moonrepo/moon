@@ -40,7 +40,7 @@ impl ActionState<'_> {
     pub fn create_action_from_task(&mut self) {
         let mut action = Action {
             command_digest: Some(self.digest.clone()),
-            do_not_cache: !self.task.options.cache,
+            do_not_cache: !self.task.options.cache.is_enabled(),
             ..Default::default()
         };
 

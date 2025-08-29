@@ -1,9 +1,13 @@
 use async_trait::async_trait;
+use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
-use proto_core::{PluginLocator, Tool, ToolSpec, UnresolvedVersionSpec, locate_tool};
+use proto_core::{
+    PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
+    UnresolvedVersionSpec, locate_plugin,
+};
 use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::ops::Deref;
@@ -45,7 +49,7 @@ impl Plugin for ToolchainPlugin {
             tool: if plugin.has_func("register_tool").await {
                 Some(RwLock::new(
                     Tool::new(
-                        registration.id_stable,
+                        ToolContext::new(registration.id_stable),
                         Arc::clone(&registration.proto_env),
                         Arc::clone(&plugin),
                     )
@@ -123,6 +127,32 @@ impl ToolchainPlugin {
 
 impl ToolchainPlugin {
     #[instrument(skip(self))]
+    pub async fn get_command_paths(
+        &self,
+        version: Option<UnresolvedVersionSpec>,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = IndexSet::<PathBuf>::default();
+
+        if let Some(version) = &version
+            && let Some(tool) = &self.tool
+        {
+            let mut tool = tool.write().await;
+            let spec = ToolSpec::new(version.to_owned());
+
+            tool.resolve_version(&spec, false).await?;
+
+            if let Some(dir) = tool.locate_exe_file().await?.parent() {
+                paths.insert(dir.to_path_buf());
+            }
+
+            paths.extend(tool.locate_exes_dirs().await?);
+            paths.extend(tool.locate_globals_dirs().await?);
+        }
+
+        Ok(paths.into_iter().collect())
+    }
+
+    #[instrument(skip(self))]
     pub async fn define_toolchain_config(&self) -> miette::Result<DefineToolchainConfigOutput> {
         let output: DefineToolchainConfigOutput =
             self.plugin.cache_func("define_toolchain_config").await?;
@@ -160,6 +190,19 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn define_requirements(
+        &self,
+        input: DefineRequirementsInput,
+    ) -> miette::Result<DefineRequirementsOutput> {
+        let output: DefineRequirementsOutput = self
+            .plugin
+            .cache_func_with("define_requirements", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
     pub fn detect_project_usage(&self, dir: &Path) -> miette::Result<bool> {
         // Do simple checks first to avoid glob overhead
         for file in &self.metadata.manifest_file_names {
@@ -188,6 +231,16 @@ impl ToolchainPlugin {
     pub fn detect_task_usage(&self, command: &String, _args: &[String]) -> miette::Result<bool> {
         if self.metadata.exe_names.contains(command) {
             return Ok(true);
+        }
+
+        // Support proto binaries like `node-20.1` or `python-3`
+        for exe in &self.metadata.exe_names {
+            if let Some((name, version)) = exe.split_once('-')
+                && name == exe
+                && version.chars().all(|ch| ch.is_ascii_digit() || ch == '.')
+            {
+                return Ok(true);
+            }
         }
 
         Ok(false)
@@ -277,7 +330,7 @@ impl ToolchainPlugin {
     ) -> miette::Result<HashTaskContentsOutput> {
         let output: HashTaskContentsOutput = self
             .plugin
-            .call_func_with("hash_task_contents", input)
+            .cache_func_with("hash_task_contents", input)
             .await?;
 
         Ok(output)
@@ -328,7 +381,7 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub async fn parse_lock(&self, input: ParseLockInput) -> miette::Result<ParseLockOutput> {
-        let output: ParseLockOutput = self.plugin.call_func_with("parse_lock", input).await?;
+        let output: ParseLockOutput = self.plugin.cache_func_with("parse_lock", input).await?;
 
         Ok(output)
     }
@@ -339,7 +392,7 @@ impl ToolchainPlugin {
         input: ParseManifestInput,
     ) -> miette::Result<ParseManifestOutput> {
         let output: ParseManifestOutput =
-            self.plugin.call_func_with("parse_manifest", input).await?;
+            self.plugin.cache_func_with("parse_manifest", input).await?;
 
         Ok(output)
     }
@@ -383,7 +436,7 @@ impl ToolchainPlugin {
 
         let mut output: SetupEnvironmentOutput = self
             .plugin
-            .call_func_with("setup_environment", input)
+            .cache_func_with("setup_environment", input)
             .await?;
 
         self.handle_output_files(&mut output.changed_files);
@@ -434,12 +487,11 @@ impl ToolchainPlugin {
             // Pre-load the tool plugin so that task executions
             // avoid network race conditions and collisions
             if let Ok(loader) = tool.proto.get_plugin_loader()
-                && let Some(locator) = tool
-                    .locator
-                    .clone()
-                    .or_else(|| locate_tool(&tool.id, &tool.proto).ok())
+                && let Some(locator) = tool.locator.clone().or_else(|| {
+                    locate_plugin(&tool.context.id, &tool.proto, ProtoPluginType::Tool).ok()
+                })
             {
-                let _ = loader.load_plugin(&tool.id, &locator).await;
+                let _ = loader.load_plugin(&tool.context.id, &locator).await;
             }
         }
 

@@ -61,10 +61,10 @@ impl CodeownersGenerator {
 
         match &self.provider {
             VcsProvider::Bitbucket => {
-                if required_approvals > 0 {
-                    if let Some(default_owner) = &config.default_owner {
-                        self.write(format!("Check({default_owner} >= {required_approvals})"))?;
-                    }
+                if required_approvals > 0
+                    && let Some(default_owner) = &config.default_owner
+                {
+                    self.write(format!("Check({default_owner} >= {required_approvals})"))?;
                 }
             }
 

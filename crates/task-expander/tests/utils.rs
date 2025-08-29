@@ -2,7 +2,7 @@
 
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::Input;
+use moon_config::{Input, TaskOptionCache};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::{Target, Task, TaskFileInput, TaskGlobInput};
@@ -80,7 +80,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
 
         if task_id == "dev" {
             task.state.local_only = true;
-            task.options.cache = false;
+            task.options.cache = TaskOptionCache::Enabled(false);
             task.options.persistent = true;
         }
 

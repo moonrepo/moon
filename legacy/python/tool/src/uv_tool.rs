@@ -117,10 +117,11 @@ impl Tool for UvTool {
             return Ok(count);
         }
 
-        if let Some(last) = last_versions.get("uv") {
-            if last == version && self.tool.get_product_dir().exists() {
-                return Ok(count);
-            }
+        if let Some(last) = last_versions.get("uv")
+            && last == version
+            && self.tool.get_product_dir().exists()
+        {
+            return Ok(count);
         }
 
         self.console
@@ -211,10 +212,13 @@ impl DependencyManager<PythonTool> for UvTool {
 
         self.inject_command_paths(&mut cmd, python, working_dir);
 
-        cmd.args(["sync"])
-            .args(&self.config.sync_args)
-            .cwd(working_dir)
-            .set_print_command(log);
+        cmd.args(["sync"]).cwd(working_dir).set_print_command(log);
+
+        if self.config.sync_args.is_empty() {
+            cmd.args(["--no-python-downloads", "--no-managed-python"]);
+        } else {
+            cmd.args(&self.config.sync_args);
+        }
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;

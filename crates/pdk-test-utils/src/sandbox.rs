@@ -1,10 +1,12 @@
 use crate::extension_wrapper::*;
+use crate::host_func_mocker::*;
 use crate::toolchain_wrapper::*;
+use extism::{Function, UserData, ValType};
 use moon_pdk_api::{
     RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
 };
-use proto_core::{ProtoEnvironment, Tool, inject_proto_manifest_config};
+use proto_core::{ProtoEnvironment, Tool, ToolContext, inject_proto_manifest_config};
 use proto_pdk_test_utils::WasmTestWrapper as ToolTestWrapper;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
@@ -21,6 +23,7 @@ use warpgate::{
 pub struct MoonWasmSandbox {
     pub sandbox: Sandbox,
     pub home_dir: PathBuf,
+    pub host_funcs: MockedHostFuncs,
     pub moon_dir: PathBuf,
     pub proto: Arc<ProtoEnvironment>,
     pub proto_dir: PathBuf,
@@ -53,6 +56,7 @@ impl MoonWasmSandbox {
             root,
             sandbox,
             wasm_file,
+            host_funcs: MockedHostFuncs::default(),
         }
     }
 
@@ -141,14 +145,22 @@ impl MoonWasmSandbox {
             root: self.root.clone(),
             tool: if plugin.has_func("register_tool").await {
                 Some(ToolTestWrapper {
-                    tool: Tool::new(plugin.id.clone(), self.proto.clone(), plugin)
-                        .await
-                        .unwrap(),
+                    tool: Tool::new(
+                        ToolContext::new(plugin.id.clone()),
+                        self.proto.clone(),
+                        plugin,
+                    )
+                    .await
+                    .unwrap(),
                 })
             } else {
                 None
             },
         }
+    }
+
+    pub fn enable_logging(&self) {
+        enable_wasm_logging(&self.wasm_file);
     }
 
     fn create_plugin_container(
@@ -157,8 +169,6 @@ impl MoonWasmSandbox {
         mut manifest: PluginManifest,
         with_proto: bool,
     ) -> PluginContainer {
-        let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));
-
         let virtual_paths = BTreeMap::<PathBuf, PathBuf>::from_iter([
             (self.root.clone(), "/cwd".into()),
             (self.root.clone(), "/workspace".into()),
@@ -181,18 +191,42 @@ impl MoonWasmSandbox {
             inject_proto_manifest_config(&id, &self.proto, &mut manifest).unwrap();
         }
 
-        let funcs = create_host_functions(HostData {
+        PluginContainer::new(id, manifest, self.create_host_funcs(virtual_paths)).unwrap()
+    }
+
+    fn create_host_funcs(&self, virtual_paths: BTreeMap<PathBuf, PathBuf>) -> Vec<Function> {
+        let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));
+
+        let host_data = HostData {
             cache_dir: self.moon_dir.join("cache"),
             http_client: loader.get_http_client().unwrap().clone(),
             virtual_paths,
             working_dir: self.root.clone(),
-        });
+        };
 
-        PluginContainer::new(id, manifest, funcs).unwrap()
-    }
+        let mut funcs = create_host_functions(host_data.clone());
 
-    pub fn enable_logging(&self) {
-        enable_wasm_logging(&self.wasm_file);
+        for func_type in [
+            MoonHostFunction::LoadProject,
+            MoonHostFunction::LoadProjects,
+            MoonHostFunction::LoadTask,
+            MoonHostFunction::LoadTasks,
+            MoonHostFunction::LoadToolchainConfig,
+        ] {
+            funcs.push(Function::new(
+                func_type.as_str().to_string(),
+                if func_type == MoonHostFunction::LoadToolchainConfig {
+                    vec![ValType::I64, ValType::I64]
+                } else {
+                    vec![ValType::I64]
+                },
+                [ValType::I64],
+                UserData::new((func_type, self.host_funcs.clone())),
+                mocked_host_func_impl,
+            ));
+        }
+
+        funcs
     }
 }
 

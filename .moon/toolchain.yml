@@ -1,18 +1,16 @@
 $schema: './cache/schemas/toolchain.json'
 
-# rust:
-#   version: '1.86.0'
-#   bins:
-#     - 'cargo-nextest'
-#   syncToolchainConfig: true
-
-node:
-  version: '22.14.0'
+unstable_javascript:
   packageManager: 'yarn'
-  yarn:
-    version: '4.8.0'
-  addEnginesConstraint: false
   inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+
+unstable_node:
+  version: '22.14.0'
+
+unstable_yarn:
+  version: '4.8.0'
 
 typescript:
   routeOutDirToCache: true

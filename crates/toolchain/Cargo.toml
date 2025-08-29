@@ -9,6 +9,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 regex = { workspace = true }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 
 [lints]

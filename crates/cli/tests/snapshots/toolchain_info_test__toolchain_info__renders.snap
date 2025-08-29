@@ -51,7 +51,6 @@ Configuration ──────────────────────
 Tier 1 - Usage detection ───────────────────────────────────
 
   Config files: tsconfig.json, tsconfig.*.json, *.tsconfig.json, .tsbuildinfo, *.tsbuildinfo
-  Executable names: tsc, tsserver
   APIs:
     🟢 register_toolchain (required)
     🟢 define_toolchain_config
@@ -72,7 +71,7 @@ Tier 2 - Platform integration ────────────────�
     ⚫️ extend_task_script
     ⚫️ locate_dependencies_root
     ⚫️ install_dependencies
-    🟢 hash_task_contents
+    ⚫️ hash_task_contents
     ⚫️ parse_lock
     ⚫️ parse_manifest
     ⚫️ setup_environment

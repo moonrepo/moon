@@ -254,10 +254,10 @@ impl<'graph> TokenExpander<'graph> {
                             .unwrap();
 
                     bag.list(|var_name, _| {
-                        if let Some(var_name) = var_name.to_str() {
-                            if pattern.is_match(var_name) {
-                                result.env.push(var_name.to_owned());
-                            }
+                        if let Some(var_name) = var_name.to_str()
+                            && pattern.is_match(var_name)
+                        {
+                            result.env.push(var_name.to_owned());
                         }
                     });
                 }
@@ -779,6 +779,7 @@ impl<'graph> TokenExpander<'graph> {
             "HEAD",
             "BASE",
             "BRANCH",
+            "_SHA",
         ];
         let ci = ci_env::get_environment();
         let cd = cd_env::get_environment();
@@ -794,7 +795,7 @@ impl<'graph> TokenExpander<'graph> {
         set.retain(|key| {
             blacklist
                 .iter()
-                .all(|prefix| key != prefix && !key.starts_with(prefix))
+                .all(|item| key != item && !key.starts_with(item) && !key.ends_with(item))
         });
 
         task.input_env.extend(set);

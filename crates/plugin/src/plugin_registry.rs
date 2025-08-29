@@ -16,7 +16,7 @@ use warpgate::{
 };
 
 pub struct PluginRegistry<T: Plugin> {
-    pub host_data: PluginHostData,
+    pub host_data: MoonHostData,
 
     loader: PluginLoader,
     plugins: Arc<scc::HashMap<PluginId, Arc<T>>>,
@@ -25,7 +25,7 @@ pub struct PluginRegistry<T: Plugin> {
 }
 
 impl<T: Plugin> PluginRegistry<T> {
-    pub fn new(type_of: PluginType, host_data: PluginHostData) -> Self {
+    pub fn new(type_of: PluginType, host_data: MoonHostData) -> Self {
         debug!(plugin = type_of.get_label(), "Creating plugin registry");
 
         // Create the loader

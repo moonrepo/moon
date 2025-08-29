@@ -64,15 +64,15 @@ impl PlatformManager {
         })
     }
 
-    pub fn enabled(&self) -> std::collections::hash_map::Keys<Id, BoxedPlatform> {
+    pub fn enabled(&self) -> std::collections::hash_map::Keys<'_, Id, BoxedPlatform> {
         self.cache.keys()
     }
 
-    pub fn list(&self) -> std::collections::hash_map::Values<Id, BoxedPlatform> {
+    pub fn list(&self) -> std::collections::hash_map::Values<'_, Id, BoxedPlatform> {
         self.cache.values()
     }
 
-    pub fn list_mut(&mut self) -> std::collections::hash_map::ValuesMut<Id, BoxedPlatform> {
+    pub fn list_mut(&mut self) -> std::collections::hash_map::ValuesMut<'_, Id, BoxedPlatform> {
         self.cache.values_mut()
     }
 

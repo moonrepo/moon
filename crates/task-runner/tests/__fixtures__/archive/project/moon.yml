@@ -4,6 +4,13 @@ tasks:
   no-outputs:
     command: noop
 
+  cache-remote:
+    command: noop
+    outputs:
+      - 'file.txt'
+    options:
+      cache: 'remote'
+
   file-outputs:
     command: noop
     outputs:

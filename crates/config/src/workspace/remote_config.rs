@@ -71,6 +71,10 @@ config_struct!(
         #[setting(default = "moon-outputs")]
         pub instance_name: String,
 
+        /// When local, only download matching blobs and do not upload new
+        /// blobs. Blobs will only be uploaded in CI environments.
+        pub local_read_only: bool,
+
         /// When downloading blobs, verify the digests/hashes in the response
         /// match the associated blob contents. This will reduce performance
         /// but ensure partial or corrupted blobs won't cause failures.

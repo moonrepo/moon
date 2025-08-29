@@ -2,7 +2,7 @@
 set -eo pipefail
 
 for var in "${!MOON_@}"; do
-	if [[ "$var" != *"MOON_TEST"* && "$var" != *"MOON_VERSION"* && "$var" != *"MOON_APP_LOG"* ]];then
+	if [[ "$var" != *"MOON_TEST"* && "$var" != *"MOON_TASK_HASH"* && "$var" != *"MOON_VERSION"* && "$var" != *"MOON_APP_LOG"* ]];then
 		echo "$var=${!var}"
 	fi
 done

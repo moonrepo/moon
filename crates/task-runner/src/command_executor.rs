@@ -296,7 +296,7 @@ impl<'task> CommandExecutor<'task> {
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        if !self.task.options.cache && is_only_primary && !is_ci {
+        if !self.task.options.cache.is_enabled() && is_only_primary && !is_ci {
             self.interactive = true;
         }
 

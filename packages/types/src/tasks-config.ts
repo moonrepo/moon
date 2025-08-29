@@ -80,7 +80,7 @@ export interface TaskOptionsConfig {
 	 * Caches the `outputs` of the task. Defaults to `true` if outputs
 	 * are configured for the task.
 	 */
-	cache: boolean | null;
+	cache: boolean | 'local' | 'remote' | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
@@ -287,9 +287,9 @@ export interface TaskConfig {
 	 */
 	script: string | null;
 	/**
-	 * The toolchain(s) in which the task will be ran in. The toolchain determines
-	 * available binaries, lookup paths, and more. When not provided, will
-	 * be automatically detected.
+	 * List of additional toolchain(s) in which the task will be ran in.
+	 * The toolchain determines available binaries, lookup paths, and more.
+	 * This list will be merged with detected toolchains.
 	 */
 	toolchain: string | string[];
 	/**
@@ -366,7 +366,7 @@ export interface PartialTaskOptionsConfig {
 	 * Caches the `outputs` of the task. Defaults to `true` if outputs
 	 * are configured for the task.
 	 */
-	cache?: boolean | null;
+	cache?: boolean | 'local' | 'remote' | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
@@ -563,9 +563,9 @@ export interface PartialTaskConfig {
 	 */
 	script?: string | null;
 	/**
-	 * The toolchain(s) in which the task will be ran in. The toolchain determines
-	 * available binaries, lookup paths, and more. When not provided, will
-	 * be automatically detected.
+	 * List of additional toolchain(s) in which the task will be ran in.
+	 * The toolchain determines available binaries, lookup paths, and more.
+	 * This list will be merged with detected toolchains.
 	 */
 	toolchain?: string | string[] | null;
 	/**

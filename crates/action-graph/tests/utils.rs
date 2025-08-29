@@ -20,6 +20,17 @@ impl ActionGraphContainer {
         }
     }
 
+    pub fn new_legacy(root: &Path) -> Self {
+        Self {
+            mocker: WorkspaceMocker::new(root)
+                .load_default_configs()
+                .with_legacy_toolchains()
+                .with_test_toolchains()
+                .with_default_projects()
+                .with_global_envs(),
+        }
+    }
+
     pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
         self.mocker = self.mocker.set_working_dir(dir);
         self
@@ -32,7 +43,7 @@ impl ActionGraphContainer {
     pub async fn create_builder(
         &mut self,
         workspace_graph: Arc<WorkspaceGraph>,
-    ) -> ActionGraphBuilder {
+    ) -> ActionGraphBuilder<'_> {
         let config = &self.mocker.workspace_config.pipeline;
 
         self.create_builder_with_options(
@@ -51,7 +62,7 @@ impl ActionGraphContainer {
         &mut self,
         workspace_graph: Arc<WorkspaceGraph>,
         options: ActionGraphBuilderOptions,
-    ) -> ActionGraphBuilder {
+    ) -> ActionGraphBuilder<'_> {
         let mut builder = ActionGraphBuilder::new(
             Arc::new(self.mocker.mock_app_context()),
             workspace_graph,

@@ -1116,7 +1116,7 @@ mod task_manager {
 
             let options = config.config.task_options.unwrap();
 
-            assert_eq!(options.cache, Some(false));
+            assert_eq!(options.cache, Some(TaskOptionCache::Enabled(false)));
             assert_eq!(options.shell, Some(true));
             assert_eq!(options.merge_args, Some(TaskMergeStrategy::Prepend));
         }
@@ -1176,7 +1176,7 @@ mod task_manager {
                         affected_files: Some(TaskOptionAffectedFiles::Args),
                         affected_pass_inputs: Some(true),
                         allow_failure: Some(true),
-                        cache: Some(false),
+                        cache: Some(TaskOptionCache::Enabled(false)),
                         cache_key: None,
                         cache_lifetime: None,
                         env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
@@ -1259,7 +1259,7 @@ mod task_manager {
                             Id::raw("example"),
                             TaskConfig {
                                 options: TaskOptionsConfig {
-                                    cache: Some(true),
+                                    cache: Some(TaskOptionCache::Enabled(true)),
                                     cache_lifetime: Some("1 hour".into()),
                                     ..Default::default()
                                 },

@@ -7,15 +7,16 @@ use moon_common::{
 };
 use moon_config::{
     InheritedTasksConfig, Input, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
-    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
-    TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
+    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
+    is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
-use moon_toolchain::detect::detect_task_toolchains;
-use moon_toolchain_plugin::ToolchainRegistry;
+use moon_toolchain::{detect::detect_task_toolchains, filter_and_resolve_toolchain_ids};
+use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
@@ -404,12 +405,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if !config.toolchain.is_empty() {
-                task.toolchains = config
-                    .toolchain
-                    .to_owned_list()
-                    .into_iter()
-                    .filter(|tc| self.context.enabled_toolchains.contains(tc))
-                    .collect();
+                task.toolchains = config.toolchain.to_owned_list();
             }
 
             if config.description.is_some() {
@@ -551,29 +547,11 @@ impl<'proj> TasksBuilder<'proj> {
         task.id = id.to_owned();
         task.target = target;
 
-        // Backwards compat for when the user has explicitly configured
-        // the deprecated `platform` setting
-        // TODO: Remove in 2.0
-        #[allow(deprecated)]
-        if !task.platform.is_unknown() && task.toolchains.is_empty() {
-            task.toolchains = vec![task.platform.get_toolchain_id()];
-
-            debug!(
-                task_target = task.target.as_str(),
-                "The {} task setting has been deprecated, use {} instead",
-                color::property("platform"),
-                color::property("toolchain"),
-            );
-        }
-
-        if task.toolchains.is_empty() {
-            task.toolchains = self.detect_task_toolchains(&task).await?;
-        }
+        self.resolve_task_toolchains(&mut task).await?;
 
         Ok(task)
     }
 
-    #[instrument(skip(self))]
     fn build_task_options(
         &self,
         id: &Id,
@@ -607,7 +585,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(cache) = &config.cache {
-                options.cache = *cache;
+                options.cache = cache.to_owned();
             }
 
             if let Some(cache_key) = &config.cache_key {
@@ -725,40 +703,69 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
+    async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {
+        // Inherit user provided toolchains first
+        let mut toolchains = FxHashSet::from_iter(task.toolchains.clone());
+
+        // Backwards compat for when the user has explicitly configured
+        // the deprecated `platform` setting
+        // TODO: Remove in 2.0
+        #[allow(deprecated)]
+        if !task.platform.is_unknown() && toolchains.is_empty() {
+            toolchains.insert(task.platform.get_toolchain_id());
+
+            debug!(
+                task_target = task.target.as_str(),
+                "The {} task setting has been deprecated, use {} instead",
+                color::property("platform"),
+                color::property("toolchain"),
+            );
+        }
+
+        // Then inherit detected toolchains
+        toolchains.extend(self.detect_task_toolchains(task).await?);
+
+        // If none inherited, then the toolchains from the project
+        if toolchains.is_empty() {
+            toolchains.extend(self.project_toolchains.to_owned());
+        }
+
+        // Resolve them to valid identifiers
+        let mut toolchains = filter_and_resolve_toolchain_ids(
+            self.context.enabled_toolchains,
+            toolchains.into_iter().collect(),
+            true,
+        );
+
+        toolchains.sort();
+
+        task.toolchains = toolchains;
+
+        Ok(())
+    }
+
     async fn detect_task_toolchains(&self, task: &Task) -> miette::Result<Vec<Id>> {
         // Detect using legacy first
-        let mut toolchains = FxHashSet::from_iter(detect_task_toolchains(
-            &task.command,
-            self.context.enabled_toolchains,
-        ));
+        let mut toolchains = detect_task_toolchains(&task.command, self.context.enabled_toolchains);
 
         // Detect using the registry first
-        // toolchains.extend(
-        //     self.context
-        //         .toolchain_registry
-        //         .detect_task_usage(
-        //             self.context.enabled_toolchains.iter().collect(),
-        //             &task.command,
-        //             &task.args,
-        //         )
-        //         .await?,
-        // );
+        toolchains.extend(
+            self.context
+                .toolchain_registry
+                .detect_task_usage(
+                    self.context.enabled_toolchains.iter().collect(),
+                    &task.command,
+                    &task.args,
+                    |registry, toolchain| DefineRequirementsInput {
+                        context: registry.create_context(),
+                        toolchain_config: registry
+                            .create_config(&toolchain.id, self.context.toolchain_config),
+                    },
+                )
+                .await?,
+        );
 
-        // Or inherit the toolchain from the project's language
-        if toolchains.is_empty() {
-            for id in self.project_toolchains {
-                if self.context.enabled_toolchains.contains(id) {
-                    toolchains.insert(id.to_owned());
-                }
-            }
-        }
-
-        // And always have something
-        if toolchains.is_empty() {
-            toolchains.insert(Id::raw("system"));
-        }
-
-        Ok(toolchains.into_iter().collect())
+        Ok(toolchains)
     }
 
     fn inherit_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {
@@ -858,7 +865,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok((command, args))
     }
 
-    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
+    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain<'_>>> {
         let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
         stack.reverse();
 
@@ -868,7 +875,7 @@ impl<'proj> TasksBuilder<'proj> {
     fn get_task_options_from_preset(&self, preset: Option<TaskPreset>) -> TaskOptions {
         match preset {
             Some(TaskPreset::Server | TaskPreset::Watcher) => TaskOptions {
-                cache: false,
+                cache: TaskOptionCache::Enabled(false),
                 interactive: preset.is_some_and(|set| set == TaskPreset::Watcher),
                 output_style: Some(TaskOutputStyle::Stream),
                 persistent: true,

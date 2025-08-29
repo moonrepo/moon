@@ -19,6 +19,7 @@
 - [x] `extend_task_command`
 - [x] `extend_task_script`
 - [x] `hash_task_contents`
+- [x] `define_requirements`
 - [x] `install_dependencies`
 - [x] `locate_dependencies_root` \*
 - [x] `parse_lock`

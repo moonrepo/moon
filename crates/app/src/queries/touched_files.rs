@@ -80,8 +80,8 @@ pub async fn query_touched_files(
     }
 
     // Check locally touched files
-    let touched_files_map = if options.local {
-        trace!("Against local");
+    let touched_files_map = if options.local && base_value.is_none() {
+        trace!("Against local index");
 
         vcs.get_touched_files().await?
     }

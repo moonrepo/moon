@@ -7,7 +7,7 @@ use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
 use moon_platform::is_using_global_toolchains;
 use proto_core::flow::install::{InstallOptions, ProtoInstallError};
-use proto_core::{Id, ToolSpec, is_offline, load_tool_from_locator};
+use proto_core::{Id, ToolContext, ToolSpec, is_offline, load_tool_from_locator};
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -43,7 +43,7 @@ pub async fn setup_proto(
         return Ok(ActionStatus::Skipped);
     }
 
-    if is_using_global_toolchains(bag) || !app_context.toolchain_config.should_install_proto() {
+    if is_using_global_toolchains(bag) || !app_context.toolchain_config.requires_proto() {
         debug!("Skipping proto install as the toolchain has been disabled or is not necessary");
 
         return Ok(ActionStatus::Skipped);
@@ -77,7 +77,7 @@ pub async fn setup_proto(
 
     // Load the built-in proto tool
     let mut tool = load_tool_from_locator(
-        Id::raw("proto"),
+        ToolContext::new(Id::raw("proto")),
         app_context.proto_env.clone(),
         app_context.proto_env.load_config()?.builtin_proto_plugin(),
     )

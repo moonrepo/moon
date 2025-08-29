@@ -27,27 +27,24 @@ fn generate_project(out_dir: &Path, toolchains: &FxHashMap<String, Schema>) -> m
     generator.add::<ProjectConfig>();
 
     // Inject the currently enabled toolchains into `ProjectToolchainConfig`
-    if !toolchains.is_empty() {
-        if let Some(config) = generator.schemas.get_mut("ProjectToolchainConfig") {
-            if let SchemaType::Struct(inner) = &mut config.ty {
-                for (id, schema) in toolchains {
-                    inner.fields.insert(
-                        id.to_string(),
-                        Box::new(SchemaField {
-                            comment: Some(format!(
-                                "Overrides top-level `{id}` toolchain settings."
-                            )),
-                            schema: Schema::union(UnionType::new_any([
-                                schema.to_owned(),
-                                Schema::boolean(BooleanType::new(true)),
-                                Schema::null(),
-                            ])),
-                            nullable: true,
-                            ..Default::default()
-                        }),
-                    );
-                }
-            }
+    if !toolchains.is_empty()
+        && let Some(config) = generator.schemas.get_mut("ProjectToolchainConfig")
+        && let SchemaType::Struct(inner) = &mut config.ty
+    {
+        for (id, schema) in toolchains {
+            inner.fields.insert(
+                id.to_string(),
+                Box::new(SchemaField {
+                    comment: Some(format!("Overrides top-level `{id}` toolchain settings.")),
+                    schema: Schema::union(UnionType::new_any([
+                        schema.to_owned(),
+                        Schema::boolean(BooleanType::new(true)),
+                        Schema::null(),
+                    ])),
+                    nullable: true,
+                    ..Default::default()
+                }),
+            );
         }
     }
 
@@ -89,28 +86,27 @@ fn generate_toolchain(
     generator.add::<ToolchainConfig>();
 
     // Inject the currently enabled toolchains into `ToolchainConfig`
-    if !toolchains.is_empty() {
-        if let Some(config) = generator.schemas.get_mut("ToolchainConfig") {
-            if let SchemaType::Struct(inner) = &mut config.ty {
-                for (id, schema) in toolchains {
-                    inner.fields.insert(
-                        id.to_string(),
-                        Box::new(SchemaField {
-                            comment: Some(schema.description.clone().unwrap_or_else(|| {
-                                format!("Configures and enables the `{id}` toolchain.")
-                            })),
-                            schema: {
-                                // Make it optional like built-in toolchains
-                                let mut schema = schema.to_owned();
-                                schema.nullify();
-                                schema
-                            },
-                            nullable: true,
-                            ..Default::default()
-                        }),
-                    );
-                }
-            }
+    if !toolchains.is_empty()
+        && let Some(config) = generator.schemas.get_mut("ToolchainConfig")
+        && let SchemaType::Struct(inner) = &mut config.ty
+    {
+        for (id, schema) in toolchains {
+            inner.fields.insert(
+                id.to_string(),
+                Box::new(SchemaField {
+                    comment: Some(schema.description.clone().unwrap_or_else(|| {
+                        format!("Configures and enables the `{id}` toolchain.")
+                    })),
+                    schema: {
+                        // Make it optional like built-in toolchains
+                        let mut schema = schema.to_owned();
+                        schema.nullify();
+                        schema
+                    },
+                    nullable: true,
+                    ..Default::default()
+                }),
+            );
         }
     }
 
@@ -123,18 +119,18 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
 
     let pipeline_config = generator.schemas.get("PipelineConfig").cloned().unwrap();
 
-    if let Some(config) = generator.schemas.get_mut("WorkspaceConfig") {
-        if let SchemaType::Struct(inner) = &mut config.ty {
-            inner.fields.insert(
-                "runner".into(),
-                Box::new(SchemaField {
-                    deprecated: Some("Use `pipeline` instead.".into()),
-                    schema: pipeline_config,
-                    nullable: true,
-                    ..Default::default()
-                }),
-            );
-        }
+    if let Some(config) = generator.schemas.get_mut("WorkspaceConfig")
+        && let SchemaType::Struct(inner) = &mut config.ty
+    {
+        inner.fields.insert(
+            "runner".into(),
+            Box::new(SchemaField {
+                deprecated: Some("Use `pipeline` instead.".into()),
+                schema: pipeline_config,
+                nullable: true,
+                ..Default::default()
+            }),
+        );
     }
 
     generator.generate(out_dir.join("workspace.json"), create_jsonschema_renderer())

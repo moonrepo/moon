@@ -11,7 +11,7 @@ hash_content!(
 );
 
 impl<'cfg> HooksHash<'cfg> {
-    pub fn new(vcs: &VcsManager) -> HooksHash {
+    pub fn new(vcs: &VcsManager) -> HooksHash<'_> {
         HooksHash {
             files_exist: false,
             hooks: BTreeMap::new(),

@@ -254,7 +254,7 @@ impl ToolchainConfig {
 
     inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
 
-    pub fn should_install_proto(&self) -> bool {
+    pub fn requires_proto(&self) -> bool {
         is_using_tool_version!(self, bun);
         is_using_tool_version!(self, deno);
         is_using_tool_version!(self, node);

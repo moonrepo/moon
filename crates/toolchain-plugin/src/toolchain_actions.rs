@@ -12,9 +12,10 @@ use moon_pdk_api::{
 };
 use moon_process::Command;
 use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchains};
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json::JsonValue;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // These implementations aggregate the call results from all toolchains
 // that were requested to be executed into a better/different format
@@ -23,6 +24,30 @@ use std::path::Path;
 // TODO: Remove the Ok(toolchain) checks once everything is on the registry!
 
 impl ToolchainRegistry {
+    pub async fn get_command_paths<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<PathBuf>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
+    {
+        let results = self
+            .call_func_all_with_check(
+                "get_command_paths",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.get_command_paths(input).await },
+                true,
+            )
+            .await?;
+
+        Ok(results
+            .into_iter()
+            .flat_map(|result| result.output)
+            .collect())
+    }
+
     pub async fn detect_project_usage<InFn>(
         &self,
         dir: &Path,
@@ -263,12 +288,12 @@ impl ToolchainRegistry {
         // Inherit versions for each toolchain
         for (id, config) in &self.plugins {
             if let Some(version) = &config.version {
-                command.env_if_missing(get_version_env_key(id), get_version_env_value(version));
+                command.env(get_version_env_key(id), get_version_env_value(version));
             }
         }
 
         // Abort early if using globals
-        if is_using_global_toolchains(bag) {
+        if is_using_global_toolchains(bag) || !self.config.requires_proto() {
             command.prepend_paths([moon.store_root.join("bin")]);
             return;
         }

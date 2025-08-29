@@ -43,7 +43,7 @@ pub async fn setup_proto(
         return Ok(ActionStatus::Skipped);
     }
 
-    if is_using_global_toolchains(bag) || !app_context.toolchain_config.should_install_proto() {
+    if is_using_global_toolchains(bag) || !app_context.toolchain_config.requires_proto() {
         debug!("Skipping proto install as the toolchain has been disabled or is not necessary");
 
         return Ok(ActionStatus::Skipped);

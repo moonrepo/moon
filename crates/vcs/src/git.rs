@@ -114,12 +114,23 @@ impl Git {
                         "Found a .git file (submodule or worktree root)"
                     );
 
+                    // Check if this .git file represents a worktree
+                    let git_content = std::fs::read_to_string(&git_check)
+                        .map_err(|e| miette::miette!("Failed to read .git file: {}", e))?;
+
                     worktree = Some(GitWorktree {
                         checkout_dir: current_dir.to_path_buf(),
                         git_dir: extract_gitdir_from_worktree(&git_check)?,
                     });
 
-                    // Don't break and continue searching for the root
+                    // If this is a worktree, stop traversal here
+                    if git_content.starts_with("gitdir:") {
+                        repository_root = current_dir.to_path_buf();
+                        git_root = git_check;
+                        break;
+                    }
+
+                    // Continue searching for the repository root
                 } else {
                     debug!(
                         git = ?git_check,
@@ -212,7 +223,11 @@ impl Git {
                     .ok()
             },
             repository_root,
-            process: ProcessCache::new("git", workspace_root),
+            process: ProcessCache::new("git", if let Some(tree) = &worktree {
+                &tree.checkout_dir
+            } else {
+                workspace_root
+            }),
             git_root,
             worktree,
             modules,

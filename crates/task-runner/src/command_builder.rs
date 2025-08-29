@@ -63,7 +63,7 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(name = "build_command", skip_all)]
-    pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
+    pub async fn build(mut self, context: &ActionContext, hash: &str) -> miette::Result<Command> {
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
@@ -79,7 +79,7 @@ impl<'task> CommandBuilder<'task> {
 
         // Order is important!
         self.inject_args(context);
-        self.inject_env();
+        self.inject_env(hash);
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
@@ -224,7 +224,7 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(skip_all)]
-    fn inject_env(&mut self) {
+    fn inject_env(&mut self, hash: &str) {
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node
             && !inner.env.is_empty()
@@ -248,6 +248,8 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("MOON_PROJECT_ROOT", &self.project.root);
         self.command
             .env("MOON_PROJECT_SOURCE", self.project.source.as_str());
+        self.command.env("MOON_TASK_ID", self.task.id.as_str());
+        self.command.env("MOON_TASK_HASH", hash);
         self.command.env("MOON_TARGET", self.task.target.as_str());
         self.command
             .env("MOON_WORKSPACE_ROOT", &self.app.workspace_root);
@@ -340,11 +342,13 @@ impl<'task> CommandBuilder<'task> {
 
         abs_files.sort();
 
-        // Convert to project relative paths
+        // Convert to relative paths
         let rel_files = abs_files
             .into_iter()
             .filter_map(|abs_file| {
-                if abs_file.starts_with(&self.project.root) {
+                if self.working_dir == self.app.workspace_root
+                    || abs_file.starts_with(&self.project.root)
+                {
                     abs_file.relative_to(self.working_dir).ok()
                 } else {
                     None
@@ -379,17 +383,25 @@ impl<'task> CommandBuilder<'task> {
             if rel_files.is_empty() {
                 self.command.arg_if_missing(".");
             } else {
-                // Mimic relative from ("./")
-                self.command.args(rel_files.iter().map(|file| {
-                    let arg = format!("./{file}");
+                let args = rel_files
+                    .into_iter()
+                    .map(|file| {
+                        // Mimic relative from ("./")
+                        let arg = format!("./{file}");
 
-                    // Escape files with special characters
-                    if arg.contains(['*', '$', '+', '[', ']']) {
-                        format!("\"{arg}\"")
-                    } else {
-                        arg
-                    }
-                }));
+                        // Escape files with special characters
+                        if arg.contains(['*', '$', '+', '[', ']']) {
+                            format!("\"{arg}\"")
+                        } else {
+                            match &self.command.shell {
+                                Some(shell) => shell.instance.quote(&arg),
+                                None => arg,
+                            }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                self.command.args(args);
             }
         }
 

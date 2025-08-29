@@ -1139,7 +1139,12 @@ tasks:
 
 Whether to cache the task's execution result using our [smart hashing](../concepts/cache#hashing)
 system. If disabled, _will not_ create a cache hash, and _will not_ persist a task's
-[outputs](#outputs). Defaults to `true`.
+[outputs](#outputs). Supports the following values:
+
+- `true` (default) - Cache the task's output.
+- `false` - Do not cache the task's output.
+- `local` - Only cache locally. <VersionLabel version="1.40.0" />
+- `remote` - Only cache [remotely](../guides/remote-cache). <VersionLabel version="1.40.0" />
 
 We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
 operations.

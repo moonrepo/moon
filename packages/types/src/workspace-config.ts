@@ -346,6 +346,13 @@ export interface RemoteCacheConfig {
 	 */
 	instanceName?: string;
 	/**
+	 * When local, only download matching blobs and do not upload new
+	 * blobs. Blobs will only be uploaded in CI environments.
+	 *
+	 * @envvar MOON_REMOTE_CACHE_LOCAL_READ_ONLY
+	 */
+	localReadOnly: boolean;
+	/**
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance
 	 * but ensure partial or corrupted blobs won't cause failures.
@@ -870,6 +877,13 @@ export interface PartialRemoteCacheConfig {
 	 * @envvar MOON_REMOTE_CACHE_INSTANCE_NAME
 	 */
 	instanceName?: string | null;
+	/**
+	 * When local, only download matching blobs and do not upload new
+	 * blobs. Blobs will only be uploaded in CI environments.
+	 *
+	 * @envvar MOON_REMOTE_CACHE_LOCAL_READ_ONLY
+	 */
+	localReadOnly?: boolean | null;
 	/**
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance

@@ -7,8 +7,9 @@ use moon_common::{
 };
 use moon_config::{
     InheritedTasksConfig, Input, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
-    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionRunInCI,
-    TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
+    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
+    is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
@@ -584,7 +585,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(cache) = &config.cache {
-                options.cache = *cache;
+                options.cache = cache.to_owned();
             }
 
             if let Some(cache_key) = &config.cache_key {
@@ -874,7 +875,7 @@ impl<'proj> TasksBuilder<'proj> {
     fn get_task_options_from_preset(&self, preset: Option<TaskPreset>) -> TaskOptions {
         match preset {
             Some(TaskPreset::Server | TaskPreset::Watcher) => TaskOptions {
-                cache: false,
+                cache: TaskOptionCache::Enabled(false),
                 interactive: preset.is_some_and(|set| set == TaskPreset::Watcher),
                 output_style: Some(TaskOutputStyle::Stream),
                 persistent: true,

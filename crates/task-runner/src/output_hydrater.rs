@@ -1,5 +1,6 @@
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_config::TaskOptionCache;
 use moon_remote::{ActionState, RemoteService};
 use moon_task::Task;
 use starbase_archive::Archiver;
@@ -35,7 +36,12 @@ impl OutputHydrater<'_> {
 
             // Based on the remote execution APIs
             HydrateFrom::RemoteCache => {
-                if let Some(state) = remote_state {
+                if let Some(state) = remote_state
+                    && matches!(
+                        &self.task.options.cache,
+                        TaskOptionCache::Remote | TaskOptionCache::Enabled(true)
+                    )
+                {
                     self.download_from_remote_service(state).await
                 } else {
                     Ok(false)
@@ -54,7 +60,12 @@ impl OutputHydrater<'_> {
                     );
 
                     // Otherwise hydrate the cached archive into the task's outputs
-                    if archive_file.exists() {
+                    if archive_file.exists()
+                        && matches!(
+                            &self.task.options.cache,
+                            TaskOptionCache::Local | TaskOptionCache::Enabled(true)
+                        )
+                    {
                         self.unpack_local_archive(hash, &archive_file)?;
                         hydrated = true
                     }

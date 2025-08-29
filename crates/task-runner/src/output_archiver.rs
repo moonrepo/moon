@@ -1,6 +1,7 @@
 use crate::task_runner_error::TaskRunnerError;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_config::TaskOptionCache;
 use moon_project::Project;
 use moon_remote::{ActionState, RemoteService};
 use moon_task::Task;
@@ -45,8 +46,13 @@ impl OutputArchiver<'_> {
                 hash, "Archiving task outputs from project"
             );
 
-            self.create_local_archive(hash, &archive_file)?;
-            archived = true;
+            if matches!(
+                &self.task.options.cache,
+                TaskOptionCache::Local | TaskOptionCache::Enabled(true)
+            ) {
+                self.create_local_archive(hash, &archive_file)?;
+                archived = true;
+            }
         } else {
             debug!(
                 task_target = self.task.target.as_str(),
@@ -55,7 +61,12 @@ impl OutputArchiver<'_> {
         }
 
         // Then cache the result in the remote service
-        if let Some(state) = remote_state {
+        if let Some(state) = remote_state
+            && matches!(
+                &self.task.options.cache,
+                TaskOptionCache::Remote | TaskOptionCache::Enabled(true)
+            )
+        {
             archived = self.upload_to_remote_service(state).await?;
         }
 
@@ -145,7 +156,9 @@ impl OutputArchiver<'_> {
     #[instrument(skip(self, state))]
     async fn upload_to_remote_service(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
-            state.compute_outputs(&self.app.workspace_root)?;
+            if remote.can_upload() {
+                state.compute_outputs(&self.app.workspace_root)?;
+            }
 
             match remote.save_action(state).await {
                 Ok(saved) => {

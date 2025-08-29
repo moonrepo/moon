@@ -823,6 +823,19 @@ unstable_remote:
 
 > We suggest changing the instance name to the name of your repository!
 
+#### `localReadOnly`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/RemoteCacheConfig#localReadOnly" />
+
+When enabled and developing locally, existing remote blobs will only be downloaded, but new local
+blobs will _not_ be uploaded. Blobs will only be uploaded in CI environments.
+
+```yaml title=".moon/workspace.yml" {3}
+unstable_remote:
+  cache:
+    localReadOnly: true
+```
+
 #### `verifyIntegrity`<VersionLabel version="1.36.0" />
 
 <HeadingApiLink to="/api/types/interface/RemoteCacheConfig#verifyIntegrity" />

@@ -839,7 +839,7 @@ mod tasks_builder {
 
         fn is_local(task: &Task) {
             assert!(task.state.local_only);
-            assert!(!task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
@@ -867,7 +867,7 @@ mod tasks_builder {
             let cache = tasks.get("override-cache").unwrap();
 
             assert!(cache.state.local_only);
-            assert!(cache.options.cache);
+            assert_eq!(cache.options.cache, TaskOptionCache::Enabled(true));
 
             let style = tasks.get("override-style").unwrap();
 
@@ -915,7 +915,7 @@ mod tasks_builder {
             let task = tasks.get("server").unwrap();
 
             assert_eq!(task.preset, Some(TaskPreset::Server));
-            assert!(!task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
@@ -925,7 +925,7 @@ mod tasks_builder {
             let task = tasks.get("server-custom").unwrap();
 
             assert_eq!(task.preset, Some(TaskPreset::Server));
-            assert!(task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
@@ -935,7 +935,7 @@ mod tasks_builder {
             let task = tasks.get("server-extends").unwrap();
 
             assert_eq!(task.preset, Some(TaskPreset::Server));
-            assert!(task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
@@ -952,7 +952,7 @@ mod tasks_builder {
             let task = tasks.get("watcher").unwrap();
 
             assert_eq!(task.preset, Some(TaskPreset::Watcher));
-            assert!(!task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(task.options.interactive);
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
@@ -962,7 +962,7 @@ mod tasks_builder {
             let task = tasks.get("watcher-custom").unwrap();
 
             assert_eq!(task.preset, Some(TaskPreset::Watcher));
-            assert!(!task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
             assert!(!task.options.run_in_ci.is_enabled());
@@ -2055,7 +2055,7 @@ mod tasks_builder {
             let tasks = container.build_tasks("extends").await;
             let task = tasks.get("extend-options").unwrap();
 
-            assert!(!task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
@@ -2069,7 +2069,7 @@ mod tasks_builder {
             let tasks = container.build_tasks("extends").await;
             let task = tasks.get("extend-local").unwrap();
 
-            assert!(task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
             assert!(task.options.run_in_ci.is_enabled());
             assert!(!task.options.persistent);
         }
@@ -2096,7 +2096,7 @@ mod tasks_builder {
                 ]
             );
 
-            assert!(task.options.cache);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
             assert!(!task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);

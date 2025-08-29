@@ -18032,7 +18032,7 @@ file = ".env"
 
 #### `auto-install`
 
-When enabled, will automatically install a missin version of a tool when
+When enabled, will automatically install a missing version of a tool when
 [`proto run`](./commands/run) is ran, instead of erroring. Defaults to `false` or
 `PROTO_AUTO_INSTALL`.
 

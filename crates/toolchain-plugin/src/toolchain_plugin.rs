@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
@@ -125,6 +126,32 @@ impl ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
+    #[instrument(skip(self))]
+    pub async fn get_command_paths(
+        &self,
+        version: Option<UnresolvedVersionSpec>,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = IndexSet::<PathBuf>::default();
+
+        if let Some(version) = &version
+            && let Some(tool) = &self.tool
+        {
+            let mut tool = tool.write().await;
+            let spec = ToolSpec::new(version.to_owned());
+
+            tool.resolve_version(&spec, false).await?;
+
+            if let Some(dir) = tool.locate_exe_file().await?.parent() {
+                paths.insert(dir.to_path_buf());
+            }
+
+            paths.extend(tool.locate_exes_dirs().await?);
+            paths.extend(tool.locate_globals_dirs().await?);
+        }
+
+        Ok(paths.into_iter().collect())
+    }
+
     #[instrument(skip(self))]
     pub async fn define_toolchain_config(&self) -> miette::Result<DefineToolchainConfigOutput> {
         let output: DefineToolchainConfigOutput =

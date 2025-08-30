@@ -173,6 +173,156 @@ unstable_go:
 
 ## JavaScript
 
+## `unstable_javascript`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_javascript" />
+
+Enables and configures JavaScript using the new WASM plugin. This core JavaScript toolchain depends
+on these other JavaScript ecosystem toolchains:
+
+- Runtimes: [`unstable_bun`](#unstable_bun), [`unstable_node`](#unstable_node)
+- Package managers: [`unstable_bun`](#unstable_bun), [`unstable_npm`](#unstable_npm),
+  [`unstable_pnpm`](#unstable_pnpm), [`unstable_yarn`](#unstable_yarn)
+
+### `dedupeOnLockfileChange`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#dedupeOnLockfileChange" />
+
+Will dedupe dependencies after they have been installed, added, removed, or changed in any way, in
+an effort to keep the workspace tree as clean and lean as possible. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  dedupeOnLockfileChange: true
+```
+
+### `dependencyVersionFormat`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#dependencyVersionFormat" />
+
+When [syncing project dependencies](#syncprojectworkspacedependencies), customize the format that
+will be used for the dependency version range. The following formats are supported (but use the one
+most applicable to your chosen package manager):
+
+- `file` (npm default) - Uses `file:../relative/path` and copies package contents.
+- `link` - Uses `link:../relative/path` and symlinks package contents.
+- `star` - Uses an explicit `*`.
+- `version` - Uses the explicit version from the dependent project's `package.json`, e.g., "1.2.3".
+- `version-caret` - Uses the version from the dependent project's `package.json` as a caret range,
+  e.g., "^1.2.3".
+- `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
+  e.g., "~1.2.3".
+- `workspace` (bun/pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires
+  package workspaces.
+- `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
+- `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  dependencyVersionFormat: 'link'
+```
+
+> This setting does not apply to peer dependencies, as they will always use a format of
+> `^<major>.0.0`. Furthermore, if a package manager does not support a chosen format, it will
+> fallback to another format!
+
+### `inferTasksFromScripts`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#inferTasksFromScripts" />
+
+Will infer and automatically create [tasks](../concepts/task) from `package.json` scripts. Defaults
+to `false`.
+
+This requires the [project's language](./project#language) to be "javascript" or "typescript", a
+`package.json` to exist in the project, and will take the following into account:
+
+- Script names will be converted to kebab-case, and will become the task ID.
+- Script names that contain `dev`, `start`, `serve`, or `preview` will be considered local only.
+- Pre, post, and life cycle hooks are ignored.
+- Tasks defined in `.moon/tasks.yml` or `moon.yml` take precedence over scripts of the same name.
+
+To verify inferred tasks, run [`moon project <id>`](../commands/project) (pass `--json` to view raw
+config and options). Tasks that are inferred will run through the configured package manager.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  inferTasksFromScripts: true
+```
+
+### `packageManager`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#packageManager" />
+
+Defines which package manager to utilize when installing dependencies. Supports `npm`, `pnpm`,
+`yarn`, or `bun`. Defaults to no package manager.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  packageManager: 'yarn'
+```
+
+:::info
+
+When this setting is configured, it will require the target toolchain
+([`unstable_bun`](#unstable_bun), ([`unstable_node`](#unstable_node),
+[`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm), or
+[`unstable_yarn`](#unstable_yarn)) to also be configured.
+
+:::
+
+### `rootPackageDependenciesOnly`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#rootPackageDependenciesOnly" />
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `package.json`, and only installing dependencies in the workspace root, and not within
+individual projects. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  rootPackageDependenciesOnly: true
+```
+
+### `syncPackageManagerField`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#syncPackageManagerField" />
+
+Will sync the currently configured [package manager](#packagemanager) and its version to the
+`packageManager` field in the root `package.json`. This setting does nothing if the package manager
+or version is not defined. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  syncPackageManagerField: true
+  packageManager: 'pnpm'
+
+unstable_pnpm:
+  version: '9.0.0'
+```
+
+A quick example on how this works. Given the above, the following field will be injected:
+
+```json title="package.json"
+{
+  // ...
+  "packageManager": "pnpm@9.0.0"
+}
+```
+
+### `syncProjectWorkspaceDependencies`
+
+<HeadingApiLink to="/api/types/interface/JavaScriptConfig#syncProjectWorkspaceDependencies" />
+
+Will sync a project's [dependencies](../concepts/project#dependencies) as manifest dependencies
+within the project's `package.json`. If a dependent project does not have a `package.json`, or if a
+dependency of the same name has an explicit version already defined, the sync will be skipped.
+Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  syncProjectWorkspaceDependencies: true
+```
+
 ## `bun`<VersionLabel version="1.17.0" />
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#bun" />
@@ -719,6 +869,128 @@ unstable_node:
 
 This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
 the same version, which is a very common practice when managing dependencies.
+
+## `unstable_npm`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_npm" />
+
+Enables and configures npm using the new WASM plugin.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/NpmConfig#version" />
+
+Defines the explicit npm toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `npm` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_npm:
+  version: '9.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `installArgs`
+
+<HeadingApiLink to="/api/types/interface/NpmConfig#installArgs" />
+
+Customize the arguments that will be passed to the `npm install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_npm:
+  installArgs: ['--no-save']
+```
+
+> This setting is referenced by the `unstable_javascript` toolchain.
+
+## `unstable_pnpm`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_pnpm" />
+
+Enables and configures pnpm using the new WASM plugin.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/PnpmConfig#version" />
+
+Defines the explicit pnpm toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `pnpm` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_pnpm:
+  version: '9.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `installArgs`
+
+<HeadingApiLink to="/api/types/interface/PnpmConfig#installArgs" />
+
+Customize the arguments that will be passed to the `pnpm install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_pnpm:
+  installArgs: ['--frozen-lockfile']
+```
+
+> This setting is referenced by the `unstable_javascript` toolchain.
+
+## `unstable_yarn`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_yarn" />
+
+Enables and configures yarn using the new WASM plugin.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/YarnConfig#version" />
+
+Defines the explicit yarn toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `yarn` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_yarn:
+  version: '4.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `installArgs`
+
+<HeadingApiLink to="/api/types/interface/YarnConfig#installArgs" />
+
+Customize the arguments that will be passed to the `yarn install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_yarn:
+  installArgs: ['--immutable']
+```
+
+> This setting is referenced by the `unstable_javascript` toolchain.
+
+### `plugins`
+
+<HeadingApiLink to="/api/types/interface/YarnConfig#plugins" />
+
+A list of plugins that will automatically be imported using `yarn plugin import` (Yarn 2+ only). For
+performance reasons, plugins will only be imported when the Yarn version changes.
+
+```yaml title=".moon/toolchain.yml" {2-4}
+unstable_yarn:
+  plugins:
+    - 'interactive-tools'
+    - 'workspace-tools'
+```
 
 ## `typescript`
 

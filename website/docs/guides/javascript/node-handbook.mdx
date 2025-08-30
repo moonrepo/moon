@@ -36,6 +36,14 @@ node:
   packageManager: 'pnpm'
 ```
 
+:::info
+
+In moon v1.40+, use `unstable_javascript` and `unstable_node` instead of `node` to enable the new
+WASM powered Node.js toolchain, which is far more accurate and efficient. The non-WASM toolchain
+will be deprecated in the future.
+
+:::
+
 Or by pinning a `node` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"

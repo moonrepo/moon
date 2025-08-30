@@ -70,7 +70,7 @@
   - When running `uv sync`, we now include the `--no-managed-python` flag unless the
     `python.uv.syncArgs` setting is defined.
 - **Rust**
-  - Updated manifest parsing to extract `path` and `git` values.
+  - Updated manifest parsing to extract `path` and `git` values from dependencies.
 
 #### 🧩 Plugins
 

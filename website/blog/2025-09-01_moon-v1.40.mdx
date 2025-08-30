@@ -1,0 +1,78 @@
+---
+slug: moon-v1.40
+title: moon v1.40 - JavaScript ecosystem toolchains and more
+authors: [milesj]
+tags: [toolchain, wasm, javascript, bun, node, npm, pnpm, yarn]
+# image: ./img/moon/v1.40.png
+---
+
+TODO
+
+<!--truncate-->
+
+## New JavaScript ecosystem toolchains powered by WASM
+
+### Core: `unstable_javascript`
+
+### Runtimes: `unstable_bun` and `unstable_node`
+
+### Package Managers: `unstable_npm`, `unstable_pnpm`, and `unstable_yarn`
+
+### Backwards incompatibility and caveats
+
+## New task caching options
+
+Tasks have always supported a [`cache` option](/docs/config/project#cache) for toggling caching on
+and off. With the introduction of remote cache, we're expanding these options to provide more
+flexibility and control. Instead of supporting only a simple boolean flag, we're introducing new
+`local` and `remote` values, which will only cache locally or remotely, respectively.
+
+This is useful for tasks that need caching, but should not persist in the remote cache, and vice
+versa.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    options:
+      cache: 'local'
+```
+
+## New local read-only mode for remote cache
+
+Adoption of our new [remote cache](/docs/guides/remote-cache) solution has been going great, and
+we've heard positive feedback from users about its performance and reliability. However, it's not
+perfect and can always be improved!
+
+And as such, we're introducing a new
+[`unstable_remote.cache.localReadOnly`](/docs/config/workspace#localreadonly) setting, which will
+only read (download) outputs from the remote cache when in local development, but will _not_ write
+(upload) outputs. This is useful for teams that want to share cache between CI and local, but don't
+want the overhead of uploading in-development outputs.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  cache:
+    localReadOnly: true
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.40.0) for a full list
+of changes.
+
+- Updated `moon query touched-files` to default to comparing against remote branches when in CI, and
+  local when not in CI. This aligns with the other `moon query` commands.
+- Updated task commands (child processes) to utilize toolchain executables directly, instead of
+  relying entirely on proto shims. It achieves this by locating the executables, and prepending
+  their directory onto `PATH`.
+- When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
+  which can be read from child processes.
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Implement more of the task inputs RFC: https://github.com/moonrepo/moon/issues/1985
+- Investigate a new `unstable_deno` toolchain
+- Investigate better task inheritance: https://github.com/moonrepo/moon/issues/2023

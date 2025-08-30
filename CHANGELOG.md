@@ -62,6 +62,8 @@
 
 #### 🧰 Toolchains
 
+- **Go**
+  - Fixed an issue with `bins` when installing multiple packages from different modules in parallel.
 - **Python**
   - When running `uv venv`, we now include the `--no-managed-python` flag when the `python.version`
     setting is defined. This _should_ ensure that moon/proto's Python managed version is used.

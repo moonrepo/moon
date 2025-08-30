@@ -224,6 +224,52 @@ bun:
   syncProjectWorkspaceDependencies: true
 ```
 
+## `unstable_bun`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_bun" />
+
+Enables and configures [Bun](../guides/javascript/bun-handbook) using the new WASM plugin.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/BunConfig#version" />
+
+Defines the explicit Bun toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `bun` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_bun:
+  version: '1.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `executeArgs`
+
+<HeadingApiLink to="/api/types/interface/BunConfig#executeArgs" />
+
+Customize the arguments that will be appended to all `bun`-based task commands. Arguments will be
+appended after the `bun` executable, but before task specific arguments.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_bun:
+  executeArgs: ['--bun', '--silent']
+```
+
+### `installArgs`
+
+<HeadingApiLink to="/api/types/interface/BunConfig#installArgs" />
+
+Customize the arguments that will be passed to the `bun install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_bun:
+  installArgs: ['--frozen-lockfile']
+```
+
 ## `deno`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#deno" />
@@ -601,6 +647,73 @@ config/rc file. Supports "nodenv" (syncs to `.node-version`), "nvm" (syncs to `.
 
 ```yaml title=".moon/toolchain.yml" {2}
 node:
+  syncVersionManagerConfig: 'nvm'
+```
+
+This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
+the same version, which is a very common practice when managing dependencies.
+
+## `unstable_node`<VersionLabel version="1.40.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_node" />
+
+Enables and configures [Node.js](../guides/javascript/node-handbook) using the new WASM plugin.
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#version" />
+
+Defines the explicit Node.js toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `node` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  version: '20.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `executeArgs`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#executeArgs" />
+
+Customize the arguments that will be appended to all `node`-based task commands. Arguments will be
+appended after the `node` executable, but before task specific arguments.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  executeArgs: ['--preserve-symlinks']
+```
+
+### `profileExecution`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#profileExecution" />
+
+Enable the v8 profiler for all `node` executions, when configured as a task `command`. This should
+only be temporarily enabled for debugging purposes, and not always enabled! Supports the following
+options:
+
+- `cpu` - Generate a CPU profile.
+- `heap` - Generate a memory heap profile.
+
+Profile snapshots will be written to a `.moon` directory in the current project.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  profileExecution: 'cpu'
+```
+
+### `syncVersionManagerConfig`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#syncVersionManagerConfig" />
+
+Will sync the currently configured [Node.js version](#version) to a 3rd-party version manager's
+config/rc file. Supports "nodenv" (syncs to `.node-version`), "nvm" (syncs to `.nvmrc`), or none
+(default).
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
   syncVersionManagerConfig: 'nvm'
 ```
 

@@ -1,12 +1,13 @@
 ---
 slug: moon-v1.40
-title: moon v1.40 - JavaScript ecosystem toolchains and more
+title: moon v1.40 - JavaScript ecosystem WASM toolchains and more
 authors: [milesj]
 tags: [toolchain, wasm, javascript, bun, node, npm, pnpm, yarn]
 # image: ./img/moon/v1.40.png
 ---
 
-TODO
+It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
+WASM toolchains, which are now available!
 
 <!--truncate-->
 
@@ -97,13 +98,13 @@ Learn more about their settings:
 
 ### Migrating from legacy toolchains
 
-Migrating from the legacy toolchains to these new modern WASM toolchains is straightforward. Follow
-these steps:
+Migrating from the legacy toolchains to these new modern WASM toolchains is rather straightforward,
+as most of the existing settings have been ported over. Follow these steps:
 
 - Move the `node.npm`, `node.pnpm`, and `node.yarn` configuration to its own top-level `unstable_`
   toolchain.
-- Move the `version` setting to an `unstable_bun` or `unstable_node` toolchain. If not using
-  `version`, set an empty object.
+- Move the `bun.version` or `node.version` setting to an `unstable_bun` or `unstable_node` toolchain
+  respectively. If not using `version`, set an empty object.
 - Remove the `node.addEnginesConstraint` setting.
 - Rename the `node` or `bun` toolchain to `unstable_javascript`.
 - Rename the `node.binExecArgs` setting to `unstable_node.executeArgs`.

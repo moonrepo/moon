@@ -134,7 +134,7 @@ impl ToolchainConfig {
         match id.as_str() {
             "typescript" => Some(find_debug_locator_with_url_fallback(
                 "typescript_toolchain",
-                "0.2.2",
+                "0.2.3",
             )),
             "unstable_bun" => Some(find_debug_locator_with_url_fallback(
                 "bun_toolchain",

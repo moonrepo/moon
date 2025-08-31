@@ -71,6 +71,9 @@
     `python.uv.syncArgs` setting is defined.
 - **Rust**
   - Updated manifest parsing to extract `path` and `git` values from dependencies.
+- **TypeScript**
+  - When `includeSharedTypes` and `syncProjectReferences` are both enabled, and the shared types
+    folder contains a `tsconfig.json`, it will also be synced as a project reference.
 
 #### 🧩 Plugins
 

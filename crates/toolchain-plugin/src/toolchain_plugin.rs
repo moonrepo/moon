@@ -123,9 +123,7 @@ impl ToolchainPlugin {
                 && (self.has_func("download_prebuilt").await
                     || self.has_func("native_install").await)
     }
-}
 
-impl ToolchainPlugin {
     #[instrument(skip(self))]
     pub async fn get_command_paths(
         &self,

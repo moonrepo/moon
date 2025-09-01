@@ -9,13 +9,13 @@ About ──────────────────
   Task: internal
   Toolchains: node, typescript
   Type: test
-  Modes: internal
+  Mode: internal
+  Depends on: —
 
 Process ────────────────
 
   Command: build
   Environment variables: —
-  Depends on: —
   Runs dependencies: Concurrently
   Runs in CI: Yes
 

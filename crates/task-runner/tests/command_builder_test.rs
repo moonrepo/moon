@@ -606,19 +606,39 @@ mod command_builder {
             assert_eq!(get_env(&command, "PROTO_AUTO_INSTALL").unwrap(), "false");
         }
 
+        // Note: This requires a real proto tool to function correctly,
+        // and our local test plugins don't implement enough APIs!
+        //
+        // #[tokio::test(flavor = "multi_thread")]
+        // async fn inherits_proto_paths() {
+        //     let container = TaskRunnerContainer::new("toolchain", "with-version").await;
+        //     let command = container.create_command(ActionContext::default()).await;
+
+        //     assert!(
+        //         command
+        //             .paths_before
+        //             .iter()
+        //             .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
+        //                 ".proto\\tools\\proto"
+        //             } else {
+        //                 ".proto/tools/proto"
+        //             }))
+        //     );
+        // }
+
         #[tokio::test(flavor = "multi_thread")]
-        async fn inherits_proto_paths() {
+        async fn doesnt_inherit_proto_paths_if_no_toolchain() {
             let container = TaskRunnerContainer::new("toolchain", "base").await;
             let command = container.create_command(ActionContext::default()).await;
 
             assert!(
-                command
+                !command
                     .paths_before
                     .iter()
-                    .any(|path| path.to_str().unwrap().ends_with(if cfg!(windows) {
-                        ".proto\\shims"
+                    .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
+                        ".proto\\tools\\proto"
                     } else {
-                        ".proto/shims"
+                        ".proto/tools/proto"
                     }))
             );
         }
@@ -638,7 +658,11 @@ mod command_builder {
                 !command
                     .paths_before
                     .iter()
-                    .any(|path| path.to_str().unwrap().ends_with(".proto/shims"))
+                    .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
+                        ".proto\\tools\\proto"
+                    } else {
+                        ".proto/tools/proto"
+                    }))
             );
         }
 

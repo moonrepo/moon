@@ -52,21 +52,25 @@ impl ToolchainRegistry {
             }
         }
 
-        if requires_proto {
-            let proto = &self.host_data.proto_env;
-            let proto_version = self.config.proto.version.to_string();
+        let moon = &self.host_data.moon_env;
+        let proto = &self.host_data.proto_env;
 
-            paths.extend([
-                // Always use a versioned proto first
-                proto.store.inventory_dir.join("proto").join(proto_version),
-                // Then fallback to shims/bins
-                proto.store.shims_dir.clone(),
-                proto.store.bin_dir.clone(),
-            ]);
+        // Always use a versioned proto first
+        if requires_proto {
+            paths.push(
+                proto
+                    .store
+                    .inventory_dir
+                    .join("proto")
+                    .join(self.config.proto.version.to_string()),
+            );
         }
 
-        // Ensure non-proto managed moon comes last
-        paths.push(self.host_data.moon_env.store_root.join("bin"));
+        paths.extend([
+            proto.store.shims_dir.clone(),
+            proto.store.bin_dir.clone(),
+            moon.store_root.join("bin"),
+        ]);
 
         Ok(paths)
     }

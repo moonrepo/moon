@@ -60,6 +60,7 @@
 - Fixed an issue with task options `affectedFiles` and `runFromWorkspaceRoot` generating invalid
   paths.
 - Fixed `moon docker file` generating invalid `Dockerfile`s after the recent proto install changes.
+- Fixed an issue where xz/liblzma was dynamically linked, instead of statically.
 
 #### 🧰 Toolchains
 

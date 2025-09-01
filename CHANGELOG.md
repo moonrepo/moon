@@ -46,6 +46,7 @@
 - Updated task commands (child processes) to utilize toolchain executables directly, instead of
   relying entirely on proto shims. It achieves this by locating the executables, and prepending
   their directory onto `PATH`.
+- Updated `moon task` to include all `PATH`s that are injected when running the task.
 - Deprecated the `moon run --profile` option.
   - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
     toolchain.

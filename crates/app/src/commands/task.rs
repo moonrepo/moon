@@ -2,11 +2,16 @@ use crate::app_error::AppError;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
+use moon_action::{ActionNode, RunTaskNode};
+use moon_action_context::ActionContext;
 use moon_common::is_test_env;
 use moon_console::ui::{
     Container, Entry, List, ListItem, Map, MapItem, Section, Style, StyledText,
 };
-use moon_task::{Target, TargetScope};
+use moon_process::Command;
+use moon_project::Project;
+use moon_task::{Target, TargetScope, Task};
+use moon_task_runner::command_builder::CommandBuilder;
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
@@ -63,6 +68,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
     outputs.extend(&task.output_files);
     outputs.sort();
 
+    let command = build_command(&session, &project, &task).await?;
     let show_in_prod = !is_test_env();
 
     session.console.render(element! {
@@ -130,7 +136,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                 } else {
                     Some(element! {
                         Entry(
-                            name: if task.toolchains.len() == 1 {
+                            name: if modes.len() == 1 {
                                 "Mode"
                             } else {
                                 "Modes"
@@ -139,6 +145,23 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                         )
                     })
                 })
+                Entry(
+                    name: "Depends on",
+                    no_children: task.deps.is_empty()
+                ) {
+                    List {
+                        #(task.deps.iter().map(|dep| {
+                            element! {
+                                ListItem {
+                                    StyledText(
+                                        content: dep.target.to_string(),
+                                        style: Style::Id
+                                    )
+                                }
+                            }
+                        }))
+                    }
+                }
             }
 
             Section(title: "Process") {
@@ -199,23 +222,6 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                         }))
                     }
                 }
-                Entry(
-                    name: "Depends on",
-                    no_children: task.deps.is_empty()
-                ) {
-                    List {
-                        #(task.deps.iter().map(|dep| {
-                            element! {
-                                ListItem {
-                                    StyledText(
-                                        content: dep.target.to_string(),
-                                        style: Style::Id
-                                    )
-                                }
-                            }
-                        }))
-                    }
-                }
                 #(show_in_prod.then(|| {
                     element! {
                         Entry(
@@ -231,6 +237,27 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                                 )
                             }.into_any()
                         )
+                    }
+                }))
+                #(show_in_prod.then(|| {
+                    element! {
+                        Entry(
+                            name: "Lookup paths",
+                            no_children: command.paths_before.is_empty()
+                        ) {
+                            List {
+                                #(command.paths_before.iter().map(|path| {
+                                    element! {
+                                        ListItem {
+                                            StyledText(
+                                                content: path.to_string_lossy(),
+                                                style: Style::Path
+                                            )
+                                        }
+                                    }
+                                }))
+                            }
+                        }
                     }
                 }))
                 Entry(
@@ -319,4 +346,19 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
     })?;
 
     Ok(None)
+}
+
+async fn build_command(
+    session: &MoonSession,
+    project: &Project,
+    task: &Task,
+) -> miette::Result<Command> {
+    let app_context = session.get_app_context().await?;
+    let action_context = ActionContext::default();
+    let node = ActionNode::run_task(RunTaskNode::new_global(task.target.clone()));
+
+    let builder = CommandBuilder::new(&app_context, project, task, &node);
+    let command = builder.build(&action_context, "").await?;
+
+    Ok(command)
 }

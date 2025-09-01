@@ -87,9 +87,11 @@ async fn internal_exec_plugin_command(
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
 
     // Must be last!
-    app_context
-        .toolchain_registry
-        .prepare_process_command(&mut cmd, GlobalEnvBag::instance());
+    app_context.toolchain_registry.prepare_process_command(
+        &mut cmd,
+        GlobalEnvBag::instance(),
+        true,
+    );
 
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;

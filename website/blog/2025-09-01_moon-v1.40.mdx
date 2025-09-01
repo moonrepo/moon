@@ -165,11 +165,14 @@ Because these new toolchains are built around a plugin system, and not hard-code
 legacy toolchains, there are some backwards incompatibilities, changes, and caveats to be aware of:
 
 1. Because the old `node`/`bun` toolchains are now spread across multiple new toolchains, the task
-   `toolchain` setting no longer overrides, and instead merges. Otherwise tasks would fail to
-   inherit the necessary functionality.
+   [`toolchain` setting](/docs/config/project#toolchain) no longer overrides, and instead merges.
+   Otherwise tasks would fail to inherit the necessary functionality.
 2. Additionally, task inheritance _may_ not function the same, based on what toolchains are now
    automatically detected. Ensure that projects and tasks inherit the correct toolchains by
    utilizing `moon project` and `moon task` commands.
+
+If either of these issues, or other unexpected issues arise, please report it so we can fix it, or
+provide a work around!
 
 ## New task caching options
 

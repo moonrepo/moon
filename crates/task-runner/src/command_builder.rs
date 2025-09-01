@@ -54,7 +54,7 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
-    pub fn set_env_bar(&mut self, bag: &'task GlobalEnvBag) {
+    pub fn set_env_bag(&mut self, bag: &'task GlobalEnvBag) {
         self.env_bag = bag;
     }
 
@@ -429,7 +429,7 @@ impl<'task> CommandBuilder<'task> {
         // Inherit common parameters
         self.app
             .toolchain_registry
-            .prepare_process_command(&mut self.command, self.env_bag);
+            .prepare_process_command(&mut self.command, self.env_bag, false);
 
         // Inherit project overrides
         for (id, config) in &self.project.config.toolchain.plugins {
@@ -443,7 +443,7 @@ impl<'task> CommandBuilder<'task> {
             }
         }
 
-        if is_using_global_toolchains(self.env_bag) || !self.app.toolchain_config.requires_proto() {
+        if is_using_global_toolchains(self.env_bag) {
             return Ok(());
         }
 

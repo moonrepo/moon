@@ -94,6 +94,10 @@ impl RunTaskNode {
         }
     }
 
+    pub fn new_global(target: Target) -> Self {
+        Self::new(target, Runtime::system())
+    }
+
     fn calculate_id(&mut self) {
         let mut hasher = FxHasher::default();
         hasher.write(self.target.as_str().as_bytes());

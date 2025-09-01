@@ -130,13 +130,12 @@ impl ToolchainPlugin {
     pub async fn get_command_paths(
         &self,
         version: Option<UnresolvedVersionSpec>,
-    ) -> miette::Result<Vec<PathBuf>> {
-        let mut paths = IndexSet::<PathBuf>::default();
-
+    ) -> miette::Result<Option<Vec<PathBuf>>> {
         if let Some(version) = &version
             && let Some(tool) = &self.tool
         {
             let mut tool = tool.write().await;
+            let mut paths = IndexSet::<PathBuf>::default();
             let spec = ToolSpec::new(version.to_owned());
 
             tool.resolve_version(&spec, false).await?;
@@ -147,9 +146,11 @@ impl ToolchainPlugin {
 
             paths.extend(tool.locate_exes_dirs().await?);
             paths.extend(tool.locate_globals_dirs().await?);
+
+            return Ok(Some(paths.into_iter().collect()));
         }
 
-        Ok(paths.into_iter().collect())
+        Ok(None)
     }
 
     #[instrument(skip(self))]

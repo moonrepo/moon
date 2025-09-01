@@ -13,7 +13,27 @@ WASM toolchains, which are now available!
 
 ## New JavaScript ecosystem toolchains powered by WASM
 
-TODO
+Porting the legacy Bun and Node.js toolchains to WASM has been a non-trivial amount of work, as the
+JavaScript ecosystem is quite convoluted compared to other languages. The paradigms required by
+JavaScript simply don't exist in other languages, and as such, we've had to build custom
+functionality into our toolchain plugin system to support it properly.
+
+On top of that, Bun and Node.js share _a lot_ of functionality, and if you've been using both legacy
+toolchains in parallel, you may have noticed a handful of issues because of this, such as
+overlapping dependency installs, conflicting alias/task extraction, or over-reading of
+`package.json` files. Additionally, this doesn't even take Deno into account, which has its own set
+of problems to solve for interoperability.
+
+To solve these problems, we've reimagined how JavaScript toolchains work in moon with the following
+goals in mind:
+
+- Share as much functionality across Node, Bun, and Deno without duplication.
+- Support any number of runtimes and package managers with clean interoperability.
+- Allow each runtime and package manager to implement their own tier 1-3 features.
+- Minimize the complexity of the toolchain configurations.
+- Allow users to depend on these toolchains if necessary.
+
+And the result of this rework is 6 new toolchains! Continue reading for more details.
 
 ### Shared core: `unstable_javascript`
 
@@ -141,7 +161,15 @@ unstable_yarn:
 
 ### Backwards incompatibility and caveats
 
-TODO
+Because these new toolchains are built around a plugin system, and not hard-coded into core like the
+legacy toolchains, there are some backwards incompatibilities, changes, and caveats to be aware of:
+
+1. Because the old `node`/`bun` toolchains are now spread across multiple new toolchains, the task
+   `toolchain` setting no longer overrides, and instead merges. Otherwise tasks would fail to
+   inherit the necessary functionality.
+2. Additionally, task inheritance _may_ not function the same, based on what toolchains are now
+   automatically detected. Ensure that projects and tasks inherit the correct toolchains by
+   utilizing `moon project` and `moon task` commands.
 
 ## New task caching options
 
@@ -191,6 +219,8 @@ of changes.
   their directory onto `PATH`.
 - When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
   which can be read from child processes.
+- Published the moon VSCode extension to Open VSX:
+  https://open-vsx.org/extension/moonrepo/moon-console
 
 ## What's next?
 

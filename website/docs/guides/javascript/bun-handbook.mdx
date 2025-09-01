@@ -32,6 +32,14 @@ To enable JavaScript support via Bun, define the [`bun`](../../config/toolchain#
 bun: {}
 ```
 
+:::info
+
+In moon v1.40+, use `unstable_javascript` and `unstable_bun` instead of `bun` to enable the new WASM
+powered Bun toolchain, which is far more accurate and efficient. The non-WASM toolchain will be
+deprecated in the future.
+
+:::
+
 Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"

@@ -9,12 +9,12 @@ About ──────────────────
   Task: test
   Toolchains: node, typescript
   Type: test
+  Depends on: —
 
 Process ────────────────
 
   Command: jest --cache --color
   Environment variables: —
-  Depends on: —
   Runs dependencies: Concurrently
   Runs in CI: Yes
 

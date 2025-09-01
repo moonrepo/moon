@@ -71,16 +71,6 @@ mod output_archiver {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_create_an_archive_if_remote_cache_only() {
-            let container = TaskRunnerContainer::new("archive", "cache-remote").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-
-            assert!(archiver.archive("hash123", None).await.unwrap().is_none());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_create_an_archive_if_cache_read_only() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");

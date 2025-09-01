@@ -364,6 +364,21 @@
             }
           ]
         },
+        "toolchains": {
+          "title": "toolchains",
+          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
         "type": {
           "title": "type",
           "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",

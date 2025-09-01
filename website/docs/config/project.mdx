@@ -1024,23 +1024,24 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#toolchain" />
 
-The `toolchain` field defines the [toolchain (language runtime)](../concepts/toolchain) the command
-runs on, where to locate its executable, and which tool to execute it with. By default, moon will
-set to a value based on the project's [`language`](#language) or default
-[`toolchain.default`](#toolchain-1).
-
-- `bun` - Command is a binary within `node_modules` and will be executed with Bun.
-  <VersionLabel version="1.17.0" />
-- `deno` - Command is executed with Deno, or is a Deno binary located in `~/.deno/bin`.
-- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
-- `rust` - Command is executed with Cargo, or is a Cargo binary located in `~/.cargo/bin`.
-- `system` - Command is expected to exist within the system's environment / user's shell.
+The `toolchain` field defines additional [toolchain(s)](../concepts/toolchain) the command runs on,
+where to locate its executable, and more. By default, moon will set to a value based on the
+project's [`language`](#language), default [`toolchain.default`](#toolchain-1), or via detection.
 
 ```yaml title="moon.yml" {4}
 tasks:
   env:
     command: 'printenv'
     toolchain: 'system'
+```
+
+This setting also supports multiple values.
+
+```yaml title="moon.yml" {4}
+tasks:
+  build:
+    command: 'npm run build'
+    toolchain: ['javascript', 'node', 'npm']
 ```
 
 ### `options`

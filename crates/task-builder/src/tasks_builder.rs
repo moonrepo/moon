@@ -704,28 +704,33 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {
-        // Inherit user provided toolchains first
-        let mut toolchains = FxHashSet::from_iter(task.toolchains.clone());
+        let mut toolchains = FxHashSet::default();
 
-        // Backwards compat for when the user has explicitly configured
-        // the deprecated `platform` setting
-        // TODO: Remove in 2.0
-        #[allow(deprecated)]
-        if !task.platform.is_unknown() && toolchains.is_empty() {
-            toolchains.insert(task.platform.get_toolchain_id());
+        // Implicitly detected/inherited toolchains
+        if task.toolchains.is_empty() {
+            // Backwards compat for when the user has explicitly configured
+            // the deprecated `platform` setting
+            // TODO: Remove in 2.0
+            #[allow(deprecated)]
+            if !task.platform.is_unknown() {
+                toolchains.insert(task.platform.get_toolchain_id());
 
-            debug!(
-                task_target = task.target.as_str(),
-                "The {} task setting has been deprecated, use {} instead",
-                color::property("platform"),
-                color::property("toolchain"),
-            );
+                debug!(
+                    task_target = task.target.as_str(),
+                    "The {} task setting has been deprecated, use {} instead",
+                    color::property("platform"),
+                    color::property("toolchain"),
+                );
+            }
+
+            toolchains.extend(self.detect_task_toolchains(task).await?);
+        }
+        // Explicitly configured toolchains
+        else {
+            toolchains.extend(task.toolchains.clone());
         }
 
-        // Then inherit detected toolchains
-        toolchains.extend(self.detect_task_toolchains(task).await?);
-
-        // If none inherited, then the toolchains from the project
+        // If none, then inherit the toolchains from the project
         if toolchains.is_empty() {
             toolchains.extend(self.project_toolchains.to_owned());
         }
@@ -748,7 +753,7 @@ impl<'proj> TasksBuilder<'proj> {
         // Detect using legacy first
         let mut toolchains = detect_task_toolchains(&task.command, self.context.enabled_toolchains);
 
-        // Detect using the registry first
+        // Detect using the registry second
         toolchains.extend(
             self.context
                 .toolchain_registry

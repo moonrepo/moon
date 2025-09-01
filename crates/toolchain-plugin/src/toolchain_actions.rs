@@ -32,6 +32,9 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
     {
+        let mut paths = vec![];
+        let mut requires_proto = false;
+
         let results = self
             .call_func_all_with_check(
                 "get_command_paths",
@@ -42,10 +45,34 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results
-            .into_iter()
-            .flat_map(|result| result.output)
-            .collect())
+        for result in results {
+            if let Some(inner_paths) = result.output {
+                paths.extend(inner_paths);
+                requires_proto = true;
+            }
+        }
+
+        let moon = &self.host_data.moon_env;
+        let proto = &self.host_data.proto_env;
+
+        // Always use a versioned proto first
+        if requires_proto {
+            paths.push(
+                proto
+                    .store
+                    .inventory_dir
+                    .join("proto")
+                    .join(self.config.proto.version.to_string()),
+            );
+        }
+
+        paths.extend([
+            proto.store.shims_dir.clone(),
+            proto.store.bin_dir.clone(),
+            moon.store_root.join("bin"),
+        ]);
+
+        Ok(paths)
     }
 
     pub async fn detect_project_usage<InFn>(
@@ -273,7 +300,12 @@ impl ToolchainRegistry {
         Ok(results.into_iter().collect())
     }
 
-    pub fn prepare_process_command(&self, command: &mut Command, bag: &GlobalEnvBag) {
+    pub fn prepare_process_command(
+        &self,
+        command: &mut Command,
+        bag: &GlobalEnvBag,
+        with_paths: bool,
+    ) {
         let moon = &self.host_data.moon_env;
         let proto = &self.host_data.proto_env;
         let proto_version = self.config.proto.version.to_string();
@@ -293,8 +325,7 @@ impl ToolchainRegistry {
         }
 
         // Abort early if using globals
-        if is_using_global_toolchains(bag) || !self.config.requires_proto() {
-            command.prepend_paths([moon.store_root.join("bin")]);
+        if is_using_global_toolchains(bag) || !self.config.requires_proto() || !with_paths {
             return;
         }
 

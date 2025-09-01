@@ -288,7 +288,7 @@ impl<'task> TaskRunner<'task> {
         // We only check for the archive, as the manifest is purely for local debugging!
         let archive_file = cache_engine.hash.get_archive_path(hash);
 
-        if archive_file.exists() {
+        if archive_file.exists() && self.task.options.cache.is_local_enabled() {
             // Also check if the archive itself is stale
             if let Some(duration) = cache_lifetime
                 && fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some()
@@ -314,7 +314,8 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in the remote service
-        if let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session())
+        if self.task.options.cache.is_remote_enabled()
+            && let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session())
             && let Some(result) = remote.is_action_cached(state).await?
         {
             debug!(

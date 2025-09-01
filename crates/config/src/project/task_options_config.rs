@@ -51,6 +51,16 @@ config_enum!(
 
 generate_switch!(TaskOptionCache, ["local", "remote"]);
 
+impl TaskOptionCache {
+    pub fn is_local_enabled(&self) -> bool {
+        matches!(self, Self::Enabled(true) | Self::Local)
+    }
+
+    pub fn is_remote_enabled(&self) -> bool {
+        matches!(self, Self::Enabled(true) | Self::Remote)
+    }
+}
+
 config_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
     #[serde(

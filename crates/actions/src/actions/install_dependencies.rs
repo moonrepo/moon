@@ -21,7 +21,7 @@ use starbase_utils::{fs, json::JsonValue};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 hash_content!(
     struct InstallDependenciesHash<'action> {
@@ -60,7 +60,7 @@ pub async fn install_dependencies(
 
     // Installing dependencies requires an internet connection
     if proto_core::is_offline() {
-        debug!(
+        warn!(
             root = node.root.as_str(),
             toolchain_id = node.toolchain_id.as_str(),
             "No internet connection, skipping dependency install"

@@ -7,8 +7,6 @@
 - The legacy toolchains (bun, node, python, etc) will no longer automatically enable if there's a
   version defined in `.prototools`, as there's no way to differentiate between the legacy and modern
   toolchains.
-- The `task.toolchain` setting now merges with detected toolchains, instead of entirely overriding
-  it. This change was made to properly support how toolchain plugins function going forward.
 - Updated `moon query touched-files` to default to comparing against remote branches when in CI, and
   local when not in CI. This aligns with the other `moon query` commands.
   - This can be overridden with the `--local` and `--remote` flags.
@@ -46,11 +44,14 @@
 - Updated task commands (child processes) to utilize toolchain executables directly, instead of
   relying entirely on proto shims. It achieves this by locating the executables, and prepending
   their directory onto `PATH`.
+- Updated `moon task` command to include all `PATH`s that are injected when running the task.
 - Deprecated the `moon run --profile` option.
   - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
     toolchain.
 - When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
   which can be read from child processes.
+- Published the moon VS Code extension to Open VSX:
+  https://open-vsx.org/extension/moonrepo/moon-console
 
 #### 🐞 Fixes
 
@@ -59,16 +60,22 @@
 - Fixed an issue with task options `affectedFiles` and `runFromWorkspaceRoot` generating invalid
   paths.
 - Fixed `moon docker file` generating invalid `Dockerfile`s after the recent proto install changes.
+- Fixed an issue where xz/liblzma was dynamically linked, instead of statically.
 
 #### 🧰 Toolchains
 
+- **Go**
+  - Fixed an issue with `bins` when installing multiple packages from different modules in parallel.
 - **Python**
   - When running `uv venv`, we now include the `--no-managed-python` flag when the `python.version`
     setting is defined. This _should_ ensure that moon/proto's Python managed version is used.
   - When running `uv sync`, we now include the `--no-managed-python` flag unless the
     `python.uv.syncArgs` setting is defined.
 - **Rust**
-  - Updated manifest parsing to extract `path` and `git` values.
+  - Updated manifest parsing to extract `path` and `git` values from dependencies.
+- **TypeScript**
+  - When `includeSharedTypes` and `syncProjectReferences` are both enabled, and the shared types
+    folder contains a `tsconfig.json`, it will also be synced as a project reference.
 
 #### 🧩 Plugins
 

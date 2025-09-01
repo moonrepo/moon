@@ -6,8 +6,8 @@ echo "coverage=$coverage"
 echo "coverage=$coverage" >> "$GITHUB_OUTPUT"
 
 # GH Windows is twice as slow as Linux/macOS
-osCoverage='["depot-ubuntu-22.04-4","macos-latest","depot-windows-2022-4"]'
-os='["ubuntu-latest","macos-latest","depot-windows-2022-4"]'
+osCoverage='["depot-ubuntu-24.04-8","depot-macos-14","depot-windows-2022-8"]'
+os='["depot-ubuntu-24.04-4","depot-macos-14","depot-windows-2022-4"]'
 
 if [[ "$coverage" == "true" ]]; then
 	echo "os=${osCoverage}"

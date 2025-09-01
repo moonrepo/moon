@@ -177,7 +177,7 @@ impl TaskRunnerContainer {
         node: &ActionNode,
     ) -> Command {
         let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
-        builder.set_env_bar(&self.env_bag);
+        builder.set_env_bag(&self.env_bag);
         builder.set_platform_manager(&self.platform_manager);
         builder.build(context, "abc123").await.unwrap()
     }

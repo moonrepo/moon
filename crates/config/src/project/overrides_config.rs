@@ -50,6 +50,7 @@ config_struct!(
     pub struct ProjectToolchainConfig {
         /// The default toolchain(s) for all tasks within the project,
         /// if their toolchain is unknown.
+        #[serde(alias = "defaults")]
         pub default: Option<OneOrMany<Id>>,
 
         /// Overrides `bun` settings.

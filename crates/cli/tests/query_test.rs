@@ -1022,7 +1022,6 @@ mod touched_files {
         assert_eq!(json.options.base.unwrap(), "master".to_string());
         assert_eq!(json.options.head.unwrap(), "branch".to_string());
         assert_eq!(json.options.status, vec![TouchedStatus::Deleted]);
-        assert!(!json.options.local);
     }
 
     #[test]

@@ -9,12 +9,12 @@ About ──────────────────
   Task: lint
   Toolchains: node, typescript
   Type: build
+  Depends on: —
 
 Process ────────────────
 
   Command: eslint --cache --report-unused-disable-directives
   Environment variables: —
-  Depends on: —
   Runs dependencies: Concurrently
   Runs in CI: Yes
 

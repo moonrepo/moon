@@ -44,13 +44,13 @@
 - Updated task commands (child processes) to utilize toolchain executables directly, instead of
   relying entirely on proto shims. It achieves this by locating the executables, and prepending
   their directory onto `PATH`.
-- Updated `moon task` to include all `PATH`s that are injected when running the task.
+- Updated `moon task` command to include all `PATH`s that are injected when running the task.
 - Deprecated the `moon run --profile` option.
   - This option was only used by Node.js, and is now a configuration setting for the `unstable_node`
     toolchain.
 - When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
   which can be read from child processes.
-- Published the moon VSCode extension to Open VSX:
+- Published the moon VS Code extension to Open VSX:
   https://open-vsx.org/extension/moonrepo/moon-console
 
 #### 🐞 Fixes

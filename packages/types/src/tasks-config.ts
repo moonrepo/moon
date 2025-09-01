@@ -291,6 +291,12 @@ export interface TaskConfig {
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
+	toolchains?: string | string[];
+	/**
+	 * List of additional toolchain(s) in which the task will be ran in.
+	 * The toolchain determines available binaries, lookup paths, and more.
+	 * This list will be merged with detected toolchains.
+	 */
 	toolchain: string | string[];
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
@@ -562,6 +568,12 @@ export interface PartialTaskConfig {
 	 * arguments, merging, or inheritance.
 	 */
 	script?: string | null;
+	/**
+	 * List of additional toolchain(s) in which the task will be ran in.
+	 * The toolchain determines available binaries, lookup paths, and more.
+	 * This list will be merged with detected toolchains.
+	 */
+	toolchains?: string | string[] | null;
 	/**
 	 * List of additional toolchain(s) in which the task will be ran in.
 	 * The toolchain determines available binaries, lookup paths, and more.

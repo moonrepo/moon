@@ -167,6 +167,11 @@ export interface ProjectToolchainConfig {
 	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
+	defaults?: string | string[] | null;
+	/**
+	 * The default toolchain(s) for all tasks within the project,
+	 * if their toolchain is unknown.
+	 */
 	default: string | string[] | null;
 	/** Overrides `deno` settings. */
 	deno: ProjectToolchainCommonToolConfig | null;
@@ -395,6 +400,11 @@ export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPlug
 export interface PartialProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun?: PartialProjectToolchainCommonToolConfig | null;
+	/**
+	 * The default toolchain(s) for all tasks within the project,
+	 * if their toolchain is unknown.
+	 */
+	defaults?: string | string[] | null;
 	/**
 	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.

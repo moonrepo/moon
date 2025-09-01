@@ -164,12 +164,31 @@ unstable_yarn:
 Because these new toolchains are built around a plugin system, and not hard-coded into core like the
 legacy toolchains, there are some backwards incompatibilities, changes, and caveats to be aware of:
 
-1. Because the old `node`/`bun` toolchains are now spread across multiple new toolchains, the task
-   [`toolchain` setting](/docs/config/project#toolchain) no longer overrides, and instead merges.
-   Otherwise tasks would fail to inherit the necessary functionality.
+1. Because the old `node`/`bun` toolchains are now spread across multiple new toolchains, instead of
+   1 toolchain, any configuration of the task [`toolchain` setting](/docs/config/project#toolchain)
+   may now be inaccurate, as this setting _overrides_ all detected/inherited toolchains. We suggest
+   omitting this field unless you want full control and understand what you are doing.
+
+```yaml title="moon.yml"
+# Invalid
+tasks:
+  build:
+    # ...
+    toolchain: 'node'
+
+# Valid
+tasks:
+  build:
+    # ...
+    toolchain: ['unstable_javascript', 'unstable_node', 'unstable_npm']
+    # Or simply
+    toolchain: ['javascript', 'node', 'npm']
+```
+
 2. Additionally, task inheritance _may_ not function the same, based on what toolchains are now
    automatically detected. Ensure that projects and tasks inherit the correct toolchains by
-   utilizing `moon project` and `moon task` commands.
+   utilizing [`moon project`](/docs/commands/project) and [`moon task`](/docs/commands/task)
+   commands.
 
 If either of these issues, or other unexpected issues arise, please report it so we can fix it, or
 provide a work around!

@@ -57,6 +57,8 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
         modes.push("persistent");
     }
 
+    let toolchains = project.get_enabled_toolchains_for_task(&task);
+
     let mut inputs = vec![];
     inputs.extend(task.input_globs.keys().map(|i| i.to_string()));
     inputs.extend(task.input_files.keys().map(|i| i.to_string()));
@@ -112,12 +114,16 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                     }.into_any()
                 )
                 Entry(
-                    name: if task.toolchains.len() == 1 {
+                    name: if toolchains.len() == 1 {
                         "Toolchain"
                     } else {
                         "Toolchains"
                     },
-                    content: task.toolchains.join(", "),
+                    content: toolchains
+                        .into_iter()
+                        .map(|tc| tc.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", "),
                 )
                 Entry(
                     name: "Type",

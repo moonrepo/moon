@@ -15,7 +15,7 @@ use starbase_utils::fs;
 use std::path::PathBuf;
 use std::process;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 cache_item!(
     pub struct DependenciesCacheState {
@@ -60,7 +60,7 @@ pub async fn install_deps(
     }
 
     if proto_core::is_offline() {
-        debug!("No internet connection, skipping dependency install");
+        warn!("No internet connection, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
     }

@@ -1527,7 +1527,8 @@ structure:
   [`vcs.defaultBranch`](../../config/workspace#defaultbranch).
 - `--head ` - Current branch, commit, or revision to compare with. Defaults to `HEAD`.
 - `--json` - Display the files in JSON format.
-- `--local` - Gather files from you local state instead of remote.
+- `--local` - Gather files from the local state instead of remote.
+- `--remote` - Gather files from the remote state instead of local.
 - `--status ` - Filter files based on a touched status. Can be passed multiple times.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`
 
@@ -3240,11 +3241,13 @@ tasks:
     inputs:
       - '/path/to/project/.storybook/**/*'
       - '/path/to/project/src/**/*'
+      - '/path/to/project/**/*.stories.*'
   start:
     command: 'start-storybook'
     inputs:
       - '/path/to/project/.storybook/**/*'
       - '/path/to/project/src/**/*'
+      - '/path/to/project/**/*.stories.*'
 ```
 
 ### `@dirs`
@@ -4762,23 +4765,24 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 ### `toolchain`
 
-The `toolchain` field defines the [toolchain (language runtime)](../concepts/toolchain) the command
-runs on, where to locate its executable, and which tool to execute it with. By default, moon will
-set to a value based on the project's [`language`](#language) or default
-[`toolchain.default`](#toolchain-1).
-
-- `bun` - Command is a binary within `node_modules` and will be executed with Bun.
-  
-- `deno` - Command is executed with Deno, or is a Deno binary located in `~/.deno/bin`.
-- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
-- `rust` - Command is executed with Cargo, or is a Cargo binary located in `~/.cargo/bin`.
-- `system` - Command is expected to exist within the system's environment / user's shell.
+The `toolchain` field defines additional [toolchain(s)](../concepts/toolchain) the command runs on,
+where to locate its executable, and more. By default, moon will set to a value based on the
+project's [`language`](#language), default [`toolchain.default`](#toolchain-1), or via detection.
 
 ```yaml title="moon.yml" {4}
 tasks:
   env:
     command: 'printenv'
     toolchain: 'system'
+```
+
+This setting also supports multiple values.
+
+```yaml title="moon.yml" {4}
+tasks:
+  build:
+    command: 'npm run build'
+    toolchain: ['javascript', 'node', 'npm']
 ```
 
 ### `options`
@@ -4867,7 +4871,12 @@ tasks:
 
 Whether to cache the task's execution result using our [smart hashing](../concepts/cache#hashing)
 system. If disabled, _will not_ create a cache hash, and _will not_ persist a task's
-[outputs](#outputs). Defaults to `true`.
+[outputs](#outputs). Supports the following values:
+
+- `true` (default) - Cache the task's output.
+- `false` - Do not cache the task's output.
+- `local` - Only cache locally. 
+- `remote` - Only cache [remotely](../guides/remote-cache). 
 
 We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
 operations.
@@ -6109,6 +6118,140 @@ unstable_go:
 
 ## JavaScript
 
+## `unstable_javascript`
+
+Enables and configures JavaScript using the new WASM plugin. This core JavaScript toolchain depends
+on these other JavaScript ecosystem toolchains:
+
+- Runtimes: [`unstable_bun`](#unstable_bun), [`unstable_node`](#unstable_node)
+- Package managers: [`unstable_bun`](#unstable_bun), [`unstable_npm`](#unstable_npm),
+  [`unstable_pnpm`](#unstable_pnpm), [`unstable_yarn`](#unstable_yarn)
+
+### `dedupeOnLockfileChange`
+
+Will dedupe dependencies after they have been installed, added, removed, or changed in any way, in
+an effort to keep the workspace tree as clean and lean as possible. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  dedupeOnLockfileChange: true
+```
+
+### `dependencyVersionFormat`
+
+When [syncing project dependencies](#syncprojectworkspacedependencies), customize the format that
+will be used for the dependency version range. The following formats are supported (but use the one
+most applicable to your chosen package manager):
+
+- `file` (npm default) - Uses `file:../relative/path` and copies package contents.
+- `link` - Uses `link:../relative/path` and symlinks package contents.
+- `star` - Uses an explicit `*`.
+- `version` - Uses the explicit version from the dependent project's `package.json`, e.g., "1.2.3".
+- `version-caret` - Uses the version from the dependent project's `package.json` as a caret range,
+  e.g., "^1.2.3".
+- `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
+  e.g., "~1.2.3".
+- `workspace` (bun/pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires
+  package workspaces.
+- `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
+- `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  dependencyVersionFormat: 'link'
+```
+
+> This setting does not apply to peer dependencies, as they will always use a format of
+> `^.0.0`. Furthermore, if a package manager does not support a chosen format, it will
+> fallback to another format!
+
+### `inferTasksFromScripts`
+
+Will infer and automatically create [tasks](../concepts/task) from `package.json` scripts. Defaults
+to `false`.
+
+This requires the [project's language](./project#language) to be "javascript" or "typescript", a
+`package.json` to exist in the project, and will take the following into account:
+
+- Script names will be converted to kebab-case, and will become the task ID.
+- Script names that contain `dev`, `start`, `serve`, or `preview` will be considered local only.
+- Pre, post, and life cycle hooks are ignored.
+- Tasks defined in `.moon/tasks.yml` or `moon.yml` take precedence over scripts of the same name.
+
+To verify inferred tasks, run [`moon project `](../commands/project) (pass `--json` to view raw
+config and options). Tasks that are inferred will run through the configured package manager.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  inferTasksFromScripts: true
+```
+
+### `packageManager`
+
+Defines which package manager to utilize when installing dependencies. Supports `npm`, `pnpm`,
+`yarn`, or `bun`. Defaults to no package manager.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  packageManager: 'yarn'
+```
+
+:::info
+
+When this setting is configured, it will require the target toolchain
+([`unstable_bun`](#unstable_bun), ([`unstable_node`](#unstable_node),
+[`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm), or
+[`unstable_yarn`](#unstable_yarn)) to also be configured.
+
+:::
+
+### `rootPackageDependenciesOnly`
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `package.json`, and only installing dependencies in the workspace root, and not within
+individual projects. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  rootPackageDependenciesOnly: true
+```
+
+### `syncPackageManagerField`
+
+Will sync the currently configured [package manager](#packagemanager) and its version to the
+`packageManager` field in the root `package.json`. This setting does nothing if the package manager
+or version is not defined. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  syncPackageManagerField: true
+  packageManager: 'pnpm'
+
+unstable_pnpm:
+  version: '9.0.0'
+```
+
+A quick example on how this works. Given the above, the following field will be injected:
+
+```json title="package.json"
+{
+  // ...
+  "packageManager": "pnpm@9.0.0"
+}
+```
+
+### `syncProjectWorkspaceDependencies`
+
+Will sync a project's [dependencies](../concepts/project#dependencies) as manifest dependencies
+within the project's `package.json`. If a dependent project does not have a `package.json`, or if a
+dependency of the same name has an explicit version already defined, the sync will be skipped.
+Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_javascript:
+  syncProjectWorkspaceDependencies: true
+```
+
 ## `bun`
 
 Enables and configures [Bun](../guides/javascript/bun-handbook).
@@ -6152,6 +6295,44 @@ bun:
   inferTasksFromScripts: true
   rootPackageOnly: true
   syncProjectWorkspaceDependencies: true
+```
+
+## `unstable_bun`
+
+Enables and configures [Bun](../guides/javascript/bun-handbook) using the new WASM plugin.
+
+### `version`
+
+Defines the explicit Bun toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `bun` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_bun:
+  version: '1.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `executeArgs`
+
+Customize the arguments that will be appended to all `bun`-based task commands. Arguments will be
+appended after the `bun` executable, but before task specific arguments.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_bun:
+  executeArgs: ['--bun', '--silent']
+```
+
+### `installArgs`
+
+Customize the arguments that will be passed to the `bun install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_bun:
+  installArgs: ['--frozen-lockfile']
 ```
 
 ## `deno`
@@ -6490,6 +6671,165 @@ node:
 
 This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
 the same version, which is a very common practice when managing dependencies.
+
+## `unstable_node`
+
+Enables and configures [Node.js](../guides/javascript/node-handbook) using the new WASM plugin.
+
+### `version`
+
+Defines the explicit Node.js toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `node` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  version: '20.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `executeArgs`
+
+Customize the arguments that will be appended to all `node`-based task commands. Arguments will be
+appended after the `node` executable, but before task specific arguments.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  executeArgs: ['--preserve-symlinks']
+```
+
+### `profileExecution`
+
+Enable the v8 profiler for all `node` executions, when configured as a task `command`. This should
+only be temporarily enabled for debugging purposes, and not always enabled! Supports the following
+options:
+
+- `cpu` - Generate a CPU profile.
+- `heap` - Generate a memory heap profile.
+
+Profile snapshots will be written to a `.moon` directory in the current project.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  profileExecution: 'cpu'
+```
+
+### `syncVersionManagerConfig`
+
+Will sync the currently configured [Node.js version](#version) to a 3rd-party version manager's
+config/rc file. Supports "nodenv" (syncs to `.node-version`), "nvm" (syncs to `.nvmrc`), or none
+(default).
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_node:
+  syncVersionManagerConfig: 'nvm'
+```
+
+This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
+the same version, which is a very common practice when managing dependencies.
+
+## `unstable_npm`
+
+Enables and configures npm using the new WASM plugin.
+
+### `version`
+
+Defines the explicit npm toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `npm` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_npm:
+  version: '9.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `installArgs`
+
+Customize the arguments that will be passed to the `npm install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_npm:
+  installArgs: ['--no-save']
+```
+
+> This setting is referenced by the `unstable_javascript` toolchain.
+
+## `unstable_pnpm`
+
+Enables and configures pnpm using the new WASM plugin.
+
+### `version`
+
+Defines the explicit pnpm toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `pnpm` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_pnpm:
+  version: '9.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `installArgs`
+
+Customize the arguments that will be passed to the `pnpm install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_pnpm:
+  installArgs: ['--frozen-lockfile']
+```
+
+> This setting is referenced by the `unstable_javascript` toolchain.
+
+## `unstable_yarn`
+
+Enables and configures yarn using the new WASM plugin.
+
+### `version`
+
+Defines the explicit yarn toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `yarn` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_yarn:
+  version: '4.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `installArgs`
+
+Customize the arguments that will be passed to the `yarn install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_yarn:
+  installArgs: ['--immutable']
+```
+
+> This setting is referenced by the `unstable_javascript` toolchain.
+
+### `plugins`
+
+A list of plugins that will automatically be imported using `yarn plugin import` (Yarn 2+ only). For
+performance reasons, plugins will only be imported when the Yarn version changes.
+
+```yaml title=".moon/toolchain.yml" {2-4}
+unstable_yarn:
+  plugins:
+    - 'interactive-tools'
+    - 'workspace-tools'
+```
 
 ## `typescript`
 
@@ -7645,6 +7985,17 @@ unstable_remote:
 ```
 
 > We suggest changing the instance name to the name of your repository!
+
+#### `localReadOnly`
+
+When enabled and developing locally, existing remote blobs will only be downloaded, but new local
+blobs will _not_ be uploaded. Blobs will only be uploaded in CI environments.
+
+```yaml title=".moon/workspace.yml" {3}
+unstable_remote:
+  cache:
+    localReadOnly: true
+```
 
 #### `verifyIntegrity`
 
@@ -9643,6 +9994,14 @@ document them below):
 - Using multi-staged or non-staged (standard) builds.
 - Something else unique to your setup!
 
+:::warning
+
+This guide and our Docker approach is merely a suggestion and is not a requirement for using moon
+with Docker! Feel free to use this as a starting point, or not at all. Choose the approach that
+works best for you!
+
+:::
+
 ### What we're trying to avoid
 
 Before we dive into writing a perfect `Dockerfile`, we'll briefly talk about the pain points we're
@@ -9744,9 +10103,6 @@ RUN moon docker scaffold
 
 #### BUILD
 FROM base AS build
-
-# Copy toolchain
-COPY --from=skeleton /root/.proto /root/.proto
 
 # Copy workspace skeleton
 COPY --from=skeleton /app/.moon/docker/workspace .
@@ -12223,6 +12579,14 @@ To enable JavaScript support via Bun, define the [`bun`](../../config/toolchain#
 bun: {}
 ```
 
+:::info
+
+In moon v1.40+, use `unstable_javascript` and `unstable_bun` instead of `bun` to enable the new WASM
+powered Bun toolchain, which is far more accurate and efficient. The non-WASM toolchain will be
+deprecated in the future.
+
+:::
+
 Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
@@ -12415,6 +12779,14 @@ node: {}
 node:
   packageManager: 'pnpm'
 ```
+
+:::info
+
+In moon v1.40+, use `unstable_javascript` and `unstable_node` instead of `node` to enable the new
+WASM powered Node.js toolchain, which is far more accurate and efficient. The non-WASM toolchain
+will be deprecated in the future.
+
+:::
 
 Or by pinning a `node` version in [`.prototools`](../../proto/config) in the workspace root.
 
@@ -30697,3 +31069,253 @@ With toolchains plugins being stabilized more, we'd like to focus on some other 
 - Better command line argument parsing/joining (especially for task `args`)
 - Pkl configuration improvements
 - WASM toolchain documentation
+
+---
+
+## moon v1.40 - JavaScript ecosystem WASM toolchains and more
+
+It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
+WASM toolchains, which are now available!
+
+## New JavaScript ecosystem toolchains powered by WASM
+
+Porting the legacy Bun and Node.js toolchains to WASM has been a non-trivial amount of work, as the
+JavaScript ecosystem is quite convoluted compared to other languages. The paradigms required by
+JavaScript simply don't exist in other languages, and as such, we've had to build custom
+functionality into our toolchain plugin system to support it properly.
+
+On top of that, Bun and Node.js share _a lot_ of functionality, and if you've been using both legacy
+toolchains in parallel, you may have noticed a handful of issues because of this, such as
+overlapping dependency installs, conflicting alias/task extraction, or over-reading of
+`package.json` files. Additionally, this doesn't even take Deno into account, which has its own set
+of problems to solve for interoperability.
+
+To solve these problems, we've reimagined how JavaScript toolchains work in moon with the following
+goals in mind:
+
+- Share as much functionality across Node, Bun, and Deno without duplication.
+- Support any number of runtimes and package managers with clean interoperability.
+- Allow each runtime and package manager to implement their own tier 1-3 features.
+- Minimize the complexity of the toolchain configurations.
+- Allow users to depend on these toolchains if necessary.
+
+And the result of this rework is 6 new toolchains! Continue reading for more details.
+
+### Shared core: `unstable_javascript`
+
+A new JavaScript toolchain has been introduced, called `unstable_javascript`. This toolchain serves
+as the foundation for all other JavaScript-related toolchains, providing a shared core of
+functionality and settings. It implements [tier 1 and tier 2][tiers] features, and is in charge of
+the following:
+
+- Defines which package manager (and runtime) to use.
+- Extends projects and tasks with `package.json` and `node_modules` information.
+- Locates the dependencies root (`package.json` workspaces).
+- Installs and dedupes dependencies for the defined package manager.
+- Parses manifests and lockfiles for relevant information.
+- Handles project and workspace syncing operations.
+- And anything else that is shared across the JavaScript ecosystem.
+
+```yaml title=".moon/toolchain.yml"
+unstable_javascript:
+  packageManager: 'yarn'
+  inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+```
+
+If you're familar with the legacy Bun or Node.js toolchains, this should feel very familiar, as this
+is a combination of their functionality. Learn more about its settings:
+
+- [`unstable_javascript`](/docs/config/toolchain#unstable_javascript)
+
+### Runtimes: `unstable_bun` and `unstable_node`
+
+JavaScript is a unique language in that it has multiple runtimes, primarily Node.js, Bun, and Deno.
+We support Node.js through the new `unstable_node` toolchain, and Bun through the `unstable_bun`
+toolchain, with Deno support coming soon. These toolchains only implement [tier 1 and tier 3][tiers]
+features, as tier 2 is handled by the core `unstable_javascript` toolchain.
+
+Their primary role is to provide settings for runtime execution (task child processes), and for
+downloading and installing the runtime tool into the proto toolchain (when the `version` setting is
+defined).
+
+The runtime that will be utilized in the action graph is defined by the new
+`unstable_javascript.packageManager` setting (bun = bun, npm/pnpm/yarn = node), but that doesn't
+stop you from using multiple runtimes in parallel.
+
+```yaml title=".moon/toolchain.yml"
+unstable_node:
+  version: '24.0.0'
+  executeArgs: ['--preserve-symlinks']
+```
+
+Learn more about their settings:
+
+- [`unstable_bun`](/docs/config/toolchain#unstable_bun)
+- [`unstable_node`](/docs/config/toolchain#unstable_node)
+
+### Package managers: `unstable_npm`, `unstable_pnpm`, and `unstable_yarn`
+
+All JavaScript package managers (including Bun) are now their own toolchain, with their own
+configuration, and are _no longer_ nested within the Node.js toolchain. These toolchains only
+implement [tier 1 and tier 3][tiers] features, as tier 2 is handled by the core
+`unstable_javascript` toolchain.
+
+Their primary role is to provide settings for the `unstable_javascript` toolchain when installing
+and syncing dependencies, and for downloading and installing the package manager tool into the proto
+toolchain (when the `version` setting is defined).
+
+Since there are multiple package managers, which do you need to configure? Only the one associated
+with the new `unstable_javascript.packageManager` setting!
+
+```yaml title=".moon/toolchain.yml"
+unstable_pnpm:
+  version: '10.15.0'
+  installArgs: ['--frozen-lockfile']
+```
+
+Learn more about their settings:
+
+- [`unstable_bun`](/docs/config/toolchain#unstable_bun)
+- [`unstable_npm`](/docs/config/toolchain#unstable_npm)
+- [`unstable_pnpm`](/docs/config/toolchain#unstable_pnpm)
+- [`unstable_yarn`](/docs/config/toolchain#unstable_yarn)
+
+### Migrating from legacy toolchains
+
+Migrating from the legacy toolchains to these new modern WASM toolchains is rather straightforward,
+as most of the existing settings have been ported over. Follow these steps:
+
+- Move the `node.npm`, `node.pnpm`, and `node.yarn` configuration to its own top-level `unstable_`
+  toolchain.
+- Move the `bun.version` or `node.version` setting to an `unstable_bun` or `unstable_node` toolchain
+  respectively. If not using `version`, set an empty object.
+- Remove the `node.addEnginesConstraint` setting.
+- Rename the `node` or `bun` toolchain to `unstable_javascript`.
+- Rename the `node.binExecArgs` setting to `unstable_node.executeArgs`.
+- Rename the `node.rootPackageOnly` setting to `unstable_javascript.rootPackageDependenciesOnly`.
+
+As an example, here's a before and after of our repository.
+
+```yaml title=".moon/toolchain.yml"
+# Before
+node:
+  version: '22.14.0'
+  packageManager: 'yarn'
+  yarn:
+    version: '4.8.0'
+  inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+```
+
+```yaml title=".moon/toolchain.yml"
+# After
+unstable_javascript:
+  packageManager: 'yarn'
+  inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+
+unstable_node:
+  version: '22.14.0'
+
+unstable_yarn:
+  version: '4.8.0'
+```
+
+### Backwards incompatibility and caveats
+
+Because these new toolchains are built around a plugin system, and not hard-coded into core like the
+legacy toolchains, there are some backwards incompatibilities, changes, and caveats to be aware of:
+
+1. Because the old `node`/`bun` toolchains are now spread across multiple new toolchains, instead of
+   1 toolchain, any configuration of the task [`toolchain` setting](/docs/config/project#toolchain)
+   may now be inaccurate, as this setting _overrides_ all detected/inherited toolchains. We suggest
+   omitting this field unless you want full control and understand what you are doing.
+
+```yaml title="moon.yml"
+# Invalid
+tasks:
+  build:
+    # ...
+    toolchain: 'node'
+
+# Valid
+tasks:
+  build:
+    # ...
+    toolchain: ['unstable_javascript', 'unstable_node', 'unstable_npm']
+    # Or simply
+    toolchain: ['javascript', 'node', 'npm']
+```
+
+2. Additionally, task inheritance _may_ not function the same, based on what toolchains are now
+   automatically detected. Ensure that projects and tasks inherit the correct toolchains by
+   utilizing [`moon project`](/docs/commands/project) and [`moon task`](/docs/commands/task)
+   commands.
+
+If either of these issues, or other unexpected issues arise, please report it so we can fix it, or
+provide a work around!
+
+## New task caching options
+
+Tasks have always supported a [`cache` option](/docs/config/project#cache) for toggling caching on
+and off. With the introduction of remote cache, we're expanding these options to provide more
+flexibility and control. Instead of supporting only a simple boolean flag, we're introducing new
+`local` and `remote` values, which will only cache locally or remotely, respectively.
+
+This is useful for tasks that need caching, but should not persist in the remote cache, and vice
+versa.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    options:
+      cache: 'local'
+```
+
+## New local read-only mode for remote cache
+
+Adoption of our new [remote cache](/docs/guides/remote-cache) solution has been going great, and
+we've heard positive feedback from users about its performance and reliability. However, it's not
+perfect and can always be improved!
+
+And as such, we're introducing a new
+[`unstable_remote.cache.localReadOnly`](/docs/config/workspace#localreadonly) setting, which will
+only read (download) outputs from the remote cache when in local development, but will _not_ write
+(upload) outputs. This is useful for teams that want to share cache between CI and local, but don't
+want the overhead of uploading in-development outputs.
+
+```yaml title=".moon/workspace.yml"
+unstable_remote:
+  cache:
+    localReadOnly: true
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.40.0) for a full list
+of changes.
+
+- Updated `moon query touched-files` to default to comparing against remote branches when in CI, and
+  local when not in CI. This aligns with the other `moon query` commands.
+- Updated task commands (child processes) to utilize toolchain executables directly, instead of
+  relying entirely on proto shims. It achieves this by locating the executables, and prepending
+  their directory onto `PATH`.
+- When running a task, we now set a `MOON_TASK_HASH` environment variable for the current hash,
+  which can be read from child processes.
+- Published the moon VSCode extension to Open VSX:
+  https://open-vsx.org/extension/moonrepo/moon-console
+
+## What's next?
+
+With toolchains plugins being stabilized more, we'd like to focus on some other areas.
+
+- Implement more of the task inputs RFC: https://github.com/moonrepo/moon/issues/1985
+- Investigate a new `unstable_deno` toolchain
+- Investigate better task inheritance: https://github.com/moonrepo/moon/issues/2023
+
+[tiers]: /docs/how-it-works/languages

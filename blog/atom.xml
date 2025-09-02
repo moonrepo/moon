@@ -2,11 +2,180 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2025-07-24T00:00:00.000Z</updated>
+    <updated>2025-09-01T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.40 - JavaScript ecosystem WASM toolchains and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.40</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.40"/>
+        <updated>2025-09-01T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[It's been a while since our last release, as we've been busy working on new JavaScript ecosystem]]></summary>
+        <content type="html"><![CDATA[<p>It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
+WASM toolchains, which are now available!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-javascript-ecosystem-toolchains-powered-by-wasm">New JavaScript ecosystem toolchains powered by WASM<a href="https://moonrepo.dev/blog/moon-v1.40#new-javascript-ecosystem-toolchains-powered-by-wasm" class="hash-link" aria-label="Direct link to New JavaScript ecosystem toolchains powered by WASM" title="Direct link to New JavaScript ecosystem toolchains powered by WASM">​</a></h2>
+<p>Porting the legacy Bun and Node.js toolchains to WASM has been a non-trivial amount of work, as the
+JavaScript ecosystem is quite convoluted compared to other languages. The paradigms required by
+JavaScript simply don't exist in other languages, and as such, we've had to build custom
+functionality into our toolchain plugin system to support it properly.</p>
+<p>On top of that, Bun and Node.js share <em>a lot</em> of functionality, and if you've been using both legacy
+toolchains in parallel, you may have noticed a handful of issues because of this, such as
+overlapping dependency installs, conflicting alias/task extraction, or over-reading of
+<code>package.json</code> files. Additionally, this doesn't even take Deno into account, which has its own set
+of problems to solve for interoperability.</p>
+<p>To solve these problems, we've reimagined how JavaScript toolchains work in moon with the following
+goals in mind:</p>
+<ul>
+<li>Share as much functionality across Node, Bun, and Deno without duplication.</li>
+<li>Support any number of runtimes and package managers with clean interoperability.</li>
+<li>Allow each runtime and package manager to implement their own tier 1-3 features.</li>
+<li>Minimize the complexity of the toolchain configurations.</li>
+<li>Allow users to depend on these toolchains if necessary.</li>
+</ul>
+<p>And the result of this rework is 6 new toolchains! Continue reading for more details.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="shared-core-unstable_javascript">Shared core: <code>unstable_javascript</code><a href="https://moonrepo.dev/blog/moon-v1.40#shared-core-unstable_javascript" class="hash-link" aria-label="Direct link to shared-core-unstable_javascript" title="Direct link to shared-core-unstable_javascript">​</a></h3>
+<p>A new JavaScript toolchain has been introduced, called <code>unstable_javascript</code>. This toolchain serves
+as the foundation for all other JavaScript-related toolchains, providing a shared core of
+functionality and settings. It implements <a href="https://moonrepo.dev/docs/how-it-works/languages">tier 1 and tier 2</a> features, and is in charge of
+the following:</p>
+<ul>
+<li>Defines which package manager (and runtime) to use.</li>
+<li>Extends projects and tasks with <code>package.json</code> and <code>node_modules</code> information.</li>
+<li>Locates the dependencies root (<code>package.json</code> workspaces).</li>
+<li>Installs and dedupes dependencies for the defined package manager.</li>
+<li>Parses manifests and lockfiles for relevant information.</li>
+<li>Handles project and workspace syncing operations.</li>
+<li>And anything else that is shared across the JavaScript ecosystem.</li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_javascript</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'yarn'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">inferTasksFromScripts</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncPackageManagerField</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncProjectWorkspaceDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>If you're familar with the legacy Bun or Node.js toolchains, this should feel very familiar, as this
+is a combination of their functionality. Learn more about its settings:</p>
+<ul>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_javascript"><code>unstable_javascript</code></a></li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="runtimes-unstable_bun-and-unstable_node">Runtimes: <code>unstable_bun</code> and <code>unstable_node</code><a href="https://moonrepo.dev/blog/moon-v1.40#runtimes-unstable_bun-and-unstable_node" class="hash-link" aria-label="Direct link to runtimes-unstable_bun-and-unstable_node" title="Direct link to runtimes-unstable_bun-and-unstable_node">​</a></h3>
+<p>JavaScript is a unique language in that it has multiple runtimes, primarily Node.js, Bun, and Deno.
+We support Node.js through the new <code>unstable_node</code> toolchain, and Bun through the <code>unstable_bun</code>
+toolchain, with Deno support coming soon. These toolchains only implement <a href="https://moonrepo.dev/docs/how-it-works/languages">tier 1 and tier 3</a>
+features, as tier 2 is handled by the core <code>unstable_javascript</code> toolchain.</p>
+<p>Their primary role is to provide settings for runtime execution (task child processes), and for
+downloading and installing the runtime tool into the proto toolchain (when the <code>version</code> setting is
+defined).</p>
+<p>The runtime that will be utilized in the action graph is defined by the new
+<code>unstable_javascript.packageManager</code> setting (bun = bun, npm/pnpm/yarn = node), but that doesn't
+stop you from using multiple runtimes in parallel.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_node</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'24.0.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">executeArgs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'--preserve-symlinks'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<p>Learn more about their settings:</p>
+<ul>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_bun"><code>unstable_bun</code></a></li>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_node"><code>unstable_node</code></a></li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="package-managers-unstable_npm-unstable_pnpm-and-unstable_yarn">Package managers: <code>unstable_npm</code>, <code>unstable_pnpm</code>, and <code>unstable_yarn</code><a href="https://moonrepo.dev/blog/moon-v1.40#package-managers-unstable_npm-unstable_pnpm-and-unstable_yarn" class="hash-link" aria-label="Direct link to package-managers-unstable_npm-unstable_pnpm-and-unstable_yarn" title="Direct link to package-managers-unstable_npm-unstable_pnpm-and-unstable_yarn">​</a></h3>
+<p>All JavaScript package managers (including Bun) are now their own toolchain, with their own
+configuration, and are <em>no longer</em> nested within the Node.js toolchain. These toolchains only
+implement <a href="https://moonrepo.dev/docs/how-it-works/languages">tier 1 and tier 3</a> features, as tier 2 is handled by the core
+<code>unstable_javascript</code> toolchain.</p>
+<p>Their primary role is to provide settings for the <code>unstable_javascript</code> toolchain when installing
+and syncing dependencies, and for downloading and installing the package manager tool into the proto
+toolchain (when the <code>version</code> setting is defined).</p>
+<p>Since there are multiple package managers, which do you need to configure? Only the one associated
+with the new <code>unstable_javascript.packageManager</code> setting!</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_pnpm</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'10.15.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">installArgs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'--frozen-lockfile'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<p>Learn more about their settings:</p>
+<ul>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_bun"><code>unstable_bun</code></a></li>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_npm"><code>unstable_npm</code></a></li>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_pnpm"><code>unstable_pnpm</code></a></li>
+<li><a href="https://moonrepo.dev/docs/config/toolchain#unstable_yarn"><code>unstable_yarn</code></a></li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="migrating-from-legacy-toolchains">Migrating from legacy toolchains<a href="https://moonrepo.dev/blog/moon-v1.40#migrating-from-legacy-toolchains" class="hash-link" aria-label="Direct link to Migrating from legacy toolchains" title="Direct link to Migrating from legacy toolchains">​</a></h3>
+<p>Migrating from the legacy toolchains to these new modern WASM toolchains is rather straightforward,
+as most of the existing settings have been ported over. Follow these steps:</p>
+<ul>
+<li>Move the <code>node.npm</code>, <code>node.pnpm</code>, and <code>node.yarn</code> configuration to its own top-level <code>unstable_</code>
+toolchain.</li>
+<li>Move the <code>bun.version</code> or <code>node.version</code> setting to an <code>unstable_bun</code> or <code>unstable_node</code> toolchain
+respectively. If not using <code>version</code>, set an empty object.</li>
+<li>Remove the <code>node.addEnginesConstraint</code> setting.</li>
+<li>Rename the <code>node</code> or <code>bun</code> toolchain to <code>unstable_javascript</code>.</li>
+<li>Rename the <code>node.binExecArgs</code> setting to <code>unstable_node.executeArgs</code>.</li>
+<li>Rename the <code>node.rootPackageOnly</code> setting to <code>unstable_javascript.rootPackageDependenciesOnly</code>.</li>
+</ul>
+<p>As an example, here's a before and after of our repository.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Before</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">node</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'22.14.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'yarn'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">yarn</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'4.8.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">inferTasksFromScripts</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncPackageManagerField</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncProjectWorkspaceDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># After</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">unstable_javascript</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'yarn'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">inferTasksFromScripts</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncPackageManagerField</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncProjectWorkspaceDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">unstable_node</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'22.14.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">unstable_yarn</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'4.8.0'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="backwards-incompatibility-and-caveats">Backwards incompatibility and caveats<a href="https://moonrepo.dev/blog/moon-v1.40#backwards-incompatibility-and-caveats" class="hash-link" aria-label="Direct link to Backwards incompatibility and caveats" title="Direct link to Backwards incompatibility and caveats">​</a></h3>
+<p>Because these new toolchains are built around a plugin system, and not hard-coded into core like the
+legacy toolchains, there are some backwards incompatibilities, changes, and caveats to be aware of:</p>
+<ol>
+<li>Because the old <code>node</code>/<code>bun</code> toolchains are now spread across multiple new toolchains, instead of
+1 toolchain, any configuration of the task <a href="https://moonrepo.dev/docs/config/project#toolchain"><code>toolchain</code> setting</a>
+may now be inaccurate, as this setting <em>overrides</em> all detected/inherited toolchains. We suggest
+omitting this field unless you want full control and understand what you are doing.</li>
+</ol>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Invalid</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'node'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Valid</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'unstable_javascript'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'unstable_node'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'unstable_npm'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># Or simply</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'javascript'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'node'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'npm'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<ol start="2">
+<li>Additionally, task inheritance <em>may</em> not function the same, based on what toolchains are now
+automatically detected. Ensure that projects and tasks inherit the correct toolchains by
+utilizing <a href="https://moonrepo.dev/docs/commands/project"><code>moon project</code></a> and <a href="https://moonrepo.dev/docs/commands/task"><code>moon task</code></a>
+commands.</li>
+</ol>
+<p>If either of these issues, or other unexpected issues arise, please report it so we can fix it, or
+provide a work around!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-task-caching-options">New task caching options<a href="https://moonrepo.dev/blog/moon-v1.40#new-task-caching-options" class="hash-link" aria-label="Direct link to New task caching options" title="Direct link to New task caching options">​</a></h2>
+<p>Tasks have always supported a <a href="https://moonrepo.dev/docs/config/project#cache"><code>cache</code> option</a> for toggling caching on
+and off. With the introduction of remote cache, we're expanding these options to provide more
+flexibility and control. Instead of supporting only a simple boolean flag, we're introducing new
+<code>local</code> and <code>remote</code> values, which will only cache locally or remotely, respectively.</p>
+<p>This is useful for tasks that need caching, but should not persist in the remote cache, and vice
+versa.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'local'</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-local-read-only-mode-for-remote-cache">New local read-only mode for remote cache<a href="https://moonrepo.dev/blog/moon-v1.40#new-local-read-only-mode-for-remote-cache" class="hash-link" aria-label="Direct link to New local read-only mode for remote cache" title="Direct link to New local read-only mode for remote cache">​</a></h2>
+<p>Adoption of our new <a href="https://moonrepo.dev/docs/guides/remote-cache">remote cache</a> solution has been going great, and
+we've heard positive feedback from users about its performance and reliability. However, it's not
+perfect and can always be improved!</p>
+<p>And as such, we're introducing a new
+<a href="https://moonrepo.dev/docs/config/workspace#localreadonly"><code>unstable_remote.cache.localReadOnly</code></a> setting, which will
+only read (download) outputs from the remote cache when in local development, but will <em>not</em> write
+(upload) outputs. This is useful for teams that want to share cache between CI and local, but don't
+want the overhead of uploading in-development outputs.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">localReadOnly</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.40#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.40.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Updated <code>moon query touched-files</code> to default to comparing against remote branches when in CI, and
+local when not in CI. This aligns with the other <code>moon query</code> commands.</li>
+<li>Updated task commands (child processes) to utilize toolchain executables directly, instead of
+relying entirely on proto shims. It achieves this by locating the executables, and prepending
+their directory onto <code>PATH</code>.</li>
+<li>When running a task, we now set a <code>MOON_TASK_HASH</code> environment variable for the current hash,
+which can be read from child processes.</li>
+<li>Published the moon VSCode extension to Open VSX:
+<a href="https://open-vsx.org/extension/moonrepo/moon-console" target="_blank" rel="noopener noreferrer">https://open-vsx.org/extension/moonrepo/moon-console</a></li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.40#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h2>
+<p>With toolchains plugins being stabilized more, we'd like to focus on some other areas.</p>
+<ul>
+<li>Implement more of the task inputs RFC: <a href="https://github.com/moonrepo/moon/issues/1985" target="_blank" rel="noopener noreferrer">https://github.com/moonrepo/moon/issues/1985</a></li>
+<li>Investigate a new <code>unstable_deno</code> toolchain</li>
+<li>Investigate better task inheritance: <a href="https://github.com/moonrepo/moon/issues/2023" target="_blank" rel="noopener noreferrer">https://github.com/moonrepo/moon/issues/2023</a></li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="toolchain" term="toolchain"/>
+        <category label="wasm" term="wasm"/>
+        <category label="javascript" term="javascript"/>
+        <category label="bun" term="bun"/>
+        <category label="node" term="node"/>
+        <category label="npm" term="npm"/>
+        <category label="pnpm" term="pnpm"/>
+        <category label="yarn" term="yarn"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.39 - Improved task inputs, better proto integration, and project layers]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.39</id>
@@ -1899,76 +2068,5 @@ everything.</li>
         <category label="token" term="token"/>
         <category label="toolchain" term="toolchain"/>
         <category label="preset" term="preset"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.40 - Config mode, progress bars, and more]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.40</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.40"/>
-        <updated>2024-08-16T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This is a small release that includes many quality of life improvements.]]></summary>
-        <content type="html"><![CDATA[<p>This is a small release that includes many quality of life improvements.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new---config-mode-global-option">New <code>--config-mode</code> global option<a href="https://moonrepo.dev/blog/proto-v0.40#new---config-mode-global-option" class="hash-link" aria-label="Direct link to new---config-mode-global-option" title="Direct link to new---config-mode-global-option">​</a></h2>
-<p>When proto is ran, we find and load all applicable <a href="https://moonrepo.dev/docs/proto/config"><code>.prototools</code> files</a>. For
-the most part, we would traverse upwards, and sometimes load <code>~/.proto/.prototools</code>, while other
-times not. It was quite confusing when certain config files were loaded. This was further
-exacerbated by the <code>--include-global</code> and <code>--only-local</code> options, which were only available to some
-commands (and have been removed entirely).</p>
-<p>To remedy and standardize this, we're introducing a new global option
-<a href="https://moonrepo.dev/docs/proto/config#resolution-mode"><code>--config-mode</code></a> (<code>-c</code>), which controls how configuration are
-loaded. This option supports the following values.</p>
-<ul>
-<li><code>global</code> - Only load <code>~/.proto/.prototools</code>.</li>
-<li><code>local</code> - Only load <code>./.prototools</code> in the current directory.</li>
-<li><code>upwards</code> - Load <code>.prototools</code> while traversing upwards, but do not load <code>~/.proto/.prototools</code>.</li>
-<li><code>upwards-global</code> / <code>all</code> - Load <code>.prototools</code> while traversing upwards, and do load
-<code>~/.proto/.prototools</code>.</li>
-</ul>
-<p>Now what is the default mode? As mentioned above, we wanted to standardize the default across all
-commands, but the problem is, is that each command has different requirements. So in the end, the
-default mode is actually 2 different modes depending on the command being ran, which is:</p>
-<ul>
-<li>For <code>activate</code>, <code>install</code>, <code>outdated</code>, <code>status</code> commands -&gt; <code>upwards</code> mode</li>
-<li>All other commands -&gt; <code>upwards-global</code> mode</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-progress-bars">Improved progress bars<a href="https://moonrepo.dev/blog/proto-v0.40#improved-progress-bars" class="hash-link" aria-label="Direct link to Improved progress bars" title="Direct link to Improved progress bars">​</a></h2>
-<p>We've improved (or added) the progress bars for <a href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a>,
-<a href="https://moonrepo.dev/docs/proto/commands/upgrade"><code>proto upgrade</code></a>, and the auto-install flow for
-<a href="https://moonrepo.dev/docs/proto/commands/run"><code>proto run</code></a>. The progress bars will now display the current phase
-(download, unpack, etc), and the download phase will now include current / total downloaded bytes.</p>
-<p>Furthermore, when installing multiple tools, we now display a progress bar for each tool.</p>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/v0.40-progress-9b4c68fcd969d5312791dc1234379127.png" width="100%" alt="" class="inline-block"></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-http-requests">Improved HTTP requests<a href="https://moonrepo.dev/blog/proto-v0.40#improved-http-requests" class="hash-link" aria-label="Direct link to Improved HTTP requests" title="Direct link to Improved HTTP requests">​</a></h2>
-<p>For historical context, requests made from the proto CLI itself use a different HTTP client than
-requests made from a WASM plugin. The reason for this is that the Rust-based HTTP client that proto
-uses is not compatible within WASM, so plugins use a different library. This disconnect meant that
-WASM requests did <em>not</em> inherit the <a href="https://moonrepo.dev/docs/proto/config#settingshttp"><code>[settings.http]</code></a> settings,
-which meant in some cases, requests would fail or not authenticate correctly, and there was no
-work-around.</p>
-<p>This is a very tricky problem to solve, but we have implemented a possible solution through a
-concept known as <a href="https://moonrepo.dev/docs/guides/wasm-plugins#host-functions--macros">host functions</a>. Host functions
-are basically functions that exist on the host machine (proto), and can be called from the guest
-runtime (WASM). This new host function utilizes the same HTTP client as proto to make requests,
-which results in WASM no longer being disconnected.</p>
-<p>However, since there is a cost for calling host functions from the guest, and then serializing the
-response from the host back to the guest, there is a small chance that performance will be affected.
-We will continue to monitor the implementation, so please report any issues!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.40#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.40.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Removed <code>--include-global</code> and <code>--only-local</code> flags from all applicable commands. Use the new
-<code>--config-mode</code> instead.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="config" term="config"/>
-        <category label="mode" term="mode"/>
-        <category label="progress" term="progress"/>
-        <category label="install" term="install"/>
-        <category label="http" term="http"/>
-        <category label="request" term="request"/>
-        <category label="fetch" term="fetch"/>
     </entry>
 </feed>

@@ -704,6 +704,28 @@
             }
           ]
         },
+        "defaults": {
+          "title": "defaults",
+          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "deno": {
           "title": "deno",
           "description": "Overrides deno settings.",
@@ -1039,7 +1061,22 @@
         },
         "toolchain": {
           "title": "toolchain",
-          "description": "The toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
+          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "toolchains": {
+          "title": "toolchains",
+          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
           "anyOf": [
             {
               "type": "string"
@@ -1216,7 +1253,18 @@
           "description": "Caches the outputs of the task. Defaults to true if outputs are configured for the task.",
           "anyOf": [
             {
-              "type": "boolean"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "local",
+                    "remote"
+                  ]
+                }
+              ]
             },
             {
               "type": "null"

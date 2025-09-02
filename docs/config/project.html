@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.0b14f664.js" defer="defer"></script>
-<script src="/assets/js/main.24aca8ae.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.4070e719.js" defer="defer"></script>
+<script src="/assets/js/main.dc06697d.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;"><defs>
@@ -505,20 +505,12 @@ with a string.</p>
 more about <a href="/docs/concepts/task#commands-vs-scripts">commands vs scripts</a>.</p></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="toolchain"><code>toolchain</code><span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.31.0</span><a href="#toolchain" class="hash-link" aria-label="Direct link to toolchain" title="Direct link to toolchain">​</a></h3>
 <!-- -->
-<p>The <code>toolchain</code> field defines the <a href="/docs/concepts/toolchain">toolchain (language runtime)</a> the command
-runs on, where to locate its executable, and which tool to execute it with. By default, moon will
-set to a value based on the project&#x27;s <a href="#language"><code>language</code></a> or default
-<a href="#toolchain-1"><code>toolchain.default</code></a>.</p>
-<ul>
-<li><code>bun</code> - Command is a binary within <code>node_modules</code> and will be executed with Bun.<!-- -->
-<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.17.0</span>
-</li>
-<li><code>deno</code> - Command is executed with Deno, or is a Deno binary located in <code>~/.deno/bin</code>.</li>
-<li><code>node</code> - Command is a binary within <code>node_modules</code> and will be executed with Node.js.</li>
-<li><code>rust</code> - Command is executed with Cargo, or is a Cargo binary located in <code>~/.cargo/bin</code>.</li>
-<li><code>system</code> - Command is expected to exist within the system&#x27;s environment / user&#x27;s shell.</li>
-</ul>
+<p>The <code>toolchain</code> field defines additional <a href="/docs/concepts/toolchain">toolchain(s)</a> the command runs on,
+where to locate its executable, and more. By default, moon will set to a value based on the
+project&#x27;s <a href="#language"><code>language</code></a>, default <a href="#toolchain-1"><code>toolchain.default</code></a>, or via detection.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">env</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;printenv&#x27;</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;system&#x27;</span><br></span></code></pre></div></div>
+<p>This setting also supports multiple values.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;npm run build&#x27;</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">&#x27;javascript&#x27;</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;node&#x27;</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;npm&#x27;</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="options"><code>options</code><a href="#options" class="hash-link" aria-label="Direct link to options" title="Direct link to options">​</a></h3>
 <!-- -->
 <p>The <code>options</code> field is an object of configurable options that can be used to modify the task and its
@@ -561,7 +553,13 @@ failing tasks are allowed to fail.</li>
 <!-- -->
 <p>Whether to cache the task&#x27;s execution result using our <a href="/docs/concepts/cache#hashing">smart hashing</a>
 system. If disabled, <em>will not</em> create a cache hash, and <em>will not</em> persist a task&#x27;s
-<a href="#outputs">outputs</a>. Defaults to <code>true</code>.</p>
+<a href="#outputs">outputs</a>. Supports the following values:</p>
+<ul>
+<li><code>true</code> (default) - Cache the task&#x27;s output.</li>
+<li><code>false</code> - Do not cache the task&#x27;s output.</li>
+<li><code>local</code> - Only cache locally. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.40.0</span></li>
+<li><code>remote</code> - Only cache <a href="/docs/guides/remote-cache">remotely</a>. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.40.0</span></li>
+</ul>
 <p>We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
 operations.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">clean</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;rm -rf ./temp&#x27;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></span></code></pre></div></div>

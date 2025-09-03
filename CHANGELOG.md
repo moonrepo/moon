@@ -6,6 +6,7 @@
 
 - Fixed an issue where a task would try to execute with proto, but proto hasn't been fully installed
   yet.
+- Fixed an issue where task `PATH`s may not always be injected correctly.
 
 #### 🧰 Toolchains
 

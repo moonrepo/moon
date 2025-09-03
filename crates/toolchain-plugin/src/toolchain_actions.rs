@@ -1,6 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
+use moon_config::ProjectConfig;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
@@ -11,7 +12,10 @@ use moon_pdk_api::{
     SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_process::Command;
-use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchains};
+use moon_toolchain::{
+    get_version_env_key, get_version_env_value, is_using_global_toolchain,
+    is_using_global_toolchains,
+};
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json::JsonValue;
@@ -32,9 +36,6 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
     {
-        let mut paths = vec![];
-        let mut requires_proto = false;
-
         let results = self
             .call_func_all_with_check(
                 "get_command_paths",
@@ -45,34 +46,10 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        for result in results {
-            if let Some(inner_paths) = result.output {
-                paths.extend(inner_paths);
-                requires_proto = true;
-            }
-        }
-
-        let moon = &self.host_data.moon_env;
-        let proto = &self.host_data.proto_env;
-
-        // Always use a versioned proto first
-        if requires_proto {
-            paths.push(
-                proto
-                    .store
-                    .inventory_dir
-                    .join("proto")
-                    .join(self.config.proto.version.to_string()),
-            );
-        }
-
-        paths.extend([
-            proto.store.shims_dir.clone(),
-            proto.store.bin_dir.clone(),
-            moon.store_root.join("bin"),
-        ]);
-
-        Ok(paths)
+        Ok(results
+            .into_iter()
+            .flat_map(|result| result.output)
+            .collect())
     }
 
     pub async fn detect_project_usage<InFn>(
@@ -300,45 +277,83 @@ impl ToolchainRegistry {
         Ok(results.into_iter().collect())
     }
 
-    pub fn prepare_process_command(
+    // TEMP public
+    pub async fn do_prepare_command(
         &self,
         command: &mut Command,
         bag: &GlobalEnvBag,
-        with_paths: bool,
-    ) {
-        let moon = &self.host_data.moon_env;
-        let proto = &self.host_data.proto_env;
+        versions: FxHashMap<Id, UnresolvedVersionSpec>,
+    ) -> miette::Result<()> {
         let proto_version = self.config.proto.version.to_string();
 
-        // Inherit env vars
+        // Inherit common proto env vars
         command.env("PROTO_AUTO_INSTALL", "false");
         command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
         command.env("PROTO_NO_PROGRESS", "true");
         command.env("PROTO_VERSION", &proto_version);
         command.env("STARBASE_FORCE_TTY", "true");
 
-        // Inherit versions for each toolchain
-        for (id, config) in &self.plugins {
-            if let Some(version) = &config.version {
+        // If no versions defined, then proto shouldn't be used
+        if versions.is_empty() {
+            return Ok(());
+        }
+
+        // Otherwise inherit the version for each toolchain as an env var
+        let mut toolchain_ids = vec![];
+
+        for (id, version) in &versions {
+            if !is_using_global_toolchain(bag, id) {
                 command.env(get_version_env_key(id), get_version_env_value(version));
+                toolchain_ids.push(id);
             }
         }
 
-        // Abort early if using globals
-        if is_using_global_toolchains(bag) || !self.config.requires_proto() || !with_paths {
-            return;
+        // If forced to globals, don't inject any paths but keep env vars
+        if is_using_global_toolchains(bag) {
+            return Ok(());
         }
 
-        // Inherit lookup paths
+        // Otherwise inherit common proto paths
+        let moon = &self.host_data.moon_env;
+        let proto = &self.host_data.proto_env;
+
         command.prepend_paths([
-            // Always use a versioned proto first
             proto.store.inventory_dir.join("proto").join(proto_version),
-            // Then fallback to shims/bins
             proto.store.shims_dir.clone(),
             proto.store.bin_dir.clone(),
-            // And ensure non-proto managed moon comes last
             moon.store_root.join("bin"),
         ]);
+
+        // Then inherit toolchain specific paths
+        if !toolchain_ids.is_empty() {
+            command.prepend_paths(
+                self.get_command_paths(toolchain_ids, |_, toolchain| {
+                    versions.get(&Id::raw(&toolchain.id)).cloned()
+                })
+                .await?,
+            );
+        }
+
+        Ok(())
+    }
+
+    pub async fn prepare_command(
+        &self,
+        command: &mut Command,
+        bag: &GlobalEnvBag,
+    ) -> miette::Result<()> {
+        self.do_prepare_command(command, bag, self.create_versions_map())
+            .await
+    }
+
+    pub async fn prepare_command_for_project(
+        &self,
+        command: &mut Command,
+        bag: &GlobalEnvBag,
+        config: &ProjectConfig,
+    ) -> miette::Result<()> {
+        self.do_prepare_command(command, bag, self.create_merged_versions_map(config))
+            .await
     }
 
     pub async fn scaffold_docker_many<InFn>(

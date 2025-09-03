@@ -79,25 +79,36 @@ impl ToolchainRegistry {
         data
     }
 
-    pub fn get_configured_version(
+    pub fn create_versions_map(&self) -> FxHashMap<Id, UnresolvedVersionSpec> {
+        let mut env = FxHashMap::default();
+
+        for (id, config) in &self.plugins {
+            if let Some(version) = &config.version {
+                env.insert(Id::raw(id), version.to_owned());
+            }
+        }
+
+        env
+    }
+
+    pub fn create_merged_versions_map(
         &self,
-        id: &str,
-        toolchain_config: &ToolchainConfig,
         project_config: &ProjectConfig,
-    ) -> Option<UnresolvedVersionSpec> {
-        if let Some(config) = project_config.toolchain.get_plugin_config(id)
-            && let Some(version) = config.get_version()
-        {
-            return Some(version.to_owned());
+    ) -> FxHashMap<Id, UnresolvedVersionSpec> {
+        let mut env = self.create_versions_map();
+
+        for (id, config) in &project_config.toolchain.plugins {
+            if !config.is_enabled() {
+                env.remove(&Id::raw(id));
+                continue;
+            }
+
+            if let Some(version) = config.get_version() {
+                env.insert(Id::raw(id), version.to_owned());
+            }
         }
 
-        if let Some(config) = toolchain_config.get_plugin_config(id)
-            && let Some(version) = &config.version
-        {
-            return Some(version.to_owned());
-        }
-
-        None
+        env
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&PluginId> {

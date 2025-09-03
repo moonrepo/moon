@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where a task would try to execute with proto, but proto hasn't been fully installed
+  yet.
+
 #### 🧰 Toolchains
 
 - **JavaScript**

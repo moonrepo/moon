@@ -412,17 +412,24 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn inherit_proto(&mut self) -> miette::Result<()> {
+        let toolchain_registry = &self.app.toolchain_registry;
+
         if self.using_platform {
             // Temporary until platforms are removed, we simply just need
             // to inherit the shared env vars!
-            self.app
-                .toolchain_registry
+            toolchain_registry
                 .do_prepare_command(&mut self.command, self.env_bag, Default::default())
                 .await?;
         } else {
-            self.app
-                .toolchain_registry
-                .prepare_command_for_project(&mut self.command, self.env_bag, &self.project.config)
+            let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
+            let mut versions = toolchain_registry.create_merged_versions_map(&self.project.config);
+
+            // Reduce the available versions to the toolchains
+            // explicitly required by this task
+            versions.retain(|id, _| toolchain_ids.contains(&id));
+
+            toolchain_registry
+                .do_prepare_command(&mut self.command, self.env_bag, versions)
                 .await?;
         }
 

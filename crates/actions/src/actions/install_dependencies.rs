@@ -131,16 +131,21 @@ pub async fn install_dependencies(
         ..Default::default()
     };
 
-    if let Some(project_id) = &node.project_id {
-        let project = workspace_graph.get_project(project_id)?;
+    let project = match &node.project_id {
+        Some(project_id) => {
+            let project = workspace_graph.get_project(project_id)?;
 
-        input.project = Some(project.to_fragment());
-        input.toolchain_config = app_context.toolchain_registry.create_merged_config(
-            &toolchain.id,
-            &app_context.toolchain_config,
-            &project.config,
-        );
-    }
+            input.project = Some(project.to_fragment());
+            input.toolchain_config = app_context.toolchain_registry.create_merged_config(
+                &toolchain.id,
+                &app_context.toolchain_config,
+                &project.config,
+            );
+
+            Some(project)
+        }
+        None => None,
+    };
 
     // Create a lock if we haven't run before
     let Some(_lock) = create_hash_and_return_lock_if_changed(
@@ -177,6 +182,7 @@ pub async fn install_dependencies(
     let console = app_context.console.clone();
 
     let options = ExecCommandOptions {
+        project,
         prefix: action.get_prefix().into(),
         working_dir: Some(deps_root),
         on_exec: Some(Arc::new(move |cmd, attempts| {

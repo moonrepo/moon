@@ -2,14 +2,16 @@ use crate::app_error::AppError;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
+use moon_action::{ActionNode, RunTaskNode};
+use moon_action_context::ActionContext;
 use moon_common::is_test_env;
 use moon_console::ui::{
     Container, Entry, List, ListItem, Map, MapItem, Section, Style, StyledText,
 };
-use moon_env_var::GlobalEnvBag;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
+use moon_task_runner::command_builder::CommandBuilder;
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
@@ -357,13 +359,13 @@ async fn build_command(
     project: &Project,
     task: &Task,
 ) -> miette::Result<Command> {
-    let mut command = Command::new(&task.command);
+    let app_context = session.get_app_context().await?;
+    let action_context = ActionContext::default();
+    let node = ActionNode::run_task(RunTaskNode::new_global(task.target.clone()));
 
-    session
-        .get_toolchain_registry()
-        .await?
-        .prepare_command_for_project(&mut command, GlobalEnvBag::instance(), &project.config)
-        .await?;
+    // Use command builder so that we inherit all paths and env vars
+    let builder = CommandBuilder::new(&app_context, project, task, &node);
+    let command = builder.build(&action_context, "").await?;
 
     Ok(command)
 }

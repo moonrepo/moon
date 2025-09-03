@@ -74,16 +74,21 @@ pub async fn setup_environment(
             .create_config(&toolchain.id, &app_context.toolchain_config),
     };
 
-    if let Some(project_id) = &node.project_id {
-        let project = workspace_graph.get_project(project_id)?;
+    let project = match &node.project_id {
+        Some(project_id) => {
+            let project = workspace_graph.get_project(project_id)?;
 
-        input.project = Some(project.to_fragment());
-        input.toolchain_config = app_context.toolchain_registry.create_merged_config(
-            &toolchain.id,
-            &app_context.toolchain_config,
-            &project.config,
-        );
-    }
+            input.project = Some(project.to_fragment());
+            input.toolchain_config = app_context.toolchain_registry.create_merged_config(
+                &toolchain.id,
+                &app_context.toolchain_config,
+                &project.config,
+            );
+
+            Some(project)
+        }
+        None => None,
+    };
 
     let output = toolchain.setup_environment(input.clone()).await?;
 
@@ -128,6 +133,7 @@ pub async fn setup_environment(
             app_context.clone(),
             output.commands,
             ExecCommandOptions {
+                project,
                 prefix: action.get_prefix().into(),
                 working_dir: Some(node.root.to_logical_path(&app_context.workspace_root)),
                 on_exec: Some(Arc::new(move |cmd, attempts| {

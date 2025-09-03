@@ -1011,7 +1011,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         edges.push(self.sync_workspace().await?);
 
-        if spec.req.is_some() {
+        if spec.req.is_some() || self.app_context.toolchain_config.requires_proto() {
             edges.push(self.setup_proto().await?);
         }
 

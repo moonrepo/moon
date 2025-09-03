@@ -11,6 +11,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::{Command, Output};
+use moon_project::Project;
 use moon_time::to_millis;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
@@ -61,6 +62,7 @@ pub fn handle_on_exec(
 pub struct ExecCommandOptions {
     pub on_exec: Option<OnExecFn>,
     pub prefix: String,
+    pub project: Option<Arc<Project>>,
     pub working_dir: Option<PathBuf>,
 }
 
@@ -87,11 +89,17 @@ async fn internal_exec_plugin_command(
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
 
     // Must be last!
-    app_context.toolchain_registry.prepare_process_command(
-        &mut cmd,
-        GlobalEnvBag::instance(),
-        true,
-    );
+    let toolchain_registry = &app_context.toolchain_registry;
+
+    if let Some(project) = &options.project {
+        toolchain_registry
+            .augment_command_for_project(&mut cmd, GlobalEnvBag::instance(), &project.config)
+            .await?;
+    } else {
+        toolchain_registry
+            .augment_command_for_workspace(&mut cmd, GlobalEnvBag::instance())
+            .await?;
+    }
 
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;

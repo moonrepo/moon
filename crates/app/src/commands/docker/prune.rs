@@ -136,7 +136,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                         production: true,
                         project: in_project.as_ref().map(|project| project.to_fragment()),
                         root: toolchain.to_virtual_path(&instance.deps_root),
-                        toolchain_config: match in_project {
+                        toolchain_config: match &in_project {
                             Some(project) => toolchain_registry.create_merged_config(
                                 &toolchain.id,
                                 &app_context.toolchain_config,
@@ -159,9 +159,10 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                         app_context,
                         &install,
                         &ExecCommandOptions {
+                            project: in_project,
                             prefix: "prune-docker".into(),
                             working_dir: Some(instance.deps_root),
-                            ..Default::default()
+                            on_exec: None,
                         },
                     )
                     .await?;

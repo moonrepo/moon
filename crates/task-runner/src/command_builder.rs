@@ -5,11 +5,10 @@ use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
-use moon_platform::{PlatformManager, is_using_global_toolchains};
+use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
-use moon_toolchain::{get_version_env_key, get_version_env_value, is_using_global_toolchain};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
@@ -263,14 +262,6 @@ impl<'task> CommandBuilder<'task> {
         );
 
         // proto
-        self.command.env("PROTO_AUTO_INSTALL", "false");
-        self.command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
-        self.command.env("PROTO_NO_PROGRESS", "true");
-        self.command.env(
-            "PROTO_VERSION",
-            self.app.toolchain_config.proto.version.to_string(),
-        );
-
         for (key, value) in self.app.toolchain_config.get_version_env_vars() {
             // Don't overwrite proto version variables inherited from toolchains
             self.command.env_if_missing(key, value);
@@ -421,54 +412,28 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn inherit_proto(&mut self) -> miette::Result<()> {
-        // The values below were inherited by the platform already
+        let toolchain_registry = &self.app.toolchain_registry;
+
         if self.using_platform {
-            return Ok(());
-        }
-
-        // Inherit common parameters
-        self.app
-            .toolchain_registry
-            .prepare_process_command(&mut self.command, self.env_bag, false);
-
-        // Inherit project overrides
-        for (id, config) in &self.project.config.toolchain.plugins {
-            if is_using_global_toolchain(self.env_bag, id) {
-                continue;
-            }
-
-            if let Some(version) = config.get_version() {
-                self.command
-                    .env(get_version_env_key(id), get_version_env_value(version));
-            }
-        }
-
-        if is_using_global_toolchains(self.env_bag) {
-            return Ok(());
-        }
-
-        // Inherit toolchain directories
-        let toolchain_ids = self
-            .project
-            .get_enabled_toolchains_for_task(self.task)
-            .into_iter()
-            .filter(|id| !is_using_global_toolchain(self.env_bag, id))
-            .collect::<Vec<_>>();
-
-        if !toolchain_ids.is_empty() {
-            let paths = self
-                .app
-                .toolchain_registry
-                .get_command_paths(toolchain_ids, |registry, toolchain| {
-                    registry.get_configured_version(
-                        &toolchain.id,
-                        &self.app.toolchain_config,
-                        &self.project.config,
-                    )
-                })
+            // Temporary until platforms are removed, we simply just need
+            // to inherit the shared env vars!
+            toolchain_registry
+                .augment_command(&mut self.command, self.env_bag, Default::default())
                 .await?;
+        } else {
+            let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
+            let mut augments =
+                toolchain_registry.create_command_augments(Some(&self.project.config));
 
-            self.command.prepend_paths(paths);
+            // Only include paths for toolchains that this task explicitly needs,
+            // but keep environment variables and other parameters
+            augments.iter_mut().for_each(|(id, augment)| {
+                augment.add_path = toolchain_ids.contains(&id);
+            });
+
+            toolchain_registry
+                .augment_command(&mut self.command, self.env_bag, augments)
+                .await?;
         }
 
         Ok(())

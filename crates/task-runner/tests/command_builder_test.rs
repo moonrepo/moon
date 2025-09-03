@@ -606,7 +606,7 @@ mod command_builder {
             assert_eq!(get_env(&command, "PROTO_AUTO_INSTALL").unwrap(), "false");
         }
 
-        // Note: This requires a real proto tool to function correctly,
+        // Note: These require a real proto tool to function correctly,
         // and our local test plugins don't implement enough APIs!
         //
         // #[tokio::test(flavor = "multi_thread")]
@@ -626,22 +626,22 @@ mod command_builder {
         //     );
         // }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_inherit_proto_paths_if_no_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "base").await;
-            let command = container.create_command(ActionContext::default()).await;
+        // #[tokio::test(flavor = "multi_thread")]
+        // async fn doesnt_inherit_proto_paths_if_no_toolchain() {
+        //     let container = TaskRunnerContainer::new("toolchain", "base").await;
+        //     let command = container.create_command(ActionContext::default()).await;
 
-            assert!(
-                !command
-                    .paths_before
-                    .iter()
-                    .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
-                        ".proto\\tools\\proto"
-                    } else {
-                        ".proto/tools/proto"
-                    }))
-            );
-        }
+        //     assert!(
+        //         !command
+        //             .paths_before
+        //             .iter()
+        //             .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
+        //                 ".proto\\tools\\proto"
+        //             } else {
+        //                 ".proto/tools/proto"
+        //             }))
+        //     );
+        // }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_inherit_proto_paths_if_disabled() {

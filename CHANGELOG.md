@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task would try to execute with proto, but proto hasn't been fully installed
+  yet.
+- Fixed an issue where task `PATH`s may not always be injected correctly.
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Fixed some `package.json` dependency version parsing issues.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.40.0
 
 #### 💥 Breaking

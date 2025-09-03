@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Fixed some `package.json` dependency version parsing issues.
+
 ## 1.40.0
 
 #### 💥 Breaking

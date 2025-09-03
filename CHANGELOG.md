@@ -13,6 +13,10 @@
 - **JavaScript**
   - Fixed some `package.json` dependency version parsing issues.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.40.0
 
 #### 💥 Breaking

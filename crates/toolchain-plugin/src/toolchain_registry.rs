@@ -7,7 +7,7 @@ use moon_pdk_api::Operation;
 use moon_plugin::{
     MoonHostData, PluginError, PluginId, PluginRegistry, PluginType, serialize_config,
 };
-use proto_core::{UnresolvedVersionSpec, inject_proto_manifest_config};
+use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue};
 use std::future::Future;
@@ -77,38 +77,6 @@ impl ToolchainRegistry {
         }
 
         data
-    }
-
-    pub fn create_versions_map(&self) -> FxHashMap<Id, &UnresolvedVersionSpec> {
-        let mut env = FxHashMap::default();
-
-        for (id, config) in &self.plugins {
-            if let Some(version) = &config.version {
-                env.insert(Id::raw(id), version);
-            }
-        }
-
-        env
-    }
-
-    pub fn create_merged_versions_map<'a, 'b: 'a>(
-        &'a self,
-        project_config: &'b ProjectConfig,
-    ) -> FxHashMap<Id, &'a UnresolvedVersionSpec> {
-        let mut env = self.create_versions_map();
-
-        for (id, config) in &project_config.toolchain.plugins {
-            if !config.is_enabled() {
-                env.remove(id);
-                continue;
-            }
-
-            if let Some(version) = config.get_version() {
-                env.insert(id.to_owned(), version);
-            }
-        }
-
-        env
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&PluginId> {

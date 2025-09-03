@@ -93,11 +93,11 @@ async fn internal_exec_plugin_command(
 
     if let Some(project) = &options.project {
         toolchain_registry
-            .prepare_command_for_project(&mut cmd, GlobalEnvBag::instance(), &project.config)
+            .augment_command_for_project(&mut cmd, GlobalEnvBag::instance(), &project.config)
             .await?;
     } else {
         toolchain_registry
-            .prepare_command(&mut cmd, GlobalEnvBag::instance())
+            .augment_command_for_workspace(&mut cmd, GlobalEnvBag::instance())
             .await?;
     }
 

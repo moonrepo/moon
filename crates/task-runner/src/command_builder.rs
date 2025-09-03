@@ -418,18 +418,21 @@ impl<'task> CommandBuilder<'task> {
             // Temporary until platforms are removed, we simply just need
             // to inherit the shared env vars!
             toolchain_registry
-                .do_prepare_command(&mut self.command, self.env_bag, Default::default())
+                .augment_command(&mut self.command, self.env_bag, Default::default())
                 .await?;
         } else {
             let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
-            let mut versions = toolchain_registry.create_merged_versions_map(&self.project.config);
+            let mut augments =
+                toolchain_registry.create_command_augments(Some(&self.project.config));
 
-            // Reduce the available versions to the toolchains
-            // explicitly required by this task
-            versions.retain(|id, _| toolchain_ids.contains(&id));
+            // Only include paths for toolchains that this task explicitly needs,
+            // but keep environment variables and other parameters
+            augments.iter_mut().for_each(|(id, augment)| {
+                augment.add_path = toolchain_ids.contains(&id);
+            });
 
             toolchain_registry
-                .do_prepare_command(&mut self.command, self.env_bag, versions)
+                .augment_command(&mut self.command, self.env_bag, augments)
                 .await?;
         }
 

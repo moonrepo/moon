@@ -79,32 +79,32 @@ impl ToolchainRegistry {
         data
     }
 
-    pub fn create_versions_map(&self) -> FxHashMap<Id, UnresolvedVersionSpec> {
+    pub fn create_versions_map(&self) -> FxHashMap<Id, &UnresolvedVersionSpec> {
         let mut env = FxHashMap::default();
 
         for (id, config) in &self.plugins {
             if let Some(version) = &config.version {
-                env.insert(Id::raw(id), version.to_owned());
+                env.insert(Id::raw(id), version);
             }
         }
 
         env
     }
 
-    pub fn create_merged_versions_map(
-        &self,
-        project_config: &ProjectConfig,
-    ) -> FxHashMap<Id, UnresolvedVersionSpec> {
+    pub fn create_merged_versions_map<'a, 'b: 'a>(
+        &'a self,
+        project_config: &'b ProjectConfig,
+    ) -> FxHashMap<Id, &'a UnresolvedVersionSpec> {
         let mut env = self.create_versions_map();
 
         for (id, config) in &project_config.toolchain.plugins {
             if !config.is_enabled() {
-                env.remove(&Id::raw(id));
+                env.remove(id);
                 continue;
             }
 
             if let Some(version) = config.get_version() {
-                env.insert(Id::raw(id), version.to_owned());
+                env.insert(id.to_owned(), version);
             }
         }
 

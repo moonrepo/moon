@@ -282,7 +282,7 @@ impl ToolchainRegistry {
         &self,
         command: &mut Command,
         bag: &GlobalEnvBag,
-        versions: FxHashMap<Id, UnresolvedVersionSpec>,
+        versions: FxHashMap<Id, &UnresolvedVersionSpec>,
     ) -> miette::Result<()> {
         let proto_version = self.config.proto.version.to_string();
 
@@ -328,7 +328,9 @@ impl ToolchainRegistry {
         if !toolchain_ids.is_empty() {
             command.prepend_paths(
                 self.get_command_paths(toolchain_ids, |_, toolchain| {
-                    versions.get(&Id::raw(&toolchain.id)).cloned()
+                    versions
+                        .get(&Id::raw(&toolchain.id))
+                        .map(|version| (*version).to_owned())
                 })
                 .await?,
             );

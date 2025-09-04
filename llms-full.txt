@@ -7057,7 +7057,7 @@ python:
 :::info
 
 Python installation's are based on pre-built binaries provided by
-[indygreg/python-build-standalone](https://github.com/indygreg/python-build-standalone).
+[astral-sh/python-build-standalone](https://github.com/astral-sh/python-build-standalone).
 
 :::
 

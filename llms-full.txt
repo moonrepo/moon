@@ -7752,7 +7752,7 @@ notifier:
 
 ### `acknowledge`
 
-When enabled, webhook notfier will wait for request result and validates the return code for 2xx.
+When enabled, webhook notifier will wait for request result and validates the return code for 2xx.
 Defaults to `false`.
 
 :::warning

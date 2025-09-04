@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.bcd84b6a.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.bc15022f.js" defer="defer"></script>
 <script src="/assets/js/main.dc06697d.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -283,7 +283,7 @@ terminal. Supports the following values:</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">notifier</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">webhookUrl</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;https://api.company.com/some/endpoint&#x27;</span><br></span></code></pre></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="acknowledge"><code>acknowledge</code><a href="#acknowledge" class="hash-link" aria-label="Direct link to acknowledge" title="Direct link to acknowledge">​</a></h3>
 <!-- -->
-<p>When enabled, webhook notfier will wait for request result and validates the return code for 2xx.
+<p>When enabled, webhook notifier will wait for request result and validates the return code for 2xx.
 Defaults to <code>false</code>.</p>
 <div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>Activating this setting will slow down your pipeline, because every webhook request will be
 evaluated!</p></div></div>

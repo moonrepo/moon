@@ -93,7 +93,7 @@ impl ToolchainRegistry {
     {
         let id = PluginId::raw(id.as_ref());
 
-        if !self.is_registered(&id).await {
+        if !self.is_registered(&id) {
             if !self.plugins.contains_key(&id) {
                 return Err(PluginError::UnknownId {
                     id: id.to_string(),
@@ -129,7 +129,7 @@ impl ToolchainRegistry {
         for id in ids {
             let id = PluginId::raw(id.as_ref());
 
-            if self.registry.is_registered(&id).await {
+            if self.registry.is_registered(&id) {
                 list.push(self.get_instance(&id).await?);
                 continue;
             }

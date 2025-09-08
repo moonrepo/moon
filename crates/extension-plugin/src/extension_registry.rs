@@ -48,7 +48,7 @@ impl ExtensionRegistry {
     {
         let id = PluginId::raw(id.as_ref());
 
-        if self.is_registered(&id).await {
+        if self.is_registered(&id) {
             return self.get_instance(&id).await;
         }
 

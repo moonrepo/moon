@@ -23,7 +23,8 @@ Commands are used as-is and are not formatted or interpolated in any way.
 
 To demonstrate this, let's configure a `pre-commit` hook that runs a moon `lint` task for affected
 projects, and also verifies that the commit message abides by a specified format (using
-[pre-commit](https://pre-commit.com/)).
+[pre-commit](https://pre-commit.com/) and the 
+[commitlint hook](https://github.com/alessandrojcm/commitlint-pre-commit-hook), for example).
 
 ```yaml title=".moon/workspace.yml"
 vcs:
@@ -31,6 +32,8 @@ vcs:
     pre-commit:
       - 'pre-commit run'
       - 'moon run :lint --affected'
+    commit-msg:
+      - 'pre-commit run --hook-stage commit-msg --commit-msg-filename $1'
 ```
 
 :::info
@@ -66,6 +69,13 @@ vcs:
   hooks: [...]
   syncHooks: true
 ```
+:::caution
+
+Automatically activating hooks on everyone's computer is considered a sensitive action, because it
+enables the execution of arbitrary code on the computers of the team members. Be careful about the
+hook commands you define in the [`.moon/workspace.yml`](../config/workspace) file.
+
+:::
 
 ### Manually by each developer
 

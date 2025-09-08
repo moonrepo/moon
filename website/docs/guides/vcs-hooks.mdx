@@ -69,6 +69,13 @@ vcs:
   hooks: [...]
   syncHooks: true
 ```
+:::caution
+
+Automatically activating hooks on everyone's computer is considered a sensitive action, because it
+enables the execution of arbitrary code on the computers of the team members. Be careful about the
+hook commands you define in the [`.moon/workspace.yml`](../config/workspace) file.
+
+:::
 
 ### Manually by each developer
 

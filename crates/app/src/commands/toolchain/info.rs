@@ -59,6 +59,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
             "extend_project_graph",
             "extend_task_command",
             "extend_task_script",
+            "define_requirements",
             "locate_dependencies_root",
             "install_dependencies",
             "hash_task_contents",
@@ -251,7 +252,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                 }
             }
 
-            Section(title: "Tier 2 - Platform integration") {
+            Section(title: "Tier 2 - Ecosystem integration") {
                 #((!toolchain.metadata.manifest_file_names.is_empty()).then(|| {
                     element! {
                         Entry(

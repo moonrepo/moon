@@ -68,12 +68,13 @@ Tier 1 - Usage detection ──────────────────�
     🟢 sync_project
     ⚫️ sync_workspace
 
-Tier 2 - Platform integration ──────────────────────────────
+Tier 2 - Ecosystem integration ─────────────────────────────
 
   APIs:
     ⚫️ extend_project_graph
     ⚫️ extend_task_command
     ⚫️ extend_task_script
+    ⚫️ define_requirements
     ⚫️ locate_dependencies_root
     ⚫️ install_dependencies
     ⚫️ hash_task_contents

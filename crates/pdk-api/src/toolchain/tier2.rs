@@ -212,6 +212,10 @@ api_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub path: Option<PathBuf>,
 
+        /// Unique reference, identifier, or specifier.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub reference: Option<String>,
+
         /// URL of the remote dependency.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub url: Option<String>,

@@ -18,6 +18,12 @@
   - `only` - Only run the task in CI, and not locally, when affected.
   - `skip` - Skip running in CI but run locally and allow task relationships to be valid.
 
+#### 🧩 Plugins
+
+- WASM API
+  - Added `ManifestDependencyConfig.reference` field.
+  - Added `SyncProjectInput.toolchain_workspace_config` field.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.53.0](https://github.com/moonrepo/proto/releases/tag/v0.53.0) (from 0.52.3).

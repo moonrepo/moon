@@ -327,7 +327,13 @@ unstable_javascript:
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#bun" />
 
-Enables and configures [Bun](../guides/javascript/bun-handbook).
+Enables and configures [Bun](../guides/javascript/bun-handbook) using the legacy implementation.
+
+:::warning
+
+This toolchain has been deprecated. We suggest using [`unstable_bun`](#unstable_bun) instead!
+
+:::
 
 ### `version`
 
@@ -379,6 +385,13 @@ bun:
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_bun" />
 
 Enables and configures [Bun](../guides/javascript/bun-handbook) using the new WASM plugin.
+
+:::info
+
+This toolchain requires the [`unstable_javascript`](#unstable_javascript) toolchain to also be
+enabled.
+
+:::
 
 ### `version`
 
@@ -501,7 +514,16 @@ deno:
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#node" />
 
-Enables and configures [Node.js](../guides/javascript/node-handbook).
+Enables and configures [Node.js](../guides/javascript/node-handbook) using the legacy
+implementation.
+
+:::warning
+
+This toolchain has been deprecated. We suggest using [`unstable_node`](#unstable_node) and a chosen
+package manager ([`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm), or
+[`unstable_yarn`](#unstable_yarn)) instead!
+
+:::
 
 ### `version`
 
@@ -809,6 +831,13 @@ the same version, which is a very common practice when managing dependencies.
 
 Enables and configures [Node.js](../guides/javascript/node-handbook) using the new WASM plugin.
 
+:::info
+
+This toolchain requires the [`unstable_javascript`](#unstable_javascript) toolchain to also be
+enabled.
+
+:::
+
 ### `version`
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#version" />
@@ -876,6 +905,12 @@ the same version, which is a very common practice when managing dependencies.
 
 Enables and configures npm using the new WASM plugin.
 
+:::info
+
+This toolchain requires the [`unstable_node`](#unstable_node) toolchain to also be enabled.
+
+:::
+
 ### `version`
 
 <HeadingApiLink to="/api/types/interface/NpmConfig#version" />
@@ -912,6 +947,12 @@ unstable_npm:
 
 Enables and configures pnpm using the new WASM plugin.
 
+:::info
+
+This toolchain requires the [`unstable_node`](#unstable_node) toolchain to also be enabled.
+
+:::
+
 ### `version`
 
 <HeadingApiLink to="/api/types/interface/PnpmConfig#version" />
@@ -947,6 +988,12 @@ unstable_pnpm:
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_yarn" />
 
 Enables and configures yarn using the new WASM plugin.
+
+:::info
+
+This toolchain requires the [`unstable_node`](#unstable_node) toolchain to also be enabled.
+
+:::
 
 ### `version`
 
@@ -1346,7 +1393,13 @@ python:
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#rust" />
 
-Enables and configures [Rust](../guides/rust/handbook).
+Enables and configures [Rust](../guides/rust/handbook) using the legacy implementation.
+
+:::warning
+
+This toolchain has been deprecated. We suggest using [`unstable_rust`](#unstable_rust) instead!
+
+:::
 
 ### `version`
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Fixed some `pnpm-lock.yaml` parsing issues when using `pnpm` as a package manager.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.40.1
 
 #### 🐞 Fixes

@@ -33,7 +33,7 @@ vcs:
       - 'pre-commit run'
       - 'moon run :lint --affected'
     commit-msg:
-      - 'pre-commit run --hook-stage commit-msg --commit-msg-filename $1'
+      - 'pre-commit run --hook-stage commit-msg --commit-msg-filename $@'
 ```
 
 :::info

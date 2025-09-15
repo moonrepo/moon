@@ -111,10 +111,7 @@ curl --fail --location --progress-bar --output "$download_file" "$download_url"
 if [[ "$ext" == ".zip" ]]; then
 	req_archive "unzip"
 
-	unzip -d "$temp_dir" "$download_file"
-
-	# Unzip doesnt remove components folder
-	temp_dir="$temp_dir/$target"
+	unzip -j -d "$temp_dir" "$download_file"
 else
 	req_archive "gzip"
 	req_archive "xz" "xz" "xz-utils"

@@ -90,6 +90,11 @@ impl<'task> CommandExecutor<'task> {
             let mut attempt = Operation::task_execution(&command_line);
             report_item.attempt_current = self.attempt_index;
 
+            self.command
+                .env("MOON_TASK_RETRY_ATTEMPT", self.attempt_index.to_string());
+            self.command
+                .env("MOON_TASK_RETRY_TOTAL", self.attempt_total.to_string());
+
             debug!(
                 task_target = self.task.target.as_str(),
                 command = self.command.bin.to_str(),

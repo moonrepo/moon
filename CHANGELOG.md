@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- When running a task, we now set `MOON_TASK_RETRY_ATTEMPT` and `MOON_TASK_RETRY_TOTAL` environment
+  variables, which can be accessed in child processes.
+
 ## 1.40.2
 
 #### 🧰 Toolchains

@@ -96,20 +96,22 @@ impl<'app> HooksGenerator<'app> {
         Ok(true)
     }
 
-    pub async fn get_hook_paths(&self) -> miette::Result<Vec<PathBuf>> {
+    pub async fn verify_hooks_exist(&self) -> miette::Result<bool> {
         let hooks_dir = self.vcs.get_hooks_dir().await?;
-        let mut paths = vec![];
 
         for (hook_name, commands) in &self.config.hooks {
             if commands.is_empty() {
                 continue;
             }
 
-            paths.push(self.create_internal_hook_path(hook_name));
-            paths.push(hooks_dir.join(hook_name));
+            if !self.create_internal_hook_path(hook_name).exists()
+                || !hooks_dir.join(hook_name).exists()
+            {
+                return Ok(false);
+            }
         }
 
-        Ok(paths)
+        Ok(true)
     }
 
     fn create_internal_hook_path(&self, hook_name: &str) -> PathBuf {
@@ -167,7 +169,7 @@ impl<'app> HooksGenerator<'app> {
                 self.create_hook_file(
                     &external_path,
                     &[format!(
-                        "{} $1 $2 $3",
+                        "{} $1 $2 $3 $4 $5",
                         path::to_virtual_string(external_command)?
                     )],
                     false,
@@ -187,7 +189,7 @@ impl<'app> HooksGenerator<'app> {
                 self.create_file(
                     &external_path,
                     format!(
-                        "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{}\" $1 $2 $3",
+                        "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{}\" $1 $2 $3 $4 $5",
                         powershell_exe, external_command.display()
                     ),
                 )?;
@@ -266,7 +268,13 @@ impl<'app> HooksGenerator<'app> {
 
         contents.push("\n");
 
-        self.create_file(file_path, contents.join("\n"))?;
+        let mut content = contents.join("\n");
+
+        if !self.is_bash_format() {
+            content = content.replace("$ARG", "$env:ARG");
+        }
+
+        self.create_file(file_path, content)?;
 
         Ok(())
     }

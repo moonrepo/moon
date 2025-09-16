@@ -9,14 +9,13 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
 
     // Generate the hash
     let mut hooks_hash = HooksHash::new(&vcs_config.manager);
-    let hook_files = generator.get_hook_paths().await?;
 
     for (hook_name, commands) in &vcs_config.hooks {
         hooks_hash.add_hook(hook_name, commands);
     }
 
     // Force run the generator
-    if force || hook_files.into_iter().any(|file| !file.exists()) {
+    if force || !generator.verify_hooks_exist().await? {
         generator.generate().await?;
 
         app_context

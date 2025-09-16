@@ -9,4 +9,4 @@ for (( i=0; i <= $#; i++ )); do
   declare -x "ARG$i"="${!i}"
 done
 
-./.moon/hooks/pre-commit.sh $1 $2 $3
+./.moon/hooks/pre-commit.sh $1 $2 $3 $4 $5

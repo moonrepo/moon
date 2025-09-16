@@ -323,10 +323,9 @@ impl AppSession for MoonSession {
             self.tasks_config = tasks_config;
         }
 
-        // Load singleton components
-
         startup::register_feature_flags(&self.workspace_config)?;
 
+        // Load singleton components
         Launchpad::register(self.moon_env.clone())?;
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
 
@@ -352,6 +351,9 @@ impl AppSession for MoonSession {
             )
             .await?;
         }
+
+        // Preload
+        let _ = self.get_cache_engine()?;
 
         Ok(None)
     }

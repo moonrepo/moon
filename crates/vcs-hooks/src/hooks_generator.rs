@@ -96,7 +96,8 @@ impl<'app> HooksGenerator<'app> {
         Ok(true)
     }
 
-    pub fn get_internal_hook_paths(&self) -> Vec<PathBuf> {
+    pub async fn get_hook_paths(&self) -> miette::Result<Vec<PathBuf>> {
+        let hooks_dir = self.vcs.get_hooks_dir().await?;
         let mut paths = vec![];
 
         for (hook_name, commands) in &self.config.hooks {
@@ -105,9 +106,10 @@ impl<'app> HooksGenerator<'app> {
             }
 
             paths.push(self.create_internal_hook_path(hook_name));
+            paths.push(hooks_dir.join(hook_name));
         }
 
-        paths
+        Ok(paths)
     }
 
     fn create_internal_hook_path(&self, hook_name: &str) -> PathBuf {
@@ -211,7 +213,15 @@ impl<'app> HooksGenerator<'app> {
         let mut contents = vec![];
 
         if self.is_bash_format() {
-            contents.extend(["#!/usr/bin/env bash", "set -eo pipefail", ""]);
+            contents.extend([
+                "#!/usr/bin/env bash",
+                "set -eo pipefail",
+                "",
+                "for (( i=0; i <= $#; i++ )); do",
+                "  declare -x \"ARG$i\"=\"${!i}\"",
+                "done",
+                "",
+            ]);
         } else {
             contents.extend([
                 if matches!(self.shell, ShellType::Pwsh) {
@@ -222,6 +232,11 @@ impl<'app> HooksGenerator<'app> {
                 "$ErrorActionPreference = 'Stop'",
                 // https://learn.microsoft.com/en-us/powershell/scripting/learn/experimental-features?view=powershell-7.4#psnativecommanderroractionpreference
                 "$PSNativeCommandErrorActionPreference = $true",
+                "",
+                "Set-Item -Path \"Env:ARG0\" -Value \"$PSCommandPath\"",
+                "for ($i = 0; $i -lt $args.Count; $i++) {",
+                "  Set-Item -Path \"Env:ARG$($i + 1)\" -Value \"$($args[$i])\"",
+                "}",
                 "",
             ]);
         }

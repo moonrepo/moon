@@ -7,23 +7,24 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
     let vcs_config = &app_context.workspace_config.vcs;
     let generator = HooksGenerator::new(&app_context.vcs, vcs_config, &app_context.workspace_root);
 
-    // Force run the generator and bypass cache
-    if force {
-        generator.generate().await?;
-
-        return Ok(true);
-    }
-
-    // Hash all the hook commands
+    // Generate the hash
     let mut hooks_hash = HooksHash::new(&vcs_config.manager);
-
-    hooks_hash.files_exist = generator
-        .get_internal_hook_paths()
-        .into_iter()
-        .all(|file| file.exists());
+    let hook_files = generator.get_hook_paths().await?;
 
     for (hook_name, commands) in &vcs_config.hooks {
         hooks_hash.add_hook(hook_name, commands);
+    }
+
+    // Force run the generator
+    if force || hook_files.into_iter().any(|file| !file.exists()) {
+        generator.generate().await?;
+
+        app_context
+            .cache_engine
+            .hash
+            .save_manifest_without_hasher("vcs-hooks", hooks_hash)?;
+
+        return Ok(true);
     }
 
     // Only generate if the hash has changed

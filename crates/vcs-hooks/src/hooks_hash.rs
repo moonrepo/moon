@@ -6,6 +6,7 @@ hash_content!(
     pub struct HooksHash<'cfg> {
         pub hooks: BTreeMap<&'cfg str, &'cfg [String]>,
         pub vcs: &'cfg VcsManager,
+        pub version: u8,
     }
 );
 
@@ -14,6 +15,7 @@ impl<'cfg> HooksHash<'cfg> {
         HooksHash {
             hooks: BTreeMap::new(),
             vcs,
+            version: 2,
         }
     }
 

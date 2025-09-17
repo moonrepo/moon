@@ -15,7 +15,7 @@ fn create_config() -> VcsConfig {
         hooks: FxHashMap::from_iter([
             (
                 "pre-commit".into(),
-                vec!["moon run :lint".into(), "some-command".into()],
+                vec!["moon run :lint".into(), "some-command $ARG1".into()],
             ),
             ("post-push".into(), vec!["moon check --all".into()]),
         ]),

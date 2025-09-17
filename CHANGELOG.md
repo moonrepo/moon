@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- When running a task, we now set `MOON_TASK_RETRY_ATTEMPT` and `MOON_TASK_RETRY_TOTAL` environment
+  variables, which can be accessed in child processes.
+- Updated VCS hook scripts to set environment variables for each argument passed to the hook, in the
+  format of `ARG<n>` (1-index based).
+
+#### 🐞 Fixes
+
+- Fixed an issue where VCS hooks would not be created if they were removed but the cache still
+  existed.
+- Fixed an issue where commands executed by a toolchain would sometimes not inherit the `PATH`
+  correctly.
+
 ## 1.40.2
 
 #### 🧰 Toolchains

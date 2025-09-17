@@ -54,8 +54,13 @@ pub async fn sync_codeowners(
     let file_path = generator.file_path.clone();
 
     // Force run the generator and bypass cache
-    if force {
+    if force || !file_path.exists() {
         generator.generate()?;
+
+        app_context
+            .cache_engine
+            .hash
+            .save_manifest_without_hasher("codeowners", codeowners_hash)?;
 
         return Ok(Some(file_path));
     }

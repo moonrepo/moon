@@ -27,10 +27,9 @@ runner:
 
 vcs:
   defaultBranch: 'master'
-  hooks:
-    pre-commit:
-      - echo $ARG1 $ARG2 $ARG3
-      # - 'cargo run -- run :lint'
+  # hooks:
+  #   pre-commit:
+  #     - 'cargo run -- run :lint'
 
 docker:
   scaffold:

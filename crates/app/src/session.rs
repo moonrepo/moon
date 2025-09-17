@@ -350,10 +350,10 @@ impl AppSession for MoonSession {
                 &self.workspace_root,
             )
             .await?;
-        }
 
-        // Preload
-        let _ = self.get_cache_engine()?;
+            // Preload
+            let _ = self.get_cache_engine()?;
+        }
 
         Ok(None)
     }

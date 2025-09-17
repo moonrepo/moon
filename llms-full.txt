@@ -15191,7 +15191,7 @@ Commands are used as-is and are not formatted or interpolated in any way.
 
 To demonstrate this, let's configure a `pre-commit` hook that runs a moon `lint` task for affected
 projects, and also verifies that the commit message abides by a specified format (using
-[pre-commit](https://pre-commit.com/) and the 
+[pre-commit](https://pre-commit.com/) and the
 [commitlint hook](https://github.com/alessandrojcm/commitlint-pre-commit-hook), for example).
 
 ```yaml title=".moon/workspace.yml"
@@ -15201,7 +15201,7 @@ vcs:
       - 'pre-commit run'
       - 'moon run :lint --affected'
     commit-msg:
-      - 'pre-commit run --hook-stage commit-msg --commit-msg-filename $1'
+      - 'pre-commit run --hook-stage commit-msg --commit-msg-filename $ARG1'
 ```
 
 :::info
@@ -15211,6 +15211,16 @@ All commands are executed from the repository root (not moon's workspace root) a
 `./node_modules/@moonrepo/cli/moon`.
 
 :::
+
+### Accessing arguments
+
+To ease interoperability between operating systems and terminal shells, we set passed arguments as
+environment variables.
+
+In your hook commands, you can access these arguments using the `$ARG` format, where `` is the
+1-indexed position of the argument. For example, to access the first argument, you would use
+`$ARG1`, the second argument would be `$ARG2`, and so on. `$ARG0` exists and points to the current
+script.
 
 ## Enabling hooks
 
@@ -15237,6 +15247,7 @@ vcs:
   hooks: [...]
   syncHooks: true
 ```
+
 :::caution
 
 Automatically activating hooks on everyone's computer is considered a sensitive action, because it

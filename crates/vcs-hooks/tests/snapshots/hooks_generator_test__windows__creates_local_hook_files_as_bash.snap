@@ -13,4 +13,4 @@ done
 # https://moonrepo.dev/docs/guides/vcs-hooks
 
 moon run :lint
-some-command $env:ARG1
+some-command $ARG1

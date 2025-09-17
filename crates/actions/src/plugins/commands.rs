@@ -101,6 +101,9 @@ async fn internal_exec_plugin_command(
             .await?;
     }
 
+    cmd.inherit_colors();
+    cmd.inherit_path()?;
+
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;
     }

@@ -13,6 +13,8 @@
 
 - Fixed an issue where VCS hooks would not be created if they were removed but the cache still
   existed.
+- Fixed an issue where commands executed by a toolchain would sometimes not inherit the `PATH`
+  correctly.
 
 ## 1.40.2
 

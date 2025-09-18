@@ -76,7 +76,9 @@ impl ToolchainConfig {
             tools.push(Id::raw("node"));
 
             // Better way to handle this?
-            if node.bun.is_some() || matches!(node.package_manager, NodePackageManager::Bun) {
+            if self.bun.is_none()
+                && (node.bun.is_some() || matches!(node.package_manager, NodePackageManager::Bun))
+            {
                 tools.push(Id::raw("bun"));
             }
         }

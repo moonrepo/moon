@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where proto wouldn't be installed for legacy toolchains in certain conditions.
+
 ## 1.40.3
 
 #### 🚀 Updates

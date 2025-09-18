@@ -934,7 +934,9 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let sync_workspace_index = self.sync_workspace().await?;
 
-        let setup_proto_index = if !runtime.requirement.is_global() {
+        let setup_proto_index = if !runtime.requirement.is_global()
+            || self.app_context.toolchain_config.requires_proto()
+        {
             self.setup_proto().await?
         } else {
             None

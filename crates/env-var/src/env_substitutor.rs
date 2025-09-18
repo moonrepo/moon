@@ -25,9 +25,53 @@ pub static ENV_VAR_SUBSTITUTE_BRACKETS: LazyLock<Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
+// $(command)
+pub static SUBCOMMAND_SUBSTITUTE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\$\([^)]+\)").unwrap()
+});
+
+// $((arithmetic))
+pub static ARITHMETIC_EXPANSION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\$\(\([^)]+\)\)").unwrap()
+});
+
+// <(command) or >(command)
+pub static PROCESS_SUBSTITUTION: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"[<>]\([^)]+\)").unwrap()
+});
+
+// `command`
+pub static COMMAND_SUBSTITUTION_ADVANCED: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"`[^`]+`").unwrap()
+});
+
 pub fn contains_env_var(value: impl AsRef<str>) -> bool {
     ENV_VAR_SUBSTITUTE.is_match(value.as_ref())
         || ENV_VAR_SUBSTITUTE_BRACKETS.is_match(value.as_ref())
+}
+
+pub fn contains_subcommand(value: impl AsRef<str>) -> bool {
+    SUBCOMMAND_SUBSTITUTE.is_match(value.as_ref())
+}
+
+pub fn contains_arithmetic_expansion(value: impl AsRef<str>) -> bool {
+    ARITHMETIC_EXPANSION.is_match(value.as_ref())
+}
+
+pub fn contains_process_substitution(value: impl AsRef<str>) -> bool {
+    PROCESS_SUBSTITUTION.is_match(value.as_ref())
+}
+
+pub fn contains_command_substitution_advanced(value: impl AsRef<str>) -> bool {
+    COMMAND_SUBSTITUTION_ADVANCED.is_match(value.as_ref())
+}
+
+pub fn contains_shell_expansion(value: impl AsRef<str>) -> bool {
+    let val = value.as_ref();
+    contains_subcommand(val)
+        || contains_arithmetic_expansion(val)
+        || contains_process_substitution(val)
+        || contains_command_substitution_advanced(val)
 }
 
 pub fn rebuild_env_var(caps: &Captures) -> String {

@@ -1,0 +1,42 @@
+tasks:
+  command-no-expansion:
+    command: './file.sh'
+    options:
+      shell: false
+  command-with-subcommand:
+    command: 'echo $(date)'
+    options:
+      shell: false
+  args-with-subcommand:
+    args: ['--date', '$(date +%Y%m%d)']
+    options:
+      shell: false
+  command-with-arithmetic:
+    command: 'echo $((1 + 2))'
+    options:
+      shell: false
+  args-with-arithmetic:
+    args: ['--count', '$((10 * 5))']
+    options:
+      shell: false
+  command-with-process-substitution:
+    command: 'diff <(ls dir1) <(ls dir2)'
+    options:
+      shell: false
+  args-with-process-substitution:
+    args: ['<(sort file.txt)', '>(tee output.log)']
+    options:
+      shell: false
+  command-with-backticks:
+    command: 'echo `pwd`'
+    options:
+      shell: false
+  args-with-backticks:
+    args: ['--path', '`realpath .`']
+    options:
+      shell: false
+  mixed-expansions:
+    command: 'backup'
+    args: ['--name', '$(date +%Y%m%d)-v$((count + 1)).tar', '`pwd`/src', '<(find . -name "*.js")']
+    options:
+      shell: false 

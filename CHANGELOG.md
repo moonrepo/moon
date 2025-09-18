@@ -6,6 +6,10 @@
 
 - Fixed an issue where proto wouldn't be installed for legacy toolchains in certain conditions.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 1.40.3
 
 #### 🚀 Updates

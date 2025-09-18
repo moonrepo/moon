@@ -19,7 +19,7 @@ default-members = ["crates/cli"]
 async-recursion = "1.1.1"
 async-trait = "0.1.89"
 cached = "0.56.0"
-chrono = { version = "0.4.41", features = ["serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
 clap = { version = "4.5.46", default-features = false, features = [
@@ -34,8 +34,8 @@ compact_str = { version = "0.9.0", default-features = false, features = [
 convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
-indexmap = "2.11.0"
-iocraft = "0.7.10"
+indexmap = "2.11.4"
+iocraft = "0.7.11"
 md5 = "0.8.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"
@@ -58,9 +58,9 @@ schematic = { version = "0.18.12", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
-semver = "1.0.26"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
+semver = "1.0.27"
+serde = { version = "1.0.225", features = ["derive"] }
+serde_json = "1.0.145"
 serde_yml = "0.0.12"
 sha2 = "0.10.9"
 starbase = { version = "0.10.5" }
@@ -94,7 +94,7 @@ tokio-util = "0.7.16"
 typescript_tsconfig_json = { version = "0.5.0", features = ["serialize"] }
 tracing = "0.1.41"
 url = "2.5.7"
-uuid = { version = "1.18.0", features = ["v4"] }
+uuid = { version = "1.18.1", features = ["v4"] }
 
 # proto/plugin related
 extism = "=1.12.0"

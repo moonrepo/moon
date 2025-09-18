@@ -257,6 +257,7 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: node.clone(),
                     }),
@@ -264,7 +265,6 @@ mod action_graph_builder {
                         runtime: node.clone(),
                         root: WorkspaceRelativePathBuf::new(),
                     }),
-                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: bun.clone(),
                     }),
@@ -773,6 +773,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -820,6 +821,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -977,6 +979,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -1045,6 +1048,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -1103,6 +1107,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -1172,6 +1177,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -1240,6 +1246,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),
@@ -1323,6 +1330,7 @@ mod action_graph_builder {
                     ActionNode::sync_project(SyncProjectNode {
                         project_id: Id::raw("bar"),
                     }),
+                    ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
                         runtime: create_node_runtime_global()
                     }),

@@ -7,7 +7,7 @@ use moon_pdk_api::Operation;
 use moon_plugin::{
     MoonHostData, PluginError, PluginId, PluginRegistry, PluginType, serialize_config,
 };
-use proto_core::inject_proto_manifest_config;
+use proto_core::{ToolContext, inject_proto_manifest_config};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue};
 use std::future::Future;
@@ -156,7 +156,11 @@ impl ToolchainRegistry {
                             .config
                             .insert("moon_toolchain_config".to_owned(), value);
 
-                        inject_proto_manifest_config(&id, &registry.host_data.proto_env, manifest)?;
+                        inject_proto_manifest_config(
+                            &ToolContext::new(id.clone()),
+                            &registry.host_data.proto_env,
+                            manifest,
+                        )?;
 
                         Ok(())
                     })

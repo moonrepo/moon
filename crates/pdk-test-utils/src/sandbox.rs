@@ -73,7 +73,7 @@ impl MoonWasmSandbox {
         id: &str,
         mut op: impl FnMut(&mut ConfigBuilder),
     ) -> ExtensionTestWrapper {
-        let id = Id::new(id).unwrap();
+        let id = Id::raw(id);
 
         // Create manifest
         let mut manifest = PluginManifest::new([Wasm::file(self.wasm_file.clone())]);
@@ -114,7 +114,7 @@ impl MoonWasmSandbox {
         id: &str,
         mut op: impl FnMut(&mut ConfigBuilder),
     ) -> ToolchainTestWrapper {
-        let id = Id::new(id).unwrap();
+        let id = Id::raw(id);
 
         // Create manifest
         let mut manifest = PluginManifest::new([Wasm::file(self.wasm_file.clone())]);
@@ -188,7 +188,9 @@ impl MoonWasmSandbox {
         inject_default_manifest_config(&id, &self.home_dir, &mut manifest).unwrap();
 
         if with_proto {
-            inject_proto_manifest_config(&id, &self.proto, &mut manifest).unwrap();
+            let context = ToolContext::new(id.clone());
+
+            inject_proto_manifest_config(&context, &self.proto, &mut manifest).unwrap();
         }
 
         PluginContainer::new(id, manifest, self.create_host_funcs(virtual_paths)).unwrap()

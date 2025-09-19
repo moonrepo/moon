@@ -101,15 +101,16 @@ pub async fn load_tool_plugin(
     proto: &ProtoEnvironment,
     locator: &PluginLocator,
 ) -> miette::Result<ProtoTool> {
+    let context = ToolContext::new(id.to_owned());
     let mut manifest = ProtoTool::create_plugin_manifest(
         proto,
         Wasm::file(proto.get_plugin_loader()?.load_plugin(id, locator).await?),
     )?;
 
     inject_default_manifest_config(id, &proto.home_dir, &mut manifest)?;
-    inject_proto_manifest_config(id, proto, &mut manifest)?;
+    inject_proto_manifest_config(&context, proto, &mut manifest)?;
 
-    Ok(ProtoTool::load_from_manifest(ToolContext::new(id.to_owned()), proto, manifest).await?)
+    Ok(ProtoTool::load_from_manifest(context, proto, manifest).await?)
 }
 
 static LOCKS: OnceLock<RwLock<FxHashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();

@@ -99,14 +99,14 @@ uuid = { version = "1.18.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.52.3"
-proto_pdk_api = "0.30.0"
-proto_pdk_test_utils = "0.40.1"
+proto_core = "0.53.0"
+proto_pdk_api = "0.31.0"
+proto_pdk_test_utils = "0.41.0"
 system_env = "0.8.3"
 version_spec = "0.9.5"
-warpgate = "0.27.2"
-warpgate_api = "0.16.2"
-warpgate_pdk = "0.15.4"
+warpgate = "0.28.0"
+warpgate_api = "0.17.0"
+warpgate_pdk = "0.16.0"
 
 # proto_core = { path = "../proto/crates/core" }
 # system_env = { path = "../proto/crates/system-env" }

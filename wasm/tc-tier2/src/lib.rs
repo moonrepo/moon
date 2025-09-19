@@ -83,7 +83,9 @@ pub fn extend_task_command(
             output.args = Some(Extend::Replace(vec!["new".into(), "arg".into()]));
         }
         "env" => {
-            output.env.insert("EXTENDED_VAR".into(), get_plugin_id()?);
+            output
+                .env
+                .insert("EXTENDED_VAR".into(), get_plugin_id()?.to_string());
         }
         "env-remove" => {
             output.env_remove.push("REMOVE_VAR".into());
@@ -105,7 +107,9 @@ pub fn extend_task_script(
 
     match input.task.target.task_id.as_str() {
         "env" => {
-            output.env.insert("EXTENDED_VAR".into(), get_plugin_id()?);
+            output
+                .env
+                .insert("EXTENDED_VAR".into(), get_plugin_id()?.to_string());
         }
         "env-remove" => {
             output.env_remove.push("REMOVE_VAR".into());

@@ -179,8 +179,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 // expect a specific ID, for example "rust", and if we provide
                 // "unstable_rust", it breaks in weird ways.
                 let orig_id = entry.key().as_str();
-                let stable_id =
-                    PluginId::new(orig_id.strip_prefix("unstable_").unwrap_or(orig_id))?;
+                let stable_id = PluginId::raw(orig_id.strip_prefix("unstable_").unwrap_or(orig_id));
 
                 // Combine everything into the container and register
                 let plugin = T::new(PluginRegistration {

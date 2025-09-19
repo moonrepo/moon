@@ -2858,7 +2858,7 @@ tasks:
 
 ### Self `~`
 
-When referring to another task within the current project, you can utilize the `~` scope, or emit
+When referring to another task within the current project, you can utilize the `~` scope, or omit
 the `~:` prefix altogether, which will be expanded to the current project's name. This is useful for
 situations where the name is unknown, for example, when configuring
 [`.moon/tasks.yml`](../config/tasks), or if you just want a shortcut!

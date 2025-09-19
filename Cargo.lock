@@ -1806,7 +1806,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -3772,7 +3772,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "serde",
  "tokio",
 ]
@@ -3876,7 +3876,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -4100,7 +4100,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "starbase_utils",
  "tracing",
 ]
@@ -4366,7 +4366,7 @@ version = "0.0.1"
 dependencies = [
  "regex",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
 ]
 
 [[package]]
@@ -4550,7 +4550,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "starbase_styles",
  "starbase_utils",
  "tracing",
@@ -4656,7 +4656,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -4764,7 +4764,7 @@ dependencies = [
  "moon_workspace",
  "petgraph 0.8.2",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "starbase_events",
  "starbase_sandbox",
  "starbase_utils",
@@ -4874,7 +4874,7 @@ dependencies = [
  "moon_task",
  "reqwest",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "serde",
  "sha2",
  "starbase_utils",
@@ -5283,7 +5283,7 @@ dependencies = [
  "moon_process",
  "regex",
  "rustc-hash 2.1.1",
- "scc 2.4.0",
+ "scc 3.0.7",
  "semver",
  "serde",
  "starbase_sandbox",
@@ -5352,7 +5352,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_task_graph",
- "scc 2.4.0",
+ "scc 3.0.7",
  "tracing",
 ]
 
@@ -7031,7 +7031,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46e6f046b7fef48e2660c57ed794263155d713de679057f2d0c169bfc6e756cc"
 dependencies = [
  "sdd 3.0.10",
- "serde",
 ]
 
 [[package]]
@@ -7042,6 +7041,7 @@ checksum = "2f0c0b27fa9a31fc2bad3b9ce122188c9df8158bdcbc3c73e3c0bc38aa69c61e"
 dependencies = [
  "saa",
  "sdd 4.0.1",
+ "serde",
 ]
 
 [[package]]
@@ -7560,9 +7560,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.10.5"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d753b4e1a05de4557a715e4886b439afa7e0c5d857a11bd8459d2de58998e01"
+checksum = "ebfcf58b02a45e1dccbbd6e10f5ebf2bef22ee6de0a50e18c7336a19be189ef3"
 dependencies = [
  "async-trait",
  "chrono",

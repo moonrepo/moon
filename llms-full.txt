@@ -17413,7 +17413,7 @@ Final configuration ────────────────────
   [tools.node.aliases]
   stable = "~20"
 
-  [plugins]
+  [plugins.tools]
   node = "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_plugin.wasm"
 
   [settings]
@@ -17501,6 +17501,63 @@ Errors ────────────────────────�
 
 - `--shell` - The shell to diagnose (will detect automatically).
 - `--json` - Print the diagnosis in JSON format.
+
+---
+
+## exec
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+The `proto exec  -- ` (or `proto x`) command will activate a temporary
+environment by loading and initializing any number of tools, and then execute an arbitrary command
+within that environment.
+
+```shell
+$ proto exec node pnpm -- pnpm run dev
+```
+
+Tools will automatically detect a version to execute with based on loaded `.prototools`, but the
+version can be provided inline by suffixing the tool with `@`.
+
+```shell
+$ proto exec node@24.2 pnpm@10 -- pnpm run dev
+```
+
+### Shell support
+
+By default, the command will not be executed in a shell, and will be excuted in the context of the
+parent process. If you want to execute the command within a shell (using `-c`), you can use the
+`--shell` option.
+
+```shell
+$ proto exec node pnpm --shell bash -- 
+```
+
+If your command contains special characters, complex expressions, or shell specific syntax, you may
+need to pass `--raw` to avoid quoting/escaping issues.
+
+```shell
+$ proto exec node pnpm --shell bash --raw -- 
+```
+
+Furthermore, if you want to launch an interactive shell session with the activated environment, you
+can pass the shell command itself as the exec command.
+
+```shell
+$ proto exec node pnpm -- bash
+```
+
+### Arguments
+
+- `` - List of tool identifiers with optional version.
+- `` - Command to execute within the environment. Must be passed after a `--` separator.
+
+### Options
+
+- `--tools-from-config` - Inherit tools to initialize from `.prototools` configs, instead of passing
+  an explicit list.
+- `--raw` - Execute the command as-is without quoting or escaping when using `--shell`.
+- `--shell` - Shell to execute the command with (e.g. `bash` or `pwsh`).
 
 ---
 
@@ -17741,6 +17798,8 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 ### Options
 
 - `--to` - [Location of `.prototools`](../../config#locations) to update.
+  
+- `--type` - Type of plugin to add, either `tool` (default) or `backend`.
 
 ---
 
@@ -17898,6 +17957,8 @@ $ proto plugin remove node
 ### Options
 
 - `--from` - [Location of `.prototools`](../../config#locations) to update.
+  
+- `--type` - Type of plugin to remove, either `tool` (default) or `backend`.
 
 ---
 
@@ -18723,21 +18784,77 @@ timeout = 500
 
 ### `[plugins]`
 
-Additional [plugins](./plugins) can be configured with the `[plugins]` section.
+This setting was renamed to [`[plugins.tools]`](#pluginstools) in v0.52 but exists for backwards
+compatibility.
+
+## Backend specific settings
+
+### `[plugins.backends]`
+
+Custom [backend plugins](./plugins) can be configured with the `[plugins.backends]` section.
 [Learn more about this syntax](./plugins#enabling-plugins).
 
 ```toml title=".prototools"
-[plugins]
+[plugins.backends]
+my-backend = "https://raw.githubusercontent.com/my/backend/master/proto-plugin.toml"
+```
+
+Once configured, you can manage a tool plugin using your custom backend:
+
+```shell
+$ proto install my-backend:tool-id
+```
+
+### `[backends.*]`
+
+Backends support custom configuration that will be passed to their WASM plugin, which can be used to
+control the behavior for _all_ tools managed by the backend. Please refer to the
+[official documentation](./tool-spec#backends) around backends.
+
+```toml title=".prototools"
+[backends.example]
+setting = true
+```
+
+### `[backends.*.env]`
+
+This setting is a map of environment variables for a specific backend, and will be applied when that
+backend is executed through a managed tool, or when [`proto activate`](./commands/activate) is ran
+in a shell profile. These variables will override those defined in `[env]`. Refer to [`[env]`](#env)
+for usage examples.
+
+```toml title=".prototools"
+[backends.example.env]
+KEY = "value"
+```
+
+#### `file`
+
+Like [`[env].file`](#file), this is a path to a dotenv file, relative from the current configuration
+file, that will be loaded into the environment variables mapping for this specific backend.
+
+```toml title=".prototools"
+[backends.example.env]
+file = "backend/.env"
+```
+
+## Tool specific settings
+
+### `[plugins.tools]`
+
+Custom [tool plugins](./plugins) can be configured with the `[plugins.tools]` section.
+[Learn more about this syntax](./plugins#enabling-plugins).
+
+```toml title=".prototools"
+[plugins.tools]
 my-tool = "https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
 ```
 
-Once configured, you can run a plugin as if it was a built-in tool:
+Once configured, you can manage a tool plugin:
 
 ```shell
 $ proto install my-tool
 ```
-
-## Tool specific settings
 
 ### `[tools.*]`
 
@@ -18756,18 +18873,6 @@ bundled-npm = true
 
 [tools.npm]
 shared-globals-dir = true
-```
-
-#### `backend`
-
-The [registry backend](./tool-spec#backends) to utilize when downloading, installing, and running
-the tool. Supports the following:
-
-- [`asdf`](https://asdf-vm.com/)
-
-```toml title=".prototools"
-[tools.node]
-backend = "asdf"
 ```
 
 ### `[tools.*.aliases]`
@@ -19336,7 +19441,7 @@ a [plugin locator string](../guides/wasm-plugins#configuring-plugin-locations) t
 protocol and source location.
 
 ```toml title=".prototools"
-[plugins]
+[plugins.tools]
  = "://"
 ```
 
@@ -19377,33 +19482,14 @@ A backend is an internal system that allows proto to use plugins from 3rd-party 
 managers within proto, greatly expanding the amount of tools that proto can install and support.
 This functionality is achieved through special WASM plugins under the hood.
 
-To make use of a backend, prefix the version in `.prototools` with the backend's unique identifier.
-For example, we can install Zig via asdf.
+To make use of a backend, prefix the tool identifier in `.prototools` with the backend's unique
+identifier. For example, we can install Zig via asdf.
 
 ```toml title=".prototools"
-zig = "asdf:0.13.0"
-```
+# >= v0.52
+"asdf:zig" = "0.13.0"
 
-The approach above only utilizes the backend for that specific version. If you want to utilize the
-backend for all versions (without using the version prefix), you can use the
-[`tools.*.backend`](./config#backend) setting.
-
-```toml title=".prototools"
-zig = "0.13.0"
-
-[tools.zig]
-backend = "asdf"
-```
-
-### `asdf`
-
-The `asdf` backend will utilize the [asdf version manager](https://asdf-vm.com/) for downloading and
-installing a tool, loading versions, and locating executables. This backend implementation _does
-not_ use the `asdf` binary itself, and instead emulates the environment as best we can. Because of
-this, some tools may not be usable through proto.
-
-```toml title=".prototools"
- = "asdf:20"
+# " = "20"
 ```
 
 By default, the ID pinned in `.prototools` is the
@@ -19412,9 +19498,9 @@ repository. If the ID is different than the shortname (`node` vs `nodejs`), you 
 `asdf-shortname` setting.
 
 ```toml title=".prototools"
-node = "asdf:20"
+"asdf:node" = "20"
 
-[tools.node]
+[tools."asdf.node"]
 asdf-shortname = "nodejs"
 ```
 
@@ -19593,11 +19679,6 @@ Users can configure tools through the [`[tools.*]`](./config#tools) section of t
 which can then be accessed within the WASM plugin using the
 [`get_tool_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_tool_config.html) function.
 
-```rust
-let config = get_tool_config::()?;
-config.bundled_npm;
-```
-
 This function requires a struct to deserialize into. It should implement `Default`, enable serde
 defaults, and map keys from `kebab-case`. If you want to error on unknown settings, also enable
 `deny_unknown_fields`.
@@ -19605,10 +19686,30 @@ defaults, and map keys from `kebab-case`. If you want to error on unknown settin
 ```rust
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
-struct NodeConfig {
+struct NodeToolConfig {
     pub bundled_npm: bool,
-    pub intercept_globals: bool,
 }
+
+let config = get_tool_config::()?;
+config.bundled_npm;
+```
+
+### Backend configuration
+
+Like tool configuration, users can configure backends through the
+[`[backends.*]`](./config#backends) section of their `.prototools`, which can then be accessed
+within the WASM plugin using the
+[`get_backend_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_backend_config.html)
+function.
+
+```rust
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+struct ExampleBackendConfig {
+    pub setting: bool,
+}
+
+let config = get_backend_config::()?;
 ```
 
 ## Creating a plugin
@@ -19620,12 +19721,12 @@ create a Rust based plugin.
 
 :::
 
-## Implementing plugin functions
+## Implementing tool functions
 
 Plugins are powered by a set of functions that are called from the host, and are annotated with
-`#[plugin_fn]`.
+`#[plugin_fn]`. These are known as plugin functions, or guest functions.
 
-### Registering metadata
+### Registering the tool
 
 The first step in a plugin's life-cycle is to register metadata about the plugin with the
 `register_tool` function. This function is called immediately after a plugin is loaded at runtime,
@@ -19656,18 +19757,18 @@ pub fn register_tool(Json(input): Json) -> FnResult> {
 }
 ```
 
-#### Configuration schema
+### Configuration schema
 
 If you are using [tool configuration](#tool-configuration), you can register the shape of the
-configuration using the [`schematic`](https://crates.io/crates/schematic) crate. This shape will be
-used to generate outputs such as JSON schemas, or TypeScript types.
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate and the
+`define_tool_config` function. This shape will be used to generate outputs such as JSON schemas, or
+TypeScript types.
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(_: ()) -> FnResult> {
-    Ok(Json(RegisterToolOutput {
-        // ...
-        config_schema: Some(schematic::SchemaBuilder::generate::()),
+pub fn define_tool_config(_: ()) -> FnResult> {
+    Ok(Json(DefineToolConfigOutput {
+        schema: Some(schematic::SchemaBuilder::generate::()),
     }))
 }
 ```
@@ -19676,10 +19777,12 @@ Schematic is a heavy library, so we suggest adding the dependency like so:
 
 ```toml
 [dependencies]
-schematic = { version = "*", default-features = false, features = ["schema"] }
+schematic = { version = "", default-features = false, features = ["schema"] }
 ```
 
-### Downloading pre-builts
+### Installation strategy
+
+#### Downloading pre-builts
 
 Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
 _not_ support building from source. The `download_prebuilt` function _must_ be defined, whichs
@@ -19743,7 +19846,7 @@ pub fn download_prebuilt(Json(input): Json) -> FnResult> {
 }
 ```
 
-#### Unpacking an archive
+##### Unpacking an archive
 
 Our plugin layer will do its best to detect file extensions, unpack the downloaded file (if an
 archive), and install the tool to the correct directory. However, we're unable to account for _all_
@@ -19761,6 +19864,37 @@ This function receives an input with the following fields:
 pub fn unpack_archive(Json(input): Json) -> FnResult {
     untar(input.input_file, input.output_dir)?;
     Ok(())
+}
+```
+
+#### Build from source
+
+Coming soon!
+
+#### Native installation
+
+For tools that can't be installed through downloading pre-builts or building from source, and
+require a more unique/native approach (say running a script), you may define the `native_install`
+function.
+
+This function allows you to execute host commands, make HTTP requests, and more, to install the
+tool. All that's required to return whether the installation was successful or not, and an optional
+error message.
+
+```rust
+#[plugin_fn]
+pub fn native_install(Json(input): Json) -> FnResult> {
+    let result = exec_captured("command", ["args"])?;
+
+    Ok(Json(NativeInstallOutput {
+        installed: result.exit_code == 0,
+        error: if result.stderr.is_empty() {
+            None
+        } else {
+            Some(result.stderr)
+        },
+        ..Default::default()
+    }))
 }
 ```
 
@@ -19929,6 +20063,98 @@ pub fn parse_version_file(Json(input): Json) -> FnResult> {
 }
 ```
 
+## Implementing backend functions
+
+Plugins are powered by a set of functions that are called from the host, and are annotated with
+`#[plugin_fn]`. These are known as plugin functions, or guest functions.
+
+### Registering the backend
+
+> Backends will also need to implement [`register_tool`](#registering-the-tool) for the managed tool
+> within the backend.
+
+The first step in a plugin's life-cycle is to register metadata about the plugin with the
+`register_backend` function. This function requires a unique backend identifier, which is typically
+the identifier of the current tool being managed.
+
+```rust
+#[plugin_fn]
+pub fn register_backend(
+    Json(input): Json,
+) -> FnResult> {
+    Ok(Json(RegisterBackendOutput {
+        backend_id: get_plugin_id()?,
+        ..Default::default()
+    }))
+}
+```
+
+#### Referencing install scripts
+
+Some tools rely on command line scripts for installation, like `asdf`. To make these scripts
+available (at `~/.proto/backends`), you can define the `source` field in the
+`RegisterBackendOutput`, which accepts a Git repository URL, or an HTTP URL to an archive to unpack.
+Additionally, the `exes` field must be defined with a list of scripts that will be executed within
+the backend.
+
+As an example, here's how the `asdf` backend is implemented:
+
+```rust
+
+#[plugin_fn]
+pub fn register_backend(
+    Json(input): Json,
+) -> FnResult> {
+    Ok(Json(RegisterBackendOutput {
+        backend_id: get_plugin_id()?,
+        exes: vec![
+            "bin/download".into(),
+            "bin/exec-env".into(),
+            "bin/install".into(),
+            "bin/latest-stable".into(),
+            "bin/list-all".into(),
+            "bin/list-bin-paths".into(),
+            "bin/list-legacy-filenames".into(),
+            "bin/parse-legacy-file".into(),
+            "bin/uninstall".into(),
+        ],
+        source: Some(SourceLocation::Git(GitSource {
+            url: "https://github.com/asdf-vm/asdf-nodejs.git".into(),
+            ..Default::default()
+        })),
+    }))
+}
+```
+
+These scripts can then be accessed on the file system using the following virtual path.
+
+```rust
+PathBuf::from("/proto/backends///bin/install")
+```
+
+### Configuration schema
+
+If you are using [backend configuration](#backend-configuration), you can register the shape of the
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate and the
+`define_backend_config` function. This shape will be used to generate outputs such as JSON schemas,
+or TypeScript types.
+
+```rust
+#[plugin_fn]
+pub fn define_backend_config(_: ()) -> FnResult> {
+    Ok(Json(DefineBackendConfigOutput {
+        schema: Some(schematic::SchemaBuilder::generate::()),
+    }))
+}
+```
+
+Schematic is a heavy library, so we suggest adding the dependency like so:
+
+```toml
+[dependencies]
+schematic = { version = "", default-features = false, features = ["schema"] }
+```
+
 ## Testing
 
 The best way to test the plugin is to execute it through `proto` directly. To do this, you'll need
@@ -19936,7 +20162,7 @@ to configure a `.prototools` file at the root of your plugin's repository that m
 debug build:
 
 ```toml
-[plugins]
+[plugins.tools]
  = "file://./target/wasm32-wasip1/debug/.wasm"
 ```
 
@@ -31111,6 +31337,63 @@ With toolchains plugins being stabilized more, we'd like to focus on some other 
 
 ---
 
+## proto v0.52 - Custom backend plugins
+
+In this release, we're excited to announce custom backend plugins!
+
+## Custom backend plugins
+
+In [proto v0.47](./proto-v0.47) we announced support for backend plugins, starting with
+[asdf](https://asdf-vm.com/). However, the initial plan was for backend plugins to be an internal
+only feature, maintained by the proto team directly. After some thought, we realized that this was a
+bit limiting, and would ultimately slow down the growth of proto's ecosystem. So, in this release,
+we're opening up backend plugins to the community!
+
+Backend plugins are a superset of tool plugins that inherit all of their functionality, with
+additional backend specific functionality layered on top. This means that backend plugins can define
+and manage multiple tools, and also handle installation, version resolution, and more.
+
+To support backend plugins, we've made some changes to the configuration format. Backend plugins can
+be configured with the new [`[plugins.backends]` section](/docs/proto/config#pluginsbackends), and
+tool plugins have moved to the [`[plugins.tools]` section](/docs/proto/config#pluginstools). For
+backwards compatibility, the old `[plugins]` section will still work for now.
+
+```toml title=".prototools"
+[plugins.backends]
+my-backend = "https://raw.githubusercontent.com/my/backend/master/proto-plugin.wasm"
+```
+
+## Breaking: New backend identifier format
+
+To support the backend plugins going forward, we've had to make a breaking change to the way
+backends are identified in configuration. Previously, the backend was specified by prefixing the
+version like `asdf:1.2.3`, or with the `[tools.*.backend]` setting. This was very restrictive.
+
+Going forward, the backend can _only_ be prefixed as part of the tool identifier.
+
+```toml title=".prototools"
+# Before
+zig = "asdf:0.13.0"
+
+# After
+"asdf:zig" = "0.13.0"
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.52.0) for a full list
+of changes.
+
+- Updated lockfiles to track `os` and `arch` information when applicable.
+
+## Looking for contributors
+
+We have a lot of cool stuff planned for proto, like more official backends and tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!
+
+---
+
 ## moon v1.40 - JavaScript ecosystem WASM toolchains and more
 
 It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
@@ -31358,3 +31641,81 @@ With toolchains plugins being stabilized more, we'd like to focus on some other 
 - Investigate better task inheritance: https://github.com/moonrepo/moon/issues/2023
 
 [tiers]: /docs/how-it-works/languages
+
+---
+
+## proto v0.53 - New exec command and backend configuration
+
+In this release, we're introducing another way to execute tools within proto.
+
+## New `proto exec` command
+
+Since proto's inception, we've had the [`proto run`](/docs/proto/commands/run) command for executing
+a specific tool with a list of arguments. While this works well for simple use-cases, like our shims
+layer, it has some limitations, such as:
+
+- It only works with one tool at a time, not multiple.
+- It cannot bootstrap the environment (vars and paths).
+- It cannot execute arbitrary commands.
+- It requires a tool to have a primary/main executable (not everything does).
+- Executing a secondary executable is not straightforward.
+
+To address these limitations, we're introducing a new command,
+[`proto exec`](/docs/proto/commands/exec)! This command is designed to bootstrap the environment
+with any numbers of tools, and execute an arbitrary command within that environment.
+
+For example, say we want to run a backend application that requires Node.js, pnpm, and Ruby, we can
+do the following:
+
+```shell
+$ proto exec node@24 pnpm@10 ruby@3.4 -- pnpm run app:start
+```
+
+This will load and activate these three tools, set environment variables, update `PATH`, and execute
+the command! Pretty nifty, right? It even supports executing the command within a shell! Head to the
+docs for more information.
+
+## Backend configuration support
+
+In our previous release, we updated backend plugins with user-driven support, instead of being
+hard-coded into proto core. To build upon this, we've improved the interoperability of backends by
+supporting configuration of the backend itself (not the tool that the backend represents), using the
+new [`[backends]` setting](/docs/proto/config#backends).
+
+For example, say you're using `asdf:zig`, which is the `zig` tool in the `asdf` backend. To
+configure the tool, you would use `[tools."asdf:zig"]`, but to configure the `asdf` backend itself,
+you can now use `[backends.asdf]`.
+
+```toml title=".prototools"
+[backends.asdf]
+backend-setting = "value"
+
+[tools."asdf:zig"]
+tool-setting = "value"
+```
+
+Backend configuration is useful where you want to control the behavior of the backend itself and
+apply it to _all_ tools, while backend-managed tool configuration is useful when you want to control
+the behavior of a specific tool.
+
+:::warning
+
+In previous versions, configuring a backend-managed tool was done without the backend prefix, for
+example `[tools.zig]`. To avoid collision with non-backend-managed tools, this is no longer
+supported, and you must use the full locator, for example `[tools."asdf:zig"]`.
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.53.0) for a full list
+of changes.
+
+- Added a mechanism for plugins to setup the environment during activation and execution workflows.
+- Fixed an issue where shims that belong to a backend would fail to run.
+
+## Looking for contributors
+
+We have a lot of cool stuff planned for proto, like more official backends and tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!

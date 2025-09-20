@@ -121,6 +121,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [debug config](https://moonrepo.dev/docs/proto/commands/debug/config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [debug env](https://moonrepo.dev/docs/proto/commands/debug/env): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [diagnose](https://moonrepo.dev/docs/proto/commands/diagnose): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [exec](https://moonrepo.dev/docs/proto/commands/exec): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [install](https://moonrepo.dev/docs/proto/commands/install): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [list-remote](https://moonrepo.dev/docs/proto/commands/list-remote): :::danger
 - [list](https://moonrepo.dev/docs/proto/commands/list): :::danger
@@ -257,4 +258,6 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v1.38 - Go WASM toolchain, MCP tools, terminal notifications, and more!](https://moonrepo.dev/blog/2025-06-24_moon-v1.38): In this release, we're stoked to release the Go WASM toolchain plugin, and improved MCP/AI support!
 - [proto v0.51 - Unstable lockfiles and plugin registries](https://moonrepo.dev/blog/2025-07-17_proto-v0.51): With this release, we're excited to introduce two major features that pave the way for proto's
 - [moon v1.39 - Improved task inputs, better proto integration, and project layers](https://moonrepo.dev/blog/2025-07-24_moon-v1.39): This is a rather small release, but it does include some important changes to task inputs, and
+- [proto v0.52 - Custom backend plugins](https://moonrepo.dev/blog/2025-08-21_proto-v0.52): In this release, we're excited to announce custom backend plugins!
 - [moon v1.40 - JavaScript ecosystem WASM toolchains and more](https://moonrepo.dev/blog/2025-09-01_moon-v1.40): It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
+- [proto v0.53 - New exec command and backend configuration](https://moonrepo.dev/blog/2025-09-18_proto-v0.53): In this release, we're introducing another way to execute tools within proto.

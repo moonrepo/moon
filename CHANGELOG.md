@@ -1,5 +1,6 @@
 # Changelog
 
+<<<<<<< HEAD
 ## 1.40.4
 
 #### 🐞 Fixes
@@ -36,6 +37,13 @@
 #### ⚙️ Internal
 
 - Updated dependencies.
+=======
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.53.0](https://github.com/moonrepo/proto/releases/tag/v0.53.0) (from 0.52.3).
+>>>>>>> 47ebc4eda1 (deps(proto): Update to v0.53. (#2119))
 
 ## 1.40.1
 

@@ -377,6 +377,65 @@ mod tasks_builder {
             assert_eq!(task.args, vec!["arg", "$ARG"]);
             assert_eq!(task.options.shell, Some(true));
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn handles_shell_expansions() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("shell-expansion").await;
+            
+            // No expansion - shell should not be enabled
+            let task = tasks.get("command-no-expansion").unwrap();
+            assert_eq!(task.command, "./file.sh");
+            assert_eq!(task.options.shell, Some(false));
+
+            // Subcommand expansion $(command)
+            let task = tasks.get("command-with-subcommand").unwrap();
+            assert_eq!(task.command, "echo");
+            assert_eq!(task.args, vec!["$(date)"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("args-with-subcommand").unwrap();
+            assert_eq!(task.args, vec!["--date", "$(date +%Y%m%d)"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            // Arithmetic expansion $((expr))
+            let task = tasks.get("command-with-arithmetic").unwrap();
+            assert_eq!(task.command, "echo");
+            assert_eq!(task.args, vec!["$((1", "+", "2))"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("args-with-arithmetic").unwrap();
+            assert_eq!(task.args, vec!["--count", "$((10 * 5))"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            // Process substitution <(command) and >(command)
+            let task = tasks.get("command-with-process-substitution").unwrap();
+            assert_eq!(task.command, "diff");
+            assert_eq!(task.args, vec!["<(ls", "dir1)", "<(ls", "dir2)"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("args-with-process-substitution").unwrap();
+            assert_eq!(task.args, vec!["<(sort file.txt)", ">(tee output.log)"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            // Backticks `command`
+            let task = tasks.get("command-with-backticks").unwrap();
+            assert_eq!(task.command, "echo");
+            assert_eq!(task.args, vec!["`pwd`"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("args-with-backticks").unwrap();
+            assert_eq!(task.args, vec!["--path", "`realpath .`"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            // Mixed expansions
+            let task = tasks.get("mixed-expansions").unwrap();
+            assert_eq!(task.command, "backup");
+            assert_eq!(task.args, vec!["--name", "$(date +%Y%m%d)-v$((count + 1)).tar", "`pwd`/src", "<(find . -name \"*.js\")"]);
+            assert_eq!(task.options.shell, Some(true));
+        }
     }
 
     mod detect_platform_legacy {

@@ -29,7 +29,11 @@ To make use of a backend, prefix the tool identifier in `.prototools` with the b
 identifier. For example, we can install Zig via asdf.
 
 ```toml title=".prototools"
+# >= v0.52
 "asdf:zig" = "0.13.0"
+
+# <= v0.51
+zig = "asdf:0.13.0"
 ```
 
 ### `asdf`

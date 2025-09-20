@@ -461,21 +461,26 @@ timeout = 500
 
 ### `[plugins]`
 
-Additional [plugins](./plugins) can be configured with the `[plugins]` section.
+This setting was renamed to [`[plugins.tools]`](#pluginstools) in v0.52 but exists for backwards
+compatibility.
+
+## Backend specific settings
+
+### `[plugins.backends]`<VersionLabel version="0.52.0" />
+
+Custom [backend plugins](./plugins) can be configured with the `[plugins.backends]` section.
 [Learn more about this syntax](./plugins#enabling-plugins).
 
 ```toml title=".prototools"
-[plugins]
-my-tool = "https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+[plugins.backends]
+my-backend = "https://raw.githubusercontent.com/my/backend/master/proto-plugin.toml"
 ```
 
-Once configured, you can run a plugin as if it was a built-in tool:
+Once configured, you can manage a tool plugin using your custom backend:
 
 ```shell
-$ proto install my-tool
+$ proto install my-backend:tool-id
 ```
-
-## Backend specific settings
 
 ### `[backends.*]`<VersionLabel version="0.53.0" />
 
@@ -511,6 +516,22 @@ file = "backend/.env"
 ```
 
 ## Tool specific settings
+
+### `[plugins.tools]`<VersionLabel version="0.52.0" />
+
+Custom [tool plugins](./plugins) can be configured with the `[plugins.tools]` section.
+[Learn more about this syntax](./plugins#enabling-plugins).
+
+```toml title=".prototools"
+[plugins.tools]
+my-tool = "https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+```
+
+Once configured, you can manage a tool plugin:
+
+```shell
+$ proto install my-tool
+```
 
 ### `[tools.*]`
 

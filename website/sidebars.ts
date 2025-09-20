@@ -333,6 +333,7 @@ const sidebars: SidebarsConfig = {
 					},
 				},
 				'proto/commands/diagnose',
+				'proto/commands/exec',
 				'proto/commands/install',
 				'proto/commands/outdated',
 				'proto/commands/pin',

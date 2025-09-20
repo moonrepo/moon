@@ -25,22 +25,11 @@ A backend is an internal system that allows proto to use plugins from 3rd-party 
 managers within proto, greatly expanding the amount of tools that proto can install and support.
 This functionality is achieved through special WASM plugins under the hood.
 
-To make use of a backend, prefix the version in `.prototools` with the backend's unique identifier.
-For example, we can install Zig via asdf.
+To make use of a backend, prefix the tool identifier in `.prototools` with the backend's unique
+identifier. For example, we can install Zig via asdf.
 
 ```toml title=".prototools"
-zig = "asdf:0.13.0"
-```
-
-The approach above only utilizes the backend for that specific version. If you want to utilize the
-backend for all versions (without using the version prefix), you can use the
-[`tools.*.backend`](./config#backend) setting.
-
-```toml title=".prototools"
-zig = "0.13.0"
-
-[tools.zig]
-backend = "asdf"
+"asdf:zig" = "0.13.0"
 ```
 
 ### `asdf`
@@ -51,7 +40,7 @@ not_ use the `asdf` binary itself, and instead emulates the environment as best 
 this, some tools may not be usable through proto.
 
 ```toml title=".prototools"
-<id> = "asdf:20"
+"asdf:<id>" = "20"
 ```
 
 By default, the ID pinned in `.prototools` is the
@@ -60,9 +49,9 @@ repository. If the ID is different than the shortname (`node` vs `nodejs`), you 
 `asdf-shortname` setting.
 
 ```toml title=".prototools"
-node = "asdf:20"
+"asdf:node" = "20"
 
-[tools.node]
+[tools."asdf.node"]
 asdf-shortname = "nodejs"
 ```
 

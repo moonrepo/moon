@@ -60,11 +60,6 @@ Users can configure tools through the [`[tools.*]`](./config#tools) section of t
 which can then be accessed within the WASM plugin using the
 [`get_tool_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_tool_config.html) function.
 
-```rust
-let config = get_tool_config::<NodeConfig>()?;
-config.bundled_npm;
-```
-
 This function requires a struct to deserialize into. It should implement `Default`, enable serde
 defaults, and map keys from `kebab-case`. If you want to error on unknown settings, also enable
 `deny_unknown_fields`.
@@ -72,10 +67,30 @@ defaults, and map keys from `kebab-case`. If you want to error on unknown settin
 ```rust
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
-struct NodeConfig {
+struct NodeToolConfig {
     pub bundled_npm: bool,
-    pub intercept_globals: bool,
 }
+
+let config = get_tool_config::<NodeToolConfig>()?;
+config.bundled_npm;
+```
+
+### Backend configuration<VersionLabel version="0.53.0" />
+
+Like tool configuration, users can configure backends through the
+[`[backends.*]`](./config#backends) section of their `.prototools`, which can then be accessed
+within the WASM plugin using the
+[`get_backend_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_backend_config.html)
+function.
+
+```rust
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+struct ExampleBackendConfig {
+    pub setting: bool,
+}
+
+let config = get_backend_config::<ExampleBackendConfig>()?;
 ```
 
 ## Creating a plugin
@@ -87,10 +102,10 @@ create a Rust based plugin.
 
 :::
 
-## Implementing plugin functions
+## Implementing tool functions
 
 Plugins are powered by a set of functions that are called from the host, and are annotated with
-`#[plugin_fn]`.
+`#[plugin_fn]`. These are known as plugin functions, or guest functions.
 
 ### Registering metadata
 
@@ -123,18 +138,18 @@ pub fn register_tool(Json(input): Json<RegisterToolInput>) -> FnResult<Json<Regi
 }
 ```
 
-#### Configuration schema<VersionLabel version="0.40.0" />
+### Configuration schema<VersionLabel version="0.53.0" />
 
 If you are using [tool configuration](#tool-configuration), you can register the shape of the
-configuration using the [`schematic`](https://crates.io/crates/schematic) crate. This shape will be
-used to generate outputs such as JSON schemas, or TypeScript types.
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate and the
+`define_tool_config` function. This shape will be used to generate outputs such as JSON schemas, or
+TypeScript types.
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(_: ()) -> FnResult<Json<RegisterToolOutput>> {
-    Ok(Json(RegisterToolOutput {
-        // ...
-        config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
+pub fn define_tool_config(_: ()) -> FnResult<Json<DefineToolConfigOutput>> {
+    Ok(Json(DefineToolConfigOutput {
+        schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
     }))
 }
 ```
@@ -143,7 +158,7 @@ Schematic is a heavy library, so we suggest adding the dependency like so:
 
 ```toml
 [dependencies]
-schematic = { version = "*", default-features = false, features = ["schema"] }
+schematic = { version = "<version>", default-features = false, features = ["schema"] }
 ```
 
 ### Downloading pre-builts

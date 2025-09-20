@@ -60,11 +60,6 @@ Users can configure tools through the [`[tools.*]`](./config#tools) section of t
 which can then be accessed within the WASM plugin using the
 [`get_tool_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_tool_config.html) function.
 
-```rust
-let config = get_tool_config::<NodeConfig>()?;
-config.bundled_npm;
-```
-
 This function requires a struct to deserialize into. It should implement `Default`, enable serde
 defaults, and map keys from `kebab-case`. If you want to error on unknown settings, also enable
 `deny_unknown_fields`.
@@ -72,10 +67,30 @@ defaults, and map keys from `kebab-case`. If you want to error on unknown settin
 ```rust
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
-struct NodeConfig {
+struct NodeToolConfig {
     pub bundled_npm: bool,
-    pub intercept_globals: bool,
 }
+
+let config = get_tool_config::<NodeToolConfig>()?;
+config.bundled_npm;
+```
+
+### Backend configuration<VersionLabel version="0.53.0" />
+
+Like tool configuration, users can configure backends through the
+[`[backends.*]`](./config#backends) section of their `.prototools`, which can then be accessed
+within the WASM plugin using the
+[`get_backend_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_backend_config.html)
+function.
+
+```rust
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+struct ExampleBackendConfig {
+    pub setting: bool,
+}
+
+let config = get_backend_config::<ExampleBackendConfig>()?;
 ```
 
 ## Creating a plugin
@@ -87,12 +102,12 @@ create a Rust based plugin.
 
 :::
 
-## Implementing plugin functions
+## Implementing tool functions
 
 Plugins are powered by a set of functions that are called from the host, and are annotated with
-`#[plugin_fn]`.
+`#[plugin_fn]`. These are known as plugin functions, or guest functions.
 
-### Registering metadata
+### Registering the tool
 
 The first step in a plugin's life-cycle is to register metadata about the plugin with the
 `register_tool` function. This function is called immediately after a plugin is loaded at runtime,
@@ -123,18 +138,18 @@ pub fn register_tool(Json(input): Json<RegisterToolInput>) -> FnResult<Json<Regi
 }
 ```
 
-#### Configuration schema<VersionLabel version="0.40.0" />
+### Configuration schema<VersionLabel version="0.53.0" />
 
 If you are using [tool configuration](#tool-configuration), you can register the shape of the
-configuration using the [`schematic`](https://crates.io/crates/schematic) crate. This shape will be
-used to generate outputs such as JSON schemas, or TypeScript types.
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate and the
+`define_tool_config` function. This shape will be used to generate outputs such as JSON schemas, or
+TypeScript types.
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(_: ()) -> FnResult<Json<RegisterToolOutput>> {
-    Ok(Json(RegisterToolOutput {
-        // ...
-        config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
+pub fn define_tool_config(_: ()) -> FnResult<Json<DefineToolConfigOutput>> {
+    Ok(Json(DefineToolConfigOutput {
+        schema: Some(schematic::SchemaBuilder::generate::<NodeToolConfig>()),
     }))
 }
 ```
@@ -143,10 +158,12 @@ Schematic is a heavy library, so we suggest adding the dependency like so:
 
 ```toml
 [dependencies]
-schematic = { version = "*", default-features = false, features = ["schema"] }
+schematic = { version = "<version>", default-features = false, features = ["schema"] }
 ```
 
-### Downloading pre-builts
+### Installation strategy
+
+#### Downloading pre-builts
 
 Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
 _not_ support building from source. The `download_prebuilt` function _must_ be defined, whichs
@@ -210,7 +227,7 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
 }
 ```
 
-#### Unpacking an archive
+##### Unpacking an archive
 
 Our plugin layer will do its best to detect file extensions, unpack the downloaded file (if an
 archive), and install the tool to the correct directory. However, we're unable to account for _all_
@@ -228,6 +245,37 @@ This function receives an input with the following fields:
 pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
     untar(input.input_file, input.output_dir)?;
     Ok(())
+}
+```
+
+#### Build from source
+
+Coming soon!
+
+#### Native installation
+
+For tools that can't be installed through downloading pre-builts or building from source, and
+require a more unique/native approach (say running a script), you may define the `native_install`
+function.
+
+This function allows you to execute host commands, make HTTP requests, and more, to install the
+tool. All that's required to return whether the installation was successful or not, and an optional
+error message.
+
+```rust
+#[plugin_fn]
+pub fn native_install(Json(input): Json<NativeInstallInput>) -> FnResult<Json<NativeInstallOutput>> {
+    let result = exec_captured("command", ["args"])?;
+
+    Ok(Json(NativeInstallOutput {
+        installed: result.exit_code == 0,
+        error: if result.stderr.is_empty() {
+            None
+        } else {
+            Some(result.stderr)
+        },
+        ..Default::default()
+    }))
 }
 ```
 
@@ -396,6 +444,98 @@ pub fn parse_version_file(Json(input): Json<ParseVersionFileInput>) -> FnResult<
 }
 ```
 
+## Implementing backend functions
+
+Plugins are powered by a set of functions that are called from the host, and are annotated with
+`#[plugin_fn]`. These are known as plugin functions, or guest functions.
+
+### Registering the backend<VersionLabel version="0.52.0" />
+
+> Backends will also need to implement [`register_tool`](#registering-the-tool) for the managed tool
+> within the backend.
+
+The first step in a plugin's life-cycle is to register metadata about the plugin with the
+`register_backend` function. This function requires a unique backend identifier, which is typically
+the identifier of the current tool being managed.
+
+```rust
+#[plugin_fn]
+pub fn register_backend(
+    Json(input): Json<RegisterBackendInput>,
+) -> FnResult<Json<RegisterBackendOutput>> {
+    Ok(Json(RegisterBackendOutput {
+        backend_id: get_plugin_id()?,
+        ..Default::default()
+    }))
+}
+```
+
+#### Referencing install scripts
+
+Some tools rely on command line scripts for installation, like `asdf`. To make these scripts
+available (at `~/.proto/backends`), you can define the `source` field in the
+`RegisterBackendOutput`, which accepts a Git repository URL, or an HTTP URL to an archive to unpack.
+Additionally, the `exes` field must be defined with a list of scripts that will be executed within
+the backend.
+
+As an example, here's how the `asdf` backend is implemented:
+
+```rust
+
+#[plugin_fn]
+pub fn register_backend(
+    Json(input): Json<RegisterBackendInput>,
+) -> FnResult<Json<RegisterBackendOutput>> {
+    Ok(Json(RegisterBackendOutput {
+        backend_id: get_plugin_id()?,
+        exes: vec![
+            "bin/download".into(),
+            "bin/exec-env".into(),
+            "bin/install".into(),
+            "bin/latest-stable".into(),
+            "bin/list-all".into(),
+            "bin/list-bin-paths".into(),
+            "bin/list-legacy-filenames".into(),
+            "bin/parse-legacy-file".into(),
+            "bin/uninstall".into(),
+        ],
+        source: Some(SourceLocation::Git(GitSource {
+            url: "https://github.com/asdf-vm/asdf-nodejs.git".into(),
+            ..Default::default()
+        })),
+    }))
+}
+```
+
+These scripts can then be accessed on the file system using the following virtual path.
+
+```rust
+PathBuf::from("/proto/backends/<backend_id>/<tool_id>/bin/install")
+```
+
+### Configuration schema<VersionLabel version="0.53.0" />
+
+If you are using [backend configuration](#backend-configuration), you can register the shape of the
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate and the
+`define_backend_config` function. This shape will be used to generate outputs such as JSON schemas,
+or TypeScript types.
+
+```rust
+#[plugin_fn]
+pub fn define_backend_config(_: ()) -> FnResult<Json<DefineBackendConfigOutput>> {
+    Ok(Json(DefineBackendConfigOutput {
+        schema: Some(schematic::SchemaBuilder::generate::<MyBackendConfig>()),
+    }))
+}
+```
+
+Schematic is a heavy library, so we suggest adding the dependency like so:
+
+```toml
+[dependencies]
+schematic = { version = "<version>", default-features = false, features = ["schema"] }
+```
+
 ## Testing
 
 The best way to test the plugin is to execute it through `proto` directly. To do this, you'll need
@@ -403,7 +543,7 @@ to configure a `.prototools` file at the root of your plugin's repository that m
 debug build:
 
 ```toml
-[plugins]
+[plugins.tools]
 <id> = "file://./target/wasm32-wasip1/debug/<name>.wasm"
 ```
 

@@ -1,0 +1,83 @@
+---
+slug: proto-v0.53
+title: proto v0.53 - New exec command and backend configuration
+authors: [milesj]
+tags: [exec, workflow, backend, config]
+image: ./img/proto/v0.53.png
+---
+
+In this release, we're introducing another way to execute tools within proto.
+
+<!--truncate-->
+
+## New `proto exec` command
+
+Since proto's inception, we've had the [`proto run`](/docs/proto/commands/run) command for executing
+a specific tool with a list of arguments. While this works well for simple use-cases, like our shims
+layer, it has some limitations, such as:
+
+- It only works with one tool at a time, not multiple.
+- It cannot bootstrap the environment (vars and paths).
+- It cannot execute arbitrary commands.
+- It requires a tool to have a primary/main executable (not everything does).
+- Executing a secondary executable is not straightforward.
+
+To address these limitations, we're introducing a new command,
+[`proto exec`](/docs/proto/commands/exec)! This command is designed to bootstrap the environment
+with any numbers of tools, and execute an arbitrary command within that environment.
+
+For example, say we want to run a backend application that requires Node.js, pnpm, and Ruby, we can
+do the following:
+
+```shell
+$ proto exec node@24 pnpm@10 ruby@3.4 -- pnpm run app:start
+```
+
+This will load and activate these three tools, set environment variables, update `PATH`, and execute
+the command! Pretty nifty, right? It even supports executing the command within a shell! Head to the
+docs for more information.
+
+## Backend configuration support
+
+In our previous release, we updated backend plugins with user-driven support, instead of being
+hard-coded into proto core. To build upon this, we've improved the interoperability of backends by
+supporting configuration of the backend itself (not the tool that the backend represents), using the
+new [`[backends]` setting](/docs/proto/config#backends).
+
+For example, say you're using `asdf:zig`, which is the `zig` tool in the `asdf` backend. To
+configure the tool, you would use `[tools."asdf:zig"]`, but to configure the `asdf` backend itself,
+you can now use `[backends.asdf]`.
+
+```toml title=".prototools"
+[backends.asdf]
+backend-setting = "value"
+
+[tools."asdf:zig"]
+tool-setting = "value"
+```
+
+Backend configuration is useful where you want to control the behavior of the backend itself and
+apply it to _all_ tools, while backend-managed tool configuration is useful when you want to control
+the behavior of a specific tool.
+
+:::warning
+
+In previous versions, configuring a backend-managed tool was done without the backend prefix, for
+example `[tools.zig]`. To avoid collision with non-backend-managed tools, this is no longer
+supported, and you must use the full locator, for example `[tools."asdf:zig"]`.
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.53.0) for a full list
+of changes.
+
+- Added a mechanism for plugins to setup the environment during activation and execution workflows.
+- Fixed an issue where shims that belong to a backend would fail to run.
+
+## Looking for contributors
+
+We have a lot of cool stuff planned for proto, like more official backends and tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!

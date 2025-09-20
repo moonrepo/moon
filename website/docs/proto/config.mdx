@@ -461,21 +461,77 @@ timeout = 500
 
 ### `[plugins]`
 
-Additional [plugins](./plugins) can be configured with the `[plugins]` section.
+This setting was renamed to [`[plugins.tools]`](#pluginstools) in v0.52 but exists for backwards
+compatibility.
+
+## Backend specific settings
+
+### `[plugins.backends]`<VersionLabel version="0.52.0" />
+
+Custom [backend plugins](./plugins) can be configured with the `[plugins.backends]` section.
 [Learn more about this syntax](./plugins#enabling-plugins).
 
 ```toml title=".prototools"
-[plugins]
+[plugins.backends]
+my-backend = "https://raw.githubusercontent.com/my/backend/master/proto-plugin.toml"
+```
+
+Once configured, you can manage a tool plugin using your custom backend:
+
+```shell
+$ proto install my-backend:tool-id
+```
+
+### `[backends.*]`<VersionLabel version="0.53.0" />
+
+Backends support custom configuration that will be passed to their WASM plugin, which can be used to
+control the behavior for _all_ tools managed by the backend. Please refer to the
+[official documentation](./tool-spec#backends) around backends.
+
+```toml title=".prototools"
+[backends.example]
+setting = true
+```
+
+### `[backends.*.env]`<VersionLabel version="0.53.0" />
+
+This setting is a map of environment variables for a specific backend, and will be applied when that
+backend is executed through a managed tool, or when [`proto activate`](./commands/activate) is ran
+in a shell profile. These variables will override those defined in `[env]`. Refer to [`[env]`](#env)
+for usage examples.
+
+```toml title=".prototools"
+[backends.example.env]
+KEY = "value"
+```
+
+#### `file`<VersionLabel version="0.53.0" />
+
+Like [`[env].file`](#file), this is a path to a dotenv file, relative from the current configuration
+file, that will be loaded into the environment variables mapping for this specific backend.
+
+```toml title=".prototools"
+[backends.example.env]
+file = "backend/.env"
+```
+
+## Tool specific settings
+
+### `[plugins.tools]`<VersionLabel version="0.52.0" />
+
+Custom [tool plugins](./plugins) can be configured with the `[plugins.tools]` section.
+[Learn more about this syntax](./plugins#enabling-plugins).
+
+```toml title=".prototools"
+[plugins.tools]
 my-tool = "https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
 ```
 
-Once configured, you can run a plugin as if it was a built-in tool:
+Once configured, you can manage a tool plugin:
 
 ```shell
 $ proto install my-tool
 ```
-
-## Tool specific settings
 
 ### `[tools.*]`
 
@@ -494,18 +550,6 @@ bundled-npm = true
 
 [tools.npm]
 shared-globals-dir = true
-```
-
-#### `backend`<VersionLabel version="0.47.0" />
-
-The [registry backend](./tool-spec#backends) to utilize when downloading, installing, and running
-the tool. Supports the following:
-
-- [`asdf`](https://asdf-vm.com/)
-
-```toml title=".prototools"
-[tools.node]
-backend = "asdf"
 ```
 
 ### `[tools.*.aliases]`

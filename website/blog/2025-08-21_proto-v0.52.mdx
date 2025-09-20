@@ -1,0 +1,62 @@
+---
+slug: proto-v0.52
+title: proto v0.52 - Custom backend plugins
+authors: [milesj]
+tags: [custom, backend, plugin, lockfile]
+image: ./img/proto/v0.52.png
+---
+
+In this release, we're excited to announce custom backend plugins!
+
+<!--truncate-->
+
+## Custom backend plugins
+
+In [proto v0.47](./proto-v0.47) we announced support for backend plugins, starting with
+[asdf](https://asdf-vm.com/). However, the initial plan was for backend plugins to be an internal
+only feature, maintained by the proto team directly. After some thought, we realized that this was a
+bit limiting, and would ultimately slow down the growth of proto's ecosystem. So, in this release,
+we're opening up backend plugins to the community!
+
+Backend plugins are a superset of tool plugins that inherit all of their functionality, with
+additional backend specific functionality layered on top. This means that backend plugins can define
+and manage multiple tools, and also handle installation, version resolution, and more.
+
+To support backend plugins, we've made some changes to the configuration format. Backend plugins can
+be configured with the new [`[plugins.backends]` section](/docs/proto/config#pluginsbackends), and
+tool plugins have moved to the [`[plugins.tools]` section](/docs/proto/config#pluginstools). For
+backwards compatibility, the old `[plugins]` section will still work for now.
+
+```toml title=".prototools"
+[plugins.backends]
+my-backend = "https://raw.githubusercontent.com/my/backend/master/proto-plugin.wasm"
+```
+
+## Breaking: New backend identifier format
+
+To support the backend plugins going forward, we've had to make a breaking change to the way
+backends are identified in configuration. Previously, the backend was specified by prefixing the
+version like `asdf:1.2.3`, or with the `[tools.*.backend]` setting. This was very restrictive.
+
+Going forward, the backend can _only_ be prefixed as part of the tool identifier.
+
+```toml title=".prototools"
+# Before
+zig = "asdf:0.13.0"
+
+# After
+"asdf:zig" = "0.13.0"
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.52.0) for a full list
+of changes.
+
+- Updated lockfiles to track `os` and `arch` information when applicable.
+
+## Looking for contributors
+
+We have a lot of cool stuff planned for proto, like more official backends and tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!

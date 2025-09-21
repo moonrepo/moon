@@ -71,6 +71,7 @@ starbase_archive = { version = "0.11.6", default-features = false, features = [
 ] }
 starbase_console = { version = "0.6.13", features = ["miette"] }
 starbase_events = "0.7.3"
+starbase_id = { version = "0.2.1", features = ["miette", "schematic"] }
 starbase_sandbox = "0.9.7"
 starbase_shell = "0.10.2"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }

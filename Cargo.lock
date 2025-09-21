@@ -1799,7 +1799,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]
@@ -4206,7 +4206,6 @@ dependencies = [
 name = "moon_common"
 version = "0.1.4"
 dependencies = [
- "compact_str 0.9.0",
  "dirs 6.0.0",
  "miette 7.6.0",
  "regex",
@@ -4214,6 +4213,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "schematic",
  "serde",
+ "starbase_id 0.2.1",
  "starbase_styles",
  "thiserror 2.0.16",
 ]
@@ -7629,6 +7629,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "starbase_id"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35295a2e2111b7a757dee9d0ca40b19f427c0af86a195746dcb467a4ab353dea"
+dependencies = [
+ "compact_str 0.9.0",
+ "miette 7.6.0",
+ "regex",
+ "schematic",
+ "serde",
+ "thiserror 2.0.16",
+]
+
+[[package]]
 name = "starbase_macros"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8846,7 +8860,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "starbase_id",
+ "starbase_id 0.1.2",
  "system_env",
  "thiserror 2.0.16",
 ]
@@ -9458,7 +9472,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.0",
 ]
 
 [[package]]

@@ -138,7 +138,7 @@ impl ToolchainRegistry {
             let registry = Arc::clone(&self.registry);
             let config = config.to_owned();
 
-            set.spawn(async move {
+            let fut = async move {
                 let instance = registry
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
                         let value = serialize_config(config.config.iter())?;
@@ -164,7 +164,11 @@ impl ToolchainRegistry {
                     .await?;
 
                 Ok(instance)
-            });
+            };
+
+            dbg!(size_of_val(&fut));
+
+            set.spawn(fut);
         }
 
         if !set.is_empty() {
@@ -246,7 +250,9 @@ impl ToolchainRegistry {
                 let input = input_factory(self, &toolchain);
                 let future = output_factory(toolchain.clone(), input);
 
-                futures.push_back(tokio::spawn(async move {
+                dbg!(size_of_val(&future));
+
+                let fut = async move {
                     let result = future.await;
                     operation.finish_with_result(&result);
 
@@ -256,7 +262,11 @@ impl ToolchainRegistry {
                         output: result?,
                         toolchain,
                     })
-                }));
+                };
+
+                dbg!(size_of_val(&fut));
+
+                futures.push_back(tokio::spawn(fut));
             }
         }
 

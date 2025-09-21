@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-import type { ExtendsFrom } from './common';
+import type { ExtendsFrom, Id } from './common';
 
 /** Formats that a `package.json` version dependency can be. */
 export type NodeVersionFormat =
@@ -400,7 +400,7 @@ export interface ToolchainConfig {
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
 	/** All configured toolchains by unique ID. */
-	plugins: Record<string, ToolchainPluginConfig>;
+	plugins: Record<Id, ToolchainPluginConfig>;
 	/** Configures how moon integrates with proto. */
 	proto: ProtoConfig;
 	/** Configures and enables the Python platform. */
@@ -772,7 +772,7 @@ export interface PartialToolchainConfig {
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
 	/** All configured toolchains by unique ID. */
-	plugins?: Record<string, PartialToolchainPluginConfig> | null;
+	plugins?: Record<Id, PartialToolchainPluginConfig> | null;
 	/** Configures how moon integrates with proto. */
 	proto?: PartialProtoConfig | null;
 	/** Configures and enables the Python platform. */

@@ -47,7 +47,7 @@
         }
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "id": {
@@ -55,7 +55,7 @@
       "description": "Overrides the ID within the project graph, as defined in the workspace projects setting.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/Id"
         },
         {
           "type": "null"
@@ -133,7 +133,7 @@
       "description": "A list of tags that this project belongs to, for categorizing, boundary enforcement, and task inheritance.",
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "tasks": {
@@ -144,7 +144,7 @@
         "$ref": "#/definitions/TaskConfig"
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "toolchain": {
@@ -187,7 +187,11 @@
         "id": {
           "title": "id",
           "description": "ID of the depended on project.",
-          "type": "string"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
         },
         "scope": {
           "title": "scope",
@@ -292,6 +296,9 @@
         }
       },
       "additionalProperties": false
+    },
+    "Id": {
+      "type": "string"
     },
     "Input": {
       "anyOf": [
@@ -477,7 +484,7 @@
       "description": "Expanded information about a project dependency.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/Id"
         },
         {
           "$ref": "#/definitions/DependencyConfig"
@@ -519,7 +526,7 @@
           "description": "A task within the current project for building the project.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "null"
@@ -543,7 +550,7 @@
           "description": "A task within the current project for starting the project.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "null"
@@ -689,12 +696,12 @@
             {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/Id"
                 },
                 {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/Id"
                   }
                 }
               ]
@@ -711,12 +718,12 @@
             {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/Id"
                 },
                 {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/Id"
                   }
                 }
               ]
@@ -760,7 +767,7 @@
             "$ref": "#/definitions/ProjectToolchainEntry"
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         },
         "python": {
@@ -832,7 +839,7 @@
           "description": "Excludes inheriting tasks by ID.",
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         },
         "include": {
@@ -842,7 +849,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Id"
               }
             },
             {
@@ -855,10 +862,10 @@
           "description": "Renames inherited tasks to a new ID.",
           "type": "object",
           "additionalProperties": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       },
@@ -964,7 +971,7 @@
           "description": "Extends settings from a sibling task by ID.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "null"
@@ -1064,12 +1071,12 @@
           "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Id"
               }
             }
           ]
@@ -1079,12 +1086,12 @@
           "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Id"
               }
             }
           ]

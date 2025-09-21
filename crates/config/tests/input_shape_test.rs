@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, ManifestDepsInput,
     ProjectSourcesInput, Uri, test_utils::*,
@@ -296,6 +297,33 @@ mod input_shape {
             assert_eq!(
                 Input::parse("glob:///dir/**/*").unwrap(),
                 Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+            );
+        }
+
+        #[test]
+        fn project_protocol() {
+            assert_eq!(
+                Input::parse("project://app").unwrap(),
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: Id::raw("app"),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://app?filter=src/**&filter=!tests/**/*").unwrap(),
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: Id::raw("app"),
+                    filter: vec!["src/**".into(), "!tests/**/*".into()],
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://app?group=sources").unwrap(),
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: Id::raw("app"),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
             );
         }
 

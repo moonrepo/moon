@@ -152,6 +152,9 @@
         },
         {
           "$ref": "#/definitions/GlobInput"
+        },
+        {
+          "$ref": "#/definitions/ProjectSourcesInput"
         }
       ]
     },
@@ -167,6 +170,50 @@
         "system",
         "unknown"
       ]
+    },
+    "ProjectSourcesInput": {
+      "description": "An external project's sources input.",
+      "type": "object",
+      "properties": {
+        "fileGroup": {
+          "title": "fileGroup",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filter": {
+          "title": "filter",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group": {
+          "title": "group",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "project": {
+          "title": "project",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "TaskArgs": {
       "description": "Configures a command to execute, and its arguments.",

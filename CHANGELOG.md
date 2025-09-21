@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new task input type that allows you to depend on changes to a project's files directly,
+  instead of depending on a project's task.
+  - Added URI support: `project://<id>`
+  - Added object support: `project: '<id>'`
+  - Can filter with globs or by file group.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.53.0](https://github.com/moonrepo/proto/releases/tag/v0.53.0) (from 0.52.3).

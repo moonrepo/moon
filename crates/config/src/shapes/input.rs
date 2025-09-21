@@ -338,7 +338,7 @@ pub enum Input {
     // New
     // FileGroup(FileGroupInput),
     // ManifestDeps(ManifestDepsInput),
-    // ProjectSources(ProjectSourcesInput),
+    ProjectSources(ProjectSourcesInput),
 }
 
 impl Input {
@@ -370,6 +370,7 @@ impl Input {
             | Self::TokenVar(value) => value,
             Self::ProjectFile(value) | Self::WorkspaceFile(value) => value.file.as_str(),
             Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.glob.as_str(),
+            Self::ProjectSources(value) => value.project.as_str(),
         }
     }
 
@@ -423,6 +424,11 @@ impl FromStr for Input {
                     Self::ProjectGlob(glob)
                 })
             }
+            "project" => {
+                let input = ProjectSourcesInput::from_uri(uri)?;
+
+                Ok(Self::ProjectSources(input))
+            }
             other => Err(ParseError::new(format!(
                 "input protocol `{other}://` is not supported"
             ))),
@@ -446,6 +452,7 @@ impl TryFrom<InputBase> for Input {
             } else {
                 Self::ProjectGlob(input)
             }),
+            InputBase::ProjectSources(input) => Ok(Self::ProjectSources(input)),
         }
     }
 }
@@ -460,6 +467,7 @@ impl Schematic for Input {
             schema.infer::<String>(),
             schema.infer::<FileInput>(),
             schema.infer::<GlobInput>(),
+            schema.infer::<ProjectSourcesInput>(),
         ]))
     }
 }
@@ -478,7 +486,7 @@ impl Serialize for Input {
             // Input::ManifestDeps(input) => ManifestDepsInput::serialize(input, serializer),
             Input::ProjectFile(input) => FileInput::serialize(input, serializer),
             Input::ProjectGlob(input) => GlobInput::serialize(input, serializer),
-            // Input::ProjectSources(input) => ProjectSourcesInput::serialize(input, serializer),
+            Input::ProjectSources(input) => ProjectSourcesInput::serialize(input, serializer),
             Input::WorkspaceFile(input) => FileInput::serialize(input, serializer),
             Input::WorkspaceGlob(input) => GlobInput::serialize(input, serializer),
         }
@@ -494,4 +502,5 @@ enum InputBase {
     Raw(String),
     File(FileInput),
     Glob(GlobInput),
+    ProjectSources(ProjectSourcesInput),
 }

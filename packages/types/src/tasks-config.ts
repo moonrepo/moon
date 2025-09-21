@@ -18,7 +18,15 @@ export interface GlobInput {
 	glob: string;
 }
 
-export type Input = string | FileInput | GlobInput;
+/** An external project's sources input. */
+export interface ProjectSourcesInput {
+	filter?: string[];
+	fileGroup?: Id | null;
+	group?: Id | null;
+	project: Id;
+}
+
+export type Input = string | FileInput | GlobInput | ProjectSourcesInput;
 
 export type TaskArgs = null | string | string[];
 

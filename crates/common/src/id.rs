@@ -1,4 +1,4 @@
-pub use starbase_id::{Id, IdError};
+pub use starbase_id::{ALNUM as ID_CHARS, Id, IdError, SYMBOLS as ID_SYMBOLS};
 
 pub trait IdExt {
     fn stable<S: AsRef<str>>(id: S) -> Id;

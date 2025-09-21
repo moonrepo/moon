@@ -72,7 +72,7 @@ impl<'app> CodeGenerator<'app> {
 
                 if let Some(existing_template) = self.templates.get(&template.id) {
                     return Err(CodegenError::DuplicateTemplate {
-                        id: template.id,
+                        id: template.id.to_string(),
                         original: existing_template.root.clone(),
                         current: template.root,
                     }
@@ -104,7 +104,7 @@ impl<'app> CodeGenerator<'app> {
             .join(id.as_str());
 
         if template_root.exists() {
-            return Err(CodegenError::ExistingTemplate(id, template_root).into());
+            return Err(CodegenError::ExistingTemplate(id.to_string(), template_root).into());
         }
 
         debug!(
@@ -140,7 +140,7 @@ impl<'app> CodeGenerator<'app> {
         debug!(template = id.as_str(), "Retrieving a template");
 
         let Some(template) = self.templates.get(&id) else {
-            return Err(CodegenError::MissingTemplate(id).into());
+            return Err(CodegenError::MissingTemplate(id.to_string()).into());
         };
 
         // Clone base template

@@ -19,7 +19,10 @@ pub struct ExtArgs {
 #[instrument(skip_all)]
 pub async fn ext(session: MoonSession, args: ExtArgs) -> AppResult {
     if !session.workspace_config.extensions.contains_key(&args.id) {
-        return Err(AppError::UnknownExtension { id: args.id }.into());
+        return Err(AppError::UnknownExtension {
+            id: args.id.to_string(),
+        }
+        .into());
     }
 
     let id = PluginId::raw(&args.id);

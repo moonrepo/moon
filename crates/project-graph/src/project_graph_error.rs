@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{Id, Style, Stylize};
+use moon_common::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -11,5 +11,5 @@ pub enum ProjectGraphError {
 
     #[diagnostic(code(project_graph::unknown_id))]
     #[error("No project has been configured with the identifier or alias {}.", .0.style(Style::Id))]
-    UnconfiguredID(Id),
+    UnconfiguredID(String),
 }

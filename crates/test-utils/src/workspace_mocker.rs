@@ -3,7 +3,7 @@ use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
-use moon_common::{Id, path::WorkspaceRelativePathBuf};
+use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;

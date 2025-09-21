@@ -309,7 +309,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
-                return Err(ProjectGraphError::UnconfiguredID(id).into());
+                return Err(ProjectGraphError::UnconfiguredID(id.to_string()).into());
             };
 
             // Already loaded, exit early with existing index
@@ -795,7 +795,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 && existing_data.source != build_data.source
             {
                 return Err(WorkspaceBuilderError::DuplicateProjectId {
-                    id: id.clone(),
+                    id: id.to_string(),
                     old_source: existing_data.source.to_string(),
                     new_source: build_data.source.to_string(),
                 }
@@ -867,7 +867,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 let id = Id::new(project_id)?;
 
                 if !self.project_data.contains_key(&id) {
-                    return Err(ProjectGraphError::UnconfiguredID(id).into());
+                    return Err(ProjectGraphError::UnconfiguredID(id.to_string()).into());
                 }
 
                 if let Some(alias) = project_extend.alias.take() {
@@ -935,8 +935,8 @@ impl<'app> WorkspaceBuilder<'app> {
 
             return Err(WorkspaceBuilderError::DuplicateProjectAlias {
                 alias: alias.clone(),
-                old_id: existing_id.to_owned(),
-                new_id: id.clone(),
+                old_id: existing_id.to_string(),
+                new_id: id.to_string(),
             }
             .into());
         }

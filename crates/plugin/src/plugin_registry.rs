@@ -1,6 +1,7 @@
 use crate::host::*;
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
+use moon_common::{Id, IdExt};
 use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
 use scc::hash_map::Entry;
@@ -11,15 +12,15 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
 use warpgate::{
-    Id as PluginId, PluginContainer, PluginLoader, PluginLocator, PluginManifest, VirtualPath,
-    Wasm, from_virtual_path, host::HostData, inject_default_manifest_config, to_virtual_path,
+    PluginContainer, PluginLoader, PluginLocator, PluginManifest, VirtualPath, Wasm,
+    from_virtual_path, host::HostData, inject_default_manifest_config, to_virtual_path,
 };
 
 pub struct PluginRegistry<T: Plugin> {
     pub host_data: MoonHostData,
 
     loader: PluginLoader,
-    plugins: Arc<scc::HashMap<PluginId, Arc<T>>>,
+    plugins: Arc<scc::HashMap<Id, Arc<T>>>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
@@ -57,11 +58,7 @@ impl<T: Plugin> PluginRegistry<T> {
         }
     }
 
-    pub fn create_manifest(
-        &self,
-        id: &PluginId,
-        wasm_file: PathBuf,
-    ) -> miette::Result<PluginManifest> {
+    pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
         debug!(
             plugin = self.type_of.get_label(),
             id = id.as_str(),
@@ -99,7 +96,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<scc::HashMap<PluginId, Arc<T>>> {
+    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, Arc<T>>> {
         Arc::clone(&self.plugins)
     }
 
@@ -107,7 +104,7 @@ impl<T: Plugin> PluginRegistry<T> {
         &self.virtual_paths
     }
 
-    pub async fn get_instance(&self, id: &PluginId) -> miette::Result<Arc<T>> {
+    pub async fn get_instance(&self, id: &Id) -> miette::Result<Arc<T>> {
         Ok(self
             .plugins
             .get_async(id)
@@ -119,7 +116,7 @@ impl<T: Plugin> PluginRegistry<T> {
             })?)
     }
 
-    pub fn is_registered(&self, id: &PluginId) -> bool {
+    pub fn is_registered(&self, id: &Id) -> bool {
         self.plugins.contains(id)
     }
 
@@ -135,7 +132,7 @@ impl<T: Plugin> PluginRegistry<T> {
         L: AsRef<PluginLocator> + fmt::Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
-        let id = PluginId::raw(id.as_ref());
+        let id = Id::raw(id.as_ref());
         let locator = locator.as_ref();
 
         // Use an entry so that it creates a lock,
@@ -179,7 +176,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 // expect a specific ID, for example "rust", and if we provide
                 // "unstable_rust", it breaks in weird ways.
                 let orig_id = entry.key().as_str();
-                let stable_id = PluginId::raw(orig_id.strip_prefix("unstable_").unwrap_or(orig_id));
+                let stable_id = Id::stable(orig_id);
 
                 // Combine everything into the container and register
                 let plugin = T::new(PluginRegistration {
@@ -218,7 +215,7 @@ impl<T: Plugin> PluginRegistry<T> {
         self.load_with_config(id, locator, |_| Ok(())).await
     }
 
-    pub fn register(&self, id: PluginId, plugin: T) -> miette::Result<()> {
+    pub fn register(&self, id: Id, plugin: T) -> miette::Result<()> {
         if self.is_registered(&id) {
             return Err(PluginError::ExistingId {
                 id: id.to_string(),

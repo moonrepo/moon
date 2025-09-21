@@ -1,8 +1,9 @@
 use async_trait::async_trait;
+use moon_common::Id;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_feature_flags::glob_walk;
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
 use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
@@ -19,7 +20,7 @@ use tracing::instrument;
 pub type ToolchainMetadata = RegisterToolchainOutput;
 
 pub struct ToolchainPlugin {
-    pub id: PluginId,
+    pub id: Id,
     pub locator: PluginLocator,
     pub metadata: ToolchainMetadata,
 

@@ -1,9 +1,9 @@
 use async_trait::async_trait;
+use moon_common::Id;
 use moon_config::{ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_plugin::{
-    MoonHostData, Plugin, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry,
-    PluginType,
+    MoonHostData, Plugin, PluginLocator, PluginRegistration, PluginRegistry, PluginType,
 };
 use proto_core::{ProtoEnvironment, warpgate::FileLocator};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};

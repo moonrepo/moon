@@ -1,6 +1,7 @@
 use async_trait::async_trait;
+use moon_common::Id;
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use std::fmt;
 use std::sync::Arc;
 use tracing::instrument;
@@ -8,7 +9,7 @@ use tracing::instrument;
 pub type ExtensionMetadata = RegisterExtensionOutput;
 
 pub struct ExtensionPlugin {
-    pub id: PluginId,
+    pub id: Id,
     pub metadata: ExtensionMetadata,
 
     plugin: Arc<PluginContainer>,

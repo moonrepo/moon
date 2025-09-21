@@ -2,7 +2,6 @@ use crate::app_error::AppError;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
-use moon_plugin::PluginId;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -25,11 +24,10 @@ pub async fn ext(session: MoonSession, args: ExtArgs) -> AppResult {
         .into());
     }
 
-    let id = PluginId::raw(&args.id);
     let extension_registry = session.get_extension_registry().await?;
 
     // Load the plugin
-    let extension = extension_registry.load(&id).await?;
+    let extension = extension_registry.load(&args.id).await?;
 
     // Execute the plugin
     extension

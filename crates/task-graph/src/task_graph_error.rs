@@ -11,8 +11,8 @@ pub enum TaskGraphError {
     )]
     #[error(
         "Unknown task {} for project {}.",
-        .0.task_id.style(Style::Id),
-        .0.get_project_id().unwrap().style(Style::Id),
+        .0.task_id.to_string().style(Style::Id),
+        .0.get_project_id().unwrap().to_string().style(Style::Id),
     )]
     UnconfiguredTarget(Target),
 }

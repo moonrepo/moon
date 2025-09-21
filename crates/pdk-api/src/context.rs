@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_project::ProjectFragment;
 use std::time::{Duration, Instant, SystemTime};
 use warpgate_api::{AnyResult, VirtualPath, api_enum, api_struct};
@@ -67,7 +68,7 @@ api_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub finished_at: Option<SystemTime>,
 
-        pub id: String,
+        pub id: Id,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub started_at: Option<SystemTime>,
@@ -82,16 +83,16 @@ api_struct!(
 impl Operation {
     /// Create a new operation with a unique ID. The ID
     /// will be converted to kebab-case when serialized.
-    pub fn new(id: impl AsRef<str>) -> Self {
-        Operation {
+    pub fn new(id: impl AsRef<str>) -> AnyResult<Self> {
+        Ok(Operation {
             duration: None,
             error: None,
             finished_at: None,
-            id: id.as_ref().to_owned(),
+            id: Id::new(id.as_ref())?,
             started_at: Some(SystemTime::now()),
             start_time: Some(Instant::now()),
             status: OperationStatus::Pending,
-        }
+        })
     }
 
     /// Mark the operation as finished with the provided status.
@@ -124,7 +125,7 @@ impl Operation {
         I: AsRef<str>,
         F: FnOnce() -> AnyResult<R>,
     {
-        let mut op = Self::new(id);
+        let mut op = Self::new(id)?;
 
         match func() {
             Ok(res) => {
@@ -138,14 +139,14 @@ impl Operation {
 
     /// Create a new operation and track its state when executing
     /// the provided callback, but do not bubble up a result error.
-    pub fn track_with_error<I, F, R>(id: I, func: F) -> (Self, Option<R>)
+    pub fn track_with_error<I, F, R>(id: I, func: F) -> AnyResult<(Self, Option<R>)>
     where
         I: AsRef<str>,
         F: FnOnce() -> AnyResult<R>,
     {
-        let mut op = Self::new(id);
+        let mut op = Self::new(id)?;
 
-        match func() {
+        let res = match func() {
             Ok(res) => {
                 op.finish(OperationStatus::Passed);
 
@@ -157,6 +158,8 @@ impl Operation {
 
                 (op, None)
             }
-        }
+        };
+
+        Ok(res)
     }
 }

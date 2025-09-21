@@ -65,7 +65,7 @@
         "$ref": "#/definitions/ExtensionConfig"
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       },
       "markdownDescription": "Configures extensions that can be executed with `moon ext`."
     },
@@ -246,11 +246,11 @@
           "additionalProperties": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             }
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           },
           "markdownDescription": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags."
         }
@@ -516,6 +516,9 @@
         "vcs"
       ]
     },
+    "Id": {
+      "type": "string"
+    },
     "NotifierConfig": {
       "description": "Configures how and where notifications are sent.",
       "type": "object",
@@ -577,7 +580,7 @@
         {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       ]
@@ -1002,7 +1005,7 @@
             "type": "string"
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       ]
@@ -1028,7 +1031,7 @@
             "type": "string"
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       },

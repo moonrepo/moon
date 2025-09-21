@@ -1,4 +1,5 @@
 use crate::context::MoonContext;
+use moon_common::Id;
 use schematic::Schema;
 use warpgate_api::*;
 
@@ -8,7 +9,7 @@ api_struct!(
     /// Input passed to the `register_extension` function.
     pub struct RegisterExtensionInput {
         /// ID of the toolchain, as it was configured.
-        pub id: String,
+        pub id: Id,
     }
 );
 

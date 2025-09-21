@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{Id, Style, Stylize};
+use moon_common::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -18,7 +18,7 @@ pub enum CodegenError {
         .0.style(Style::Id),
         .1.style(Style::Path),
     )]
-    ExistingTemplate(Id, PathBuf),
+    ExistingTemplate(String, PathBuf),
 
     #[diagnostic(code(codegen::args::parse_failed))]
     #[error("Failed to parse variables from arguments.")]
@@ -32,7 +32,7 @@ pub enum CodegenError {
         "No template with the name {} could be found at any of the configured template locations.",
         .0.style(Style::Id),
     )]
-    MissingTemplate(Id),
+    MissingTemplate(String),
 
     #[diagnostic(code(codegen::template::duplicate))]
     #[error(
@@ -42,7 +42,7 @@ pub enum CodegenError {
         .current.style(Style::Path),
     )]
     DuplicateTemplate {
-        id: Id,
+        id: String,
         original: PathBuf,
         current: PathBuf,
     },

@@ -309,7 +309,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
-                return Err(ProjectGraphError::UnconfiguredID(id).into());
+                return Err(ProjectGraphError::UnconfiguredID(id.to_string()).into());
             };
 
             // Already loaded, exit early with existing index
@@ -445,7 +445,7 @@ impl<'app> WorkspaceBuilder<'app> {
             }
 
             for (task_id, task_config) in &extended_data.tasks {
-                builder.extend_with_task(Id::new(task_id)?, finalize_config(task_config.clone())?);
+                builder.extend_with_task(task_id.to_owned(), finalize_config(task_config.clone())?);
             }
         }
 
@@ -795,7 +795,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 && existing_data.source != build_data.source
             {
                 return Err(WorkspaceBuilderError::DuplicateProjectId {
-                    id: id.clone(),
+                    id: id.to_string(),
                     old_source: existing_data.source.to_string(),
                     new_source: build_data.source.to_string(),
                 }
@@ -857,24 +857,22 @@ impl<'app> WorkspaceBuilder<'app> {
                 project_sources: self
                     .project_data
                     .iter()
-                    .map(|(id, build_data)| (id.to_string(), build_data.source.to_string()))
+                    .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
                     .collect(),
                 toolchain_config: registry.create_config(&toolchain.id, context.toolchain_config),
             })
             .await?
         {
             for (project_id, mut project_extend) in output.extended_projects {
-                let id = Id::new(project_id)?;
-
-                if !self.project_data.contains_key(&id) {
-                    return Err(ProjectGraphError::UnconfiguredID(id).into());
+                if !self.project_data.contains_key(&project_id) {
+                    return Err(ProjectGraphError::UnconfiguredID(project_id.to_string()).into());
                 }
 
                 if let Some(alias) = project_extend.alias.take() {
-                    self.track_alias(id.clone(), alias)?;
+                    self.track_alias(project_id.clone(), alias)?;
                 }
 
-                if let Some(build_data) = self.project_data.get_mut(&id) {
+                if let Some(build_data) = self.project_data.get_mut(&project_id) {
                     build_data.extensions.push(project_extend);
                 }
             }
@@ -935,8 +933,8 @@ impl<'app> WorkspaceBuilder<'app> {
 
             return Err(WorkspaceBuilderError::DuplicateProjectAlias {
                 alias: alias.clone(),
-                old_id: existing_id.to_owned(),
-                new_id: id.clone(),
+                old_id: existing_id.to_string(),
+                new_id: id.to_string(),
             }
             .into());
         }

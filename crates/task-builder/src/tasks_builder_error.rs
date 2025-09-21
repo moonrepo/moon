@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{Id, Style, Stylize};
+use moon_common::{Style, Stylize};
 use moon_task::Target;
 use thiserror::Error;
 
@@ -42,7 +42,10 @@ pub enum TasksBuilderError {
         .source_id.style(Style::Id),
         .target_id.style(Style::Id),
     )]
-    UnknownExtendsSource { source_id: Id, target_id: Id },
+    UnknownExtendsSource {
+        source_id: String,
+        target_id: String,
+    },
 
     #[diagnostic(code(task_builder::unknown_target))]
     #[error(

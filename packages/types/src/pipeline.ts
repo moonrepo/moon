@@ -1,4 +1,4 @@
-import type { Duration, Runtime, ToolchainSpec } from './common';
+import type { Duration, Id, Runtime, ToolchainSpec } from './common';
 
 export type ActionPipelineStatus =
 	| 'aborted'
@@ -157,9 +157,9 @@ export type ActionNode =
 export interface ActionNodeInstallDependencies {
 	action: 'install-dependencies';
 	params: {
-		projectId: string | null;
+		projectId: Id | null;
 		root: string;
-		toolchainId: string;
+		toolchainId: Id;
 	};
 }
 
@@ -175,7 +175,7 @@ export interface ActionNodeInstallProjectDeps {
 	action: 'install-project-deps';
 	params: {
 		runtime: Runtime;
-		projectId: string;
+		projectId: Id;
 	};
 }
 
@@ -195,9 +195,9 @@ export interface ActionNodeRunTask {
 export interface ActionNodeSetupEnvironment {
 	action: 'install-environment';
 	params: {
-		projectId: string | null;
+		projectId: Id | null;
 		root: string;
-		toolchainId: string;
+		toolchainId: Id;
 	};
 }
 
@@ -216,7 +216,7 @@ export interface ActionNodeSetupProto {
 export interface ActionNodeSetupToolchain {
 	action: 'setup-toolchain';
 	params: {
-		projectId: string | null;
+		projectId: Id | null;
 		spec: ToolchainSpec;
 	};
 }
@@ -224,7 +224,7 @@ export interface ActionNodeSetupToolchain {
 export interface ActionNodeSyncProject {
 	action: 'sync-project';
 	params: {
-		projectId: string;
+		projectId: Id;
 	};
 }
 

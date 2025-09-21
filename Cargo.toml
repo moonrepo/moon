@@ -71,6 +71,7 @@ starbase_archive = { version = "0.11.6", default-features = false, features = [
 ] }
 starbase_console = { version = "0.6.13", features = ["miette"] }
 starbase_events = "0.7.3"
+starbase_id = { version = "0.2.2", features = ["miette", "schematic"] }
 starbase_sandbox = "0.9.7"
 starbase_shell = "0.10.2"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
@@ -99,14 +100,14 @@ uuid = { version = "1.18.1", features = ["v4"] }
 # proto/plugin related
 extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.53.0"
-proto_pdk_api = "0.31.0"
-proto_pdk_test_utils = "0.41.0"
+proto_core = "0.53.1"
+proto_pdk_api = "0.31.1"
+proto_pdk_test_utils = "0.41.1"
 system_env = "0.8.3"
 version_spec = "0.9.5"
-warpgate = "0.28.0"
-warpgate_api = "0.17.0"
-warpgate_pdk = "0.16.0"
+warpgate = "0.28.1"
+warpgate_api = "0.17.1"
+warpgate_pdk = "0.16.1"
 
 # proto_core = { path = "../proto/crates/core" }
 # system_env = { path = "../proto/crates/system-env" }

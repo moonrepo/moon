@@ -48,8 +48,8 @@ fn extract_config<'builder, 'proj>(
 
                 if extended_stack.is_empty() {
                     return Err(TasksBuilderError::UnknownExtendsSource {
-                        source_id: task_id.to_owned(),
-                        target_id: extend_task_id.to_owned(),
+                        source_id: task_id.to_string(),
+                        target_id: extend_task_id.to_string(),
                     }
                     .into());
                 } else {

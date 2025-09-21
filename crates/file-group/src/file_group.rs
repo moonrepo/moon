@@ -59,7 +59,7 @@ impl FileGroup {
                 self.env.push(var.to_owned());
             }
             Input::TokenFunc(_) | Input::TokenVar(_) => {
-                return Err(FileGroupError::NoTokens(self.id.clone()).into());
+                return Err(FileGroupError::NoTokens(self.id.to_string()).into());
             }
             Input::ProjectFile(file) | Input::WorkspaceFile(file) => {
                 self.files.push(file.to_workspace_relative(project_source));
@@ -110,7 +110,7 @@ impl FileGroup {
     /// relative to the project root.
     pub fn globs(&self) -> miette::Result<&Vec<WorkspaceRelativePathBuf>> {
         if self.globs.is_empty() {
-            return Err(FileGroupError::MissingGlobs(self.id.clone()).into());
+            return Err(FileGroupError::MissingGlobs(self.id.to_string()).into());
         }
 
         Ok(&self.globs)

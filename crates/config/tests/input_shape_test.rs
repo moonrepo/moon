@@ -502,7 +502,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid format")]
+        #[should_panic(expected = "Invalid identifier format")]
         fn errors_invalid_id() {
             FileGroupInput::from_uri(Uri::parse("group://@&n3k(").unwrap()).unwrap();
         }
@@ -678,7 +678,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid format")]
+        #[should_panic(expected = "Invalid identifier format")]
         fn errors_invalid_id() {
             ManifestDepsInput::from_uri(Uri::parse("manifest://@&n3k(").unwrap()).unwrap();
         }
@@ -742,7 +742,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid format")]
+        #[should_panic(expected = "Invalid identifier format")]
         fn errors_invalid_id() {
             ProjectSourcesInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
         }

@@ -2,6 +2,8 @@
 
 /* eslint-disable */
 
+import type { Id } from './common';
+
 /** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
 export interface TemplateFrontmatterConfig {
 	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
@@ -155,9 +157,9 @@ export interface TemplateConfig {
 	 */
 	destination: string | null;
 	/** Extends one or many other templates. */
-	extends: string | string[];
+	extends: Id | Id[];
 	/** Overrides the ID of the template, instead of using the folder name. */
-	id: string | null;
+	id: Id | null;
 	/** A human-readable title for the template. */
 	title: string;
 	/**
@@ -302,9 +304,9 @@ export interface PartialTemplateConfig {
 	 */
 	destination?: string | null;
 	/** Extends one or many other templates. */
-	extends?: string | string[] | null;
+	extends?: Id | Id[] | null;
 	/** Overrides the ID of the template, instead of using the folder name. */
-	id?: string | null;
+	id?: Id | null;
 	/** A human-readable title for the template. */
 	title?: string | null;
 	/**

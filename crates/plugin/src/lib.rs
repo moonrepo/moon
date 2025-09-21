@@ -9,9 +9,7 @@ pub use plugin::*;
 pub use plugin_error::*;
 pub use plugin_registry::*;
 pub use proto_core::ProtoEnvironment;
-pub use warpgate::{
-    Id as PluginId, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm,
-};
+pub use warpgate::{PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm};
 
 use convert_case::{Case, Casing};
 use miette::IntoDiagnostic;

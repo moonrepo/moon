@@ -514,7 +514,7 @@ tags:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid format for foo bar")]
+        #[should_panic(expected = "Invalid identifier format for foo bar")]
         fn errors_on_invalid_format() {
             test_load_config("moon.yml", "tags: ['foo bar']", |path| {
                 load_config_from_root(path, ".")

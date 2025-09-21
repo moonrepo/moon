@@ -1,7 +1,7 @@
 use crate::shapes::OneOrMany;
 use crate::toolchain::ToolchainPluginConfig;
 use crate::{config_enum, config_struct};
-use moon_common::Id;
+use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use version_spec::UnresolvedVersionSpec;

@@ -3,7 +3,7 @@ use crate::host_func_mocker::*;
 use crate::toolchain_wrapper::*;
 use extism::{Function, UserData, ValType};
 use moon_pdk_api::{
-    RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
+    Id, RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
 };
 use proto_core::{ProtoEnvironment, Tool, ToolContext, inject_proto_manifest_config};
@@ -16,8 +16,8 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::Arc;
 use warpgate::{
-    Id, PluginContainer, PluginLoader, PluginManifest, Wasm, host::*,
-    inject_default_manifest_config, test_utils::*,
+    PluginContainer, PluginLoader, PluginManifest, Wasm, host::*, inject_default_manifest_config,
+    test_utils::*,
 };
 
 pub struct MoonWasmSandbox {
@@ -92,7 +92,7 @@ impl MoonWasmSandbox {
             .cache_func_with(
                 "register_extension",
                 RegisterExtensionInput {
-                    id: plugin.id.to_string(),
+                    id: plugin.id.clone(),
                 },
             )
             .await
@@ -133,7 +133,7 @@ impl MoonWasmSandbox {
             .cache_func_with(
                 "register_toolchain",
                 RegisterToolchainInput {
-                    id: plugin.id.to_string(),
+                    id: plugin.id.clone(),
                 },
             )
             .await

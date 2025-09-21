@@ -1,6 +1,7 @@
 use crate::context::*;
 use crate::is_false;
 use crate::prompts::*;
+use moon_common::Id;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
 use moon_project::ProjectFragment;
 use rustc_hash::FxHashMap;
@@ -19,7 +20,7 @@ api_struct!(
     /// Input passed to the `register_toolchain` function.
     pub struct RegisterToolchainInput {
         /// ID of the toolchain, as it was configured.
-        pub id: String,
+        pub id: Id,
     }
 );
 

@@ -73,7 +73,7 @@
         "$ref": "#/definitions/ToolchainPluginConfig"
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "proto": {
@@ -345,6 +345,9 @@
           }
         }
       ]
+    },
+    "Id": {
+      "type": "string"
     },
     "MoonConfig": {
       "description": "Configures how and where updates will be received.",

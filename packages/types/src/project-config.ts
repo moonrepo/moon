@@ -2,6 +2,7 @@
 
 /* eslint-disable */
 
+import type { Id } from './common';
 import type { Input, PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type {
 	PartialToolchainPluginConfig,
@@ -24,7 +25,7 @@ export type DependencySource = 'explicit' | 'implicit';
 /** Expanded information about a project dependency. */
 export interface DependencyConfig {
 	/** ID of the depended on project. */
-	id: string;
+	id: Id;
 	/**
 	 * Scope of the dependency relationship.
 	 *
@@ -43,16 +44,16 @@ export interface DependencyConfig {
 	via: string | null;
 }
 
-export type ProjectDependsOn = string | DependencyConfig;
+export type ProjectDependsOn = Id | DependencyConfig;
 
 /** Configures `Dockerfile` generation. */
 export interface ProjectDockerFileConfig {
 	/** A task within the current project for building the project. */
-	buildTask: string | null;
+	buildTask: Id | null;
 	/** The base Docker image. */
 	image: string | null;
 	/** A task within the current project for starting the project. */
-	startTask: string | null;
+	startTask: Id | null;
 }
 
 /** Configures aspects of the Docker scaffolding process. */
@@ -167,18 +168,18 @@ export interface ProjectToolchainConfig {
 	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	defaults?: string | string[] | null;
+	defaults?: Id | Id[] | null;
 	/**
 	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	default: string | string[] | null;
+	default: Id | Id[] | null;
 	/** Overrides `deno` settings. */
 	deno: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node: ProjectToolchainCommonToolConfig | null;
 	/** Overrides toolchains by their ID. */
-	plugins: Record<string, ProjectToolchainEntry>;
+	plugins: Record<Id, ProjectToolchainEntry>;
 	/** Overrides `python` settings. */
 	python: ProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
@@ -188,15 +189,15 @@ export interface ProjectToolchainConfig {
 /** Controls how tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
 	/** Excludes inheriting tasks by ID. */
-	exclude: string[];
+	exclude: Id[];
 	/**
 	 * Only inherits tasks by ID, and ignores the rest.
 	 * When not defined, inherits all matching tasks.
 	 * When an empty list, inherits no tasks.
 	 */
-	include: string[] | null;
+	include: Id[] | null;
 	/** Renames inherited tasks to a new ID. */
-	rename: Record<string, string>;
+	rename: Record<Id, Id>;
 }
 
 /** Overrides top-level workspace settings, scoped to this project. */
@@ -225,12 +226,12 @@ export interface ProjectConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<string, Input[]>;
+	fileGroups: Record<Id, Input[]>;
 	/**
 	 * Overrides the ID within the project graph, as defined in
 	 * the workspace `projects` setting.
 	 */
-	id: string | null;
+	id: Id | null;
 	/**
 	 * The primary programming language of the project.
 	 *
@@ -278,9 +279,9 @@ export interface ProjectConfig {
 	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */
-	tags: string[];
+	tags: Id[];
 	/** A mapping of tasks by ID to parameters required for running the task. */
-	tasks: Record<string, TaskConfig>;
+	tasks: Record<Id, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain: ProjectToolchainConfig;
 	/** Overrides top-level workspace settings, scoped to this project. */
@@ -290,7 +291,7 @@ export interface ProjectConfig {
 /** Expanded information about a project dependency. */
 export interface PartialDependencyConfig {
 	/** ID of the depended on project. */
-	id?: string | null;
+	id?: Id | null;
 	/**
 	 * Scope of the dependency relationship.
 	 *
@@ -307,16 +308,16 @@ export interface PartialDependencyConfig {
 	via?: string | null;
 }
 
-export type PartialProjectDependsOn = string | PartialDependencyConfig;
+export type PartialProjectDependsOn = Id | PartialDependencyConfig;
 
 /** Configures `Dockerfile` generation. */
 export interface PartialProjectDockerFileConfig {
 	/** A task within the current project for building the project. */
-	buildTask?: string | null;
+	buildTask?: Id | null;
 	/** The base Docker image. */
 	image?: string | null;
 	/** A task within the current project for starting the project. */
-	startTask?: string | null;
+	startTask?: Id | null;
 }
 
 /** Configures aspects of the Docker scaffolding process. */
@@ -404,18 +405,18 @@ export interface PartialProjectToolchainConfig {
 	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	defaults?: string | string[] | null;
+	defaults?: Id | Id[] | null;
 	/**
 	 * The default toolchain(s) for all tasks within the project,
 	 * if their toolchain is unknown.
 	 */
-	default?: string | string[] | null;
+	default?: Id | Id[] | null;
 	/** Overrides `deno` settings. */
 	deno?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `node` settings. */
 	node?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides toolchains by their ID. */
-	plugins?: Record<string, PartialProjectToolchainEntry> | null;
+	plugins?: Record<Id, PartialProjectToolchainEntry> | null;
 	/** Overrides `python` settings. */
 	python?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides `rust` settings. */
@@ -425,15 +426,15 @@ export interface PartialProjectToolchainConfig {
 /** Controls how tasks are inherited. */
 export interface PartialProjectWorkspaceInheritedTasksConfig {
 	/** Excludes inheriting tasks by ID. */
-	exclude?: string[] | null;
+	exclude?: Id[] | null;
 	/**
 	 * Only inherits tasks by ID, and ignores the rest.
 	 * When not defined, inherits all matching tasks.
 	 * When an empty list, inherits no tasks.
 	 */
-	include?: string[] | null;
+	include?: Id[] | null;
 	/** Renames inherited tasks to a new ID. */
-	rename?: Record<string, string> | null;
+	rename?: Record<Id, Id> | null;
 }
 
 /** Overrides top-level workspace settings, scoped to this project. */
@@ -462,12 +463,12 @@ export interface PartialProjectConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<string, Input[]> | null;
+	fileGroups?: Record<Id, Input[]> | null;
 	/**
 	 * Overrides the ID within the project graph, as defined in
 	 * the workspace `projects` setting.
 	 */
-	id?: string | null;
+	id?: Id | null;
 	/**
 	 * The primary programming language of the project.
 	 *
@@ -511,9 +512,9 @@ export interface PartialProjectConfig {
 	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */
-	tags?: string[] | null;
+	tags?: Id[] | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
-	tasks?: Record<string, PartialTaskConfig> | null;
+	tasks?: Record<Id, PartialTaskConfig> | null;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain?: PartialProjectToolchainConfig | null;
 	/** Overrides top-level workspace settings, scoped to this project. */

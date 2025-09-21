@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-import type { ExtendsFrom } from './common';
+import type { ExtendsFrom, Id } from './common';
 
 /** A file path input. */
 export interface FileInput {
@@ -247,7 +247,7 @@ export interface TaskConfig {
 	 */
 	env: Record<string, string> | null;
 	/** Extends settings from a sibling task by ID. */
-	extends: string | null;
+	extends: Id | null;
 	/**
 	 * Inputs and sources that will mark the task as affected when comparing
 	 * against touched files. When not provided, all files within the project
@@ -291,13 +291,13 @@ export interface TaskConfig {
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchains?: string | string[];
+	toolchains?: Id | Id[];
 	/**
 	 * List of additional toolchain(s) in which the task will be ran in.
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchain: string | string[];
+	toolchain: Id | Id[];
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
@@ -324,7 +324,7 @@ export interface InheritedTasksConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<string, Input[]>;
+	fileGroups: Record<Id, Input[]>;
 	/**
 	 * Task dependencies that'll automatically be injected into every
 	 * task that inherits this configuration.
@@ -338,7 +338,7 @@ export interface InheritedTasksConfig {
 	/** Default task options for all inherited tasks. */
 	taskOptions: TaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
-	tasks: Record<string, TaskConfig>;
+	tasks: Record<Id, TaskConfig>;
 }
 
 export type PartialTaskArgs = null | string | string[];
@@ -530,7 +530,7 @@ export interface PartialTaskConfig {
 	 */
 	env?: Record<string, string> | null;
 	/** Extends settings from a sibling task by ID. */
-	extends?: string | null;
+	extends?: Id | null;
 	/**
 	 * Inputs and sources that will mark the task as affected when comparing
 	 * against touched files. When not provided, all files within the project
@@ -573,13 +573,13 @@ export interface PartialTaskConfig {
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchains?: string | string[] | null;
+	toolchains?: Id | Id[] | null;
 	/**
 	 * List of additional toolchain(s) in which the task will be ran in.
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchain?: string | string[] | null;
+	toolchain?: Id | Id[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
@@ -606,7 +606,7 @@ export interface PartialInheritedTasksConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<string, Input[]> | null;
+	fileGroups?: Record<Id, Input[]> | null;
 	/**
 	 * Task dependencies that'll automatically be injected into every
 	 * task that inherits this configuration.
@@ -620,5 +620,5 @@ export interface PartialInheritedTasksConfig {
 	/** Default task options for all inherited tasks. */
 	taskOptions?: PartialTaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
-	tasks?: Record<string, PartialTaskConfig> | null;
+	tasks?: Record<Id, PartialTaskConfig> | null;
 }

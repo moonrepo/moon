@@ -1,5 +1,5 @@
 use crate::WorkspaceGraph;
-use moon_common::{Id, color};
+use moon_common::{Id, IdExt, color};
 use moon_project_graph::Project;
 use moon_query::*;
 use std::{fmt::Debug, sync::Arc};
@@ -130,7 +130,7 @@ impl WorkspaceGraph {
                                 }
 
                                 let toolchains =
-                                    toolchains.iter().map(|t| t.as_str()).collect::<Vec<_>>();
+                                    toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>();
 
                                 condition.matches_list(ids, &toolchains).unwrap_or_default()
                             })),

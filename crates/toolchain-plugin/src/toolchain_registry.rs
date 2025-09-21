@@ -4,9 +4,7 @@ use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
 use moon_pdk_api::Operation;
-use moon_plugin::{
-    MoonHostData, PluginError, PluginId, PluginRegistry, PluginType, serialize_config,
-};
+use moon_plugin::{MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config};
 use proto_core::{ToolContext, inject_proto_manifest_config};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue};
@@ -19,7 +17,7 @@ use tracing::{debug, trace};
 #[derive(Debug)]
 pub struct ToolchainRegistry {
     pub config: Arc<ToolchainConfig>,
-    pub plugins: FxHashMap<PluginId, ToolchainPluginConfig>,
+    pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 
@@ -47,8 +45,7 @@ impl ToolchainRegistry {
 
     pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ToolchainPluginConfig>) {
         for (id, config) in configs {
-            // Convert moon IDs to plugin IDs
-            self.plugins.insert(PluginId::raw(id), config.to_owned());
+            self.plugins.insert(id.to_owned(), config.to_owned());
         }
     }
 
@@ -79,7 +76,7 @@ impl ToolchainRegistry {
         data
     }
 
-    pub fn get_plugin_ids(&self) -> Vec<&PluginId> {
+    pub fn get_plugin_ids(&self) -> Vec<&Id> {
         self.plugins.keys().collect()
     }
 
@@ -87,11 +84,11 @@ impl ToolchainRegistry {
         !self.plugins.is_empty()
     }
 
-    pub async fn load<Id>(&self, id: Id) -> miette::Result<Arc<ToolchainPlugin>>
+    pub async fn load<T>(&self, id: T) -> miette::Result<Arc<ToolchainPlugin>>
     where
-        Id: AsRef<str>,
+        T: AsRef<str>,
     {
-        let id = PluginId::raw(id.as_ref());
+        let id = Id::raw(id.as_ref());
 
         if !self.is_registered(&id) {
             if !self.plugins.contains_key(&id) {
@@ -118,16 +115,16 @@ impl ToolchainRegistry {
         self.load_many(self.get_plugin_ids()).await
     }
 
-    pub async fn load_many<I, Id>(&self, ids: I) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
+    pub async fn load_many<I, T>(&self, ids: I) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
     where
-        I: IntoIterator<Item = Id>,
-        Id: AsRef<str>,
+        I: IntoIterator<Item = T>,
+        T: AsRef<str>,
     {
         let mut set = JoinSet::<miette::Result<Arc<ToolchainPlugin>>>::new();
         let mut list = vec![];
 
         for id in ids {
-            let id = PluginId::raw(id.as_ref());
+            let id = Id::raw(id.as_ref());
 
             if self.registry.is_registered(&id) {
                 list.push(self.get_instance(&id).await?);
@@ -244,7 +241,7 @@ impl ToolchainRegistry {
             if let Ok(toolchain) = self.load(toolchain_id).await
                 && (skip_func_check || toolchain.has_func(func_name).await)
             {
-                let mut operation = Operation::new(func_name);
+                let mut operation = Operation::new(func_name).unwrap();
                 let id = toolchain.id.clone();
                 let input = input_factory(self, &toolchain);
                 let future = output_factory(toolchain.clone(), input);
@@ -280,7 +277,7 @@ impl Deref for ToolchainRegistry {
 }
 
 pub struct CallResult<T> {
-    pub id: PluginId,
+    pub id: Id,
     pub operation: Operation,
     pub output: T,
     pub toolchain: Arc<ToolchainPlugin>,

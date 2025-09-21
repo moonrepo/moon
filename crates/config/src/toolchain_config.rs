@@ -1,7 +1,7 @@
 use crate::config_struct;
 use crate::language_platform::*;
 use crate::toolchain::*;
-use moon_common::Id;
+use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
 use schematic::{Config, validate};
 use version_spec::UnresolvedVersionSpec;

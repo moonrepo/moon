@@ -6,7 +6,7 @@ pub fn register_toolchain(
     Json(input): Json<RegisterToolchainInput>,
 ) -> FnResult<Json<RegisterToolchainOutput>> {
     Ok(Json(RegisterToolchainOutput {
-        name: input.id.into(),
+        name: input.id.to_string(),
         ..Default::default()
     }))
 }
@@ -14,7 +14,7 @@ pub fn register_toolchain(
 #[plugin_fn]
 pub fn sync_project(Json(input): Json<SyncProjectInput>) -> FnResult<Json<SyncOutput>> {
     let mut output = SyncOutput::default();
-    let mut op = Operation::new("sync-project-test");
+    let mut op = Operation::new("sync-project-test")?;
 
     if input.project.id == "b" {
         if let Some(file) = input.context.workspace_root.join("file.txt").virtual_path() {
@@ -32,7 +32,7 @@ pub fn sync_project(Json(input): Json<SyncProjectInput>) -> FnResult<Json<SyncOu
 #[plugin_fn]
 pub fn sync_workspace(Json(input): Json<SyncWorkspaceInput>) -> FnResult<Json<SyncOutput>> {
     let mut output = SyncOutput::default();
-    let mut op = Operation::new("sync-workspace-test");
+    let mut op = Operation::new("sync-workspace-test")?;
 
     if let Some(file) = input.context.workspace_root.join("file.txt").virtual_path() {
         output.changed_files.push(file);

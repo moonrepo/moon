@@ -7,6 +7,15 @@ use starbase_utils::fs;
 use starbase_utils::glob::GlobWalkOptions;
 use tracing::{debug, instrument, warn};
 
+fn is_hidden(path: &str) -> bool {
+    let last = match path.rfind('/') {
+        Some(index) => &path[index + 1..],
+        None => path,
+    };
+
+    last.starts_with('.')
+}
+
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
 fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry> {
@@ -79,7 +88,7 @@ where
                 if project_root
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .map(|name| !name.starts_with('.'))
+                    .map(|name| !is_hidden(name))
                     .unwrap_or_default()
                 {
                     warn!(
@@ -114,16 +123,13 @@ where
                 continue;
             }
 
-            let (id, source) = infer_project_id_and_source(&project_source)?;
-
-            if id.starts_with(".") {
+            if is_hidden(&project_source) {
                 debug!(
-                    project_id = id.as_str(),
-                    source = source.as_str(),
+                    source = project_source,
                     "Received a project for a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
                 );
             } else {
-                sources.push((id, source));
+                sources.push(infer_project_id_and_source(&project_source)?);
             }
         }
     }

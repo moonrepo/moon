@@ -35,7 +35,7 @@ impl Plugin for ExtensionPlugin {
             .cache_func_with(
                 "register_extension",
                 RegisterExtensionInput {
-                    id: registration.id.to_string(),
+                    id: registration.id.clone(),
                 },
             )
             .await?;

@@ -241,7 +241,7 @@ impl ToolchainRegistry {
             if let Ok(toolchain) = self.load(toolchain_id).await
                 && (skip_func_check || toolchain.has_func(func_name).await)
             {
-                let mut operation = Operation::new(func_name);
+                let mut operation = Operation::new(func_name).unwrap();
                 let id = toolchain.id.clone();
                 let input = input_factory(self, &toolchain);
                 let future = output_factory(toolchain.clone(), input);

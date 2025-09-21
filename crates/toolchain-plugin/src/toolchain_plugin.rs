@@ -39,7 +39,7 @@ impl Plugin for ToolchainPlugin {
             .cache_func_with(
                 "register_toolchain",
                 RegisterToolchainInput {
-                    id: registration.id.to_string(),
+                    id: registration.id.clone(),
                 },
             )
             .await?;

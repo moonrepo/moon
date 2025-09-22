@@ -1100,6 +1100,43 @@ mod affected_tasks {
                         create_project_dep_state()
                     ),
                     (
+                        Target::parse("project-sources:by-deps").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/tests/file.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn using_project_deps() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-filter").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-deps").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
                         Target::parse("dep:global").unwrap(),
                         create_state_from_file("dep/tests/file.txt")
                     ),

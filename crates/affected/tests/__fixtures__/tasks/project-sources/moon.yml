@@ -1,7 +1,15 @@
+dependsOn:
+  - 'dep'
+  - 'dep-test'
+
 tasks:
   by-any:
     inputs:
       - 'project://dep'
+  by-deps:
+    inputs:
+      - project: '^'
+        group: 'tests'
   by-group:
     inputs:
       - project: 'dep'

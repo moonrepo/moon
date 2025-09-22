@@ -427,6 +427,7 @@ inputs:
   - project://b?filter=src/**
   - project: c
     fileGroup: sources
+  - project: ^
 ",
                 load_config_from_code,
             );
@@ -435,19 +436,23 @@ inputs:
                 config.inputs.unwrap(),
                 vec![
                     Input::ProjectSources(ProjectSourcesInput {
-                        project: Id::raw("a"),
+                        project: "a".into(),
                         ..Default::default()
                     }),
                     Input::ProjectSources(ProjectSourcesInput {
-                        project: Id::raw("b"),
+                        project: "b".into(),
                         filter: vec!["src/**".into()],
                         ..Default::default()
                     }),
                     Input::ProjectSources(ProjectSourcesInput {
-                        project: Id::raw("c"),
+                        project: "c".into(),
                         group: Some(Id::raw("sources")),
                         ..Default::default()
-                    })
+                    }),
+                    Input::ProjectSources(ProjectSourcesInput {
+                        project: "^".into(),
+                        ..Default::default()
+                    }),
                 ]
             );
         }

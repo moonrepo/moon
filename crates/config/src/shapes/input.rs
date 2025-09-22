@@ -279,7 +279,8 @@ config_struct!(
     /// An external project's sources input.
     #[derive(Config)]
     pub struct ProjectSourcesInput {
-        pub project: Id,
+        // This is not an `Id` as we need to support "^".
+        pub project: String,
 
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<String>,
@@ -294,8 +295,10 @@ impl ProjectSourcesInput {
         let mut input = Self {
             project: if uri.path.is_empty() {
                 return Err(ParseError::new("a project identifier is required"));
+            } else if uri.path == "^" {
+                uri.path
             } else {
-                Id::new(&uri.path).map_err(map_parse_error)?
+                Id::new(&uri.path).map_err(map_parse_error)?.to_string()
             },
             ..Default::default()
         };

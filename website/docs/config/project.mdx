@@ -874,8 +874,8 @@ useful for handling cross-project relationships without needing to define explic
 dependencies.
 
 External projects can be defined as a `project://` URI, or as an object with a `project` property,
-both of which require a project identifier. Additionally, the following parameters are supported as
-a URI query or as object fields:
+both of which require a project identifier, or `^` for all dependent projects. Additionally, the
+following parameters are supported as a URI query or as object fields:
 
 - `group`, `fileGroup` (`id`) - The name of a file group within the external project in which file
   and glob patterns will be used for matching. Takes precedence over `filter`.

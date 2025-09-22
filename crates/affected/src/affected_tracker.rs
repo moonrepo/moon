@@ -444,23 +444,42 @@ impl AffectedTracker {
         }
 
         // By other inputs
+        let mut has_all_project_sources = false;
+
         for input in &task.inputs {
             match input {
                 Input::ProjectSources(inner) => {
-                    let project = self.workspace_graph.get_project(&inner.project)?;
+                    if has_all_project_sources {
+                        continue;
+                    }
 
-                    let affected = if let Some(group_id) = &inner.group {
-                        self.is_project_affected_using_file_group(&project, group_id)?
-                            .is_some()
-                    } else if !inner.filter.is_empty() {
-                        self.is_project_affected_using_globs(&project, &inner.filter)?
-                            .is_some()
+                    let projects = if inner.project == "^" {
+                        has_all_project_sources = true;
+
+                        let parent = self
+                            .workspace_graph
+                            .get_project(task.target.get_project_id()?)?;
+
+                        self.workspace_graph
+                            .get_projects_by_id(parent.dependencies.iter().map(|dep| &dep.id))?
                     } else {
-                        self.is_project_affected(&project).is_some()
+                        vec![self.workspace_graph.get_project(&inner.project)?]
                     };
 
-                    if affected {
-                        return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
+                    for project in projects {
+                        let affected = if let Some(group_id) = &inner.group {
+                            self.is_project_affected_using_file_group(&project, group_id)?
+                                .is_some()
+                        } else if !inner.filter.is_empty() {
+                            self.is_project_affected_using_globs(&project, &inner.filter)?
+                                .is_some()
+                        } else {
+                            self.is_project_affected(&project).is_some()
+                        };
+
+                        if affected {
+                            return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
+                        }
                     }
                 }
                 _ => {

@@ -305,14 +305,14 @@ mod input_shape {
             assert_eq!(
                 Input::parse("project://app").unwrap(),
                 Input::ProjectSources(ProjectSourcesInput {
-                    project: Id::raw("app"),
+                    project: "app".into(),
                     ..Default::default()
                 })
             );
             assert_eq!(
                 Input::parse("project://app?filter=src/**&filter=!tests/**/*").unwrap(),
                 Input::ProjectSources(ProjectSourcesInput {
-                    project: Id::raw("app"),
+                    project: "app".into(),
                     filter: vec!["src/**".into(), "!tests/**/*".into()],
                     ..Default::default()
                 })
@@ -320,7 +320,34 @@ mod input_shape {
             assert_eq!(
                 Input::parse("project://app?group=sources").unwrap(),
                 Input::ProjectSources(ProjectSourcesInput {
-                    project: Id::raw("app"),
+                    project: "app".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn project_protocol_all() {
+            assert_eq!(
+                Input::parse("project://^").unwrap(),
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "^".into(),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://^?filter=src/**&filter=!tests/**/*").unwrap(),
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "^".into(),
+                    filter: vec!["src/**".into(), "!tests/**/*".into()],
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://^?group=sources").unwrap(),
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "^".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
                 })
@@ -420,6 +447,84 @@ mod input_shape {
         #[should_panic] // Swallowed by enum expecting message
         fn errors_for_parent_traversal_inner() {
             let _: Input = serde_json::from_str(r#"{ "glob": "dir/../../file.*" }"#).unwrap();
+        }
+
+        #[test]
+        fn project_sources() {
+            let input: Input = serde_json::from_str(r#"{ "project": "app" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "app".into(),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input =
+                serde_json::from_str(r#"{ "project": "app", "group": "sources" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "app".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input = serde_json::from_str(
+                r#"{ "project": "app", "group": "sources", "filter": ["src/**/*"] }"#,
+            )
+            .unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "app".into(),
+                    group: Some(Id::raw("sources")),
+                    filter: vec!["src/**/*".into()],
+                })
+            );
+        }
+
+        #[test]
+        fn project_sources_all() {
+            let input: Input = serde_json::from_str(r#"{ "project": "^" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "^".into(),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input =
+                serde_json::from_str(r#"{ "project": "^", "group": "sources" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "^".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input = serde_json::from_str(
+                r#"{ "project": "^", "group": "sources", "filter": ["src/**/*"] }"#,
+            )
+            .unwrap();
+
+            assert_eq!(
+                input,
+                Input::ProjectSources(ProjectSourcesInput {
+                    project: "^".into(),
+                    group: Some(Id::raw("sources")),
+                    filter: vec!["src/**/*".into()],
+                })
+            );
         }
     }
 

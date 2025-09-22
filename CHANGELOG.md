@@ -9,6 +9,7 @@
   - Added URI support: `project://<id>`
   - Added object support: `project: '<id>'`
   - Can filter with globs or by file group.
+  - Can reference all project dependencies with `^`.
 
 #### ⚙️ Internal
 

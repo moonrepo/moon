@@ -322,7 +322,7 @@ impl ProjectSourcesInput {
     }
 }
 
-/// The different patterns a task input can be defined.
+/// The different patterns a task input can be defined as.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(try_from = "InputBase")]
 pub enum Input {

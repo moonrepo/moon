@@ -1,0 +1,11 @@
+tasks:
+  by-any:
+    inputs:
+      - 'project://dep'
+  by-group:
+    inputs:
+      - project: 'dep'
+        group: 'sources'
+  by-filter:
+    inputs:
+      - 'project://dep?filter=tests/**/*'

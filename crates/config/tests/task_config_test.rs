@@ -4,8 +4,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FilePath, Input, OneOrMany, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOutputStyle, TaskType,
+    FilePath, Input, OneOrMany, OutputPath, PlatformType, ProjectSourcesInput, TaskArgs,
+    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -413,6 +414,40 @@ inputs:
                     Input::EnvVar("FOO_BAR".into()),
                     Input::EnvVarGlob("FOO_*".into()),
                     Input::ProjectFile(create_file_input("file/path")),
+                ]
+            );
+        }
+
+        #[test]
+        fn supports_project_sources_formats() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - project://a
+  - project://b?filter=src/**
+  - project: c
+    fileGroup: sources
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::ProjectSources(ProjectSourcesInput {
+                        project: Id::raw("a"),
+                        ..Default::default()
+                    }),
+                    Input::ProjectSources(ProjectSourcesInput {
+                        project: Id::raw("b"),
+                        filter: vec!["src/**".into()],
+                        ..Default::default()
+                    }),
+                    Input::ProjectSources(ProjectSourcesInput {
+                        project: Id::raw("c"),
+                        group: Some(Id::raw("sources")),
+                        ..Default::default()
+                    })
                 ]
             );
         }

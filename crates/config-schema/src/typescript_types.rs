@@ -20,6 +20,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "Input".into(),
                 "FileInput".into(),
                 "GlobInput".into(),
+                "ProjectSourcesInput".into(),
                 "PartialTaskArgs".into(),
                 "PartialTaskConfig".into(),
                 "PartialTaskDependency".into(),

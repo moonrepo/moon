@@ -76,10 +76,11 @@ impl AffectedTracker {
             debug!(
                 env = ?state.env.iter().collect::<Vec<_>>(),
                 files = ?state.files.iter().collect::<Vec<_>>(),
+                projects = ?state.projects.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
                 upstream = ?state.upstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
                 downstream = ?state.downstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
                 other = state.other,
-                "Task {} is affected by", color::label(&target),
+                "Task {} is affected by", color::id(&target),
             );
 
             affected.tasks.insert(target, state);
@@ -387,6 +388,7 @@ impl AffectedTracker {
             return Ok(Some(AffectedBy::AlreadyMarked));
         }
 
+        // Special CI handling
         if self.ci {
             match &task.options.run_in_ci {
                 TaskOptionRunInCI::Always => {
@@ -397,7 +399,7 @@ impl AffectedTracker {
             };
         }
 
-        // inputs: []
+        // Never affected
         if task.state.empty_inputs {
             return Ok(None);
         }
@@ -422,10 +424,13 @@ impl AffectedTracker {
             let affected = if let Some(params) = task.input_files.get(file) {
                 match &params.content {
                     Some(matcher) => {
-                        let content =
-                            fs::read_file(file.to_logical_path(&self.workspace_graph.root))?;
+                        let abs_file = file.to_logical_path(&self.workspace_graph.root);
 
-                        matcher.is_match(&content)
+                        if abs_file.exists() {
+                            matcher.is_match(&fs::read_file(abs_file)?)
+                        } else {
+                            false
+                        }
                     }
                     None => true,
                 }
@@ -444,19 +449,17 @@ impl AffectedTracker {
                 Input::ProjectSources(inner) => {
                     let project = self.workspace_graph.get_project(&inner.project)?;
 
-                    if let Some(group_id) = &inner.group
-                        && self
-                            .is_project_affected_using_file_group(&project, group_id)?
+                    let affected = if let Some(group_id) = &inner.group {
+                        self.is_project_affected_using_file_group(&project, group_id)?
                             .is_some()
-                    {
-                        return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
-                    }
+                    } else if !inner.filter.is_empty() {
+                        self.is_project_affected_using_globs(&project, &inner.filter)?
+                            .is_some()
+                    } else {
+                        self.is_project_affected(&project).is_some()
+                    };
 
-                    if !inner.filter.is_empty()
-                        && self
-                            .is_project_affected_using_globs(&project, &inner.filter)?
-                            .is_some()
-                    {
+                    if affected {
                         return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
                     }
                 }

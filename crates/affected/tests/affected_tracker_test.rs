@@ -1015,6 +1015,99 @@ mod affected_tasks {
         }
     }
 
+    mod project_sources {
+        use super::*;
+
+        fn create_project_dep_state() -> AffectedTaskState {
+            let mut state = AffectedTaskState::default();
+            state.projects.insert(Id::raw("dep"));
+            state
+        }
+
+        #[tokio::test]
+        async fn any_file() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/file.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn using_file_group() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-group").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/src/file.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn using_filter_glob() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-filter").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/tests/file.txt")
+                    ),
+                ])
+            );
+        }
+    }
+
     mod ci {
         use super::*;
 

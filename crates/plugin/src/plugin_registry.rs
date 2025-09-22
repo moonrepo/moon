@@ -230,7 +230,7 @@ impl<T: Plugin> PluginRegistry<T> {
             "Registered plugin",
         );
 
-        let _ = self.plugins.insert_async(id, Arc::new(plugin));
+        let _ = self.plugins.insert_async(id, Arc::new(plugin)).await;
 
         Ok(())
     }

@@ -4,7 +4,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectError {
-    #[diagnostic(code(project::unknown_file_group))]
+    #[diagnostic(
+        code(project::unknown_file_group),
+        help = "Has this group been configured?"
+    )]
     #[error(
         "Unknown file group {} for project {}.",
         .group_id.style(Style::Id),
@@ -15,7 +18,7 @@ pub enum ProjectError {
         project_id: String,
     },
 
-    #[diagnostic(code(project::unknown_task))]
+    #[diagnostic(code(project::unknown_task), help = "Has this task been configured?")]
     #[error(
         "Unknown task {} for project {}.",
         .task_id.style(Style::Id),

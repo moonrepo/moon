@@ -27,7 +27,7 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Unknown file group unknown used in token @files(unknown).")]
+    #[should_panic(expected = "Unknown file group unknown for project project.")]
     fn errors_for_unknown_file_group() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());

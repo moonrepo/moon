@@ -12,6 +12,7 @@ publish = false
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_graph_utils = { path = "../graph-utils" }
+moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }

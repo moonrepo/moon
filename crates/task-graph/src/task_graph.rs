@@ -1,7 +1,7 @@
-use crate::task_graph_error::TaskGraphError;
 use moon_common::Id;
 use moon_config::DependencyType;
 use moon_graph_utils::*;
+use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
 use moon_task::Task;
@@ -66,7 +66,10 @@ impl TaskGraph {
         let metadata = self
             .metadata
             .get(target)
-            .ok_or(TaskGraphError::UnconfiguredTarget(target.to_owned()))?;
+            .ok_or_else(|| ProjectError::UnknownTask {
+                task_id: target.task_id.to_string(),
+                project_id: target.get_project_id().unwrap().to_string(),
+            })?;
 
         Ok(self.graph.node_weight(metadata.index).unwrap())
     }

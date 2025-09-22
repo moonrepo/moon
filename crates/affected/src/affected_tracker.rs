@@ -1,12 +1,14 @@
 use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
+use moon_config::Input;
 use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::fs;
+use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{debug, trace};
@@ -159,6 +161,59 @@ impl AffectedTracker {
                 .find(|file| file.starts_with(&project.source))
                 .map(|file| AffectedBy::TouchedFile(file.to_owned()))
         }
+    }
+
+    pub fn is_project_affected_using_file_group(
+        &self,
+        project: &Project,
+        file_group_id: &Id,
+    ) -> miette::Result<Option<AffectedBy>> {
+        let group = project.get_file_group(file_group_id)?;
+
+        if !group.files.is_empty() {
+            for file in &group.files {
+                if self.touched_files.contains(file) {
+                    return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
+                }
+            }
+        }
+
+        if !group.globs.is_empty() {
+            return self.is_project_affected_using_globs(project, &group.globs);
+        }
+
+        Ok(None)
+    }
+
+    pub fn is_project_affected_using_globs<G: AsRef<str>>(
+        &self,
+        project: &Project,
+        base_globs: &[G],
+    ) -> miette::Result<Option<AffectedBy>> {
+        let mut globs = vec![];
+
+        // Ensure they are relative from the project root
+        for glob in base_globs {
+            let glob = glob.as_ref();
+
+            if glob.starts_with(project.source.as_str()) {
+                globs.push(glob.to_owned());
+            } else {
+                globs.push(format!("{}/{glob}", project.source));
+            }
+        }
+
+        if !globs.is_empty() {
+            let globset = GlobSet::new(&globs)?;
+
+            for file in &self.touched_files {
+                if globset.matches(file.as_str()) {
+                    return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
+                }
+            }
+        }
+
+        Ok(None)
     }
 
     pub fn is_project_marked(&self, project: &Project) -> bool {
@@ -347,6 +402,7 @@ impl AffectedTracker {
             return Ok(None);
         }
 
+        // By env vars
         if !task.input_env.is_empty() {
             let bag = GlobalEnvBag::instance();
 
@@ -359,13 +415,12 @@ impl AffectedTracker {
             }
         }
 
+        // By files
         let globset = task.create_globset()?;
 
         for file in self.touched_files.iter() {
-            let mut affected = false;
-
-            if let Some(params) = task.input_files.get(file) {
-                affected = match &params.content {
+            let affected = if let Some(params) = task.input_files.get(file) {
+                match &params.content {
                     Some(matcher) => {
                         let content =
                             fs::read_file(file.to_logical_path(&self.workspace_graph.root))?;
@@ -373,16 +428,42 @@ impl AffectedTracker {
                         matcher.is_match(&content)
                     }
                     None => true,
-                };
-            }
-
-            if !affected {
-                affected = globset.matches(file.as_str());
-            }
+                }
+            } else {
+                globset.matches(file.as_str())
+            };
 
             if affected {
                 return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
             }
+        }
+
+        // By other inputs
+        for input in &task.inputs {
+            match input {
+                Input::ProjectSources(inner) => {
+                    let project = self.workspace_graph.get_project(&inner.project)?;
+
+                    if let Some(group_id) = &inner.group
+                        && self
+                            .is_project_affected_using_file_group(&project, group_id)?
+                            .is_some()
+                    {
+                        return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
+                    }
+
+                    if !inner.filter.is_empty()
+                        && self
+                            .is_project_affected_using_globs(&project, &inner.filter)?
+                            .is_some()
+                    {
+                        return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
+                    }
+                }
+                _ => {
+                    // Skip
+                }
+            };
         }
 
         Ok(None)

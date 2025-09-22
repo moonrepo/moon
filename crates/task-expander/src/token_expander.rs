@@ -375,12 +375,7 @@ impl<'graph> TokenExpander<'graph> {
                 ],
             )?;
 
-            Ok(self.project.file_groups.get(arg).ok_or_else(|| {
-                TokenExpanderError::UnknownFileGroup {
-                    group: arg.to_owned(),
-                    token: token.to_owned(),
-                }
-            })?)
+            Ok(self.project.get_file_group(arg)?)
         };
 
         match func {

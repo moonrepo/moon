@@ -14,11 +14,11 @@ use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_platform::{PlatformManager, Runtime, ToolchainSpec};
-use moon_project::Project;
+use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
-use moon_workspace_graph::{GraphConnections, WorkspaceGraph, tasks::TaskGraphError};
+use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -627,7 +627,11 @@ impl<'query> ActionGraphBuilder<'query> {
 
                 // Don't allow internal tasks to be ran
                 if !allow_internal && task.is_internal() {
-                    return Err(TaskGraphError::UnconfiguredTarget(task.target.clone()).into());
+                    return Err(ProjectError::UnknownTask {
+                        task_id: task.id.to_string(),
+                        project_id: project_id.to_string(),
+                    }
+                    .into());
                 }
 
                 tasks.push(task);

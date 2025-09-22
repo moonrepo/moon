@@ -300,7 +300,7 @@ impl<'graph> TokenExpander<'graph> {
                         .globs_for_input
                         .insert(glob, TaskGlobInput { cache: inner.cache });
                 }
-                Input::ProjectSources(_) => {
+                Input::ExternalProject(_) => {
                     // Skip
                 }
             };

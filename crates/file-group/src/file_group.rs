@@ -67,7 +67,7 @@ impl FileGroup {
             Input::ProjectGlob(glob) | Input::WorkspaceGlob(glob) => {
                 self.globs.push(glob.to_workspace_relative(project_source));
             }
-            Input::ProjectSources(_) => {
+            Input::ExternalProject(_) => {
                 // Skip
             }
         };

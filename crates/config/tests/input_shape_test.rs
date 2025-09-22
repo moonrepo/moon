@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, ManifestDepsInput,
-    ProjectSourcesInput, Uri, test_utils::*,
+    ExternalProjectInput, FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input,
+    ManifestDepsInput, Uri, test_utils::*,
 };
 use schematic::RegexSetting;
 
@@ -304,14 +304,14 @@ mod input_shape {
         fn project_protocol() {
             assert_eq!(
                 Input::parse("project://app").unwrap(),
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "app".into(),
                     ..Default::default()
                 })
             );
             assert_eq!(
                 Input::parse("project://app?filter=src/**&filter=!tests/**/*").unwrap(),
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "app".into(),
                     filter: vec!["src/**".into(), "!tests/**/*".into()],
                     ..Default::default()
@@ -319,7 +319,7 @@ mod input_shape {
             );
             assert_eq!(
                 Input::parse("project://app?group=sources").unwrap(),
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -331,14 +331,14 @@ mod input_shape {
         fn project_protocol_all() {
             assert_eq!(
                 Input::parse("project://^").unwrap(),
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "^".into(),
                     ..Default::default()
                 })
             );
             assert_eq!(
                 Input::parse("project://^?filter=src/**&filter=!tests/**/*").unwrap(),
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "^".into(),
                     filter: vec!["src/**".into(), "!tests/**/*".into()],
                     ..Default::default()
@@ -346,7 +346,7 @@ mod input_shape {
             );
             assert_eq!(
                 Input::parse("project://^?group=sources").unwrap(),
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -455,7 +455,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "app".into(),
                     ..Default::default()
                 })
@@ -466,7 +466,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -480,7 +480,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     filter: vec!["src/**/*".into()],
@@ -494,7 +494,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "^".into(),
                     ..Default::default()
                 })
@@ -505,7 +505,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -519,7 +519,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ProjectSources(ProjectSourcesInput {
+                Input::ExternalProject(ExternalProjectInput {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     filter: vec!["src/**/*".into()],
@@ -829,7 +829,7 @@ mod input_shape {
         #[test]
         fn id() {
             let input =
-                ProjectSourcesInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
+                ExternalProjectInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
 
             assert_eq!(input.project, "app");
         }
@@ -837,14 +837,14 @@ mod input_shape {
         #[test]
         fn supports_file_group_field() {
             for key in ["fileGroup", "group"] {
-                let input = ProjectSourcesInput::from_uri(
+                let input = ExternalProjectInput::from_uri(
                     Uri::parse(format!("project://app?{key}").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert!(input.group.is_none());
 
-                let input = ProjectSourcesInput::from_uri(
+                let input = ExternalProjectInput::from_uri(
                     Uri::parse(format!("project://app?{key}=a").as_str()).unwrap(),
                 )
                 .unwrap();
@@ -855,12 +855,12 @@ mod input_shape {
 
         #[test]
         fn supports_filter_field() {
-            let input =
-                ProjectSourcesInput::from_uri(Uri::parse("project://app?filter").unwrap()).unwrap();
+            let input = ExternalProjectInput::from_uri(Uri::parse("project://app?filter").unwrap())
+                .unwrap();
 
             assert!(input.filter.is_empty());
 
-            let input = ProjectSourcesInput::from_uri(
+            let input = ExternalProjectInput::from_uri(
                 Uri::parse("project://app?filter=a&filter=b").unwrap(),
             )
             .unwrap();
@@ -871,19 +871,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "a project identifier is required")]
         fn errors_no_id() {
-            ProjectSourcesInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
+            ExternalProjectInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Invalid identifier format")]
         fn errors_invalid_id() {
-            ProjectSourcesInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
+            ExternalProjectInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            ProjectSourcesInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
+            ExternalProjectInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
         }
     }
 }

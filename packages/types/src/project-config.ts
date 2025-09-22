@@ -73,6 +73,14 @@ export interface ProjectDockerConfig {
 	scaffold: ProjectDockerScaffoldConfig;
 }
 
+/** An external project input. */
+export interface ExternalProjectInput {
+	filter?: string[];
+	fileGroup?: Id | null;
+	group?: Id | null;
+	project: string;
+}
+
 /** Supported programming languages that each project can be written in. */
 export type LanguageType =
 	| 'bash'

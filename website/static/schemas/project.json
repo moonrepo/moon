@@ -287,6 +287,51 @@
       },
       "additionalProperties": false
     },
+    "FileGroupInput": {
+      "description": "A file group input.",
+      "type": "object",
+      "properties": {
+        "as": {
+          "title": "as",
+          "default": "static",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FileGroupInputFormat"
+            }
+          ]
+        },
+        "format": {
+          "title": "format",
+          "default": "static",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FileGroupInputFormat"
+            }
+          ]
+        },
+        "group": {
+          "title": "group",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FileGroupInputFormat": {
+      "description": "Format to resolve the file group into.",
+      "type": "string",
+      "enum": [
+        "static",
+        "dirs",
+        "envs",
+        "files",
+        "globs",
+        "root"
+      ]
+    },
     "FileInput": {
       "description": "A file path input.",
       "type": "object",
@@ -347,6 +392,9 @@
         },
         {
           "$ref": "#/definitions/FileInput"
+        },
+        {
+          "$ref": "#/definitions/FileGroupInput"
         },
         {
           "$ref": "#/definitions/GlobInput"

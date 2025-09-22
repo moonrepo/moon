@@ -4,9 +4,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ExternalProjectInput, FilePath, Input, OneOrMany, OutputPath, PlatformType, TaskArgs,
-    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
-    TaskOutputStyle, TaskType,
+    ExternalProjectInput, FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany,
+    OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig,
+    TaskMergeStrategy, TaskOptionCache, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -414,6 +414,43 @@ inputs:
                     Input::EnvVar("FOO_BAR".into()),
                     Input::EnvVarGlob("FOO_*".into()),
                     Input::ProjectFile(create_file_input("file/path")),
+                ]
+            );
+        }
+
+        #[test]
+        fn supports_file_group_formats() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - group://sources
+  - group://sources?as=dirs
+  - group: 'tests'
+  - group: 'tests'
+    as: 'files'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("sources"),
+                        ..Default::default()
+                    }),
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("sources"),
+                        format: FileGroupInputFormat::Dirs,
+                    }),
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("tests"),
+                        ..Default::default()
+                    }),
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("tests"),
+                        format: FileGroupInputFormat::Files,
+                    })
                 ]
             );
         }

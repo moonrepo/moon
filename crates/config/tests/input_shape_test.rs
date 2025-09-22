@@ -301,6 +301,31 @@ mod input_shape {
         }
 
         #[test]
+        fn file_group_protocol() {
+            assert_eq!(
+                Input::parse("group://sources").unwrap(),
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("group://sources?format=dirs").unwrap(),
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    format: FileGroupInputFormat::Dirs,
+                })
+            );
+            assert_eq!(
+                Input::parse("group://sources?as=root").unwrap(),
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    format: FileGroupInputFormat::Root,
+                })
+            );
+        }
+
+        #[test]
         fn project_protocol() {
             assert_eq!(
                 Input::parse("project://app").unwrap(),
@@ -447,6 +472,30 @@ mod input_shape {
         #[should_panic] // Swallowed by enum expecting message
         fn errors_for_parent_traversal_inner() {
             let _: Input = serde_json::from_str(r#"{ "glob": "dir/../../file.*" }"#).unwrap();
+        }
+
+        #[test]
+        fn file_group() {
+            let input: Input = serde_json::from_str(r#"{ "group": "sources" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input =
+                serde_json::from_str(r#"{ "group": "sources", "format": "files" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    format: FileGroupInputFormat::Files,
+                })
+            );
         }
 
         #[test]

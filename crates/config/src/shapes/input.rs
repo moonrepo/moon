@@ -339,9 +339,9 @@ pub enum Input {
     TokenFunc(String),
     TokenVar(String),
     // New
-    // FileGroup(FileGroupInput),
-    // ManifestDeps(ManifestDepsInput),
+    FileGroup(FileGroupInput),
     ExternalProject(ExternalProjectInput),
+    // ManifestDeps(ManifestDepsInput),
 }
 
 impl Input {
@@ -373,6 +373,7 @@ impl Input {
             | Self::TokenVar(value) => value,
             Self::ProjectFile(value) | Self::WorkspaceFile(value) => value.file.as_str(),
             Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.glob.as_str(),
+            Self::FileGroup(value) => value.group.as_str(),
             Self::ExternalProject(value) => value.project.as_str(),
         }
     }
@@ -427,6 +428,11 @@ impl FromStr for Input {
                     Self::ProjectGlob(glob)
                 })
             }
+            "group" | "filegroup" | "fileGroup" => {
+                let input = FileGroupInput::from_uri(uri)?;
+
+                Ok(Self::FileGroup(input))
+            }
             "project" => {
                 let input = ExternalProjectInput::from_uri(uri)?;
 
@@ -445,17 +451,18 @@ impl TryFrom<InputBase> for Input {
     fn try_from(base: InputBase) -> Result<Self, Self::Error> {
         match base {
             InputBase::Raw(input) => Self::parse(input),
+            InputBase::ExternalProject(input) => Ok(Self::ExternalProject(input)),
             InputBase::File(input) => Ok(if input.is_workspace_relative() {
                 Self::WorkspaceFile(input)
             } else {
                 Self::ProjectFile(input)
             }),
+            InputBase::FileGroup(input) => Ok(Self::FileGroup(input)),
             InputBase::Glob(input) => Ok(if input.is_workspace_relative() {
                 Self::WorkspaceGlob(input)
             } else {
                 Self::ProjectGlob(input)
             }),
-            InputBase::ProjectSources(input) => Ok(Self::ExternalProject(input)),
         }
     }
 }
@@ -469,6 +476,7 @@ impl Schematic for Input {
         schema.union(UnionType::new_any([
             schema.infer::<String>(),
             schema.infer::<FileInput>(),
+            schema.infer::<FileGroupInput>(),
             schema.infer::<GlobInput>(),
             schema.infer::<ExternalProjectInput>(),
         ]))
@@ -484,12 +492,12 @@ impl Serialize for Input {
             Input::EnvVar(var) | Input::EnvVarGlob(var) => {
                 serializer.serialize_str(format!("${var}").as_str())
             }
+            Input::ExternalProject(input) => ExternalProjectInput::serialize(input, serializer),
             Input::TokenFunc(token) | Input::TokenVar(token) => serializer.serialize_str(token),
-            // Input::FileGroup(input) => FileGroupInput::serialize(input, serializer),
+            Input::FileGroup(input) => FileGroupInput::serialize(input, serializer),
             // Input::ManifestDeps(input) => ManifestDepsInput::serialize(input, serializer),
             Input::ProjectFile(input) => FileInput::serialize(input, serializer),
             Input::ProjectGlob(input) => GlobInput::serialize(input, serializer),
-            Input::ExternalProject(input) => ExternalProjectInput::serialize(input, serializer),
             Input::WorkspaceFile(input) => FileInput::serialize(input, serializer),
             Input::WorkspaceGlob(input) => GlobInput::serialize(input, serializer),
         }
@@ -499,11 +507,12 @@ impl Serialize for Input {
 #[derive(Deserialize)]
 #[serde(
     untagged,
-    expecting = "expected a file path, glob pattern, URI, or object"
+    expecting = "expected a file path, glob pattern, URI string, or object"
 )]
 enum InputBase {
     Raw(String),
+    ExternalProject(ExternalProjectInput),
     File(FileInput),
+    FileGroup(FileGroupInput),
     Glob(GlobInput),
-    ProjectSources(ExternalProjectInput),
 }

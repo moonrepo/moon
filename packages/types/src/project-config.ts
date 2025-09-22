@@ -73,6 +73,24 @@ export interface ProjectDockerConfig {
 	scaffold: ProjectDockerScaffoldConfig;
 }
 
+/** Format to resolve the file group into. */
+export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root';
+
+/** A file group input. */
+export interface FileGroupInput {
+	/**
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	as?: FileGroupInputFormat;
+	/**
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	format?: FileGroupInputFormat;
+	group: Id;
+}
+
 /** An external project input. */
 export interface ExternalProjectInput {
 	filter?: string[];

@@ -11,6 +11,24 @@ export interface FileInput {
 	optional?: boolean | null;
 }
 
+/** Format to resolve the file group into. */
+export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root';
+
+/** A file group input. */
+export interface FileGroupInput {
+	/**
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	as?: FileGroupInputFormat;
+	/**
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	format?: FileGroupInputFormat;
+	group: Id;
+}
+
 /** A glob path input. */
 export interface GlobInput {
 	/** @default true */
@@ -26,7 +44,7 @@ export interface ExternalProjectInput {
 	project: string;
 }
 
-export type Input = string | FileInput | GlobInput | ExternalProjectInput;
+export type Input = string | FileInput | FileGroupInput | GlobInput | ExternalProjectInput;
 
 export type TaskArgs = null | string | string[];
 

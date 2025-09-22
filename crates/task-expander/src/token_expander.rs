@@ -300,6 +300,13 @@ impl<'graph> TokenExpander<'graph> {
                         .globs_for_input
                         .insert(glob, TaskGlobInput { cache: inner.cache });
                 }
+                Input::FileGroup(inner) => {
+                    self.update_result_for_file_group(
+                        self.project.get_file_group(&inner.group)?,
+                        inner.format.to_string().as_str(),
+                        &mut result,
+                    )?;
+                }
                 Input::ExternalProject(_) => {
                     // Skip
                 }
@@ -361,53 +368,24 @@ impl<'graph> TokenExpander<'graph> {
             ..ExpandedResult::default()
         };
 
-        let loose_check = matches!(self.scope, TokenScope::Outputs);
-        let file_group = || -> miette::Result<&FileGroup> {
-            self.check_scope(
-                task,
-                token,
-                &[
-                    TokenScope::Script,
-                    TokenScope::Args,
-                    TokenScope::Env,
-                    TokenScope::Inputs,
-                    TokenScope::Outputs,
-                ],
-            )?;
-
-            Ok(self.project.get_file_group(arg)?)
-        };
-
         match func {
             // File groups
-            "root" => {
-                result
-                    .files
-                    .push(file_group()?.root(&self.context.workspace_root, &self.project.source)?);
-            }
-            "dirs" => {
-                result
-                    .files
-                    .extend(file_group()?.dirs(&self.context.workspace_root, loose_check)?);
-            }
-            "files" => {
-                result
-                    .files
-                    .extend(file_group()?.files(&self.context.workspace_root, loose_check)?);
-            }
-            "globs" => {
-                result.globs.extend(file_group()?.globs()?.to_owned());
-            }
-            "group" => {
-                let group = file_group()?;
-                result.files.extend(group.files.clone());
-                result.globs.extend(group.globs.clone());
+            "root" | "dirs" | "files" | "globs" | "group" => {
+                self.check_scope(
+                    task,
+                    token,
+                    &[
+                        TokenScope::Script,
+                        TokenScope::Args,
+                        TokenScope::Env,
+                        TokenScope::Inputs,
+                        TokenScope::Outputs,
+                    ],
+                )?;
 
-                // Only inputs can use env vars, but instead of failing for other
-                // scopes, just ignore them
-                if self.scope == TokenScope::Inputs {
-                    result.env.extend(group.env.clone());
-                }
+                let group = self.project.get_file_group(arg)?;
+
+                self.update_result_for_file_group(group, func, &mut result)?;
             }
             // Inputs, outputs
             "in" => {
@@ -494,7 +472,11 @@ impl<'graph> TokenExpander<'graph> {
             "envs" => {
                 self.check_scope(task, token, &[TokenScope::Inputs])?;
 
-                result.env.extend(file_group()?.env()?.to_owned());
+                self.update_result_for_file_group(
+                    self.project.get_file_group(arg)?,
+                    func,
+                    &mut result,
+                )?;
             }
             "meta" => {
                 self.check_scope(
@@ -655,6 +637,52 @@ impl<'graph> TokenExpander<'graph> {
                 token: token.to_owned(),
                 index: value.to_owned(),
             })?)
+    }
+
+    fn update_result_for_file_group(
+        &self,
+        group: &FileGroup,
+        format: &str,
+        result: &mut ExpandedResult,
+    ) -> miette::Result<()> {
+        let loose_check = matches!(self.scope, TokenScope::Outputs);
+
+        match format {
+            "root" => {
+                result
+                    .files
+                    .push(group.root(&self.context.workspace_root, &self.project.source)?);
+            }
+            "dirs" => {
+                result
+                    .files
+                    .extend(group.dirs(&self.context.workspace_root, loose_check)?);
+            }
+            "envs" => {
+                if self.scope == TokenScope::Inputs {
+                    result.env.extend(group.env.clone());
+                }
+            }
+            "files" => {
+                result
+                    .files
+                    .extend(group.files(&self.context.workspace_root, loose_check)?);
+            }
+            "globs" => {
+                result.globs.extend(group.globs()?.to_owned());
+            }
+            "group" | "static" => {
+                result.files.extend(group.files.clone());
+                result.globs.extend(group.globs.clone());
+
+                if self.scope == TokenScope::Inputs {
+                    result.env.extend(group.env.clone());
+                }
+            }
+            _ => {}
+        };
+
+        Ok(())
     }
 
     fn create_path_for_task(

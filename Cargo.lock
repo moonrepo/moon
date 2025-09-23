@@ -3765,7 +3765,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "serde",
  "tokio",
 ]
@@ -3869,7 +3869,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -4094,7 +4094,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "starbase_utils",
  "tracing",
 ]
@@ -4360,7 +4360,7 @@ version = "0.0.1"
 dependencies = [
  "regex",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
 ]
 
 [[package]]
@@ -4544,7 +4544,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "starbase_styles",
  "starbase_utils",
  "tracing",
@@ -4650,7 +4650,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -4758,7 +4758,7 @@ dependencies = [
  "moon_workspace",
  "petgraph 0.8.2",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "starbase_events",
  "starbase_sandbox",
  "starbase_utils",
@@ -4868,7 +4868,7 @@ dependencies = [
  "moon_task",
  "reqwest",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "serde",
  "sha2",
  "starbase_utils",
@@ -5278,7 +5278,7 @@ dependencies = [
  "moon_process",
  "regex",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "semver",
  "serde",
  "starbase_sandbox",
@@ -5347,7 +5347,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_task_graph",
- "scc 3.1.0",
+ "scc 3.1.1",
  "tracing",
 ]
 
@@ -6298,7 +6298,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rustc-hash 2.1.1",
- "scc 3.1.0",
+ "scc 3.1.1",
  "schematic",
  "semver",
  "serde",
@@ -7006,9 +7006,9 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
 name = "saa"
-version = "4.1.0"
+version = "4.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14e9fa21973077ea653ab459c4746540e49f21fed90f49efa1b5a7dbbc4ca3af"
+checksum = "054a3921793fff8c8a48b2dc0cd799f229dc460795b034365f0a15b2fddf25fb"
 
 [[package]]
 name = "same-file"
@@ -7030,9 +7030,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "3.1.0"
+version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db652791ad0074be7e117e9e778a961cd66e1382c6b160c96a4502971d7211a6"
+checksum = "0db79cdeebe84ea1b64d7239e2643e06c0caa53c78dff5956f01167071ca8f36"
 dependencies = [
  "saa",
  "sdd 4.1.1",
@@ -7700,7 +7700,7 @@ dependencies = [
  "miette 7.6.0",
  "regex",
  "reqwest",
- "scc 3.1.0",
+ "scc 3.1.1",
  "serde",
  "serde_json",
  "serde_yml",
@@ -8822,7 +8822,7 @@ dependencies = [
  "reqwest",
  "reqwest-middleware",
  "reqwest-netrc",
- "scc 3.1.0",
+ "scc 3.1.1",
  "schematic",
  "serde",
  "serde_json",

@@ -302,8 +302,8 @@ fileGroups:
                     (
                         Id::raw("files"),
                         vec![
-                            Input::WorkspaceFile(create_file_input("/ws/relative")),
-                            Input::ProjectFile(create_file_input("proj/relative"))
+                            Input::File(create_file_input("/ws/relative")),
+                            Input::File(create_file_input("proj/relative"))
                         ]
                     ),
                     (
@@ -449,10 +449,10 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    Input::WorkspaceFile(create_file_input("/ws/path")),
+                    Input::File(create_file_input("/ws/path")),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile(create_file_input("proj/path")),
+                    Input::File(create_file_input("proj/path")),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
                     Input::ProjectGlob(create_glob_input("!proj/glob/{a,b,c}")),
                 ]
@@ -475,7 +475,7 @@ implicitInputs:
                 config.implicit_inputs,
                 vec![
                     Input::EnvVar("FOO_BAR".into()),
-                    Input::ProjectFile(create_file_input("file/path")),
+                    Input::File(create_file_input("file/path")),
                 ]
             );
         }
@@ -490,7 +490,7 @@ mod task_manager {
 
         if command != "global" {
             // No .moon prefix since the fixture is contrived
-            global_inputs.push(Input::WorkspaceFile(create_file_input(format!(
+            global_inputs.push(Input::File(create_file_input(format!(
                 "/tasks/{command}.yml"
             ))));
         }
@@ -1032,7 +1032,7 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("node-library", vec![Id::raw("node"), Id::raw("javascript")]);
-            task.inputs = Some(vec![Input::ProjectFile(create_file_input("c"))]);
+            task.inputs = Some(vec![Input::File(create_file_input("c"))]);
 
             let config = manager
                 .get_inherited_config(
@@ -1058,7 +1058,7 @@ mod task_manager {
                 "dotnet-application",
                 vec![Id::raw("dotnet"), Id::raw("system")],
             );
-            task.inputs = Some(vec![Input::ProjectFile(create_file_input("c"))]);
+            task.inputs = Some(vec![Input::File(create_file_input("c"))]);
 
             let config = manager
                 .get_inherited_config(
@@ -1167,9 +1167,9 @@ mod task_manager {
                     implicit_inputs: vec![
                         Input::EnvVar("ENV".into()),
                         Input::EnvVarGlob("ENV_*".into()),
-                        Input::ProjectFile(create_file_input("file.txt")),
+                        Input::File(create_file_input("file.txt")),
                         Input::ProjectGlob(create_glob_input("file.*")),
-                        Input::WorkspaceFile(create_file_input("/file.txt")),
+                        Input::File(create_file_input("/file.txt")),
                         Input::WorkspaceGlob(create_glob_input("/file.*")),
                     ],
                     task_options: Some(TaskOptionsConfig {

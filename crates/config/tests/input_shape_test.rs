@@ -15,7 +15,7 @@ mod input_shape {
         fn converts_backward_slashes() {
             assert_eq!(
                 Input::parse("some\\file.txt").unwrap(),
-                Input::ProjectFile(create_file_input("some/file.txt"))
+                Input::File(create_file_input("some/file.txt"))
             );
         }
 
@@ -79,7 +79,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("file://file.txt?optional").unwrap(),
-                Input::ProjectFile(input)
+                Input::File(input)
             );
 
             let mut input = create_file_input("/file.txt");
@@ -87,7 +87,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("file:///file.txt?optional=false").unwrap(),
-                Input::WorkspaceFile(input)
+                Input::File(input)
             );
         }
 
@@ -95,19 +95,19 @@ mod input_shape {
         fn file_project_relative() {
             assert_eq!(
                 Input::parse("file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
             assert_eq!(
                 Input::parse("./file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("././dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
         }
 
@@ -115,19 +115,19 @@ mod input_shape {
         fn file_project_relative_protocol() {
             assert_eq!(
                 Input::parse("file://file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("file://dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
             assert_eq!(
                 Input::parse("file://./file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("file://././dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
         }
 
@@ -135,17 +135,17 @@ mod input_shape {
         fn file_workspace_relative() {
             assert_eq!(
                 Input::parse("/file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/file.rs"))
+                Input::File(create_file_input("/file.rs"))
             );
             assert_eq!(
                 Input::parse("/dir/file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/dir/file.rs"))
+                Input::File(create_file_input("/dir/file.rs"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("/.cache/$projectSource").unwrap(),
-                Input::WorkspaceFile(create_file_input("/.cache/$projectSource"))
+                Input::File(create_file_input("/.cache/$projectSource"))
             );
         }
 
@@ -153,17 +153,17 @@ mod input_shape {
         fn file_workspace_relative_protocol() {
             assert_eq!(
                 Input::parse("file:///file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/file.rs"))
+                Input::File(create_file_input("/file.rs"))
             );
             assert_eq!(
                 Input::parse("file:///dir/file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/dir/file.rs"))
+                Input::File(create_file_input("/dir/file.rs"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("file:///.cache/$projectSource").unwrap(),
-                Input::WorkspaceFile(create_file_input("/.cache/$projectSource"))
+                Input::File(create_file_input("/.cache/$projectSource"))
             );
         }
 
@@ -405,18 +405,18 @@ mod input_shape {
         fn files() {
             let input: Input = serde_json::from_str(r#""file.txt""#).unwrap();
 
-            assert_eq!(input, Input::ProjectFile(create_file_input("file.txt")));
+            assert_eq!(input, Input::File(create_file_input("file.txt")));
 
             let input: Input = serde_json::from_str(r#"{ "file": "file.txt" }"#).unwrap();
 
-            assert_eq!(input, Input::ProjectFile(create_file_input("file.txt")));
+            assert_eq!(input, Input::File(create_file_input("file.txt")));
 
             let input: Input =
                 serde_json::from_str(r#"{ "file": "dir/file.txt", "optional": true }"#).unwrap();
 
             assert_eq!(
                 input,
-                Input::ProjectFile({
+                Input::File({
                     let mut inner = create_file_input("dir/file.txt");
                     inner.optional = Some(true);
                     inner
@@ -430,7 +430,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::WorkspaceFile({
+                Input::File({
                     let mut inner = create_file_input("/root/file.txt");
                     inner.optional = Some(true);
                     inner.content = Some(RegexSetting::new("a|b|c").unwrap());

@@ -261,10 +261,10 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile(create_file_input("/ws/path")),
+                    Input::File(create_file_input("/ws/path")),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile(create_file_input("proj/path")),
+                    Input::File(create_file_input("proj/path")),
                     Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
                     Input::ProjectGlob(create_glob_input("!proj/glob/{a,b,c}")),
                 ]
@@ -289,14 +289,14 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile({
+                    Input::File({
                         let mut inner = create_file_input("/ws/path");
                         inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile({
+                    Input::File({
                         let mut inner = create_file_input("proj/path");
                         inner.optional = Some(true);
                         inner
@@ -332,14 +332,14 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile({
+                    Input::File({
                         let mut inner = create_file_input("/ws/path");
                         inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile({
+                    Input::File({
                         let mut inner = create_file_input("proj/path");
                         inner.optional = Some(true);
                         inner
@@ -374,14 +374,14 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile({
+                    Input::File({
                         let mut inner = create_file_input("/ws/path");
                         inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
                     Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
                     Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile({
+                    Input::File({
                         let mut inner = create_file_input("proj/path");
                         inner.optional = Some(true);
                         inner
@@ -413,7 +413,7 @@ inputs:
                 vec![
                     Input::EnvVar("FOO_BAR".into()),
                     Input::EnvVarGlob("FOO_*".into()),
-                    Input::ProjectFile(create_file_input("file/path")),
+                    Input::File(create_file_input("file/path")),
                 ]
             );
         }
@@ -941,9 +941,9 @@ options:
                     inputs: Some(vec![
                         Input::EnvVar("ENV".into()),
                         Input::EnvVarGlob("ENV_*".into()),
-                        Input::ProjectFile(create_file_input("file.txt")),
+                        Input::File(create_file_input("file.txt")),
                         Input::ProjectGlob(create_glob_input("file.*")),
-                        Input::WorkspaceFile(create_file_input("/file.txt")),
+                        Input::File(create_file_input("/file.txt")),
                         Input::WorkspaceGlob(create_glob_input("/file.*")),
                         Input::TokenFunc("@dirs(name)".into())
                     ]),

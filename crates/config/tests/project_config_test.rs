@@ -231,8 +231,8 @@ fileGroups:
                     (
                         Id::raw("files"),
                         vec![
-                            Input::WorkspaceFile(create_file_input("/ws/relative")),
-                            Input::ProjectFile(create_file_input("proj/relative"))
+                            Input::File(create_file_input("/ws/relative")),
+                            Input::File(create_file_input("proj/relative"))
                         ]
                     ),
                     (

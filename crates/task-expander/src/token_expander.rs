@@ -276,7 +276,7 @@ impl<'graph> TokenExpander<'graph> {
                             .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
                 }
-                Input::ProjectFile(inner) | Input::WorkspaceFile(inner) => {
+                Input::File(inner) => {
                     let file = self.create_path_for_task(
                         task,
                         inner.to_workspace_relative(&self.project.source),
@@ -290,6 +290,13 @@ impl<'graph> TokenExpander<'graph> {
                         },
                     );
                 }
+                Input::FileGroup(inner) => {
+                    self.update_result_for_file_group(
+                        self.project.get_file_group(&inner.group)?,
+                        inner.format.to_string().as_str(),
+                        &mut result,
+                    )?;
+                }
                 Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
                     let glob = self.create_path_for_task(
                         task,
@@ -299,13 +306,6 @@ impl<'graph> TokenExpander<'graph> {
                     result
                         .globs_for_input
                         .insert(glob, TaskGlobInput { cache: inner.cache });
-                }
-                Input::FileGroup(inner) => {
-                    self.update_result_for_file_group(
-                        self.project.get_file_group(&inner.group)?,
-                        inner.format.to_string().as_str(),
-                        &mut result,
-                    )?;
                 }
                 Input::ExternalProject(_) => {
                     // Skip
@@ -402,11 +402,18 @@ impl<'graph> TokenExpander<'graph> {
                         })?;
 
                 match input {
-                    Input::ProjectFile(inner) | Input::WorkspaceFile(inner) => {
+                    Input::File(inner) => {
                         result.files.push(self.create_path_for_task(
                             task,
                             inner.to_workspace_relative(&self.project.source),
                         )?);
+                    }
+                    Input::FileGroup(inner) => {
+                        self.update_result_for_file_group(
+                            self.project.get_file_group(&inner.group)?,
+                            inner.format.to_string().as_str(),
+                            &mut result,
+                        )?;
                     }
                     Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
                         result.globs.push(self.create_path_for_task(

@@ -37,14 +37,14 @@ export interface GlobInput {
 }
 
 /** An external project input. */
-export interface ExternalProjectInput {
+export interface ProjectInput {
 	filter?: string[];
 	fileGroup?: Id | null;
 	group?: Id | null;
 	project: string;
 }
 
-export type Input = string | FileInput | FileGroupInput | GlobInput | ExternalProjectInput;
+export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInput;
 
 export type TaskArgs = null | string | string[];
 

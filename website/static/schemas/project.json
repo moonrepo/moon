@@ -247,46 +247,6 @@
         "implicit"
       ]
     },
-    "ExternalProjectInput": {
-      "description": "An external project input.",
-      "type": "object",
-      "properties": {
-        "fileGroup": {
-          "title": "fileGroup",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "filter": {
-          "title": "filter",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "group": {
-          "title": "group",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "project": {
-          "title": "project",
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
     "FileGroupInput": {
       "description": "A file group input.",
       "type": "object",
@@ -400,7 +360,7 @@
           "$ref": "#/definitions/GlobInput"
         },
         {
-          "$ref": "#/definitions/ExternalProjectInput"
+          "$ref": "#/definitions/ProjectInput"
         }
       ]
     },
@@ -663,6 +623,46 @@
           "items": {
             "type": "string"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectInput": {
+      "description": "An external project input.",
+      "type": "object",
+      "properties": {
+        "fileGroup": {
+          "title": "fileGroup",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filter": {
+          "title": "filter",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group": {
+          "title": "group",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "project": {
+          "title": "project",
+          "type": "string"
         }
       },
       "additionalProperties": false

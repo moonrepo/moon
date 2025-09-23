@@ -474,8 +474,9 @@ impl Serialize for Input {
 )]
 enum InputBase {
     Raw(String),
-    File(FileInput),
-    FileGroup(FileGroupInput),
-    Glob(GlobInput),
+    // From most complex to least
     Project(ProjectInput),
+    FileGroup(FileGroupInput),
+    File(FileInput),
+    Glob(GlobInput),
 }

@@ -10,6 +10,10 @@
   - Added object support: `project: '<id>'`
   - Can filter with globs or by file group.
   - Can reference all project dependencies with `^`.
+- Added a new task input type for referencing file groups within the owning project.
+  - Added URI support: `group://<name>`
+  - Added object support: `group: '<name>'`
+  - This is similar to the `@files`, `@globs`, etc, token functions.
 
 #### ⚙️ Internal
 

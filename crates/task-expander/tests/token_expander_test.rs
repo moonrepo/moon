@@ -1,7 +1,11 @@
 mod utils;
 
+use moon_common::Id;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{Input, LanguageType, LayerType, OutputPath};
+use moon_config::{
+    DependencyConfig, FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType,
+    OutputPath, ProjectInput,
+};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
@@ -1044,7 +1048,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     env: vec!["FOO_BAR".into()],
                     ..ExpandedResult::default()
@@ -1069,7 +1073,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            let mut result = expander.expand_inputs(&task).unwrap();
+            let mut result = expander.expand_inputs(&mut task).unwrap();
             result.env.sort();
 
             assert_eq!(
@@ -1098,7 +1102,37 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/config.yml"),
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir")
+                    ],
+                    globs: vec![
+                        WorkspaceRelativePathBuf::from("project/source/*.md"),
+                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                    ],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_group_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Static,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files: vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
@@ -1125,7 +1159,34 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
+                        WorkspaceRelativePathBuf::from("project/source/other"),
+                    ],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_dirs_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("dirs"),
+                format: FileGroupInputFormat::Dirs,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files: vec![
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
@@ -1149,7 +1210,36 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/config.yml"),
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
+                        WorkspaceRelativePathBuf::from("project/source/docs.md"),
+                        WorkspaceRelativePathBuf::from("project/source/other/file.json"),
+                    ],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_files_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Files,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files: vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
@@ -1175,7 +1265,34 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
+                ExpandedResult {
+                    files: vec![],
+                    globs: vec![
+                        WorkspaceRelativePathBuf::from("project/source/*.md"),
+                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                    ],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_globs_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Globs,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files: vec![],
                     globs: vec![
@@ -1199,7 +1316,31 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
+                ExpandedResult {
+                    files: vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_root_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Root,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files: vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
                     globs: vec![],
@@ -1220,7 +1361,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     env: vec!["FOO_BAR".into()],
                     ..ExpandedResult::default()
@@ -1242,7 +1383,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_inputs(&task).unwrap();
+            expander.expand_inputs(&mut task).unwrap();
         }
 
         #[test]
@@ -1259,7 +1400,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_inputs(&task).unwrap();
+            expander.expand_inputs(&mut task).unwrap();
         }
 
         #[test]
@@ -1276,7 +1417,7 @@ mod token_expander {
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
 
-            expander.expand_inputs(&task).unwrap();
+            expander.expand_inputs(&mut task).unwrap();
         }
 
         #[test]
@@ -1294,7 +1435,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files: vec![
                         WorkspaceRelativePathBuf::from("project/source/project:task"),
@@ -1323,7 +1464,7 @@ mod token_expander {
             let mut expander = TokenExpander::new(&project, &context);
 
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                expander.expand_inputs(&mut task).unwrap(),
                 ExpandedResult {
                     files_for_input: create_file_input_map(vec![
                         "project/source/task/file.txt",
@@ -1335,6 +1476,61 @@ mod token_expander {
                     ]),
                     ..ExpandedResult::default()
                 }
+            );
+        }
+
+        #[test]
+        fn expands_project_input_into_dependencies() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            project.dependencies.extend([
+                DependencyConfig {
+                    id: Id::raw("a"),
+                    ..Default::default()
+                },
+                DependencyConfig {
+                    id: Id::raw("b"),
+                    ..Default::default()
+                },
+                DependencyConfig {
+                    id: Id::raw("c"),
+                    ..Default::default()
+                },
+            ]);
+
+            let mut task = create_task();
+
+            task.inputs = vec![Input::Project(ProjectInput {
+                project: "^".into(),
+                filter: vec!["src/**/*".into()],
+                group: Some(Id::raw("sources")),
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            expander.expand_inputs(&mut task).unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "a".into(),
+                        filter: vec!["src/**/*".into()],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "b".into(),
+                        filter: vec!["src/**/*".into()],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "c".into(),
+                        filter: vec!["src/**/*".into()],
+                        group: Some(Id::raw("sources")),
+                    }),
+                ]
             );
         }
     }

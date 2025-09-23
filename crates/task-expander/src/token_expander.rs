@@ -4,7 +4,7 @@ use moon_common::{
     color,
     path::{self, WorkspaceRelativePathBuf},
 };
-use moon_config::{Input, OutputPath, ProjectMetadataConfig, patterns};
+use moon_config::{Input, OutputPath, ProjectInput, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
@@ -237,14 +237,15 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_inputs(&mut self, task: &Task) -> miette::Result<ExpandedResult> {
+    pub fn expand_inputs(&mut self, task: &mut Task) -> miette::Result<ExpandedResult> {
         self.scope = TokenScope::Inputs;
 
+        let mut inputs = vec![];
         let mut result = ExpandedResult::default();
         let bag = GlobalEnvBag::instance();
 
-        for input in &task.inputs {
-            match input {
+        for input in mem::take(&mut task.inputs) {
+            match &input {
                 Input::EnvVar(var) => {
                     result.env.push(var.to_owned());
                 }
@@ -307,11 +308,26 @@ impl<'graph> TokenExpander<'graph> {
                         .globs_for_input
                         .insert(glob, TaskGlobInput { cache: inner.cache });
                 }
-                Input::Project(_) => {
-                    // Skip
+                Input::Project(inner) => {
+                    // Expand to all owning project dependencies
+                    if inner.project == "^" {
+                        for dep_config in &self.project.dependencies {
+                            inputs.push(Input::Project(ProjectInput {
+                                project: dep_config.id.to_string(),
+                                filter: inner.filter.clone(),
+                                group: inner.group.clone(),
+                            }));
+                        }
+
+                        continue;
+                    }
                 }
             };
+
+            inputs.push(input);
         }
+
+        task.inputs = inputs;
 
         Ok(result)
     }

@@ -297,7 +297,7 @@ impl<'graph> TokenExpander<'graph> {
                         &mut result,
                     )?;
                 }
-                Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
+                Input::Glob(inner) => {
                     let glob = self.create_path_for_task(
                         task,
                         inner.to_workspace_relative(&self.project.source),
@@ -307,7 +307,7 @@ impl<'graph> TokenExpander<'graph> {
                         .globs_for_input
                         .insert(glob, TaskGlobInput { cache: inner.cache });
                 }
-                Input::ExternalProject(_) => {
+                Input::Project(_) => {
                     // Skip
                 }
             };
@@ -415,7 +415,7 @@ impl<'graph> TokenExpander<'graph> {
                             &mut result,
                         )?;
                     }
-                    Input::ProjectGlob(inner) | Input::WorkspaceGlob(inner) => {
+                    Input::Glob(inner) => {
                         result.globs.push(self.create_path_for_task(
                             task,
                             inner.to_workspace_relative(&self.project.source),

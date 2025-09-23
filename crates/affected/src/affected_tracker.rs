@@ -448,7 +448,7 @@ impl AffectedTracker {
 
         for input in &task.inputs {
             match input {
-                Input::ExternalProject(inner) => {
+                Input::Project(inner) => {
                     if has_all_project_sources {
                         continue;
                     }

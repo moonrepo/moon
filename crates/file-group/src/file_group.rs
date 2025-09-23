@@ -64,10 +64,10 @@ impl FileGroup {
             Input::File(file) => {
                 self.files.push(file.to_workspace_relative(project_source));
             }
-            Input::ProjectGlob(glob) | Input::WorkspaceGlob(glob) => {
+            Input::Glob(glob) => {
                 self.globs.push(glob.to_workspace_relative(project_source));
             }
-            Input::FileGroup(_) | Input::ExternalProject(_) => {
+            Input::FileGroup(_) | Input::Project(_) => {
                 // Skip
             }
         };

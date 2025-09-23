@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{
-    ExternalProjectInput, FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input,
-    ManifestDepsInput, Uri, test_utils::*,
+    FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, ManifestDepsInput,
+    ProjectInput, Uri, test_utils::*,
 };
 use schematic::RegexSetting;
 
@@ -174,7 +174,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("glob://file.*?cache").unwrap(),
-                Input::ProjectGlob(input)
+                Input::Glob(input)
             );
 
             let mut input = create_glob_input("/file.*");
@@ -182,7 +182,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("glob:///file.*?cache=false").unwrap(),
-                Input::WorkspaceGlob(input)
+                Input::Glob(input)
             );
         }
 
@@ -204,22 +204,22 @@ mod input_shape {
                 input.cache = true;
 
                 assert_eq!(
-                    Input::ProjectGlob(GlobInput {
+                    Input::Glob(GlobInput {
                         glob: GlobPath(pat.into()),
                         cache: true
                     }),
-                    Input::ProjectGlob(input)
+                    Input::Glob(input)
                 );
 
                 let mut input = create_glob_input(pat);
                 input.cache = false;
 
                 assert_eq!(
-                    Input::ProjectGlob(GlobInput {
+                    Input::Glob(GlobInput {
                         glob: GlobPath(pat.into()),
                         cache: false
                     }),
-                    Input::ProjectGlob(input)
+                    Input::Glob(input)
                 );
             }
         }
@@ -228,21 +228,21 @@ mod input_shape {
         fn glob_project_relative() {
             assert_eq!(
                 Input::parse("!file.*").unwrap(),
-                Input::ProjectGlob(create_glob_input("!file.*"))
+                Input::Glob(create_glob_input("!file.*"))
             );
             assert_eq!(
                 Input::parse("dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
             assert_eq!(
                 Input::parse("./dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("$projectSource/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("$projectSource/**/*"))
+                Input::Glob(create_glob_input("$projectSource/**/*"))
             );
         }
 
@@ -250,21 +250,21 @@ mod input_shape {
         fn glob_project_relative_protocol() {
             assert_eq!(
                 Input::parse("glob://!file.*").unwrap(),
-                Input::ProjectGlob(create_glob_input("!file.*"))
+                Input::Glob(create_glob_input("!file.*"))
             );
             assert_eq!(
                 Input::parse("glob://dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
             assert_eq!(
                 Input::parse("glob://./dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("glob://$projectSource/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("$projectSource/**/*"))
+                Input::Glob(create_glob_input("$projectSource/**/*"))
             );
         }
 
@@ -272,15 +272,15 @@ mod input_shape {
         fn glob_workspace_relative() {
             assert_eq!(
                 Input::parse("/!file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("!/file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("/dir/**/*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+                Input::Glob(create_glob_input("/dir/**/*"))
             );
         }
 
@@ -288,15 +288,15 @@ mod input_shape {
         fn glob_workspace_relative_protocol() {
             assert_eq!(
                 Input::parse("glob:///!file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("glob://!/file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("glob:///dir/**/*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+                Input::Glob(create_glob_input("/dir/**/*"))
             );
         }
 
@@ -329,14 +329,14 @@ mod input_shape {
         fn project_protocol() {
             assert_eq!(
                 Input::parse("project://app").unwrap(),
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "app".into(),
                     ..Default::default()
                 })
             );
             assert_eq!(
                 Input::parse("project://app?filter=src/**&filter=!tests/**/*").unwrap(),
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "app".into(),
                     filter: vec!["src/**".into(), "!tests/**/*".into()],
                     ..Default::default()
@@ -344,7 +344,7 @@ mod input_shape {
             );
             assert_eq!(
                 Input::parse("project://app?group=sources").unwrap(),
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -356,14 +356,14 @@ mod input_shape {
         fn project_protocol_all() {
             assert_eq!(
                 Input::parse("project://^").unwrap(),
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "^".into(),
                     ..Default::default()
                 })
             );
             assert_eq!(
                 Input::parse("project://^?filter=src/**&filter=!tests/**/*").unwrap(),
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "^".into(),
                     filter: vec!["src/**".into(), "!tests/**/*".into()],
                     ..Default::default()
@@ -371,7 +371,7 @@ mod input_shape {
             );
             assert_eq!(
                 Input::parse("project://^?group=sources").unwrap(),
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -443,18 +443,18 @@ mod input_shape {
         fn globs() {
             let input: Input = serde_json::from_str(r#""file.*""#).unwrap();
 
-            assert_eq!(input, Input::ProjectGlob(create_glob_input("file.*")));
+            assert_eq!(input, Input::Glob(create_glob_input("file.*")));
 
             let input: Input = serde_json::from_str(r#"{ "glob": "file.*" }"#).unwrap();
 
-            assert_eq!(input, Input::ProjectGlob(create_glob_input("file.*")));
+            assert_eq!(input, Input::Glob(create_glob_input("file.*")));
 
             let input: Input =
                 serde_json::from_str(r#"{ "glob": "/dir/file.*", "cache": false }"#).unwrap();
 
             assert_eq!(
                 input,
-                Input::WorkspaceGlob({
+                Input::Glob({
                     let mut inner = create_glob_input("/dir/file.*");
                     inner.cache = false;
                     inner
@@ -504,7 +504,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "app".into(),
                     ..Default::default()
                 })
@@ -515,7 +515,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -529,7 +529,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "app".into(),
                     group: Some(Id::raw("sources")),
                     filter: vec!["src/**/*".into()],
@@ -543,7 +543,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "^".into(),
                     ..Default::default()
                 })
@@ -554,7 +554,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     ..Default::default()
@@ -568,7 +568,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::ExternalProject(ExternalProjectInput {
+                Input::Project(ProjectInput {
                     project: "^".into(),
                     group: Some(Id::raw("sources")),
                     filter: vec!["src/**/*".into()],
@@ -877,8 +877,7 @@ mod input_shape {
 
         #[test]
         fn id() {
-            let input =
-                ExternalProjectInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
+            let input = ProjectInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
 
             assert_eq!(input.project, "app");
         }
@@ -886,14 +885,14 @@ mod input_shape {
         #[test]
         fn supports_file_group_field() {
             for key in ["fileGroup", "group"] {
-                let input = ExternalProjectInput::from_uri(
+                let input = ProjectInput::from_uri(
                     Uri::parse(format!("project://app?{key}").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert!(input.group.is_none());
 
-                let input = ExternalProjectInput::from_uri(
+                let input = ProjectInput::from_uri(
                     Uri::parse(format!("project://app?{key}=a").as_str()).unwrap(),
                 )
                 .unwrap();
@@ -904,15 +903,14 @@ mod input_shape {
 
         #[test]
         fn supports_filter_field() {
-            let input = ExternalProjectInput::from_uri(Uri::parse("project://app?filter").unwrap())
-                .unwrap();
+            let input =
+                ProjectInput::from_uri(Uri::parse("project://app?filter").unwrap()).unwrap();
 
             assert!(input.filter.is_empty());
 
-            let input = ExternalProjectInput::from_uri(
-                Uri::parse("project://app?filter=a&filter=b").unwrap(),
-            )
-            .unwrap();
+            let input =
+                ProjectInput::from_uri(Uri::parse("project://app?filter=a&filter=b").unwrap())
+                    .unwrap();
 
             assert_eq!(input.filter, ["a", "b"]);
         }
@@ -920,19 +918,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "a project identifier is required")]
         fn errors_no_id() {
-            ExternalProjectInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
+            ProjectInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Invalid identifier format")]
         fn errors_invalid_id() {
-            ExternalProjectInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
+            ProjectInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            ExternalProjectInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
+            ProjectInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
         }
     }
 }

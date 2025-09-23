@@ -278,7 +278,7 @@ impl ManifestDepsInput {
 config_struct!(
     /// An external project input.
     #[derive(Config)]
-    pub struct ExternalProjectInput {
+    pub struct ProjectInput {
         // This is not an `Id` as we need to support "^".
         pub project: String,
 
@@ -290,7 +290,7 @@ config_struct!(
     }
 );
 
-impl ExternalProjectInput {
+impl ProjectInput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let mut input = Self {
             project: if uri.path.is_empty() {
@@ -333,13 +333,12 @@ pub enum Input {
     EnvVarGlob(String),
     File(FileInput),
     FileGroup(FileGroupInput),
-    ProjectGlob(GlobInput),
-    WorkspaceGlob(GlobInput),
+    Glob(GlobInput),
+    Project(ProjectInput),
     // Old
     TokenFunc(String),
     TokenVar(String),
     // New
-    ExternalProject(ExternalProjectInput),
     // ManifestDeps(ManifestDepsInput),
 }
 
@@ -372,16 +371,13 @@ impl Input {
             | Self::TokenVar(value) => value,
             Self::File(value) => value.file.as_str(),
             Self::FileGroup(value) => value.group.as_str(),
-            Self::ProjectGlob(value) | Self::WorkspaceGlob(value) => value.glob.as_str(),
-            Self::ExternalProject(value) => value.project.as_str(),
+            Self::Glob(value) => value.glob.as_str(),
+            Self::Project(value) => value.project.as_str(),
         }
     }
 
     pub fn is_glob(&self) -> bool {
-        matches!(
-            self,
-            Self::EnvVarGlob(_) | Self::ProjectGlob(_) | Self::WorkspaceGlob(_)
-        )
+        matches!(self, Self::EnvVarGlob(_) | Self::Glob(_))
     }
 }
 
@@ -410,19 +406,11 @@ impl FromStr for Input {
 
         match uri.scheme.as_str() {
             "file" => Ok(Self::File(FileInput::from_uri(uri)?)),
-            "glob" => {
-                let glob = GlobInput::from_uri(uri)?;
-
-                Ok(if glob.is_workspace_relative() {
-                    Self::WorkspaceGlob(glob)
-                } else {
-                    Self::ProjectGlob(glob)
-                })
-            }
+            "glob" => Ok(Self::Glob(GlobInput::from_uri(uri)?)),
             "group" | "filegroup" | "fileGroup" => {
                 Ok(Self::FileGroup(FileGroupInput::from_uri(uri)?))
             }
-            "project" => Ok(Self::ExternalProject(ExternalProjectInput::from_uri(uri)?)),
+            "project" => Ok(Self::Project(ProjectInput::from_uri(uri)?)),
             other => Err(ParseError::new(format!(
                 "input protocol `{other}://` is not supported"
             ))),
@@ -436,14 +424,10 @@ impl TryFrom<InputBase> for Input {
     fn try_from(base: InputBase) -> Result<Self, Self::Error> {
         match base {
             InputBase::Raw(input) => Self::parse(input),
-            InputBase::ExternalProject(input) => Ok(Self::ExternalProject(input)),
             InputBase::File(input) => Ok(Self::File(input)),
             InputBase::FileGroup(input) => Ok(Self::FileGroup(input)),
-            InputBase::Glob(input) => Ok(if input.is_workspace_relative() {
-                Self::WorkspaceGlob(input)
-            } else {
-                Self::ProjectGlob(input)
-            }),
+            InputBase::Glob(input) => Ok(Self::Glob(input)),
+            InputBase::Project(input) => Ok(Self::Project(input)),
         }
     }
 }
@@ -459,7 +443,7 @@ impl Schematic for Input {
             schema.infer::<FileInput>(),
             schema.infer::<FileGroupInput>(),
             schema.infer::<GlobInput>(),
-            schema.infer::<ExternalProjectInput>(),
+            schema.infer::<ProjectInput>(),
         ]))
     }
 }
@@ -473,13 +457,12 @@ impl Serialize for Input {
             Input::EnvVar(var) | Input::EnvVarGlob(var) => {
                 serializer.serialize_str(format!("${var}").as_str())
             }
-            Input::ExternalProject(input) => ExternalProjectInput::serialize(input, serializer),
             Input::TokenFunc(token) | Input::TokenVar(token) => serializer.serialize_str(token),
             Input::File(input) => FileInput::serialize(input, serializer),
             Input::FileGroup(input) => FileGroupInput::serialize(input, serializer),
             // Input::ManifestDeps(input) => ManifestDepsInput::serialize(input, serializer),
-            Input::ProjectGlob(input) => GlobInput::serialize(input, serializer),
-            Input::WorkspaceGlob(input) => GlobInput::serialize(input, serializer),
+            Input::Glob(input) => GlobInput::serialize(input, serializer),
+            Input::Project(input) => ProjectInput::serialize(input, serializer),
         }
     }
 }
@@ -491,8 +474,8 @@ impl Serialize for Input {
 )]
 enum InputBase {
     Raw(String),
-    ExternalProject(ExternalProjectInput),
     File(FileInput),
     FileGroup(FileGroupInput),
     Glob(GlobInput),
+    Project(ProjectInput),
 }

@@ -383,9 +383,11 @@ impl<'graph> TokenExpander<'graph> {
                     ],
                 )?;
 
-                let group = self.project.get_file_group(arg)?;
-
-                self.update_result_for_file_group(group, func, &mut result)?;
+                self.update_result_for_file_group(
+                    self.project.get_file_group(arg)?,
+                    func,
+                    &mut result,
+                )?;
             }
             // Inputs, outputs
             "in" => {

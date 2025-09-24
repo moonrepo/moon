@@ -1,7 +1,7 @@
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, TaskDependencyConfig, WorkspaceProjects,
-    WorkspaceProjectsConfig,
+    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
+    WorkspaceProjects, WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
 use moon_project_graph::*;
@@ -739,7 +739,7 @@ mod project_graph {
 
             assert_eq!(
                 project.dependencies,
-                vec![DependencyConfig {
+                vec![ProjectDependencyConfig {
                     id: Id::raw("base"),
                     scope: DependencyScope::Development,
                     source: DependencySource::Explicit,
@@ -1032,7 +1032,7 @@ mod project_graph {
                         let mut data = data.write().await;
 
                         if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
-                            data.dependencies.push(DependencyConfig {
+                            data.dependencies.push(ProjectDependencyConfig {
                                 id: Id::raw("@three"),
                                 scope: DependencyScope::Build,
                                 ..Default::default()
@@ -1040,7 +1040,7 @@ mod project_graph {
                         }
 
                         if event.project_id == "implicit" {
-                            data.dependencies.push(DependencyConfig {
+                            data.dependencies.push(ProjectDependencyConfig {
                                 id: Id::raw("@one"),
                                 scope: DependencyScope::Peer,
                                 ..Default::default()
@@ -1150,11 +1150,11 @@ mod project_graph {
 
             assert_eq!(
                 graph.get_project("dupes-depends-on").unwrap().dependencies,
-                vec![DependencyConfig {
+                vec![ProjectDependencyConfig {
                     id: Id::raw("alias-two"),
                     scope: DependencyScope::Build,
                     source: DependencySource::Explicit,
-                    ..DependencyConfig::default()
+                    ..Default::default()
                 }]
             );
 

@@ -42,7 +42,7 @@ config_unit_enum!(
 config_struct!(
     /// Expanded information about a project dependency.
     #[derive(Config)]
-    pub struct DependencyConfig {
+    pub struct ProjectDependencyConfig {
         /// ID of the depended on project.
         pub id: Id,
 
@@ -57,7 +57,7 @@ config_struct!(
     }
 );
 
-impl DependencyConfig {
+impl ProjectDependencyConfig {
     pub fn new(id: Id) -> Self {
         Self {
             id,

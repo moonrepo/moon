@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, Input, LanguageType, LayerType, OwnersPaths,
-    PlatformType, ProjectConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
+    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, PlatformType,
+    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
     ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
@@ -150,15 +150,15 @@ dependsOn:
             assert_eq!(
                 config.depends_on,
                 vec![
-                    ProjectDependsOn::Object(DependencyConfig {
+                    ProjectDependsOn::Object(ProjectDependencyConfig {
                         id: Id::raw("a"),
                         scope: DependencyScope::Development,
-                        ..DependencyConfig::default()
+                        ..Default::default()
                     }),
-                    ProjectDependsOn::Object(DependencyConfig {
+                    ProjectDependsOn::Object(ProjectDependencyConfig {
                         id: Id::raw("b"),
                         scope: DependencyScope::Production,
-                        ..DependencyConfig::default()
+                        ..Default::default()
                     })
                 ]
             );
@@ -180,10 +180,10 @@ dependsOn:
                 config.depends_on,
                 vec![
                     ProjectDependsOn::String(Id::raw("a")),
-                    ProjectDependsOn::Object(DependencyConfig {
+                    ProjectDependsOn::Object(ProjectDependencyConfig {
                         id: Id::raw("b"),
                         scope: DependencyScope::Production,
-                        ..DependencyConfig::default()
+                        ..Default::default()
                     })
                 ]
             );
@@ -734,7 +734,7 @@ workspace:
                 ProjectConfig {
                     depends_on: vec![
                         ProjectDependsOn::String(Id::raw("a")),
-                        ProjectDependsOn::Object(DependencyConfig {
+                        ProjectDependsOn::Object(ProjectDependencyConfig {
                             id: Id::raw("b"),
                             scope: DependencyScope::Build,
                             source: DependencySource::Implicit,

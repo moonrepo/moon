@@ -6,7 +6,7 @@ use moon_common::{
     path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, HasherConfig, HasherOptimization,
+    ProjectDependencyConfig, DependencyScope, DependencySource, HasherConfig, HasherOptimization,
     PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, PythonConfig,
     PythonPackageManager, UnresolvedVersionSpec,
 };
@@ -161,7 +161,7 @@ impl Platform for PythonPlatform {
         &self,
         project_id: &str,
         project_source: &str,
-    ) -> miette::Result<Vec<DependencyConfig>> {
+    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
         let mut implicit_deps = vec![];
 
         if self.config.package_manager == PythonPackageManager::Uv {
@@ -184,7 +184,7 @@ impl Platform for PythonPlatform {
                         && dep.origin.is_none()
                         && let Some(dep_project_id) = self.package_names.get(&dep_name)
                     {
-                        implicit_deps.push(DependencyConfig {
+                        implicit_deps.push(ProjectDependencyConfig {
                             id: dep_project_id.to_owned(),
                             scope: DependencyScope::Production,
                             source: DependencySource::Implicit,

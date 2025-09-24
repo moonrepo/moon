@@ -4,7 +4,7 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    DependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType,
+    ProjectDependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType,
     ProjectConfig, StackType,
 };
 use moon_file_group::FileGroup;
@@ -26,7 +26,7 @@ cacheable!(
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.
-        pub dependencies: Vec<DependencyConfig>,
+        pub dependencies: Vec<ProjectDependencyConfig>,
 
         /// File groups specific to the project. Inherits all file groups from the global config.
         pub file_groups: BTreeMap<Id, FileGroup>,

@@ -11,7 +11,7 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, DependencyType, InheritedTasksManager,
+    ConfigLoader, ProjectDependencyConfig, DependencyScope, DependencyType, InheritedTasksManager,
     ProjectsSourcesList, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;
@@ -437,7 +437,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {
             for dep_config in &extended_data.dependencies {
-                builder.extend_with_dependency(DependencyConfig {
+                builder.extend_with_dependency(ProjectDependencyConfig {
                     id: ProjectBuildData::resolve_id(&dep_config.id, &self.project_data),
                     scope: dep_config.scope,
                     ..Default::default()

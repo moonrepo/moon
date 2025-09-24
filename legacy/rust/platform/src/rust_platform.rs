@@ -9,7 +9,7 @@ use moon_common::{
     path::{WorkspaceRelativePath, WorkspaceRelativePathBuf, exe_name, is_root_level_source},
 };
 use moon_config::{
-    BinEntry, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
+    BinEntry, ProjectDependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, RustConfig, UnresolvedVersionSpec,
 };
 use moon_console::{Checkpoint, Console};
@@ -213,7 +213,7 @@ impl Platform for RustPlatform {
         &self,
         project_id: &str,
         project_source: &str,
-    ) -> miette::Result<Vec<DependencyConfig>> {
+    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
         let mut implicit_deps = vec![];
 
         debug!(
@@ -229,7 +229,7 @@ impl Platform for RustPlatform {
                     if dep.detail().is_some_and(|d| d.path.is_some())
                         && let Some(dep_project_id) = self.package_names.get(dep_name)
                     {
-                        implicit_deps.push(DependencyConfig {
+                        implicit_deps.push(ProjectDependencyConfig {
                             id: dep_project_id.to_owned(),
                             scope: *scope,
                             source: DependencySource::Implicit,

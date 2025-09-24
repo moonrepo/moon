@@ -3,8 +3,8 @@ mod utils;
 use moon_common::Id;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{
-    DependencyConfig, FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType,
-    OutputPath, ProjectInput,
+    FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, OutputPath,
+    ProjectDependencyConfig, ProjectInput,
 };
 use moon_env_var::GlobalEnvBag;
 use moon_task::{TaskFileInput, TaskGlobInput};
@@ -1485,15 +1485,15 @@ mod token_expander {
             let mut project = create_project(sandbox.path());
 
             project.dependencies.extend([
-                DependencyConfig {
+                ProjectDependencyConfig {
                     id: Id::raw("a"),
                     ..Default::default()
                 },
-                DependencyConfig {
+                ProjectDependencyConfig {
                     id: Id::raw("b"),
                     ..Default::default()
                 },
-                DependencyConfig {
+                ProjectDependencyConfig {
                     id: Id::raw("c"),
                     ..Default::default()
                 },

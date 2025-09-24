@@ -1,7 +1,7 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencySource, InheritedTasksManager, InheritedTasksResult,
-    LanguageType, ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
+    ConfigLoader, DependencySource, InheritedTasksManager, InheritedTasksResult, LanguageType,
+    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -221,7 +221,7 @@ impl<'app> ProjectBuilder<'app> {
 
     /// Extend the builder with a project dependency implicitly derived from the project graph.
     /// Implicit dependencies *must not* override explicitly configured dependencies.
-    pub fn extend_with_dependency(&mut self, mut config: DependencyConfig) -> &mut Self {
+    pub fn extend_with_dependency(&mut self, mut config: ProjectDependencyConfig) -> &mut Self {
         let local_config = self
             .local_config
             .as_mut()
@@ -292,7 +292,7 @@ impl<'app> ProjectBuilder<'app> {
     fn build_dependencies(
         &self,
         tasks: &BTreeMap<Id, Task>,
-    ) -> miette::Result<Vec<DependencyConfig>> {
+    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(
@@ -303,9 +303,9 @@ impl<'app> ProjectBuilder<'app> {
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
                 let dep_config = match dep_on {
-                    ProjectDependsOn::String(id) => DependencyConfig {
+                    ProjectDependsOn::String(id) => ProjectDependencyConfig {
                         id: id.to_owned(),
-                        ..DependencyConfig::default()
+                        ..Default::default()
                     },
                     ProjectDependsOn::Object(config) => config.to_owned(),
                 };

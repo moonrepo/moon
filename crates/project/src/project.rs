@@ -1,3 +1,4 @@
+use crate::project_error::ProjectError;
 use moon_common::{
     Id, cacheable,
     path::{WorkspaceRelativePathBuf, is_root_level_source},
@@ -102,6 +103,26 @@ impl Project {
                 Some(cfg) => cfg.is_enabled(),
             })
             .collect()
+    }
+
+    /// Return the file group by ID or fail with an error.
+    pub fn get_file_group(&self, group_id: impl AsRef<str>) -> Result<&FileGroup, ProjectError> {
+        self.file_groups
+            .get(group_id.as_ref())
+            .ok_or_else(|| ProjectError::UnknownFileGroup {
+                group_id: group_id.as_ref().to_string(),
+                project_id: self.id.to_string(),
+            })
+    }
+
+    /// Return the task by ID or fail with an error.
+    pub fn get_task(&self, task_id: impl AsRef<str>) -> Result<&Task, ProjectError> {
+        self.tasks
+            .get(task_id.as_ref())
+            .ok_or_else(|| ProjectError::UnknownTask {
+                task_id: task_id.as_ref().to_string(),
+                project_id: self.id.to_string(),
+            })
     }
 
     /// Return true if the root-level project.

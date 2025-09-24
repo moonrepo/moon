@@ -16,13 +16,13 @@ use moon_config::{
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
-use moon_project::Project;
+use moon_project::{Project, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
+use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskMetadata};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
@@ -497,7 +497,11 @@ impl<'app> WorkspaceBuilder<'app> {
 
         {
             let Some(build_data) = self.task_data.get(&target) else {
-                return Err(TaskGraphError::UnconfiguredTarget(target).into());
+                return Err(ProjectError::UnknownTask {
+                    task_id: target.task_id.to_string(),
+                    project_id: target.get_project_id().unwrap().to_string(),
+                }
+                .into());
             };
 
             // Already loaded, exit early with existing index

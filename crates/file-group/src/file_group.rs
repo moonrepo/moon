@@ -61,11 +61,14 @@ impl FileGroup {
             Input::TokenFunc(_) | Input::TokenVar(_) => {
                 return Err(FileGroupError::NoTokens(self.id.to_string()).into());
             }
-            Input::ProjectFile(file) | Input::WorkspaceFile(file) => {
+            Input::File(file) => {
                 self.files.push(file.to_workspace_relative(project_source));
             }
-            Input::ProjectGlob(glob) | Input::WorkspaceGlob(glob) => {
+            Input::Glob(glob) => {
                 self.globs.push(glob.to_workspace_relative(project_source));
+            }
+            Input::FileGroup(_) | Input::Project(_) => {
+                // Skip
             }
         };
 

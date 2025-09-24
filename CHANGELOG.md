@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed `go.mod` parsing failures when `tool` is a list.
+- **Python**
+  - Potential fix for Windows path escaping issues when running `uv venv`.
+
 ## 1.40.4
 
 #### 🐞 Fixes

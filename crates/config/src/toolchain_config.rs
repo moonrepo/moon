@@ -148,7 +148,7 @@ impl ToolchainConfig {
             )),
             "unstable_go" => Some(find_debug_locator_with_url_fallback(
                 "go_toolchain",
-                "0.1.5",
+                "0.1.6",
             )),
             "unstable_node" => Some(find_debug_locator_with_url_fallback(
                 "node_toolchain",

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.40.5
 
 #### 🧰 Toolchains
 

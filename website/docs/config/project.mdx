@@ -791,8 +791,8 @@ They can be defined as a literal path, or a `file://` URI <VersionLabel inline v
 or as an object with a `file` property <VersionLabel inline version="1.39.0" />. Additionally, the
 following parameters are supported as a URI query or as object fields:
 
-- `content` (`string`) - When determining affected state, will match against the file's content
-  using the defined regex pattern, instead of relying on file existence.
+- `content`, `match`, `matches` (`string`) - When determining affected state, will match against the
+  file's content using the defined regex pattern, instead of relying on file existence.
 - `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
   warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
   a warning.
@@ -866,6 +866,41 @@ Be aware that files that match the glob, but are ignored via `.gitignore` (or si
 be considered an input. To work around this, use explicit file inputs.
 
 :::
+
+#### External projects<VersionLabel version="1.41.0" />
+
+Tasks can also depend on files and globs from other projects within the same workspace. This is
+useful for handling cross-project relationships without needing to define explicit task
+dependencies.
+
+External projects can be defined as a `project://` URI, or as an object with a `project` property,
+both of which require a project identifier, or `^` for all dependent projects. Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `group`, `fileGroup` (`id`) - The name of a file group within the external project in which file
+  and glob patterns will be used for matching. Takes precedence over `filter`.
+- `filter` (`string[]`) - A list of
+  [project relative glob patterns](../concepts/file-pattern#project-relative) that will be used for
+  matching.
+
+If neither `group` nor `filter` are defined, all files within the external project are considered a
+match (`**/*`).
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Using project protocol
+      - 'project://foo'
+      - 'project://bar?group=sources'
+      - 'project://baz?filter=src/**/*'
+      # Using an object
+      - project: 'foo'
+      - project: 'bar'
+        group: 'sources'
+      - project: 'baz'
+        filter: ['src/**/*']
+```
 
 ### `local`
 

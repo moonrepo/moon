@@ -62,7 +62,7 @@ tasks:
         assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
-            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
+            Some(vec![Input::Glob(create_glob_input("src/**/*"))])
         );
 
         let start = config.tasks.get("start").unwrap();
@@ -71,7 +71,7 @@ tasks:
         assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
         assert_eq!(
             start.inputs,
-            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
+            Some(vec![Input::Glob(create_glob_input("src/**/*"))])
         );
     }
 
@@ -102,7 +102,7 @@ tasks:
         assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
-            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
+            Some(vec![Input::Glob(create_glob_input("src/**/*"))])
         );
 
         let start = config.tasks.get("start").unwrap();
@@ -111,7 +111,7 @@ tasks:
         assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
         assert_eq!(
             start.inputs,
-            Some(vec![Input::ProjectGlob(create_glob_input("src/**/*"))])
+            Some(vec![Input::Glob(create_glob_input("src/**/*"))])
         );
     }
 
@@ -231,17 +231,17 @@ fileGroups:
                     (
                         Id::raw("files"),
                         vec![
-                            Input::WorkspaceFile(create_file_input("/ws/relative")),
-                            Input::ProjectFile(create_file_input("proj/relative"))
+                            Input::File(create_file_input("/ws/relative")),
+                            Input::File(create_file_input("proj/relative"))
                         ]
                     ),
                     (
                         Id::raw("globs"),
                         vec![
-                            Input::WorkspaceGlob(create_glob_input("/ws/**/*")),
-                            Input::WorkspaceGlob(create_glob_input("!/ws/**/*")),
-                            Input::ProjectGlob(create_glob_input("proj/**/*")),
-                            Input::ProjectGlob(create_glob_input("!proj/**/*")),
+                            Input::Glob(create_glob_input("/ws/**/*")),
+                            Input::Glob(create_glob_input("!/ws/**/*")),
+                            Input::Glob(create_glob_input("proj/**/*")),
+                            Input::Glob(create_glob_input("!proj/**/*")),
                         ]
                     ),
                 ])
@@ -514,7 +514,7 @@ tags:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid identifier format for foo bar")]
+        #[should_panic(expected = "Invalid identifier format for `foo bar`")]
         fn errors_on_invalid_format() {
             test_load_config("moon.yml", "tags: ['foo bar']", |path| {
                 load_config_from_root(path, ".")
@@ -755,11 +755,11 @@ workspace:
                     file_groups: FxHashMap::from_iter([
                         (
                             Id::raw("sources"),
-                            vec![Input::ProjectGlob(create_glob_input("src/**/*"))]
+                            vec![Input::Glob(create_glob_input("src/**/*"))]
                         ),
                         (
                             Id::raw("tests"),
-                            vec![Input::WorkspaceGlob(create_glob_input("/**/*.test.*"))]
+                            vec![Input::Glob(create_glob_input("/**/*.test.*"))]
                         )
                     ]),
                     id: Some(Id::raw("custom-id")),

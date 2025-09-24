@@ -1,6 +1,7 @@
+use moon_common::Id;
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, GlobInput, GlobPath, Input, ManifestDepsInput,
-    ProjectSourcesInput, Uri, test_utils::*,
+    ProjectInput, Uri, test_utils::*,
 };
 use schematic::RegexSetting;
 
@@ -14,7 +15,7 @@ mod input_shape {
         fn converts_backward_slashes() {
             assert_eq!(
                 Input::parse("some\\file.txt").unwrap(),
-                Input::ProjectFile(create_file_input("some/file.txt"))
+                Input::File(create_file_input("some/file.txt"))
             );
         }
 
@@ -78,7 +79,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("file://file.txt?optional").unwrap(),
-                Input::ProjectFile(input)
+                Input::File(input)
             );
 
             let mut input = create_file_input("/file.txt");
@@ -86,7 +87,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("file:///file.txt?optional=false").unwrap(),
-                Input::WorkspaceFile(input)
+                Input::File(input)
             );
         }
 
@@ -94,19 +95,19 @@ mod input_shape {
         fn file_project_relative() {
             assert_eq!(
                 Input::parse("file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
             assert_eq!(
                 Input::parse("./file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("././dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
         }
 
@@ -114,19 +115,19 @@ mod input_shape {
         fn file_project_relative_protocol() {
             assert_eq!(
                 Input::parse("file://file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("file://dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
             assert_eq!(
                 Input::parse("file://./file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("file.rs"))
+                Input::File(create_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("file://././dir/file.rs").unwrap(),
-                Input::ProjectFile(create_file_input("dir/file.rs"))
+                Input::File(create_file_input("dir/file.rs"))
             );
         }
 
@@ -134,17 +135,17 @@ mod input_shape {
         fn file_workspace_relative() {
             assert_eq!(
                 Input::parse("/file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/file.rs"))
+                Input::File(create_file_input("/file.rs"))
             );
             assert_eq!(
                 Input::parse("/dir/file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/dir/file.rs"))
+                Input::File(create_file_input("/dir/file.rs"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("/.cache/$projectSource").unwrap(),
-                Input::WorkspaceFile(create_file_input("/.cache/$projectSource"))
+                Input::File(create_file_input("/.cache/$projectSource"))
             );
         }
 
@@ -152,17 +153,17 @@ mod input_shape {
         fn file_workspace_relative_protocol() {
             assert_eq!(
                 Input::parse("file:///file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/file.rs"))
+                Input::File(create_file_input("/file.rs"))
             );
             assert_eq!(
                 Input::parse("file:///dir/file.rs").unwrap(),
-                Input::WorkspaceFile(create_file_input("/dir/file.rs"))
+                Input::File(create_file_input("/dir/file.rs"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("file:///.cache/$projectSource").unwrap(),
-                Input::WorkspaceFile(create_file_input("/.cache/$projectSource"))
+                Input::File(create_file_input("/.cache/$projectSource"))
             );
         }
 
@@ -173,7 +174,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("glob://file.*?cache").unwrap(),
-                Input::ProjectGlob(input)
+                Input::Glob(input)
             );
 
             let mut input = create_glob_input("/file.*");
@@ -181,7 +182,7 @@ mod input_shape {
 
             assert_eq!(
                 Input::parse("glob:///file.*?cache=false").unwrap(),
-                Input::WorkspaceGlob(input)
+                Input::Glob(input)
             );
         }
 
@@ -203,22 +204,22 @@ mod input_shape {
                 input.cache = true;
 
                 assert_eq!(
-                    Input::ProjectGlob(GlobInput {
+                    Input::Glob(GlobInput {
                         glob: GlobPath(pat.into()),
                         cache: true
                     }),
-                    Input::ProjectGlob(input)
+                    Input::Glob(input)
                 );
 
                 let mut input = create_glob_input(pat);
                 input.cache = false;
 
                 assert_eq!(
-                    Input::ProjectGlob(GlobInput {
+                    Input::Glob(GlobInput {
                         glob: GlobPath(pat.into()),
                         cache: false
                     }),
-                    Input::ProjectGlob(input)
+                    Input::Glob(input)
                 );
             }
         }
@@ -227,21 +228,21 @@ mod input_shape {
         fn glob_project_relative() {
             assert_eq!(
                 Input::parse("!file.*").unwrap(),
-                Input::ProjectGlob(create_glob_input("!file.*"))
+                Input::Glob(create_glob_input("!file.*"))
             );
             assert_eq!(
                 Input::parse("dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
             assert_eq!(
                 Input::parse("./dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("$projectSource/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("$projectSource/**/*"))
+                Input::Glob(create_glob_input("$projectSource/**/*"))
             );
         }
 
@@ -249,21 +250,21 @@ mod input_shape {
         fn glob_project_relative_protocol() {
             assert_eq!(
                 Input::parse("glob://!file.*").unwrap(),
-                Input::ProjectGlob(create_glob_input("!file.*"))
+                Input::Glob(create_glob_input("!file.*"))
             );
             assert_eq!(
                 Input::parse("glob://dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
             assert_eq!(
                 Input::parse("glob://./dir/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("dir/**/*"))
+                Input::Glob(create_glob_input("dir/**/*"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("glob://$projectSource/**/*").unwrap(),
-                Input::ProjectGlob(create_glob_input("$projectSource/**/*"))
+                Input::Glob(create_glob_input("$projectSource/**/*"))
             );
         }
 
@@ -271,15 +272,15 @@ mod input_shape {
         fn glob_workspace_relative() {
             assert_eq!(
                 Input::parse("/!file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("!/file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("/dir/**/*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+                Input::Glob(create_glob_input("/dir/**/*"))
             );
         }
 
@@ -287,15 +288,94 @@ mod input_shape {
         fn glob_workspace_relative_protocol() {
             assert_eq!(
                 Input::parse("glob:///!file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("glob://!/file.*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("!/file.*"))
+                Input::Glob(create_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("glob:///dir/**/*").unwrap(),
-                Input::WorkspaceGlob(create_glob_input("/dir/**/*"))
+                Input::Glob(create_glob_input("/dir/**/*"))
+            );
+        }
+
+        #[test]
+        fn file_group_protocol() {
+            assert_eq!(
+                Input::parse("group://sources").unwrap(),
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("group://sources?format=dirs").unwrap(),
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    format: FileGroupInputFormat::Dirs,
+                })
+            );
+            assert_eq!(
+                Input::parse("group://sources?as=root").unwrap(),
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    format: FileGroupInputFormat::Root,
+                })
+            );
+        }
+
+        #[test]
+        fn project_protocol() {
+            assert_eq!(
+                Input::parse("project://app").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "app".into(),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://app?filter=src/**&filter=!tests/**/*").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "app".into(),
+                    filter: vec!["src/**".into(), "!tests/**/*".into()],
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://app?group=sources").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "app".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn project_protocol_all() {
+            assert_eq!(
+                Input::parse("project://^").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "^".into(),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://^?filter=src/**&filter=!tests/**/*").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "^".into(),
+                    filter: vec!["src/**".into(), "!tests/**/*".into()],
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://^?group=sources").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "^".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
             );
         }
 
@@ -325,18 +405,18 @@ mod input_shape {
         fn files() {
             let input: Input = serde_json::from_str(r#""file.txt""#).unwrap();
 
-            assert_eq!(input, Input::ProjectFile(create_file_input("file.txt")));
+            assert_eq!(input, Input::File(create_file_input("file.txt")));
 
             let input: Input = serde_json::from_str(r#"{ "file": "file.txt" }"#).unwrap();
 
-            assert_eq!(input, Input::ProjectFile(create_file_input("file.txt")));
+            assert_eq!(input, Input::File(create_file_input("file.txt")));
 
             let input: Input =
                 serde_json::from_str(r#"{ "file": "dir/file.txt", "optional": true }"#).unwrap();
 
             assert_eq!(
                 input,
-                Input::ProjectFile({
+                Input::File({
                     let mut inner = create_file_input("dir/file.txt");
                     inner.optional = Some(true);
                     inner
@@ -350,7 +430,7 @@ mod input_shape {
 
             assert_eq!(
                 input,
-                Input::WorkspaceFile({
+                Input::File({
                     let mut inner = create_file_input("/root/file.txt");
                     inner.optional = Some(true);
                     inner.content = Some(RegexSetting::new("a|b|c").unwrap());
@@ -363,18 +443,18 @@ mod input_shape {
         fn globs() {
             let input: Input = serde_json::from_str(r#""file.*""#).unwrap();
 
-            assert_eq!(input, Input::ProjectGlob(create_glob_input("file.*")));
+            assert_eq!(input, Input::Glob(create_glob_input("file.*")));
 
             let input: Input = serde_json::from_str(r#"{ "glob": "file.*" }"#).unwrap();
 
-            assert_eq!(input, Input::ProjectGlob(create_glob_input("file.*")));
+            assert_eq!(input, Input::Glob(create_glob_input("file.*")));
 
             let input: Input =
                 serde_json::from_str(r#"{ "glob": "/dir/file.*", "cache": false }"#).unwrap();
 
             assert_eq!(
                 input,
-                Input::WorkspaceGlob({
+                Input::Glob({
                     let mut inner = create_glob_input("/dir/file.*");
                     inner.cache = false;
                     inner
@@ -392,6 +472,108 @@ mod input_shape {
         #[should_panic] // Swallowed by enum expecting message
         fn errors_for_parent_traversal_inner() {
             let _: Input = serde_json::from_str(r#"{ "glob": "dir/../../file.*" }"#).unwrap();
+        }
+
+        #[test]
+        fn file_group() {
+            let input: Input = serde_json::from_str(r#"{ "group": "sources" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input =
+                serde_json::from_str(r#"{ "group": "sources", "format": "files" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::FileGroup(FileGroupInput {
+                    group: Id::raw("sources"),
+                    format: FileGroupInputFormat::Files,
+                })
+            );
+        }
+
+        #[test]
+        fn project_sources() {
+            let input: Input = serde_json::from_str(r#"{ "project": "app" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::Project(ProjectInput {
+                    project: "app".into(),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input =
+                serde_json::from_str(r#"{ "project": "app", "group": "sources" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::Project(ProjectInput {
+                    project: "app".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input = serde_json::from_str(
+                r#"{ "project": "app", "group": "sources", "filter": ["src/**/*"] }"#,
+            )
+            .unwrap();
+
+            assert_eq!(
+                input,
+                Input::Project(ProjectInput {
+                    project: "app".into(),
+                    group: Some(Id::raw("sources")),
+                    filter: vec!["src/**/*".into()],
+                })
+            );
+        }
+
+        #[test]
+        fn project_sources_all() {
+            let input: Input = serde_json::from_str(r#"{ "project": "^" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::Project(ProjectInput {
+                    project: "^".into(),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input =
+                serde_json::from_str(r#"{ "project": "^", "group": "sources" }"#).unwrap();
+
+            assert_eq!(
+                input,
+                Input::Project(ProjectInput {
+                    project: "^".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+
+            let input: Input = serde_json::from_str(
+                r#"{ "project": "^", "group": "sources", "filter": ["src/**/*"] }"#,
+            )
+            .unwrap();
+
+            assert_eq!(
+                input,
+                Input::Project(ProjectInput {
+                    project: "^".into(),
+                    group: Some(Id::raw("sources")),
+                    filter: vec!["src/**/*".into()],
+                })
+            );
         }
     }
 
@@ -695,8 +877,7 @@ mod input_shape {
 
         #[test]
         fn id() {
-            let input =
-                ProjectSourcesInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
+            let input = ProjectInput::from_uri(Uri::parse("project://app").unwrap()).unwrap();
 
             assert_eq!(input.project, "app");
         }
@@ -704,14 +885,14 @@ mod input_shape {
         #[test]
         fn supports_file_group_field() {
             for key in ["fileGroup", "group"] {
-                let input = ProjectSourcesInput::from_uri(
+                let input = ProjectInput::from_uri(
                     Uri::parse(format!("project://app?{key}").as_str()).unwrap(),
                 )
                 .unwrap();
 
                 assert!(input.group.is_none());
 
-                let input = ProjectSourcesInput::from_uri(
+                let input = ProjectInput::from_uri(
                     Uri::parse(format!("project://app?{key}=a").as_str()).unwrap(),
                 )
                 .unwrap();
@@ -723,14 +904,13 @@ mod input_shape {
         #[test]
         fn supports_filter_field() {
             let input =
-                ProjectSourcesInput::from_uri(Uri::parse("project://app?filter").unwrap()).unwrap();
+                ProjectInput::from_uri(Uri::parse("project://app?filter").unwrap()).unwrap();
 
             assert!(input.filter.is_empty());
 
-            let input = ProjectSourcesInput::from_uri(
-                Uri::parse("project://app?filter=a&filter=b").unwrap(),
-            )
-            .unwrap();
+            let input =
+                ProjectInput::from_uri(Uri::parse("project://app?filter=a&filter=b").unwrap())
+                    .unwrap();
 
             assert_eq!(input.filter, ["a", "b"]);
         }
@@ -738,19 +918,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "a project identifier is required")]
         fn errors_no_id() {
-            ProjectSourcesInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
+            ProjectInput::from_uri(Uri::parse("project://").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "Invalid identifier format")]
         fn errors_invalid_id() {
-            ProjectSourcesInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
+            ProjectInput::from_uri(Uri::parse("project://@&n3k(").unwrap()).unwrap();
         }
 
         #[test]
         #[should_panic(expected = "unknown field `unknown`")]
         fn errors_unknown_field() {
-            ProjectSourcesInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
+            ProjectInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
         }
     }
 }

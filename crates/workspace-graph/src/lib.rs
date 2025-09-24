@@ -64,6 +64,20 @@ impl WorkspaceGraph {
         self.projects.get_all()
     }
 
+    pub fn get_projects_by_id<I, T>(&self, ids: I) -> miette::Result<Vec<Arc<Project>>>
+    where
+        I: IntoIterator<Item = T>,
+        T: AsRef<str>,
+    {
+        let mut projects = vec![];
+
+        for id in ids {
+            projects.push(self.get_project(id.as_ref())?);
+        }
+
+        Ok(projects)
+    }
+
     pub fn get_task(&self, target: &Target) -> miette::Result<Arc<Task>> {
         self.tasks.get(target)
     }

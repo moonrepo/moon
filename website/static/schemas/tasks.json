@@ -89,6 +89,51 @@
         }
       ]
     },
+    "FileGroupInput": {
+      "description": "A file group input.",
+      "type": "object",
+      "properties": {
+        "as": {
+          "title": "as",
+          "default": "static",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FileGroupInputFormat"
+            }
+          ]
+        },
+        "format": {
+          "title": "format",
+          "default": "static",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FileGroupInputFormat"
+            }
+          ]
+        },
+        "group": {
+          "title": "group",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FileGroupInputFormat": {
+      "description": "Format to resolve the file group into.",
+      "type": "string",
+      "enum": [
+        "static",
+        "dirs",
+        "envs",
+        "files",
+        "globs",
+        "root"
+      ]
+    },
     "FileInput": {
       "description": "A file path input.",
       "type": "object",
@@ -151,7 +196,13 @@
           "$ref": "#/definitions/FileInput"
         },
         {
+          "$ref": "#/definitions/FileGroupInput"
+        },
+        {
           "$ref": "#/definitions/GlobInput"
+        },
+        {
+          "$ref": "#/definitions/ProjectInput"
         }
       ]
     },
@@ -167,6 +218,46 @@
         "system",
         "unknown"
       ]
+    },
+    "ProjectInput": {
+      "description": "An external project input.",
+      "type": "object",
+      "properties": {
+        "fileGroup": {
+          "title": "fileGroup",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filter": {
+          "title": "filter",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group": {
+          "title": "group",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "project": {
+          "title": "project",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "TaskArgs": {
       "description": "Configures a command to execute, and its arguments.",

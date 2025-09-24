@@ -352,7 +352,7 @@ constraints:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid identifier format for bad id")]
+        #[should_panic(expected = "Invalid identifier format for `bad id`")]
         fn errors_on_invalid_tag_format() {
             test_load_config(
                 FILENAME,

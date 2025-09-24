@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, LanguageType, TaskArgs, TaskConfig,
+    DependencyScope, DependencySource, LanguageType, ProjectDependencyConfig, TaskArgs, TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -78,13 +78,13 @@ mod project_builder {
         assert_eq!(
             project.dependencies,
             vec![
-                DependencyConfig {
+                ProjectDependencyConfig {
                     id: "foo".try_into().unwrap(),
                     source: DependencySource::Explicit,
                     scope: DependencyScope::Development,
                     ..Default::default()
                 },
-                DependencyConfig {
+                ProjectDependencyConfig {
                     id: "bar".try_into().unwrap(),
                     source: DependencySource::Explicit,
                     ..Default::default()
@@ -468,21 +468,21 @@ mod project_builder {
 
             let project = container
                 .build_project_with("bar", |builder| {
-                    builder.extend_with_dependency(DependencyConfig {
+                    builder.extend_with_dependency(ProjectDependencyConfig {
                         id: "foo".try_into().unwrap(),
                         scope: DependencyScope::Development,
-                        ..DependencyConfig::default()
+                        ..Default::default()
                     });
                 })
                 .await;
 
             assert_eq!(
                 project.dependencies,
-                vec![DependencyConfig {
+                vec![ProjectDependencyConfig {
                     id: "foo".try_into().unwrap(),
                     scope: DependencyScope::Development,
                     source: DependencySource::Implicit,
-                    ..DependencyConfig::default()
+                    ..Default::default()
                 }]
             );
         }

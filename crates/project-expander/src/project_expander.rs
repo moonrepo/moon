@@ -1,6 +1,6 @@
 use crate::expander_context::ProjectExpanderContext;
 use moon_common::color;
-use moon_config::DependencyConfig;
+use moon_config::ProjectDependencyConfig;
 use moon_project::Project;
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -45,7 +45,7 @@ impl<'graph> ProjectExpander<'graph> {
             // Use a map so that aliases and IDs get flattened
             depends_on.insert(
                 new_dep_id.clone(),
-                DependencyConfig {
+                ProjectDependencyConfig {
                     id: new_dep_id,
                     ..dep_config
                 },

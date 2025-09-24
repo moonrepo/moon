@@ -159,15 +159,14 @@ impl PythonTool {
         working_dir: &Path,
         workspace_root: &Path,
     ) -> miette::Result<()> {
+        // Avoid Windows path escaping issues
+        // https://github.com/moonrepo/moon/issues/2129
+        let quoted_venv_root = format!("\"{}\"", venv_root.to_str().unwrap_or_default());
+
         match self.config.package_manager {
             PythonPackageManager::Pip => {
                 self.exec_python(
-                    [
-                        "-m",
-                        "venv",
-                        venv_root.to_str().unwrap_or_default(),
-                        "--clear",
-                    ],
+                    ["-m", "venv", &quoted_venv_root, "--clear"],
                     working_dir,
                     workspace_root,
                     false,
@@ -176,7 +175,7 @@ impl PythonTool {
             }
             PythonPackageManager::Uv => {
                 let uv = self.get_uv()?;
-                let mut args = vec!["venv", venv_root.to_str().unwrap_or_default()];
+                let mut args = vec!["venv", &quoted_venv_root];
 
                 if self.config.version.is_some() {
                     args.extend(["--no-python-downloads", "--no-managed-python"]);

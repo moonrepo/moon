@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **Python**
+  - Potential fix for Windows path escaping issues when running `uv venv`.
+
 ## 1.40.4
 
 #### 🐞 Fixes

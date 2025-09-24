@@ -1,5 +1,6 @@
 use moon_action::Operation;
 use moon_common::is_test_env;
+use moon_common::path::PathExt;
 use moon_config::PythonPackageManager;
 use moon_console::{Checkpoint, Console};
 use moon_logger::error;
@@ -58,7 +59,12 @@ pub async fn install_deps(
                     console.print_checkpoint(Checkpoint::Setup, command)?;
 
                     python
-                        .exec_venv(&venv_root, working_dir, workspace_root)
+                        .exec_venv(
+                            // Relative instead of absolute
+                            Path::new(venv_root.relative_to(working_dir).unwrap().as_str()),
+                            working_dir,
+                            workspace_root,
+                        )
                         .await
                 })
                 .await?,

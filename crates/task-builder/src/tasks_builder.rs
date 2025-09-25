@@ -11,7 +11,7 @@ use moon_config::{
     TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
     is_glob_like,
 };
-use moon_env_var::contains_env_var;
+use moon_env_var::{contains_env_var, contains_shell_expansion};
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
@@ -267,6 +267,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut is_local = false;
         let mut preset = None;
         let mut args_sets = vec![];
+        let mut needs_shell_for_expansion = false;
 
         if id == "dev" || id == "serve" || id == "start" {
             is_local = true;
@@ -283,6 +284,35 @@ impl<'proj> TasksBuilder<'proj> {
             #[allow(deprecated)]
             if let Some(local) = link.config.local {
                 is_local = local;
+            }
+
+            // Check for shell expansions in raw command/args before parsing
+            match &link.config.command {
+                TaskArgs::String(s) => {
+                    if contains_shell_expansion(s) {
+                        needs_shell_for_expansion = true;
+                    }
+                }
+                TaskArgs::List(list) => {
+                    if list.iter().any(contains_shell_expansion) {
+                        needs_shell_for_expansion = true;
+                    }
+                }
+                TaskArgs::None => {}
+            }
+            
+            match &link.config.args {
+                TaskArgs::String(s) => {
+                    if contains_shell_expansion(s) {
+                        needs_shell_for_expansion = true;
+                    }
+                }
+                TaskArgs::List(list) => {
+                    if list.iter().any(contains_shell_expansion) {
+                        needs_shell_for_expansion = true;
+                    }
+                }
+                TaskArgs::None => {}
             }
 
             let (command, base_args) = self.get_command_and_args(link.config)?;
@@ -523,6 +553,26 @@ impl<'proj> TasksBuilder<'proj> {
             trace!(
                 task_target = target.as_str(),
                 "Task references an environment variable, wrapping in a shell so substitution works",
+            );
+
+            task.options.shell = Some(true);
+        }
+
+        // If an arg contains a subcommand, we must run in a shell for execution to work
+        if contains_shell_expansion(&task.command) || task.args.iter().any(contains_shell_expansion) {
+            trace!(
+                task_target = target.as_str(),
+                "Task contains shell expansion (subcommand, arithmetic, process substitution, or backticks), wrapping in a shell",
+            );
+
+            task.options.shell = Some(true);
+        }
+
+        // Also check the flag we set earlier for expansions in raw args
+        if needs_shell_for_expansion {
+            trace!(
+                task_target = target.as_str(),
+                "Task contains shell expansion in raw args/command, wrapping in a shell",
             );
 
             task.options.shell = Some(true);

@@ -69,7 +69,7 @@ pub struct ActionContext {
 
 impl ActionContext {
     pub fn get_or_create_mutex(&self, name: &str) -> Arc<Mutex<()>> {
-        if let Some(value) = self.named_mutexes.read_sync(name, |_, v| v.clone()) {
+        if let Some(value) = self.named_mutexes.read(name, |_, v| v.clone()) {
             return value;
         }
 
@@ -77,7 +77,7 @@ impl ActionContext {
 
         let _ = self
             .named_mutexes
-            .insert_sync(name.to_owned(), Arc::clone(&mutex));
+            .insert(name.to_owned(), Arc::clone(&mutex));
 
         mutex
     }
@@ -93,9 +93,8 @@ impl ActionContext {
 
     pub fn get_target_states(&self) -> FxHashMap<Target, TargetState> {
         let mut map = FxHashMap::default();
-        self.target_states.iter_sync(|k, v| {
+        self.target_states.scan(|k, v| {
             map.insert(k.to_owned(), v.to_owned());
-            true
         });
         map
     }
@@ -105,9 +104,7 @@ impl ActionContext {
     }
 
     pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {
-        let _ = self
-            .target_states
-            .insert_sync(target.as_ref().to_owned(), state);
+        let _ = self.target_states.insert(target.as_ref().to_owned(), state);
     }
 
     pub fn should_inherit_args<T: AsRef<Target>>(&self, target: T) -> bool {

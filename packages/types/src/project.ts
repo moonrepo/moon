@@ -1,11 +1,11 @@
 import type { Id } from './common';
 import type {
-	DependencyConfig,
 	DependencyScope,
 	DependencyType,
 	LanguageType,
 	LayerType,
 	ProjectConfig,
+	ProjectDependencyConfig,
 	StackType,
 } from './project-config';
 import type {
@@ -111,7 +111,7 @@ export interface TaskFragment {
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: DependencyConfig[];
+	dependencies: ProjectDependencyConfig[];
 	fileGroups: Record<string, FileGroup>;
 	id: Id;
 	inherited: {

@@ -453,7 +453,7 @@ impl AffectedTracker {
                         continue;
                     }
 
-                    let projects = if inner.project == "^" {
+                    let projects = if inner.is_all_deps() {
                         has_all_project_sources = true;
 
                         let parent = self

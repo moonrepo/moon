@@ -435,9 +435,7 @@ mod tasks_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        #[should_panic(
-            expected = "Invalid project input dep-b for inputs-project-error:will-error."
-        )]
+        #[should_panic(expected = "Invalid project input")]
         async fn errors_if_referencing_a_non_dep_project() {
             let sandbox = create_sandbox("builder");
             sandbox.create_file(

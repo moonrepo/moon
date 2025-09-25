@@ -49,7 +49,7 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::unknown_target))]
     #[error(
-        "Invalid dependency {} for {}, target does not exist.",
+        "Invalid dependency {} for task {}, target does not exist.",
         .dep.style(Style::Label),
         .task.style(Style::Label),
     )]
@@ -57,7 +57,7 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::unknown_target_in_project_deps))]
     #[error(
-        "Invalid dependency {} for {}, no matching targets in project dependencies. Mark the dependency as {} to allow no results.",
+        "Invalid dependency {} for task {}, no matching targets in project dependencies. Mark the dependency as {} to allow no results.",
         .dep.style(Style::Label),
         .task.style(Style::Label),
         "optional".style(Style::Property),
@@ -66,7 +66,7 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::unknown_target_in_tag))]
     #[error(
-        "Invalid dependency {} for {}, no matching targets within this tag. Mark the dependency as {} to allow no results.",
+        "Invalid dependency {} for task {}, no matching targets within this tag. Mark the dependency as {} to allow no results.",
         .dep.style(Style::Label),
         .task.style(Style::Label),
         "optional".style(Style::Property),
@@ -75,9 +75,17 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::unsupported_target_scope))]
     #[error(
-        "Invalid dependency {} for {}. All (:) scope is not supported.",
+        "Invalid dependency {} for task {}. All (:) scope is not supported.",
         .dep.style(Style::Label),
         .task.style(Style::Label),
     )]
     UnsupportedTargetScopeInDeps { dep: Target, task: Target },
+
+    #[diagnostic(code(task_builder::unknown_project_input))]
+    #[error(
+        "Invalid project input {} for task {}. Only project dependencies of the parent project can be referenced as an input.",
+        .dep.style(Style::Id),
+        .task.style(Style::Label),
+    )]
+    UnknownProjectInput { dep: String, task: Target },
 }

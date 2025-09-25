@@ -281,7 +281,7 @@ mod task_deps_builder {
 
         #[test]
         #[should_panic(
-            expected = "Invalid dependency :build for project:task. All (:) scope is not"
+            expected = "Invalid dependency :build for task project:task. All (:) scope is not"
         )]
         fn errors_for_all_scope() {
             let mut project = create_project();
@@ -385,7 +385,7 @@ mod task_deps_builder {
 
         #[test]
         #[should_panic(
-            expected = "Invalid dependency ^:build for project:task, no matching targets"
+            expected = "Invalid dependency ^:build for task project:task, no matching targets"
         )]
         fn can_error_if_non_optional_and_no_results() {
             let mut project = create_project();
@@ -485,7 +485,7 @@ mod task_deps_builder {
 
         #[test]
         #[should_panic(
-            expected = "Invalid dependency ~:unknown for project:task, target does not exist"
+            expected = "Invalid dependency ~:unknown for task project:task, target does not exist"
         )]
         fn errors_if_unknown() {
             let mut project = create_project();
@@ -583,7 +583,7 @@ mod task_deps_builder {
 
         #[test]
         #[should_panic(
-            expected = "Invalid dependency d:unknown for project:task, target does not exist"
+            expected = "Invalid dependency d:unknown for task project:task, target does not exist"
         )]
         fn errors_if_unknown() {
             let mut project = create_project();
@@ -721,7 +721,7 @@ mod task_deps_builder {
 
         #[test]
         #[should_panic(
-            expected = "Invalid dependency #pkg:build for project:task, no matching targets"
+            expected = "Invalid dependency #pkg:build for task project:task, no matching targets"
         )]
         fn can_error_if_non_optional_and_no_results() {
             let mut project = create_project();

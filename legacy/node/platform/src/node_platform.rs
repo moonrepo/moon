@@ -8,9 +8,9 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::path::is_root_level_source;
 use moon_config::{
-    ProjectDependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
-    NodePackageManager, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
-    TaskConfig, TasksConfigsMap, UnresolvedVersionSpec,
+    DependencyScope, DependencySource, HasherConfig, NodeConfig, NodePackageManager, PlatformType,
+    ProjectConfig, ProjectDependencyConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
+    TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};

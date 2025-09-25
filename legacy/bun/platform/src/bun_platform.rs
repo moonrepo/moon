@@ -9,8 +9,8 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::path::is_root_level_source;
 use moon_config::{
-    BunConfig, ProjectDependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
+    BunConfig, DependencyScope, DependencySource, HasherConfig, PlatformType, ProjectConfig,
+    ProjectDependencyConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
     UnresolvedVersionSpec,
 };
 use moon_console::Console;

@@ -6,8 +6,8 @@ use moon_common::{
     path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
-    ProjectDependencyConfig, DependencyScope, DependencySource, HasherConfig, HasherOptimization,
-    PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, PythonConfig,
+    DependencyScope, DependencySource, HasherConfig, HasherOptimization, PlatformType,
+    ProjectConfig, ProjectDependencyConfig, ProjectsAliasesList, ProjectsSourcesList, PythonConfig,
     PythonPackageManager, UnresolvedVersionSpec,
 };
 use moon_console::Console;

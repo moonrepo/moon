@@ -11,7 +11,7 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, ProjectDependencyConfig, DependencyScope, DependencyType, InheritedTasksManager,
+    ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectDependencyConfig,
     ProjectsSourcesList, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;

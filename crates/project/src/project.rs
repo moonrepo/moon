@@ -4,8 +4,8 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ProjectDependencyConfig, DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType,
-    ProjectConfig, StackType,
+    DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType, ProjectConfig,
+    ProjectDependencyConfig, StackType,
 };
 use moon_file_group::FileGroup;
 use moon_task::{Target, Task};

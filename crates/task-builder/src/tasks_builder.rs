@@ -709,15 +709,28 @@ impl<'proj> TasksBuilder<'proj> {
         let mut inputs = vec![];
 
         for input in mem::take(&mut task.inputs) {
-            if let Input::Project(inner) = &input
-                && inner.project == "^"
-            {
-                for dep_config in &self.project.dependencies {
-                    inputs.push(Input::Project(ProjectInput {
-                        project: dep_config.id.to_string(),
-                        filter: inner.filter.clone(),
-                        group: inner.group.clone(),
-                    }));
+            if let Input::Project(inner) = input {
+                if inner.project == "^" {
+                    for dep_config in &self.project.dependencies {
+                        inputs.push(Input::Project(ProjectInput {
+                            project: dep_config.id.to_string(),
+                            filter: inner.filter.clone(),
+                            group: inner.group.clone(),
+                        }));
+                    }
+                } else if self
+                    .project
+                    .dependencies
+                    .iter()
+                    .any(|dep| dep.id == inner.project)
+                {
+                    inputs.push(Input::Project(inner));
+                } else {
+                    return Err(TasksBuilderError::UnknownProjectInput {
+                        dep: inner.project,
+                        task: task.target.clone(),
+                    }
+                    .into());
                 }
             } else {
                 inputs.push(input);

@@ -7,8 +7,8 @@ use moon_action_context::ActionContext;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color, is_ci, is_test_env};
 use moon_config::{
-    BinEntry, DenoConfig, ProjectDependencyConfig, HasherConfig, HasherOptimization, PlatformType,
-    ProjectConfig,
+    BinEntry, DenoConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
+    ProjectDependencyConfig,
 };
 use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{DenoJson, find_package_manager_workspaces_root, load_lockfile_dependencies};

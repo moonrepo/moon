@@ -1,6 +1,8 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::Id;
-use moon_config::{ProjectDependencyConfig, DependencyScope, DependencySource, TaskDependencyConfig};
+use moon_config::{
+    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
+};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task, TaskOptions};
 use std::mem;

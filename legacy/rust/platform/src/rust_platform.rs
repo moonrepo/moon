@@ -9,8 +9,9 @@ use moon_common::{
     path::{WorkspaceRelativePath, WorkspaceRelativePathBuf, exe_name, is_root_level_source},
 };
 use moon_config::{
-    BinEntry, ProjectDependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, RustConfig, UnresolvedVersionSpec,
+    BinEntry, DependencyScope, DependencySource, HasherConfig, PlatformType, ProjectConfig,
+    ProjectDependencyConfig, ProjectsAliasesList, ProjectsSourcesList, RustConfig,
+    UnresolvedVersionSpec,
 };
 use moon_console::{Checkpoint, Console};
 use moon_hash::ContentHasher;

@@ -14,6 +14,8 @@
   - Added URI support: `group://<name>`
   - Added object support: `group: '<name>'`
   - This is similar to the `@files`, `@globs`, etc, token functions.
+- Added new values to the `runInCI` task option:
+  - `only` - Only run the task in CI, and not locally, when affected.
 
 #### ⚙️ Internal
 

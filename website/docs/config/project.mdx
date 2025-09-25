@@ -1528,7 +1528,9 @@ touched files, typically through the [`moon ci`](../commands/ci) command. Suppor
 values:
 
 - `always` - Always run in CI, regardless if affected or not. <VersionLabel version="1.31.0" />
-- `true`, `affected` - Only run if affected by touched files.
+- `affected`, `true` - Only run if affected by touched files.
+- `only` - Only run in CI, and not locally, if affected by touched files.
+  <VersionLabel version="1.41.0" />
 - `false` - Never run in CI.
 
 Defaults to `true` unless the [`local`](#local) setting is enabled.

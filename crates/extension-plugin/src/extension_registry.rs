@@ -45,7 +45,7 @@ impl ExtensionRegistry {
     {
         let id = Id::raw(id.as_ref());
 
-        if self.is_registered(&id) {
+        if self.is_registered(&id).await {
             return self.get_instance(&id).await;
         }
 

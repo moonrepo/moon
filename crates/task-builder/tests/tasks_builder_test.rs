@@ -379,6 +379,62 @@ mod tasks_builder {
         }
     }
 
+    mod inputs {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn expands_project_all() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("inputs-project").await;
+            let task = tasks.get("all-deps").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "dep-b".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "dep-a".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "dep-c".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn uses_single_project() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("inputs-project").await;
+            let task = tasks.get("only-a").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "dep-a".into(),
+                        filter: vec!["src/**/*".into()],
+                        group: None,
+                    }),
+                    Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
+                ]
+            );
+        }
+    }
+
     mod detect_platform_legacy {
         use super::*;
 

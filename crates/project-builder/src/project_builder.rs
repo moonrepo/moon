@@ -5,7 +5,6 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
@@ -256,43 +255,57 @@ impl<'app> ProjectBuilder<'app> {
 
     #[instrument(name = "build_project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
-        let tasks = self.build_tasks().await?;
-        let task_targets = tasks
-            .values()
-            .map(|task| task.target.clone())
-            .collect::<Vec<_>>();
-
+        // Build the project
         let mut project = Project {
-            dependencies: self.build_dependencies(&tasks)?,
+            dependencies: self.build_dependencies()?,
             file_groups: self.build_file_groups()?,
-            task_targets,
-            tasks,
             alias: self.alias,
             id: self.id.to_owned(),
             language: self.language,
             root: self.root,
             source: self.source.to_owned(),
             toolchains: self.toolchains,
-            ..Project::default()
+            inherited: self.global_config.take(),
+            ..Default::default()
         };
 
-        project.inherited = self.global_config.take();
-
+        // Inherit config after building
         let config = self.local_config.take().unwrap_or_default();
-
         project.stack = config.stack;
         project.layer = config.layer;
         project.config = config;
         project.toolchains.sort();
 
+        // Then build the tasks with the project
+        let mut tasks_builder = TasksBuilder::new(
+            &project,
+            TasksBuilderContext {
+                enabled_toolchains: &self.enabled_toolchains,
+                monorepo: self.context.monorepo,
+                toolchain_config: self.context.toolchain_config,
+                toolchain_registry: self.context.toolchain_registry.clone(),
+                workspace_root: self.context.workspace_root,
+            },
+        );
+
+        tasks_builder.inherit_from_project();
+
+        let tasks = tasks_builder.build().await?;
+        let task_targets = tasks
+            .values()
+            .map(|task| task.target.clone())
+            .collect::<Vec<_>>();
+
+        project.tasks = tasks;
+        project.task_targets = task_targets;
+
+        resolve_project_dependencies(&mut project, self.context.root_project_id);
+
         Ok(project)
     }
 
     #[instrument(skip_all)]
-    fn build_dependencies(
-        &self,
-        tasks: &BTreeMap<Id, Task>,
-    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
+    fn build_dependencies(&self) -> miette::Result<Vec<ProjectDependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(
@@ -311,26 +324,6 @@ impl<'app> ProjectBuilder<'app> {
                 };
 
                 deps.insert(dep_config.id.clone(), dep_config);
-            }
-        }
-
-        // Tasks can depend on arbitrary projects, so include them also
-        for task_config in tasks.values() {
-            for task_dep in &task_config.deps {
-                if let Some(dep_config) = create_project_dep_from_task_dep(
-                    task_dep,
-                    self.id,
-                    self.context.root_project_id,
-                    |dep_project_id| {
-                        deps.contains_key(dep_project_id)
-                            || self
-                                .alias
-                                .as_ref()
-                                .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
-                    },
-                ) {
-                    deps.insert(dep_config.id.clone(), dep_config);
-                }
             }
         }
 
@@ -391,37 +384,34 @@ impl<'app> ProjectBuilder<'app> {
 
         Ok(file_groups)
     }
+}
 
-    #[instrument(skip_all)]
-    async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
-        trace!(project_id = self.id.as_str(), "Building tasks");
+fn resolve_project_dependencies(project: &mut Project, root_project_id: Option<&Id>) {
+    let mut deps: Vec<ProjectDependencyConfig> = vec![];
 
-        let mut tasks_builder = TasksBuilder::new(
-            self.id,
-            self.source,
-            &self.toolchains,
-            TasksBuilderContext {
-                enabled_toolchains: &self.enabled_toolchains,
-                monorepo: self.context.monorepo,
-                toolchain_config: self.context.toolchain_config,
-                toolchain_registry: self.context.toolchain_registry.clone(),
-                workspace_root: self.context.workspace_root,
-            },
-        );
-
-        if let Some(global_config) = &self.global_config {
-            tasks_builder.inherit_global_tasks(
-                &global_config.config,
-                self.local_config
-                    .as_ref()
-                    .map(|cfg| &cfg.workspace.inherited_tasks),
-            );
+    // Tasks can depend on arbitrary projects, so include them also
+    for task_config in project.tasks.values() {
+        for task_dep in &task_config.deps {
+            if let Some(dep_config) = create_project_dep_from_task_dep(
+                task_dep,
+                &project.id,
+                root_project_id,
+                |dep_project_id| {
+                    deps.iter().any(|dep| &dep.id == dep_project_id)
+                        || project
+                            .dependencies
+                            .iter()
+                            .any(|dep| &dep.id == dep_project_id)
+                        || project
+                            .alias
+                            .as_ref()
+                            .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                },
+            ) {
+                deps.push(dep_config);
+            }
         }
-
-        if let Some(local_config) = &self.local_config {
-            tasks_builder.load_local_tasks(local_config);
-        }
-
-        tasks_builder.build().await
     }
+
+    project.dependencies.extend(deps);
 }

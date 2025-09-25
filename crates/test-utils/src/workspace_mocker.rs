@@ -284,9 +284,7 @@ impl WorkspaceMocker {
         let enabled_toolchains = self.toolchain_config.get_enabled();
 
         let mut builder = TasksBuilder::new(
-            &project.id,
-            &project.source,
-            &project.toolchains,
+            project,
             TasksBuilderContext {
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,

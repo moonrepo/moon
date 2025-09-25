@@ -43,7 +43,7 @@ pub async fn hash_common_task_contents(
         let mut deps = BTreeMap::default();
 
         for dep in &task.deps {
-            if let Some(entry) = action_context.target_states.get_sync(&dep.target) {
+            if let Some(entry) = action_context.target_states.get(&dep.target) {
                 match entry.get() {
                     TargetState::Passed(hash) => {
                         deps.insert(&dep.target, hash.clone());

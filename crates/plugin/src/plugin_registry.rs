@@ -116,8 +116,8 @@ impl<T: Plugin> PluginRegistry<T> {
             })?)
     }
 
-    pub async fn is_registered(&self, id: &Id) -> bool {
-        self.plugins.contains_async(id).await
+    pub fn is_registered(&self, id: &Id) -> bool {
+        self.plugins.contains(id)
     }
 
     #[instrument(skip(self, op))]
@@ -215,8 +215,8 @@ impl<T: Plugin> PluginRegistry<T> {
         self.load_with_config(id, locator, |_| Ok(())).await
     }
 
-    pub async fn register(&self, id: Id, plugin: T) -> miette::Result<()> {
-        if self.is_registered(&id).await {
+    pub fn register(&self, id: Id, plugin: T) -> miette::Result<()> {
+        if self.is_registered(&id) {
             return Err(PluginError::ExistingId {
                 id: id.to_string(),
                 ty: self.type_of,
@@ -230,7 +230,7 @@ impl<T: Plugin> PluginRegistry<T> {
             "Registered plugin",
         );
 
-        let _ = self.plugins.insert_async(id, Arc::new(plugin)).await;
+        let _ = self.plugins.insert(id, Arc::new(plugin));
 
         Ok(())
     }

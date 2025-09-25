@@ -28,7 +28,7 @@ mod task_runner {
             assert_eq!(
                 context
                     .target_states
-                    .get_sync(&runner.task.target)
+                    .get(&runner.task.target)
                     .unwrap()
                     .get(),
                 &TargetState::Passthrough
@@ -58,7 +58,7 @@ mod task_runner {
                 let context = ActionContext::default();
                 context
                     .target_states
-                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
+                    .insert(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                     .unwrap();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -66,7 +66,7 @@ mod task_runner {
                 assert_eq!(
                     context
                         .target_states
-                        .get_sync(&runner.task.target)
+                        .get(&runner.task.target)
                         .unwrap()
                         .get(),
                     &TargetState::Skipped
@@ -82,7 +82,7 @@ mod task_runner {
                 let context = ActionContext::default();
                 context
                     .target_states
-                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
+                    .insert(Target::new("project", "dep").unwrap(), TargetState::Failed)
                     .unwrap();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -90,7 +90,7 @@ mod task_runner {
                 assert_eq!(
                     context
                         .target_states
-                        .get_sync(&runner.task.target)
+                        .get(&runner.task.target)
                         .unwrap()
                         .get(),
                     &TargetState::Skipped
@@ -578,7 +578,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
+                .insert(Target::new("project", "dep").unwrap(), TargetState::Failed)
                 .unwrap();
 
             assert!(!runner.is_dependencies_complete(&context).unwrap());
@@ -592,7 +592,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
+                .insert(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                 .unwrap();
 
             assert!(!runner.is_dependencies_complete(&context).unwrap());
@@ -606,7 +606,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert_sync(
+                .insert(
                     Target::new("project", "dep").unwrap(),
                     TargetState::Passed("hash123".into()),
                 )

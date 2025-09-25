@@ -60,7 +60,7 @@ pub async fn setup_toolchain(
 
     // Acquire a lock for the toolchain ID
     let locks = LOCKS.get_or_init(scc::HashMap::default);
-    let entry = locks.entry_async(node.runtime.id()).await.or_default();
+    let entry = locks.entry(node.runtime.id()).or_default();
     let _lock = entry.lock().await;
 
     // Install and setup the specific tool + version in the toolchain!

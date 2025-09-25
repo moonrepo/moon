@@ -323,6 +323,10 @@ impl ProjectInput {
 
         Ok(input)
     }
+
+    pub fn is_all_deps(&self) -> bool {
+        self.project == "^"
+    }
 }
 
 /// The different patterns a task input can be defined as.

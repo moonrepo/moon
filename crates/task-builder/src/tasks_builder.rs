@@ -710,7 +710,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         for input in mem::take(&mut task.inputs) {
             if let Input::Project(inner) = input {
-                if inner.project == "^" {
+                if inner.is_all_deps() {
                     for dep_config in &self.project.dependencies {
                         inputs.push(Input::Project(ProjectInput {
                             project: dep_config.id.to_string(),

@@ -3,8 +3,8 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::{Id, color, path::is_root_level_source};
 use moon_config::{
-    InheritedTasksConfig, Input, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
-    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    InheritedTasksConfig, Input, ProjectConfig, ProjectInput, ProjectWorkspaceInheritedTasksConfig,
+    TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
     TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
     is_glob_like,
 };
@@ -18,6 +18,7 @@ use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
+use std::mem;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -547,6 +548,7 @@ impl<'proj> TasksBuilder<'proj> {
         task.id = id.to_owned();
         task.target = target;
 
+        self.resolve_task_inputs(&mut task).await?;
         self.resolve_task_toolchains(&mut task).await?;
 
         Ok(task)
@@ -701,6 +703,30 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         Ok(options)
+    }
+
+    async fn resolve_task_inputs(&self, task: &mut Task) -> miette::Result<()> {
+        let mut inputs = vec![];
+
+        for input in mem::take(&mut task.inputs) {
+            if let Input::Project(inner) = &input
+                && inner.project == "^"
+            {
+                for dep_config in &self.project.dependencies {
+                    inputs.push(Input::Project(ProjectInput {
+                        project: dep_config.id.to_string(),
+                        filter: inner.filter.clone(),
+                        group: inner.group.clone(),
+                    }));
+                }
+            } else {
+                inputs.push(input);
+            }
+        }
+
+        task.inputs = inputs;
+
+        Ok(())
     }
 
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {

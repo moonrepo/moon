@@ -1,0 +1,14 @@
+dependsOn:
+  - 'dep-a'
+  - 'dep-b'
+  - 'dep-c'
+
+tasks:
+  all-deps:
+    inputs:
+      - project: '^'
+        group: 'sources'
+  only-a:
+    inputs:
+      - project: 'dep-a'
+        filter: ['src/**/*']

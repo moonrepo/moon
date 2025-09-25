@@ -32,7 +32,10 @@ impl WorkspaceGraph {
             .expect("Querying the project graph requires a query input string.");
         let cache_key = query_input.to_string();
 
-        if let Some(cache) = self.project_query_cache.read(&cache_key, |_, v| v.clone()) {
+        if let Some(cache) = self
+            .project_query_cache
+            .read_sync(&cache_key, |_, v| v.clone())
+        {
             return Ok(cache);
         }
 
@@ -61,7 +64,9 @@ impl WorkspaceGraph {
         );
 
         let ids = Arc::new(project_ids);
-        let _ = self.project_query_cache.insert(cache_key, Arc::clone(&ids));
+        let _ = self
+            .project_query_cache
+            .insert_sync(cache_key, Arc::clone(&ids));
 
         Ok(ids)
     }

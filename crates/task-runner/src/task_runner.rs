@@ -349,7 +349,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         for dep in &self.task.deps {
-            if let Some(dep_state) = context.target_states.get(&dep.target) {
+            if let Some(dep_state) = context.target_states.get_sync(&dep.target) {
                 if dep_state.get().is_complete() {
                     continue;
                 }

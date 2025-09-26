@@ -1579,6 +1579,42 @@ mod action_graph_builder {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_graph_if_task_ci_skip() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let mut task = create_task("bar", "build");
+                task.options.run_in_ci = TaskOptionRunInCI::Skip;
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(
+                    context.get_target_states(),
+                    FxHashMap::from_iter([(
+                        Target::parse("bar:build").unwrap(),
+                        TargetState::Passthrough
+                    )])
+                );
+
+                assert!(topo(graph).is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_graph_if_ci_check_true() {
                 let sandbox = create_sandbox("projects");
                 let mut container = ActionGraphContainer::new(sandbox.path());

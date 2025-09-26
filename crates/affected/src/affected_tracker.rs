@@ -389,15 +389,17 @@ impl AffectedTracker {
         }
 
         // Special CI handling
-        if self.ci {
-            match &task.options.run_in_ci {
-                TaskOptionRunInCI::Always => {
-                    return Ok(Some(AffectedBy::AlwaysAffected));
-                }
-                TaskOptionRunInCI::Enabled(false) => return Ok(None),
-                _ => {}
-            };
-        }
+        match (self.ci, &task.options.run_in_ci) {
+            (true, TaskOptionRunInCI::Always) => {
+                return Ok(Some(AffectedBy::AlwaysAffected));
+            }
+            (true, TaskOptionRunInCI::Enabled(false))
+            | (true, TaskOptionRunInCI::Skip)
+            | (false, TaskOptionRunInCI::Only) => {
+                return Ok(None);
+            }
+            _ => {}
+        };
 
         // Never affected
         if task.state.empty_inputs {

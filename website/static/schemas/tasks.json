@@ -937,7 +937,9 @@
                   "type": "string",
                   "enum": [
                     "always",
-                    "affected"
+                    "affected",
+                    "only",
+                    "skip"
                   ]
                 }
               ]

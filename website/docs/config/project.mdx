@@ -1524,14 +1524,15 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runInCI" />
 
 Whether to run the task automatically in a CI (continuous integration) environment when affected by
-touched files, typically through the [`moon ci`](../commands/ci) command. Supports the following
-values:
+touched files using the [`moon ci`](../commands/ci) command. Supports the following values:
 
 - `always` - Always run in CI, regardless if affected or not. <VersionLabel version="1.31.0" />
-- `true`, `affected` - Only run if affected by touched files.
+- `affected`, `true` (default) - Only run in CI if affected by touched files.
 - `false` - Never run in CI.
-
-Defaults to `true` unless the [`local`](#local) setting is enabled.
+- `only` - Only run in CI, and not locally, if affected by touched files.
+  <VersionLabel version="1.41.0" />
+- `skip` - Skip running in CI but run locally and allow task relationships to be valid.
+  <VersionLabel version="1.41.0" />
 
 ```yaml title="moon.yml" {5}
 tasks:

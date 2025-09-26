@@ -809,7 +809,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
             debug!(
                 task_target = task.target.as_str(),
-                "Not running task {} because {} is false",
+                "Not running task {} in CI because {} has been configured not to",
                 color::id(&task.target.id),
                 color::property("runInCI"),
             );

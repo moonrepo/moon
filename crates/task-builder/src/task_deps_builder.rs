@@ -2,7 +2,7 @@ use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::Id;
 use moon_config::{DependencyConfig, DependencyScope, DependencySource, TaskDependencyConfig};
 use moon_project::Project;
-use moon_task::{Target, TargetScope, Task, TaskOptions};
+use moon_task::{Target, TargetScope, Task, TaskOptionRunInCI, TaskOptions};
 use std::mem;
 use tracing::trace;
 
@@ -154,7 +154,11 @@ impl TaskDepsBuilder<'_> {
         }
 
         // Do not depend on tasks that can't run in CI
-        if !dep_task_options.run_in_ci.is_enabled() && self.task.options.run_in_ci.is_enabled() {
+        if !dep_task_options.run_in_ci.is_enabled()
+            && self.task.options.run_in_ci.is_enabled()
+            && dep_task_options.run_in_ci != TaskOptionRunInCI::Skip
+            && self.task.options.run_in_ci != TaskOptionRunInCI::Skip
+        {
             return Err(TasksBuilderError::RunInCiDepRequirement {
                 dep: dep_task_target.to_owned(),
                 task: self.task.target.to_owned(),

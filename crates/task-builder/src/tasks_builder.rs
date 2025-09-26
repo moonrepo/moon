@@ -6,10 +6,10 @@ use moon_common::{
     path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
-    InheritedTasksConfig, Input, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
-    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
-    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
-    is_glob_like,
+    InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
+    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
+    TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
@@ -81,6 +81,7 @@ pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
 
     project_id: &'proj Id,
+    project_dependencies: &'proj [ProjectDependencyConfig],
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_source: &'proj WorkspaceRelativePath,
     project_toolchains: &'proj [Id],
@@ -100,6 +101,7 @@ pub struct TasksBuilder<'proj> {
 impl<'proj> TasksBuilder<'proj> {
     pub fn new(
         project_id: &'proj Id,
+        project_dependencies: &'proj [ProjectDependencyConfig],
         project_source: &'proj WorkspaceRelativePath,
         project_toolchains: &'proj [Id],
         context: TasksBuilderContext<'proj>,
@@ -107,6 +109,7 @@ impl<'proj> TasksBuilder<'proj> {
         Self {
             context,
             project_id,
+            project_dependencies,
             project_env: FxHashMap::default(),
             project_source,
             project_toolchains,

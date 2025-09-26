@@ -256,21 +256,27 @@ impl<'app> ProjectBuilder<'app> {
 
     #[instrument(name = "build_project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
-        let tasks = self.build_tasks().await?;
+        // Build dependencies first since they're required for tasks
+        let dependencies = self.build_dependencies()?;
+
+        // Then build the tasks
+        let tasks = self.build_tasks(&dependencies).await?;
         let task_targets = tasks
             .values()
             .map(|task| task.target.clone())
             .collect::<Vec<_>>();
 
-        // Build the project first
+        // And finally build the project
         let mut project = Project {
-            dependencies: self.build_dependencies()?,
+            dependencies,
             file_groups: self.build_file_groups()?,
             alias: self.alias,
             id: self.id.to_owned(),
             language: self.language,
             root: self.root,
             source: self.source.to_owned(),
+            tasks,
+            task_targets,
             toolchains: self.toolchains,
             ..Project::default()
         };
@@ -283,10 +289,6 @@ impl<'app> ProjectBuilder<'app> {
         project.layer = config.layer;
         project.config = config;
         project.toolchains.sort();
-
-        // Then build the tasks with the project
-        project.tasks = tasks;
-        project.task_targets = task_targets;
 
         resolve_project_dependencies(&mut project, self.context.root_project_id);
 
@@ -375,11 +377,15 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
+    async fn build_tasks(
+        &mut self,
+        dependencies: &[ProjectDependencyConfig],
+    ) -> miette::Result<BTreeMap<Id, Task>> {
         trace!(project_id = self.id.as_str(), "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(
             self.id,
+            dependencies,
             self.source,
             &self.toolchains,
             TasksBuilderContext {

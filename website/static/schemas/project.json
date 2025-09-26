@@ -180,54 +180,6 @@
   },
   "additionalProperties": false,
   "definitions": {
-    "DependencyConfig": {
-      "description": "Expanded information about a project dependency.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "title": "id",
-          "description": "ID of the depended on project.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Id"
-            }
-          ]
-        },
-        "scope": {
-          "title": "scope",
-          "description": "Scope of the dependency relationship.",
-          "default": "production",
-          "allOf": [
-            {
-              "$ref": "#/definitions/DependencyScope"
-            }
-          ]
-        },
-        "source": {
-          "title": "source",
-          "description": "Source of where the dependency came from.",
-          "default": "explicit",
-          "allOf": [
-            {
-              "$ref": "#/definitions/DependencySource"
-            }
-          ]
-        },
-        "via": {
-          "title": "via",
-          "description": "Metadata about the source.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
     "DependencyScope": {
       "description": "The scope and or relationship of the dependency.",
       "type": "string",
@@ -531,6 +483,54 @@
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
     },
+    "ProjectDependencyConfig": {
+      "description": "Expanded information about a project dependency.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "id",
+          "description": "ID of the depended on project.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
+        },
+        "scope": {
+          "title": "scope",
+          "description": "Scope of the dependency relationship.",
+          "default": "production",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencyScope"
+            }
+          ]
+        },
+        "source": {
+          "title": "source",
+          "description": "Source of where the dependency came from.",
+          "default": "explicit",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencySource"
+            }
+          ]
+        },
+        "via": {
+          "title": "via",
+          "description": "Metadata about the source.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "ProjectDependsOn": {
       "description": "Expanded information about a project dependency.",
       "anyOf": [
@@ -538,7 +538,7 @@
           "$ref": "#/definitions/Id"
         },
         {
-          "$ref": "#/definitions/DependencyConfig"
+          "$ref": "#/definitions/ProjectDependencyConfig"
         }
       ]
     },

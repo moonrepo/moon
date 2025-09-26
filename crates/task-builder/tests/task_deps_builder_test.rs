@@ -314,10 +314,10 @@ mod task_deps_builder {
         fn returns_each_parent_task() {
             let mut project = create_project();
             project.dependencies = vec![
-                DependencyConfig::new(Id::raw("foo")),
-                DependencyConfig::new(Id::raw("bar")),
-                DependencyConfig::new(Id::raw("baz")),
-                DependencyConfig::new(Id::raw("qux")),
+                ProjectDependencyConfig::new(Id::raw("foo")),
+                ProjectDependencyConfig::new(Id::raw("bar")),
+                ProjectDependencyConfig::new(Id::raw("baz")),
+                ProjectDependencyConfig::new(Id::raw("qux")),
             ];
 
             let mut task = create_task();
@@ -348,9 +348,9 @@ mod task_deps_builder {
         fn returns_each_parent_task_only_if_id_matches() {
             let mut project = create_project();
             project.dependencies = vec![
-                DependencyConfig::new(Id::raw("foo")),
-                DependencyConfig::new(Id::raw("bar")),
-                DependencyConfig::new(Id::raw("baz")),
+                ProjectDependencyConfig::new(Id::raw("foo")),
+                ProjectDependencyConfig::new(Id::raw("bar")),
+                ProjectDependencyConfig::new(Id::raw("baz")),
             ];
 
             let mut task = create_task();
@@ -390,9 +390,9 @@ mod task_deps_builder {
         fn can_error_if_non_optional_and_no_results() {
             let mut project = create_project();
             project.dependencies = vec![
-                DependencyConfig::new(Id::raw("foo")),
-                DependencyConfig::new(Id::raw("bar")),
-                DependencyConfig::new(Id::raw("baz")),
+                ProjectDependencyConfig::new(Id::raw("foo")),
+                ProjectDependencyConfig::new(Id::raw("bar")),
+                ProjectDependencyConfig::new(Id::raw("baz")),
             ];
 
             let mut task = create_task();
@@ -624,13 +624,13 @@ mod task_deps_builder {
             assert_eq!(
                 project.dependencies,
                 vec![
-                    DependencyConfig {
+                    ProjectDependencyConfig {
                         id: Id::raw("a"),
                         scope: DependencyScope::Build,
                         source: DependencySource::Implicit,
                         via: Some("task a:build".into())
                     },
-                    DependencyConfig {
+                    ProjectDependencyConfig {
                         id: Id::raw("c"),
                         scope: DependencyScope::Build,
                         source: DependencySource::Implicit,
@@ -789,13 +789,13 @@ mod task_deps_builder {
             assert_eq!(
                 project.dependencies,
                 vec![
-                    DependencyConfig {
+                    ProjectDependencyConfig {
                         id: Id::raw("baz"),
                         scope: DependencyScope::Build,
                         source: DependencySource::Implicit,
                         via: Some("task baz:build".into())
                     },
-                    DependencyConfig {
+                    ProjectDependencyConfig {
                         id: Id::raw("foo"),
                         scope: DependencyScope::Build,
                         source: DependencySource::Implicit,

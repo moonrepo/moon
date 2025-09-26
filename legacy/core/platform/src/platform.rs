@@ -4,7 +4,7 @@ use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_config::{
-    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList,
+    HasherConfig, PlatformType, ProjectConfig, ProjectDependencyConfig, ProjectsAliasesList,
     ProjectsSourcesList, TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
@@ -64,7 +64,7 @@ pub trait Platform: Send + Sync {
         &self,
         project_id: &str,
         project_source: &str,
-    ) -> miette::Result<Vec<DependencyConfig>> {
+    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
         Ok(vec![])
     }
 

@@ -1652,7 +1652,8 @@
                   "enum": [
                     "always",
                     "affected",
-                    "only"
+                    "only",
+                    "skip"
                   ]
                 }
               ]

@@ -125,7 +125,7 @@ config_enum!(
     }
 );
 
-generate_switch!(TaskOptionRunInCI, ["always", "affected", "only"]);
+generate_switch!(TaskOptionRunInCI, ["always", "affected", "only", "skip"]);
 
 config_unit_enum!(
     /// The strategy in which to merge a specific task option.

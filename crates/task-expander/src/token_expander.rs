@@ -310,7 +310,7 @@ impl<'graph> TokenExpander<'graph> {
                 }
                 Input::Project(inner) => {
                     // Expand to all owning project dependencies
-                    if inner.project == "^" {
+                    if inner.is_all_deps() {
                         for dep_config in &self.project.dependencies {
                             inputs.push(Input::Project(ProjectInput {
                                 project: dep_config.id.to_string(),

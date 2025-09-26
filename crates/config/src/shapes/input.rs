@@ -279,7 +279,7 @@ config_struct!(
     /// An external project input.
     #[derive(Config)]
     pub struct ProjectInput {
-        // This is not an `Id` as we need to support "^".
+        // This is not an `Id` as we need to support `^`!
         pub project: String,
 
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -322,6 +322,10 @@ impl ProjectInput {
         }
 
         Ok(input)
+    }
+
+    pub fn is_all_deps(&self) -> bool {
+        self.project == "^"
     }
 }
 

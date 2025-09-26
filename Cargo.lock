@@ -7556,9 +7556,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.10.5"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d753b4e1a05de4557a715e4886b439afa7e0c5d857a11bd8459d2de58998e01"
+checksum = "ebfcf58b02a45e1dccbbd6e10f5ebf2bef22ee6de0a50e18c7336a19be189ef3"
 dependencies = [
  "async-trait",
  "chrono",
@@ -7688,9 +7688,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.11.19"
+version = "0.11.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c3138017c8bc9a262b792f1c264106305a580e6d9252d702ca41c4898973e87"
+checksum = "1e6a13a15f9fb697b959ddb010af5599b0d8389d61ea1ebe72d46a46decfcd6b"
 dependencies = [
  "async-trait",
  "dirs 6.0.0",
@@ -7700,7 +7700,7 @@ dependencies = [
  "miette 7.6.0",
  "regex",
  "reqwest",
- "scc 3.0.7",
+ "scc 2.4.0",
  "serde",
  "serde_json",
  "serde_yml",

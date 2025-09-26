@@ -5,6 +5,7 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
+use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
 use moon_toolchain::detect::{
     detect_project_language, detect_project_toolchains, get_project_toolchains,
@@ -255,6 +256,12 @@ impl<'app> ProjectBuilder<'app> {
 
     #[instrument(name = "build_project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
+        let tasks = self.build_tasks().await?;
+        let task_targets = tasks
+            .values()
+            .map(|task| task.target.clone())
+            .collect::<Vec<_>>();
+
         // Build the project first
         let mut project = Project {
             dependencies: self.build_dependencies()?,
@@ -278,25 +285,6 @@ impl<'app> ProjectBuilder<'app> {
         project.toolchains.sort();
 
         // Then build the tasks with the project
-        let mut tasks_builder = TasksBuilder::new(
-            &project,
-            TasksBuilderContext {
-                enabled_toolchains: &self.enabled_toolchains,
-                monorepo: self.context.monorepo,
-                toolchain_config: self.context.toolchain_config,
-                toolchain_registry: self.context.toolchain_registry.clone(),
-                workspace_root: self.context.workspace_root,
-            },
-        );
-
-        tasks_builder.inherit_from_project();
-
-        let tasks = tasks_builder.build().await?;
-        let task_targets = tasks
-            .values()
-            .map(|task| task.target.clone())
-            .collect::<Vec<_>>();
-
         project.tasks = tasks;
         project.task_targets = task_targets;
 
@@ -384,6 +372,39 @@ impl<'app> ProjectBuilder<'app> {
         }
 
         Ok(file_groups)
+    }
+
+    #[instrument(skip_all)]
+    async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
+        trace!(project_id = self.id.as_str(), "Building tasks");
+
+        let mut tasks_builder = TasksBuilder::new(
+            self.id,
+            self.source,
+            &self.toolchains,
+            TasksBuilderContext {
+                enabled_toolchains: &self.enabled_toolchains,
+                monorepo: self.context.monorepo,
+                toolchain_config: self.context.toolchain_config,
+                toolchain_registry: self.context.toolchain_registry.clone(),
+                workspace_root: self.context.workspace_root,
+            },
+        );
+
+        if let Some(global_config) = &self.global_config {
+            tasks_builder.inherit_global_tasks(
+                &global_config.config,
+                self.local_config
+                    .as_ref()
+                    .map(|cfg| &cfg.workspace.inherited_tasks),
+            );
+        }
+
+        if let Some(local_config) = &self.local_config {
+            tasks_builder.load_local_tasks(local_config);
+        }
+
+        tasks_builder.build().await
     }
 }
 

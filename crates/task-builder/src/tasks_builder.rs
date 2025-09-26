@@ -1,15 +1,17 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_common::{Id, color, path::is_root_level_source};
+use moon_common::{
+    Id, color,
+    path::{WorkspaceRelativePath, is_root_level_source},
+};
 use moon_config::{
-    InheritedTasksConfig, Input, ProjectConfig, ProjectInput, ProjectWorkspaceInheritedTasksConfig,
-    TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    InheritedTasksConfig, Input, ProjectConfig, ProjectWorkspaceInheritedTasksConfig, TaskArgs,
+    TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
     TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
     is_glob_like,
 };
 use moon_env_var::contains_env_var;
-use moon_project::Project;
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
@@ -78,8 +80,10 @@ pub struct TasksBuilderContext<'proj> {
 pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
 
-    project: &'proj Project,
+    project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
+    project_source: &'proj WorkspaceRelativePath,
+    project_toolchains: &'proj [Id],
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
@@ -94,11 +98,18 @@ pub struct TasksBuilder<'proj> {
 }
 
 impl<'proj> TasksBuilder<'proj> {
-    pub fn new(project: &'proj Project, context: TasksBuilderContext<'proj>) -> Self {
+    pub fn new(
+        project_id: &'proj Id,
+        project_source: &'proj WorkspaceRelativePath,
+        project_toolchains: &'proj [Id],
+        context: TasksBuilderContext<'proj>,
+    ) -> Self {
         Self {
             context,
-            project,
+            project_id,
             project_env: FxHashMap::default(),
+            project_source,
+            project_toolchains,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -107,17 +118,6 @@ impl<'proj> TasksBuilder<'proj> {
             local_tasks: FxHashMap::default(),
             filters: None,
         }
-    }
-
-    pub fn inherit_from_project(&mut self) {
-        if let Some(global_config) = &self.project.inherited {
-            self.inherit_global_tasks(
-                &global_config.config,
-                Some(&self.project.config.workspace.inherited_tasks),
-            );
-        }
-
-        self.load_local_tasks(&self.project.config);
     }
 
     #[instrument(skip_all)]
@@ -142,13 +142,13 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            project_id = self.project.id.as_str(),
+            project_id = self.project_id.as_str(),
             task_ids = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Filtering global tasks",
         );
 
         for (task_id, task_config) in &global_config.tasks {
-            let target = Target::new(&self.project.id, task_id).unwrap();
+            let target = Target::new(self.project_id, task_id).unwrap();
 
             // None = Include all
             // [] = Include none
@@ -220,12 +220,8 @@ impl<'proj> TasksBuilder<'proj> {
             self.project_env.insert(key, value);
         }
 
-        if local_config.tasks.is_empty() {
-            return self;
-        }
-
         trace!(
-            project_id = self.project.id.as_str(),
+            project_id = self.project_id.as_str(),
             task_ids = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Loading local tasks",
         );
@@ -252,7 +248,7 @@ impl<'proj> TasksBuilder<'proj> {
 
     #[instrument(skip(self))]
     async fn build_task(&self, id: &Id) -> miette::Result<Task> {
-        let target = Target::new(&self.project.id, id)?;
+        let target = Target::new(self.project_id, id)?;
 
         trace!(
             task_target = target.as_str(),
@@ -316,7 +312,7 @@ impl<'proj> TasksBuilder<'proj> {
         task.preset = preset;
         task.options = self.build_task_options(id, preset)?;
         task.state.local_only = is_local;
-        task.state.root_level = is_root_level_source(&self.project.source);
+        task.state.root_level = is_root_level_source(self.project_source);
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -551,7 +547,6 @@ impl<'proj> TasksBuilder<'proj> {
         task.id = id.to_owned();
         task.target = target;
 
-        self.resolve_task_inputs(&mut task)?;
         self.resolve_task_toolchains(&mut task).await?;
 
         Ok(task)
@@ -708,43 +703,6 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
-    fn resolve_task_inputs(&self, task: &mut Task) -> miette::Result<()> {
-        let mut inputs = vec![];
-
-        for input in std::mem::take(&mut task.inputs) {
-            if let Input::Project(inner) = input {
-                if inner.is_all_deps() {
-                    for dep_config in &self.project.dependencies {
-                        inputs.push(Input::Project(ProjectInput {
-                            project: dep_config.id.to_string(),
-                            filter: inner.filter.clone(),
-                            group: inner.group.clone(),
-                        }));
-                    }
-                } else if self
-                    .project
-                    .dependencies
-                    .iter()
-                    .any(|dep| dep.id == inner.project)
-                {
-                    inputs.push(Input::Project(inner));
-                } else {
-                    return Err(TasksBuilderError::UnknownProjectInput {
-                        dep: inner.project,
-                        task: task.target.clone(),
-                    }
-                    .into());
-                }
-            } else {
-                inputs.push(input);
-            }
-        }
-
-        task.inputs = inputs;
-
-        Ok(())
-    }
-
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {
         let mut toolchains = FxHashSet::default();
 
@@ -774,7 +732,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // If none, then inherit the toolchains from the project
         if toolchains.is_empty() {
-            toolchains.extend(self.project.toolchains.clone());
+            toolchains.extend(self.project_toolchains.to_owned());
         }
 
         // Resolve them to valid identifiers

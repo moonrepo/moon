@@ -299,7 +299,7 @@ impl<'app> ProjectBuilder<'app> {
         project.tasks = tasks;
         project.task_targets = task_targets;
 
-        resolve_project_dependencies(&mut project, self.context.root_project_id);
+        // resolve_project_dependencies(&mut project, self.context.root_project_id);
 
         Ok(project)
     }

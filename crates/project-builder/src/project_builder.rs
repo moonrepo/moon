@@ -262,11 +262,10 @@ impl<'app> ProjectBuilder<'app> {
             .map(|task| task.target.clone())
             .collect::<Vec<_>>();
 
+        // Build the project first
         let mut project = Project {
-            dependencies: self.build_dependencies(&tasks)?,
+            dependencies: self.build_dependencies()?,
             file_groups: self.build_file_groups()?,
-            task_targets,
-            tasks,
             alias: self.alias,
             id: self.id.to_owned(),
             language: self.language,
@@ -285,14 +284,17 @@ impl<'app> ProjectBuilder<'app> {
         project.config = config;
         project.toolchains.sort();
 
+        // Then build the tasks with the project
+        project.tasks = tasks;
+        project.task_targets = task_targets;
+
+        resolve_project_dependencies(&mut project, self.context.root_project_id);
+
         Ok(project)
     }
 
     #[instrument(skip_all)]
-    fn build_dependencies(
-        &self,
-        tasks: &BTreeMap<Id, Task>,
-    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
+    fn build_dependencies(&self) -> miette::Result<Vec<ProjectDependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(
@@ -305,32 +307,12 @@ impl<'app> ProjectBuilder<'app> {
                 let dep_config = match dep_on {
                     ProjectDependsOn::String(id) => ProjectDependencyConfig {
                         id: id.to_owned(),
-                        ..ProjectDependencyConfig::default()
+                        ..Default::default()
                     },
                     ProjectDependsOn::Object(config) => config.to_owned(),
                 };
 
                 deps.insert(dep_config.id.clone(), dep_config);
-            }
-        }
-
-        // Tasks can depend on arbitrary projects, so include them also
-        for task_config in tasks.values() {
-            for task_dep in &task_config.deps {
-                if let Some(dep_config) = create_project_dep_from_task_dep(
-                    task_dep,
-                    self.id,
-                    self.context.root_project_id,
-                    |dep_project_id| {
-                        deps.contains_key(dep_project_id)
-                            || self
-                                .alias
-                                .as_ref()
-                                .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
-                    },
-                ) {
-                    deps.insert(dep_config.id.clone(), dep_config);
-                }
             }
         }
 
@@ -424,4 +406,34 @@ impl<'app> ProjectBuilder<'app> {
 
         tasks_builder.build().await
     }
+}
+
+fn resolve_project_dependencies(project: &mut Project, root_project_id: Option<&Id>) {
+    let mut deps: Vec<ProjectDependencyConfig> = vec![];
+
+    // Tasks can depend on arbitrary projects, so include them also
+    for task_config in project.tasks.values() {
+        for task_dep in &task_config.deps {
+            if let Some(dep_config) = create_project_dep_from_task_dep(
+                task_dep,
+                &project.id,
+                root_project_id,
+                |dep_project_id| {
+                    deps.iter().any(|dep| &dep.id == dep_project_id)
+                        || project
+                            .dependencies
+                            .iter()
+                            .any(|dep| &dep.id == dep_project_id)
+                        || project
+                            .alias
+                            .as_ref()
+                            .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                },
+            ) {
+                deps.push(dep_config);
+            }
+        }
+    }
+
+    project.dependencies.extend(deps);
 }

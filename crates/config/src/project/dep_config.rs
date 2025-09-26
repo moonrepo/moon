@@ -3,17 +3,6 @@ use moon_common::Id;
 use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
-    /// The task-to-task relationship of the dependency.
-    #[derive(ConfigEnum)]
-    pub enum DependencyType {
-        Cleanup,
-        #[default]
-        Required,
-        Optional,
-    }
-);
-
-config_unit_enum!(
     /// The scope and or relationship of the dependency.
     #[derive(ConfigEnum, PartialOrd, Ord)]
     pub enum DependencyScope {

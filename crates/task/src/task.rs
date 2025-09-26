@@ -1,8 +1,8 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType, is_false,
-    schematic::RegexSetting,
+    Input, OutputPath, PlatformType, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType,
+    is_false, schematic::RegexSetting,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
@@ -312,7 +312,8 @@ impl Task {
 
     /// Return true if the task should run in a CI environment.
     pub fn should_run_in_ci(&self) -> bool {
-        if !self.options.run_in_ci.is_enabled() {
+        if !self.options.run_in_ci.is_enabled() || self.options.run_in_ci == TaskOptionRunInCI::Skip
+        {
             return false;
         }
 

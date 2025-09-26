@@ -284,9 +284,7 @@ impl WorkspaceMocker {
         let enabled_toolchains = self.toolchain_config.get_enabled();
 
         let mut builder = TasksBuilder::new(
-            &project.id,
-            &project.source,
-            &project.toolchains,
+            project,
             TasksBuilderContext {
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,
@@ -295,8 +293,6 @@ impl WorkspaceMocker {
                 workspace_root: &self.workspace_root,
             },
         );
-
-        builder.load_local_tasks(&project.config);
 
         // Note: this list isn't accurate for a real world scenario!
         let stable_toolchains = project
@@ -319,6 +315,8 @@ impl WorkspaceMocker {
             &global_config.config,
             Some(&project.config.workspace.inherited_tasks),
         );
+
+        builder.load_local_tasks(&project.config);
 
         op(&mut builder);
 

@@ -265,7 +265,6 @@ impl<'app> ProjectBuilder<'app> {
             root: self.root,
             source: self.source.to_owned(),
             toolchains: self.toolchains,
-            inherited: self.global_config.take(),
             ..Default::default()
         };
 
@@ -274,6 +273,7 @@ impl<'app> ProjectBuilder<'app> {
         project.stack = config.stack;
         project.layer = config.layer;
         project.config = config;
+        project.inherited = self.global_config.take();
         project.toolchains.sort();
 
         // Then build the tasks with the project
@@ -299,7 +299,7 @@ impl<'app> ProjectBuilder<'app> {
         project.tasks = tasks;
         project.task_targets = task_targets;
 
-        resolve_project_dependencies(&mut project, self.context.root_project_id);
+        // resolve_project_dependencies(&mut project, self.context.root_project_id);
 
         Ok(project)
     }

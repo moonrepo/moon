@@ -1285,5 +1285,41 @@ mod affected_tasks {
 
             assert!(affected.tasks.is_empty());
         }
+
+        #[tokio::test]
+        async fn when_ci_doesnt_track_for_skip() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.set_ci_check(true);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert!(affected.tasks.is_empty());
+        }
+
+        #[tokio::test]
+        async fn when_not_ci_tracks_for_skip() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.set_ci_check(false);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:skip").unwrap(),
+                    create_state_from_file("ci/file.txt")
+                )])
+            );
+        }
     }
 }

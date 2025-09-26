@@ -117,6 +117,8 @@ config_enum!(
         Affected,
         /// Only run in CI and not locally if affected by touched files.
         Only,
+        /// Skip running in CI but run locally and allow task relationships to be valid.
+        Skip,
         /// Either affected, or don't run at all.
         #[serde(untagged)]
         Enabled(bool),

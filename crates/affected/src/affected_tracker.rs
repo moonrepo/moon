@@ -393,7 +393,9 @@ impl AffectedTracker {
             (true, TaskOptionRunInCI::Always) => {
                 return Ok(Some(AffectedBy::AlwaysAffected));
             }
-            (true, TaskOptionRunInCI::Enabled(false)) | (false, TaskOptionRunInCI::Only) => {
+            (true, TaskOptionRunInCI::Enabled(false))
+            | (true, TaskOptionRunInCI::Skip)
+            | (false, TaskOptionRunInCI::Only) => {
                 return Ok(None);
             }
             _ => {}

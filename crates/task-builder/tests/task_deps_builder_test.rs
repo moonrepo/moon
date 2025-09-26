@@ -108,96 +108,172 @@ mod task_deps_builder {
         );
     }
 
-    #[test]
-    #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
-    fn errors_if_dep_not_run_in_ci() {
-        let mut project = create_project();
+    mod run_in_ci {
+        use super::*;
 
-        let mut task = create_task();
-        task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
-        task.deps
-            .push(TaskDependencyConfig::new(Target::parse("no-ci").unwrap()));
+        #[test]
+        #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
+        fn errors_if_dep_not_enabled() {
+            let mut project = create_project();
 
-        build_task_deps_with_data(
-            &mut project,
-            &mut task,
-            FxHashMap::from_iter([(
-                Target::parse("project:no-ci").unwrap(),
-                TaskOptions {
-                    run_in_ci: TaskOptionRunInCI::Enabled(false),
-                    ..Default::default()
-                },
-            )]),
-        );
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("no-ci").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:no-ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Enabled(false),
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
+
+        #[test]
+        fn doesnt_errors_if_dep_enabled() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Enabled(true),
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
+
+        #[test]
+        fn doesnt_errors_if_dep_is_skipped() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(true);
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Skip,
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
+
+        #[test]
+        fn doesnt_errors_if_task_is_skipped() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Skip;
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Enabled(true),
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
+
+        #[test]
+        fn doesnt_errors_if_both_are_skipped() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.options.run_in_ci = TaskOptionRunInCI::Skip;
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
+
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:ci").unwrap(),
+                    TaskOptions {
+                        run_in_ci: TaskOptionRunInCI::Skip,
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
     }
 
-    #[test]
-    fn doesnt_errors_if_dep_run_in_ci() {
-        let mut project = create_project();
+    mod persistent {
+        use super::*;
 
-        let mut task = create_task();
-        task.options.run_in_ci = TaskOptionRunInCI::Enabled(false);
-        task.deps
-            .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
+        #[test]
+        #[should_panic(
+            expected = "Non-persistent task project:task cannot depend on persistent task"
+        )]
+        fn errors_for_invalid_persistent_chain() {
+            let mut project = create_project();
 
-        build_task_deps_with_data(
-            &mut project,
-            &mut task,
-            FxHashMap::from_iter([(
-                Target::parse("project:ci").unwrap(),
-                TaskOptions {
-                    run_in_ci: TaskOptionRunInCI::Enabled(true),
-                    ..Default::default()
-                },
-            )]),
-        );
-    }
+            let mut task = create_task();
+            task.options.persistent = false;
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("persistent").unwrap(),
+            ));
 
-    #[test]
-    #[should_panic(expected = "Non-persistent task project:task cannot depend on persistent task")]
-    fn errors_for_invalid_persistent_chain() {
-        let mut project = create_project();
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:persistent").unwrap(),
+                    TaskOptions {
+                        persistent: true,
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
 
-        let mut task = create_task();
-        task.options.persistent = false;
-        task.deps.push(TaskDependencyConfig::new(
-            Target::parse("persistent").unwrap(),
-        ));
+        #[test]
+        fn doesnt_errors_for_valid_persistent_chain() {
+            let mut project = create_project();
 
-        build_task_deps_with_data(
-            &mut project,
-            &mut task,
-            FxHashMap::from_iter([(
-                Target::parse("project:persistent").unwrap(),
-                TaskOptions {
-                    persistent: true,
-                    ..Default::default()
-                },
-            )]),
-        );
-    }
+            let mut task = create_task();
+            task.options.persistent = true;
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("not-persistent").unwrap(),
+            ));
 
-    #[test]
-    fn doesnt_errors_for_valid_persistent_chain() {
-        let mut project = create_project();
-
-        let mut task = create_task();
-        task.options.persistent = true;
-        task.deps.push(TaskDependencyConfig::new(
-            Target::parse("not-persistent").unwrap(),
-        ));
-
-        build_task_deps_with_data(
-            &mut project,
-            &mut task,
-            FxHashMap::from_iter([(
-                Target::parse("project:not-persistent").unwrap(),
-                TaskOptions {
-                    persistent: false,
-                    ..Default::default()
-                },
-            )]),
-        );
+            build_task_deps_with_data(
+                &mut project,
+                &mut task,
+                FxHashMap::from_iter([(
+                    Target::parse("project:not-persistent").unwrap(),
+                    TaskOptions {
+                        persistent: false,
+                        ..Default::default()
+                    },
+                )]),
+            );
+        }
     }
 
     mod all_scope {

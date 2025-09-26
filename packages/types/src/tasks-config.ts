@@ -215,7 +215,7 @@ export interface TaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI: boolean | 'always' | 'affected' | null;
+	runInCI: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.
@@ -507,7 +507,7 @@ export interface PartialTaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot?: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI?: boolean | 'always' | 'affected' | null;
+	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.

@@ -381,7 +381,7 @@ impl<'app> ProjectBuilder<'app> {
         &mut self,
         dependencies: &[ProjectDependencyConfig],
     ) -> miette::Result<BTreeMap<Id, Task>> {
-        trace!(project_id = self.id.as_str(), "Building tasks");
+        trace!(project_id = self.id.as_str(), "Building project tasks");
 
         let mut tasks_builder = TasksBuilder::new(
             self.id,

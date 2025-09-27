@@ -6,7 +6,7 @@ use moon_common::{
     path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
-    InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
+    InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig, ProjectInput,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
     TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
@@ -550,6 +550,7 @@ impl<'proj> TasksBuilder<'proj> {
         task.id = id.to_owned();
         task.target = target;
 
+        self.resolve_task_inputs(&mut task)?;
         self.resolve_task_toolchains(&mut task).await?;
 
         Ok(task)
@@ -704,6 +705,42 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         Ok(options)
+    }
+
+    fn resolve_task_inputs(&self, task: &mut Task) -> miette::Result<()> {
+        let mut inputs = vec![];
+
+        for input in std::mem::take(&mut task.inputs) {
+            if let Input::Project(inner) = input {
+                if inner.is_all_deps() {
+                    for dep_config in self.project_dependencies {
+                        inputs.push(Input::Project(ProjectInput {
+                            project: dep_config.id.to_string(),
+                            filter: inner.filter.clone(),
+                            group: inner.group.clone(),
+                        }));
+                    }
+                } else if self
+                    .project_dependencies
+                    .iter()
+                    .any(|dep| dep.id == inner.project)
+                {
+                    inputs.push(Input::Project(inner));
+                } else {
+                    return Err(TasksBuilderError::UnknownProjectInput {
+                        dep: inner.project,
+                        task: task.target.clone(),
+                    }
+                    .into());
+                }
+            } else {
+                inputs.push(input);
+            }
+        }
+
+        task.inputs = inputs;
+
+        Ok(())
     }
 
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {

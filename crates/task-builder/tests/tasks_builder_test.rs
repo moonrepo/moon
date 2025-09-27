@@ -379,6 +379,96 @@ mod tasks_builder {
         }
     }
 
+    mod inputs {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn expands_project_all() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("inputs-project").await;
+            let task = tasks.get("all-deps").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "dep-b".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "dep-a".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "dep-c".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn uses_single_project() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("inputs-project").await;
+            let task = tasks.get("only-a").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "dep-a".into(),
+                        filter: vec!["src/**/*".into()],
+                        group: None,
+                    }),
+                    Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Invalid project input")]
+        async fn errors_if_referencing_a_non_dep_project() {
+            let sandbox = create_sandbox("builder");
+            sandbox.create_file(
+                "inputs-project-error/moon.yml",
+                r#"
+dependsOn: ['dep-a']
+
+tasks:
+  will-error:
+    inputs:
+      - project: 'dep-b'
+"#,
+            );
+
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("inputs-project-error").await;
+            let task = tasks.get("only-a").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "dep-a".into(),
+                        filter: vec!["src/**/*".into()],
+                        group: None,
+                    }),
+                    Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
+                ]
+            );
+        }
+    }
+
     mod detect_platform_legacy {
         use super::*;
 

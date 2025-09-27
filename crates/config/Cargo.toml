@@ -46,7 +46,7 @@ tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 moon_config = { path = ".", features = ["proto", "template", "tracing"] }
-httpmock = "0.7.0"
+httpmock = "0.8.0"
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 

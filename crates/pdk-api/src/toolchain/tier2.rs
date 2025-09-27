@@ -305,10 +305,6 @@ api_struct!(
         /// Map of all dependencies and their locked versions.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub dependencies: BTreeMap<String, Vec<LockDependency>>,
-
-        /// Map of all packages within the current workspace.
-        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-        pub packages: BTreeMap<String, Option<Version>>,
     }
 );
 

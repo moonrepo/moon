@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- **WASM API**
+  - Removed `ParseLockOutput.packages` field.
+
 #### 🚀 Updates
 
 - Added a new task input type that allows you to depend on changes to a project's files directly,
@@ -20,7 +25,7 @@
 
 #### 🧩 Plugins
 
-- WASM API
+- **WASM API**
   - Added `ManifestDependencyConfig.reference` field.
   - Added `SyncProjectInput.toolchain_workspace_config` field.
 

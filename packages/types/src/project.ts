@@ -1,10 +1,10 @@
+import type { Id } from './common';
 import type {
-	DependencyConfig,
 	DependencyScope,
-	DependencyType,
 	LanguageType,
 	LayerType,
 	ProjectConfig,
+	ProjectDependencyConfig,
 	StackType,
 } from './project-config';
 import type {
@@ -13,6 +13,7 @@ import type {
 	PartialInheritedTasksConfig,
 	PlatformType,
 	TaskDependencyConfig,
+	TaskDependencyType,
 	TaskMergeStrategy,
 	TaskOperatingSystem,
 	TaskOutputStyle,
@@ -27,7 +28,7 @@ export interface FileGroup {
 	env: string[];
 	files: string[];
 	globs: string[];
-	id: string;
+	id: Id;
 }
 
 export interface TaskOptions {
@@ -84,7 +85,7 @@ export interface Task {
 	deps: TaskDependencyConfig[];
 	description: string | null;
 	env: Record<string, string>;
-	id: string;
+	id: Id;
 	inputs: Input[];
 	inputEnv: string[];
 	inputFiles: Record<string, TaskFileInput>;
@@ -110,9 +111,9 @@ export interface TaskFragment {
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: DependencyConfig[];
+	dependencies: ProjectDependencyConfig[];
 	fileGroups: Record<string, FileGroup>;
-	id: string;
+	id: Id;
 	inherited: {
 		order: string[];
 		config: InheritedTasksConfig;
@@ -125,15 +126,15 @@ export interface Project {
 	root: string;
 	source: string;
 	stack: StackType;
-	tasks: Record<string, Task>;
+	tasks: Record<Id, Task>;
 	taskTargets: string[];
-	toolchains: string[];
+	toolchains: Id[];
 }
 
 export interface ProjectFragment {
 	alias: string | null;
 	dependencyScope: DependencyScope;
-	id: string;
+	id: Id;
 	source: string;
 	toolchains: string[];
 }
@@ -153,7 +154,7 @@ export interface TaskGraphInner {
 	nodes: Task[];
 	node_holes: string[];
 	edge_property: 'directed';
-	edges: [number, number, DependencyType][];
+	edges: [number, number, TaskDependencyType][];
 }
 
 export interface TaskGraph {
@@ -166,7 +167,7 @@ export interface WorkspaceGraph {
 	project_graph: ProjectGraphInner;
 	renamed_project_ids: Record<string, string>;
 	repo_type: 'monorepo-with-root' | 'monorepo' | 'polyrepo';
-	root_project_id: string | null;
+	root_project_id: Id | null;
 	task_data: Record<string, { node_index: number }>;
 	task_graph: TaskGraphInner;
 }

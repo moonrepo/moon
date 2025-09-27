@@ -31,12 +31,12 @@
       "description": "Extends one or many other templates.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/Id"
         },
         {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       ]
@@ -46,7 +46,7 @@
       "description": "Overrides the ID of the template, instead of using the folder name.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/Id"
         },
         {
           "type": "null"
@@ -73,6 +73,9 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "Id": {
+      "type": "string"
+    },
     "TemplateVariable": {
       "description": "Each type of template variable.",
       "anyOf": [

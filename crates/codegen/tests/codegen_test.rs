@@ -98,22 +98,22 @@ mod codegen {
             assert!(
                 sandbox
                     .path()
-                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_")
+                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123")
                     .exists()
             );
             assert!(
                 sandbox
                     .path()
-                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_/template.yml")
+                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123/template.yml")
                     .exists()
             );
 
-            assert_eq!(template.id, "so-me-temPlatE--with-Ran-dom-Valu-es-123_");
+            assert_eq!(template.id, "so-me-temPlatE--with-Ran-dom-Valu-es-123");
             assert_eq!(
                 template.root,
                 sandbox
                     .path()
-                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_")
+                    .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123")
             );
         }
     }

@@ -1,7 +1,10 @@
 mod utils;
 
+use moon_common::Id;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{Input, LanguageType, LayerType, OutputPath};
+use moon_config::{
+    FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, OutputPath,
+};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
@@ -27,7 +30,7 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Unknown file group unknown used in token @files(unknown).")]
+    #[should_panic(expected = "Unknown file group unknown for project project.")]
     fn errors_for_unknown_file_group() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -1114,12 +1117,69 @@ mod token_expander {
         }
 
         #[test]
+        fn supports_group_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Static,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/config.yml"),
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir")
+                    ],
+                    globs: vec![
+                        WorkspaceRelativePathBuf::from("project/source/*.md"),
+                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                    ],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
         fn supports_dirs_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
             task.inputs = vec![Input::TokenFunc("@dirs(dirs)".into())];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
+                        WorkspaceRelativePathBuf::from("project/source/other"),
+                    ],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_dirs_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("dirs"),
+                format: FileGroupInputFormat::Dirs,
+            })];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1164,6 +1224,35 @@ mod token_expander {
         }
 
         #[test]
+        fn supports_files_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Files,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/config.yml"),
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
+                        WorkspaceRelativePathBuf::from("project/source/docs.md"),
+                        WorkspaceRelativePathBuf::from("project/source/other/file.json"),
+                    ],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
         fn supports_globs_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -1188,12 +1277,63 @@ mod token_expander {
         }
 
         #[test]
+        fn supports_globs_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Globs,
+            })];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    files: vec![],
+                    globs: vec![
+                        WorkspaceRelativePathBuf::from("project/source/*.md"),
+                        WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                    ],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
         fn supports_root_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
             task.inputs = vec![Input::TokenFunc("@root(all)".into())];
+
+            let context = create_context(sandbox.path());
+            let mut expander = TokenExpander::new(&project, &context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    files: vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_root_via_input() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![Input::FileGroup(FileGroupInput {
+                group: Id::raw("all"),
+                format: FileGroupInputFormat::Root,
+            })];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);

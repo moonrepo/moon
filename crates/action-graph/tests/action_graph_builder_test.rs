@@ -25,7 +25,7 @@ fn create_task(project: &str, id: &str) -> Task {
 }
 
 fn create_proto_version() -> VersionSpec {
-    VersionSpec::parse("0.52.3").unwrap()
+    VersionSpec::parse("0.53.0").unwrap()
 }
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {
@@ -1577,6 +1577,42 @@ mod action_graph_builder {
 
         mod dont_run_in_ci {
             use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_graph_if_task_ci_skip() {
+                let sandbox = create_sandbox("projects");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let mut task = create_task("bar", "build");
+                task.options.run_in_ci = TaskOptionRunInCI::Skip;
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(
+                    context.get_target_states(),
+                    FxHashMap::from_iter([(
+                        Target::parse("bar:build").unwrap(),
+                        TargetState::Passthrough
+                    )])
+                );
+
+                assert!(topo(graph).is_empty());
+            }
 
             #[tokio::test(flavor = "multi_thread")]
             async fn doesnt_graph_if_ci_check_true() {

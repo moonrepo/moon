@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-import type { ExtendsFrom } from './common';
+import type { ExtendsFrom, Id } from './common';
 import type { PluginLocator } from './toolchain-config';
 
 /** How to order ownership rules within the generated file. */
@@ -54,7 +54,7 @@ export interface ConstraintsConfig {
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
-	tagRelationships: Record<string, string[]>;
+	tagRelationships: Record<Id, Id[]>;
 }
 
 /** Configures aspects of the Docker pruning process. */
@@ -233,7 +233,7 @@ export interface NotifierConfig {
 	webhookUrl: string | null;
 }
 
-export type PipelineActionSwitch = null | boolean | string[];
+export type PipelineActionSwitch = null | boolean | Id[];
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PipelineConfig {
@@ -305,10 +305,10 @@ export interface WorkspaceProjectsConfig {
 	 */
 	globs: string[];
 	/** A mapping of project IDs to relative file paths to each project directory. */
-	sources: Record<string, string>;
+	sources: Record<Id, string>;
 }
 
-export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<string, string>;
+export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<Id, string>;
 
 /** The API format of the remote service. */
 export type RemoteApi = 'grpc' | 'http';
@@ -525,7 +525,7 @@ export interface WorkspaceConfig {
 	 */
 	extends: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
-	extensions: Record<string, ExtensionConfig>;
+	extensions: Record<Id, ExtensionConfig>;
 	/** Configures the generator for scaffolding from templates. */
 	generator: GeneratorConfig;
 	/** Configures aspects of the content hashing engine. */
@@ -601,7 +601,7 @@ export interface PartialConstraintsConfig {
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
-	tagRelationships?: Record<string, string[]> | null;
+	tagRelationships?: Record<Id, Id[]> | null;
 }
 
 /** Configures aspects of the Docker pruning process. */
@@ -769,7 +769,7 @@ export interface PartialNotifierConfig {
 	webhookUrl?: string | null;
 }
 
-export type PartialPipelineActionSwitch = null | boolean | string[];
+export type PartialPipelineActionSwitch = null | boolean | Id[];
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PartialPipelineConfig {
@@ -841,13 +841,13 @@ export interface PartialWorkspaceProjectsConfig {
 	 */
 	globs?: string[] | null;
 	/** A mapping of project IDs to relative file paths to each project directory. */
-	sources?: Record<string, string> | null;
+	sources?: Record<Id, string> | null;
 }
 
 export type PartialWorkspaceProjects =
 	| PartialWorkspaceProjectsConfig
 	| string[]
-	| Record<string, string>;
+	| Record<Id, string>;
 
 /** Configures basic HTTP authentication. */
 export interface PartialRemoteAuthConfig {
@@ -1041,7 +1041,7 @@ export interface PartialWorkspaceConfig {
 	 */
 	extends?: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
-	extensions?: Record<string, PartialExtensionConfig> | null;
+	extensions?: Record<Id, PartialExtensionConfig> | null;
 	/** Configures the generator for scaffolding from templates. */
 	generator?: PartialGeneratorConfig | null;
 	/** Configures aspects of the content hashing engine. */

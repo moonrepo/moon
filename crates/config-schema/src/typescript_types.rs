@@ -8,17 +8,20 @@ use std::path::Path;
 
 fn generate_project(out_dir: &Path) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
-    generator.add::<DependencyType>();
-    generator.add::<DependencyConfig>();
+    generator.add::<ProjectDependencyConfig>();
     generator.add::<ProjectConfig>();
     generator.add::<PartialProjectConfig>();
     generator.generate(
         out_dir.join("project-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
             exclude_references: vec![
+                "Id".into(),
                 "Input".into(),
                 "FileInput".into(),
+                "FileGroupInput".into(),
+                "FileGroupInputFormat".into(),
                 "GlobInput".into(),
+                "ProjectInput".into(),
                 "PartialTaskArgs".into(),
                 "PartialTaskConfig".into(),
                 "PartialTaskDependency".into(),
@@ -64,6 +67,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                         "UnresolvedVersionSpec".into(),
                     ],
                 ),
+                ("./common".into(), vec!["Id".into()]),
             ]),
             ..Default::default()
         }),
@@ -72,13 +76,17 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
 
 fn generate_tasks(out_dir: &Path) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
+    generator.add::<TaskDependencyType>();
     generator.add::<InheritedTasksConfig>();
     generator.add::<PartialInheritedTasksConfig>();
     generator.generate(
         out_dir.join("tasks-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
-            exclude_references: vec!["ExtendsFrom".into()],
-            external_types: HashMap::from_iter([("./common".into(), vec!["ExtendsFrom".into()])]),
+            exclude_references: vec!["Id".into(), "ExtendsFrom".into()],
+            external_types: HashMap::from_iter([(
+                "./common".into(),
+                vec!["Id".into(), "ExtendsFrom".into()],
+            )]),
             ..Default::default()
         }),
     )
@@ -92,7 +100,11 @@ fn generate_template(out_dir: &Path) -> miette::Result<()> {
     generator.add::<PartialTemplateConfig>();
     generator.generate(
         out_dir.join("template-config.ts"),
-        TypeScriptRenderer::default(),
+        TypeScriptRenderer::new(TypeScriptOptions {
+            exclude_references: vec!["Id".into()],
+            external_types: HashMap::from_iter([("./common".into(), vec!["Id".into()])]),
+            ..Default::default()
+        }),
     )
 }
 
@@ -103,8 +115,11 @@ fn generate_toolchain(out_dir: &Path) -> miette::Result<()> {
     generator.generate(
         out_dir.join("toolchain-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
-            exclude_references: vec!["ExtendsFrom".into()],
-            external_types: HashMap::from_iter([("./common".into(), vec!["ExtendsFrom".into()])]),
+            exclude_references: vec!["Id".into(), "ExtendsFrom".into()],
+            external_types: HashMap::from_iter([(
+                "./common".into(),
+                vec!["Id".into(), "ExtendsFrom".into()],
+            )]),
             ..Default::default()
         }),
     )
@@ -117,9 +132,9 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
     generator.generate(
         out_dir.join("workspace-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
-            exclude_references: vec!["ExtendsFrom".into(), "PluginLocator".into()],
+            exclude_references: vec!["Id".into(), "ExtendsFrom".into(), "PluginLocator".into()],
             external_types: HashMap::from_iter([
-                ("./common".into(), vec!["ExtendsFrom".into()]),
+                ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),
                 ("./toolchain-config".into(), vec!["PluginLocator".into()]),
             ]),
             ..Default::default()

@@ -2,13 +2,34 @@
 
 /* eslint-disable */
 
-import type { ExtendsFrom } from './common';
+import type { ExtendsFrom, Id } from './common';
+
+/** The task-to-task relationship of the dependency. */
+export type TaskDependencyType = 'cleanup' | 'required' | 'optional';
 
 /** A file path input. */
 export interface FileInput {
 	content: string | null;
 	file: string;
 	optional?: boolean | null;
+}
+
+/** Format to resolve the file group into. */
+export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root';
+
+/** A file group input. */
+export interface FileGroupInput {
+	/**
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	as?: FileGroupInputFormat;
+	/**
+	 * @default 'static'
+	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
+	 */
+	format?: FileGroupInputFormat;
+	group: Id;
 }
 
 /** A glob path input. */
@@ -18,7 +39,15 @@ export interface GlobInput {
 	glob: string;
 }
 
-export type Input = string | FileInput | GlobInput;
+/** An external project input. */
+export interface ProjectInput {
+	filter?: string[];
+	fileGroup?: Id | null;
+	group?: Id | null;
+	project: string;
+}
+
+export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInput;
 
 export type TaskArgs = null | string | string[];
 
@@ -189,7 +218,7 @@ export interface TaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI: boolean | 'always' | 'affected' | null;
+	runInCI: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.
@@ -247,7 +276,7 @@ export interface TaskConfig {
 	 */
 	env: Record<string, string> | null;
 	/** Extends settings from a sibling task by ID. */
-	extends: string | null;
+	extends: Id | null;
 	/**
 	 * Inputs and sources that will mark the task as affected when comparing
 	 * against touched files. When not provided, all files within the project
@@ -291,13 +320,13 @@ export interface TaskConfig {
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchains?: string | string[];
+	toolchains?: Id | Id[];
 	/**
 	 * List of additional toolchain(s) in which the task will be ran in.
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchain: string | string[];
+	toolchain: Id | Id[];
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
@@ -324,7 +353,7 @@ export interface InheritedTasksConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<string, Input[]>;
+	fileGroups: Record<Id, Input[]>;
 	/**
 	 * Task dependencies that'll automatically be injected into every
 	 * task that inherits this configuration.
@@ -338,7 +367,7 @@ export interface InheritedTasksConfig {
 	/** Default task options for all inherited tasks. */
 	taskOptions: TaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
-	tasks: Record<string, TaskConfig>;
+	tasks: Record<Id, TaskConfig>;
 }
 
 export type PartialTaskArgs = null | string | string[];
@@ -481,7 +510,7 @@ export interface PartialTaskOptionsConfig {
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot?: boolean | null;
 	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
-	runInCI?: boolean | 'always' | 'affected' | null;
+	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on `PATH` resolution.
@@ -530,7 +559,7 @@ export interface PartialTaskConfig {
 	 */
 	env?: Record<string, string> | null;
 	/** Extends settings from a sibling task by ID. */
-	extends?: string | null;
+	extends?: Id | null;
 	/**
 	 * Inputs and sources that will mark the task as affected when comparing
 	 * against touched files. When not provided, all files within the project
@@ -573,13 +602,13 @@ export interface PartialTaskConfig {
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchains?: string | string[] | null;
+	toolchains?: Id | Id[] | null;
 	/**
 	 * List of additional toolchain(s) in which the task will be ran in.
 	 * The toolchain determines available binaries, lookup paths, and more.
 	 * This list will be merged with detected toolchains.
 	 */
-	toolchain?: string | string[] | null;
+	toolchain?: Id | Id[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
@@ -606,7 +635,7 @@ export interface PartialInheritedTasksConfig {
 	 * A mapping of group IDs to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups?: Record<string, Input[]> | null;
+	fileGroups?: Record<Id, Input[]> | null;
 	/**
 	 * Task dependencies that'll automatically be injected into every
 	 * task that inherits this configuration.
@@ -620,5 +649,5 @@ export interface PartialInheritedTasksConfig {
 	/** Default task options for all inherited tasks. */
 	taskOptions?: PartialTaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
-	tasks?: Record<string, PartialTaskConfig> | null;
+	tasks?: Record<Id, PartialTaskConfig> | null;
 }

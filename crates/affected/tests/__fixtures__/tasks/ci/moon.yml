@@ -11,3 +11,9 @@ tasks:
   always:
     options:
       runInCI: always
+  only:
+    options:
+      runInCI: only
+  skip:
+    options:
+      runInCI: skip

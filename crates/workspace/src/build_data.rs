@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
-    DependencyConfig, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
+    ProjectConfig, ProjectDependencyConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
 };
 use moon_pdk_api::ExtendProjectOutput;
 use moon_task::{Target, TaskOptions};
@@ -106,7 +106,7 @@ pub struct ExtendProjectEvent {
 
 #[derive(Debug, Default)]
 pub struct ExtendProjectData {
-    pub dependencies: Vec<DependencyConfig>,
+    pub dependencies: Vec<ProjectDependencyConfig>,
     pub tasks: FxHashMap<Id, TaskConfig>,
 }
 

@@ -121,6 +121,9 @@ pub struct AffectedTaskState {
     pub files: FxHashSet<WorkspaceRelativePathBuf>,
 
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub projects: FxHashSet<Id>,
+
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub upstream: FxHashSet<Target>,
 
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
@@ -146,6 +149,9 @@ impl AffectedTaskState {
                 }
                 AffectedBy::UpstreamTask(target) => {
                     state.upstream.insert(target);
+                }
+                AffectedBy::UpstreamProject(id) => {
+                    state.projects.insert(id);
                 }
                 _ => {
                     state.other = true;

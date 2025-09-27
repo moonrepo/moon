@@ -89,7 +89,7 @@ impl ProjectGraph {
         let metadata = self
             .metadata
             .get(&id)
-            .ok_or(ProjectGraphError::UnconfiguredID(id))?;
+            .ok_or_else(|| ProjectGraphError::UnconfiguredID(id.to_string()))?;
 
         Ok(self.graph.node_weight(metadata.index).unwrap())
     }

@@ -103,6 +103,17 @@ config_enum!(
     }
 );
 
+config_unit_enum!(
+    /// The task-to-task relationship of the dependency.
+    #[derive(ConfigEnum)]
+    pub enum TaskDependencyType {
+        Cleanup,
+        #[default]
+        Required,
+        Optional,
+    }
+);
+
 config_struct!(
     /// Expanded information about a task dependency.
     #[derive(Config)]

@@ -15,9 +15,9 @@ pub enum ProjectConstraintsError {
         "layer".style(Style::Property),
     )]
     InvalidLayerRelationship {
-        source_id: Id,
+        source_id: String,
         source_layer: LayerType,
-        dep_id: Id,
+        dep_id: String,
         dep_layer: LayerType,
         allowed: String,
     },
@@ -29,9 +29,9 @@ pub enum ProjectConstraintsError {
         .dep_id.style(Style::Id),
     )]
     InvalidTagRelationship {
-        source_id: Id,
-        source_tag: Id,
-        dep_id: Id,
+        source_id: String,
+        source_tag: String,
+        dep_id: String,
         allowed: String,
     },
 }
@@ -146,9 +146,9 @@ pub fn enforce_layer_relationships(
 
     if !valid {
         return Err(ProjectConstraintsError::InvalidLayerRelationship {
-            source_id: source.id.clone(),
+            source_id: source.id.to_string(),
             source_layer: source.layer,
-            dep_id: dependency.id.clone(),
+            dep_id: dependency.id.to_string(),
             dep_layer: dependency.layer,
             allowed: allowed
                 .into_iter()
@@ -196,9 +196,9 @@ pub fn enforce_tag_relationships(
     allowed.push(source_tag.to_owned());
 
     Err(ProjectConstraintsError::InvalidTagRelationship {
-        source_id: source.id.clone(),
-        source_tag: source_tag.clone(),
-        dep_id: dependency.id.clone(),
+        source_id: source.id.to_string(),
+        source_tag: source_tag.to_string(),
+        dep_id: dependency.id.to_string(),
         allowed: allowed
             .iter()
             .map(|t| format!("#{t}"))

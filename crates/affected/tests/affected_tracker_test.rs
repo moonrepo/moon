@@ -1015,6 +1015,136 @@ mod affected_tasks {
         }
     }
 
+    mod project_sources {
+        use super::*;
+
+        fn create_project_dep_state() -> AffectedTaskState {
+            let mut state = AffectedTaskState::default();
+            state.projects.insert(Id::raw("dep"));
+            state
+        }
+
+        #[tokio::test]
+        async fn any_file() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/file.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn using_file_group() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-group").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/src/file.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn using_filter_glob() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-filter").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-deps").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/tests/file.txt")
+                    ),
+                ])
+            );
+        }
+
+        #[tokio::test]
+        async fn using_project_deps() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.track_tasks().unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([
+                    (
+                        Target::parse("project-sources:by-filter").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-any").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("project-sources:by-deps").unwrap(),
+                        create_project_dep_state()
+                    ),
+                    (
+                        Target::parse("dep:global").unwrap(),
+                        create_state_from_file("dep/tests/file.txt")
+                    ),
+                ])
+            );
+        }
+    }
+
     mod ci {
         use super::*;
 
@@ -1116,6 +1246,78 @@ mod affected_tasks {
                         other: true,
                         ..Default::default()
                     }
+                )])
+            );
+        }
+
+        #[tokio::test]
+        async fn when_ci_only_tracks_when_ci() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.set_ci_check(true);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:only").unwrap(),
+                    create_state_from_file("ci/file.txt")
+                )])
+            );
+        }
+
+        #[tokio::test]
+        async fn when_ci_only_doesnt_track_when_not_in_ci() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.set_ci_check(false);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert!(affected.tasks.is_empty());
+        }
+
+        #[tokio::test]
+        async fn when_ci_doesnt_track_for_skip() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.set_ci_check(true);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert!(affected.tasks.is_empty());
+        }
+
+        #[tokio::test]
+        async fn when_not_ci_tracks_for_skip() {
+            let workspace_graph = build_graph("tasks").await;
+            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            tracker.set_ci_check(false);
+            tracker
+                .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .unwrap();
+            let affected = tracker.build();
+
+            assert_eq!(
+                affected.tasks,
+                FxHashMap::from_iter([(
+                    Target::parse("ci:skip").unwrap(),
+                    create_state_from_file("ci/file.txt")
                 )])
             );
         }

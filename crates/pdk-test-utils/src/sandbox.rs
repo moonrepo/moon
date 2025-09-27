@@ -3,7 +3,7 @@ use crate::host_func_mocker::*;
 use crate::toolchain_wrapper::*;
 use extism::{Function, UserData, ValType};
 use moon_pdk_api::{
-    RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
+    Id, RegisterExtensionInput, RegisterExtensionOutput, RegisterToolchainInput,
     RegisterToolchainOutput,
 };
 use proto_core::{ProtoEnvironment, Tool, ToolContext, inject_proto_manifest_config};
@@ -16,8 +16,8 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::Arc;
 use warpgate::{
-    Id, PluginContainer, PluginLoader, PluginManifest, Wasm, host::*,
-    inject_default_manifest_config, test_utils::*,
+    PluginContainer, PluginLoader, PluginManifest, Wasm, host::*, inject_default_manifest_config,
+    test_utils::*,
 };
 
 pub struct MoonWasmSandbox {
@@ -73,7 +73,7 @@ impl MoonWasmSandbox {
         id: &str,
         mut op: impl FnMut(&mut ConfigBuilder),
     ) -> ExtensionTestWrapper {
-        let id = Id::new(id).unwrap();
+        let id = Id::raw(id);
 
         // Create manifest
         let mut manifest = PluginManifest::new([Wasm::file(self.wasm_file.clone())]);
@@ -92,7 +92,7 @@ impl MoonWasmSandbox {
             .cache_func_with(
                 "register_extension",
                 RegisterExtensionInput {
-                    id: plugin.id.to_string(),
+                    id: plugin.id.clone(),
                 },
             )
             .await
@@ -114,7 +114,7 @@ impl MoonWasmSandbox {
         id: &str,
         mut op: impl FnMut(&mut ConfigBuilder),
     ) -> ToolchainTestWrapper {
-        let id = Id::new(id).unwrap();
+        let id = Id::raw(id);
 
         // Create manifest
         let mut manifest = PluginManifest::new([Wasm::file(self.wasm_file.clone())]);
@@ -133,7 +133,7 @@ impl MoonWasmSandbox {
             .cache_func_with(
                 "register_toolchain",
                 RegisterToolchainInput {
-                    id: plugin.id.to_string(),
+                    id: plugin.id.clone(),
                 },
             )
             .await
@@ -188,7 +188,9 @@ impl MoonWasmSandbox {
         inject_default_manifest_config(&id, &self.home_dir, &mut manifest).unwrap();
 
         if with_proto {
-            inject_proto_manifest_config(&id, &self.proto, &mut manifest).unwrap();
+            let context = ToolContext::new(id.clone());
+
+            inject_proto_manifest_config(&context, &self.proto, &mut manifest).unwrap();
         }
 
         PluginContainer::new(id, manifest, self.create_host_funcs(virtual_paths)).unwrap()

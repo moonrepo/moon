@@ -5,7 +5,7 @@ mod spec;
 pub use runtime::*;
 pub use spec::*;
 
-use moon_common::Id;
+use moon_common::{Id, IdExt};
 use moon_env_var::{GlobalEnvBag, as_bool};
 use rustc_hash::FxHashSet;
 

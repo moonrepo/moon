@@ -153,7 +153,7 @@ impl<'graph> TaskExpander<'graph> {
             let env_paths = env_files
                 .iter()
                 .filter_map(|input| match input {
-                    Input::ProjectFile(file) | Input::WorkspaceFile(file) => Some(
+                    Input::File(file) => Some(
                         file.to_workspace_relative(self.project.source.as_str())
                             .to_path(&self.context.workspace_root),
                     ),

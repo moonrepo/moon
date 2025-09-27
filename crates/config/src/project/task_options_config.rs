@@ -115,13 +115,17 @@ config_enum!(
         Always,
         /// Only run if affected by touched files.
         Affected,
+        /// Only run in CI and not locally if affected by touched files.
+        Only,
+        /// Skip running in CI but run locally and allow task relationships to be valid.
+        Skip,
         /// Either affected, or don't run at all.
         #[serde(untagged)]
         Enabled(bool),
     }
 );
 
-generate_switch!(TaskOptionRunInCI, ["always", "affected"]);
+generate_switch!(TaskOptionRunInCI, ["always", "affected", "only", "skip"]);
 
 config_unit_enum!(
     /// The strategy in which to merge a specific task option.

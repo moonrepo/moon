@@ -60,14 +60,6 @@ pub enum TokenExpanderError {
         token: String,
     },
 
-    #[diagnostic(code(token_expander::unknown_file_group))]
-    #[error(
-        "Unknown file group {} used in token {}.",
-        .group.style(Style::Id),
-        .token.style(Style::Symbol),
-    )]
-    UnknownFileGroup { group: String, token: String },
-
     #[diagnostic(
         code(token_expander::unknown),
         url("https://moonrepo.dev/docs/concepts/token")

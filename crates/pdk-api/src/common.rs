@@ -1,4 +1,5 @@
 use crate::context::MoonContext;
+use moon_common::Id;
 use moon_config::{DependencyScope, PartialTaskConfig};
 use moon_project::ProjectFragment;
 use moon_task::TaskFragment;
@@ -17,7 +18,7 @@ api_struct!(
 
         /// Map of project IDs to their source location,
         /// relative from the workspace root.
-        pub project_sources: BTreeMap<String, String>,
+        pub project_sources: BTreeMap<Id, String>,
 
         /// Workspace toolchain configuration.
         pub toolchain_config: serde_json::Value,
@@ -31,7 +32,7 @@ api_struct!(
         /// Map of project IDs to extracted information in which to
         /// extend projects in the project graph.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-        pub extended_projects: BTreeMap<String, ExtendProjectOutput>,
+        pub extended_projects: BTreeMap<Id, ExtendProjectOutput>,
 
         /// List of virtual files in which information was extracted from and
         /// should invalidate the project graph cache.
@@ -44,7 +45,7 @@ api_struct!(
     /// A project-to-project relationship.
     pub struct ProjectDependency {
         /// ID or alias of the depended on project.
-        pub id: String,
+        pub id: Id,
 
         /// Scope of the dependency relationship.
         pub scope: DependencyScope,
@@ -69,7 +70,7 @@ api_struct!(
 
         /// Map of inherited tasks keyed by a unique ID, typically extracted from a manifest.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-        pub tasks: BTreeMap<String, PartialTaskConfig>,
+        pub tasks: BTreeMap<Id, PartialTaskConfig>,
     }
 );
 

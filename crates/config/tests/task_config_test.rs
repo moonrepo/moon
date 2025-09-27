@@ -4,8 +4,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FilePath, Input, OneOrMany, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOutputStyle, TaskType,
+    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, OutputPath, PlatformType,
+    ProjectInput, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy,
+    TaskOptionCache, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -260,12 +261,12 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile(create_file_input("/ws/path")),
-                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
-                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile(create_file_input("proj/path")),
-                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
-                    Input::ProjectGlob(create_glob_input("!proj/glob/{a,b,c}")),
+                    Input::File(create_file_input("/ws/path")),
+                    Input::Glob(create_glob_input("/ws/glob/**/*")),
+                    Input::Glob(create_glob_input("!/ws/glob/**/*")),
+                    Input::File(create_file_input("proj/path")),
+                    Input::Glob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::Glob(create_glob_input("!proj/glob/{a,b,c}")),
                 ]
             );
         }
@@ -288,20 +289,20 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile({
+                    Input::File({
                         let mut inner = create_file_input("/ws/path");
                         inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
-                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
-                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile({
+                    Input::Glob(create_glob_input("/ws/glob/**/*")),
+                    Input::Glob(create_glob_input("!/ws/glob/**/*")),
+                    Input::File({
                         let mut inner = create_file_input("proj/path");
                         inner.optional = Some(true);
                         inner
                     }),
-                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
-                    Input::ProjectGlob({
+                    Input::Glob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::Glob({
                         let mut inner = create_glob_input("!proj/glob/{a,b,c}");
                         inner.cache = false;
                         inner
@@ -331,20 +332,20 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile({
+                    Input::File({
                         let mut inner = create_file_input("/ws/path");
                         inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
-                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
-                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile({
+                    Input::Glob(create_glob_input("/ws/glob/**/*")),
+                    Input::Glob(create_glob_input("!/ws/glob/**/*")),
+                    Input::File({
                         let mut inner = create_file_input("proj/path");
                         inner.optional = Some(true);
                         inner
                     }),
-                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
-                    Input::ProjectGlob({
+                    Input::Glob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::Glob({
                         let mut inner = create_glob_input("!proj/glob/{a,b,c}");
                         inner.cache = false;
                         inner
@@ -373,20 +374,20 @@ inputs:
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    Input::WorkspaceFile({
+                    Input::File({
                         let mut inner = create_file_input("/ws/path");
                         inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                         inner
                     }),
-                    Input::WorkspaceGlob(create_glob_input("/ws/glob/**/*")),
-                    Input::WorkspaceGlob(create_glob_input("!/ws/glob/**/*")),
-                    Input::ProjectFile({
+                    Input::Glob(create_glob_input("/ws/glob/**/*")),
+                    Input::Glob(create_glob_input("!/ws/glob/**/*")),
+                    Input::File({
                         let mut inner = create_file_input("proj/path");
                         inner.optional = Some(true);
                         inner
                     }),
-                    Input::ProjectGlob(create_glob_input("proj/glob/{a,b,c}")),
-                    Input::ProjectGlob({
+                    Input::Glob(create_glob_input("proj/glob/{a,b,c}")),
+                    Input::Glob({
                         let mut inner = create_glob_input("!proj/glob/{a,b,c}");
                         inner.cache = false;
                         inner
@@ -412,7 +413,83 @@ inputs:
                 vec![
                     Input::EnvVar("FOO_BAR".into()),
                     Input::EnvVarGlob("FOO_*".into()),
-                    Input::ProjectFile(create_file_input("file/path")),
+                    Input::File(create_file_input("file/path")),
+                ]
+            );
+        }
+
+        #[test]
+        fn supports_file_group_formats() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - group://sources
+  - group://sources?as=dirs
+  - group: 'tests'
+  - group: 'tests'
+    as: 'files'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("sources"),
+                        ..Default::default()
+                    }),
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("sources"),
+                        format: FileGroupInputFormat::Dirs,
+                    }),
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("tests"),
+                        ..Default::default()
+                    }),
+                    Input::FileGroup(FileGroupInput {
+                        group: Id::raw("tests"),
+                        format: FileGroupInputFormat::Files,
+                    })
+                ]
+            );
+        }
+
+        #[test]
+        fn supports_project_sources_formats() {
+            let config = test_parse_config(
+                r"
+inputs:
+  - project://a
+  - project://b?filter=src/**
+  - project: c
+    fileGroup: sources
+  - project: ^
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    Input::Project(ProjectInput {
+                        project: "a".into(),
+                        ..Default::default()
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "b".into(),
+                        filter: vec!["src/**".into()],
+                        ..Default::default()
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "c".into(),
+                        group: Some(Id::raw("sources")),
+                        ..Default::default()
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "^".into(),
+                        ..Default::default()
+                    }),
                 ]
             );
         }
@@ -864,10 +941,10 @@ options:
                     inputs: Some(vec![
                         Input::EnvVar("ENV".into()),
                         Input::EnvVarGlob("ENV_*".into()),
-                        Input::ProjectFile(create_file_input("file.txt")),
-                        Input::ProjectGlob(create_glob_input("file.*")),
-                        Input::WorkspaceFile(create_file_input("/file.txt")),
-                        Input::WorkspaceGlob(create_glob_input("/file.*")),
+                        Input::File(create_file_input("file.txt")),
+                        Input::Glob(create_glob_input("file.*")),
+                        Input::File(create_file_input("/file.txt")),
+                        Input::Glob(create_glob_input("/file.*")),
                         Input::TokenFunc("@dirs(name)".into())
                     ]),
                     local: Some(true),

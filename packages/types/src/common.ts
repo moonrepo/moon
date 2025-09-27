@@ -1,5 +1,7 @@
 import type { PlatformType } from './tasks-config';
 
+export type Id = string;
+
 export type Nullable<T> = { [K in keyof T]: T[K] | null };
 
 export interface Duration {
@@ -14,7 +16,7 @@ export interface Runtime {
 }
 
 export interface ToolchainSpec {
-	id: string;
+	id: Id;
 	overridden: boolean;
 	req?: string | null;
 }

@@ -89,7 +89,7 @@ config_enum!(
 
         /// A project referenced by ID, with additional parameters to pass through.
         #[setting(nested)]
-        Object(DependencyConfig),
+        Object(ProjectDependencyConfig),
     }
 );
 

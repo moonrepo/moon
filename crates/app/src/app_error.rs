@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use miette::Diagnostic;
-use moon_common::{Id, Style, Stylize, consts};
+use moon_common::{Style, Stylize, consts};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -55,7 +55,7 @@ pub enum AppError {
         "extensions".style(Style::Property),
         ".moon/workspace.yml".style(Style::File),
     )]
-    UnknownExtension { id: Id },
+    UnknownExtension { id: String },
 
     #[diagnostic(code(app::upgrade::requires_internet))]
     #[error("Upgrading moon requires an internet connection!")]

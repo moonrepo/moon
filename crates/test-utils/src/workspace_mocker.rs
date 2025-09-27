@@ -3,7 +3,7 @@ use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
-use moon_common::{Id, path::WorkspaceRelativePathBuf};
+use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
@@ -285,6 +285,7 @@ impl WorkspaceMocker {
 
         let mut builder = TasksBuilder::new(
             &project.id,
+            &project.dependencies,
             &project.source,
             &project.toolchains,
             TasksBuilderContext {
@@ -295,8 +296,6 @@ impl WorkspaceMocker {
                 workspace_root: &self.workspace_root,
             },
         );
-
-        builder.load_local_tasks(&project.config);
 
         // Note: this list isn't accurate for a real world scenario!
         let stable_toolchains = project
@@ -319,6 +318,8 @@ impl WorkspaceMocker {
             &global_config.config,
             Some(&project.config.workspace.inherited_tasks),
         );
+
+        builder.load_local_tasks(&project.config);
 
         op(&mut builder);
 

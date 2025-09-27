@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{Id, Style, Stylize};
+use moon_common::{Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -13,8 +13,8 @@ pub enum WorkspaceBuilderError {
     )]
     DuplicateProjectAlias {
         alias: String,
-        old_id: Id,
-        new_id: Id,
+        old_id: String,
+        new_id: String,
     },
 
     #[diagnostic(code(project_graph::duplicate_id))]
@@ -27,7 +27,7 @@ pub enum WorkspaceBuilderError {
         "moon.yml".style(Style::File)
     )]
     DuplicateProjectId {
-        id: Id,
+        id: String,
         old_source: String,
         new_source: String,
     },

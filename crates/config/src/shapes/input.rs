@@ -1,5 +1,5 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
-use super::{Uri, is_false};
+use super::*;
 use crate::{config_struct, config_unit_enum, patterns};
 use moon_common::Id;
 use moon_common::path::{
@@ -10,26 +10,7 @@ use schematic::{
     schema::UnionType,
 };
 use serde::{Deserialize, Serialize, Serializer};
-use std::fmt;
 use std::str::FromStr;
-
-fn map_parse_error<T: fmt::Display>(error: T) -> ParseError {
-    ParseError::new(error.to_string())
-}
-
-fn default_true() -> bool {
-    true
-}
-
-fn parse_bool_field(key: &str, value: &str) -> Result<bool, ParseError> {
-    if value.is_empty() || value == "true" {
-        Ok(true)
-    } else if value == "false" {
-        Ok(false)
-    } else {
-        Err(ParseError::new(format!("unsupported value for `{key}`")))
-    }
-}
 
 config_struct!(
     /// A file path input.

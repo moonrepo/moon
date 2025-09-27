@@ -9,8 +9,8 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::path::is_root_level_source;
 use moon_config::{
-    BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
+    BunConfig, DependencyScope, DependencySource, HasherConfig, PlatformType, ProjectConfig,
+    ProjectDependencyConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
     UnresolvedVersionSpec,
 };
 use moon_console::Console;
@@ -189,7 +189,7 @@ impl Platform for BunPlatform {
         &self,
         project_id: &str,
         project_source: &str,
-    ) -> miette::Result<Vec<DependencyConfig>> {
+    ) -> miette::Result<Vec<ProjectDependencyConfig>> {
         let mut implicit_deps = vec![];
 
         debug!(
@@ -205,7 +205,7 @@ impl Platform for BunPlatform {
                 |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
                     for dep_name in package_deps.keys() {
                         if let Some(dep_project_id) = self.package_names.get(dep_name) {
-                            implicit_deps.push(DependencyConfig {
+                            implicit_deps.push(ProjectDependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: *scope,
                                 source: DependencySource::Implicit,

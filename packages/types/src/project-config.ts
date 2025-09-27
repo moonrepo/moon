@@ -10,9 +10,6 @@ import type {
 	UnresolvedVersionSpec,
 } from './toolchain-config';
 
-/** The task-to-task relationship of the dependency. */
-export type DependencyType = 'cleanup' | 'required' | 'optional';
-
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
 
@@ -23,7 +20,7 @@ export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 
 export type DependencySource = 'explicit' | 'implicit';
 
 /** Expanded information about a project dependency. */
-export interface DependencyConfig {
+export interface ProjectDependencyConfig {
 	/** ID of the depended on project. */
 	id: Id;
 	/**
@@ -44,7 +41,7 @@ export interface DependencyConfig {
 	via: string | null;
 }
 
-export type ProjectDependsOn = Id | DependencyConfig;
+export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
 /** Configures `Dockerfile` generation. */
 export interface ProjectDockerFileConfig {
@@ -289,7 +286,7 @@ export interface ProjectConfig {
 }
 
 /** Expanded information about a project dependency. */
-export interface PartialDependencyConfig {
+export interface PartialProjectDependencyConfig {
 	/** ID of the depended on project. */
 	id?: Id | null;
 	/**
@@ -308,7 +305,7 @@ export interface PartialDependencyConfig {
 	via?: string | null;
 }
 
-export type PartialProjectDependsOn = Id | PartialDependencyConfig;
+export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
 /** Configures `Dockerfile` generation. */
 export interface PartialProjectDockerFileConfig {

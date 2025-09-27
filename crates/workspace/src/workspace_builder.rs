@@ -11,8 +11,9 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, DependencyConfig, DependencyScope, DependencyType, InheritedTasksManager,
-    ProjectsSourcesList, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
+    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectDependencyConfig,
+    ProjectsSourcesList, TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
@@ -92,7 +93,7 @@ pub struct WorkspaceBuilder<'app> {
     task_data: FxHashMap<Target, TaskBuildData>,
 
     /// The task DAG.
-    task_graph: DiGraph<NodeState<Task>, DependencyType>,
+    task_graph: DiGraph<NodeState<Task>, TaskDependencyType>,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -437,7 +438,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {
             for dep_config in &extended_data.dependencies {
-                builder.extend_with_dependency(DependencyConfig {
+                builder.extend_with_dependency(ProjectDependencyConfig {
                     id: ProjectBuildData::resolve_id(&dep_config.id, &self.project_data),
                     scope: dep_config.scope,
                     ..Default::default()
@@ -561,9 +562,9 @@ impl<'app> WorkspaceBuilder<'app> {
                 index,
                 dep_index,
                 if dep_config.optional.is_some_and(|v| v) {
-                    DependencyType::Optional
+                    TaskDependencyType::Optional
                 } else {
-                    DependencyType::Required
+                    TaskDependencyType::Required
                 },
             );
         }

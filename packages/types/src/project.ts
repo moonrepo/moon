@@ -1,11 +1,10 @@
 import type { Id } from './common';
 import type {
-	DependencyConfig,
 	DependencyScope,
-	DependencyType,
 	LanguageType,
 	LayerType,
 	ProjectConfig,
+	ProjectDependencyConfig,
 	StackType,
 } from './project-config';
 import type {
@@ -14,6 +13,7 @@ import type {
 	PartialInheritedTasksConfig,
 	PlatformType,
 	TaskDependencyConfig,
+	TaskDependencyType,
 	TaskMergeStrategy,
 	TaskOperatingSystem,
 	TaskOutputStyle,
@@ -111,7 +111,7 @@ export interface TaskFragment {
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: DependencyConfig[];
+	dependencies: ProjectDependencyConfig[];
 	fileGroups: Record<string, FileGroup>;
 	id: Id;
 	inherited: {
@@ -154,7 +154,7 @@ export interface TaskGraphInner {
 	nodes: Task[];
 	node_holes: string[];
 	edge_property: 'directed';
-	edges: [number, number, DependencyType][];
+	edges: [number, number, TaskDependencyType][];
 }
 
 export interface TaskGraph {

@@ -3,7 +3,7 @@ use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
 use moon_config::{
-    DependencyScope, NodePackageManager, PartialDependencyConfig, PartialProjectDependsOn,
+    DependencyScope, NodePackageManager, PartialProjectDependencyConfig, PartialProjectDependsOn,
 };
 use moon_node_lang::PackageJsonCache;
 use moon_node_lang::package_json::DependenciesMap;
@@ -59,10 +59,10 @@ pub async fn from_package_json(session: MoonSession, args: FromPackageJsonArgs) 
                     if matches!(scope, DependencyScope::Production) {
                         PartialProjectDependsOn::String(dep_id.to_owned())
                     } else {
-                        PartialProjectDependsOn::Object(PartialDependencyConfig {
+                        PartialProjectDependsOn::Object(PartialProjectDependencyConfig {
                             id: Some(dep_id.to_owned()),
                             scope: Some(scope),
-                            ..PartialDependencyConfig::default()
+                            ..PartialProjectDependencyConfig::default()
                         })
                     },
                 );

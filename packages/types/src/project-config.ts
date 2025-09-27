@@ -149,6 +149,19 @@ export interface ProjectMetadataConfig {
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
+/** A file path output. */
+export interface FileOutput {
+	file: string;
+	optional?: boolean | null;
+}
+
+/** A glob path output. */
+export interface GlobOutput {
+	glob: string;
+}
+
+export type Output = string | FileOutput | GlobOutput;
+
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */

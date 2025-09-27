@@ -45,7 +45,6 @@ impl<'task> TaskHasher<'task> {
     pub fn hash(mut self) -> TaskHash<'task> {
         // Ensure hashing is deterministic
         self.content.args.sort();
-        self.content.outputs.sort();
         self.content.project_deps.sort();
 
         // Consume the hasher and return the content
@@ -177,7 +176,7 @@ impl<'task> TaskHasher<'task> {
             return false;
         }
 
-        for output in &self.task.output_files {
+        for output in self.task.output_files.keys() {
             if workspace_relative_path == output || workspace_relative_path.starts_with(output) {
                 return false;
             }

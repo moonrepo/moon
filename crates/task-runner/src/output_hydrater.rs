@@ -83,11 +83,11 @@ impl OutputHydrater<'_> {
         // Create the archiver instance based on task outputs
         let mut archive = Archiver::new(&self.app.workspace_root, archive_file);
 
-        for output_file in &self.task.output_files {
+        for output_file in self.task.output_files.keys() {
             archive.add_source_file(output_file.as_str(), None);
         }
 
-        for output_glob in &self.task.output_globs {
+        for output_glob in self.task.output_globs.keys() {
             archive.add_source_glob(output_glob.as_str());
         }
 

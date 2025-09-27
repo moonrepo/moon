@@ -240,6 +240,19 @@ export interface TaskOptionsConfig {
 	windowsShell: TaskWindowsShell | null;
 }
 
+/** A file path output. */
+export interface FileOutput {
+	file: string;
+	optional?: boolean | null;
+}
+
+/** A glob path output. */
+export interface GlobOutput {
+	glob: string;
+}
+
+export type Output = string | FileOutput | GlobOutput;
+
 /** Platforms that each programming language can belong to. */
 export type PlatformType = 'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown';
 
@@ -297,7 +310,7 @@ export interface TaskConfig {
 	 * Outputs that will be created when the task has successfully ran.
 	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
 	 */
-	outputs: string[] | null;
+	outputs: Output[] | null;
 	/**
 	 * The platform in which the task will be ran in. The platform determines
 	 * available binaries, lookup paths, and more. When not provided, will
@@ -580,7 +593,7 @@ export interface PartialTaskConfig {
 	 * Outputs that will be created when the task has successfully ran.
 	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
 	 */
-	outputs?: string[] | null;
+	outputs?: Output[] | null;
 	/**
 	 * The platform in which the task will be ran in. The platform determines
 	 * available binaries, lookup paths, and more. When not provided, will

@@ -66,8 +66,8 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
     inputs.sort();
 
     let mut outputs = vec![];
-    outputs.extend(&task.output_globs);
-    outputs.extend(&task.output_files);
+    outputs.extend(task.output_globs.keys().map(|i| i.to_string()));
+    outputs.extend(task.output_files.keys().map(|i| i.to_string()));
     outputs.sort();
 
     let command = build_command(&session, &project, &task).await?;

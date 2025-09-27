@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::OutputPath;
+use moon_config::Output;
 use moon_hash::hash_content;
 use moon_project::Project;
 use moon_task::{Target, Task};
@@ -31,7 +31,7 @@ hash_content!(
         pub input_env: BTreeMap<&'task str, String>,
 
         // Relative output paths
-        pub outputs: Vec<&'task OutputPath>,
+        pub outputs: Vec<&'task Output>,
 
         // Project `dependsOn`
         pub project_deps: Vec<&'task Id>,

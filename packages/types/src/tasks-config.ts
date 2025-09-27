@@ -4,6 +4,9 @@
 
 import type { ExtendsFrom, Id } from './common';
 
+/** The task-to-task relationship of the dependency. */
+export type TaskDependencyType = 'cleanup' | 'required' | 'optional';
+
 /** A file path input. */
 export interface FileInput {
 	content: string | null;

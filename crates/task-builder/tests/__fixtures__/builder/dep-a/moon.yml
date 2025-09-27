@@ -1,0 +1,3 @@
+fileGroups:
+  sources:
+    - 'src/**/*'

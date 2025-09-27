@@ -1,6 +1,8 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::Id;
-use moon_config::{DependencyConfig, DependencyScope, DependencySource, TaskDependencyConfig};
+use moon_config::{
+    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
+};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task, TaskOptionRunInCI, TaskOptions};
 use std::mem;
@@ -191,7 +193,7 @@ pub fn create_project_dep_from_task_dep(
     project_id: &Id,
     root_project_id: Option<&Id>,
     already_exists: impl FnOnce(&Id) -> bool,
-) -> Option<DependencyConfig> {
+) -> Option<ProjectDependencyConfig> {
     let TargetScope::Project(dep_project_id) = &task_dep.target.scope else {
         return None;
     };
@@ -208,7 +210,7 @@ pub fn create_project_dep_from_task_dep(
         "Marking arbitrary project as an implicit dependency because of a task dependency"
     );
 
-    Some(DependencyConfig {
+    Some(ProjectDependencyConfig {
         id: dep_project_id.to_owned(),
         scope: if root_project_id.is_some_and(|id| id == dep_project_id) {
             DependencyScope::Root

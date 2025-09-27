@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::DependencyType;
+use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
 use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
@@ -11,7 +11,7 @@ use rustc_hash::FxHashMap;
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
-pub type TaskGraphType = DiGraph<Task, DependencyType>;
+pub type TaskGraphType = DiGraph<Task, TaskDependencyType>;
 pub type TasksCache = FxHashMap<Target, Arc<Task>>;
 
 #[derive(Clone, Debug, Default)]
@@ -180,8 +180,8 @@ impl TaskGraph {
     }
 }
 
-impl GraphData<Task, DependencyType, Target> for TaskGraph {
-    fn get_graph(&self) -> &DiGraph<Task, DependencyType> {
+impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
+    fn get_graph(&self) -> &DiGraph<Task, TaskDependencyType> {
         &self.graph
     }
 
@@ -194,10 +194,10 @@ impl GraphData<Task, DependencyType, Target> for TaskGraph {
     }
 }
 
-impl GraphConnections<Task, DependencyType, Target> for TaskGraph {}
+impl GraphConnections<Task, TaskDependencyType, Target> for TaskGraph {}
 
-impl GraphConversions<Task, DependencyType, Target> for TaskGraph {}
+impl GraphConversions<Task, TaskDependencyType, Target> for TaskGraph {}
 
-impl GraphToDot<Task, DependencyType, Target> for TaskGraph {}
+impl GraphToDot<Task, TaskDependencyType, Target> for TaskGraph {}
 
-impl GraphToJson<Task, DependencyType, Target> for TaskGraph {}
+impl GraphToJson<Task, TaskDependencyType, Target> for TaskGraph {}

@@ -1,9 +1,11 @@
 mod input;
+mod output;
 mod output_path;
 mod poly;
 mod portable_path;
 
 pub use input::*;
+pub use output::*;
 pub use output_path::*;
 pub use poly::*;
 pub use portable_path::*;
@@ -52,4 +54,22 @@ impl Uri {
 
 pub fn is_false(value: &bool) -> bool {
     !(*value)
+}
+
+pub(super) fn default_true() -> bool {
+    true
+}
+
+pub(super) fn map_parse_error<T: std::fmt::Display>(error: T) -> ParseError {
+    ParseError::new(error.to_string())
+}
+
+pub(super) fn parse_bool_field(key: &str, value: &str) -> Result<bool, ParseError> {
+    if value.is_empty() || value == "true" {
+        Ok(true)
+    } else if value == "false" {
+        Ok(false)
+    } else {
+        Err(ParseError::new(format!("unsupported value for `{key}`")))
+    }
 }

@@ -4409,6 +4409,7 @@ version = "0.4.0"
 dependencies = [
  "extism",
  "moon_pdk_api",
+ "moon_target",
  "proto_core",
  "proto_pdk_test_utils",
  "serde",

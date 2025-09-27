@@ -1,4 +1,5 @@
 use moon_pdk_api::*;
+use moon_target::Target;
 use proto_pdk_test_utils::WasmTestWrapper as ToolTestWrapper;
 use std::ops::Deref;
 use std::path::PathBuf;
@@ -17,6 +18,21 @@ impl ToolchainTestWrapper {
         MoonContext {
             working_dir: self.plugin.to_virtual_path(&self.root),
             workspace_root: self.plugin.to_virtual_path(&self.root),
+        }
+    }
+
+    pub fn create_project_fragment(&self) -> ProjectFragment {
+        ProjectFragment {
+            id: Id::raw("project"),
+            source: "project".into(),
+            ..Default::default()
+        }
+    }
+
+    pub fn create_task_fragment(&self) -> TaskFragment {
+        TaskFragment {
+            target: Target::parse("project:task").unwrap(),
+            ..Default::default()
         }
     }
 
@@ -49,9 +65,18 @@ impl ToolchainTestWrapper {
         mut input: ExtendTaskCommandInput,
     ) -> ExtendTaskCommandOutput {
         input.context = self.create_context();
+
         input.globals_dir = input
             .globals_dir
             .map(|path| self.plugin.to_virtual_path(path));
+
+        if input.project.id.is_empty() {
+            input.project = self.create_project_fragment();
+        }
+
+        if input.task.target.id.is_empty() {
+            input.task = self.create_task_fragment();
+        }
 
         self.plugin
             .call_func_with("extend_task_command", input)
@@ -64,9 +89,18 @@ impl ToolchainTestWrapper {
         mut input: ExtendTaskScriptInput,
     ) -> ExtendTaskScriptOutput {
         input.context = self.create_context();
+
         input.globals_dir = input
             .globals_dir
             .map(|path| self.plugin.to_virtual_path(path));
+
+        if input.project.id.is_empty() {
+            input.project = self.create_project_fragment();
+        }
+
+        if input.task.target.id.is_empty() {
+            input.task = self.create_task_fragment();
+        }
 
         self.plugin
             .call_func_with("extend_task_script", input)
@@ -79,6 +113,14 @@ impl ToolchainTestWrapper {
         mut input: HashTaskContentsInput,
     ) -> HashTaskContentsOutput {
         input.context = self.create_context();
+
+        if input.project.id.is_empty() {
+            input.project = self.create_project_fragment();
+        }
+
+        if input.task.target.id.is_empty() {
+            input.task = self.create_task_fragment();
+        }
 
         self.plugin
             .call_func_with("hash_task_contents", input)
@@ -104,6 +146,14 @@ impl ToolchainTestWrapper {
     ) -> InstallDependenciesOutput {
         input.context = self.create_context();
         input.root = self.plugin.to_virtual_path(input.root);
+
+        if input
+            .project
+            .as_ref()
+            .is_some_and(|project| project.id.is_empty())
+        {
+            input.project = Some(self.create_project_fragment());
+        }
 
         self.plugin
             .call_func_with("install_dependencies", input)
@@ -169,6 +219,10 @@ impl ToolchainTestWrapper {
         input.input_dir = self.plugin.to_virtual_path(input.input_dir);
         input.output_dir = self.plugin.to_virtual_path(input.output_dir);
 
+        if input.project.id.is_empty() {
+            input.project = self.create_project_fragment();
+        }
+
         self.plugin
             .call_func_with("scaffold_docker", input)
             .await
@@ -181,9 +235,18 @@ impl ToolchainTestWrapper {
     ) -> SetupEnvironmentOutput {
         input.context = self.create_context();
         input.root = self.plugin.to_virtual_path(input.root);
+
         input.globals_dir = input
             .globals_dir
             .map(|path| self.plugin.to_virtual_path(path));
+
+        if input
+            .project
+            .as_ref()
+            .is_some_and(|project| project.id.is_empty())
+        {
+            input.project = Some(self.create_project_fragment());
+        }
 
         self.plugin
             .call_func_with("setup_environment", input)
@@ -202,6 +265,10 @@ impl ToolchainTestWrapper {
 
     pub async fn sync_project(&self, mut input: SyncProjectInput) -> SyncOutput {
         input.context = self.create_context();
+
+        if input.project.id.is_empty() {
+            input.project = self.create_project_fragment();
+        }
 
         self.plugin
             .call_func_with("sync_project", input)

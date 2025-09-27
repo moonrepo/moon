@@ -386,9 +386,17 @@ export interface RustConfig {
 export interface ToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string;
-	/** Configures and enables the Bun platform. */
+	/**
+	 * Configures and enables the Bun platform.
+	 *
+	 * @deprecated Use `unstable_bun` instead.
+	 */
 	bun: BunConfig | null;
-	/** Configures and enables the Deno platform. */
+	/**
+	 * Configures and enables the Deno platform.
+	 *
+	 * @deprecated Use `unstable_deno` instead.
+	 */
 	deno: DenoConfig | null;
 	/**
 	 * Extends one or many toolchain configuration files.
@@ -397,7 +405,11 @@ export interface ToolchainConfig {
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
-	/** Configures and enables the Node.js platform. */
+	/**
+	 * Configures and enables the Node.js platform.
+	 *
+	 * @deprecated Use `unstable_node` instead.
+	 */
 	node: NodeConfig | null;
 	/** All configured toolchains by unique ID. */
 	plugins: Record<Id, ToolchainPluginConfig>;
@@ -405,7 +417,11 @@ export interface ToolchainConfig {
 	proto: ProtoConfig;
 	/** Configures and enables the Python platform. */
 	python: PythonConfig | null;
-	/** Configures and enables the Rust platform. */
+	/**
+	 * Configures and enables the Rust platform.
+	 *
+	 * @deprecated Use `unstable_rust` instead.
+	 */
 	rust: RustConfig | null;
 }
 
@@ -758,9 +774,17 @@ export interface PartialRustConfig {
 export interface PartialToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string | null;
-	/** Configures and enables the Bun platform. */
+	/**
+	 * Configures and enables the Bun platform.
+	 *
+	 * @deprecated Use `unstable_bun` instead.
+	 */
 	bun?: PartialBunConfig | null;
-	/** Configures and enables the Deno platform. */
+	/**
+	 * Configures and enables the Deno platform.
+	 *
+	 * @deprecated Use `unstable_deno` instead.
+	 */
 	deno?: PartialDenoConfig | null;
 	/**
 	 * Extends one or many toolchain configuration files.
@@ -769,7 +793,11 @@ export interface PartialToolchainConfig {
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
-	/** Configures and enables the Node.js platform. */
+	/**
+	 * Configures and enables the Node.js platform.
+	 *
+	 * @deprecated Use `unstable_node` instead.
+	 */
 	node?: PartialNodeConfig | null;
 	/** All configured toolchains by unique ID. */
 	plugins?: Record<Id, PartialToolchainPluginConfig> | null;
@@ -777,6 +805,10 @@ export interface PartialToolchainConfig {
 	proto?: PartialProtoConfig | null;
 	/** Configures and enables the Python platform. */
 	python?: PartialPythonConfig | null;
-	/** Configures and enables the Rust platform. */
+	/**
+	 * Configures and enables the Rust platform.
+	 *
+	 * @deprecated Use `unstable_rust` instead.
+	 */
 	rust?: PartialRustConfig | null;
 }

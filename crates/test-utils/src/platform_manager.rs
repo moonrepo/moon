@@ -27,6 +27,7 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
     generate_platform_manager(root, &config, proto, console).await
 }
 
+#[allow(deprecated)]
 pub async fn generate_platform_manager(
     root: &Path,
     config: &ToolchainConfig,

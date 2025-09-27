@@ -137,14 +137,11 @@ impl WorkspaceMocker {
 
     pub fn with_all_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
-            // config.bun = Some(BunConfig::default());
-            config.deno = Some(DenoConfig::default());
-            // config.node = Some(NodeConfig::default());
-            // config.rust = Some(RustConfig::default());
             config.inherit_default_plugins().unwrap();
         })
     }
 
+    #[allow(deprecated)]
     pub fn with_legacy_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
             config.bun = Some(BunConfig::default());
@@ -186,6 +183,7 @@ impl WorkspaceMocker {
         })
     }
 
+    #[allow(deprecated)]
     pub fn with_default_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
             if config.node.is_none() {

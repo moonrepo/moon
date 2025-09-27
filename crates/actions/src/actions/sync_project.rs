@@ -94,6 +94,8 @@ pub async fn sync_project(
                     &app_context.toolchain_config,
                     &project.config,
                 ),
+                toolchain_workspace_config: registry
+                    .create_config(&toolchain.id, &app_context.toolchain_config),
             }
         })
         .await?

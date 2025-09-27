@@ -1,6 +1,6 @@
 [package]
 name = "moon_feature_flags"
-version = "0.0.4"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 description = "Manages feature flags."

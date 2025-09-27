@@ -212,6 +212,10 @@ api_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub path: Option<PathBuf>,
 
+        /// Unique reference, identifier, or specifier.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub reference: Option<String>,
+
         /// URL of the remote dependency.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub url: Option<String>,
@@ -301,10 +305,6 @@ api_struct!(
         /// Map of all dependencies and their locked versions.
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub dependencies: BTreeMap<String, Vec<LockDependency>>,
-
-        /// Map of all packages within the current workspace.
-        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-        pub packages: BTreeMap<String, Option<Version>>,
     }
 );
 

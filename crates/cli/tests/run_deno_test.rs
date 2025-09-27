@@ -9,6 +9,7 @@ fn deno_sandbox() -> Sandbox {
     deno_sandbox_with_config(|_| {})
 }
 
+#[allow(deprecated)]
 fn deno_sandbox_with_config<C>(callback: C) -> Sandbox
 where
     C: FnOnce(&mut PartialDenoConfig),

@@ -37,7 +37,7 @@ async fn sends_webhooks() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_hits(24);
+    mock.assert_calls(24);
 
     assert.success();
 }
@@ -62,7 +62,7 @@ async fn sends_webhooks_for_cache_events() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_hits(48);
+    mock.assert_calls(48);
 
     assert.success();
 }
@@ -82,7 +82,7 @@ async fn doesnt_send_webhooks_if_first_fails() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_hits(1);
+    mock.assert_calls(1);
 }
 
 #[tokio::test]
@@ -92,7 +92,7 @@ async fn all_webhooks_have_same_uuid() {
     let mock = server.mock(|when, then| {
         when.method(POST)
             .path("/webhook")
-            .json_body_partial(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
+            .json_body(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
 
         then.status(200);
     });
@@ -103,5 +103,5 @@ async fn all_webhooks_have_same_uuid() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_hits(24);
+    mock.assert_calls(24);
 }

@@ -1,6 +1,6 @@
 [package]
 name = "moon_config"
-version = "0.1.9"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 description = "Core workspace, project, and moon configuration."
@@ -12,8 +12,8 @@ publish = true
 features = ["loader"]
 
 [dependencies]
-moon_common = { version = "0.1.4", path = "../common" }
-moon_target = { version = "0.1.3", path = "../target" }
+moon_common = { version = "0.2.0", path = "../common" }
+moon_target = { version = "0.2.0", path = "../target" }
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
@@ -46,7 +46,7 @@ tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 moon_config = { path = ".", features = ["proto", "template", "tracing"] }
-httpmock = "0.7.0"
+httpmock = "0.8.0"
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 

@@ -70,6 +70,7 @@ pub async fn from_package_json(session: MoonSession, args: FromPackageJsonArgs) 
         }
     };
 
+    #[allow(deprecated)]
     PackageJsonCache::sync(&project.root, |package_json| {
         // Create tasks from `package.json` scripts
         for (task_id, task_config) in create_tasks_from_scripts(

@@ -16,6 +16,7 @@ fn node_sandbox() -> Sandbox {
     node_sandbox_with_config(|_| {})
 }
 
+#[allow(deprecated)]
 fn node_sandbox_with_config<C>(callback: C) -> Sandbox
 where
     C: FnOnce(&mut PartialNodeConfig),

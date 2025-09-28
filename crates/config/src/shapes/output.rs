@@ -1,6 +1,6 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use super::*;
-use crate::{config_struct, patterns};
+use crate::{config_struct, generate_io_file_methods, generate_io_glob_methods, patterns};
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
 };
@@ -12,12 +12,17 @@ config_struct!(
     /// A file path output.
     #[derive(Config)]
     pub struct FileOutput {
+        /// The literal file path.
         pub file: FilePath,
 
+        /// Mark the file as optional instead of failing with
+        /// an error after running a task and the output doesn't exist.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
     }
 );
+
+generate_io_file_methods!(FileOutput);
 
 impl FileOutput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
@@ -32,40 +37,12 @@ impl FileOutput {
                     output.optional = Some(parse_bool_field(&key, &value)?);
                 }
                 _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                    return Err(ParseError::new(format!("unknown file field `{key}`")));
                 }
             };
         }
 
         Ok(output)
-    }
-
-    pub fn get_path(&self) -> String {
-        let path = self.file.as_str();
-
-        if self.is_workspace_relative() {
-            path[1..].into()
-        } else {
-            path.into()
-        }
-    }
-
-    pub fn is_workspace_relative(&self) -> bool {
-        self.file.as_str().starts_with('/')
-    }
-
-    pub fn to_workspace_relative(
-        &self,
-        project_source: impl AsRef<str>,
-    ) -> WorkspaceRelativePathBuf {
-        expand_to_workspace_relative(
-            if self.is_workspace_relative() {
-                RelativeFrom::Workspace
-            } else {
-                RelativeFrom::Project(project_source.as_ref())
-            },
-            self.get_path(),
-        )
     }
 }
 
@@ -73,9 +50,12 @@ config_struct!(
     /// A glob pattern output.
     #[derive(Config)]
     pub struct GlobOutput {
+        /// The glob pattern.
         pub glob: GlobPath,
     }
 );
+
+generate_io_glob_methods!(GlobOutput);
 
 impl GlobOutput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
@@ -88,44 +68,6 @@ impl GlobOutput {
         }
 
         Ok(output)
-    }
-
-    pub fn get_path(&self) -> String {
-        let path = self.glob.as_str();
-
-        if self.is_workspace_relative() {
-            if self.is_negated() {
-                format!("!{}", &path[2..])
-            } else {
-                path[1..].into()
-            }
-        } else {
-            path.into()
-        }
-    }
-
-    pub fn is_negated(&self) -> bool {
-        self.glob.as_str().starts_with('!')
-    }
-
-    pub fn is_workspace_relative(&self) -> bool {
-        let path = self.glob.as_str();
-
-        path.starts_with('/') || path.starts_with("!/")
-    }
-
-    pub fn to_workspace_relative(
-        &self,
-        project_source: impl AsRef<str>,
-    ) -> WorkspaceRelativePathBuf {
-        expand_to_workspace_relative(
-            if self.is_workspace_relative() {
-                RelativeFrom::Workspace
-            } else {
-                RelativeFrom::Project(project_source.as_ref())
-            },
-            self.get_path(),
-        )
     }
 }
 
@@ -211,18 +153,6 @@ impl FromStr for Output {
     }
 }
 
-impl TryFrom<OutputBase> for Output {
-    type Error = ParseError;
-
-    fn try_from(base: OutputBase) -> Result<Self, Self::Error> {
-        match base {
-            OutputBase::Raw(output) => Self::parse(output),
-            OutputBase::File(output) => Ok(Self::File(output)),
-            OutputBase::Glob(output) => Ok(Self::Glob(output)),
-        }
-    }
-}
-
 impl Schematic for Output {
     fn schema_name() -> Option<String> {
         Some("Output".into())
@@ -260,4 +190,16 @@ enum OutputBase {
     // From most complex to least
     File(FileOutput),
     Glob(GlobOutput),
+}
+
+impl TryFrom<OutputBase> for Output {
+    type Error = ParseError;
+
+    fn try_from(base: OutputBase) -> Result<Self, Self::Error> {
+        match base {
+            OutputBase::Raw(output) => Self::parse(output),
+            OutputBase::File(output) => Ok(Self::File(output)),
+            OutputBase::Glob(output) => Ok(Self::Glob(output)),
+        }
+    }
 }

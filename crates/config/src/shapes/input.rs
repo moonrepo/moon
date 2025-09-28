@@ -1,6 +1,8 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use super::*;
-use crate::{config_struct, config_unit_enum, patterns};
+use crate::{
+    config_struct, config_unit_enum, generate_io_file_methods, generate_io_glob_methods, patterns,
+};
 use moon_common::Id;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
@@ -16,8 +18,11 @@ config_struct!(
     /// A file path input.
     #[derive(Config)]
     pub struct FileInput {
+        /// The literal file path.
         pub file: FilePath,
 
+        /// Regex pattern to match the file's contents against
+        /// when determining affected status.
         #[serde(
             default,
             alias = "match",
@@ -26,10 +31,14 @@ config_struct!(
         )]
         pub content: Option<RegexSetting>,
 
+        /// Mark the file as optional instead of logging a warning
+        /// when hashing a task.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
     }
 );
+
+generate_io_file_methods!(FileInput);
 
 impl FileInput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
@@ -49,53 +58,31 @@ impl FileInput {
                     input.optional = Some(parse_bool_field(&key, &value)?);
                 }
                 _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                    return Err(ParseError::new(format!("unknown file field `{key}`")));
                 }
             };
         }
 
         Ok(input)
     }
-
-    pub fn get_path(&self) -> String {
-        let path = self.file.as_str();
-
-        if self.is_workspace_relative() {
-            path[1..].into()
-        } else {
-            path.into()
-        }
-    }
-
-    pub fn is_workspace_relative(&self) -> bool {
-        self.file.as_str().starts_with('/')
-    }
-
-    pub fn to_workspace_relative(
-        &self,
-        project_source: impl AsRef<str>,
-    ) -> WorkspaceRelativePathBuf {
-        expand_to_workspace_relative(
-            if self.is_workspace_relative() {
-                RelativeFrom::Workspace
-            } else {
-                RelativeFrom::Project(project_source.as_ref())
-            },
-            self.get_path(),
-        )
-    }
 }
 
 config_unit_enum!(
-    /// Format to resolve the file group into.
+    /// Available formats to resolve the file group into.
     #[derive(ConfigEnum)]
     pub enum FileGroupInputFormat {
+        /// Return the group as-is.
         #[default]
         Static,
+        /// Return only directories.
         Dirs,
+        /// Return only environment variables.
         Envs,
+        /// Return only files.
         Files,
+        /// Return only globs.
         Globs,
+        /// Return the lowest common root of all paths.
         Root,
     }
 );
@@ -104,8 +91,10 @@ config_struct!(
     /// A file group input.
     #[derive(Config)]
     pub struct FileGroupInput {
+        /// The file group identifier.
         pub group: Id,
 
+        /// Format to resolve the file group into.
         #[serde(default, alias = "as")]
         pub format: FileGroupInputFormat,
     }
@@ -129,7 +118,7 @@ impl FileGroupInput {
                         FileGroupInputFormat::from_str(&value).map_err(map_parse_error)?
                 }
                 _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                    return Err(ParseError::new(format!("unknown file group field `{key}`")));
                 }
             };
         }
@@ -142,13 +131,17 @@ config_struct!(
     /// A glob pattern input.
     #[derive(Config)]
     pub struct GlobInput {
+        /// The glob pattern.
         pub glob: GlobPath,
 
+        /// Cache the glob walking result for increased performance.
         #[serde(default = "default_true", skip_serializing_if = "is_false")]
         #[setting(default = true)]
         pub cache: bool,
     }
 );
+
+generate_io_glob_methods!(GlobInput);
 
 impl GlobInput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
@@ -163,50 +156,12 @@ impl GlobInput {
                     input.cache = parse_bool_field(&key, &value)?;
                 }
                 _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                    return Err(ParseError::new(format!("unknown glob field `{key}`")));
                 }
             };
         }
 
         Ok(input)
-    }
-
-    pub fn get_path(&self) -> String {
-        let path = self.glob.as_str();
-
-        if self.is_workspace_relative() {
-            if self.is_negated() {
-                format!("!{}", &path[2..])
-            } else {
-                path[1..].into()
-            }
-        } else {
-            path.into()
-        }
-    }
-
-    pub fn is_negated(&self) -> bool {
-        self.glob.as_str().starts_with('!')
-    }
-
-    pub fn is_workspace_relative(&self) -> bool {
-        let path = self.glob.as_str();
-
-        path.starts_with('/') || path.starts_with("!/")
-    }
-
-    pub fn to_workspace_relative(
-        &self,
-        project_source: impl AsRef<str>,
-    ) -> WorkspaceRelativePathBuf {
-        expand_to_workspace_relative(
-            if self.is_workspace_relative() {
-                RelativeFrom::Workspace
-            } else {
-                RelativeFrom::Project(project_source.as_ref())
-            },
-            self.get_path(),
-        )
     }
 }
 
@@ -214,8 +169,11 @@ config_struct!(
     /// A manifest file's dependencies input.
     #[derive(Config)]
     pub struct ManifestDepsInput {
-        pub manifest: Id, // toolchain
+        /// The toolchain identifier.
+        pub manifest: Id,
 
+        /// List of dependencies to compare against when
+        /// determining affected status.
         #[serde(
             default,
             alias = "dep",
@@ -247,7 +205,7 @@ impl ManifestDepsInput {
                     }
                 }
                 _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                    return Err(ParseError::new(format!("unknown manifest field `{key}`")));
                 }
             };
         }
@@ -261,11 +219,16 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectInput {
         // This is not an `Id` as we need to support `^`!
+        /// The external project identifier.
         pub project: String,
 
+        /// A list of globs, relative from the project's root,
+        /// in which to determine affected status.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub filter: Vec<String>,
 
+        /// A file group identifier within the project in which
+        /// to determine affected status.
         #[serde(default, alias = "fileGroup", skip_serializing_if = "Option::is_none")]
         pub group: Option<Id>,
     }
@@ -291,13 +254,13 @@ impl ProjectInput {
                         input.filter.push(value);
                     }
                 }
-                "fileGroup" | "group" => {
+                "fileGroup" | "filegroup" | "group" => {
                     if !value.is_empty() {
                         input.group = Some(Id::new(&value).map_err(map_parse_error)?);
                     }
                 }
                 _ => {
-                    return Err(ParseError::new(format!("unknown field `{key}`")));
+                    return Err(ParseError::new(format!("unknown project field `{key}`")));
                 }
             };
         }
@@ -403,20 +366,6 @@ impl FromStr for Input {
     }
 }
 
-impl TryFrom<InputBase> for Input {
-    type Error = ParseError;
-
-    fn try_from(base: InputBase) -> Result<Self, Self::Error> {
-        match base {
-            InputBase::Raw(input) => Self::parse(input),
-            InputBase::File(input) => Ok(Self::File(input)),
-            InputBase::FileGroup(input) => Ok(Self::FileGroup(input)),
-            InputBase::Glob(input) => Ok(Self::Glob(input)),
-            InputBase::Project(input) => Ok(Self::Project(input)),
-        }
-    }
-}
-
 impl Schematic for Input {
     fn schema_name() -> Option<String> {
         Some("Input".into())
@@ -464,4 +413,18 @@ enum InputBase {
     FileGroup(FileGroupInput),
     File(FileInput),
     Glob(GlobInput),
+}
+
+impl TryFrom<InputBase> for Input {
+    type Error = ParseError;
+
+    fn try_from(base: InputBase) -> Result<Self, Self::Error> {
+        match base {
+            InputBase::Raw(input) => Self::parse(input),
+            InputBase::File(input) => Ok(Self::File(input)),
+            InputBase::FileGroup(input) => Ok(Self::FileGroup(input)),
+            InputBase::Glob(input) => Ok(Self::Glob(input)),
+            InputBase::Project(input) => Ok(Self::Project(input)),
+        }
+    }
 }

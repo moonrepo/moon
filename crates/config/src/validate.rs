@@ -1,4 +1,4 @@
-use schematic::ValidateError;
+use schematic::ParseError;
 use std::path::Path;
 
 #[cfg(feature = "loader")]
@@ -25,19 +25,19 @@ pub fn check_yml_extension(path: &Path) -> std::path::PathBuf {
     path.to_path_buf()
 }
 
-pub fn validate_relative_path(value: &str) -> Result<(), ValidateError> {
+pub fn validate_relative_path(value: &str) -> Result<(), ParseError> {
     let path = Path::new(value);
 
     if path.has_root() || path.is_absolute() {
-        return Err(ValidateError::new("absolute paths are not supported"));
+        return Err(ParseError::new("absolute paths are not supported"));
     }
 
     Ok(())
 }
 
-pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
+pub fn validate_child_relative_path(value: &str) -> Result<(), ParseError> {
     if value.contains("..") {
-        return Err(ValidateError::new(
+        return Err(ParseError::new(
             "parent directory traversal (..) is not supported",
         ));
     }

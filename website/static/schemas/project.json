@@ -205,6 +205,7 @@
       "properties": {
         "as": {
           "title": "as",
+          "description": "Format to resolve the file group into.",
           "default": "static",
           "allOf": [
             {
@@ -214,6 +215,7 @@
         },
         "format": {
           "title": "format",
+          "description": "Format to resolve the file group into.",
           "default": "static",
           "allOf": [
             {
@@ -223,6 +225,7 @@
         },
         "group": {
           "title": "group",
+          "description": "The file group identifier.",
           "allOf": [
             {
               "$ref": "#/definitions/Id"
@@ -233,7 +236,7 @@
       "additionalProperties": false
     },
     "FileGroupInputFormat": {
-      "description": "Format to resolve the file group into.",
+      "description": "Available formats to resolve the file group into.",
       "type": "string",
       "enum": [
         "static",
@@ -250,6 +253,7 @@
       "properties": {
         "content": {
           "title": "content",
+          "description": "Regex pattern to match the file's contents against when determining affected status.",
           "anyOf": [
             {
               "type": "string",
@@ -262,10 +266,12 @@
         },
         "file": {
           "title": "file",
+          "description": "The literal file path.",
           "type": "string"
         },
         "optional": {
           "title": "optional",
+          "description": "Mark the file as optional instead of logging a warning when hashing a task.",
           "anyOf": [
             {
               "type": "boolean"
@@ -284,10 +290,12 @@
       "properties": {
         "file": {
           "title": "file",
+          "description": "The literal file path.",
           "type": "string"
         },
         "optional": {
           "title": "optional",
+          "description": "Mark the file as optional instead of failing with an error after running a task and the output doesn't exist.",
           "anyOf": [
             {
               "type": "boolean"
@@ -306,11 +314,13 @@
       "properties": {
         "cache": {
           "title": "cache",
+          "description": "Cache the glob walking result for increased performance.",
           "default": true,
           "type": "boolean"
         },
         "glob": {
           "title": "glob",
+          "description": "The glob pattern.",
           "type": "string"
         }
       },
@@ -322,6 +332,7 @@
       "properties": {
         "glob": {
           "title": "glob",
+          "description": "The glob pattern.",
           "type": "string"
         }
       },
@@ -679,6 +690,7 @@
       "properties": {
         "fileGroup": {
           "title": "fileGroup",
+          "description": "A file group identifier within the project in which to determine affected status.",
           "anyOf": [
             {
               "$ref": "#/definitions/Id"
@@ -690,6 +702,7 @@
         },
         "filter": {
           "title": "filter",
+          "description": "A list of globs, relative from the project's root, in which to determine affected status.",
           "type": "array",
           "items": {
             "type": "string"
@@ -697,6 +710,7 @@
         },
         "group": {
           "title": "group",
+          "description": "A file group identifier within the project in which to determine affected status.",
           "anyOf": [
             {
               "$ref": "#/definitions/Id"
@@ -708,6 +722,7 @@
         },
         "project": {
           "title": "project",
+          "description": "The external project identifier.",
           "type": "string"
         }
       },

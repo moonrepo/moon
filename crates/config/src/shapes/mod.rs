@@ -29,6 +29,7 @@ impl Uri {
 
         if let Some(index) = suffix.rfind('?')
             && index != suffix.len() - 1
+            && index != 0
         {
             uri.path = suffix[0..index].into();
 

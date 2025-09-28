@@ -872,7 +872,7 @@ mod input_shape {
         }
     }
 
-    mod project_srcs {
+    mod external_project {
         use super::*;
 
         #[test]

@@ -151,12 +151,18 @@ export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 
 
 /** A file path output. */
 export interface FileOutput {
+	/** The literal file path. */
 	file: string;
+	/**
+	 * Mark the file as optional instead of failing with
+	 * an error after running a task and the output doesn't exist.
+	 */
 	optional?: boolean | null;
 }
 
 /** A glob pattern output. */
 export interface GlobOutput {
+	/** The glob pattern. */
 	glob: string;
 }
 

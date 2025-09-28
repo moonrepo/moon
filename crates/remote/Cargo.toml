@@ -13,7 +13,7 @@ moon_feature_flags = { path = "../feature-flags" }
 moon_process = { path = "../process" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
-bazel-remote-apis = { version = "0.18.0", features = ["serde"] }
+bazel-remote-apis = { version = "0.19.0", features = ["serde"] }
 chrono = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true, features = ["json", "rustls-tls"] }

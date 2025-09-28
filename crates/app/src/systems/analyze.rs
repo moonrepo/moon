@@ -44,6 +44,7 @@ pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -
     Ok(None)
 }
 
+#[allow(deprecated)]
 #[instrument(skip_all)]
 pub async fn register_platforms(
     console: &Console,

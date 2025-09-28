@@ -7,6 +7,7 @@ use moon_test_utils::{
 };
 use rustc_hash::FxHashMap;
 
+#[allow(deprecated)]
 fn rust_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
@@ -169,6 +170,7 @@ fn runs_script_task() {
 mod rustup_toolchain {
     use super::*;
 
+    #[allow(deprecated)]
     fn rust_toolchain_sandbox() -> Sandbox {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(

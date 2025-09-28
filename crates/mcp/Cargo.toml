@@ -13,9 +13,9 @@ moon_action = { path = "../action" }
 moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline = { path = "../action-pipeline" }
 moon_app_context = { path = "../app-context" }
-moon_common = { version = "0.1.4", path = "../common" }
-moon_project = { version = "0.1.4", path = "../project" }
-moon_task = { version = "0.1.3", path = "../task" }
+moon_common = { version = "0.2.0", path = "../common" }
+moon_project = { version = "0.2.0", path = "../project" }
+moon_task = { version = "0.2.0", path = "../task" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }

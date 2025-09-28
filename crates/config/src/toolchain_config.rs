@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::config_struct;
 use crate::language_platform::*;
 use crate::toolchain::*;
@@ -27,10 +29,12 @@ config_struct!(
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// Configures and enables the Bun platform.
+        #[deprecated = "Use `unstable_bun` instead."]
         #[setting(nested)]
         pub bun: Option<BunConfig>,
 
         /// Configures and enables the Deno platform.
+        #[deprecated = "Use `unstable_deno` instead."]
         #[setting(nested)]
         pub deno: Option<DenoConfig>,
 
@@ -39,6 +43,7 @@ config_struct!(
         pub moon: MoonConfig,
 
         /// Configures and enables the Node.js platform.
+        #[deprecated = "Use `unstable_node` instead."]
         #[setting(nested)]
         pub node: Option<NodeConfig>,
 
@@ -51,6 +56,7 @@ config_struct!(
         pub python: Option<PythonConfig>,
 
         /// Configures and enables the Rust platform.
+        #[deprecated = "Use `unstable_rust` instead."]
         #[setting(nested)]
         pub rust: Option<RustConfig>,
 
@@ -136,39 +142,43 @@ impl ToolchainConfig {
         match id.as_str() {
             "typescript" => Some(find_debug_locator_with_url_fallback(
                 "typescript_toolchain",
-                "0.2.3",
+                "0.3.0",
             )),
             "unstable_bun" => Some(find_debug_locator_with_url_fallback(
                 "bun_toolchain",
-                "0.1.1",
+                "0.2.0",
+            )),
+            "unstable_deno" => Some(find_debug_locator_with_url_fallback(
+                "deno_toolchain",
+                "0.1.0",
             )),
             "unstable_javascript" => Some(find_debug_locator_with_url_fallback(
                 "javascript_toolchain",
-                "0.1.3",
+                "0.2.0",
             )),
             "unstable_go" => Some(find_debug_locator_with_url_fallback(
                 "go_toolchain",
-                "0.1.6",
+                "0.2.0",
             )),
             "unstable_node" => Some(find_debug_locator_with_url_fallback(
                 "node_toolchain",
-                "0.1.1",
+                "0.2.0",
             )),
             "unstable_npm" => Some(find_debug_locator_with_url_fallback(
                 "node_depman_toolchain",
-                "0.1.1",
+                "0.2.0",
             )),
             "unstable_pnpm" => Some(find_debug_locator_with_url_fallback(
                 "node_depman_toolchain",
-                "0.1.1",
+                "0.2.0",
             )),
             "unstable_rust" => Some(find_debug_locator_with_url_fallback(
                 "rust_toolchain",
-                "0.2.4",
+                "0.3.0",
             )),
             "unstable_yarn" => Some(find_debug_locator_with_url_fallback(
                 "node_depman_toolchain",
-                "0.1.1",
+                "0.2.0",
             )),
             _ => None,
         }
@@ -375,6 +385,17 @@ impl ToolchainConfig {
             );
         }
 
+        if self.deno.is_some()
+            && (self.plugins.contains_key("deno")
+                || self.plugins.contains_key("unstable_deno")
+                || self.plugins.contains_key("javascript")
+                || self.plugins.contains_key("unstable_javascript"))
+        {
+            warn!(
+                "The legacy Deno platform and WASM based JavaScript/Deno toolchains must not be used together!"
+            );
+        }
+
         if self.node.is_some()
             && (self.plugins.contains_key("node")
                 || self.plugins.contains_key("unstable_node")
@@ -401,6 +422,7 @@ impl ToolchainConfig {
         for id in [
             "typescript",
             "unstable_bun",
+            "unstable_deno",
             "unstable_go",
             "unstable_javascript",
             "unstable_node",
@@ -430,6 +452,7 @@ impl ToolchainConfig {
             match id.as_str() {
                 "typescript"
                 | "unstable_bun"
+                | "unstable_deno"
                 | "unstable_go"
                 | "unstable_javascript"
                 | "unstable_node"

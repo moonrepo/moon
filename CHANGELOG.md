@@ -9,6 +9,16 @@
 
 #### 🚀 Updates
 
+- Added a new
+  [Deno toolchain implementation](https://github.com/moonrepo/plugins/tree/master/toolchains/deno),
+  powered entirely by our new WASM plugin system. It can be enabled with the `unstable_deno`
+  identifier.
+  - Supports tiers 1, 2, and 3!
+  - Parses `deno.json` and `deno.jsonc` manifest files.
+  - Parses `deno.lock` lock files.
+  - Will install dependencies with `deno install`.
+  - Pairs with the `unstable_javascript` toolchain.
+  - And much more!
 - Added a new task input type that allows you to depend on changes to a project's files directly,
   instead of depending on a project's task.
   - Added URI support: `project://<id>`
@@ -22,6 +32,14 @@
 - Added new values to the `runInCI` task option:
   - `only` - Only run the task in CI, and not locally, when affected.
   - `skip` - Skip running in CI but run locally and allow task relationships to be valid.
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added Deno support. Can customize `packageManager` with `deno`.
+  - Added workspace member caching to reduce fs operations.
+  - Updated `install_dependencies` and `setup_environment` to take project toolchain configuration
+    into account.
 
 #### 🧩 Plugins
 

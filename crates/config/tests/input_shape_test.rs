@@ -781,7 +781,7 @@ mod input_shape {
         }
 
         #[test]
-        fn supports_optional_field() {
+        fn supports_cache_field() {
             let input = stub_glob_input("glob://file.*?cache");
 
             assert!(input.cache);

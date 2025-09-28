@@ -1690,14 +1690,14 @@ mod token_expander {
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
                 ExpandedResult {
-                    files: vec![
-                        WorkspaceRelativePathBuf::from("project/source/task/file.txt"),
-                        WorkspaceRelativePathBuf::from("cache/project:task/file.txt"),
-                    ],
-                    globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/task/files/**/*"),
-                        WorkspaceRelativePathBuf::from("cache/project:task/files/**/*"),
-                    ],
+                    files_for_output: create_file_output_map(vec![
+                        "project/source/task/file.txt",
+                        "cache/project:task/file.txt",
+                    ]),
+                    globs_for_output: create_glob_output_map(vec![
+                        "project/source/task/files/**/*",
+                        "cache/project:task/files/**/*",
+                    ]),
                     ..ExpandedResult::default()
                 }
             );

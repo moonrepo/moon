@@ -349,7 +349,7 @@ impl<'graph> TokenExpander<'graph> {
                     result.files_for_output.insert(
                         file,
                         TaskFileOutput {
-                            optional: inner.optional,
+                            optional: inner.optional.unwrap_or_default(),
                         },
                     );
                 }

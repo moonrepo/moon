@@ -68,8 +68,7 @@ cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskFileOutput {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub optional: Option<bool>,
+        pub optional: bool,
     }
 );
 
@@ -83,19 +82,23 @@ cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct Task {
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub args: Vec<String>,
 
         pub command: String,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub deps: Vec<TaskDependencyConfig>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub env: FxHashMap<String, String>,
 
         pub id: Id,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub inputs: Vec<Input>,
 
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
@@ -109,6 +112,7 @@ cacheable!(
 
         pub options: TaskOptions,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub outputs: Vec<Output>,
 
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
@@ -130,6 +134,7 @@ cacheable!(
 
         pub target: Target,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
 
         #[serde(rename = "type")]

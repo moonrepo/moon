@@ -80,8 +80,8 @@ impl OutputArchiver<'_> {
         }
 
         // Check paths first since they are literal
-        for output in self.task.output_files.keys() {
-            if !output.to_path(&self.app.workspace_root).exists() {
+        for (output, params) in &self.task.output_files {
+            if !output.to_path(&self.app.workspace_root).exists() && !params.optional {
                 return Ok(false);
             }
         }

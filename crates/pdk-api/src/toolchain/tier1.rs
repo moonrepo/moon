@@ -138,6 +138,9 @@ api_struct!(
         /// Workspace and project merged toolchain configuration,
         /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
+
+        /// Workspace only toolchain configuration.
+        pub toolchain_workspace_config: serde_json::Value,
     }
 );
 

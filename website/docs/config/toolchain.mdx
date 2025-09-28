@@ -180,9 +180,11 @@ unstable_go:
 Enables and configures JavaScript using the new WASM plugin. This core JavaScript toolchain depends
 on these other JavaScript ecosystem toolchains:
 
-- Runtimes: [`unstable_bun`](#unstable_bun), [`unstable_node`](#unstable_node)
-- Package managers: [`unstable_bun`](#unstable_bun), [`unstable_npm`](#unstable_npm),
-  [`unstable_pnpm`](#unstable_pnpm), [`unstable_yarn`](#unstable_yarn)
+- Runtimes: [`unstable_bun`](#unstable_bun), [`unstable_deno`](#unstable_deno),
+  [`unstable_node`](#unstable_node)
+- Package managers: [`unstable_bun`](#unstable_bun), [`unstable_deno`](#unstable_deno),
+  [`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm),
+  [`unstable_yarn`](#unstable_yarn)
 
 ### `dedupeOnLockfileChange`
 
@@ -254,7 +256,7 @@ unstable_javascript:
 <HeadingApiLink to="/api/types/interface/JavaScriptConfig#packageManager" />
 
 Defines which package manager to utilize when installing dependencies. Supports `npm`, `pnpm`,
-`yarn`, or `bun`. Defaults to no package manager.
+`yarn`, `deno`, or `bun`. Defaults to no package manager.
 
 ```yaml title=".moon/toolchain.yml" {2}
 unstable_javascript:
@@ -264,9 +266,9 @@ unstable_javascript:
 :::info
 
 When this setting is configured, it will require the target toolchain
-([`unstable_bun`](#unstable_bun), ([`unstable_node`](#unstable_node),
-[`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm), or
-[`unstable_yarn`](#unstable_yarn)) to also be configured.
+([`unstable_bun`](#unstable_bun), [`unstable_deno`](#unstable_deno),
+[`unstable_node`](#unstable_node), [`unstable_npm`](#unstable_npm),
+[`unstable_pnpm`](#unstable_pnpm), or [`unstable_yarn`](#unstable_yarn)) to also be configured.
 
 :::
 
@@ -439,6 +441,12 @@ unstable_bun:
 
 Enables and configures [Deno](../guides/javascript/deno-handbook).
 
+:::warning
+
+This toolchain has been deprecated. We suggest using [`unstable_deno`](#unstable_deno) instead!
+
+:::
+
 ### `version`<VersionLabel version="1.21.0" />
 
 <HeadingApiLink to="/api/types/interface/DenoConfig#version" />
@@ -508,6 +516,79 @@ Enables lockfile (`deno.lock`) support for Deno dependencies. When enabled, will
 ```yaml title=".moon/toolchain.yml" {2}
 deno:
   lockfile: true
+```
+
+## `unstable_deno`<VersionLabel version="1.41.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#unstable_deno" />
+
+Enables and configures [Deno](../guides/javascript/deno-handbook) using the new WASM plugin.
+
+:::info
+
+This toolchain requires the [`unstable_javascript`](#unstable_javascript) toolchain to also be
+enabled.
+
+:::
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#version" />
+
+Defines the explicit Deno toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `deno` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_deno:
+  version: '2.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `bins`
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#bins" />
+
+A list of binaries to install globally into Deno (`~/.deno/bin`). This setting requires a list of
+URLs or binary configuration objects with the following fields:
+
+- `bin` (required) - URL of the binary.
+- `name` - Provide a custom name for the binary.
+- `local` - Only install the binary locally, and not in CI.
+- `force` - Force install the binary. This _should_ be toggled for one-offs.
+
+```yaml title=".moon/toolchain.yml" {2-5}
+unstable_deno:
+  bins:
+    - 'https://deno.land/std@0.192.0/http/file_server.ts'
+    - bin: 'https://deno.land/std@0.192.0/http/file_server.ts'
+      name: 'fs'
+```
+
+### `executeArgs`
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#executeArgs" />
+
+Customize the arguments that will be appended to all `deno`-based task commands. Arguments will be
+appended after the `deno` executable, but before task specific arguments.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_deno:
+  executeArgs: ['--allow-read']
+```
+
+### `installArgs`
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#installArgs" />
+
+Customize the arguments that will be passed to the `deno install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_deno:
+  installArgs: ['--frozen']
 ```
 
 ## `node`

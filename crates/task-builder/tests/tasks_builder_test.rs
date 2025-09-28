@@ -508,7 +508,10 @@ tasks:
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("deno")]);
+            assert_eq!(
+                task.toolchains,
+                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
+            );
 
             let task = tasks.get("node-via-cmd").unwrap();
 
@@ -622,7 +625,10 @@ tasks:
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("deno")]);
+            assert_eq!(
+                task.toolchains,
+                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
+            );
 
             let task = tasks.get("node-via-cmd").unwrap();
 

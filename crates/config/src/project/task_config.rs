@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::shapes::{Input, OneOrMany, OutputPath};
+use crate::shapes::{Input, OneOrMany, Output};
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use moon_target::{Target, TargetScope};
@@ -225,7 +225,7 @@ config_struct!(
 
         /// Outputs that will be created when the task has successfully ran.
         /// When `cache` is enabled, the outputs will be persisted for subsequent runs.
-        pub outputs: Option<Vec<OutputPath>>,
+        pub outputs: Option<Vec<Output>>,
 
         /// Options to control task inheritance and execution.
         #[setting(nested)]

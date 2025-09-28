@@ -939,28 +939,58 @@ are _created_ as a result of executing this task, typically from a build or comp
 task. Outputs are necessary for [incremental caching and hydration](../concepts/cache). If you'd
 prefer to avoid that functionality, omit this field.
 
-```yaml title="moon.yml" {4-6}
+#### File paths
+
+File paths support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `file://` URI <VersionLabel inline version="1.41.0" />,
+or as an object with a `file` property <VersionLabel inline version="1.41.0" />. Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `optional` (`boolean`) - When archiving and set to `true` and the file is missing, will not fail
+  with a missing output error. Defaults to `false`.
+
+```yaml title="moon.yml"
 tasks:
-  build:
-    command: 'webpack'
-    outputs:
-      # Relative from project root
+  example:
+    inputs:
+      # Literal paths
       - 'build/'
+      # Using file protocol
+      - 'file://build/'
+      # Using an object
+      - file: 'build/'
+        optional: true
 ```
 
-Globs can also be used if you'd like to restrict which files are cached. For example, when building
-a JavaScript project, you may want to include `.js` files, but exclude `.map` and other files.
+#### Glob patterns
 
-```yaml title="moon.yml" {4-6}
+Glob patterns support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `glob://` URI <VersionLabel inline version="1.41.0" />,
+or as an object with a `glob` property <VersionLabel inline version="1.41.0" />.
+
+```yaml title="moon.yml"
 tasks:
-  build:
-    command: 'webpack'
-    outputs:
+  example:
+    inputs:
+      # Literal paths
       - 'build/**/*.js'
       - '!build/internal.js'
+      # Using glob protocol
+      - 'glob://build/**/*.js'
+      # Using an object
+      - glob: 'build/**/*.js'
 ```
 
-:::caution
+:::warning
+
+Glob patterns that contain `?`, for example `*.tsx?`, cannot be used in URI format, as it conflicts
+with the query string syntax. Use the path or object format instead.
+
+:::
+
+:::danger
 
 When using globs and moon hydrates an output (a cache hit), all files not matching the glob will be
 **deleted**. Ensure that all files critical for the build to function correctly are included.

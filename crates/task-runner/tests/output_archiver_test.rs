@@ -22,6 +22,14 @@ mod output_archiver {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_error_if_outputs_not_created_but_marked_as_optional() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
+            let archiver = container.create_archiver();
+
+            let _ = archiver.archive("hash123", None).await.unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_an_archive() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");

@@ -1,7 +1,7 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, OutputPath, PlatformType, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType,
+    Input, Output, PlatformType, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType,
     is_false, schematic::RegexSetting,
 };
 use moon_feature_flags::glob_walk_with_options;
@@ -65,22 +65,40 @@ impl Default for TaskGlobInput {
 }
 
 cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
+    pub struct TaskFileOutput {
+        pub optional: bool,
+    }
+);
+
+cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
+    pub struct TaskGlobOutput {}
+);
+
+cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct Task {
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub args: Vec<String>,
 
         pub command: String,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub deps: Vec<TaskDependencyConfig>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub env: FxHashMap<String, String>,
 
         pub id: Id,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub inputs: Vec<Input>,
 
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
@@ -94,13 +112,14 @@ cacheable!(
 
         pub options: TaskOptions,
 
-        pub outputs: Vec<OutputPath>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub outputs: Vec<Output>,
 
-        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
-        pub output_files: FxHashSet<WorkspaceRelativePathBuf>,
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub output_files: FxHashMap<WorkspaceRelativePathBuf, TaskFileOutput>,
 
-        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
-        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub output_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
 
         #[deprecated]
         pub platform: PlatformType,
@@ -115,6 +134,7 @@ cacheable!(
 
         pub target: Target,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
 
         #[serde(rename = "type")]
@@ -128,7 +148,7 @@ impl Task {
         // Both inputs/outputs may have a mix of negated and
         // non-negated globs, so we must split them into groups
         let (gi, ni) = split_patterns(self.input_globs.keys());
-        let (go, no) = split_patterns(&self.output_globs);
+        let (go, no) = split_patterns(self.output_globs.keys());
 
         // We then only match against non-negated inputs
         let g = gi;
@@ -243,7 +263,7 @@ impl Task {
         let mut list = FxHashSet::default();
 
         if include_non_globs {
-            for file in &self.output_files {
+            for file in self.output_files.keys() {
                 list.insert(file.to_logical_path(workspace_root));
             }
         }
@@ -251,7 +271,7 @@ impl Task {
         if !self.output_globs.is_empty() {
             list.extend(glob_walk_with_options(
                 workspace_root,
-                &self.output_globs,
+                self.output_globs.keys(),
                 GlobWalkOptions::default().files(),
             )?);
         }
@@ -345,8 +365,8 @@ impl Default for Task {
             input_globs: FxHashMap::default(),
             options: TaskOptions::default(),
             outputs: vec![],
-            output_files: FxHashSet::default(),
-            output_globs: FxHashSet::default(),
+            output_files: FxHashMap::default(),
+            output_globs: FxHashMap::default(),
             platform: PlatformType::default(),
             preset: None,
             script: None,

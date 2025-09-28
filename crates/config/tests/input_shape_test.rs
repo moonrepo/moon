@@ -15,7 +15,7 @@ mod input_shape {
         fn converts_backward_slashes() {
             assert_eq!(
                 Input::parse("some\\file.txt").unwrap(),
-                Input::File(create_file_input("some/file.txt"))
+                Input::File(stub_file_input("some/file.txt"))
             );
         }
 
@@ -74,7 +74,7 @@ mod input_shape {
 
         #[test]
         fn file_protocol() {
-            let mut input = create_file_input("file.txt");
+            let mut input = stub_file_input("file.txt");
             input.optional = Some(true);
 
             assert_eq!(
@@ -82,7 +82,7 @@ mod input_shape {
                 Input::File(input)
             );
 
-            let mut input = create_file_input("/file.txt");
+            let mut input = stub_file_input("/file.txt");
             input.optional = Some(false);
 
             assert_eq!(
@@ -95,19 +95,19 @@ mod input_shape {
         fn file_project_relative() {
             assert_eq!(
                 Input::parse("file.rs").unwrap(),
-                Input::File(create_file_input("file.rs"))
+                Input::File(stub_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("dir/file.rs").unwrap(),
-                Input::File(create_file_input("dir/file.rs"))
+                Input::File(stub_file_input("dir/file.rs"))
             );
             assert_eq!(
                 Input::parse("./file.rs").unwrap(),
-                Input::File(create_file_input("file.rs"))
+                Input::File(stub_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("././dir/file.rs").unwrap(),
-                Input::File(create_file_input("dir/file.rs"))
+                Input::File(stub_file_input("dir/file.rs"))
             );
         }
 
@@ -115,19 +115,19 @@ mod input_shape {
         fn file_project_relative_protocol() {
             assert_eq!(
                 Input::parse("file://file.rs").unwrap(),
-                Input::File(create_file_input("file.rs"))
+                Input::File(stub_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("file://dir/file.rs").unwrap(),
-                Input::File(create_file_input("dir/file.rs"))
+                Input::File(stub_file_input("dir/file.rs"))
             );
             assert_eq!(
                 Input::parse("file://./file.rs").unwrap(),
-                Input::File(create_file_input("file.rs"))
+                Input::File(stub_file_input("file.rs"))
             );
             assert_eq!(
                 Input::parse("file://././dir/file.rs").unwrap(),
-                Input::File(create_file_input("dir/file.rs"))
+                Input::File(stub_file_input("dir/file.rs"))
             );
         }
 
@@ -135,17 +135,17 @@ mod input_shape {
         fn file_workspace_relative() {
             assert_eq!(
                 Input::parse("/file.rs").unwrap(),
-                Input::File(create_file_input("/file.rs"))
+                Input::File(stub_file_input("/file.rs"))
             );
             assert_eq!(
                 Input::parse("/dir/file.rs").unwrap(),
-                Input::File(create_file_input("/dir/file.rs"))
+                Input::File(stub_file_input("/dir/file.rs"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("/.cache/$projectSource").unwrap(),
-                Input::File(create_file_input("/.cache/$projectSource"))
+                Input::File(stub_file_input("/.cache/$projectSource"))
             );
         }
 
@@ -153,23 +153,23 @@ mod input_shape {
         fn file_workspace_relative_protocol() {
             assert_eq!(
                 Input::parse("file:///file.rs").unwrap(),
-                Input::File(create_file_input("/file.rs"))
+                Input::File(stub_file_input("/file.rs"))
             );
             assert_eq!(
                 Input::parse("file:///dir/file.rs").unwrap(),
-                Input::File(create_file_input("/dir/file.rs"))
+                Input::File(stub_file_input("/dir/file.rs"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("file:///.cache/$projectSource").unwrap(),
-                Input::File(create_file_input("/.cache/$projectSource"))
+                Input::File(stub_file_input("/.cache/$projectSource"))
             );
         }
 
         #[test]
         fn glob_protocol() {
-            let mut input = create_glob_input("file.*");
+            let mut input = stub_glob_input("file.*");
             input.cache = true;
 
             assert_eq!(
@@ -177,7 +177,7 @@ mod input_shape {
                 Input::Glob(input)
             );
 
-            let mut input = create_glob_input("/file.*");
+            let mut input = stub_glob_input("/file.*");
             input.cache = false;
 
             assert_eq!(
@@ -200,7 +200,7 @@ mod input_shape {
                 "a/<b/**:1,>",
                 "file.tsx?",
             ] {
-                let mut input = create_glob_input(pat);
+                let mut input = stub_glob_input(pat);
                 input.cache = true;
 
                 assert_eq!(
@@ -211,7 +211,7 @@ mod input_shape {
                     Input::Glob(input)
                 );
 
-                let mut input = create_glob_input(pat);
+                let mut input = stub_glob_input(pat);
                 input.cache = false;
 
                 assert_eq!(
@@ -228,21 +228,21 @@ mod input_shape {
         fn glob_project_relative() {
             assert_eq!(
                 Input::parse("!file.*").unwrap(),
-                Input::Glob(create_glob_input("!file.*"))
+                Input::Glob(stub_glob_input("!file.*"))
             );
             assert_eq!(
                 Input::parse("dir/**/*").unwrap(),
-                Input::Glob(create_glob_input("dir/**/*"))
+                Input::Glob(stub_glob_input("dir/**/*"))
             );
             assert_eq!(
                 Input::parse("./dir/**/*").unwrap(),
-                Input::Glob(create_glob_input("dir/**/*"))
+                Input::Glob(stub_glob_input("dir/**/*"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("$projectSource/**/*").unwrap(),
-                Input::Glob(create_glob_input("$projectSource/**/*"))
+                Input::Glob(stub_glob_input("$projectSource/**/*"))
             );
         }
 
@@ -250,21 +250,21 @@ mod input_shape {
         fn glob_project_relative_protocol() {
             assert_eq!(
                 Input::parse("glob://!file.*").unwrap(),
-                Input::Glob(create_glob_input("!file.*"))
+                Input::Glob(stub_glob_input("!file.*"))
             );
             assert_eq!(
                 Input::parse("glob://dir/**/*").unwrap(),
-                Input::Glob(create_glob_input("dir/**/*"))
+                Input::Glob(stub_glob_input("dir/**/*"))
             );
             assert_eq!(
                 Input::parse("glob://./dir/**/*").unwrap(),
-                Input::Glob(create_glob_input("dir/**/*"))
+                Input::Glob(stub_glob_input("dir/**/*"))
             );
 
             // With tokens
             assert_eq!(
                 Input::parse("glob://$projectSource/**/*").unwrap(),
-                Input::Glob(create_glob_input("$projectSource/**/*"))
+                Input::Glob(stub_glob_input("$projectSource/**/*"))
             );
         }
 
@@ -272,15 +272,15 @@ mod input_shape {
         fn glob_workspace_relative() {
             assert_eq!(
                 Input::parse("/!file.*").unwrap(),
-                Input::Glob(create_glob_input("!/file.*"))
+                Input::Glob(stub_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("!/file.*").unwrap(),
-                Input::Glob(create_glob_input("!/file.*"))
+                Input::Glob(stub_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("/dir/**/*").unwrap(),
-                Input::Glob(create_glob_input("/dir/**/*"))
+                Input::Glob(stub_glob_input("/dir/**/*"))
             );
         }
 
@@ -288,15 +288,15 @@ mod input_shape {
         fn glob_workspace_relative_protocol() {
             assert_eq!(
                 Input::parse("glob:///!file.*").unwrap(),
-                Input::Glob(create_glob_input("!/file.*"))
+                Input::Glob(stub_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("glob://!/file.*").unwrap(),
-                Input::Glob(create_glob_input("!/file.*"))
+                Input::Glob(stub_glob_input("!/file.*"))
             );
             assert_eq!(
                 Input::parse("glob:///dir/**/*").unwrap(),
-                Input::Glob(create_glob_input("/dir/**/*"))
+                Input::Glob(stub_glob_input("/dir/**/*"))
             );
         }
 
@@ -405,11 +405,11 @@ mod input_shape {
         fn files() {
             let input: Input = serde_json::from_str(r#""file.txt""#).unwrap();
 
-            assert_eq!(input, Input::File(create_file_input("file.txt")));
+            assert_eq!(input, Input::File(stub_file_input("file.txt")));
 
             let input: Input = serde_json::from_str(r#"{ "file": "file.txt" }"#).unwrap();
 
-            assert_eq!(input, Input::File(create_file_input("file.txt")));
+            assert_eq!(input, Input::File(stub_file_input("file.txt")));
 
             let input: Input =
                 serde_json::from_str(r#"{ "file": "dir/file.txt", "optional": true }"#).unwrap();
@@ -417,7 +417,7 @@ mod input_shape {
             assert_eq!(
                 input,
                 Input::File({
-                    let mut inner = create_file_input("dir/file.txt");
+                    let mut inner = stub_file_input("dir/file.txt");
                     inner.optional = Some(true);
                     inner
                 })
@@ -431,7 +431,7 @@ mod input_shape {
             assert_eq!(
                 input,
                 Input::File({
-                    let mut inner = create_file_input("/root/file.txt");
+                    let mut inner = stub_file_input("/root/file.txt");
                     inner.optional = Some(true);
                     inner.content = Some(RegexSetting::new("a|b|c").unwrap());
                     inner
@@ -443,11 +443,11 @@ mod input_shape {
         fn globs() {
             let input: Input = serde_json::from_str(r#""file.*""#).unwrap();
 
-            assert_eq!(input, Input::Glob(create_glob_input("file.*")));
+            assert_eq!(input, Input::Glob(stub_glob_input("file.*")));
 
             let input: Input = serde_json::from_str(r#"{ "glob": "file.*" }"#).unwrap();
 
-            assert_eq!(input, Input::Glob(create_glob_input("file.*")));
+            assert_eq!(input, Input::Glob(stub_glob_input("file.*")));
 
             let input: Input =
                 serde_json::from_str(r#"{ "glob": "/dir/file.*", "cache": false }"#).unwrap();
@@ -455,7 +455,7 @@ mod input_shape {
             assert_eq!(
                 input,
                 Input::Glob({
-                    let mut inner = create_glob_input("/dir/file.*");
+                    let mut inner = stub_glob_input("/dir/file.*");
                     inner.cache = false;
                     inner
                 })
@@ -582,13 +582,13 @@ mod input_shape {
 
         #[test]
         fn project_relative() {
-            let input = create_file_input("project/file.txt");
+            let input = stub_file_input("project/file.txt");
 
             assert_eq!(input.file, "project/file.txt");
             assert_eq!(input.get_path(), "project/file.txt");
             assert!(!input.is_workspace_relative());
 
-            let input = create_file_input("./project/file.txt");
+            let input = stub_file_input("./project/file.txt");
 
             assert_eq!(input.file, "project/file.txt");
             assert_eq!(input.get_path(), "project/file.txt");
@@ -597,7 +597,7 @@ mod input_shape {
 
         #[test]
         fn workspace_relative() {
-            let input = create_file_input("/root/file.txt");
+            let input = stub_file_input("/root/file.txt");
 
             assert_eq!(input.file, "/root/file.txt");
             assert_eq!(input.get_path(), "root/file.txt");
@@ -606,30 +606,30 @@ mod input_shape {
 
         #[test]
         fn supports_matches_field() {
-            let input = create_file_input("file.txt?matches=abc");
+            let input = stub_file_input("file.txt?matches=abc");
 
             assert_eq!(input.content.unwrap().as_str(), "abc");
 
-            let input = create_file_input("file.txt?match=abc");
+            let input = stub_file_input("file.txt?match=abc");
 
             assert_eq!(input.content.unwrap().as_str(), "abc");
 
-            let input = create_file_input("file.txt?matches");
+            let input = stub_file_input("file.txt?matches");
 
             assert!(input.content.is_none());
         }
 
         #[test]
         fn supports_optional_field() {
-            let input = create_file_input("file.txt?optional");
+            let input = stub_file_input("file.txt?optional");
 
             assert!(input.optional.unwrap());
 
-            let input = create_file_input("file.txt?optional=true");
+            let input = stub_file_input("file.txt?optional=true");
 
             assert!(input.optional.unwrap());
 
-            let input = create_file_input("file.txt?optional=false");
+            let input = stub_file_input("file.txt?optional=false");
 
             assert!(!input.optional.unwrap());
         }
@@ -637,19 +637,19 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "globs are not supported")]
         fn errors_for_glob() {
-            create_file_input("file.*");
+            stub_file_input("file.*");
         }
 
         #[test]
         #[should_panic(expected = "unsupported value for `optional`")]
         fn errors_invalid_optional_field() {
-            create_file_input("file.txt?optional=invalid");
+            stub_file_input("file.txt?optional=invalid");
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown file field `unknown`")]
         fn errors_unknown_field() {
-            create_file_input("file.txt?unknown");
+            stub_file_input("file.txt?unknown");
         }
     }
 
@@ -696,7 +696,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown file group field `unknown`")]
         fn errors_unknown_field() {
             FileGroupInput::from_uri(Uri::parse("group://id?unknown").unwrap()).unwrap();
         }
@@ -707,21 +707,21 @@ mod input_shape {
 
         #[test]
         fn default_cache_enabled() {
-            let input = create_glob_input("file.*");
+            let input = stub_glob_input("file.*");
 
             assert!(input.cache);
         }
 
         #[test]
         fn project_relative() {
-            let input = create_glob_input("project/file.*");
+            let input = stub_glob_input("project/file.*");
 
             assert_eq!(input.glob, "project/file.*");
             assert_eq!(input.get_path(), "project/file.*");
             assert!(!input.is_workspace_relative());
             assert!(!input.is_negated());
 
-            let input = create_glob_input("./project/file.*");
+            let input = stub_glob_input("./project/file.*");
 
             assert_eq!(input.glob, "project/file.*");
             assert_eq!(input.get_path(), "project/file.*");
@@ -731,21 +731,21 @@ mod input_shape {
 
         #[test]
         fn project_relative_negated() {
-            let input = create_glob_input("!project/file.*");
+            let input = stub_glob_input("!project/file.*");
 
             assert_eq!(input.glob, "!project/file.*");
             assert_eq!(input.get_path(), "!project/file.*");
             assert!(!input.is_workspace_relative());
             assert!(input.is_negated());
 
-            let input = create_glob_input("!./project/file.*");
+            let input = stub_glob_input("!./project/file.*");
 
             assert_eq!(input.glob, "!project/file.*");
             assert_eq!(input.get_path(), "!project/file.*");
             assert!(!input.is_workspace_relative());
             assert!(input.is_negated());
 
-            let input = create_glob_input("./!project/file.*");
+            let input = stub_glob_input("./!project/file.*");
 
             assert_eq!(input.glob, "!project/file.*");
             assert_eq!(input.get_path(), "!project/file.*");
@@ -755,7 +755,7 @@ mod input_shape {
 
         #[test]
         fn workspace_relative() {
-            let input = create_glob_input("/root/file.*");
+            let input = stub_glob_input("/root/file.*");
 
             assert_eq!(input.glob, "/root/file.*");
             assert_eq!(input.get_path(), "root/file.*");
@@ -765,14 +765,14 @@ mod input_shape {
 
         #[test]
         fn workspace_relative_negated() {
-            let input = create_glob_input("!/root/file.*");
+            let input = stub_glob_input("!/root/file.*");
 
             assert_eq!(input.glob, "!/root/file.*");
             assert_eq!(input.get_path(), "!root/file.*");
             assert!(input.is_workspace_relative());
             assert!(input.is_negated());
 
-            let input = create_glob_input("/!root/file.*");
+            let input = stub_glob_input("/!root/file.*");
 
             assert_eq!(input.glob, "!/root/file.*");
             assert_eq!(input.get_path(), "!root/file.*");
@@ -781,16 +781,16 @@ mod input_shape {
         }
 
         #[test]
-        fn supports_optional_field() {
-            let input = create_glob_input("glob://file.*?cache");
+        fn supports_cache_field() {
+            let input = stub_glob_input("glob://file.*?cache");
 
             assert!(input.cache);
 
-            let input = create_glob_input("glob://file.*?cache=true");
+            let input = stub_glob_input("glob://file.*?cache=true");
 
             assert!(input.cache);
 
-            let input = create_glob_input("glob://file.*?cache=false");
+            let input = stub_glob_input("glob://file.*?cache=false");
 
             assert!(!input.cache);
         }
@@ -798,13 +798,13 @@ mod input_shape {
         #[test]
         #[should_panic(expected = "unsupported value for `cache`")]
         fn errors_invalid_cache_field() {
-            create_glob_input("glob://file.*?cache=invalid");
+            stub_glob_input("glob://file.*?cache=invalid");
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown glob field `unknown`")]
         fn errors_unknown_field() {
-            create_glob_input("glob://file.*?unknown");
+            stub_glob_input("glob://file.*?unknown");
         }
     }
 
@@ -866,13 +866,13 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown manifest field `unknown`")]
         fn errors_unknown_field() {
             ManifestDepsInput::from_uri(Uri::parse("manifest://id?unknown").unwrap()).unwrap();
         }
     }
 
-    mod project_srcs {
+    mod external_project {
         use super::*;
 
         #[test]
@@ -928,7 +928,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown project field `unknown`")]
         fn errors_unknown_field() {
             ProjectInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
         }

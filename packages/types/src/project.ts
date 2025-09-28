@@ -10,6 +10,7 @@ import type {
 import type {
 	InheritedTasksConfig,
 	Input,
+	Output,
 	PartialInheritedTasksConfig,
 	PlatformType,
 	TaskDependencyConfig,
@@ -79,6 +80,13 @@ export interface TaskGlobInput {
 	cache?: boolean;
 }
 
+export interface TaskFileOutput {
+	optional?: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface TaskGlobOutput {}
+
 export interface Task {
 	args: string[];
 	command: string;
@@ -91,21 +99,21 @@ export interface Task {
 	inputFiles: Record<string, TaskFileInput>;
 	inputGlobs: Record<string, TaskGlobInput>;
 	options: TaskOptions;
-	outputs: string[];
-	outputFiles: string[];
-	outputGlobs: string[];
+	outputs: Output[];
+	outputFiles: Record<string, TaskFileOutput>;
+	outputGlobs: Record<string, TaskGlobOutput>;
 	platform: PlatformType;
 	preset: TaskPreset | null;
 	script: string | null;
 	state: TaskState;
 	target: string;
-	toolchains: string[];
+	toolchains: Id[];
 	type: TaskType;
 }
 
 export interface TaskFragment {
 	target: string;
-	toolchains: string[];
+	toolchains: Id[];
 }
 
 export interface Project {
@@ -136,7 +144,7 @@ export interface ProjectFragment {
 	dependencyScope: DependencyScope;
 	id: Id;
 	source: string;
-	toolchains: string[];
+	toolchains: Id[];
 }
 
 export interface ProjectGraphInner {

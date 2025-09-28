@@ -34,8 +34,7 @@ pub trait PortablePath: Sized {
     fn parse(path: impl AsRef<str>) -> Result<Self, ParseError>;
 
     fn parse_relative(path: impl AsRef<str>) -> Result<Self, ParseError> {
-        validate_relative_path(path.as_ref())
-            .map_err(|error| ParseError::new(error.to_string()))?;
+        validate_relative_path(path.as_ref())?;
 
         Self::parse(path)
     }
@@ -131,14 +130,12 @@ macro_rules! path_type {
     };
 }
 
-// Represents any file glob pattern.
+// Represents any glob pattern.
 path_type!(GlobPath);
 
 impl PortablePath for GlobPath {
     fn parse(value: impl AsRef<str>) -> Result<Self, ParseError> {
         let mut value = value.as_ref().to_owned();
-
-        validate_child_relative_path(&value).map_err(|error| ParseError::new(error.to_string()))?;
 
         // Fix invalid negated workspace paths
         if value.starts_with("/!") {
@@ -152,18 +149,20 @@ impl PortablePath for GlobPath {
             value.trim_start_matches("./").to_owned()
         };
 
+        validate_child_relative_path(&value)?;
+
         Ok(GlobPath(value.into()))
     }
 }
 
-// Represents any file system path.
+// Represents any file path.
 path_type!(FilePath);
 
 impl PortablePath for FilePath {
     fn parse(value: impl AsRef<str>) -> Result<Self, ParseError> {
         let value = value.as_ref();
 
-        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
+        validate_child_relative_path(value)?;
 
         if is_glob_like(value) {
             return Err(ParseError::new(

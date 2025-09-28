@@ -26,15 +26,18 @@ cacheable!(
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub dependencies: Vec<ProjectDependencyConfig>,
 
         /// File groups specific to the project. Inherits all file groups from the global config.
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub file_groups: BTreeMap<Id, FileGroup>,
 
         /// Unique ID for the project. Is the LHS of the `projects` setting.
         pub id: Id,
 
         /// Task configuration that was inherited from ".moon/tasks".
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub inherited: Option<InheritedTasksResult>,
 
         /// Primary programming language of the project.
@@ -61,13 +64,16 @@ cacheable!(
 
         /// Tasks specific to the project. Inherits all tasks from the global config.
         /// Note: This map is empty when the project is in the project graph!
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub tasks: BTreeMap<Id, Task>,
 
         /// List of targets of all tasks configured or inherited for the project.
         /// Includes internal tasks!
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub task_targets: Vec<Target>,
 
         /// Toolchains derived from the configured language.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
         pub toolchains: Vec<Id>,
     }
 );

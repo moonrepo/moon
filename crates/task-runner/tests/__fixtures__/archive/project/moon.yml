@@ -23,6 +23,12 @@ tasks:
       - '!b.txt'
       - 'c.txt'
 
+  file-outputs-optional:
+    command: noop
+    outputs:
+      - file: 'file.txt'
+        optional: true
+
   glob-outputs:
     command: noop
     outputs:

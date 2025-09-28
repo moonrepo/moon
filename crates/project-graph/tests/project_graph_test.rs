@@ -6,14 +6,14 @@ use moon_config::{
 use moon_project::{FileGroup, Project};
 use moon_project_graph::*;
 use moon_query::build_query;
-use moon_task::{Target, TaskFileInput, TaskGlobInput};
+use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
 use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
     WorkspaceProjectsCacheState,
 };
 use petgraph::prelude::*;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use starbase_events::EventState;
 use starbase_sandbox::{Sandbox, assert_snapshot, create_sandbox, locate_fixture};
 use starbase_utils::{fs, json, string_vec};
@@ -804,7 +804,10 @@ mod project_graph {
 
             assert_eq!(
                 task.output_files,
-                FxHashSet::from_iter([WorkspaceRelativePathBuf::from("tasks/build")])
+                FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("tasks/build"),
+                    TaskFileOutput::default()
+                )])
             );
 
             assert_eq!(

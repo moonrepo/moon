@@ -12,7 +12,7 @@ tasks:
     - '--out'
     - './lib'
     outputs:
-    - lib
+    - file: lib
     toolchain: node
   test:
     command: jest

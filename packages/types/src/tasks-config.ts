@@ -9,41 +9,73 @@ export type TaskDependencyType = 'cleanup' | 'required' | 'optional';
 
 /** A file path input. */
 export interface FileInput {
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
 	content: string | null;
+	/** The literal file path. */
 	file: string;
+	/**
+	 * Mark the file as optional instead of logging a warning
+	 * when hashing a task.
+	 */
 	optional?: boolean | null;
 }
 
-/** Format to resolve the file group into. */
+/** Available formats to resolve the file group into. */
 export type FileGroupInputFormat = 'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root';
 
 /** A file group input. */
 export interface FileGroupInput {
 	/**
+	 * Format to resolve the file group into.
+	 *
 	 * @default 'static'
 	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
 	 */
 	as?: FileGroupInputFormat;
 	/**
+	 * Format to resolve the file group into.
+	 *
 	 * @default 'static'
 	 * @type {'static' | 'dirs' | 'envs' | 'files' | 'globs' | 'root'}
 	 */
 	format?: FileGroupInputFormat;
+	/** The file group identifier. */
 	group: Id;
 }
 
-/** A glob path input. */
+/** A glob pattern input. */
 export interface GlobInput {
-	/** @default true */
+	/**
+	 * Cache the glob walking result for increased performance.
+	 *
+	 * @default true
+	 */
 	cache?: boolean;
+	/** The glob pattern. */
 	glob: string;
 }
 
 /** An external project input. */
 export interface ProjectInput {
+	/**
+	 * A list of globs, relative from the project's root,
+	 * in which to determine affected status.
+	 */
 	filter?: string[];
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
 	fileGroup?: Id | null;
+	/**
+	 * A file group identifier within the project in which
+	 * to determine affected status.
+	 */
 	group?: Id | null;
+	/** The external project identifier. */
 	project: string;
 }
 
@@ -240,6 +272,25 @@ export interface TaskOptionsConfig {
 	windowsShell: TaskWindowsShell | null;
 }
 
+/** A file path output. */
+export interface FileOutput {
+	/** The literal file path. */
+	file: string;
+	/**
+	 * Mark the file as optional instead of failing with
+	 * an error after running a task and the output doesn't exist.
+	 */
+	optional?: boolean | null;
+}
+
+/** A glob pattern output. */
+export interface GlobOutput {
+	/** The glob pattern. */
+	glob: string;
+}
+
+export type Output = string | FileOutput | GlobOutput;
+
 /** Platforms that each programming language can belong to. */
 export type PlatformType = 'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown';
 
@@ -297,7 +348,7 @@ export interface TaskConfig {
 	 * Outputs that will be created when the task has successfully ran.
 	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
 	 */
-	outputs: string[] | null;
+	outputs: Output[] | null;
 	/**
 	 * The platform in which the task will be ran in. The platform determines
 	 * available binaries, lookup paths, and more. When not provided, will
@@ -580,7 +631,7 @@ export interface PartialTaskConfig {
 	 * Outputs that will be created when the task has successfully ran.
 	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
 	 */
-	outputs?: string[] | null;
+	outputs?: Output[] | null;
 	/**
 	 * The platform in which the task will be ran in. The platform determines
 	 * available binaries, lookup paths, and more. When not provided, will

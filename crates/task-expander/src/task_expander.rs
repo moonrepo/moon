@@ -5,7 +5,7 @@ use moon_config::{Input, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
-use moon_task::{Task, TaskFileInput, TaskGlobInput};
+use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -262,8 +262,21 @@ impl<'graph> TaskExpander<'graph> {
         // Expand outputs to file system paths
         let result = self.token.expand_outputs(task)?;
 
-        task.output_files.extend(result.files);
-        task.output_globs.extend(result.globs);
+        task.output_files.extend(result.files_for_output);
+        task.output_files.extend(
+            result
+                .files
+                .into_iter()
+                .map(|file| (file, TaskFileOutput::default())),
+        );
+
+        task.output_globs.extend(result.globs_for_output);
+        task.output_globs.extend(
+            result
+                .globs
+                .into_iter()
+                .map(|glob| (glob, TaskGlobOutput::default())),
+        );
 
         Ok(())
     }
@@ -275,7 +288,7 @@ impl<'graph> TaskExpander<'graph> {
 
         for file in task.input_files.keys() {
             // If this dir is actually an output dir, just remove it
-            if task.output_files.contains(file) {
+            if task.output_files.contains_key(file) {
                 to_remove.push(file.to_owned());
                 continue;
             }
@@ -299,11 +312,11 @@ impl<'graph> TaskExpander<'graph> {
     // Outputs must not be considered an input, otherwise the content
     // hash will constantly change, and the cache will always be busted
     pub fn remove_input_output_overlaps(&mut self, task: &mut Task) {
-        for file in &task.output_files {
+        for file in task.output_files.keys() {
             task.input_files.remove(file);
         }
 
-        for glob in &task.output_globs {
+        for glob in task.output_globs.keys() {
             task.input_globs.remove(glob);
         }
     }

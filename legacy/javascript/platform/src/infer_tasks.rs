@@ -1,7 +1,7 @@
 use moon_args::split_args;
 use moon_common::Id;
 use moon_config::{
-    NodePackageManager, OneOrMany, OutputPath, PartialTaskArgs, PartialTaskConfig,
+    NodePackageManager, OneOrMany, Output, PartialTaskArgs, PartialTaskConfig,
     PartialTaskDependency,
 };
 use moon_node_lang::package_json::{PackageJsonCache, ScriptsMap};
@@ -165,9 +165,7 @@ pub fn create_task(
         if ARG_OUTPUT_FLAG.is_match(arg)
             && let Some(output) = script_args.get(index + 1)
         {
-            outputs.push(OutputPath::ProjectFile(clean_output_path(
-                target_id, output,
-            )?));
+            outputs.push(Output::parse(clean_output_path(target_id, output)?)?);
         }
 
         if !is_wrapping {

@@ -1,29 +1,36 @@
-use crate::shapes::{FileInput, GlobInput, Uri};
+use crate::shapes::{FileInput, FileOutput, GlobInput, GlobOutput, Uri};
 
-pub fn create_file_input(path: impl AsRef<str>) -> FileInput {
+fn create_uri(prefix: &str, path: impl AsRef<str>) -> Uri {
+    let protocol = format!("{prefix}://");
     let path = path.as_ref();
 
-    FileInput::from_uri(
-        Uri::parse(if path.starts_with("file://") {
-            path.to_owned()
-        } else {
-            format!("file://{path}")
-        })
-        .unwrap(),
-    )
+    Uri::parse(if path.starts_with(&protocol) {
+        path.to_owned()
+    } else {
+        format!(
+            "{protocol}{}",
+            if prefix == "glob" {
+                path.replace("?", "__QM__")
+            } else {
+                path.to_owned()
+            }
+        )
+    })
     .unwrap()
 }
 
-pub fn create_glob_input(path: impl AsRef<str>) -> GlobInput {
-    let path = path.as_ref();
+pub fn stub_file_input(path: impl AsRef<str>) -> FileInput {
+    FileInput::from_uri(create_uri("file", path)).unwrap()
+}
 
-    GlobInput::from_uri(
-        Uri::parse(if path.starts_with("glob://") {
-            path.to_owned()
-        } else {
-            format!("glob://{}", path.replace("?", "__QM__"))
-        })
-        .unwrap(),
-    )
-    .unwrap()
+pub fn stub_file_output(path: impl AsRef<str>) -> FileOutput {
+    FileOutput::from_uri(create_uri("file", path)).unwrap()
+}
+
+pub fn stub_glob_input(path: impl AsRef<str>) -> GlobInput {
+    GlobInput::from_uri(create_uri("glob", path)).unwrap()
+}
+
+pub fn stub_glob_output(path: impl AsRef<str>) -> GlobOutput {
+    GlobOutput::from_uri(create_uri("glob", path)).unwrap()
 }

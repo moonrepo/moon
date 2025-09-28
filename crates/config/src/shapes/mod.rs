@@ -1,10 +1,10 @@
 mod input;
-mod output_path;
+mod output;
 mod poly;
 mod portable_path;
 
 pub use input::*;
-pub use output_path::*;
+pub use output::*;
 pub use poly::*;
 pub use portable_path::*;
 
@@ -29,6 +29,7 @@ impl Uri {
 
         if let Some(index) = suffix.rfind('?')
             && index != suffix.len() - 1
+            && index != 0
         {
             uri.path = suffix[0..index].into();
 
@@ -52,4 +53,22 @@ impl Uri {
 
 pub fn is_false(value: &bool) -> bool {
     !(*value)
+}
+
+pub(super) fn default_true() -> bool {
+    true
+}
+
+pub(super) fn map_parse_error<T: std::fmt::Display>(error: T) -> ParseError {
+    ParseError::new(error.to_string())
+}
+
+pub(super) fn parse_bool_field(key: &str, value: &str) -> Result<bool, ParseError> {
+    if value.is_empty() || value == "true" {
+        Ok(true)
+    } else if value == "false" {
+        Ok(false)
+    } else {
+        Err(ParseError::new(format!("unsupported value for `{key}`")))
+    }
 }

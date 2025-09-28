@@ -4,11 +4,11 @@ use moon_common::{
     color,
     path::{self, WorkspaceRelativePathBuf},
 };
-use moon_config::{Input, OutputPath, ProjectMetadataConfig, patterns};
+use moon_config::{Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
-use moon_task::{Task, TaskFileInput, TaskGlobInput};
+use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use regex::Regex;
@@ -24,8 +24,10 @@ pub struct ExpandedResult {
     pub env: Vec<String>,
     pub files: Vec<WorkspaceRelativePathBuf>,
     pub files_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskFileInput>,
+    pub files_for_output: FxHashMap<WorkspaceRelativePathBuf, TaskFileOutput>,
     pub globs: Vec<WorkspaceRelativePathBuf>,
     pub globs_for_input: FxHashMap<WorkspaceRelativePathBuf, TaskGlobInput>,
+    pub globs_for_output: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
     pub token: Option<String>,
     pub value: Option<String>,
 }
@@ -324,31 +326,40 @@ impl<'graph> TokenExpander<'graph> {
 
         for output in &task.outputs {
             match output {
-                OutputPath::TokenFunc(func) => {
+                Output::TokenFunc(func) => {
                     let inner_result = self.replace_function(task, func)?;
 
                     result.files.extend(inner_result.files);
                     result.globs.extend(inner_result.globs);
                     result.value = inner_result.value;
                 }
-                OutputPath::TokenVar(var) => {
+                Output::TokenVar(var) => {
                     result.files.push(
                         self.project
                             .source
                             .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
                 }
-                _ => {
-                    let path = self.create_path_for_task(
+                Output::File(inner) => {
+                    let file = self.create_path_for_task(
                         task,
-                        output.to_workspace_relative(&self.project.source).unwrap(),
+                        inner.to_workspace_relative(&self.project.source),
                     )?;
 
-                    if output.is_glob() {
-                        result.globs.push(path);
-                    } else {
-                        result.files.push(path);
-                    }
+                    result.files_for_output.insert(
+                        file,
+                        TaskFileOutput {
+                            optional: inner.optional.unwrap_or_default(),
+                        },
+                    );
+                }
+                Output::Glob(inner) => {
+                    let glob = self.create_path_for_task(
+                        task,
+                        inner.to_workspace_relative(&self.project.source),
+                    )?;
+
+                    result.globs_for_output.insert(glob, TaskGlobOutput {});
                 }
             };
         }
@@ -451,19 +462,19 @@ impl<'graph> TokenExpander<'graph> {
                         })?;
 
                 match output {
-                    OutputPath::ProjectFile(_) | OutputPath::WorkspaceFile(_) => {
+                    Output::File(inner) => {
                         result.files.push(self.create_path_for_task(
                             task,
-                            output.to_workspace_relative(&self.project.source).unwrap(),
+                            inner.to_workspace_relative(&self.project.source),
                         )?);
                     }
-                    OutputPath::ProjectGlob(_) | OutputPath::WorkspaceGlob(_) => {
+                    Output::Glob(inner) => {
                         result.globs.push(self.create_path_for_task(
                             task,
-                            output.to_workspace_relative(&self.project.source).unwrap(),
+                            inner.to_workspace_relative(&self.project.source),
                         )?);
                     }
-                    OutputPath::TokenFunc(func) => {
+                    Output::TokenFunc(func) => {
                         let inner_result = self.replace_function(task, func)?;
                         result.files.extend(inner_result.files);
                         result.globs.extend(inner_result.globs);

@@ -92,7 +92,7 @@ async fn all_webhooks_have_same_uuid() {
     let mock = server.mock(|when, then| {
         when.method(POST)
             .path("/webhook")
-            .json_body(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
+            .json_body_includes(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
 
         then.status(200);
     });

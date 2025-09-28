@@ -245,7 +245,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("deno"), Id::raw("unstable_javascript")]
+                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
             );
 
             let project = build_lang_project("deno-config").await;
@@ -253,7 +253,11 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::TypeScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("deno"), Id::raw("typescript")]
+                vec![
+                    Id::raw("typescript"),
+                    Id::raw("unstable_deno"),
+                    Id::raw("unstable_javascript")
+                ]
             );
         }
 

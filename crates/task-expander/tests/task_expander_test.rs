@@ -1,6 +1,8 @@
 mod utils;
 
-use moon_config::{Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting};
+use moon_config::{
+    Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
+};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput, TaskGlobInput};
 use moon_task_expander::TaskExpander;
@@ -17,7 +19,7 @@ mod task_expander {
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
-        task.outputs.push(Output::parse("out").unwrap());
+        task.outputs.push(Output::File(stub_file_output("out")));
         task.input_files
             .insert("project/source/out".into(), TaskFileInput::default());
 
@@ -37,7 +39,8 @@ mod task_expander {
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
-        task.outputs.push(Output::parse("out/**/*").unwrap());
+        task.outputs
+            .push(Output::Glob(stub_glob_output("out/**/*")));
         task.input_globs
             .insert("project/source/out/**/*".into(), TaskGlobInput::default());
 
@@ -911,7 +914,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.outputs.push(Output::parse("file.txt").unwrap());
+            task.outputs
+                .push(Output::File(stub_file_output("file.txt")));
             task.outputs.push(Output::TokenFunc("@files(all)".into()));
 
             let context = create_context(sandbox.path());
@@ -938,7 +942,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.outputs.push(Output::parse("file.txt").unwrap());
+            task.outputs
+                .push(Output::File(stub_file_output("file.txt")));
             task.outputs.push(Output::TokenFunc("@group(all)".into()));
 
             let context = create_context(sandbox.path());
@@ -966,9 +971,10 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.outputs.push(Output::parse("$task/**/*").unwrap());
             task.outputs
-                .push(Output::parse("/$project/index.js").unwrap());
+                .push(Output::Glob(stub_glob_output("$task/**/*")));
+            task.outputs
+                .push(Output::File(stub_file_output("/$project/index.js")));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)

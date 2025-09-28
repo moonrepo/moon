@@ -191,7 +191,7 @@
       "additionalProperties": false
     },
     "GlobInput": {
-      "description": "A glob path input.",
+      "description": "A glob pattern input.",
       "type": "object",
       "properties": {
         "cache": {
@@ -207,7 +207,7 @@
       "additionalProperties": false
     },
     "GlobOutput": {
-      "description": "A glob path output.",
+      "description": "A glob pattern output.",
       "type": "object",
       "properties": {
         "glob": {

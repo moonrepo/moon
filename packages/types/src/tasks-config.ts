@@ -32,7 +32,7 @@ export interface FileGroupInput {
 	group: Id;
 }
 
-/** A glob path input. */
+/** A glob pattern input. */
 export interface GlobInput {
 	/** @default true */
 	cache?: boolean;
@@ -246,7 +246,7 @@ export interface FileOutput {
 	optional?: boolean | null;
 }
 
-/** A glob path output. */
+/** A glob pattern output. */
 export interface GlobOutput {
 	glob: string;
 }

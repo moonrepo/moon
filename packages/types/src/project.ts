@@ -84,8 +84,7 @@ export interface TaskFileOutput {
 	optional?: boolean;
 }
 
-export interface TaskGlobOutput {
-}
+export interface TaskGlobOutput {}
 
 export interface Task {
 	args: string[];

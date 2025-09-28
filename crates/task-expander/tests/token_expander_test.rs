@@ -2,7 +2,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output};
+use moon_config::{
+    FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output, test_utils::*,
+};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
@@ -1676,10 +1678,10 @@ mod token_expander {
             let mut task = create_task();
 
             task.outputs = vec![
-                Output::parse("$task/file.txt").unwrap(),
-                Output::parse("$task/files/**/*").unwrap(),
-                Output::parse("/cache/$target/file.txt").unwrap(),
-                Output::parse("/cache/$target/files/**/*").unwrap(),
+                Output::File(stub_file_output("$task/file.txt")),
+                Output::Glob(stub_glob_output("$task/files/**/*")),
+                Output::File(stub_file_output("/cache/$target/file.txt")),
+                Output::Glob(stub_glob_output("/cache/$target/files/**/*")),
             ];
 
             let context = create_context(sandbox.path());
@@ -1711,10 +1713,10 @@ mod token_expander {
             task.env.insert("BAR".into(), "bar".into());
 
             task.outputs = vec![
-                Output::parse("$FOO/file.txt").unwrap(),
-                Output::parse("${BAR}/files/**/*").unwrap(),
-                Output::parse("/cache/$FOO/file.txt").unwrap(),
-                Output::parse("/cache/${BAR}/files/**/*").unwrap(),
+                Output::File(stub_file_output("$FOO/file.txt")),
+                Output::Glob(stub_glob_output("${BAR}/files/**/*")),
+                Output::File(stub_file_output("/cache/$FOO/file.txt")),
+                Output::Glob(stub_glob_output("/cache/${BAR}/files/**/*")),
             ];
 
             let context = create_context(sandbox.path());
@@ -1723,14 +1725,14 @@ mod token_expander {
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
                 ExpandedResult {
-                    files: vec![
-                        WorkspaceRelativePathBuf::from("project/source/foo/file.txt"),
-                        WorkspaceRelativePathBuf::from("cache/foo/file.txt"),
-                    ],
-                    globs: vec![
-                        WorkspaceRelativePathBuf::from("project/source/bar/files/**/*"),
-                        WorkspaceRelativePathBuf::from("cache/bar/files/**/*"),
-                    ],
+                    files_for_output: create_file_output_map(vec![
+                        "project/source/foo/file.txt",
+                        "cache/foo/file.txt",
+                    ]),
+                    globs_for_output: create_glob_output_map(vec![
+                        "project/source/bar/files/**/*",
+                        "cache/bar/files/**/*",
+                    ]),
                     ..ExpandedResult::default()
                 }
             );
@@ -1880,7 +1882,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.script = Some("bin --foo -az @out(0)".into());
-            task.outputs = vec![Output::parse("**/*.json").unwrap()];
+            task.outputs = vec![Output::Glob(stub_glob_output("**/*.json"))];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);

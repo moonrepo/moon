@@ -86,7 +86,7 @@ impl TaskOptionEnvFile {
             TaskOptionEnvFile::Files(paths) => Some(
                 paths
                     .iter()
-                    .flat_map(|p| Input::parse(p.as_str()).ok())
+                    .flat_map(|path| Input::parse(path.as_str()).ok())
                     .collect(),
             ),
         }

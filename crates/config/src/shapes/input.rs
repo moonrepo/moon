@@ -139,7 +139,7 @@ impl FileGroupInput {
 }
 
 config_struct!(
-    /// A glob path input.
+    /// A glob pattern input.
     #[derive(Config)]
     pub struct GlobInput {
         pub glob: GlobPath,

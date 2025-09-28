@@ -6,7 +6,7 @@ use moon_config::{
 use moon_project::{FileGroup, Project};
 use moon_project_graph::*;
 use moon_query::build_query;
-use moon_task::{Target, TaskFileInput, TaskGlobInput};
+use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
 use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
@@ -730,8 +730,6 @@ mod project_graph {
     }
 
     mod expansion {
-        use moon_task::TaskFileOutput;
-
         use super::*;
 
         #[tokio::test]

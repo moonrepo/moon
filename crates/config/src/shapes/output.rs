@@ -70,7 +70,7 @@ impl FileOutput {
 }
 
 config_struct!(
-    /// A glob path output.
+    /// A glob pattern output.
     #[derive(Config)]
     pub struct GlobOutput {
         pub glob: GlobPath,

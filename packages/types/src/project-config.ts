@@ -155,7 +155,7 @@ export interface FileOutput {
 	optional?: boolean | null;
 }
 
-/** A glob path output. */
+/** A glob pattern output. */
 export interface GlobOutput {
 	glob: string;
 }

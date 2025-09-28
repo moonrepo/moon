@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::{
-    NodePackageManager, OneOrMany, OutputPath, PartialTaskArgs, PartialTaskConfig,
+    NodePackageManager, OneOrMany, Output, PartialTaskArgs, PartialTaskConfig,
     PartialTaskDependency,
 };
 use moon_javascript_platform::infer_tasks::*;
@@ -665,7 +665,7 @@ mod create_task {
                             candidate.0,
                             candidate.1
                         ])),
-                        outputs: Some(vec![OutputPath::ProjectFile(candidate.2.to_owned())]),
+                        outputs: Some(vec![Output::parse(candidate.2).unwrap()]),
                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }
@@ -753,7 +753,7 @@ mod infer_tasks_from_scripts {
                             "run",
                             "build:app"
                         ])),
-                        outputs: Some(vec![OutputPath::ProjectFile("dist".into())]),
+                        outputs: Some(vec![Output::parse("dist").unwrap()]),
                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
                         ..PartialTaskConfig::default()
                     }

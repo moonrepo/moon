@@ -2,9 +2,7 @@ mod utils;
 
 use moon_common::Id;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{
-    FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, OutputPath,
-};
+use moon_config::{FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{TaskFileInput, TaskGlobInput};
 use moon_task_expander::{ExpandedResult, TokenExpander};
@@ -133,8 +131,7 @@ mod token_expander {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
             let mut task = create_task();
-            task.outputs
-                .push(OutputPath::TokenFunc("@globs(all)".into()));
+            task.outputs.push(Output::TokenFunc("@globs(all)".into()));
 
             let context = create_context(sandbox.path());
             let expander = TokenExpander::new(&project, &context);
@@ -154,7 +151,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
             task.outputs
-                .push(OutputPath::TokenFunc("@globs(unknown)".into()));
+                .push(Output::TokenFunc("@globs(unknown)".into()));
 
             let context = create_context(sandbox.path());
             let expander = TokenExpander::new(&project, &context);
@@ -1488,7 +1485,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@group(all)".into())];
+            task.outputs = vec![Output::TokenFunc("@group(all)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1515,7 +1512,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@dirs(dirs)".into())];
+            task.outputs = vec![Output::TokenFunc("@dirs(dirs)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1539,7 +1536,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@files(all)".into())];
+            task.outputs = vec![Output::TokenFunc("@files(all)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1565,7 +1562,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@globs(all)".into())];
+            task.outputs = vec![Output::TokenFunc("@globs(all)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1589,7 +1586,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@root(all)".into())];
+            task.outputs = vec![Output::TokenFunc("@root(all)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1613,7 +1610,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@in(0)".into())];
+            task.outputs = vec![Output::TokenFunc("@in(0)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1630,7 +1627,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@out(0)".into())];
+            task.outputs = vec![Output::TokenFunc("@out(0)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1647,7 +1644,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@meta(name)".into())];
+            task.outputs = vec![Output::TokenFunc("@meta(name)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1664,7 +1661,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.outputs = vec![OutputPath::TokenFunc("@envs(envs)".into())];
+            task.outputs = vec![Output::TokenFunc("@envs(envs)".into())];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1679,10 +1676,10 @@ mod token_expander {
             let mut task = create_task();
 
             task.outputs = vec![
-                OutputPath::ProjectFile("$task/file.txt".into()),
-                OutputPath::ProjectGlob("$task/files/**/*".into()),
-                OutputPath::WorkspaceFile("cache/$target/file.txt".into()),
-                OutputPath::WorkspaceGlob("cache/$target/files/**/*".into()),
+                Output::parse("$task/file.txt").unwrap(),
+                Output::parse("$task/files/**/*").unwrap(),
+                Output::parse("/cache/$target/file.txt").unwrap(),
+                Output::parse("/cache/$target/files/**/*").unwrap(),
             ];
 
             let context = create_context(sandbox.path());
@@ -1714,10 +1711,10 @@ mod token_expander {
             task.env.insert("BAR".into(), "bar".into());
 
             task.outputs = vec![
-                OutputPath::ProjectFile("$FOO/file.txt".into()),
-                OutputPath::ProjectGlob("${BAR}/files/**/*".into()),
-                OutputPath::WorkspaceFile("cache/$FOO/file.txt".into()),
-                OutputPath::WorkspaceGlob("cache/${BAR}/files/**/*".into()),
+                Output::parse("$FOO/file.txt").unwrap(),
+                Output::parse("${BAR}/files/**/*").unwrap(),
+                Output::parse("/cache/$FOO/file.txt").unwrap(),
+                Output::parse("/cache/${BAR}/files/**/*").unwrap(),
             ];
 
             let context = create_context(sandbox.path());
@@ -1883,7 +1880,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.script = Some("bin --foo -az @out(0)".into());
-            task.outputs = vec![OutputPath::ProjectGlob("**/*.json".into())];
+            task.outputs = vec![Output::parse("**/*.json").unwrap()];
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);

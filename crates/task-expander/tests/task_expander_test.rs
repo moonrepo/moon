@@ -1,17 +1,12 @@
 mod utils;
 
-use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{Input, OutputPath, TaskArgs, TaskDependencyConfig, schematic::RegexSetting};
+use moon_config::{Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting};
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput, TaskGlobInput};
 use moon_task_expander::TaskExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use utils::*;
-
-fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
-    FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
-}
 
 mod task_expander {
     use super::*;
@@ -22,7 +17,7 @@ mod task_expander {
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
-        task.outputs.push(OutputPath::ProjectFile("out".into()));
+        task.outputs.push(Output::parse("out").unwrap());
         task.input_files
             .insert("project/source/out".into(), TaskFileInput::default());
 
@@ -32,7 +27,7 @@ mod task_expander {
         assert!(task.input_files.is_empty());
         assert_eq!(
             task.output_files,
-            create_path_set(vec!["project/source/out"])
+            create_file_output_map(vec!["project/source/out"])
         );
     }
 
@@ -42,8 +37,7 @@ mod task_expander {
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
-        task.outputs
-            .push(OutputPath::ProjectGlob("out/**/*".into()));
+        task.outputs.push(Output::parse("out/**/*").unwrap());
         task.input_globs
             .insert("project/source/out/**/*".into(), TaskGlobInput::default());
 
@@ -53,7 +47,7 @@ mod task_expander {
         assert!(task.input_globs.is_empty());
         assert_eq!(
             task.output_globs,
-            create_path_set(vec!["project/source/out/**/*"])
+            create_glob_output_map(vec!["project/source/out/**/*"])
         );
     }
 
@@ -917,20 +911,18 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.outputs
-                .push(OutputPath::ProjectFile("file.txt".into()));
-            task.outputs
-                .push(OutputPath::TokenFunc("@files(all)".into()));
+            task.outputs.push(Output::parse("file.txt").unwrap());
+            task.outputs.push(Output::TokenFunc("@files(all)".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
-            assert_eq!(task.output_globs, FxHashSet::default());
+            assert_eq!(task.output_globs, FxHashMap::default());
             assert_eq!(
                 task.output_files,
-                create_path_set(vec![
+                create_file_output_map(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
                     "project/source/docs.md",
@@ -946,10 +938,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.outputs
-                .push(OutputPath::ProjectFile("file.txt".into()));
-            task.outputs
-                .push(OutputPath::TokenFunc("@group(all)".into()));
+            task.outputs.push(Output::parse("file.txt").unwrap());
+            task.outputs.push(Output::TokenFunc("@group(all)".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -958,11 +948,11 @@ mod task_expander {
 
             assert_eq!(
                 task.output_globs,
-                create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
+                create_glob_output_map(vec!["project/source/*.md", "project/source/**/*.json"])
             );
             assert_eq!(
                 task.output_files,
-                create_path_set(vec![
+                create_file_output_map(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
                     "project/source/config.yml",
@@ -976,10 +966,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
+            task.outputs.push(Output::parse("$task/**/*").unwrap());
             task.outputs
-                .push(OutputPath::ProjectGlob("$task/**/*".into()));
-            task.outputs
-                .push(OutputPath::WorkspaceFile("$project/index.js".into()));
+                .push(Output::parse("/$project/index.js").unwrap());
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -988,9 +977,12 @@ mod task_expander {
 
             assert_eq!(
                 task.output_globs,
-                create_path_set(vec!["project/source/task/**/*"])
+                create_glob_output_map(vec!["project/source/task/**/*"])
             );
-            assert_eq!(task.output_files, create_path_set(vec!["project/index.js"]));
+            assert_eq!(
+                task.output_files,
+                create_file_output_map(vec!["project/index.js"])
+            );
         }
     }
 }

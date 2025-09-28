@@ -4,7 +4,7 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, OutputPath, PlatformType,
+    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, PlatformType,
     ProjectInput, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy,
     TaskOptionCache, TaskOutputStyle, TaskType,
 };
@@ -516,12 +516,12 @@ outputs:
             assert_eq!(
                 config.outputs.unwrap(),
                 vec![
-                    OutputPath::WorkspaceFile("ws/path".into()),
-                    OutputPath::WorkspaceGlob("ws/glob/**/*".into()),
-                    // OutputPath::WorkspaceGlob("!ws/glob/**/*".into()),
-                    OutputPath::ProjectFile("proj/path".into()),
-                    OutputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
-                    // OutputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
+                    Output::File(create_file_output("/ws/path")),
+                    Output::Glob(create_glob_output("/ws/glob/**/*")),
+                    // Output::WorkspaceGlob("!ws/glob/**/*".into()),
+                    Output::File(create_file_output("proj/path")),
+                    Output::Glob(create_glob_output("proj/glob/{a,b,c}")),
+                    // Output::ProjectGlob("!proj/glob/{a,b,c}".into()),
                 ]
             );
         }
@@ -949,11 +949,11 @@ options:
                     ]),
                     local: Some(true),
                     outputs: Some(vec![
-                        OutputPath::TokenVar("$workspaceRoot".into()),
-                        OutputPath::ProjectFile("file.txt".into()),
-                        OutputPath::ProjectGlob("file.*".into()),
-                        OutputPath::WorkspaceFile("file.txt".into()),
-                        OutputPath::WorkspaceGlob("file.*".into()),
+                        Output::TokenVar("$workspaceRoot".into()),
+                        Output::File(create_file_output("file.txt")),
+                        Output::Glob(create_glob_output("file.*")),
+                        Output::File(create_file_output("/file.txt")),
+                        Output::Glob(create_glob_output("/file.*")),
                     ]),
                     options: TaskOptionsConfig {
                         cache: Some(TaskOptionCache::Enabled(false)),

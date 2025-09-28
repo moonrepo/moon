@@ -81,10 +81,9 @@ impl GlobOutput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
         let output = Self {
             glob: GlobPath::parse(uri.path.replace("__QM__", "?"))?,
-            ..Default::default()
         };
 
-        for (key, _) in uri.query {
+        if let Some((key, _)) = uri.query.into_iter().next() {
             return Err(ParseError::new(format!("unknown field `{key}`")));
         }
 

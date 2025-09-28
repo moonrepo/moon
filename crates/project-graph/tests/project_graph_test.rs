@@ -13,7 +13,7 @@ use moon_workspace::{
     WorkspaceProjectsCacheState,
 };
 use petgraph::prelude::*;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use starbase_events::EventState;
 use starbase_sandbox::{Sandbox, assert_snapshot, create_sandbox, locate_fixture};
 use starbase_utils::{fs, json, string_vec};
@@ -730,6 +730,8 @@ mod project_graph {
     }
 
     mod expansion {
+        use moon_task::TaskFileOutput;
+
         use super::*;
 
         #[tokio::test]
@@ -804,7 +806,10 @@ mod project_graph {
 
             assert_eq!(
                 task.output_files,
-                FxHashSet::from_iter([WorkspaceRelativePathBuf::from("tasks/build")])
+                FxHashMap::from_iter([(
+                    WorkspaceRelativePathBuf::from("tasks/build"),
+                    TaskFileOutput::default()
+                )])
             );
 
             assert_eq!(

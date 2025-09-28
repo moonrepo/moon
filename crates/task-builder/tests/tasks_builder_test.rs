@@ -27,7 +27,7 @@ mod tasks_builder {
                 Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
             ]
         );
-        assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
+        assert_eq!(build.outputs, vec![Output::File(create_file_output("out"))]);
         assert!(!build.state.local_only);
 
         let run = tasks.get("local-run").unwrap();
@@ -75,7 +75,7 @@ mod tasks_builder {
                     Input::Glob(create_glob_input("/.moon/*.{pkl,yml}")),
                 ]
             );
-            assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
+            assert_eq!(build.outputs, vec![Output::File(create_file_output("out"))]);
             assert!(!build.state.local_only);
 
             let run = tasks.get("local-run").unwrap();
@@ -1276,8 +1276,8 @@ tasks:
             assert_eq!(
                 task.outputs,
                 vec![
-                    OutputPath::ProjectFile("global".into()),
-                    OutputPath::ProjectFile("local".into()),
+                    Output::File(create_file_output("global")),
+                    Output::File(create_file_output("local")),
                 ]
             );
         }
@@ -1331,8 +1331,8 @@ tasks:
             assert_eq!(
                 task.outputs,
                 vec![
-                    OutputPath::ProjectFile("global".into()),
-                    OutputPath::ProjectFile("local".into()),
+                    Output::File(create_file_output("global")),
+                    Output::File(create_file_output("local")),
                 ]
             );
         }
@@ -1386,8 +1386,8 @@ tasks:
             assert_eq!(
                 task.outputs,
                 vec![
-                    OutputPath::ProjectFile("local".into()),
-                    OutputPath::ProjectFile("global".into()),
+                    Output::File(create_file_output("local")),
+                    Output::File(create_file_output("global")),
                 ]
             );
         }
@@ -1441,8 +1441,8 @@ tasks:
             assert_eq!(
                 task.outputs,
                 vec![
-                    OutputPath::ProjectFile("local".into()),
-                    OutputPath::ProjectFile("global".into()),
+                    Output::File(create_file_output("local")),
+                    Output::File(create_file_output("global")),
                 ]
             );
         }
@@ -1490,7 +1490,10 @@ tasks:
 
             let task = tasks.get("outputs").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("local".into())]);
+            assert_eq!(
+                task.outputs,
+                vec![Output::File(create_file_output("local"))]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1536,7 +1539,10 @@ tasks:
 
             let task = tasks.get("all").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("local".into())]);
+            assert_eq!(
+                task.outputs,
+                vec![Output::File(create_file_output("local"))]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1644,7 +1650,10 @@ tasks:
 
             let task = tasks.get("outputs").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("global".into())]);
+            assert_eq!(
+                task.outputs,
+                vec![Output::File(create_file_output("global"))]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1692,7 +1701,10 @@ tasks:
 
             let task = tasks.get("all").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("global".into())]);
+            assert_eq!(
+                task.outputs,
+                vec![Output::File(create_file_output("global"))]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1738,7 +1750,10 @@ tasks:
 
             let task = tasks.get("outputs").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("global".into())]);
+            assert_eq!(
+                task.outputs,
+                vec![Output::File(create_file_output("global"))]
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1784,7 +1799,10 @@ tasks:
 
             let task = tasks.get("all").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("global".into())]);
+            assert_eq!(
+                task.outputs,
+                vec![Output::File(create_file_output("global"))]
+            );
         }
     }
 

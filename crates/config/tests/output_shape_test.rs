@@ -387,7 +387,7 @@ mod output_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown file field `unknown`")]
         fn errors_unknown_field() {
             stub_file_output("file.txt?unknown");
         }
@@ -465,13 +465,13 @@ mod output_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unsupported value for `cache`")]
+        #[should_panic(expected = "unknown glob field `cache`")]
         fn errors_invalid_cache_field() {
             stub_glob_output("glob://file.*?cache=invalid");
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown glob field `unknown`")]
         fn errors_unknown_field() {
             stub_glob_output("glob://file.*?unknown");
         }

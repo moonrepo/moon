@@ -647,7 +647,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown file field `unknown`")]
         fn errors_unknown_field() {
             stub_file_input("file.txt?unknown");
         }
@@ -696,7 +696,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown file group field `unknown`")]
         fn errors_unknown_field() {
             FileGroupInput::from_uri(Uri::parse("group://id?unknown").unwrap()).unwrap();
         }
@@ -802,7 +802,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown glob field `unknown`")]
         fn errors_unknown_field() {
             stub_glob_input("glob://file.*?unknown");
         }
@@ -866,7 +866,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown manifest field `unknown`")]
         fn errors_unknown_field() {
             ManifestDepsInput::from_uri(Uri::parse("manifest://id?unknown").unwrap()).unwrap();
         }
@@ -928,7 +928,7 @@ mod input_shape {
         }
 
         #[test]
-        #[should_panic(expected = "unknown field `unknown`")]
+        #[should_panic(expected = "unknown project field `unknown`")]
         fn errors_unknown_field() {
             ProjectInput::from_uri(Uri::parse("project://id?unknown").unwrap()).unwrap();
         }

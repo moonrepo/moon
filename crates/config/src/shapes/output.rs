@@ -64,7 +64,7 @@ impl GlobOutput {
         };
 
         if let Some((key, _)) = uri.query.into_iter().next() {
-            return Err(ParseError::new(format!("unknown field `{key}`")));
+            return Err(ParseError::new(format!("unknown glob field `{key}`")));
         }
 
         Ok(output)

@@ -3,14 +3,15 @@ slug: moon-v1.41
 title: moon v1.41 - Deno WASM toolchain and task input/output improvements
 authors: [milesj]
 tags: [toolchain, wasm, javascript, deno, task, input, output, v2]
-# image: ./img/moon/v1.41.png
+image: ./img/moon/v1.41.png
 ---
 
-TODO
+With this release, we're introducing the final piece of the JavaScript ecosystem puzzle, Deno!
+Additionally, we're introducing new task input and output formats.
 
 <!--truncate-->
 
-## v2 in the works!
+## v2 in development!
 
 We've been talking about v2 for many years now, and with the near stabilization of toolchain WASM
 plugins, we're ready to pull the trigger! So what does this mean exactly?
@@ -38,7 +39,26 @@ you'd like to help with v2, let us know!
 
 ## New Deno toolchain powered by WASM
 
-TODO
+In our [last release](./moon-v1.40) we introduced an array of new JavaScript ecosystem toolchain
+plugins, but there was important plugin missing, Deno! Deno works quite differently than Node.js and
+Bun, so we wanted to spend some extra time and effort to get it right.
+
+We're excited to announce Deno support, with full workspaces support and npm compatibility. This
+toolchain, unlike the previous implementation, only supports Deno >= v2, but also supports the
+following:
+
+- Updated `unstable_javascript.packageManager` with `deno`.
+- Will parse `deno.json` and `deno.jsonc` manifest files.
+- Will parse `deno.lock` lock files.
+- Will install dependencies with `deno install`.
+
+```yaml title=".moon/toolchain.yml"
+unstable_deno:
+  version: '2.5.0'
+
+unstable_javascript:
+  packageManager: 'deno'
+```
 
 ## New task inputs
 

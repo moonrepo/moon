@@ -1,10 +1,12 @@
 use moon_app_context::AppContext;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::{TaskHash, TaskHasher};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_sandbox;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -56,6 +58,13 @@ async fn generate_hash<'a>(
     hasher.hash()
 }
 
+fn get_input_files(
+    mut inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
+) -> Vec<WorkspaceRelativePathBuf> {
+    inputs.remove(&WorkspaceRelativePathBuf::from(".moon/cache/CACHEDIR.TAG"));
+    inputs.into_keys().collect::<Vec<_>>()
+}
+
 mod task_hasher {
     use super::*;
 
@@ -76,7 +85,7 @@ mod task_hasher {
         let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
 
         assert_eq!(
-            result.inputs.keys().collect::<Vec<_>>(),
+            get_input_files(result.inputs),
             [".gitignore", "package.json"]
         );
     }
@@ -99,12 +108,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -122,12 +131,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -145,12 +154,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -175,12 +184,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -198,12 +207,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -221,12 +230,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -242,7 +251,7 @@ mod task_hasher {
 
             let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), Vec::<&str>::new());
+            assert_eq!(get_input_files(result.inputs), Vec::<&str>::new());
         }
 
         #[tokio::test]
@@ -263,7 +272,7 @@ mod task_hasher {
 
             let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["created.txt"]);
+            assert_eq!(get_input_files(result.inputs), ["created.txt"]);
         }
 
         #[tokio::test]
@@ -282,12 +291,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -307,12 +316,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -327,7 +336,7 @@ mod task_hasher {
             let hasher_config = HasherConfig::default();
             let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["moon.yml"]);
+            assert_eq!(get_input_files(result.inputs), ["moon.yml"]);
         }
 
         #[tokio::test]
@@ -381,12 +390,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -404,12 +413,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -427,12 +436,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -458,12 +467,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -486,12 +495,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
 
         #[tokio::test]
@@ -514,12 +523,12 @@ mod task_hasher {
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
 
             // Glob
             let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
 
-            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(get_input_files(result.inputs), expected);
         }
     }
 }

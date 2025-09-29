@@ -47,7 +47,7 @@
         }
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "id": {
@@ -55,7 +55,7 @@
       "description": "Overrides the ID within the project graph, as defined in the workspace projects setting.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/Id"
         },
         {
           "type": "null"
@@ -133,7 +133,7 @@
       "description": "A list of tags that this project belongs to, for categorizing, boundary enforcement, and task inheritance.",
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "tasks": {
@@ -144,7 +144,7 @@
         "$ref": "#/definitions/TaskConfig"
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "toolchain": {
@@ -180,50 +180,6 @@
   },
   "additionalProperties": false,
   "definitions": {
-    "DependencyConfig": {
-      "description": "Expanded information about a project dependency.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "title": "id",
-          "description": "ID of the depended on project.",
-          "type": "string"
-        },
-        "scope": {
-          "title": "scope",
-          "description": "Scope of the dependency relationship.",
-          "default": "production",
-          "allOf": [
-            {
-              "$ref": "#/definitions/DependencyScope"
-            }
-          ]
-        },
-        "source": {
-          "title": "source",
-          "description": "Source of where the dependency came from.",
-          "default": "explicit",
-          "allOf": [
-            {
-              "$ref": "#/definitions/DependencySource"
-            }
-          ]
-        },
-        "via": {
-          "title": "via",
-          "description": "Metadata about the source.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
     "DependencyScope": {
       "description": "The scope and or relationship of the dependency.",
       "type": "string",
@@ -243,12 +199,61 @@
         "implicit"
       ]
     },
+    "FileGroupInput": {
+      "description": "A file group input.",
+      "type": "object",
+      "properties": {
+        "as": {
+          "title": "as",
+          "description": "Format to resolve the file group into.",
+          "default": "static",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FileGroupInputFormat"
+            }
+          ]
+        },
+        "format": {
+          "title": "format",
+          "description": "Format to resolve the file group into.",
+          "default": "static",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FileGroupInputFormat"
+            }
+          ]
+        },
+        "group": {
+          "title": "group",
+          "description": "The file group identifier.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FileGroupInputFormat": {
+      "description": "Available formats to resolve the file group into.",
+      "type": "string",
+      "enum": [
+        "static",
+        "dirs",
+        "envs",
+        "files",
+        "globs",
+        "root"
+      ]
+    },
     "FileInput": {
       "description": "A file path input.",
       "type": "object",
       "properties": {
         "content": {
           "title": "content",
+          "description": "Regex pattern to match the file's contents against when determining affected status.",
           "anyOf": [
             {
               "type": "string",
@@ -261,10 +266,36 @@
         },
         "file": {
           "title": "file",
+          "description": "The literal file path.",
           "type": "string"
         },
         "optional": {
           "title": "optional",
+          "description": "Mark the file as optional instead of logging a warning when hashing a task.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FileOutput": {
+      "description": "A file path output.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "title": "file",
+          "description": "The literal file path.",
+          "type": "string"
+        },
+        "optional": {
+          "title": "optional",
+          "description": "Mark the file as optional instead of failing with an error after running a task and the output doesn't exist.",
           "anyOf": [
             {
               "type": "boolean"
@@ -278,20 +309,37 @@
       "additionalProperties": false
     },
     "GlobInput": {
-      "description": "A glob path input.",
+      "description": "A glob pattern input.",
       "type": "object",
       "properties": {
         "cache": {
           "title": "cache",
+          "description": "Cache the glob walking result for increased performance.",
           "default": true,
           "type": "boolean"
         },
         "glob": {
           "title": "glob",
+          "description": "The glob pattern.",
           "type": "string"
         }
       },
       "additionalProperties": false
+    },
+    "GlobOutput": {
+      "description": "A glob pattern output.",
+      "type": "object",
+      "properties": {
+        "glob": {
+          "title": "glob",
+          "description": "The glob pattern.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Id": {
+      "type": "string"
     },
     "Input": {
       "anyOf": [
@@ -302,7 +350,13 @@
           "$ref": "#/definitions/FileInput"
         },
         {
+          "$ref": "#/definitions/FileGroupInput"
+        },
+        {
           "$ref": "#/definitions/GlobInput"
+        },
+        {
+          "$ref": "#/definitions/ProjectInput"
         }
       ]
     },
@@ -368,6 +422,19 @@
         "scaffolding",
         "tool",
         "unknown"
+      ]
+    },
+    "Output": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/FileOutput"
+        },
+        {
+          "$ref": "#/definitions/GlobOutput"
+        }
       ]
     },
     "OwnersConfig": {
@@ -473,14 +540,62 @@
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
     },
+    "ProjectDependencyConfig": {
+      "description": "Expanded information about a project dependency.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "id",
+          "description": "ID of the depended on project.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Id"
+            }
+          ]
+        },
+        "scope": {
+          "title": "scope",
+          "description": "Scope of the dependency relationship.",
+          "default": "production",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencyScope"
+            }
+          ]
+        },
+        "source": {
+          "title": "source",
+          "description": "Source of where the dependency came from.",
+          "default": "explicit",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencySource"
+            }
+          ]
+        },
+        "via": {
+          "title": "via",
+          "description": "Metadata about the source.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "ProjectDependsOn": {
       "description": "Expanded information about a project dependency.",
       "anyOf": [
         {
-          "type": "string"
+          "$ref": "#/definitions/Id"
         },
         {
-          "$ref": "#/definitions/DependencyConfig"
+          "$ref": "#/definitions/ProjectDependencyConfig"
         }
       ]
     },
@@ -519,7 +634,7 @@
           "description": "A task within the current project for building the project.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "null"
@@ -543,7 +658,7 @@
           "description": "A task within the current project for starting the project.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "null"
@@ -565,6 +680,50 @@
           "items": {
             "type": "string"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectInput": {
+      "description": "An external project input.",
+      "type": "object",
+      "properties": {
+        "fileGroup": {
+          "title": "fileGroup",
+          "description": "A file group identifier within the project in which to determine affected status.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filter": {
+          "title": "filter",
+          "description": "A list of globs, relative from the project's root, in which to determine affected status.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group": {
+          "title": "group",
+          "description": "A file group identifier within the project in which to determine affected status.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "project": {
+          "title": "project",
+          "description": "The external project identifier.",
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -689,12 +848,12 @@
             {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/Id"
                 },
                 {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/Id"
                   }
                 }
               ]
@@ -711,12 +870,12 @@
             {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/Id"
                 },
                 {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/definitions/Id"
                   }
                 }
               ]
@@ -760,7 +919,7 @@
             "$ref": "#/definitions/ProjectToolchainEntry"
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         },
         "python": {
@@ -832,7 +991,7 @@
           "description": "Excludes inheriting tasks by ID.",
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         },
         "include": {
@@ -842,7 +1001,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Id"
               }
             },
             {
@@ -855,10 +1014,10 @@
           "description": "Renames inherited tasks to a new ID.",
           "type": "object",
           "additionalProperties": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           },
           "propertyNames": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       },
@@ -964,7 +1123,7 @@
           "description": "Extends settings from a sibling task by ID.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "null"
@@ -1016,7 +1175,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Output"
               }
             },
             {
@@ -1064,12 +1223,12 @@
           "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Id"
               }
             }
           ]
@@ -1079,12 +1238,12 @@
           "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             },
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/Id"
               }
             }
           ]
@@ -1553,7 +1712,9 @@
                   "type": "string",
                   "enum": [
                     "always",
-                    "affected"
+                    "affected",
+                    "only",
+                    "skip"
                   ]
                 }
               ]

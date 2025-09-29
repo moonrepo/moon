@@ -11,6 +11,7 @@
     "bun": {
       "title": "bun",
       "description": "Configures and enables the Bun platform.",
+      "deprecated": true,
       "anyOf": [
         {
           "$ref": "#/definitions/BunConfig"
@@ -23,6 +24,7 @@
     "deno": {
       "title": "deno",
       "description": "Configures and enables the Deno platform.",
+      "deprecated": true,
       "anyOf": [
         {
           "$ref": "#/definitions/DenoConfig"
@@ -56,6 +58,7 @@
     "node": {
       "title": "node",
       "description": "Configures and enables the Node.js platform.",
+      "deprecated": true,
       "anyOf": [
         {
           "$ref": "#/definitions/NodeConfig"
@@ -73,7 +76,7 @@
         "$ref": "#/definitions/ToolchainPluginConfig"
       },
       "propertyNames": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "proto": {
@@ -100,6 +103,7 @@
     "rust": {
       "title": "rust",
       "description": "Configures and enables the Rust platform.",
+      "deprecated": true,
       "anyOf": [
         {
           "$ref": "#/definitions/RustConfig"
@@ -345,6 +349,9 @@
           }
         }
       ]
+    },
+    "Id": {
+      "type": "string"
     },
     "MoonConfig": {
       "description": "Configures how and where updates will be received.",

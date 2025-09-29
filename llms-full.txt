@@ -4509,8 +4509,8 @@ They can be defined as a literal path, or a `file://` URI ,
 or as an object with a `file` property . Additionally, the
 following parameters are supported as a URI query or as object fields:
 
-- `content` (`string`) - When determining affected state, will match against the file's content
-  using the defined regex pattern, instead of relying on file existence.
+- `content`, `match`, `matches` (`string`) - When determining affected state, will match against the
+  file's content using the defined regex pattern, instead of relying on file existence.
 - `optional` (`boolean`) - When hashing and set to `true` and the file is missing, will not log a
   warning. When set to `false` and the file is missing, will fail with an error. Defaults to logging
   a warning.
@@ -4530,6 +4530,31 @@ tasks:
         optional: true
       - file: '/workspace/relative/file.js'
         content: 'a|b|c'
+```
+
+#### File groups
+
+A file group input will reference the defined files/globs within from a file group in the current
+project. It can be defined with a `group://` URI, or as an object with a `group` property.
+Additionally, the following parameters are supported as a URI query or as object fields:
+
+- `format`, `as` (`string`) - The format in which to gather the file group results. Supported values
+  are `static` (default), `files`, `dirs`, `globs`, `envs`, and `root`.
+
+```yaml title="moon.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+
+tasks:
+  build:
+    # ...
+    inputs:
+      # Using group protocol
+      - 'group://sources?format=dirs'
+      # Using an object
+      - group: 'sources'
+        format: 'dirs'
 ```
 
 #### Glob patterns
@@ -4585,6 +4610,41 @@ be considered an input. To work around this, use explicit file inputs.
 
 :::
 
+#### External projects
+
+Tasks can also depend on files and globs from other projects within the same workspace. This is
+useful for handling cross-project relationships without needing to define explicit task
+dependencies.
+
+External projects can be defined as a `project://` URI, or as an object with a `project` property,
+both of which require a project identifier, or `^` for all dependent projects. Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `group`, `fileGroup` (`id`) - The name of a file group within the external project in which file
+  and glob patterns will be used for matching. Takes precedence over `filter`.
+- `filter` (`string[]`) - A list of
+  [project relative glob patterns](../concepts/file-pattern#project-relative) that will be used for
+  matching.
+
+If neither `group` nor `filter` are defined, all files within the external project are considered a
+match (`**/*`).
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Using project protocol
+      - 'project://foo'
+      - 'project://bar?group=sources'
+      - 'project://baz?filter=src/**/*'
+      # Using an object
+      - project: 'foo'
+      - project: 'bar'
+        group: 'sources'
+      - project: 'baz'
+        filter: ['src/**/*']
+```
+
 ### `local`
 
 :::info
@@ -4618,28 +4678,58 @@ are _created_ as a result of executing this task, typically from a build or comp
 task. Outputs are necessary for [incremental caching and hydration](../concepts/cache). If you'd
 prefer to avoid that functionality, omit this field.
 
-```yaml title="moon.yml" {4-6}
+#### File paths
+
+File paths support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `file://` URI ,
+or as an object with a `file` property . Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `optional` (`boolean`) - When archiving and set to `true` and the file is missing, will not fail
+  with a missing output error. Defaults to `false`.
+
+```yaml title="moon.yml"
 tasks:
-  build:
-    command: 'webpack'
-    outputs:
-      # Relative from project root
+  example:
+    inputs:
+      # Literal paths
       - 'build/'
+      # Using file protocol
+      - 'file://build/'
+      # Using an object
+      - file: 'build/'
+        optional: true
 ```
 
-Globs can also be used if you'd like to restrict which files are cached. For example, when building
-a JavaScript project, you may want to include `.js` files, but exclude `.map` and other files.
+#### Glob patterns
 
-```yaml title="moon.yml" {4-6}
+Glob patterns support
+[project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
+They can be defined as a literal path, or a `glob://` URI ,
+or as an object with a `glob` property .
+
+```yaml title="moon.yml"
 tasks:
-  build:
-    command: 'webpack'
-    outputs:
+  example:
+    inputs:
+      # Literal paths
       - 'build/**/*.js'
       - '!build/internal.js'
+      # Using glob protocol
+      - 'glob://build/**/*.js'
+      # Using an object
+      - glob: 'build/**/*.js'
 ```
 
-:::caution
+:::warning
+
+Glob patterns that contain `?`, for example `*.tsx?`, cannot be used in URI format, as it conflicts
+with the query string syntax. Use the path or object format instead.
+
+:::
+
+:::danger
 
 When using globs and moon hydrates an output (a cache hit), all files not matching the glob will be
 **deleted**. Ensure that all files critical for the build to function correctly are included.
@@ -5145,14 +5235,15 @@ tasks:
 #### `runInCI`
 
 Whether to run the task automatically in a CI (continuous integration) environment when affected by
-touched files, typically through the [`moon ci`](../commands/ci) command. Supports the following
-values:
+touched files using the [`moon ci`](../commands/ci) command. Supports the following values:
 
 - `always` - Always run in CI, regardless if affected or not. 
-- `true`, `affected` - Only run if affected by touched files.
+- `affected`, `true` (default) - Only run in CI if affected by touched files.
 - `false` - Never run in CI.
-
-Defaults to `true` unless the [`local`](#local) setting is enabled.
+- `only` - Only run in CI, and not locally, if affected by touched files.
+  
+- `skip` - Skip running in CI but run locally and allow task relationships to be valid.
+  
 
 ```yaml title="moon.yml" {5}
 tasks:
@@ -6088,9 +6179,11 @@ unstable_go:
 Enables and configures JavaScript using the new WASM plugin. This core JavaScript toolchain depends
 on these other JavaScript ecosystem toolchains:
 
-- Runtimes: [`unstable_bun`](#unstable_bun), [`unstable_node`](#unstable_node)
-- Package managers: [`unstable_bun`](#unstable_bun), [`unstable_npm`](#unstable_npm),
-  [`unstable_pnpm`](#unstable_pnpm), [`unstable_yarn`](#unstable_yarn)
+- Runtimes: [`unstable_bun`](#unstable_bun), [`unstable_deno`](#unstable_deno),
+  [`unstable_node`](#unstable_node)
+- Package managers: [`unstable_bun`](#unstable_bun), [`unstable_deno`](#unstable_deno),
+  [`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm),
+  [`unstable_yarn`](#unstable_yarn)
 
 ### `dedupeOnLockfileChange`
 
@@ -6154,7 +6247,7 @@ unstable_javascript:
 ### `packageManager`
 
 Defines which package manager to utilize when installing dependencies. Supports `npm`, `pnpm`,
-`yarn`, or `bun`. Defaults to no package manager.
+`yarn`, `deno`, or `bun`. Defaults to no package manager.
 
 ```yaml title=".moon/toolchain.yml" {2}
 unstable_javascript:
@@ -6164,9 +6257,9 @@ unstable_javascript:
 :::info
 
 When this setting is configured, it will require the target toolchain
-([`unstable_bun`](#unstable_bun), ([`unstable_node`](#unstable_node),
-[`unstable_npm`](#unstable_npm), [`unstable_pnpm`](#unstable_pnpm), or
-[`unstable_yarn`](#unstable_yarn)) to also be configured.
+([`unstable_bun`](#unstable_bun), [`unstable_deno`](#unstable_deno),
+[`unstable_node`](#unstable_node), [`unstable_npm`](#unstable_npm),
+[`unstable_pnpm`](#unstable_pnpm), or [`unstable_yarn`](#unstable_yarn)) to also be configured.
 
 :::
 
@@ -6317,6 +6410,12 @@ unstable_bun:
 
 Enables and configures [Deno](../guides/javascript/deno-handbook).
 
+:::warning
+
+This toolchain has been deprecated. We suggest using [`unstable_deno`](#unstable_deno) instead!
+
+:::
+
 ### `version`
 
 Defines the explicit Deno toolchain
@@ -6376,6 +6475,69 @@ Enables lockfile (`deno.lock`) support for Deno dependencies. When enabled, will
 ```yaml title=".moon/toolchain.yml" {2}
 deno:
   lockfile: true
+```
+
+## `unstable_deno`
+
+Enables and configures [Deno](../guides/javascript/deno-handbook) using the new WASM plugin.
+
+:::info
+
+This toolchain requires the [`unstable_javascript`](#unstable_javascript) toolchain to also be
+enabled.
+
+:::
+
+### `version`
+
+Defines the explicit Deno toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `deno` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_deno:
+  version: '2.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `bins`
+
+A list of binaries to install globally into Deno (`~/.deno/bin`). This setting requires a list of
+URLs or binary configuration objects with the following fields:
+
+- `bin` (required) - URL of the binary.
+- `name` - Provide a custom name for the binary.
+- `local` - Only install the binary locally, and not in CI.
+- `force` - Force install the binary. This _should_ be toggled for one-offs.
+
+```yaml title=".moon/toolchain.yml" {2-5}
+unstable_deno:
+  bins:
+    - 'https://deno.land/std@0.192.0/http/file_server.ts'
+    - bin: 'https://deno.land/std@0.192.0/http/file_server.ts'
+      name: 'fs'
+```
+
+### `executeArgs`
+
+Customize the arguments that will be appended to all `deno`-based task commands. Arguments will be
+appended after the `deno` executable, but before task specific arguments.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_deno:
+  executeArgs: ['--allow-read']
+```
+
+### `installArgs`
+
+Customize the arguments that will be passed to the `deno install` command, when the
+`InstallDependencies` action is triggered in the pipeline. These arguments are used both locally and
+in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+unstable_deno:
+  installArgs: ['--frozen']
 ```
 
 ## `node`
@@ -31719,3 +31881,159 @@ of changes.
 We have a lot of cool stuff planned for proto, like more official backends and tools, improved
 workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
 and appreciate your help. Feel free to ping us on Discord!
+
+---
+
+## moon v1.41 - Deno WASM toolchain and task input/output improvements
+
+With this release, we're introducing the final piece of the JavaScript ecosystem puzzle, Deno!
+Additionally, we're introducing new task input and output formats.
+
+## v2 in development!
+
+We've been talking about v2 for many years now, and with the near stabilization of toolchain WASM
+plugins, we're ready to pull the trigger! So what does this mean exactly?
+
+We'd like to land v2 at the start of the new year, and to hit this milestone, we'll be focusing all
+our efforts on this initiative and _will not_ be releasing any new features or improvements to the
+v1 line until v2 is released. This does not include bug fixes or security patches, which we will
+continue to provide as needed.
+
+So what should you expect in v2?
+
+- Toolchain WASM plugins stabilized, with the old platform system removed.
+- Extension WASM plugins can extend the project graph and tasks.
+- Remote cache powered by Bazel Remote Execution API stabilized.
+- Task inheritance via inline configuration.
+- Task inheritance deep merging/extending (is shallow right now).
+- Default project when running tasks.
+- Renamed and improved configuration settings.
+- New binary release strategy.
+- Improved CLI commands.
+- [And much more!](https://github.com/moonrepo/moon/issues/1681)
+
+If you have any requests for v2, please leave a comment in the PR linked above! Additionally, if
+you'd like to help with v2, let us know!
+
+## New Deno toolchain powered by WASM
+
+In our [last release](./moon-v1.40) we introduced an array of new JavaScript ecosystem toolchain
+plugins, but there was important plugin missing, Deno! Deno works quite differently than Node.js and
+Bun, so we wanted to spend some extra time and effort to get it right.
+
+We're excited to announce Deno support, with full workspaces support and npm compatibility. This
+toolchain, unlike the previous implementation, only supports Deno >= v2, but also supports the
+following:
+
+- Updated `unstable_javascript.packageManager` with `deno`.
+- Will parse `deno.json` and `deno.jsonc` manifest files.
+- Will parse `deno.lock` lock files.
+- Will install dependencies with `deno install`.
+
+```yaml title=".moon/toolchain.yml"
+unstable_deno:
+  version: '2.5.0'
+
+unstable_javascript:
+  packageManager: 'deno'
+```
+
+## New task inputs
+
+In [v1.39](./moon-v1.39) we introduced new formats for task inputs, a URI string format and an
+object format, based on this [RFC](https://github.com/moonrepo/moon/issues/1985). However, we only
+implemented support for files and globs. In this release, we have added support for more input
+types.
+
+### File groups
+
+Similar to the existing file group tokens (`@files`, `@dirs`, etc), we are introducing a new
+[file group input type](/docs/config/project#file-groups), with support for `group://` URIs and
+`group` objects.
+
+```yaml title="moon.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+
+tasks:
+  build:
+    # ...
+    inputs:
+      # Using group protocol
+      - 'group://sources?format=dirs'
+      # Using an object
+      - group: 'sources'
+        format: 'dirs'
+```
+
+### External projects
+
+This feature has been highly requested, but we were unsure how to best implement it... until now.
+With the new external project input type, you can now rely on arbitrary files from other projects as
+inputs, instead of requiring no-op or intermediate task relationships. This is perfect for "I want
+any file change in a project dependency to trigger a rebuild" scenarios.
+
+This input type supports both `project://` URIs and `project` objects. Both of which require a
+project identifier, or `^` to inherit all project dependencies (similar to targets).
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Using project protocol
+      - 'project://foo'
+      # Using an object
+      - project: 'foo'
+```
+
+By default this will include all files in the target project, using `**/*`, but this can be
+customized with explicit globs, or referencing a file group in the target project.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      - 'project://foo?filter=src/**/*'
+      - project: 'foo'
+        group: 'sources'
+```
+
+## Improved task outputs
+
+In the spirit of the new task inputs, we have also improved task outputs by applying the same
+formats treatment! All file and glob outputs now support the URI and object formats.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    outputs:
+      # Literal
+      - 'dist/**/*'
+      # Using glob protocol
+      - 'glob://dist/**/*'
+      # Using an object
+      - glob: 'dist/**/*'
+```
+
+Additionally, file based outputs now support an `optional` parameter, which will avoid throwing an
+error if the output does not exist after a task has ran. This has also been a much requested
+feature!
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    outputs:
+      - 'file://build/artifact?optional'
+      - file: 'build/artifact'
+        optional: true
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.41.0) for a full list
+of changes.
+
+- Added new values to the `runInCI` task option:
+  - `only` - Only run the task in CI, and not locally, when affected.
+  - `skip` - Skip running in CI but run locally and allow task relationships to be valid.

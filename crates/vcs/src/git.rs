@@ -5,6 +5,7 @@ use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
+use git_url_parse::types::provider::GenericProvider;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::Diagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
@@ -706,8 +707,10 @@ impl Vcs for Git {
             if let Ok(output) = self
                 .process
                 .run_with_formatter(["remote", "get-url", candidate], true, |out| {
-                    if let Ok(url) = GitUrl::parse(&out) {
-                        url.fullname
+                    if let Ok(url) =
+                        GitUrl::parse(&out).and_then(|url| url.provider_info::<GenericProvider>())
+                    {
+                        url.fullname()
                     } else {
                         out
                     }

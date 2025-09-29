@@ -814,6 +814,31 @@ tasks:
         content: 'a|b|c'
 ```
 
+#### File groups<VersionLabel version="1.41.0" />
+
+A file group input will reference the defined files/globs within from a file group in the current
+project. It can be defined with a `group://` URI, or as an object with a `group` property.
+Additionally, the following parameters are supported as a URI query or as object fields:
+
+- `format`, `as` (`string`) - The format in which to gather the file group results. Supported values
+  are `static` (default), `files`, `dirs`, `globs`, `envs`, and `root`.
+
+```yaml title="moon.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+
+tasks:
+  build:
+    # ...
+    inputs:
+      # Using group protocol
+      - 'group://sources?format=dirs'
+      # Using an object
+      - group: 'sources'
+        format: 'dirs'
+```
+
 #### Glob patterns
 
 Glob patterns support

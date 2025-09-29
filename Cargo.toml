@@ -35,7 +35,7 @@ convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.11.4"
-iocraft = "0.7.11"
+iocraft = "0.7.13"
 md5 = "0.8.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"
@@ -59,7 +59,7 @@ schematic = { version = "0.18.12", default-features = false, features = [
 ] }
 serial_test = "3.2.0"
 semver = "1.0.27"
-serde = { version = "1.0.227", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 serde_yml = "0.0.12"
 sha2 = "0.10.9"

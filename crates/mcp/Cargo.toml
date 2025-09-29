@@ -19,9 +19,10 @@ moon_task = { version = "0.2.0", path = "../task" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }
-rust-mcp-sdk = { version = "0.6.0", default-features = false, features = [
+rust-mcp-sdk = { version = "0.7.0", default-features = false, features = [
 	"macros",
 	"server",
+	"stdio",
 	"2025_06_18",
 ] }
 serde = { workspace = true }

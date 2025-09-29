@@ -23,7 +23,7 @@ pub async fn run_task(
     // and error is bubbled up the stack
     action.allow_failure = task.options.allow_failure;
 
-    let result = TaskRunner::new(&app_context, &project, &task)?
+    let result = TaskRunner::new(&app_context, &workspace_graph.projects, &project, &task)?
         .run(&action_context, &action.node)
         .await?;
 

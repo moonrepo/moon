@@ -16,7 +16,7 @@ pub enum HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
-    pub app: &'task AppContext,
+    pub app_context: &'task AppContext,
     pub task: &'task Task,
 }
 
@@ -46,10 +46,10 @@ impl OutputHydrater<'_> {
 
             // Otherwise write to local cache
             _ => {
-                let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
+                let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
                 let mut hydrated = false;
 
-                if self.app.cache_engine.is_readable() {
+                if self.app_context.cache_engine.is_readable() {
                     debug!(
                         task_target = self.task.target.as_str(),
                         hash, "Hydrating cached outputs into project"
@@ -81,7 +81,7 @@ impl OutputHydrater<'_> {
         );
 
         // Create the archiver instance based on task outputs
-        let mut archive = Archiver::new(&self.app.workspace_root, archive_file);
+        let mut archive = Archiver::new(&self.app_context.workspace_root, archive_file);
 
         for output_file in self.task.output_files.keys() {
             archive.add_source_file(output_file.as_str(), None);
@@ -139,7 +139,10 @@ impl OutputHydrater<'_> {
     }
 
     fn delete_existing_outputs(&self) -> miette::Result<()> {
-        for output in self.task.get_output_files(&self.app.workspace_root, true)? {
+        for output in self
+            .task
+            .get_output_files(&self.app_context.workspace_root, true)?
+        {
             // Ignore failures as we don't want to crash the entire pipeline,
             // and in most cases, these artifacts will just be overwritten
             // on the next hydration anyways!

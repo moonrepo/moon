@@ -105,10 +105,7 @@ impl<'task> TaskHasher<'task> {
 
         if !self.task.input_globs.is_empty() {
             let use_globs = &self.project.root == workspace_root
-                || matches!(
-                    self.app_context.workspace_config.hasher.walk_strategy,
-                    HasherWalkStrategy::Glob
-                )
+                || matches!(self.hasher_config.walk_strategy, HasherWalkStrategy::Glob)
                 || !vcs_enabled;
 
             // Collect inputs by walking and globbing the file system
@@ -191,7 +188,7 @@ impl<'task> TaskHasher<'task> {
             )?)
         } else if !input.filter.is_empty() {
             files.extend(glob_walk_with_options(
-                &self.app_context.workspace_root,
+                &project.root,
                 &input.filter,
                 GlobWalkOptions::default().cache().files(),
             )?);

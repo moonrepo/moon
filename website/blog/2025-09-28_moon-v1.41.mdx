@@ -2,7 +2,7 @@
 slug: moon-v1.41
 title: moon v1.41 - Deno WASM toolchain and task input/output improvements
 authors: [milesj]
-tags: [toolchain, wasm, javascript, deno, task, input, output]
+tags: [toolchain, wasm, javascript, deno, task, input, output, v2]
 # image: ./img/moon/v1.41.png
 ---
 
@@ -10,7 +10,35 @@ TODO
 
 <!--truncate-->
 
+## v2 in the works!
+
+We've been talking about v2 for many years now, and with the near stabilization of toolchain WASM
+plugins, we're ready to pull the trigger! So what does this mean exactly?
+
+We'd like to land v2 at the start of the new year, and to hit this milestone, we'll be focusing all
+our efforts on this initiative and _will not_ be releasing any new features or improvements to the
+v1 line until v2 is released. This does not include bug fixes or security patches, which we will
+continue to provide as needed.
+
+So what should you expect in v2?
+
+- Toolchain WASM plugins stabilized, with the old platform system removed.
+- Extension WASM plugins can extend the project graph and tasks.
+- Remote cache powered by Bazel Remote Execution API stabilized.
+- Task inheritance via inline configuration.
+- Task inheritance deep merging/extending (is shallow right now).
+- Default project when running tasks.
+- Renamed and improved configuration settings.
+- New binary release strategy.
+- Improved CLI commands.
+- [And much more!](https://github.com/moonrepo/moon/issues/1681)
+
+If you have any requests for v2, please leave a comment in the PR linked above! Additionally, if
+you'd like to help with v2, let us know!
+
 ## New Deno toolchain powered by WASM
+
+TODO
 
 ## New task inputs
 
@@ -74,6 +102,34 @@ tasks:
 ```
 
 ## Improved task outputs
+
+In the spirit of the new task inputs, we have also improved task outputs by applying the same
+formats treatment! All file and glob outputs now support the URI and object formats.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    outputs:
+      # Literal
+      - 'dist/**/*'
+      # Using glob protocol
+      - 'glob://dist/**/*'
+      # Using an object
+      - glob: 'dist/**/*'
+```
+
+Additionally, file based outputs now support an `optional` parameter, which will avoid throwing an
+error if the output does not exist after a task has ran. This has also been a much requested
+feature!
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    outputs:
+      - 'file://build/artifact?optional'
+      - file: 'build/artifact'
+        optional: true
+```
 
 ## Other changes
 

@@ -25,6 +25,7 @@ moon_pdk_api = { path = "../pdk-api" }
 moon_platform = { path = "../../legacy/core/platform" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
 moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }

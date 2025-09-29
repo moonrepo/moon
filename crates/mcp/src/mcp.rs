@@ -26,7 +26,7 @@ impl ServerHandler for MoonMcpHandler {
     async fn handle_list_tools_request(
         &self,
         _request: ListToolsRequest,
-        _runtime: &dyn McpServer,
+        _runtime: Arc<dyn McpServer>,
     ) -> Result<ListToolsResult, RpcError> {
         Ok(ListToolsResult {
             meta: None,
@@ -38,7 +38,7 @@ impl ServerHandler for MoonMcpHandler {
     async fn handle_call_tool_request(
         &self,
         request: CallToolRequest,
-        _runtime: &dyn McpServer,
+        _runtime: Arc<dyn McpServer>,
     ) -> std::result::Result<CallToolResult, CallToolError> {
         let tool_params: MoonTools =
             MoonTools::try_from(request.params).map_err(CallToolError::new)?;
@@ -94,7 +94,8 @@ pub async fn run_mcp(
     };
 
     // STEP 4: Create the MCP runtime
-    let server: ServerRuntime = server_runtime::create_server(server_details, transport, handler);
+    let server: Arc<ServerRuntime> =
+        server_runtime::create_server(server_details, transport, handler);
 
     // STEP 5: Start the server
     server.start().await

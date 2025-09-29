@@ -13,6 +13,7 @@ use moon_console::TaskReportItem;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
 use moon_time::{is_stale, now_millis};
@@ -29,7 +30,8 @@ pub struct TaskRunResult {
 }
 
 pub struct TaskRunner<'task> {
-    app: &'task Arc<AppContext>,
+    app_context: &'task Arc<AppContext>,
+    project_graph: &'task ProjectGraph,
     project: &'task Project,
     pub task: &'task Task,
     platform_manager: &'task PlatformManager,
@@ -47,7 +49,8 @@ pub struct TaskRunner<'task> {
 
 impl<'task> TaskRunner<'task> {
     pub fn new(
-        app: &'task Arc<AppContext>,
+        app_context: &'task Arc<AppContext>,
+        project_graph: &'task ProjectGraph,
         project: &'task Project,
         task: &'task Task,
     ) -> miette::Result<Self> {
@@ -56,7 +59,7 @@ impl<'task> TaskRunner<'task> {
             "Creating a task runner for target"
         );
 
-        let mut cache = app
+        let mut cache = app_context
             .cache_engine
             .state
             .load_target_state::<TaskRunCacheState>(&task.target)?;
@@ -67,9 +70,14 @@ impl<'task> TaskRunner<'task> {
 
         Ok(Self {
             cache,
-            archiver: OutputArchiver { app, project, task },
-            hydrater: OutputHydrater { app, task },
+            archiver: OutputArchiver {
+                app_context,
+                project,
+                task,
+            },
+            hydrater: OutputHydrater { app_context, task },
             platform_manager: PlatformManager::read(),
+            project_graph,
             project,
             remote_state: None,
             report_item: TaskReportItem {
@@ -78,7 +86,7 @@ impl<'task> TaskRunner<'task> {
             },
             target_state: None,
             task,
-            app,
+            app_context,
             operations: OperationList::default(),
         })
     }
@@ -155,7 +163,7 @@ impl<'task> TaskRunner<'task> {
 
                 self.report_item.hash = maybe_hash.clone();
 
-                self.app.console.on_task_completed(
+                self.app_context.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &self.report_item,
@@ -176,7 +184,7 @@ impl<'task> TaskRunner<'task> {
 
                 self.inject_failed_task_execution(Some(&error))?;
 
-                self.app.console.on_task_completed(
+                self.app_context.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &self.report_item,
@@ -209,7 +217,7 @@ impl<'task> TaskRunner<'task> {
 
     #[instrument(skip(self))]
     pub async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
-        let cache_engine = &self.app.cache_engine;
+        let cache_engine = &self.app_context.cache_engine;
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -219,7 +227,7 @@ impl<'task> TaskRunner<'task> {
         // If a lifetime has been configured, we need to check the last run and the archive
         // for staleness, and return a cache miss/skip
         let cache_lifetime = match &self.task.options.cache_lifetime {
-            Some(lifetime) => Some(self.app.cache_engine.parse_lifetime(lifetime)?),
+            Some(lifetime) => Some(self.app_context.cache_engine.parse_lifetime(lifetime)?),
             None => None,
         };
 
@@ -339,7 +347,7 @@ impl<'task> TaskRunner<'task> {
     pub fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
-        self.task.options.cache.is_enabled() && self.app.vcs.is_enabled()
+        self.task.options.cache.is_enabled() && self.app_context.vcs.is_enabled()
     }
 
     #[instrument(skip_all)]
@@ -384,14 +392,15 @@ impl<'task> TaskRunner<'task> {
             "Generating a unique hash for this task"
         );
 
-        let hash_engine = &self.app.cache_engine.hash;
+        let hash_engine = &self.app_context.cache_engine.hash;
         let mut hasher = hash_engine.create_hasher(node.label());
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
         hash_common_task_contents(
-            self.app,
+            self.app_context,
             context,
+            self.project_graph,
             self.project,
             self.task,
             node,
@@ -409,13 +418,14 @@ impl<'task> TaskRunner<'task> {
                     self.project,
                     node.get_runtime(),
                     &mut hasher,
-                    &self.app.workspace_config.hasher,
+                    &self.app_context.workspace_config.hasher,
                 )
                 .await?;
         }
 
         // Hash toolchain fields
-        hash_toolchain_task_contents(self.app, self.project, self.task, &mut hasher).await?;
+        hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
+            .await?;
 
         // Generate the hash and persist values
         let hash = hash_engine.save_manifest(&mut hasher)?;
@@ -469,7 +479,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Build the command from the current task
-        let mut builder = CommandBuilder::new(self.app, self.project, self.task, node);
+        let mut builder = CommandBuilder::new(self.app_context, self.project, self.task, node);
         builder.set_platform_manager(self.platform_manager);
 
         let command = builder
@@ -480,7 +490,8 @@ impl<'task> TaskRunner<'task> {
             .await?;
 
         // Execute the command and gather all attempts made
-        let executor = CommandExecutor::new(self.app, self.project, self.task, node, command);
+        let executor =
+            CommandExecutor::new(self.app_context, self.project, self.task, node, command);
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::mutex_acquisition();
@@ -689,7 +700,7 @@ impl<'task> TaskRunner<'task> {
                 output.exit_code = Some(self.cache.data.exit_code);
 
                 let state_dir = self
-                    .app
+                    .app_context
                     .cache_engine
                     .state
                     .get_target_dir(&self.task.target);
@@ -745,7 +756,7 @@ impl<'task> TaskRunner<'task> {
 
         operation.finish(ActionStatus::Aborted);
 
-        self.app.console.on_task_finished(
+        self.app_context.console.on_task_finished(
             &self.task.target,
             &operation,
             &self.report_item,
@@ -759,7 +770,7 @@ impl<'task> TaskRunner<'task> {
 
     fn persist_state(&mut self, operation: &Operation) -> miette::Result<()> {
         let state_dir = self
-            .app
+            .app_context
             .cache_engine
             .state
             .get_target_dir(&self.task.target);

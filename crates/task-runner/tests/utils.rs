@@ -83,7 +83,7 @@ impl TaskRunnerContainer {
 
     pub fn create_archiver(&self) -> OutputArchiver<'_> {
         OutputArchiver {
-            app: &self.app_context,
+            app_context: &self.app_context,
             project: &self.project,
             task: &self.task,
         }
@@ -91,7 +91,7 @@ impl TaskRunnerContainer {
 
     pub fn create_hydrator(&self) -> OutputHydrater<'_> {
         OutputHydrater {
-            app: &self.app_context,
+            app_context: &self.app_context,
             task: &self.task,
         }
     }
@@ -127,7 +127,13 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self) -> TaskRunner<'_> {
-        let mut runner = TaskRunner::new(&self.app_context, &self.project, &self.task).unwrap();
+        let mut runner = TaskRunner::new(
+            &self.app_context,
+            &self.workspace_graph.projects,
+            &self.project,
+            &self.task,
+        )
+        .unwrap();
         runner.set_platform_manager(&self.platform_manager);
         runner
     }

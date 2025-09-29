@@ -6,7 +6,7 @@ use moon_config::Input;
 use moon_feature_flags::glob_walk_with_options;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -148,12 +148,30 @@ impl FileGroup {
         Ok(".".into())
     }
 
-    fn walk(
+    pub fn walk(
         &self,
         is_dir: bool,
         workspace_root: &Path,
         loose_check: bool,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+        self.walk_absolute(is_dir, workspace_root, loose_check)
+            .map(|files| {
+                files
+                    .into_iter()
+                    .filter_map(|file| match file.strip_prefix(workspace_root) {
+                        Ok(suffix) => WorkspaceRelativePathBuf::from_path(suffix).ok(),
+                        Err(_) => None,
+                    })
+                    .collect::<Vec<_>>()
+            })
+    }
+
+    pub fn walk_absolute(
+        &self,
+        is_dir: bool,
+        workspace_root: &Path,
+        loose_check: bool,
+    ) -> miette::Result<Vec<PathBuf>> {
         let mut list = vec![];
 
         for path in &self.files {
@@ -168,7 +186,7 @@ impl FileGroup {
             }
 
             if allowed {
-                list.push(path.to_owned());
+                list.push(file);
             }
         }
 
@@ -186,12 +204,7 @@ impl FileGroup {
                 };
 
                 if allowed {
-                    list.push(
-                        WorkspaceRelativePathBuf::from_path(
-                            path.strip_prefix(workspace_root).unwrap(),
-                        )
-                        .unwrap(),
-                    );
+                    list.push(path);
                 }
             }
         }

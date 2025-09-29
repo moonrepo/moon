@@ -1,43 +1,45 @@
 use crate::task_hash::TaskHash;
 use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
+use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci};
-use moon_config::{HasherConfig, HasherWalkStrategy};
+use moon_config::{HasherConfig, HasherWalkStrategy, Input, ProjectInput};
 use moon_env_var::GlobalEnvBag;
+use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
-use moon_vcs::BoxedVcs;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::GlobSet;
-use std::path::{Path, PathBuf};
+use starbase_utils::glob::{GlobSet, GlobWalkOptions};
+use std::path::PathBuf;
 use tracing::{trace, warn};
 
 // Hash all inputs for a task, but exclude outputs and moon specific configuration files!
 pub struct TaskHasher<'task> {
-    pub hasher_config: &'task HasherConfig,
+    pub app_context: &'task AppContext,
+    pub project_graph: &'task ProjectGraph,
     pub project: &'task Project,
     pub task: &'task Task,
-    pub vcs: &'task BoxedVcs,
-    pub workspace_root: &'task Path,
+    pub hasher_config: &'task HasherConfig,
 
     content: TaskHash<'task>,
 }
 
 impl<'task> TaskHasher<'task> {
     pub fn new(
+        app_context: &'task AppContext,
+        project_graph: &'task ProjectGraph,
         project: &'task Project,
         task: &'task Task,
-        vcs: &'task BoxedVcs,
-        workspace_root: &'task Path,
         hasher_config: &'task HasherConfig,
     ) -> Self {
         Self {
-            hasher_config,
+            app_context,
             project,
+            project_graph,
             task,
-            vcs,
-            workspace_root,
+            hasher_config,
             content: TaskHash::new(project, task),
         }
     }
@@ -71,10 +73,10 @@ impl<'task> TaskHasher<'task> {
         let absolute_inputs = self.aggregate_inputs().await?;
         let processed_inputs = self.process_inputs(absolute_inputs)?;
 
-        if !processed_inputs.is_empty() && self.vcs.is_enabled() {
+        if !processed_inputs.is_empty() && self.app_context.vcs.is_enabled() {
             let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
-            self.content.inputs = self.vcs.get_file_hashes(&files, true).await?;
+            self.content.inputs = self.app_context.vcs.get_file_hashes(&files, true).await?;
         }
 
         if !self.task.input_env.is_empty() {
@@ -92,30 +94,39 @@ impl<'task> TaskHasher<'task> {
 
     async fn aggregate_inputs(&mut self) -> miette::Result<FxHashSet<PathBuf>> {
         let mut files = FxHashSet::default();
-        let vcs_enabled = self.vcs.is_enabled();
+        let vcs_enabled = self.app_context.vcs.is_enabled();
+        let workspace_root = &self.app_context.workspace_root;
 
         if !self.task.input_files.is_empty() {
             for file in self.task.input_files.keys() {
-                files.insert(file.to_logical_path(self.workspace_root));
+                files.insert(file.to_logical_path(workspace_root));
             }
         }
 
         if !self.task.input_globs.is_empty() {
-            let use_globs = self.project.root == self.workspace_root
-                || matches!(self.hasher_config.walk_strategy, HasherWalkStrategy::Glob)
+            let use_globs = &self.project.root == workspace_root
+                || matches!(
+                    self.app_context.workspace_config.hasher.walk_strategy,
+                    HasherWalkStrategy::Glob
+                )
                 || !vcs_enabled;
 
             // Collect inputs by walking and globbing the file system
             if use_globs {
                 files.extend(self.task.get_input_files_with_globs(
-                    self.workspace_root,
+                    workspace_root,
                     self.task.input_globs.iter().collect(),
                 )?);
             }
             // Collect inputs by querying VCS which is faster than globbing
             else {
-                for file in self.vcs.get_file_tree(&self.project.source).await? {
-                    files.insert(file.to_logical_path(self.workspace_root));
+                for file in self
+                    .app_context
+                    .vcs
+                    .get_file_tree(&self.project.source)
+                    .await?
+                {
+                    files.insert(file.to_logical_path(workspace_root));
                 }
 
                 // However that completely ignores workspace level globs,
@@ -130,17 +141,25 @@ impl<'task> TaskHasher<'task> {
                 if !workspace_globs.is_empty() {
                     files.extend(
                         self.task
-                            .get_input_files_with_globs(self.workspace_root, workspace_globs)?,
+                            .get_input_files_with_globs(workspace_root, workspace_globs)?,
                     );
                 }
+            }
+        }
+
+        for input in &self.task.inputs {
+            if let Input::Project(inner) = &input
+                && !inner.is_all_deps()
+            {
+                files.extend(self.aggregate_inputs_from_project(inner).await?);
             }
         }
 
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
         if !is_ci() && vcs_enabled {
-            for local_file in self.vcs.get_touched_files().await?.all() {
-                let abs_file = local_file.to_logical_path(self.workspace_root);
+            for local_file in self.app_context.vcs.get_touched_files().await?.all() {
+                let abs_file = local_file.to_logical_path(workspace_root);
 
                 // Deleted files are listed in `git status` but are
                 // not valid inputs, so avoid hashing them!
@@ -152,6 +171,30 @@ impl<'task> TaskHasher<'task> {
                     files.remove(&abs_file);
                 }
             }
+        }
+
+        Ok(files)
+    }
+
+    async fn aggregate_inputs_from_project(
+        &mut self,
+        input: &ProjectInput,
+    ) -> miette::Result<FxHashSet<PathBuf>> {
+        let mut files = FxHashSet::default();
+        let project = self.project_graph.get(&input.project)?;
+
+        if let Some(group_id) = &input.group {
+            files.extend(project.get_file_group(group_id)?.walk_absolute(
+                false,
+                &self.app_context.workspace_root,
+                false,
+            )?)
+        } else if !input.filter.is_empty() {
+            files.extend(glob_walk_with_options(
+                &self.app_context.workspace_root,
+                &input.filter,
+                GlobWalkOptions::default().cache().files(),
+            )?);
         }
 
         Ok(files)
@@ -201,7 +244,7 @@ impl<'task> TaskHasher<'task> {
             // We need to use relative paths from the workspace root
             // so that it works the same across all machines
             let rel_path = abs_path
-                .relative_to(self.workspace_root)
+                .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
             if has_globs && !self.is_valid_input_source(&globset, &rel_path) {

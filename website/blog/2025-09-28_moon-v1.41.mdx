@@ -1,6 +1,6 @@
 ---
 slug: moon-v1.41
-title: moon v1.41 - Deno WASM toolchain
+title: moon v1.41 - Deno WASM toolchain and task input/output improvements
 authors: [milesj]
 tags: [toolchain, wasm, javascript, deno, task, input, output]
 # image: ./img/moon/v1.41.png
@@ -12,9 +12,68 @@ TODO
 
 ## New Deno toolchain powered by WASM
 
-## New task input types
+## New task inputs
 
-## Improved task output types
+In [v1.39](./moon-v1.39) we introduced new formats for task inputs, a URI string format and an
+object format, based on this [RFC](https://github.com/moonrepo/moon/issues/1985). However, we only
+implemented support for files and globs. In this release, we have added support for more input
+types.
+
+### File groups
+
+Similar to the existing file group tokens (`@files`, `@dirs`, etc), we are introducing a new
+[file group input type](/docs/config/project#file-groups), with support for `group://` URIs and
+`group` objects.
+
+```yaml title="moon.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+
+tasks:
+  build:
+    # ...
+    inputs:
+      # Using group protocol
+      - 'group://sources?format=dirs'
+      # Using an object
+      - group: 'sources'
+        format: 'dirs'
+```
+
+### External projects
+
+This feature has been highly requested, but we were unsure how to best implement it... until now.
+With the new external project input type, you can now rely on arbitrary files from other projects as
+inputs, instead of requiring no-op or intermediate task relationships. This is perfect for "I want
+any file change in a project dependency to trigger a rebuild" scenarios.
+
+This input type supports both `project://` URIs and `project` objects. Both of which require a
+project identifier, or `^` to inherit all project dependencies (similar to targets).
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      # Using project protocol
+      - 'project://foo'
+      # Using an object
+      - project: 'foo'
+```
+
+By default this will include all files in the target project, using `**/*`, but this can be
+customized with explicit globs, or referencing a file group in the target project.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    inputs:
+      - 'project://foo?filter=src/**/*'
+      - project: 'foo'
+        group: 'sources'
+```
+
+## Improved task outputs
 
 ## Other changes
 

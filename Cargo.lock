@@ -4879,12 +4879,14 @@ name = "moon_task_hasher"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_app_context",
  "moon_common",
  "moon_config",
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
  "moon_project",
+ "moon_project_graph",
  "moon_task",
  "moon_test_utils2",
  "moon_vcs",
@@ -4918,6 +4920,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
+ "moon_project_graph",
  "moon_remote",
  "moon_task",
  "moon_task_hasher",

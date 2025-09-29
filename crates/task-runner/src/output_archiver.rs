@@ -13,7 +13,7 @@ use tracing::{debug, instrument, warn};
 /// so that subsequent builds are faster, and any local outputs
 /// can be hydrated easily.
 pub struct OutputArchiver<'task> {
-    pub app: &'task AppContext,
+    pub app_context: &'task AppContext,
     pub project: &'task Project,
     pub task: &'task Task,
 }
@@ -26,7 +26,7 @@ impl OutputArchiver<'_> {
         remote_state: Option<&mut ActionState<'_>>,
     ) -> miette::Result<Option<PathBuf>> {
         let mut archived = false;
-        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
+        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
 
         // Check that outputs actually exist
         if self.task.is_build_type() && !self.has_outputs_been_created(false)? {
@@ -39,7 +39,7 @@ impl OutputArchiver<'_> {
         // If so, create and pack the archive!
         if archive_file.exists() {
             archived = true;
-        } else if self.app.cache_engine.is_writable() {
+        } else if self.app_context.cache_engine.is_writable() {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Archiving task outputs from project"
@@ -81,7 +81,7 @@ impl OutputArchiver<'_> {
 
         // Check paths first since they are literal
         for (output, params) in &self.task.output_files {
-            if !output.to_path(&self.app.workspace_root).exists() && !params.optional {
+            if !output.to_path(&self.app_context.workspace_root).exists() && !params.optional {
                 return Ok(false);
             }
         }
@@ -92,7 +92,7 @@ impl OutputArchiver<'_> {
         if has_globs && !all_negated_globs {
             let outputs = self
                 .task
-                .get_output_files(&self.app.workspace_root, false)?;
+                .get_output_files(&self.app_context.workspace_root, false)?;
 
             return Ok(!outputs.is_empty());
         }
@@ -109,7 +109,7 @@ impl OutputArchiver<'_> {
         );
 
         // Create the archiver instance based on task outputs
-        let mut archive = Archiver::new(&self.app.workspace_root, archive_file);
+        let mut archive = Archiver::new(&self.app_context.workspace_root, archive_file);
 
         for output_file in self.task.output_files.keys() {
             archive.add_source_file(output_file.as_str(), None);
@@ -121,7 +121,7 @@ impl OutputArchiver<'_> {
 
         // Also include stdout/stderr logs in the tarball
         let state_dir = self
-            .app
+            .app_context
             .cache_engine
             .state
             .get_target_dir(&self.task.target);
@@ -148,7 +148,7 @@ impl OutputArchiver<'_> {
     async fn upload_to_remote_service(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
             if remote.can_upload() {
-                state.compute_outputs(&self.app.workspace_root)?;
+                state.compute_outputs(&self.app_context.workspace_root)?;
             }
 
             match remote.save_action(state).await {

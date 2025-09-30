@@ -63,8 +63,16 @@ impl RemoteService {
             RemoteApi::Http => Box::new(HttpRemoteClient::default()),
         };
 
+        let cache_enabled = match client.connect_to_host(config, workspace_root).await {
+            Ok(inner) => inner,
+            Err(error) => {
+                warn!("{error} Disabling remote service!");
+                false
+            }
+        };
+
         let mut instance = Self {
-            cache_enabled: client.connect_to_host(config, workspace_root).await?,
+            cache_enabled,
             capabilities: ServerCapabilities::default(),
             client: Arc::new(client),
             config: config.to_owned(),

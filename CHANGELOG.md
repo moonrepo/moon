@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated remote service to disable itself if it cannot connect to the host, instead of failing the
+  entire pipeline.
+
 ## 1.41.0
 
 #### 💥 Breaking

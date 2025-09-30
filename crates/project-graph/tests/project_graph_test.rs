@@ -166,6 +166,27 @@ mod project_graph {
         }
 
         #[tokio::test]
+        async fn globs_with_config_and_root() {
+            let sandbox = create_sandbox("locate-configs");
+            sandbox.create_file("moon.yml", "");
+
+            let graph = create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.projects = WorkspaceProjects::Globs(string_vec!["**/moon.yml"]);
+                })
+                .mock_workspace_graph()
+                .await;
+
+            let ids = get_ids_from_projects(graph.get_projects().unwrap());
+
+            // Because the root project inherits the sandbox folder name,
+            // and the sandbox name is randomly generated, we can't exact match
+            assert_eq!(ids.len(), 3);
+            assert!(ids.contains(&String::from("a")));
+            assert!(ids.contains(&String::from("c")));
+        }
+
+        #[tokio::test]
         async fn paths() {
             let sandbox = create_sandbox("dependencies");
 

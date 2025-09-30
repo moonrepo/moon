@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated remote service to disable itself if it cannot connect to the host, instead of failing the
+  entire pipeline.
+
+#### 🐞 Fixes
+
+- Fixed an issue where locating projects with `**/moon.yml` and a root-level `moon.yml` existed,
+  would trigger an invalid identifier error.
+
 ## 1.41.0
 
 #### 💥 Breaking

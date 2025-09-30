@@ -19,10 +19,10 @@ fn is_hidden(path: &str) -> bool {
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
 fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry> {
-    let (id, source) = if path.contains('/') {
-        (path.split('/').next_back().unwrap().to_owned(), path)
+    let (id, source) = if let Some(index) = path.rfind('/') {
+        (&path[index + 1..], path)
     } else {
-        (path.to_owned(), path)
+        (path, path)
     };
 
     Ok((Id::clean(id)?, WorkspaceRelativePathBuf::from(source)))
@@ -41,7 +41,8 @@ where
     V: AsRef<str> + 'glob,
 {
     let mut locate_globs = vec![];
-    let mut has_root_level = sources
+    let mut add_root_level = false;
+    let has_root_level = sources
         .iter()
         .any(|(_, source)| is_root_level_source(source));
 
@@ -50,15 +51,7 @@ where
         let glob = glob.as_ref();
 
         if glob == "." {
-            if has_root_level {
-                continue;
-            }
-
-            has_root_level = true;
-            sources.push((
-                Id::clean(fs::file_name(context.workspace_root))?,
-                WorkspaceRelativePathBuf::from("."),
-            ));
+            add_root_level = true;
         } else {
             locate_globs.push(glob);
         }
@@ -102,6 +95,11 @@ where
         }
 
         if project_root.is_dir() {
+            if project_root == context.workspace_root {
+                add_root_level = true;
+                continue;
+            }
+
             let project_source =
                 to_virtual_string(project_root.strip_prefix(context.workspace_root).unwrap())?;
 
@@ -132,6 +130,13 @@ where
                 sources.push(infer_project_id_and_source(&project_source)?);
             }
         }
+    }
+
+    if add_root_level && !has_root_level {
+        sources.push((
+            Id::clean(fs::file_name(context.workspace_root))?,
+            WorkspaceRelativePathBuf::from("."),
+        ));
     }
 
     Ok(())

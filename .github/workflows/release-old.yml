@@ -1,0 +1,297 @@
+name: Release
+
+env:
+  APP_NAME: moon
+  # For setup-rust
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  # Manually release cli/core packages
+  workflow_dispatch:
+  # Test on master to ensure PRs are good
+  push:
+    branches:
+      - master
+      - develop-*
+      - release-*
+  # Every day at midnight (nightly)
+  schedule:
+    - cron: '0 0 * * *'
+  # Uncomment to test in PRs (its safe)
+  # pull_request:
+
+# Required for depot!
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  plan:
+    name: Plan release
+    runs-on: ubuntu-latest
+    outputs:
+      publish:
+        ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
+        github.event_name == 'push' && contains(github.ref, 'develop-') }}
+      npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
+      cli-version: ${{ steps.plan-step.outputs.cli-version }}
+      cli-version-base: ${{ steps.plan-step.outputs.cli-version-base }}
+      cli-version-build: ${{ steps.plan-step.outputs.cli-version-build }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan-step
+        run: bash ./scripts/release/planRelease.sh
+        env:
+          CANARY: ${{ github.event_name == 'push' && contains(github.ref, 'develop-') }}
+          NIGHTLY: ${{ github.event_name == 'schedule' }}
+          # CANARY: true
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            host: ubuntu-22.04
+            binary: moon
+            docker-target: bin-gnu
+            docker-platform: linux/amd64
+
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-22.04
+            binary: moon
+            docker-target: bin-musl
+            docker-platform: linux/amd64
+
+          - target: aarch64-unknown-linux-gnu
+            host: ubuntu-22.04
+            binary: moon
+            docker-target: bin-gnu
+            docker-platform: linux/arm64
+
+          - target: aarch64-unknown-linux-musl
+            host: ubuntu-22.04
+            binary: moon
+            docker-target: bin-musl
+            docker-platform: linux/arm64
+
+          - target: x86_64-apple-darwin
+            host: macos-13
+            binary: moon
+            # setup: |
+            #   export MACOSX_DEPLOYMENT_TARGET="10.13";
+
+          - target: aarch64-apple-darwin
+            host: macos-14
+            binary: moon
+            # setup: |
+            #   export CC=$(xcrun -f clang);
+            #   export CXX=$(xcrun -f clang++);
+            #   export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
+            #   export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
+            #   export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
+
+          - target: x86_64-pc-windows-msvc
+            host: windows-2022
+            binary: moon.exe
+    needs:
+      - plan
+    name: Stable - ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        if: ${{ !matrix.docker-target }}
+        with:
+          cache: false
+          targets: ${{ matrix.target }}
+      - name: Setup toolchain
+        if: ${{ matrix.setup }}
+        run: ${{ matrix.setup }}
+      - name: Build binary
+        if: ${{ !matrix.docker-target }}
+        run: bash ./scripts/release/buildBinary.sh
+        env:
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
+          CLI_VERSION: ${{ needs.plan.outputs.cli-version }}
+          CLI_VERSION_BASE: ${{ needs.plan.outputs.cli-version-base }}
+      - name: Install Depot CLI
+        if: ${{ matrix.docker-target }}
+        uses: depot/setup-action@v1
+      - name: Build binary with Docker / Depot
+        if: ${{ matrix.docker-target }}
+        uses: depot/build-push-action@v1
+        with:
+          context: .
+          file: ./scripts/Dockerfile
+          target: ${{ matrix.docker-target }}
+          platforms: ${{ matrix.docker-platform }}
+          outputs: |
+            type=local,dest=.
+      - name: Prepare artifacts
+        run: bash ./scripts/release/prepareArtifacts.sh
+        env:
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        name: Upload artifact
+        with:
+          name: binary-${{ matrix.target }}
+          path: artifacts/${{ matrix.binary }}
+          if-no-files-found: error
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            host: ubuntu-22.04
+
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-22.04
+            image: clux/muslrust:stable
+            setup: yarn config set supportedArchitectures.libc "musl"
+
+          - target: x86_64-apple-darwin
+            host: macos-13
+
+          - target: aarch64-apple-darwin
+            host: macos-14
+
+          - target: x86_64-pc-windows-msvc
+            host: windows-2022
+    needs:
+      - build
+    name: Test - ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - name: Setup toolchain
+        if: ${{ matrix.setup }}
+        run: ${{ matrix.setup }}
+      - uses: actions/download-artifact@v4
+        name: Download artifacts
+        with:
+          path: artifacts
+      - name: Sync artifact binaries
+        run: node ./scripts/release/syncArtifacts.mjs
+      - name: List packages
+        run: ls -lR ./packages/cli ./packages/core-*
+        shell: bash
+      - name: Test binary
+        if: ${{ !matrix.image }}
+        run: bash ./scripts/release/testBinary.sh
+        env:
+          TARGET: ${{ matrix.target }}
+      - name: Test binary with Docker
+        if: ${{ matrix.image }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ${{ matrix.image }}
+          params: -e TARGET=${{ matrix.target }}
+          command: bash ./scripts/release/testBinary.sh
+
+  publish:
+    if: ${{ needs.plan.outputs.publish == 'true' }}
+    name: Publish cli/core packages
+    runs-on: ubuntu-22.04
+    needs:
+      - plan
+      - test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          check-latest: true
+      - name: Install dependencies
+        run: yarn install --immutable
+      - uses: actions/download-artifact@v4
+        name: Download artifacts
+        with:
+          path: artifacts
+      - name: Sync artifact binaries
+        run: node ./scripts/release/syncArtifacts.mjs
+      - name: List binaries
+        run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
+        shell: bash
+      - id: publish-step
+        name: Publish npm packages
+        run: bash ./scripts/release/publishBinaryPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CLI_VERSION: ${{ needs.plan.outputs.cli-version }}
+          CLI_VERSION_BASE: ${{ needs.plan.outputs.cli-version-base }}
+          CLI_VERSION_BUILD: ${{ needs.plan.outputs.cli-version-build }}
+      - if:
+          ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next'
+          }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          tag: ${{ steps.publish-step.outputs.npm-tag-name }}
+          prerelease: ${{ needs.plan.outputs.npm-channel == 'next' }}
+          skipIfReleaseExists: true
+      - if: ${{ needs.plan.outputs.npm-channel == 'canary' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This canary release corresponds to the commit [${{ github.sha }}].'
+          name: 'Canary'
+          tag: 'canary'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
+      - if: ${{ needs.plan.outputs.npm-channel == 'nightly' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
+          name: 'Nightly'
+          tag: 'nightly'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
+
+  publish-npm:
+    if:
+      ${{ needs.plan.outputs.publish == 'true' && (needs.plan.outputs.npm-channel == 'latest' ||
+      needs.plan.outputs.npm-channel == 'next') }}
+    needs:
+      - plan
+    name: Publish npm packages
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          check-latest: true
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build packages
+        run: bash ./scripts/release/buildPackages.sh
+      - name: Publish npm packages
+        run: bash ./scripts/release/publishPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CLI_VERSION: ${{ needs.plan.outputs.cli-version }}
+          CLI_VERSION_BASE: ${{ needs.plan.outputs.cli-version-base }}
+          CLI_VERSION_BUILD: ${{ needs.plan.outputs.cli-version-build }}

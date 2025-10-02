@@ -5,6 +5,9 @@ edition = "2024"
 publish = false
 default-run = "moon"
 
+[package.metadata.dist]
+publish = true
+
 [[bin]]
 name = "moon"
 path = "src/main.rs"

@@ -295,7 +295,7 @@ mod project_graph {
         use moon_workspace::ProjectBuildData;
 
         const CACHE_PATH: &str = ".moon/cache/states/workspaceGraph.json";
-        const STATE_PATH: &str = ".moon/cache/states/projectsBuildData.json";
+        const STATE_PATH: &str = ".moon/cache/states/projectsBuildDataV1.json";
 
         async fn do_generate(root: &Path) -> WorkspaceGraph {
             let mock = create_workspace_mocker(root);

@@ -158,7 +158,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Check the current state and cache
         let mut state = cache_engine
             .state
-            .load_state::<WorkspaceProjectsCacheState>("projectsBuildData.json")?;
+            .load_state::<WorkspaceProjectsCacheState>("projectsBuildDataV1.json")?;
         let cache_path = cache_engine.state.resolve_path("workspaceGraph.json");
 
         if hash == state.data.last_hash && cache_path.exists() {

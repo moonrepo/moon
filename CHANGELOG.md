@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed a regression that didn't allow identifiers to start with a non-alphanumeric character.
+- Fixed a parsing error when loading the `projectsBuildData.json` cache state.
 
 ## 1.41.1
 

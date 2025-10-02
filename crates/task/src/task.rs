@@ -330,6 +330,11 @@ impl Task {
         self.options.persistent
     }
 
+    /// Return true if this task is set to only run in CI.
+    pub fn is_run_in_ci_only(&self) -> bool {
+        self.options.run_in_ci == TaskOptionRunInCI::Only
+    }
+
     /// Return true if the task should run in a CI environment.
     pub fn should_run_in_ci(&self) -> bool {
         if !self.options.run_in_ci.is_enabled() || self.options.run_in_ci == TaskOptionRunInCI::Skip

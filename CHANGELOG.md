@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.41.2
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks with `runInCI: only` would be run as part of `moon check`. 
+
 ## 1.41.1
 
 #### 🚀 Updates

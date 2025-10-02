@@ -1,3 +1,5 @@
+# https://axodotdev.github.io/cargo-dist/book/workspaces/cargo-release-guide.html
+
 [workspace]
 members = ["cargo:."]
 
@@ -7,24 +9,21 @@ cargo-dist-version = "0.30.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
-installers = ["shell", "powershell", "npm"]
+installers = ["shell", "powershell"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
 	"aarch64-apple-darwin",
-	"x86_64-unknown-linux-gnu",
 	"aarch64-unknown-linux-gnu",
-	"x86_64-unknown-linux-musl",
 	"aarch64-unknown-linux-musl",
+	"x86_64-unknown-linux-gnu",
+	"x86_64-unknown-linux-musl",
 	"x86_64-pc-windows-msvc",
 ]
 # A namespace to use when publishing this package to the npm registry
-npm-scope = "@moonrepo"
+# npm-scope = "@moonrepo"
 # Path that installers should place binaries in
 install-path = ["$MOON_HOME/bin", "~/.moon/bin"]
-# Whether to install an updater program
-install-updater = true
-
-# Publish jobs to run in CI
+# Which actions to run on pull requests
 pr-run-mode = "upload"
 # Skip checking whether the specified configuration files are up to date
 allow-dirty = ["ci"]

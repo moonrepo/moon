@@ -7,6 +7,11 @@
 - Fixed a regression that didn't allow identifiers to start with a non-alphanumeric character.
 - Fixed a parsing error when loading the `projectsBuildData.json` cache state.
 
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Fixed some version parsing issues that contain ".x" and other variants.
+
 ## 1.41.1
 
 #### 🚀 Updates

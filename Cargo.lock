@@ -384,9 +384,9 @@ dependencies = [
 
 [[package]]
 name = "aws-lc-sys"
-version = "0.32.1"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ba2e2516bdf37af57fc6ff047855f54abad0066e5c4fdaaeb76dabb2e05bcf5"
+checksum = "a2b715a6010afb9e457ca2b7c9d2b9c344baa8baed7b38dc476034c171b32575"
 dependencies = [
  "bindgen",
  "cc",
@@ -398,9 +398,9 @@ dependencies = [
 
 [[package]]
 name = "axum"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98e529aee37b5c8206bb4bf4c44797127566d72f76952c970bd3d1e85de8f4e2"
+checksum = "8a18ed336352031311f4e0b4dd2ff392d4fbb370777c9d18d7fc9d7359f73871"
 dependencies = [
  "axum-core",
  "bytes",
@@ -423,9 +423,9 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ac7a6beb1182c7e30253ee75c3e918080bfb83f5a3023bcdf7209d85fd147e6"
+checksum = "59446ce19cd142f8833f856eb31f3eb097812d1479ab224f54d72428ca21ea22"
 dependencies = [
  "bytes",
  "futures-core",
@@ -2368,7 +2368,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27b92c49194cd4f20bad0d9875503c951993f4249c0cfd210a49ed39ef072a0c"
 dependencies = [
  "ahash",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
 ]
 
 [[package]]
@@ -3592,7 +3592,7 @@ dependencies = [
  "moon_task_args",
  "moon_test_utils2",
  "moon_workspace_graph",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "rustc-hash",
  "starbase_sandbox",
  "starbase_utils",
@@ -3628,7 +3628,7 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_workspace_graph",
  "num_cpus",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "rustc-hash",
  "serde",
  "starbase_sandbox",
@@ -3791,7 +3791,7 @@ dependencies = [
  "moon_workspace",
  "moon_workspace_graph",
  "open",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "proto_core",
  "regex",
  "reqwest",
@@ -4206,7 +4206,7 @@ name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "rustc-hash",
  "serde",
  "starbase_utils",
@@ -4559,7 +4559,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils2",
  "moon_workspace",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "rustc-hash",
  "scc 2.4.0",
  "starbase_events",
@@ -4869,7 +4869,7 @@ dependencies = [
  "moon_target",
  "moon_task",
  "moon_task_expander",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "rustc-hash",
  "thiserror 2.0.17",
  "tracing",
@@ -5134,7 +5134,7 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace_graph",
- "petgraph 0.8.2",
+ "petgraph 0.8.3",
  "rustc-hash",
  "serde",
  "starbase_events",
@@ -5485,9 +5485,9 @@ checksum = "d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e"
 
 [[package]]
 name = "openssl-src"
-version = "300.5.2+3.5.2"
+version = "300.5.3+3.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d270b79e2926f5150189d475bc7e9d2c69f9c4697b185fa917d5a32b792d21b4"
+checksum = "dc6bad8cd0233b63971e232cc9c5e83039375b8586d2312f31fda85db8f888c2"
 dependencies = [
  "cc",
 ]
@@ -5741,9 +5741,9 @@ dependencies = [
 
 [[package]]
 name = "petgraph"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54acf3a685220b533e437e264e4d932cfbdc4cc7ec0cd232ed73c08d03b8a7ca"
+checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
 dependencies = [
  "fixedbitset",
  "hashbrown 0.15.5",
@@ -6053,9 +6053,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.53.1"
+version = "0.53.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18693091ef2e40cf4f3322dc175d2a5b779705ac30ae42b1f8e8559dbb5cd310"
+checksum = "9d54ad44ca2403655916ec636d33e16be3809341adda21e43c9ae0d4115c002b"
 dependencies = [
  "convert_case",
  "docker_credential",
@@ -6071,7 +6071,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rustc-hash",
- "scc 3.1.2",
+ "scc 3.2.0",
  "schematic",
  "semver",
  "serde",
@@ -6751,9 +6751,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.6"
+version = "0.103.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8572f3c2cb9934231157b45499fc41e1f58c589fdfb81a844ba873265e80f8eb"
+checksum = "e10b3f4191e8a80e6b43eebabfac91e5dcecebb27a71f04e820c47ec41d314bf"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -6775,9 +6775,9 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
 name = "saa"
-version = "4.3.2"
+version = "4.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d568b02a433a98d20e7dc1a8b3077163629fe1e86c89fb95e31798324137a925"
+checksum = "540e257511935edc5f7fbe3c472ce4f642d43f0df4333fe996dfdf0b96862c72"
 
 [[package]]
 name = "same-file"
@@ -6800,9 +6800,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "3.1.2"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b502f85d09e86afa08920ba0e320d9919e0edfb57aa6d7f7947d9961f789cdd7"
+checksum = "93ef1d3a981ec33b3924730d96a607a8defd69a9660895cce9f5155fe7f1d7c0"
 dependencies = [
  "saa",
  "sdd 4.1.1",
@@ -7382,9 +7382,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_id"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b524c77e06ce0407cf6bd2c89b7c9d101e21404db405deb40af71bd3e34a018a"
+checksum = "5c1d0296d2d05d00901b3e18f0231e061039de6448b9f16a79c2d09855fb32e4"
 dependencies = [
  "compact_str 0.9.0",
  "miette 7.6.0",
@@ -7569,9 +7569,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.37.1"
+version = "0.37.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bddd368fda2f82ead69c03d46d351987cfa0c2a57abfa37a017f3aa3e9bf69a"
+checksum = "16607d5caffd1c07ce073528f9ed972d88db15dd44023fa57142963be3feb11f"
 dependencies = [
  "libc",
  "memchr",
@@ -8212,9 +8212,9 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "typenum"
-version = "1.18.0"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
+checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
 
 [[package]]
 name = "typescript_tsconfig_json"
@@ -8523,9 +8523,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.28.1"
+version = "0.28.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d37269a01855b558b2dfe3da7bc73f4003467eba2fcf4a798a2ec933af1d39a3"
+checksum = "af21c9c585e3bcfb89c3b849012870cd8dc76a48f878e5c3de7cd0cd2f6b9ac1"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",
@@ -8539,7 +8539,7 @@ dependencies = [
  "reqwest",
  "reqwest-middleware",
  "reqwest-netrc",
- "scc 3.1.2",
+ "scc 3.2.0",
  "schematic",
  "serde",
  "serde_json",
@@ -9875,9 +9875,9 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.8.1"
+version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ced3678a2879b30306d323f4542626697a464a97c0a07c9aebf7ebca65cd4dde"
+checksum = "b97154e67e32c85465826e8bcc1c59429aaaf107c1e4a9e53c8d8ccd5eff88d0"
 
 [[package]]
 name = "zerotrie"

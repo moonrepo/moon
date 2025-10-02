@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a regression that didn't allow identifiers to start with a non-alphanumeric character.
+
 ## 1.41.1
 
 #### 🚀 Updates

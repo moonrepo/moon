@@ -4,6 +4,9 @@ version = "1.41.1"
 edition = "2024"
 publish = false
 
+[package.metadata.dist]
+publish = true
+
 [[bin]]
 name = "moon"
 path = "src/main.rs"

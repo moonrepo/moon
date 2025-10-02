@@ -27,6 +27,8 @@ install-path = ["$MOON_HOME/bin", "~/.moon/bin"]
 pr-run-mode = "upload"
 # Skip checking whether the specified configuration files are up to date
 allow-dirty = ["ci"]
+# Custom job to publish the npm packages
+publish-jobs = ["./release-npm"]
 
 [dist.github-custom-runners]
 x86_64-unknown-linux-gnu = "depot-ubuntu-22.04-4"

@@ -592,13 +592,17 @@ toolchain:
                 |path| load_config_from_root(path, "."),
             );
 
-            assert!(config.toolchain.node.is_some());
-            assert!(config.toolchain.rust.is_none());
+            assert!(config.toolchain.plugins.get("node").is_some());
+            assert!(config.toolchain.plugins.get("rust").is_none());
 
-            assert_eq!(
-                config.toolchain.node.unwrap().version,
-                Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
-            );
+            if let ProjectToolchainEntry::Config(node) =
+                config.toolchain.plugins.get("node").unwrap()
+            {
+                assert_eq!(
+                    node.version,
+                    Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
+                );
+            }
 
             if let ProjectToolchainEntry::Config(ts) =
                 config.toolchain.plugins.get("typescript").unwrap()
@@ -787,19 +791,25 @@ workspace:
                     tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
                     tasks: BTreeMap::default(),
                     toolchain: ProjectToolchainConfig {
-                        deno: Some(ProjectToolchainCommonToolConfig {
-                            version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
-                        }),
-                        plugins: FxHashMap::from_iter([(
-                            Id::raw("typescript"),
-                            ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                                config: BTreeMap::from_iter([(
-                                    "includeSharedTypes".into(),
-                                    serde_json::Value::Bool(true)
-                                )]),
-                                ..Default::default()
-                            })
-                        )]),
+                        plugins: FxHashMap::from_iter([
+                            (
+                                Id::raw("deno"),
+                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                    version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
+                                    ..Default::default()
+                                })
+                            ),
+                            (
+                                Id::raw("typescript"),
+                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                    config: BTreeMap::from_iter([(
+                                        "includeSharedTypes".into(),
+                                        serde_json::Value::Bool(true)
+                                    )]),
+                                    ..Default::default()
+                                })
+                            )
+                        ]),
                         ..Default::default()
                     },
                     layer: LayerType::Library,

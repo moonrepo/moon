@@ -3651,7 +3651,6 @@ dependencies = [
  "serde",
  "serial_test",
  "starbase",
- "starbase_events",
  "starbase_sandbox",
  "starbase_shell",
  "starbase_styles",
@@ -4171,7 +4170,6 @@ dependencies = [
  "petgraph 0.8.3",
  "rustc-hash",
  "scc 2.4.0",
- "starbase_events",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.17",
@@ -4435,7 +4433,6 @@ dependencies = [
  "moon_workspace",
  "moon_workspace_graph",
  "proto_core",
- "starbase_events",
  "starbase_sandbox",
 ]
 
@@ -4587,7 +4584,6 @@ dependencies = [
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
- "starbase_events",
  "starbase_utils",
  "thiserror 2.0.17",
  "tracing",
@@ -6725,18 +6721,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "starbase_events"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bddc8bad22acb634ada26db8d5f18e3faee02ca1430ade29160911934635707"
-dependencies = [
- "async-trait",
- "miette 7.6.0",
- "starbase_macros",
- "tokio",
-]
-
-[[package]]
 name = "starbase_id"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6748,18 +6732,6 @@ dependencies = [
  "schematic",
  "serde",
  "thiserror 2.0.17",
-]
-
-[[package]]
-name = "starbase_macros"
-version = "0.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "630f0c56ad661935d1d4f5f3ce1b1517460af89a04a4402ece4dde1fafded356"
-dependencies = [
- "darling 0.21.3",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

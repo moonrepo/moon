@@ -232,12 +232,6 @@ impl<'task> CommandBuilder<'task> {
                 .state
                 .get_project_snapshot_path(&self.project.id),
         );
-
-        // proto
-        for (key, value) in self.app.toolchain_config.get_version_env_vars() {
-            // Don't overwrite proto version variables inherited from toolchains
-            self.command.env_if_missing(key, value);
-        }
     }
 
     #[instrument(skip_all)]

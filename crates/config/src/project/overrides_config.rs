@@ -1,5 +1,5 @@
 use crate::shapes::OneOrMany;
-use crate::toolchain::ToolchainPluginConfig;
+use crate::toolchain_config::ToolchainPluginConfig;
 use crate::{config_enum, config_struct};
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
@@ -22,7 +22,7 @@ impl ProjectToolchainEntry {
         match self {
             Self::Disabled => false,
             Self::Enabled(state) => *state,
-            Self::Config(config) => !config.disabled,
+            Self::Config(_) => true,
         }
     }
 
@@ -48,30 +48,10 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {
-        /// The default toolchain(s) for all tasks within the project,
-        /// if their toolchain is unknown.
+        /// The default toolchain(s) to inherit for the project,
+        /// and all of its tasks.
         #[serde(alias = "defaults")]
         pub default: Option<OneOrMany<Id>>,
-
-        /// Overrides `bun` settings.
-        #[setting(nested)]
-        pub bun: Option<ProjectToolchainCommonToolConfig>,
-
-        /// Overrides `deno` settings.
-        #[setting(nested)]
-        pub deno: Option<ProjectToolchainCommonToolConfig>,
-
-        /// Overrides `python` settings.
-        #[setting(nested)]
-        pub python: Option<ProjectToolchainCommonToolConfig>,
-
-        /// Overrides `node` settings.
-        #[setting(nested)]
-        pub node: Option<ProjectToolchainCommonToolConfig>,
-
-        /// Overrides `rust` settings.
-        #[setting(nested)]
-        pub rust: Option<ProjectToolchainCommonToolConfig>,
 
         /// Overrides toolchains by their ID.
         #[setting(flatten, nested)]

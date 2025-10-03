@@ -16,7 +16,6 @@ use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 pub use moon_workspace_graph::WorkspaceGraph;
 use proto_core::{ProtoConfig, ProtoEnvironment, warpgate::find_debug_locator};
-use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
@@ -139,14 +138,9 @@ impl WorkspaceMocker {
         })
     }
 
-    #[allow(deprecated)]
+    #[deprecated]
     pub fn with_legacy_toolchains(self) -> Self {
-        self.update_toolchain_config(|config| {
-            config.bun = Some(BunConfig::default());
-            config.deno = Some(DenoConfig::default());
-            config.node = Some(NodeConfig::default());
-            config.rust = Some(RustConfig::default());
-        })
+        self
     }
 
     pub fn with_test_toolchains(self) -> Self {
@@ -181,13 +175,9 @@ impl WorkspaceMocker {
         })
     }
 
-    #[allow(deprecated)]
+    #[deprecated]
     pub fn with_default_toolchains(self) -> Self {
-        self.update_toolchain_config(|config| {
-            if config.node.is_none() {
-                config.node = Some(NodeConfig::default());
-            }
-        })
+        self
     }
 
     pub fn with_global_envs(mut self) -> Self {
@@ -394,8 +384,6 @@ impl WorkspaceMocker {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchain_config.get_enabled(),
-            extend_project: Emitter::<ExtendProjectEvent>::new(),
-            extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),

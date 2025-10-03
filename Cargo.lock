@@ -3945,21 +3945,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_lang"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "rustc-hash",
-]
-
-[[package]]
-name = "moon_logger"
-version = "0.0.1"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "moon_mcp"
 version = "0.0.1"
 dependencies = [
@@ -4445,24 +4430,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_tool"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "miette 7.6.0",
- "moon_common",
- "moon_lang",
- "moon_process",
- "moon_toolchain",
- "proto_core",
- "rustc-hash",
- "starbase_styles",
- "thiserror 2.0.17",
- "tokio",
- "warpgate",
-]
-
-[[package]]
 name = "moon_toolchain"
 version = "0.0.1"
 dependencies = [
@@ -4494,25 +4461,6 @@ dependencies = [
  "starbase_utils",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "moon_utils"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "cached",
- "chrono",
- "dunce",
- "humantime",
- "md5",
- "miette 7.6.0",
- "moon_common",
- "pathdiff",
- "regex",
- "relative-path",
- "semver",
- "starbase_utils",
 ]
 
 [[package]]
@@ -6680,7 +6628,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-chrome",
- "tracing-log",
  "tracing-subscriber",
 ]
 

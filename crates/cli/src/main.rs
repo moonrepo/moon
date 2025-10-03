@@ -99,7 +99,6 @@ async fn main() -> MainResult {
     let _guard = app.setup_tracing(TracingOptions {
         dump_trace: cli.dump,
         filter_modules: get_tracing_modules(),
-        intercept_log: true,
         log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
         show_spans: cli.log.is_verbose(),

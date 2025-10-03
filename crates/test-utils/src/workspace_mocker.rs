@@ -138,11 +138,6 @@ impl WorkspaceMocker {
         })
     }
 
-    #[deprecated]
-    pub fn with_legacy_toolchains(self) -> Self {
-        self
-    }
-
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
             for id in [
@@ -175,13 +170,7 @@ impl WorkspaceMocker {
         })
     }
 
-    #[deprecated]
-    pub fn with_default_toolchains(self) -> Self {
-        self
-    }
-
     pub fn with_global_envs(mut self) -> Self {
-        #[allow(deprecated)]
         let home_dir = std::env::home_dir().unwrap();
 
         self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();

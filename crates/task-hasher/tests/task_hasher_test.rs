@@ -39,7 +39,7 @@ async fn mock_workspace(workspace_root: &Path) -> (WorkspaceGraph, AppContext) {
     let mock = WorkspaceMocker::new(workspace_root)
         .load_default_configs()
         .with_default_projects()
-        .with_default_toolchains()
+        .with_all_toolchains()
         .with_inherited_tasks()
         .with_global_envs();
 

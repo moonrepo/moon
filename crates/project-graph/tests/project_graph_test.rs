@@ -49,7 +49,7 @@ pub fn create_workspace_mocker(root: &Path) -> WorkspaceMocker {
     WorkspaceMocker::new(root)
         .load_default_configs()
         .with_default_projects()
-        .with_default_toolchains()
+        .with_all_toolchains()
         .with_inherited_tasks()
 }
 

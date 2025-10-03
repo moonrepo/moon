@@ -2,7 +2,7 @@ fileGroups {
 	["sources"] = new Listing {
 		"src/**/*"
 	}
-	["tests"] = new Listing  {
+	["tests"] = new Listing {
 		"*.test.ts"
 		"*.test.tsx"
 	}

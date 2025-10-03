@@ -1,5 +1,5 @@
 use moon_common::{Id, IdError};
-use schematic::{ConfigEnum, derive_enum};
+use schematic::ConfigEnum;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::str::FromStr;
 
@@ -70,50 +70,6 @@ impl Serialize for LanguageType {
         S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
-    }
-}
-
-// TODO: Remove in 2.0
-derive_enum!(
-    /// Platforms that each programming language can belong to.
-    #[derive(ConfigEnum, Copy, Default, Hash)]
-    pub enum PlatformType {
-        Bun,
-        Deno,
-        Node,
-        Python,
-        Rust,
-        System,
-        #[default]
-        Unknown,
-    }
-);
-
-impl PlatformType {
-    pub fn is_javascript(&self) -> bool {
-        matches!(
-            self,
-            PlatformType::Bun | PlatformType::Deno | PlatformType::Node
-        )
-    }
-
-    pub fn is_system(&self) -> bool {
-        matches!(self, PlatformType::System)
-    }
-
-    pub fn is_unknown(&self) -> bool {
-        matches!(self, PlatformType::Unknown)
-    }
-
-    pub fn get_toolchain_id(&self) -> Id {
-        match self {
-            PlatformType::Bun => Id::raw("bun"),
-            PlatformType::Deno => Id::raw("deno"),
-            PlatformType::Node => Id::raw("node"),
-            PlatformType::Python => Id::raw("python"),
-            PlatformType::Rust => Id::raw("rust"),
-            PlatformType::System | PlatformType::Unknown => Id::raw("system"),
-        }
     }
 }
 

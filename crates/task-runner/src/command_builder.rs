@@ -5,7 +5,6 @@ use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
-use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
@@ -20,11 +19,9 @@ pub struct CommandBuilder<'task> {
     task: &'task Task,
     working_dir: &'task Path,
     env_bag: &'task GlobalEnvBag,
-    platform_manager: &'task PlatformManager,
 
     // To be built
     command: Command,
-    using_platform: bool,
 }
 
 impl<'task> CommandBuilder<'task> {
@@ -47,18 +44,12 @@ impl<'task> CommandBuilder<'task> {
             task,
             working_dir,
             env_bag: GlobalEnvBag::instance(),
-            platform_manager: PlatformManager::read(),
             command: Command::new("noop"),
-            using_platform: false,
         }
     }
 
     pub fn set_env_bag(&mut self, bag: &'task GlobalEnvBag) {
         self.env_bag = bag;
-    }
-
-    pub fn set_platform_manager(&mut self, manager: &'task PlatformManager) {
-        self.platform_manager = manager;
     }
 
     #[instrument(name = "build_command", skip_all)]
@@ -394,28 +385,18 @@ impl<'task> CommandBuilder<'task> {
 
     async fn inherit_proto(&mut self) -> miette::Result<()> {
         let toolchain_registry = &self.app.toolchain_registry;
+        let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
+        let mut augments = toolchain_registry.create_command_augments(Some(&self.project.config));
 
-        if self.using_platform {
-            // Temporary until platforms are removed, we simply just need
-            // to inherit the shared env vars!
-            toolchain_registry
-                .augment_command(&mut self.command, self.env_bag, Default::default())
-                .await?;
-        } else {
-            let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
-            let mut augments =
-                toolchain_registry.create_command_augments(Some(&self.project.config));
+        // Only include paths for toolchains that this task explicitly needs,
+        // but keep environment variables and other parameters
+        augments.iter_mut().for_each(|(id, augment)| {
+            augment.add_path = toolchain_ids.contains(&id);
+        });
 
-            // Only include paths for toolchains that this task explicitly needs,
-            // but keep environment variables and other parameters
-            augments.iter_mut().for_each(|(id, augment)| {
-                augment.add_path = toolchain_ids.contains(&id);
-            });
-
-            toolchain_registry
-                .augment_command(&mut self.command, self.env_bag, augments)
-                .await?;
-        }
+        toolchain_registry
+            .augment_command(&mut self.command, self.env_bag, augments)
+            .await?;
 
         Ok(())
     }

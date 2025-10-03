@@ -3,10 +3,7 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_config::{
-    BinConfig, BinEntry, ConfigLoader, NodePackageManager, NodeVersionFormat, ToolchainConfig,
-    ToolchainPluginConfig,
-};
+use moon_config::{ConfigLoader, ToolchainConfig, ToolchainPluginConfig};
 use proto_core::{
     Id, PluginLocator, ProtoConfig, ToolContext, UnresolvedVersionSpec, warpgate::FileLocator,
 };
@@ -14,7 +11,6 @@ use schematic::ConfigLoader as BaseLoader;
 use serde_json::Value;
 use serial_test::serial;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
-use std::env;
 use std::path::Path;
 use utils::*;
 
@@ -59,21 +55,30 @@ node: {}";
                 Ok(load_config_from_file(path))
             });
 
-            let node = config.node.unwrap();
+            let node = config.get_plugin_config("node").unwrap();
 
             assert_eq!(
-                node.version.unwrap(),
-                UnresolvedVersionSpec::parse("4.5.6").unwrap()
+                node.version.as_ref().unwrap(),
+                &UnresolvedVersionSpec::parse("4.5.6").unwrap()
             );
-            assert!(node.add_engines_constraint);
-            assert!(!node.dedupe_on_lockfile_change);
-            assert_eq!(node.package_manager, NodePackageManager::Yarn);
+            assert_eq!(
+                node.config.get("addEnginesConstraint").unwrap(),
+                &Value::Bool(true)
+            );
+            assert_eq!(
+                node.config.get("packageManager").unwrap(),
+                &Value::String("yarn".into())
+            );
+            assert_eq!(
+                node.config.get("dedupeOnLockfileChange").unwrap(),
+                &Value::Bool(false)
+            );
 
-            let yarn = node.yarn.unwrap();
+            let yarn = config.get_plugin_config("yarn").unwrap();
 
             assert_eq!(
-                yarn.version.unwrap(),
-                UnresolvedVersionSpec::parse("3.3.0").unwrap()
+                yarn.version.as_ref().unwrap(),
+                &UnresolvedVersionSpec::parse("3.3.0").unwrap()
             );
         }
 
@@ -84,7 +89,7 @@ node: {}";
                 Ok(load_config_from_file(path))
             });
 
-            let cfg = config.plugins.get("typescript").unwrap();
+            let cfg = config.get_plugin_config("typescript").unwrap();
 
             assert_eq!(
                 cfg.config.get("rootConfigFileName").unwrap(),
@@ -127,9 +132,11 @@ deno: {{}}
                 load_config_from_root(root, &ProtoConfig::default())
             });
 
-            assert!(config.bun.is_some());
-            assert!(config.deno.is_some());
-            assert!(config.node.is_some());
+            dbg!(&config);
+
+            assert!(config.get_plugin_config("bun").is_some());
+            assert!(config.get_plugin_config("deno").is_some());
+            assert!(config.get_plugin_config("node").is_some());
         }
 
         #[test]
@@ -154,157 +161,6 @@ deno: {{}}
             });
 
             assert!(temp_dir.exists());
-        }
-    }
-
-    mod bun {
-        use super::*;
-
-        // #[test]
-        // fn uses_defaults() {
-        //     let config = test_load_config(FILENAME, "bun: {}", |path| {
-        //         load_config_from_root(path, &ProtoConfig::default())
-        //     });
-
-        //     let cfg = config.bun.unwrap();
-
-        //     assert!(cfg.plugin.is_some());
-        // }
-
-        // #[test]
-        // fn enables_via_proto() {
-        //     let config = test_load_config(FILENAME, "{}", |path| {
-        //         let mut proto = ProtoConfig::default();
-        //         proto.versions.insert(
-        //             ToolContext::new(Id::raw("bun")),
-        //             UnresolvedVersionSpec::parse("1.0.0").unwrap().into(),
-        //         );
-
-        //         load_config_from_root(path, &proto)
-        //     });
-
-        //     assert!(config.bun.is_some());
-        //     assert_eq!(
-        //         config.bun.unwrap().version.unwrap(),
-        //         UnresolvedVersionSpec::parse("1.0.0").unwrap()
-        //     );
-        // }
-
-        #[test]
-        fn inherits_plugin_locator() {
-            let config = test_load_config(FILENAME, "bun: {}", |path| {
-                let mut tools = ProtoConfig::default();
-                tools.inherit_builtin_plugins();
-
-                load_config_from_root(path, &tools)
-            });
-
-            assert!(config.bun.unwrap().plugin.is_some());
-        }
-
-        #[test]
-        #[serial]
-        fn proto_version_doesnt_override() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-bun:
-  version: 1.0.0
-",
-                |path| {
-                    let mut proto = ProtoConfig::default();
-                    proto.versions.insert(
-                        ToolContext::new(Id::raw("bun")),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
-                    );
-
-                    load_config_from_root(path, &proto)
-                },
-            );
-
-            assert!(config.bun.is_some());
-            assert_eq!(
-                config.bun.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.0.0").unwrap()
-            );
-        }
-
-        #[test]
-        #[serial]
-        fn inherits_version_from_env_var() {
-            unsafe { env::set_var("MOON_BUN_VERSION", "1.0.0") };
-
-            let config = test_load_config(
-                FILENAME,
-                r"
-bun:
-  version: 3.0.0
-",
-                |path| {
-                    let mut proto = ProtoConfig::default();
-                    proto.versions.insert(
-                        ToolContext::new(Id::raw("bun")),
-                        UnresolvedVersionSpec::parse("2.0.0").unwrap().into(),
-                    );
-
-                    load_config_from_root(path, &proto)
-                },
-            );
-
-            unsafe { env::remove_var("MOON_BUN_VERSION") };
-
-            assert_eq!(
-                config.bun.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.0.0").unwrap()
-            );
-        }
-
-        #[test]
-        fn inherits_version_from_node_pm() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-bun: {}
-node:
-  packageManager: bun
-  bun:
-    version: 1.0.0
-",
-                |path| load_config_from_root(path, &ProtoConfig::default()),
-            );
-
-            assert_eq!(
-                config.bun.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.0.0").unwrap()
-            );
-
-            assert_eq!(
-                config.node.unwrap().bun.unwrap().version.unwrap(),
-                UnresolvedVersionSpec::parse("1.0.0").unwrap()
-            );
-        }
-
-        #[test]
-        fn inherits_args_from_node_pm() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-bun: {}
-node:
-  packageManager: bun
-  bun:
-    version: 1.0.0
-    installArgs: [--frozen]
-",
-                |path| load_config_from_root(path, &ProtoConfig::default()),
-            );
-
-            assert_eq!(config.bun.unwrap().install_args, vec!["--frozen"]);
-
-            assert_eq!(
-                config.node.unwrap().bun.unwrap().install_args,
-                vec!["--frozen"]
-            );
         }
     }
 
@@ -448,44 +304,16 @@ plugin:
 
     mod pkl {
         use super::*;
-        use moon_config::*;
         use starbase_sandbox::locate_fixture;
         use std::collections::BTreeMap;
 
         #[test]
         fn loads_pkl() {
-            let mut config = test_config(locate_fixture("pkl"), |path| {
+            let config = test_config(locate_fixture("pkl"), |path| {
                 let proto = proto_core::ProtoConfig::default();
                 ConfigLoader::default().load_toolchain_config(path, &proto)
             });
 
-            assert_eq!(
-                config.node.take().unwrap(),
-                NodeConfig {
-                    add_engines_constraint: false,
-                    bin_exec_args: vec!["--profile".into()],
-                    bun: None,
-                    dedupe_on_lockfile_change: false,
-                    dependency_version_format: NodeVersionFormat::WorkspaceCaret,
-                    infer_tasks_from_scripts: true,
-                    npm: NpmConfig::default(),
-                    package_manager: NodePackageManager::Yarn,
-                    packages_root: ".".into(),
-                    plugin: None,
-                    pnpm: None,
-                    root_package_only: true,
-                    sync_package_manager_field: false,
-                    sync_project_workspace_dependencies: false,
-                    sync_version_manager_config: Some(NodeVersionManager::Nvm),
-                    version: Some(UnresolvedVersionSpec::parse("20.12").unwrap()),
-                    yarn: Some(YarnConfig {
-                        install_args: vec!["--immutable".into()],
-                        plugin: None,
-                        plugins: vec![],
-                        version: Some(UnresolvedVersionSpec::parse("4").unwrap())
-                    })
-                }
-            );
             assert_eq!(
                 config.plugins.get("typescript").unwrap().config,
                 BTreeMap::from_iter([

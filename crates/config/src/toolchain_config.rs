@@ -1,3 +1,4 @@
+use crate::patterns::{merge_iter, merge_plugin_partials};
 use crate::toolchain::*;
 use crate::{config_enum, config_struct};
 use moon_common::{Id, IdExt};
@@ -41,7 +42,7 @@ config_struct!(
         pub version_from_prototools: ToolchainPluginVersionFrom,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
-        #[setting(flatten)]
+        #[setting(flatten, merge = merge_iter)]
         pub config: BTreeMap<String, Value>,
     }
 );
@@ -84,7 +85,7 @@ config_struct!(
         pub proto: ProtoConfig,
 
         /// Configures toolchains by unique ID.
-        #[setting(flatten, nested)]
+        #[setting(flatten, nested, merge = merge_plugin_partials)]
         pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     }
 );

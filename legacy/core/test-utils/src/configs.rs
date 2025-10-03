@@ -11,30 +11,56 @@ use std::str::FromStr;
 // Turn everything off by default
 pub fn get_default_toolchain() -> PartialToolchainConfig {
     PartialToolchainConfig {
-        node: Some(PartialNodeConfig {
-            version: Some(UnresolvedVersionSpec::parse("18.0.0").unwrap()),
-            add_engines_constraint: Some(false),
-            dedupe_on_lockfile_change: Some(false),
-            infer_tasks_from_scripts: Some(false),
-            sync_project_workspace_dependencies: Some(false),
-            npm: Some(PartialNpmConfig {
-                version: Some(UnresolvedVersionSpec::parse("8.19.0").unwrap()),
-                ..PartialNpmConfig::default()
-            }),
-            ..PartialNodeConfig::default()
-        }),
-        plugins: Some(FxHashMap::from_iter([(
-            Id::raw("typescript"),
-            PartialToolchainPluginConfig {
-                config: Some(BTreeMap::from_iter([
-                    ("createMissingConfig".into(), Value::Bool(false)),
-                    ("routeOutDirToCache".into(), Value::Bool(false)),
-                    ("syncProjectReferences".into(), Value::Bool(false)),
-                    ("syncProjectReferencesToPaths".into(), Value::Bool(false)),
-                ])),
-                ..PartialToolchainPluginConfig::default()
-            },
-        )])),
+        plugins: Some(FxHashMap::from_iter([
+            (
+                Id::raw("javascript"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([
+                        ("dedupeOnLockfileChange".into(), Value::Bool(false)),
+                        ("inferTasksFromScripts".into(), Value::Bool(false)),
+                        ("packageManager".into(), Value::String("npm".into())),
+                        ("syncPackageManagerField".into(), Value::Bool(false)),
+                        (
+                            "syncProjectWorkspaceDependencies".into(),
+                            Value::Bool(false),
+                        ),
+                    ])),
+                    ..Default::default()
+                },
+            ),
+            (
+                Id::raw("node"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("18.0.0".into()),
+                    )])),
+                    ..Default::default()
+                },
+            ),
+            (
+                Id::raw("npm"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("8.19.0".into()),
+                    )])),
+                    ..Default::default()
+                },
+            ),
+            (
+                Id::raw("typescript"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([
+                        ("createMissingConfig".into(), Value::Bool(false)),
+                        ("routeOutDirToCache".into(), Value::Bool(false)),
+                        ("syncProjectReferences".into(), Value::Bool(false)),
+                        ("syncProjectReferencesToPaths".into(), Value::Bool(false)),
+                    ])),
+                    ..Default::default()
+                },
+            ),
+        ])),
         ..PartialToolchainConfig::default()
     }
 }
@@ -177,20 +203,7 @@ pub fn get_project_graph_aliases_fixture_configs() -> (
         ..PartialWorkspaceConfig::default()
     };
 
-    let toolchain_config = PartialToolchainConfig {
-        node: Some(PartialNodeConfig {
-            version: Some(UnresolvedVersionSpec::parse("18.0.0").unwrap()),
-            add_engines_constraint: Some(false),
-            dedupe_on_lockfile_change: Some(false),
-            npm: Some(PartialNpmConfig {
-                version: Some(UnresolvedVersionSpec::parse("8.19.0").unwrap()),
-                ..PartialNpmConfig::default()
-            }),
-            ..PartialNodeConfig::default()
-        }),
-        ..PartialToolchainConfig::default()
-    };
-
+    let toolchain_config = get_default_toolchain();
     let tasks_config = PartialInheritedTasksConfig::default();
 
     (workspace_config, toolchain_config, tasks_config)
@@ -345,12 +358,26 @@ pub fn get_bun_fixture_configs() -> (
     };
 
     let mut toolchain_config = get_default_toolchain();
-    toolchain_config.node = None;
-    toolchain_config.bun = Some(PartialBunConfig {
-        infer_tasks_from_scripts: Some(true),
-        version: Some(UnresolvedVersionSpec::parse("1.2.2").unwrap()),
-        ..PartialBunConfig::default()
-    });
+
+    if let Some(plugins) = &mut toolchain_config.plugins {
+        plugins.remove("node");
+        plugins.insert(
+            Id::raw("bun"),
+            PartialToolchainPluginConfig {
+                config: Some(BTreeMap::from_iter([(
+                    "version".into(),
+                    Value::String("1.2.2".into()),
+                )])),
+                ..Default::default()
+            },
+        );
+
+        if let Some(js) = plugins.get_mut("javascript") {
+            js.config
+                .get_or_insert_default()
+                .insert("packageManager".into(), Value::String("bun".into()));
+        }
+    }
 
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([
@@ -393,11 +420,26 @@ pub fn get_deno_fixture_configs() -> (
     };
 
     let mut toolchain_config = get_default_toolchain();
-    toolchain_config.node = None;
-    toolchain_config.deno = Some(PartialDenoConfig {
-        version: Some(UnresolvedVersionSpec::parse("2.1.9").unwrap()),
-        ..PartialDenoConfig::default()
-    });
+
+    if let Some(plugins) = &mut toolchain_config.plugins {
+        plugins.remove("node");
+        plugins.insert(
+            Id::raw("deno"),
+            PartialToolchainPluginConfig {
+                config: Some(BTreeMap::from_iter([(
+                    "version".into(),
+                    Value::String("2.1.9".into()),
+                )])),
+                ..Default::default()
+            },
+        );
+
+        if let Some(js) = plugins.get_mut("javascript") {
+            js.config
+                .get_or_insert_default()
+                .insert("packageManager".into(), Value::String("deno".into()));
+        }
+    }
 
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([
@@ -498,11 +540,19 @@ pub fn get_python_fixture_configs() -> (
     };
 
     let mut toolchain_config = get_default_toolchain();
-    toolchain_config.node = None;
-    toolchain_config.python = Some(PartialPythonConfig {
-        version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
-        ..PartialPythonConfig::default()
-    });
+
+    if let Some(plugins) = &mut toolchain_config.plugins {
+        plugins.insert(
+            Id::raw("python"),
+            PartialToolchainPluginConfig {
+                config: Some(BTreeMap::from_iter([(
+                    "version".into(),
+                    Value::String("3.11.10".into()),
+                )])),
+                ..Default::default()
+            },
+        );
+    }
 
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([
@@ -546,47 +596,77 @@ pub fn get_node_depman_fixture_configs(
         ),
     ])));
 
-    if let Some(node_config) = &mut toolchain_config.node {
-        match depman {
-            "bun" => {
-                node_config.package_manager = Some(NodePackageManager::Bun);
-                node_config.bun = Some(PartialBunpmConfig {
-                    version: Some(UnresolvedVersionSpec::parse("1.1.19").unwrap()),
-                    ..PartialBunpmConfig::default()
-                });
-            }
-            "npm" => {
-                node_config.package_manager = Some(NodePackageManager::Npm);
-                node_config.npm = Some(PartialNpmConfig {
-                    version: Some(UnresolvedVersionSpec::parse("8.0.0").unwrap()),
-                    ..PartialNpmConfig::default()
-                });
-            }
-            "pnpm" => {
-                node_config.package_manager = Some(NodePackageManager::Pnpm);
-                node_config.pnpm = Some(PartialPnpmConfig {
-                    version: Some(UnresolvedVersionSpec::parse("7.5.0").unwrap()),
-                    ..PartialPnpmConfig::default()
-                });
-            }
-            "yarn" => {
-                node_config.package_manager = Some(NodePackageManager::Yarn);
-                node_config.yarn = Some(PartialYarnConfig {
-                    version: Some(UnresolvedVersionSpec::parse("3.3.0").unwrap()),
-                    plugins: Some(vec!["workspace-tools".into()]),
-                    ..PartialYarnConfig::default()
-                });
-            }
-            "yarn1" => {
-                node_config.package_manager = Some(NodePackageManager::Yarn);
-                node_config.yarn = Some(PartialYarnConfig {
-                    version: Some(UnresolvedVersionSpec::parse("1.22.0").unwrap()),
-                    plugins: Some(vec![]),
-                    ..PartialYarnConfig::default()
-                });
-            }
-            _ => {}
+    let plugins = toolchain_config.plugins.get_or_insert_default();
+    let javascript = plugins.get_mut("javascript").unwrap();
+    let javascript_config = javascript.config.get_or_insert_default();
+
+    match depman {
+        "bun" => {
+            javascript_config.insert("packageManager".into(), Value::String("bun".into()));
+            plugins.insert(
+                Id::raw("bun"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("1.2.2".into()),
+                    )])),
+                    ..Default::default()
+                },
+            );
         }
+        "npm" => {
+            javascript_config.insert("packageManager".into(), Value::String("npm".into()));
+            plugins.insert(
+                Id::raw("npm"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("8.0.0".into()),
+                    )])),
+                    ..Default::default()
+                },
+            );
+        }
+        "pnpm" => {
+            javascript_config.insert("packageManager".into(), Value::String("pnpm".into()));
+            plugins.insert(
+                Id::raw("pnpm"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("7.5.0".into()),
+                    )])),
+                    ..Default::default()
+                },
+            );
+        }
+        "yarn" => {
+            javascript_config.insert("packageManager".into(), Value::String("yarn".into()));
+            plugins.insert(
+                Id::raw("yarn"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("3.3.0".into()),
+                    )])),
+                    ..Default::default()
+                },
+            );
+        }
+        "yarn1" => {
+            javascript_config.insert("packageManager".into(), Value::String("yarn".into()));
+            plugins.insert(
+                Id::raw("yarn"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([(
+                        "version".into(),
+                        Value::String("1.22.0".into()),
+                    )])),
+                    ..Default::default()
+                },
+            );
+        }
+        _ => {}
     }
 
     (workspace_config, toolchain_config, tasks_config)

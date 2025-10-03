@@ -1,18 +1,65 @@
-#![allow(deprecated)]
-
-use crate::config_struct;
-use crate::language_platform::*;
 use crate::toolchain::*;
+use crate::{config_enum, config_struct};
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
-use schematic::{Config, validate};
+use schematic::{Config, Schematic, validate};
+use serde_json::Value;
+use std::collections::BTreeMap;
 use version_spec::UnresolvedVersionSpec;
+use warpgate_api::PluginLocator;
 
-#[cfg(feature = "proto")]
-use crate::{inherit_tool, is_using_tool_version};
+config_enum!(
+    /// Strategy in which to inherit a version from `.prototools`.
+    #[derive(Schematic)]
+    #[serde(untagged)]
+    pub enum ToolchainPluginVersionFrom {
+        Enabled(bool),
+        Id(String),
+    }
+);
+
+impl Default for ToolchainPluginVersionFrom {
+    fn default() -> Self {
+        Self::Enabled(true)
+    }
+}
 
 config_struct!(
-    /// Configures all tools and platforms.
+    /// Configures an individual toolchain.
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    pub struct ToolchainPluginConfig {
+        /// Location of the WASM plugin to use.
+        pub plugin: Option<PluginLocator>,
+
+        /// The version of the toolchain to download and install.
+        pub version: Option<UnresolvedVersionSpec>,
+
+        /// Inherit the version from the root `.prototools`.
+        /// When true, matches using the same ID, otherwise a
+        /// string can be provided for a custom ID.
+        pub version_from_prototools: ToolchainPluginVersionFrom,
+
+        /// Arbitrary configuration that'll be passed to the WASM plugin.
+        #[setting(flatten)]
+        pub config: BTreeMap<String, Value>,
+    }
+);
+
+impl ToolchainPluginConfig {
+    pub fn to_json(&self) -> Value {
+        let mut data = Value::Object(self.config.clone().into_iter().collect());
+
+        if let Some(version) = &self.version {
+            data["version"] = Value::String(version.to_string());
+        }
+
+        data
+    }
+}
+
+config_struct!(
+    /// Configures all toolchains.
     /// Docs: https://moonrepo.dev/docs/config/toolchain
     #[derive(Config)]
     #[config(allow_unknown_fields)]
@@ -28,39 +75,15 @@ config_struct!(
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 
-        /// Configures and enables the Bun platform.
-        #[deprecated = "Use `unstable_bun` instead."]
-        #[setting(nested)]
-        pub bun: Option<BunConfig>,
-
-        /// Configures and enables the Deno platform.
-        #[deprecated = "Use `unstable_deno` instead."]
-        #[setting(nested)]
-        pub deno: Option<DenoConfig>,
-
         /// Configures moon itself.
         #[setting(nested)]
         pub moon: MoonConfig,
-
-        /// Configures and enables the Node.js platform.
-        #[deprecated = "Use `unstable_node` instead."]
-        #[setting(nested)]
-        pub node: Option<NodeConfig>,
 
         /// Configures how moon integrates with proto.
         #[setting(nested)]
         pub proto: ProtoConfig,
 
-        /// Configures and enables the Python platform.
-        #[setting(nested)]
-        pub python: Option<PythonConfig>,
-
-        /// Configures and enables the Rust platform.
-        #[deprecated = "Use `unstable_rust` instead."]
-        #[setting(nested)]
-        pub rust: Option<RustConfig>,
-
-        /// All configured toolchains by unique ID.
+        /// Configures toolchains by unique ID.
         #[setting(flatten, nested)]
         pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     }
@@ -69,61 +92,7 @@ config_struct!(
 impl ToolchainConfig {
     pub fn get_enabled(&self) -> Vec<Id> {
         let mut tools = self.plugins.keys().cloned().collect::<Vec<_>>();
-
-        if self.bun.is_some() {
-            tools.push(Id::raw("bun"));
-        }
-
-        if self.deno.is_some() {
-            tools.push(Id::raw("deno"));
-        }
-
-        if let Some(node) = &self.node {
-            tools.push(Id::raw("node"));
-
-            // Better way to handle this?
-            if self.bun.is_none()
-                && (node.bun.is_some() || matches!(node.package_manager, NodePackageManager::Bun))
-            {
-                tools.push(Id::raw("bun"));
-            }
-        }
-
-        if self.python.is_some() {
-            tools.push(Id::raw("python"))
-        }
-
-        if self.rust.is_some() {
-            tools.push(Id::raw("rust"));
-        }
-
         tools.push(Id::raw("system"));
-        tools
-    }
-
-    pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
-        let mut tools = vec![];
-
-        if self.bun.is_some() {
-            tools.push(PlatformType::Bun);
-        }
-
-        if self.deno.is_some() {
-            tools.push(PlatformType::Deno);
-        }
-
-        if self.node.is_some() {
-            tools.push(PlatformType::Node);
-        }
-
-        if self.python.is_some() {
-            tools.push(PlatformType::Python)
-        }
-
-        if self.rust.is_some() {
-            tools.push(PlatformType::Rust);
-        }
-
         tools
     }
 
@@ -135,7 +104,23 @@ impl ToolchainConfig {
             .or_else(|| self.plugins.get(&unstable_id))
     }
 
-    #[cfg(feature = "proto")]
+    pub fn is_plugin(&self, id: &str) -> bool {
+        self.plugins.contains_key(id)
+    }
+}
+
+#[cfg(feature = "proto")]
+impl ToolchainConfig {
+    pub fn requires_proto(&self) -> bool {
+        for config in self.plugins.values() {
+            if config.version.is_some() {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
         use proto_core::warpgate::find_debug_locator_with_url_fallback;
 
@@ -184,117 +169,6 @@ impl ToolchainConfig {
         }
     }
 
-    pub fn get_version_env_vars(&self) -> FxHashMap<String, String> {
-        let mut env = FxHashMap::default();
-
-        let mut inject = |key: &str, version: &UnresolvedVersionSpec| {
-            env.entry(key.to_owned())
-                .or_insert_with(|| version.to_string());
-        };
-
-        if let Some(bun_config) = &self.bun
-            && let Some(version) = &bun_config.version
-        {
-            inject("PROTO_BUN_VERSION", version);
-        }
-
-        if let Some(deno_config) = &self.deno
-            && let Some(version) = &deno_config.version
-        {
-            inject("PROTO_DENO_VERSION", version);
-        }
-
-        if let Some(node_config) = &self.node {
-            if let Some(version) = &node_config.version {
-                inject("PROTO_NODE_VERSION", version);
-            }
-
-            if let Some(version) = &node_config.npm.version {
-                inject("PROTO_NPM_VERSION", version);
-            }
-
-            if let Some(pnpm_config) = &node_config.pnpm
-                && let Some(version) = &pnpm_config.version
-            {
-                inject("PROTO_PNPM_VERSION", version);
-            }
-
-            if let Some(yarn_config) = &node_config.yarn
-                && let Some(version) = &yarn_config.version
-            {
-                inject("PROTO_YARN_VERSION", version);
-            }
-
-            if let Some(bunpm_config) = &node_config.bun
-                && let Some(version) = &bunpm_config.version
-            {
-                inject("PROTO_BUN_VERSION", version);
-            }
-        }
-
-        if let Some(python_config) = &self.python {
-            if let Some(version) = &python_config.version {
-                inject("PROTO_PYTHON_VERSION", version);
-            }
-
-            if let Some(uv_config) = &python_config.uv
-                && let Some(version) = &uv_config.version
-            {
-                inject("PROTO_UV_VERSION", version);
-            }
-        }
-
-        // We don't include Rust since it's a special case!
-
-        env
-    }
-
-    pub fn is_plugin(&self, id: &str) -> bool {
-        self.plugins.contains_key(id)
-    }
-}
-
-#[cfg(feature = "proto")]
-impl ToolchainConfig {
-    inherit_tool!(BunConfig, bun, "bun", inherit_proto_bun);
-
-    inherit_tool!(DenoConfig, deno, "deno", inherit_proto_deno);
-
-    inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
-
-    inherit_tool!(PythonConfig, python, "python", inherit_proto_python);
-
-    inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
-
-    pub fn requires_proto(&self) -> bool {
-        is_using_tool_version!(self, bun);
-        is_using_tool_version!(self, deno);
-        is_using_tool_version!(self, node);
-        is_using_tool_version!(self, node, bun);
-        is_using_tool_version!(self, node, pnpm);
-        is_using_tool_version!(self, node, yarn);
-        is_using_tool_version!(self, python);
-        is_using_tool_version!(self, python, uv);
-        is_using_tool_version!(self, rust);
-
-        // Special case
-        if self
-            .node
-            .as_ref()
-            .is_some_and(|config| config.npm.version.is_some())
-        {
-            return true;
-        }
-
-        for config in self.plugins.values() {
-            if config.version.is_some() {
-                return true;
-            }
-        }
-
-        false
-    }
-
     pub fn inherit_proto_for_plugins(
         &mut self,
         proto_config: &proto_core::ProtoConfig,
@@ -335,85 +209,8 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
-        use tracing::warn;
-
         self.inherit_proto_for_plugins(proto_config)?;
-        self.inherit_proto_bun(proto_config)?;
-        self.inherit_proto_deno(proto_config)?;
-        self.inherit_proto_node(proto_config)?;
-        self.inherit_proto_python(proto_config)?;
-        self.inherit_proto_rust(proto_config)?;
-
-        if let Some(node_config) = &mut self.node {
-            node_config.inherit_proto(proto_config)?;
-
-            // If bun and node are both enabled, and bun is being used
-            // as a package manager within node, we need to keep the
-            // versions in sync between both tools. The bun toolchain
-            // version takes precedence!
-            if let (Some(bun_config), Some(bunpm_config)) = (&mut self.bun, &mut node_config.bun) {
-                if bun_config.version.is_some() && bunpm_config.version.is_none() {
-                    bunpm_config.version = bun_config.version.clone();
-                } else if bunpm_config.version.is_some() && bun_config.version.is_none() {
-                    bun_config.version = bunpm_config.version.clone();
-                }
-
-                if !bun_config.install_args.is_empty() && bunpm_config.install_args.is_empty() {
-                    bunpm_config.install_args = bun_config.install_args.clone();
-                } else if !bunpm_config.install_args.is_empty()
-                    && bun_config.install_args.is_empty()
-                {
-                    bun_config.install_args = bunpm_config.install_args.clone();
-                }
-            };
-        }
-
-        if let Some(python_config) = &mut self.python {
-            python_config.inherit_proto(proto_config)?;
-        }
-
         self.inherit_plugin_locators()?;
-
-        if self.bun.is_some()
-            && (self.plugins.contains_key("bun")
-                || self.plugins.contains_key("unstable_bun")
-                || self.plugins.contains_key("javascript")
-                || self.plugins.contains_key("unstable_javascript"))
-        {
-            warn!(
-                "The legacy Bun platform and WASM based JavaScript/Bun toolchains must not be used together!"
-            );
-        }
-
-        if self.deno.is_some()
-            && (self.plugins.contains_key("deno")
-                || self.plugins.contains_key("unstable_deno")
-                || self.plugins.contains_key("javascript")
-                || self.plugins.contains_key("unstable_javascript"))
-        {
-            warn!(
-                "The legacy Deno platform and WASM based JavaScript/Deno toolchains must not be used together!"
-            );
-        }
-
-        if self.node.is_some()
-            && (self.plugins.contains_key("node")
-                || self.plugins.contains_key("unstable_node")
-                || self.plugins.contains_key("javascript")
-                || self.plugins.contains_key("unstable_javascript"))
-        {
-            warn!(
-                "The legacy Node.js platform and WASM based JavaScript/Node.js toolchains must not be used together!"
-            );
-        }
-
-        if self.rust.is_some()
-            && (self.plugins.contains_key("rust") || self.plugins.contains_key("unstable_rust"))
-        {
-            warn!(
-                "The legacy Rust platform and WASM based Rust toolchain must not be used together!"
-            );
-        }
 
         Ok(())
     }

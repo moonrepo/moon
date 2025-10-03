@@ -8,8 +8,7 @@ use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_console::{Console, ConsoleError};
-use moon_workspace::{ExtendProjectEvent, ExtendProjectGraphEvent, WorkspaceBuilderContext};
-use starbase_events::Emitter;
+use moon_workspace::WorkspaceBuilderContext;
 use std::sync::Arc;
 
 pub async fn run_action_pipeline(
@@ -58,8 +57,6 @@ pub async fn create_workspace_graph_context(
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
         enabled_toolchains: session.toolchain_config.get_enabled(),
-        extend_project: Emitter::<ExtendProjectEvent>::new(),
-        extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,
         toolchain_config: &session.toolchain_config,
         toolchain_registry: session.get_toolchain_registry().await?,

@@ -28,7 +28,6 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 extism = { workspace = true }
 proto_core = { workspace = true }
-starbase_events = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

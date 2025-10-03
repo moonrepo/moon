@@ -36,15 +36,6 @@ impl ProjectToolchainEntry {
 }
 
 config_struct!(
-    /// Overrides top-level toolchain settings.
-    #[derive(Config)]
-    pub struct ProjectToolchainCommonToolConfig {
-        /// Version of the tool this project will use.
-        pub version: Option<UnresolvedVersionSpec>,
-    }
-);
-
-config_struct!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Config)]
     #[config(allow_unknown_fields)]

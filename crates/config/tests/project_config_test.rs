@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
+    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, ProjectConfig,
+    ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
     ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
@@ -23,7 +23,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `type`, `owners`, `platform`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {
@@ -775,7 +775,6 @@ workspace:
                         paths: OwnersPaths::List(vec!["dir/".into(), "file.txt".into()]),
                         required_approvals: Some(5)
                     },
-                    platform: Some(PlatformType::Node),
                     project: Some(ProjectMetadataConfig {
                         name: Some("Name".into()),
                         description: "Does something".into(),

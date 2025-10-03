@@ -309,6 +309,7 @@
           "title": "copyToolchainFiles",
           "description": "Copy toolchain specific configs/manifests/files into the workspace skeleton.",
           "default": true,
+          "deprecated": true,
           "type": "boolean"
         },
         "include": {

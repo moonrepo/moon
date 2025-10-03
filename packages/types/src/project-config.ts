@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 import type { Id } from './common';
-import type { Input, PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
 import type {
 	PartialToolchainPluginConfig,
 	ToolchainPluginConfig,
@@ -149,38 +149,22 @@ export interface ProjectMetadataConfig {
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
-/** Overrides top-level toolchain settings. */
-export interface ProjectToolchainCommonToolConfig {
-	/** Version of the tool this project will use. */
-	version: UnresolvedVersionSpec | null;
-}
-
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
 export interface ProjectToolchainConfig {
-	/** Overrides `bun` settings. */
-	bun: ProjectToolchainCommonToolConfig | null;
 	/**
-	 * The default toolchain(s) for all tasks within the project,
-	 * if their toolchain is unknown.
+	 * The default toolchain(s) to inherit for the project,
+	 * and all of its tasks.
 	 */
 	defaults?: Id | Id[] | null;
 	/**
-	 * The default toolchain(s) for all tasks within the project,
-	 * if their toolchain is unknown.
+	 * The default toolchain(s) to inherit for the project,
+	 * and all of its tasks.
 	 */
 	default: Id | Id[] | null;
-	/** Overrides `deno` settings. */
-	deno: ProjectToolchainCommonToolConfig | null;
-	/** Overrides `node` settings. */
-	node: ProjectToolchainCommonToolConfig | null;
 	/** Overrides toolchains by their ID. */
 	plugins: Record<Id, ProjectToolchainEntry>;
-	/** Overrides `python` settings. */
-	python: ProjectToolchainCommonToolConfig | null;
-	/** Overrides `rust` settings. */
-	rust: ProjectToolchainCommonToolConfig | null;
 }
 
 /** Controls how tasks are inherited. */
@@ -242,27 +226,12 @@ export interface ProjectConfig {
 	 * @default 'unknown'
 	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
 	 */
-	type?: LayerType;
-	/**
-	 * The layer within the project stack, for categorizing.
-	 *
-	 * @default 'unknown'
-	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
-	 */
 	layer: LayerType;
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
 	 */
 	owners: OwnersConfig;
-	/**
-	 * The default platform for all tasks within the project,
-	 * if their platform is unknown.
-	 *
-	 * @default 'unknown'
-	 * @deprecated
-	 */
-	platform: PlatformType | null;
 	/** Expanded information about the project. */
 	project: ProjectMetadataConfig | null;
 	/**
@@ -386,38 +355,22 @@ export interface PartialProjectMetadataConfig {
 	owner?: string | null;
 }
 
-/** Overrides top-level toolchain settings. */
-export interface PartialProjectToolchainCommonToolConfig {
-	/** Version of the tool this project will use. */
-	version?: UnresolvedVersionSpec | null;
-}
-
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainConfig {
-	/** Overrides `bun` settings. */
-	bun?: PartialProjectToolchainCommonToolConfig | null;
 	/**
-	 * The default toolchain(s) for all tasks within the project,
-	 * if their toolchain is unknown.
+	 * The default toolchain(s) to inherit for the project,
+	 * and all of its tasks.
 	 */
 	defaults?: Id | Id[] | null;
 	/**
-	 * The default toolchain(s) for all tasks within the project,
-	 * if their toolchain is unknown.
+	 * The default toolchain(s) to inherit for the project,
+	 * and all of its tasks.
 	 */
 	default?: Id | Id[] | null;
-	/** Overrides `deno` settings. */
-	deno?: PartialProjectToolchainCommonToolConfig | null;
-	/** Overrides `node` settings. */
-	node?: PartialProjectToolchainCommonToolConfig | null;
 	/** Overrides toolchains by their ID. */
 	plugins?: Record<Id, PartialProjectToolchainEntry> | null;
-	/** Overrides `python` settings. */
-	python?: PartialProjectToolchainCommonToolConfig | null;
-	/** Overrides `rust` settings. */
-	rust?: PartialProjectToolchainCommonToolConfig | null;
 }
 
 /** Controls how tasks are inherited. */
@@ -477,26 +430,12 @@ export interface PartialProjectConfig {
 	 *
 	 * @default 'unknown'
 	 */
-	type?: LayerType | null;
-	/**
-	 * The layer within the project stack, for categorizing.
-	 *
-	 * @default 'unknown'
-	 */
 	layer?: LayerType | null;
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
 	 */
 	owners?: PartialOwnersConfig | null;
-	/**
-	 * The default platform for all tasks within the project,
-	 * if their platform is unknown.
-	 *
-	 * @default 'unknown'
-	 * @deprecated
-	 */
-	platform?: PlatformType | null;
 	/** Expanded information about the project. */
 	project?: PartialProjectMetadataConfig | null;
 	/**

@@ -1,17 +1,6 @@
 [workspace]
 resolver = "3"
-members = [
-    "crates/*",
-    "legacy/core/*",
-
-    # Languages
-    "legacy/bun/*",
-    "legacy/deno/*",
-    "legacy/javascript/*",
-    "legacy/node/*",
-    "legacy/rust/*",
-    "legacy/system/*",
-]
+members = ["crates/*", "legacy/core/*"]
 exclude = ["tests/fixtures", "wasm/test-plugin"]
 default-members = ["crates/cli"]
 

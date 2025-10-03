@@ -80,25 +80,6 @@ petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"
 
-# TODO remove
-moon_lang = { path = "../../legacy/core/lang" }
-moon_tool = { path = "../../legacy/core/tool" }
-moon_platform = { path = "../../legacy/core/platform" }
-moon_bun_tool = { path = "../../legacy/bun/tool" }
-moon_bun_platform = { path = "../../legacy/bun/platform" }
-moon_deno_tool = { path = "../../legacy/deno/tool" }
-moon_deno_platform = { path = "../../legacy/deno/platform" }
-moon_node_lang = { path = "../../legacy/node/lang" }
-moon_node_tool = { path = "../../legacy/node/tool" }
-moon_node_platform = { path = "../../legacy/node/platform" }
-moon_python_lang = { path = "../../legacy/python/lang" }
-moon_python_tool = { path = "../../legacy/python/tool" }
-moon_python_platform = { path = "../../legacy/python/platform" }
-moon_rust_lang = { path = "../../legacy/rust/lang" }
-moon_rust_tool = { path = "../../legacy/rust/tool" }
-moon_rust_platform = { path = "../../legacy/rust/platform" }
-moon_system_platform = { path = "../../legacy/system/platform" }
-
 [dev-dependencies]
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }

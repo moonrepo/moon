@@ -41,7 +41,9 @@ use tracing::{debug, instrument, trace};
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
+    #[deprecated]
     pub extend_project: Emitter<ExtendProjectEvent>,
+    #[deprecated]
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,

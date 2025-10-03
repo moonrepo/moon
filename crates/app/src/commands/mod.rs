@@ -11,7 +11,6 @@ pub mod graph;
 pub mod init;
 pub mod mcp;
 pub mod migrate;
-pub mod node;
 pub mod project;
 pub mod query;
 pub mod run;

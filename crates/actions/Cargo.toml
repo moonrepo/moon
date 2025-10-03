@@ -25,6 +25,7 @@ moon_project = { path = "../project" }
 moon_remote = { path = "../remote" }
 moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
+moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs_hooks = { path = "../vcs-hooks" }
 moon_workspace_graph = { path = "../workspace-graph" }

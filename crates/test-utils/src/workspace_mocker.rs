@@ -1,4 +1,3 @@
-use crate::generate_platform_manager;
 use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
@@ -7,7 +6,6 @@ use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
-use moon_platform::PlatformManager;
 use moon_plugin::MoonHostData;
 use moon_project_builder::*;
 use moon_project_graph::Project;
@@ -364,16 +362,6 @@ impl WorkspaceMocker {
         let mut console = Console::new_testing();
         console.set_reporter(MoonReporter::new_testing());
         console
-    }
-
-    pub async fn mock_platform_manager(&self) -> PlatformManager {
-        generate_platform_manager(
-            &self.workspace_root,
-            &self.toolchain_config,
-            Arc::new(self.proto_env.clone()),
-            Arc::new(self.mock_console()),
-        )
-        .await
     }
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {

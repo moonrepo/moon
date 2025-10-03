@@ -14,7 +14,6 @@ use crate::commands::graph::task::TaskGraphArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::mcp::McpArgs;
 use crate::commands::migrate::MigrateCommands;
-use crate::commands::node::NodeCommands;
 use crate::commands::project::ProjectArgs;
 use crate::commands::query::QueryCommands;
 use crate::commands::run::RunArgs;
@@ -64,13 +63,6 @@ pub enum Commands {
         long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
     )]
     Bin(BinArgs),
-
-    // moon node <command>
-    #[command(name = "node", about = "Special Node.js commands.")]
-    Node {
-        #[command(subcommand)]
-        command: NodeCommands,
-    },
 
     // moon setup
     #[command(

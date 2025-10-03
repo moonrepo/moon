@@ -1,8 +1,7 @@
 use super::languages::{BUN, DENO, NODE};
 use super::project_language::has_language_files;
 use moon_common::Id;
-use moon_config::{LanguageType, PlatformType};
-use std::convert::TryFrom;
+use moon_config::LanguageType;
 use std::path::Path;
 
 /// Return a list of toolchains based on the provided ID.
@@ -12,10 +11,6 @@ pub fn get_project_toolchains(id: &Id) -> Vec<Id> {
     // Since JS has multiple runtimes, we should inherit JS also
     if id == "bun" || id == "deno" || id == "node" {
         toolchains.push(Id::raw("javascript"));
-    }
-    // Otherwise check if we're a supported platform, if not, inherit system
-    else if PlatformType::try_from(id.as_str()).is_err() {
-        toolchains.push(Id::raw("system"));
     }
 
     toolchains
@@ -55,6 +50,5 @@ pub fn detect_project_toolchains(
         }
     }
 
-    toolchains.extend(language.get_toolchain_ids());
     toolchains
 }

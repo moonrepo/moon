@@ -12,9 +12,13 @@
   - Removed the `moon migrate from-turborepo` command. Use the `migrate-turborepo` extension
     instead.
 - **Configuration**
-  - Removed the `toolchain.*.disabled` setting in `moon.yml`. Set the toolchain to null/false
-    instead.
-  - Removed the `node.addEnginesConstraint` setting.
+  - `moon.yml`
+    - Removed the `type` alias. Use `layer` instead.
+    - Removed the `platform` setting. Use `toolchain.default` instead.
+    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
+    - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
+  - `.moon/toolchain.yml`
+    - Removed the `node.addEnginesConstraint` setting.
 - **Toolchains**
   - Removed the legacy built-in platform system. WASM plugins have replaced their functionality.
     - Some configuration settings may have changed. Refer to the documentation.

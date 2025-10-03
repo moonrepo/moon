@@ -4,7 +4,7 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType, ProjectConfig,
+    DependencyScope, InheritedTasksResult, LanguageType, LayerType, ProjectConfig,
     ProjectDependencyConfig, StackType,
 };
 use moon_file_group::FileGroup;
@@ -44,19 +44,12 @@ cacheable!(
         pub language: LanguageType,
 
         /// The type of layer within the stack. Is used for layer constraints.
-        #[serde(alias = "type")]
         pub layer: LayerType,
-
-        /// Default platform to run tasks against.
-        // TODO REMOVE
-        #[deprecated]
-        pub platform: PlatformType,
 
         /// Absolute path to the project's root folder.
         pub root: PathBuf,
 
         /// Relative path from the workspace root to the project root.
-        /// Is the RHS of the `projects` setting.
         pub source: WorkspaceRelativePathBuf,
 
         /// The technology stack of the project.

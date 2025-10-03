@@ -408,21 +408,6 @@ impl<'task> TaskRunner<'task> {
         )
         .await?;
 
-        // Hash platform fields
-        if let Ok(platform) = self
-            .platform_manager
-            .get_by_toolchains(&self.task.toolchains)
-        {
-            platform
-                .hash_run_target(
-                    self.project,
-                    node.get_runtime(),
-                    &mut hasher,
-                    &self.app_context.workspace_config.hasher,
-                )
-                .await?;
-        }
-
         // Hash toolchain fields
         hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
             .await?;

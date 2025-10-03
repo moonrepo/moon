@@ -1,8 +1,7 @@
 pub mod detect;
-mod runtime;
 mod spec;
 
-pub use runtime::*;
+pub use moon_config::{UnresolvedVersionSpec, VersionSpec};
 pub use spec::*;
 
 use moon_common::{Id, IdExt};

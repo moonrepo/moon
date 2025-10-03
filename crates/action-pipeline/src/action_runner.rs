@@ -119,25 +119,6 @@ pub async fn run_action(
 
         ActionNode::SetupProto(_) => setup_proto(action, action_context, app_context).await,
 
-        ActionNode::SetupToolchainLegacy(inner) => {
-            emitter
-                .emit(Event::ToolInstalling {
-                    runtime: &inner.runtime,
-                })
-                .await?;
-
-            let result = setup_toolchain(action, action_context, app_context, inner).await;
-
-            emitter
-                .emit(Event::ToolInstalled {
-                    error: extract_error(&result),
-                    runtime: &inner.runtime,
-                })
-                .await?;
-
-            result
-        }
-
         ActionNode::SetupToolchain(inner) => {
             emitter
                 .emit(Event::ToolchainInstalling {
@@ -166,7 +147,6 @@ pub async fn run_action(
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: project.as_deref(),
-                    runtime: None,
                     root: Some(&inner.root),
                     toolchain: Some(&inner.toolchain_id),
                 })
@@ -185,79 +165,8 @@ pub async fn run_action(
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&result),
                     project: project.as_deref(),
-                    runtime: None,
                     root: Some(&inner.root),
                     toolchain: Some(&inner.toolchain_id),
-                })
-                .await?;
-
-            result
-        }
-
-        ActionNode::InstallWorkspaceDeps(inner) => {
-            emitter
-                .emit(Event::DependenciesInstalling {
-                    project: None,
-                    runtime: Some(&inner.runtime),
-                    root: None,
-                    toolchain: None,
-                })
-                .await?;
-
-            let result = install_deps(
-                action,
-                action_context,
-                app_context,
-                workspace_graph.clone(),
-                &inner.runtime,
-                None,
-                Some(&inner.root),
-            )
-            .await;
-
-            emitter
-                .emit(Event::DependenciesInstalled {
-                    error: extract_error(&result),
-                    project: None,
-                    runtime: Some(&inner.runtime),
-                    root: None,
-                    toolchain: None,
-                })
-                .await?;
-
-            result
-        }
-
-        ActionNode::InstallProjectDeps(inner) => {
-            let project = workspace_graph.get_project(&inner.project_id)?;
-
-            emitter
-                .emit(Event::DependenciesInstalling {
-                    project: Some(&project),
-                    runtime: Some(&inner.runtime),
-                    root: None,
-                    toolchain: None,
-                })
-                .await?;
-
-            let result = install_deps(
-                action,
-                action_context,
-                app_context,
-                workspace_graph.clone(),
-                &inner.runtime,
-                Some(&project),
-                None,
-            )
-            .await;
-
-            emitter
-                .emit(Event::DependenciesInstalled {
-                    error: extract_error(&result),
-                    project: Some(&project),
-                    runtime: Some(&inner.runtime),
-                    root: None,
-                    toolchain: None,
                 })
                 .await?;
 
@@ -332,11 +241,7 @@ pub async fn run_action(
         // If these actions failed, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupToolchain { .. }
-                | ActionNode::SetupToolchainLegacy { .. }
-                | ActionNode::InstallDependencies { .. }
-                | ActionNode::InstallProjectDeps { .. }
-                | ActionNode::InstallWorkspaceDeps { .. }
+            ActionNode::SetupToolchain { .. } | ActionNode::InstallDependencies { .. }
         ) {
             action.abort();
         }

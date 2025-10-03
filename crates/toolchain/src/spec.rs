@@ -7,33 +7,16 @@ use std::hash::Hash;
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ToolchainSpec {
     pub id: Id,
-    // pub overridden: bool,
     pub req: Option<UnresolvedVersionSpec>,
 }
 
 impl ToolchainSpec {
     pub fn new(id: Id, req: UnresolvedVersionSpec) -> Self {
-        Self {
-            id,
-            req: Some(req),
-            // overridden: false,
-        }
+        Self { id, req: Some(req) }
     }
 
     pub fn new_global(id: Id) -> Self {
-        Self {
-            id,
-            req: None,
-            // overridden: false,
-        }
-    }
-
-    pub fn new_override(id: Id, req: UnresolvedVersionSpec) -> Self {
-        Self {
-            id,
-            req: Some(req),
-            // overridden: true,
-        }
+        Self { id, req: None }
     }
 
     pub fn system() -> Self {

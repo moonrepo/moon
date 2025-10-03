@@ -69,7 +69,7 @@ impl<'task> CommandBuilder<'task> {
             "Creating task child process to execute",
         );
 
-        self.command = self.build_command(context).await?;
+        self.command = self.build_command().await?;
 
         // We need to handle non-zero exit code's manually
         self.command
@@ -90,33 +90,14 @@ impl<'task> CommandBuilder<'task> {
         Ok(self.command)
     }
 
-    async fn build_command(&mut self, context: &ActionContext) -> miette::Result<Command> {
+    async fn build_command(&mut self) -> miette::Result<Command> {
         let project = self.project;
         let task = self.task;
         let toolchain_ids = project.get_enabled_toolchains_for_task(task);
 
-        let mut command = match self.platform_manager.get_by_toolchains(&task.toolchains) {
-            Ok(platform) => {
-                self.using_platform = true;
-
-                platform
-                    .create_run_target_command(
-                        context,
-                        project,
-                        task,
-                        self.node.get_runtime(),
-                        self.working_dir,
-                    )
-                    .await?
-            }
-            Err(_) => {
-                // No platform so create a custom command
-                let mut cmd = Command::new(&task.command);
-                cmd.args(&task.args);
-                cmd.envs_if_not_global(&task.env);
-                cmd
-            }
-        };
+        let mut command = Command::new(&task.command);
+        command.args(&task.args);
+        command.envs_if_not_global(&task.env);
 
         match &task.script {
             // If a script, overwrite the binary (command) with the script and reset args,

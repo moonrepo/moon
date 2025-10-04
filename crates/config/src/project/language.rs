@@ -16,7 +16,9 @@ pub enum LanguageType {
     #[variant(alias = ".net")]
     DotNet,
     Go,
+    Java,
     JavaScript,
+    Kotlin,
     Php,
     Python,
     Ruby,
@@ -28,7 +30,7 @@ pub enum LanguageType {
     #[default]
     Unknown,
 
-    /// An unsupported language.
+    /// An custom language.
     #[variant(fallback)]
     Other(Id),
 }
@@ -123,8 +125,8 @@ mod tests {
             LanguageType::Unknown,
         );
         assert_eq!(
-            serde_json::from_str::<LanguageType>("\"dotnet\"").unwrap(),
-            LanguageType::Other(Id::raw("dotnet")),
+            serde_json::from_str::<LanguageType>("\"groovy\"").unwrap(),
+            LanguageType::Other(Id::raw("groovy")),
         );
     }
 }

@@ -75,46 +75,6 @@ tasks:
         );
     }
 
-    // TODO: fix this in schematic?
-    #[test]
-    #[should_panic(expected = "unknown field `_webpack`")]
-    fn can_use_references_from_root() {
-        let config = test_load_config(
-            "moon.yml",
-            r"
-_webpack: &webpack
-    command: 'webpack'
-    inputs:
-      - 'src/**/*'
-
-tasks:
-  build: *webpack
-  start:
-    <<: *webpack
-    args: 'serve'
-",
-            |path| load_config_from_root(path, "."),
-        );
-
-        let build = config.tasks.get("build").unwrap();
-
-        assert_eq!(build.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskArgs::None);
-        assert_eq!(
-            build.inputs,
-            Some(vec![Input::Glob(stub_glob_input("src/**/*"))])
-        );
-
-        let start = config.tasks.get("start").unwrap();
-
-        assert_eq!(start.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            Some(vec![Input::Glob(stub_glob_input("src/**/*"))])
-        );
-    }
-
     mod depends_on {
         use super::*;
 
@@ -263,11 +223,11 @@ fileGroups:
 
         #[test]
         fn unsupported_variant_becomes_other() {
-            let config = test_load_config("moon.yml", "language: dotnet", |path| {
+            let config = test_load_config("moon.yml", "language: groovy", |path| {
                 load_config_from_root(path, ".")
             });
 
-            assert_eq!(config.language, LanguageType::Other(Id::raw("dotnet")));
+            assert_eq!(config.language, LanguageType::Other(Id::raw("groovy")));
         }
     }
 

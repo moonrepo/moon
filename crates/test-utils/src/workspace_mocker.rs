@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct WorkspaceMocker {
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
@@ -43,6 +43,12 @@ impl WorkspaceMocker {
             proto_env: ProtoEnvironment::new_testing(root).unwrap(),
             working_dir: root.to_path_buf(),
             workspace_root: root.to_path_buf(),
+            toolchain_config: {
+                let mut config = ToolchainConfig::default();
+                config.inherit_system_plugin();
+                config.inherit_plugin_locators().unwrap();
+                config
+            },
             ..Default::default()
         }
     }
@@ -76,11 +82,9 @@ impl WorkspaceMocker {
         self
     }
 
-    pub fn set_toolchain_config(mut self, mut config: ToolchainConfig) -> Self {
-        config.inherit_plugin_locators().unwrap();
-
+    pub fn set_toolchain_config(mut self, config: ToolchainConfig) -> Self {
         self.toolchain_config = config;
-        self
+        self.update_toolchain_config(|_| {})
     }
 
     pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
@@ -97,6 +101,7 @@ impl WorkspaceMocker {
 
     pub fn update_toolchain_config(mut self, mut op: impl FnMut(&mut ToolchainConfig)) -> Self {
         op(&mut self.toolchain_config);
+        self.toolchain_config.inherit_system_plugin();
         self.toolchain_config.inherit_plugin_locators().unwrap();
         self
     }

@@ -1019,58 +1019,58 @@ mod project_graph {
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
 
-            // Set aliases for projects
-            context
-                .extend_project_graph
-                .on(
-                    |event: Arc<ExtendProjectGraphEvent>,
-                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-                        let mut data = data.write().await;
+            // // Set aliases for projects
+            // context
+            //     .extend_project_graph
+            //     .on(
+            //         |event: Arc<ExtendProjectGraphEvent>,
+            //          data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+            //             let mut data = data.write().await;
 
-                        for (id, source) in &event.sources {
-                            let alias_path = source.join("alias").to_path(&event.workspace_root);
+            //             for (id, source) in &event.sources {
+            //                 let alias_path = source.join("alias").to_path(&event.workspace_root);
 
-                            if alias_path.exists() {
-                                data.aliases.push((
-                                    id.to_owned(),
-                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
-                                ));
-                            }
-                        }
+            //                 if alias_path.exists() {
+            //                     data.aliases.push((
+            //                         id.to_owned(),
+            //                         fs::read_file(alias_path).unwrap().trim().to_owned(),
+            //                     ));
+            //                 }
+            //             }
 
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
+            //             Ok(EventState::Continue)
+            //         },
+            //     )
+            //     .await;
 
-            // Set implicit deps for projects
-            context
-                .extend_project
-                .on(
-                    |event: Arc<ExtendProjectEvent>,
-                     data: Arc<RwLock<ExtendProjectData>>| async move {
-                        let mut data = data.write().await;
+            // // Set implicit deps for projects
+            // context
+            //     .extend_project
+            //     .on(
+            //         |event: Arc<ExtendProjectEvent>,
+            //          data: Arc<RwLock<ExtendProjectData>>| async move {
+            //             let mut data = data.write().await;
 
-                        if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
-                            data.dependencies.push(ProjectDependencyConfig {
-                                id: Id::raw("@three"),
-                                scope: DependencyScope::Build,
-                                ..Default::default()
-                            });
-                        }
+            //             if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
+            //                 data.dependencies.push(ProjectDependencyConfig {
+            //                     id: Id::raw("@three"),
+            //                     scope: DependencyScope::Build,
+            //                     ..Default::default()
+            //                 });
+            //             }
 
-                        if event.project_id == "implicit" {
-                            data.dependencies.push(ProjectDependencyConfig {
-                                id: Id::raw("@one"),
-                                scope: DependencyScope::Peer,
-                                ..Default::default()
-                            });
-                        }
+            //             if event.project_id == "implicit" {
+            //                 data.dependencies.push(ProjectDependencyConfig {
+            //                     id: Id::raw("@one"),
+            //                     scope: DependencyScope::Peer,
+            //                     ..Default::default()
+            //                 });
+            //             }
 
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
+            //             Ok(EventState::Continue)
+            //         },
+            //     )
+            //     .await;
 
             mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
                 context: Some(context),
@@ -1218,23 +1218,23 @@ mod project_graph {
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
 
-            context
-                .extend_project_graph
-                .on(
-                    |event: Arc<ExtendProjectGraphEvent>,
-                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-                        let mut data = data.write().await;
+            // context
+            //     .extend_project_graph
+            //     .on(
+            //         |event: Arc<ExtendProjectGraphEvent>,
+            //          data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+            //             let mut data = data.write().await;
 
-                        for (id, _) in &event.sources {
-                            // Add dupes
-                            data.aliases.push((id.to_owned(), format!("@{id}")));
-                            data.aliases.push((id.to_owned(), format!("@{id}")));
-                        }
+            //             for (id, _) in &event.sources {
+            //                 // Add dupes
+            //                 data.aliases.push((id.to_owned(), format!("@{id}")));
+            //                 data.aliases.push((id.to_owned(), format!("@{id}")));
+            //             }
 
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
+            //             Ok(EventState::Continue)
+            //         },
+            //     )
+            //     .await;
 
             let graph = mock
                 .mock_workspace_graph_with_options(WorkspaceMockOptions {

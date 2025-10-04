@@ -11,7 +11,7 @@ pub enum LanguageType {
     Batch,
     #[variant(alias = "c++")]
     CPlusPlus,
-    #[variant(alias = "#")]
+    #[variant(alias = "c#")]
     CSharp,
     #[variant(alias = ".net")]
     DotNet,

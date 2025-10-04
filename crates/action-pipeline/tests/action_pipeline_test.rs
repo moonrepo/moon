@@ -14,7 +14,7 @@ mod action_pipeline {
     mod priority {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn runs_priority_in_order() {
             let sandbox = create_sandbox("pipeline");
             let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
@@ -59,7 +59,7 @@ mod action_pipeline {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn critical_depends_on_low() {
             let sandbox = create_sandbox("pipeline");
             let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
@@ -90,7 +90,7 @@ mod action_pipeline {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn high_depends_on_low() {
             let sandbox = create_sandbox("pipeline");
             let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();

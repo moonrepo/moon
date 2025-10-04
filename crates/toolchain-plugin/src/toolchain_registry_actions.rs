@@ -191,9 +191,7 @@ impl ToolchainRegistry {
     pub async fn detect_project_language(&self, dir: &Path) -> miette::Result<LanguageType> {
         let mut detected = vec![];
 
-        for id in self.get_plugin_ids() {
-            let toolchain = self.load(id).await?;
-
+        for toolchain in self.load_many(self.get_plugin_ids()).await? {
             if let Some(language) = &toolchain.metadata.language
                 && toolchain.detect_project_usage(dir)?
                 && language != &LanguageType::Unknown
@@ -225,9 +223,9 @@ impl ToolchainRegistry {
     {
         let mut detected = FxHashSet::default();
 
-        for id in self.get_plugin_ids() {
-            if self.load(id).await?.detect_project_usage(dir)? {
-                detected.insert(Id::raw(id));
+        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+            if toolchain.detect_project_usage(dir)? {
+                detected.insert(toolchain.id.clone());
             }
         }
 
@@ -255,9 +253,9 @@ impl ToolchainRegistry {
     {
         let mut detected = FxHashSet::default();
 
-        for id in ids {
-            if self.load(id).await?.detect_task_usage(command, args)? {
-                detected.insert(Id::raw(id));
+        for toolchain in self.load_many(ids).await? {
+            if toolchain.detect_task_usage(command, args)? {
+                detected.insert(toolchain.id.clone());
             }
         }
 

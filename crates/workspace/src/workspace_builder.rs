@@ -31,7 +31,6 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use starbase_events::Emitter;
 use starbase_utils::glob::GlobWalkOptions;
 use starbase_utils::json;
 use std::sync::Arc;
@@ -41,8 +40,6 @@ use tracing::{debug, instrument, trace};
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
-    pub extend_project: Emitter<ExtendProjectEvent>,
-    pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
@@ -416,24 +413,6 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         builder.inherit_global_config(context.inherited_tasks)?;
-
-        // Inherit from legacy platforms
-        let extended_data = context
-            .extend_project
-            .emit(ExtendProjectEvent {
-                project_id: id.to_owned(),
-                project_source: build_data.source.to_owned(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?;
-
-        for dep_config in extended_data.dependencies {
-            builder.extend_with_dependency(dep_config);
-        }
-
-        for (task_id, task_config) in extended_data.tasks {
-            builder.extend_with_task(task_id, task_config);
-        }
 
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {
@@ -835,24 +814,6 @@ impl<'app> WorkspaceBuilder<'app> {
         let context = self.context();
 
         debug!("Extending project graph");
-
-        // From platforms
-        let aliases = context
-            .extend_project_graph
-            .emit(ExtendProjectGraphEvent {
-                sources: self
-                    .project_data
-                    .iter()
-                    .map(|(id, build_data)| (id.to_owned(), build_data.source.to_owned()))
-                    .collect(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?
-            .aliases;
-
-        for (project_id, alias) in aliases {
-            self.track_alias(project_id, alias)?;
-        }
 
         // From toolchains
         for output in context

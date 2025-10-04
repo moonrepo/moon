@@ -4,9 +4,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, PlatformType,
-    ProjectInput, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy,
-    TaskOptionCache, TaskOutputStyle, TaskType,
+    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
+    TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -30,7 +30,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", load_config_from_code);
@@ -540,25 +540,6 @@ outputs:
         }
     }
 
-    mod platform {
-        use super::*;
-
-        #[test]
-        fn supports_variant() {
-            let config = test_parse_config("platform: rust", load_config_from_code);
-
-            assert_eq!(config.platform, PlatformType::Rust);
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to parse TaskConfig. platform: unknown variant `perl`, expected one of `bun`, `deno`, `node`, `python`, `rust`, `system`, `unknown`"
-        )]
-        fn errors_on_invalid_variant() {
-            test_parse_config("platform: perl", load_config_from_code);
-        }
-    }
-
     mod type_of {
         use super::*;
 
@@ -960,7 +941,6 @@ options:
                         retry_count: Some(3),
                         ..Default::default()
                     },
-                    platform: PlatformType::Bun,
                     preset: Some(TaskPreset::Server),
                     type_of: Some(TaskType::Build),
                     ..Default::default()

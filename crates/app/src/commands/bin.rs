@@ -1,7 +1,6 @@
 use crate::session::MoonSession;
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon_tool::{get_proto_env_vars, get_proto_paths, prepend_path_env_var};
 use starbase::AppResult;
 use tokio::process::Command;
 use tracing::instrument;
@@ -19,11 +18,12 @@ pub async fn bin(session: MoonSession, args: BinArgs) -> AppResult {
     let result = Command::new("proto")
         .arg("bin")
         .arg(&args.tool)
-        .env(
-            "PATH",
-            prepend_path_env_var(get_proto_paths(&session.proto_env)),
-        )
-        .envs(get_proto_env_vars())
+        // TODO
+        // .env(
+        //     "PATH",
+        //     prepend_path_env_var(get_proto_paths(&session.proto_env)),
+        // )
+        // .envs(get_proto_env_vars())
         .spawn()
         .into_diagnostic()?
         .wait()

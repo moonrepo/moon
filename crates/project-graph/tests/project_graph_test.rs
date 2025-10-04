@@ -8,13 +8,9 @@ use moon_project_graph::*;
 use moon_query::build_query;
 use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
-use moon_workspace::{
-    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    WorkspaceProjectsCacheState,
-};
+use moon_workspace::WorkspaceProjectsCacheState;
 use petgraph::prelude::*;
 use rustc_hash::FxHashMap;
-use starbase_events::EventState;
 use starbase_sandbox::{Sandbox, assert_snapshot, create_sandbox, locate_fixture};
 use starbase_utils::{fs, json, string_vec};
 use std::fs::OpenOptions;
@@ -53,7 +49,7 @@ pub fn create_workspace_mocker(root: &Path) -> WorkspaceMocker {
     WorkspaceMocker::new(root)
         .load_default_configs()
         .with_default_projects()
-        .with_default_toolchains()
+        .with_all_toolchains()
         .with_inherited_tasks()
 }
 
@@ -1023,58 +1019,58 @@ mod project_graph {
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
 
-            // Set aliases for projects
-            context
-                .extend_project_graph
-                .on(
-                    |event: Arc<ExtendProjectGraphEvent>,
-                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-                        let mut data = data.write().await;
+            // // Set aliases for projects
+            // context
+            //     .extend_project_graph
+            //     .on(
+            //         |event: Arc<ExtendProjectGraphEvent>,
+            //          data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+            //             let mut data = data.write().await;
 
-                        for (id, source) in &event.sources {
-                            let alias_path = source.join("alias").to_path(&event.workspace_root);
+            //             for (id, source) in &event.sources {
+            //                 let alias_path = source.join("alias").to_path(&event.workspace_root);
 
-                            if alias_path.exists() {
-                                data.aliases.push((
-                                    id.to_owned(),
-                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
-                                ));
-                            }
-                        }
+            //                 if alias_path.exists() {
+            //                     data.aliases.push((
+            //                         id.to_owned(),
+            //                         fs::read_file(alias_path).unwrap().trim().to_owned(),
+            //                     ));
+            //                 }
+            //             }
 
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
+            //             Ok(EventState::Continue)
+            //         },
+            //     )
+            //     .await;
 
-            // Set implicit deps for projects
-            context
-                .extend_project
-                .on(
-                    |event: Arc<ExtendProjectEvent>,
-                     data: Arc<RwLock<ExtendProjectData>>| async move {
-                        let mut data = data.write().await;
+            // // Set implicit deps for projects
+            // context
+            //     .extend_project
+            //     .on(
+            //         |event: Arc<ExtendProjectEvent>,
+            //          data: Arc<RwLock<ExtendProjectData>>| async move {
+            //             let mut data = data.write().await;
 
-                        if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
-                            data.dependencies.push(ProjectDependencyConfig {
-                                id: Id::raw("@three"),
-                                scope: DependencyScope::Build,
-                                ..Default::default()
-                            });
-                        }
+            //             if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
+            //                 data.dependencies.push(ProjectDependencyConfig {
+            //                     id: Id::raw("@three"),
+            //                     scope: DependencyScope::Build,
+            //                     ..Default::default()
+            //                 });
+            //             }
 
-                        if event.project_id == "implicit" {
-                            data.dependencies.push(ProjectDependencyConfig {
-                                id: Id::raw("@one"),
-                                scope: DependencyScope::Peer,
-                                ..Default::default()
-                            });
-                        }
+            //             if event.project_id == "implicit" {
+            //                 data.dependencies.push(ProjectDependencyConfig {
+            //                     id: Id::raw("@one"),
+            //                     scope: DependencyScope::Peer,
+            //                     ..Default::default()
+            //                 });
+            //             }
 
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
+            //             Ok(EventState::Continue)
+            //         },
+            //     )
+            //     .await;
 
             mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
                 context: Some(context),
@@ -1222,23 +1218,23 @@ mod project_graph {
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
 
-            context
-                .extend_project_graph
-                .on(
-                    |event: Arc<ExtendProjectGraphEvent>,
-                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-                        let mut data = data.write().await;
+            // context
+            //     .extend_project_graph
+            //     .on(
+            //         |event: Arc<ExtendProjectGraphEvent>,
+            //          data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+            //             let mut data = data.write().await;
 
-                        for (id, _) in &event.sources {
-                            // Add dupes
-                            data.aliases.push((id.to_owned(), format!("@{id}")));
-                            data.aliases.push((id.to_owned(), format!("@{id}")));
-                        }
+            //             for (id, _) in &event.sources {
+            //                 // Add dupes
+            //                 data.aliases.push((id.to_owned(), format!("@{id}")));
+            //                 data.aliases.push((id.to_owned(), format!("@{id}")));
+            //             }
 
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
+            //             Ok(EventState::Continue)
+            //         },
+            //     )
+            //     .await;
 
             let graph = mock
                 .mock_workspace_graph_with_options(WorkspaceMockOptions {

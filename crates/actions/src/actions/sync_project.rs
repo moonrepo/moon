@@ -5,16 +5,15 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
 use moon_pdk_api::SyncProjectInput;
-use moon_platform::PlatformManager;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
-#[instrument(skip(action, action_context, app_context, workspace_graph))]
+#[instrument(skip(action, _action_context, app_context, workspace_graph))]
 pub async fn sync_project(
     action: &mut Action,
-    action_context: Arc<ActionContext>,
+    _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
     node: &SyncProjectNode,
@@ -66,20 +65,10 @@ pub async fn sync_project(
         dependencies.insert(dep_config.id.to_owned(), dep_project);
     }
 
+    // TODO
     // Sync the projects and return true if any files have been mutated
     let mut mutated_files = false;
     let mut changed_files = vec![];
-
-    // Loop through legacy platforms
-    for toolchain_id in project.get_enabled_toolchains() {
-        if let Ok(platform) = PlatformManager::read().get_by_toolchain(toolchain_id)
-            && platform
-                .sync_project(&action_context, &project, &dependencies)
-                .await?
-        {
-            mutated_files = true;
-        }
-    }
 
     // Loop through each toolchain and sync
     for sync_result in app_context

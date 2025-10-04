@@ -1,4 +1,3 @@
-use crate::generate_platform_manager;
 use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
@@ -7,7 +6,6 @@ use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
-use moon_platform::PlatformManager;
 use moon_plugin::MoonHostData;
 use moon_project_builder::*;
 use moon_project_graph::Project;
@@ -18,12 +16,11 @@ use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 pub use moon_workspace_graph::WorkspaceGraph;
 use proto_core::{ProtoConfig, ProtoEnvironment, warpgate::find_debug_locator};
-use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct WorkspaceMocker {
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
@@ -46,6 +43,12 @@ impl WorkspaceMocker {
             proto_env: ProtoEnvironment::new_testing(root).unwrap(),
             working_dir: root.to_path_buf(),
             workspace_root: root.to_path_buf(),
+            toolchain_config: {
+                let mut config = ToolchainConfig::default();
+                config.inherit_system_plugin();
+                config.inherit_plugin_locators().unwrap();
+                config
+            },
             ..Default::default()
         }
     }
@@ -79,11 +82,9 @@ impl WorkspaceMocker {
         self
     }
 
-    pub fn set_toolchain_config(mut self, mut config: ToolchainConfig) -> Self {
-        config.inherit_plugin_locators().unwrap();
-
+    pub fn set_toolchain_config(mut self, config: ToolchainConfig) -> Self {
         self.toolchain_config = config;
-        self
+        self.update_toolchain_config(|_| {})
     }
 
     pub fn set_working_dir(mut self, dir: PathBuf) -> Self {
@@ -100,6 +101,7 @@ impl WorkspaceMocker {
 
     pub fn update_toolchain_config(mut self, mut op: impl FnMut(&mut ToolchainConfig)) -> Self {
         op(&mut self.toolchain_config);
+        self.toolchain_config.inherit_system_plugin();
         self.toolchain_config.inherit_plugin_locators().unwrap();
         self
     }
@@ -141,16 +143,6 @@ impl WorkspaceMocker {
         })
     }
 
-    #[allow(deprecated)]
-    pub fn with_legacy_toolchains(self) -> Self {
-        self.update_toolchain_config(|config| {
-            config.bun = Some(BunConfig::default());
-            config.deno = Some(DenoConfig::default());
-            config.node = Some(NodeConfig::default());
-            config.rust = Some(RustConfig::default());
-        })
-    }
-
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchain_config(|config| {
             for id in [
@@ -183,17 +175,7 @@ impl WorkspaceMocker {
         })
     }
 
-    #[allow(deprecated)]
-    pub fn with_default_toolchains(self) -> Self {
-        self.update_toolchain_config(|config| {
-            if config.node.is_none() {
-                config.node = Some(NodeConfig::default());
-            }
-        })
-    }
-
     pub fn with_global_envs(mut self) -> Self {
-        #[allow(deprecated)]
         let home_dir = std::env::home_dir().unwrap();
 
         self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();
@@ -366,16 +348,6 @@ impl WorkspaceMocker {
         console
     }
 
-    pub async fn mock_platform_manager(&self) -> PlatformManager {
-        generate_platform_manager(
-            &self.workspace_root,
-            &self.toolchain_config,
-            Arc::new(self.proto_env.clone()),
-            Arc::new(self.mock_console()),
-        )
-        .await
-    }
-
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
         let mut registry = ToolchainRegistry::new(
             MoonHostData {
@@ -406,8 +378,6 @@ impl WorkspaceMocker {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchain_config.get_enabled(),
-            extend_project: Emitter::<ExtendProjectEvent>::new(),
-            extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),

@@ -82,6 +82,7 @@ export interface DockerScaffoldConfig {
 	 * the workspace skeleton.
 	 *
 	 * @default true
+	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean;
 	/**
@@ -629,6 +630,7 @@ export interface PartialDockerScaffoldConfig {
 	 * the workspace skeleton.
 	 *
 	 * @default true
+	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean | null;
 	/**

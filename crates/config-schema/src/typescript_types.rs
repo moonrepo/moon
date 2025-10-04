@@ -31,7 +31,6 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "PartialTaskDependencyConfig".into(),
                 "PartialTaskOptionsConfig".into(),
                 "PartialToolchainPluginConfig".into(),
-                "PlatformType".into(),
                 "PluginLocator".into(),
                 "TaskArgs".into(),
                 "TaskConfig".into(),
@@ -57,7 +56,6 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                     "./tasks-config".into(),
                     vec![
                         "Input".into(),
-                        "PlatformType".into(),
                         "PartialTaskConfig".into(),
                         "TaskConfig".into(),
                     ],

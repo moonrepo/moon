@@ -5,7 +5,7 @@ use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project::Project;
 use moon_task::Target;
-use moon_toolchain::{Runtime, ToolchainSpec};
+use moon_toolchain::ToolchainSpec;
 use serde::Serialize;
 use std::sync::Arc;
 use std::time::Duration;
@@ -31,22 +31,12 @@ pub enum Event<'data> {
     // Installing deps
     DependenciesInstalling {
         project: Option<&'data Project>,
-
-        // Old
-        runtime: Option<&'data Runtime>,
-
-        // New
         root: Option<&'data WorkspaceRelativePathBuf>,
         toolchain: Option<&'data Id>,
     },
     DependenciesInstalled {
         error: Option<String>,
         project: Option<&'data Project>,
-
-        // Old
-        runtime: Option<&'data Runtime>,
-
-        // New
         root: Option<&'data WorkspaceRelativePathBuf>,
         toolchain: Option<&'data Id>,
     },
@@ -102,13 +92,6 @@ pub enum Event<'data> {
     },
 
     // Installing a tool
-    ToolInstalling {
-        runtime: &'data Runtime,
-    },
-    ToolInstalled {
-        error: Option<String>,
-        runtime: &'data Runtime,
-    },
     ToolchainInstalling {
         spec: &'data ToolchainSpec,
     },
@@ -139,8 +122,6 @@ impl Event<'_> {
             Event::PipelineCompleted { .. } => "pipeline.completed",
             Event::TaskRunning { .. } => "task.running",
             Event::TaskRan { .. } => "task.ran",
-            Event::ToolInstalling { .. } => "tool.installing",
-            Event::ToolInstalled { .. } => "tool.installed",
             Event::ToolchainInstalling { .. } => "toolchain.installing",
             Event::ToolchainInstalled { .. } => "toolchain.installed",
             Event::WorkspaceSyncing => "workspace.syncing",

@@ -14,7 +14,7 @@ use schematic::{Config, ConfigLoader as Loader};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ConfigLoader {
     pub finder: ConfigFinder,
 }

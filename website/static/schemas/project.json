@@ -92,20 +92,6 @@
         }
       ]
     },
-    "platform": {
-      "title": "platform",
-      "description": "The default platform for all tasks within the project, if their platform is unknown.",
-      "default": "unknown",
-      "deprecated": true,
-      "anyOf": [
-        {
-          "$ref": "#/definitions/PlatformType"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "project": {
       "title": "project",
       "description": "Expanded information about the project.",
@@ -156,16 +142,6 @@
         }
       ],
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
-    },
-    "type": {
-      "title": "type",
-      "description": "The layer within the project stack, for categorizing.",
-      "default": "unknown",
-      "allOf": [
-        {
-          "$ref": "#/definitions/LayerType"
-        }
-      ]
     },
     "workspace": {
       "title": "workspace",
@@ -523,19 +499,6 @@
         }
       ]
     },
-    "PlatformType": {
-      "description": "Platforms that each programming language can belong to.",
-      "type": "string",
-      "enum": [
-        "bun",
-        "deno",
-        "node",
-        "python",
-        "rust",
-        "system",
-        "unknown"
-      ]
-    },
     "PluginLocator": {
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
@@ -804,46 +767,13 @@
       },
       "additionalProperties": false
     },
-    "ProjectToolchainCommonToolConfig": {
-      "description": "Overrides top-level toolchain settings.",
-      "type": "object",
-      "properties": {
-        "version": {
-          "title": "version",
-          "description": "Version of the tool this project will use.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/UnresolvedVersionSpec"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Overrides top-level toolchain settings."
-    },
     "ProjectToolchainConfig": {
       "description": "Overrides top-level toolchain settings, scoped to this project.",
       "type": "object",
       "properties": {
-        "bun": {
-          "title": "bun",
-          "description": "Overrides bun settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `bun` settings."
-        },
         "default": {
           "title": "default",
-          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
+          "description": "The default toolchain(s) to inherit for the project, and all of its tasks.",
           "anyOf": [
             {
               "anyOf": [
@@ -865,7 +795,7 @@
         },
         "defaults": {
           "title": "defaults",
-          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
+          "description": "The default toolchain(s) to inherit for the project, and all of its tasks.",
           "anyOf": [
             {
               "anyOf": [
@@ -885,32 +815,6 @@
             }
           ]
         },
-        "deno": {
-          "title": "deno",
-          "description": "Overrides deno settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `deno` settings."
-        },
-        "node": {
-          "title": "node",
-          "description": "Overrides node settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `node` settings."
-        },
         "plugins": {
           "title": "plugins",
           "description": "Overrides toolchains by their ID.",
@@ -921,32 +825,6 @@
           "propertyNames": {
             "$ref": "#/definitions/Id"
           }
-        },
-        "python": {
-          "title": "python",
-          "description": "Overrides python settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `python` settings."
-        },
-        "rust": {
-          "title": "rust",
-          "description": "Overrides rust settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `rust` settings."
         }
       },
       "additionalProperties": false,
@@ -1183,16 +1061,6 @@
             }
           ],
           "markdownDescription": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs."
-        },
-        "platform": {
-          "title": "platform",
-          "description": "The platform in which the task will be ran in. The platform determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
-          "default": "unknown",
-          "allOf": [
-            {
-              "$ref": "#/definitions/PlatformType"
-            }
-          ]
         },
         "preset": {
           "title": "preset",
@@ -1867,10 +1735,6 @@
           "propertyNames": {
             "type": "string"
           }
-        },
-        "disabled": {
-          "title": "disabled",
-          "type": "boolean"
         },
         "plugin": {
           "title": "plugin",

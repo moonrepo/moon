@@ -7,16 +7,13 @@ use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
-use moon_toolchain::detect::{
-    detect_project_language, detect_project_toolchains, get_project_toolchains,
-};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
@@ -118,12 +115,16 @@ impl<'app> ProjectBuilder<'app> {
     pub async fn inherit_local_config(&mut self, config: &ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
-            let language = detect_project_language(&self.root);
+            let language = self
+                .context
+                .toolchain_registry
+                .detect_project_language(&self.root)
+                .await?;
 
             trace!(
                 project_id = self.id.as_str(),
                 language = ?language,
-                "Unknown project language, detecting from environment",
+                "Unknown project language, attempted to detect from environment",
             );
 
             language
@@ -135,42 +136,11 @@ impl<'app> ProjectBuilder<'app> {
         let mut toolchains = FxHashSet::default();
 
         // 1 - Explicitly configured by the user
-        #[allow(deprecated)]
         if let Some(default_ids) = &config.toolchain.default {
-            for default_id in default_ids.to_list() {
-                toolchains.extend(get_project_toolchains(default_id));
-            }
-        } else if let Some(platform) = &config.platform {
-            let default_id = platform.get_toolchain_id();
-
-            toolchains.extend(get_project_toolchains(&default_id));
-
-            debug!(
-                project_id = self.id.as_str(),
-                "The {} project setting has been deprecated, use {} instead, or rely on configuration/environment detection instead",
-                color::property("platform"),
-                color::property("toolchain.default"),
-            );
+            toolchains.extend(default_ids.to_owned_list());
         }
 
-        // 2 - Infer from language if nothing configured
-        if toolchains.is_empty() {
-            // TODO deprecate in v2
-            toolchains.extend(detect_project_toolchains(
-                self.context.workspace_root,
-                &self.root,
-                &self.language,
-            ));
-
-            trace!(
-                project_id = self.id.as_str(),
-                language = ?self.language,
-                toolchains = ?toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
-                "Unknown toolchain, inferring from project language",
-            );
-        }
-
-        // 3 - Detect from plugins
+        // 2 - Detected from plugins
         toolchains.extend(
             self.context
                 .toolchain_registry

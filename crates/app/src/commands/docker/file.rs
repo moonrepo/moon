@@ -220,10 +220,9 @@ async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Res
     };
 
     let toolchain_registry = session.get_toolchain_registry().await?;
+    let toolchain = toolchain_registry.load(&toolchain_id).await?;
 
-    if let Ok(toolchain) = toolchain_registry.load(&toolchain_id).await
-        && toolchain.has_func("define_docker_metadata").await
-    {
+    if toolchain.has_func("define_docker_metadata").await {
         let metadata = toolchain
             .define_docker_metadata(DefineDockerMetadataInput {
                 context: toolchain_registry.create_context(),

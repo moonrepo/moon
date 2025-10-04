@@ -32,6 +32,13 @@ fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {
     UnresolvedVersionSpec::Semantic(SemVer(version))
 }
 
+fn create_node_spec() -> ToolchainSpec {
+    ToolchainSpec::new(
+        Id::raw("node"),
+        UnresolvedVersionSpec::parse("20.0.0").unwrap(),
+    )
+}
+
 fn create_tier_spec(tier: u8) -> ToolchainSpec {
     create_tier_spec_with_name(format!("tc-tier{tier}"))
 }
@@ -453,9 +460,9 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
-                    ActionNode::run_task(RunTaskNode::new(task.target.clone(),))
+                    ActionNode::run_task(RunTaskNode::new(task.target.clone()))
                 ]
             );
         }
@@ -494,9 +501,9 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
-                    ActionNode::run_task(RunTaskNode::new(task.target.clone(),))
+                    ActionNode::run_task(RunTaskNode::new(task.target.clone()))
                 ]
             );
         }
@@ -645,9 +652,9 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
-                    ActionNode::run_task(RunTaskNode::new(task.target.clone(),)),
+                    ActionNode::run_task(RunTaskNode::new(task.target.clone())),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target.clone());
                         node.args = vec!["a".into(), "b".into(), "c".into()];
@@ -706,7 +713,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target);
@@ -761,7 +768,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target);
@@ -827,9 +834,9 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
-                    ActionNode::run_task(RunTaskNode::new(task.target.clone(),)),
+                    ActionNode::run_task(RunTaskNode::new(task.target.clone())),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target.clone());
                         node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
@@ -888,7 +895,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target);
@@ -968,7 +975,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::setup_proto(create_proto_version()),
                     ActionNode::setup_toolchain(SetupToolchainNode {
-                        toolchain: ToolchainSpec::new_global(Id::raw("node")),
+                        toolchain: create_node_spec(),
                     }),
                     ActionNode::run_task(RunTaskNode::new(task.target.clone())),
                     ActionNode::run_task({

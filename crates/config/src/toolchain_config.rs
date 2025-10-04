@@ -59,6 +59,13 @@ impl ToolchainPluginConfig {
     }
 }
 
+// fn default_plugins<C>(_ctx: &C) -> DefaultValueResult<FxHashMap<Id, ToolchainPluginConfig>> {
+//     Ok(Some(FxHashMap::from_iter([(
+//         Id::raw("system"),
+//         ToolchainPluginConfig::default(),
+//     )])))
+// }
+
 config_struct!(
     /// Configures all toolchains.
     /// Docs: https://moonrepo.dev/docs/config/toolchain
@@ -158,6 +165,10 @@ impl ToolchainConfig {
                 "rust_toolchain",
                 "0.3.0",
             )),
+            "system" => Some(find_debug_locator_with_url_fallback(
+                "system_toolchain",
+                "0.0.1",
+            )),
             "typescript" => Some(find_debug_locator_with_url_fallback(
                 "typescript_toolchain",
                 "0.3.0",
@@ -168,6 +179,14 @@ impl ToolchainConfig {
             )),
             _ => None,
         }
+    }
+
+    pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
+        self.inherit_proto_for_plugins(proto_config)?;
+        self.inherit_system_plugin();
+        self.inherit_plugin_locators()?;
+
+        Ok(())
     }
 
     pub fn inherit_proto_for_plugins(
@@ -209,11 +228,13 @@ impl ToolchainConfig {
         Ok(())
     }
 
-    pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
-        self.inherit_proto_for_plugins(proto_config)?;
-        self.inherit_plugin_locators()?;
+    pub fn inherit_system_plugin(&mut self) {
+        let system = Id::raw("system");
 
-        Ok(())
+        if !self.plugins.contains_key(&system) {
+            self.plugins
+                .insert(system, ToolchainPluginConfig::default());
+        }
     }
 
     pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {
@@ -225,6 +246,7 @@ impl ToolchainConfig {
             "node",
             "npm",
             "rust",
+            "system",
             "typescript",
             // We only need 1 package manager while testing!
             // "pnpm",
@@ -249,7 +271,7 @@ impl ToolchainConfig {
 
             match id.as_str() {
                 "bun" | "deno" | "go" | "javascript" | "node" | "npm" | "pnpm" | "rust"
-                | "typescript" | "yarn" => {
+                | "system" | "typescript" | "yarn" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 other => {

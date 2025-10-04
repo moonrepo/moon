@@ -38,7 +38,8 @@ mod toolchain_config {
             load_config_from_root(path, &ProtoConfig::default())
         });
 
-        assert!(config.plugins.is_empty());
+        // system
+        assert_eq!(config.plugins.len(), 1);
     }
 
     mod extends {

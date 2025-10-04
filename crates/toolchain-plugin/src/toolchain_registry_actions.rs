@@ -1,7 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
-use moon_config::ProjectConfig;
+use moon_config::{LanguageType, ProjectConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
@@ -24,8 +24,6 @@ use std::path::{Path, PathBuf};
 // These implementations aggregate the call results from all toolchains
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
-
-// TODO: Remove the Ok(toolchain) checks once everything is on the registry!
 
 pub struct CommandAugment<'a> {
     pub add_env: bool,
@@ -190,6 +188,33 @@ impl ToolchainRegistry {
             .collect())
     }
 
+    pub async fn detect_project_language(&self, dir: &Path) -> miette::Result<LanguageType> {
+        let mut detected = vec![];
+
+        for id in self.get_plugin_ids() {
+            let toolchain = self.load(id).await?;
+
+            if let Some(language) = &toolchain.metadata.language
+                && toolchain.detect_project_usage(dir)?
+                && language != &LanguageType::Unknown
+            {
+                detected.push(language.clone());
+            }
+        }
+
+        if detected.is_empty() {
+            return Ok(LanguageType::Unknown);
+        }
+
+        let language = detected.remove(0);
+
+        if language == LanguageType::JavaScript && detected.contains(&LanguageType::TypeScript) {
+            return Ok(LanguageType::TypeScript);
+        }
+
+        Ok(language)
+    }
+
     pub async fn detect_project_usage<InFn>(
         &self,
         dir: &Path,
@@ -201,9 +226,7 @@ impl ToolchainRegistry {
         let mut detected = FxHashSet::default();
 
         for id in self.get_plugin_ids() {
-            if let Ok(toolchain) = self.load(id).await
-                && toolchain.detect_project_usage(dir)?
-            {
+            if self.load(id).await?.detect_project_usage(dir)? {
                 detected.insert(Id::raw(id));
             }
         }
@@ -233,9 +256,7 @@ impl ToolchainRegistry {
         let mut detected = FxHashSet::default();
 
         for id in ids {
-            if let Ok(toolchain) = self.load(id).await
-                && toolchain.detect_task_usage(command, args)?
-            {
+            if self.load(id).await?.detect_task_usage(command, args)? {
                 detected.insert(Id::raw(id));
             }
         }

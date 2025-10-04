@@ -5,17 +5,23 @@ use std::str::FromStr;
 
 /// Supported programming languages that each project can be written in.
 #[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq)]
+#[config(rename_all = "lowercase")]
 pub enum LanguageType {
     Bash,
     Batch,
+    #[variant(alias = "c++")]
+    CPlusPlus,
+    #[variant(alias = "#")]
+    CSharp,
+    #[variant(alias = ".net")]
+    DotNet,
     Go,
-    #[variant(value = "javascript")]
     JavaScript,
     Php,
     Python,
     Ruby,
     Rust,
-    #[variant(value = "typescript")]
+    Swift,
     TypeScript,
 
     /// Not explicitly set or detected.

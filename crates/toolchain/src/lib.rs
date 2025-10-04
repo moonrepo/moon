@@ -1,4 +1,3 @@
-pub mod detect;
 mod spec;
 
 pub use moon_config::{UnresolvedVersionSpec, VersionSpec};

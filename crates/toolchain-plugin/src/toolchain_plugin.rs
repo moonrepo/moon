@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moon_common::Id;
 use moon_config::schematic::schema::indexmap::IndexSet;
-use moon_feature_flags::glob_walk;
+use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
@@ -9,7 +9,7 @@ use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
-use starbase_utils::glob::GlobSet;
+use starbase_utils::glob::{GlobSet, GlobWalkOptions};
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -220,8 +220,12 @@ impl ToolchainPlugin {
             return Ok(false);
         }
 
-        // Oh no, heavy lookup...
-        let results = glob_walk(dir, &self.metadata.config_file_globs)?;
+        // Oh no, heavy lookup... but at least it's cached
+        let results = glob_walk_with_options(
+            dir,
+            &self.metadata.config_file_globs,
+            GlobWalkOptions::default().cache(),
+        )?;
 
         Ok(!results.is_empty())
     }

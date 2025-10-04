@@ -19,9 +19,17 @@
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `.moon/toolchain.yml`
     - Removed the `node.addEnginesConstraint` setting.
+- **Projects**
+  - The primary `language` is now detected from toolchains, instead of being a hardcoded
+    implementation. The result may now differ, as the first toolchain in the list will be used.
 - **Toolchains**
   - Removed the legacy built-in platform system. WASM plugins have replaced their functionality.
     - Some configuration settings may have changed. Refer to the documentation.
 - **Webhooks**
   - Removed the `tool.*` events. Use `toolchain.*` events instead.
   - Removed the `runtime` field from `dependencies.*` events. Use `toolchain` field instead.
+
+#### 🚀 Updates
+
+- **WASM API**
+  - Added `RegisterToolchainOutput.language` field.

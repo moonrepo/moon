@@ -91,8 +91,6 @@ impl<'task> CommandBuilder<'task> {
         command.envs_if_not_global(&task.env);
 
         match &task.script {
-            // If a script, overwrite the binary (command) with the script and reset args,
-            // but also inherit all environment variables and paths from the platform
             Some(script) => {
                 command.bin = script.into();
                 command.args.clear();

@@ -113,8 +113,10 @@ impl<'app> ProjectBuilder<'app> {
     /// Inherit the local config and then detect applicable language and toolchain fields.
     #[instrument(skip_all)]
     pub async fn inherit_local_config(&mut self, config: &ProjectConfig) -> miette::Result<()> {
+        let mut infer_toolchain_from_language = true;
+
         // Use configured language or detect from environment
-        self.language = if config.language == LanguageType::Unknown {
+        self.language = if config.language.is_unknown() {
             let language = self
                 .context
                 .toolchain_registry
@@ -127,6 +129,7 @@ impl<'app> ProjectBuilder<'app> {
                 "Unknown project language, attempted to detect from environment",
             );
 
+            infer_toolchain_from_language = false;
             language
         } else {
             config.language.clone()
@@ -140,14 +143,26 @@ impl<'app> ProjectBuilder<'app> {
             toolchains.extend(default_ids.to_owned_list());
         }
 
+        // 2 - Inferred from the language
+        if infer_toolchain_from_language && !self.language.is_unknown() {
+            toolchains.extend(
+                self.context
+                    .toolchain_registry
+                    .detect_project_toolchain_from_language(&self.language)
+                    .await?,
+            );
+        }
+
         // 2 - Detected from plugins
         toolchains.extend(
             self.context
                 .toolchain_registry
-                .detect_project_usage(&self.root, |registry, toolchain| DefineRequirementsInput {
-                    context: registry.create_context(),
-                    toolchain_config: registry
-                        .create_config(&toolchain.id, self.context.toolchain_config),
+                .detect_project_toolchain_from_usage(&self.root, |registry, toolchain| {
+                    DefineRequirementsInput {
+                        context: registry.create_context(),
+                        toolchain_config: registry
+                            .create_config(&toolchain.id, self.context.toolchain_config),
+                    }
                 })
                 .await?,
         );

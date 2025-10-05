@@ -22,8 +22,8 @@
 - **Projects**
   - The primary `language` is now detected from toolchains, instead of being a hardcoded
     implementation. The result may now differ, as the first toolchain in the list will be used.
-  - Toolchains are no longer inferred from the project language. They are now detected based on
-    files in the project.
+    Additionally, languages that don't have a toolchain yet, like PHP or Ruby, will not be detected
+    and must be explicitly configured.
 - **Toolchains**
   - Removed the legacy built-in platform system. WASM plugins have replaced their functionality.
     - Some configuration settings may have changed. Refer to the documentation.

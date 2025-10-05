@@ -194,7 +194,7 @@ impl ToolchainRegistry {
         for toolchain in self.load_many(self.get_plugin_ids()).await? {
             if let Some(language) = &toolchain.metadata.language
                 && toolchain.detect_project_usage(dir)?
-                && language != &LanguageType::Unknown
+                && !language.is_unknown()
             {
                 detected.push(language.clone());
             }
@@ -213,7 +213,27 @@ impl ToolchainRegistry {
         Ok(language)
     }
 
-    pub async fn detect_project_usage<InFn>(
+    pub async fn detect_project_toolchain_from_language(
+        &self,
+        language: &LanguageType,
+    ) -> miette::Result<Vec<Id>> {
+        let mut detected = vec![];
+
+        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+            if toolchain
+                .metadata
+                .language
+                .as_ref()
+                .is_some_and(|lang| lang == language)
+            {
+                detected.push(toolchain.id.clone());
+            }
+        }
+
+        Ok(detected)
+    }
+
+    pub async fn detect_project_toolchain_from_usage<InFn>(
         &self,
         dir: &Path,
         input_factory: InFn,

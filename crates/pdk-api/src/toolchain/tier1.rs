@@ -43,7 +43,12 @@ api_struct!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub exe_names: Vec<String>,
 
-        /// The programming language this toolchain applies to.
+        /// The programming language this toolchain applies to. This value
+        /// will be used for 2 purposes:
+        ///   - If the project language is unknown, it will use this value
+        ///     if the project is toolchain aware based on file detection.
+        ///   - If the project language is defined, it will infer the
+        ///     the toolchain from this value.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub language: Option<LanguageType>,
 

@@ -39,6 +39,10 @@ impl LanguageType {
     pub fn other(id: &str) -> Result<LanguageType, IdError> {
         Ok(Self::Other(Id::new(id)?))
     }
+
+    pub fn is_unknown(&self) -> bool {
+        self == &Self::Unknown
+    }
 }
 
 // Required to handle the other and unknown variants

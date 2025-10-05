@@ -68,7 +68,7 @@ fn get_input_files(
 mod task_hasher {
     use super::*;
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn filters_out_files_matching_ignore_pattern() {
         let sandbox = create_sandbox("ignore-patterns");
         sandbox.enable_git();
@@ -93,7 +93,7 @@ mod task_hasher {
     mod input_aggregation {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -116,7 +116,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_dirs() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -139,7 +139,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_globs_star() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -162,7 +162,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_globs_nested_star() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -192,7 +192,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_globs_groups() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -215,7 +215,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn excludes_glob_negations() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -238,7 +238,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_none() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -254,7 +254,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), Vec::<&str>::new());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_local_touched_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -275,7 +275,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), ["created.txt"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_env_file() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -299,7 +299,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_custom_env_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -324,7 +324,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_moon_project_config() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -339,7 +339,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), ["moon.yml"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "task_hasher::missing_input_file")]
         async fn errors_if_optional_false_and_file_missing() {
             let sandbox = create_sandbox("inputs");
@@ -353,7 +353,7 @@ mod task_hasher {
             generate_hash(&project, &task, &wg, &app, &vcs_config).await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_if_optional_true_and_file_missing() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -370,7 +370,7 @@ mod task_hasher {
     mod output_filtering {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_file_output_file() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -398,7 +398,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_file_output_dir() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -421,7 +421,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_file_output_glob() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -444,7 +444,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_glob_output_file() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -475,7 +475,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_glob_output_dir() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -503,7 +503,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_glob_output_glob() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();

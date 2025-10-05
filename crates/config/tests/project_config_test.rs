@@ -552,8 +552,8 @@ toolchain:
                 |path| load_config_from_root(path, "."),
             );
 
-            assert!(config.toolchain.plugins.get("node").is_some());
-            assert!(config.toolchain.plugins.get("rust").is_none());
+            assert!(config.toolchain.plugins.contains_key("node"));
+            assert!(config.toolchain.plugins.contains_key("rust"));
 
             if let ProjectToolchainEntry::Config(node) =
                 config.toolchain.plugins.get("node").unwrap()

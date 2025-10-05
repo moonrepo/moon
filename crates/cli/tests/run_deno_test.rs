@@ -1,4 +1,4 @@
-use moon_config::PartialDenoConfig;
+use moon_config::PartialToolchainPluginConfig;
 use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox_with_config, get_deno_fixture_configs,
     predicates::prelude::*,
@@ -12,11 +12,15 @@ fn deno_sandbox() -> Sandbox {
 #[allow(deprecated)]
 fn deno_sandbox_with_config<C>(callback: C) -> Sandbox
 where
-    C: FnOnce(&mut PartialDenoConfig),
+    C: FnOnce(&mut PartialToolchainPluginConfig),
 {
     let (workspace_config, mut toolchain_config, tasks_config) = get_deno_fixture_configs();
 
-    if let Some(deno_config) = &mut toolchain_config.deno {
+    if let Some(deno_config) = toolchain_config
+        .plugins
+        .as_mut()
+        .and_then(|cfg| cfg.get_mut("deno"))
+    {
         callback(deno_config);
     }
 

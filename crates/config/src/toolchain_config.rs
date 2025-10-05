@@ -229,12 +229,7 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_system_plugin(&mut self) {
-        let system = Id::raw("system");
-
-        if !self.plugins.contains_key(&system) {
-            self.plugins
-                .insert(system, ToolchainPluginConfig::default());
-        }
+        self.plugins.entry(Id::raw("system")).or_insert_default()
     }
 
     pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {

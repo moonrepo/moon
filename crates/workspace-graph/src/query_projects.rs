@@ -115,7 +115,7 @@ impl WorkspaceGraph {
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
                             condition.matches(ids, &target.task_id).unwrap_or_default()
                         })),
-                        Field::TaskPlatform(ids) | Field::TaskToolchain(ids) => Ok(self
+                        Field::TaskToolchain(ids) => Ok(self
                             .tasks
                             .get_all_for_project(&project.id, false)?
                             .iter()

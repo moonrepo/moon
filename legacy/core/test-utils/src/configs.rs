@@ -150,7 +150,7 @@ pub fn get_projects_fixture_configs() -> (
             ("noConfig".try_into().unwrap(), "no-config".to_owned()),
             ("metadata".try_into().unwrap(), "metadata".to_owned()),
             ("tasks".try_into().unwrap(), "tasks".to_owned()),
-            ("platforms".try_into().unwrap(), "platforms".to_owned()),
+            ("toolchains".try_into().unwrap(), "toolchains".to_owned()),
             // Deps
             ("foo".try_into().unwrap(), "deps/foo".to_owned()),
             ("bar".try_into().unwrap(), "deps/bar".to_owned()),

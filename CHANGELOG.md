@@ -11,7 +11,9 @@
   - Removed the `moon migrate from-package-json` command.
   - Removed the `moon migrate from-turborepo` command. Use the `migrate-turborepo` extension
     instead.
+  - Removed the `--platform` flag from all applicable commands. Use the `--toolchain` flag instead.
 - **Configuration**
+  - Removed the `$taskPlatform` token. Use `$taskToolchain` instead.
   - `moon.yml`
     - Removed the `type` alias. Use `layer` instead.
     - Removed the `platform` setting. Use `toolchain.default` instead.

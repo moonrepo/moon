@@ -1426,7 +1426,7 @@ mod token_expander {
 
             task.inputs = vec![
                 Input::TokenVar("$target".into()),
-                Input::TokenVar("$taskPlatform".into()),
+                Input::TokenVar("$taskToolchain".into()),
             ];
 
             let context = create_context(sandbox.path());

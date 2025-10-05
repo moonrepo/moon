@@ -3,7 +3,7 @@ language: unknown
 tasks:
   system:
     command: noop
-    platform: system
+    toolchain: system
   node:
     command: node --version
-    platform: node
+    toolchain: node

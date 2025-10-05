@@ -12,7 +12,6 @@ import type {
 	Input,
 	Output,
 	PartialInheritedTasksConfig,
-	PlatformType,
 	TaskDependencyConfig,
 	TaskDependencyType,
 	TaskMergeStrategy,
@@ -102,7 +101,6 @@ export interface Task {
 	outputs: Output[];
 	outputFiles: Record<string, TaskFileOutput>;
 	outputGlobs: Record<string, TaskGlobOutput>;
-	platform: PlatformType;
 	preset: TaskPreset | null;
 	script: string | null;
 	state: TaskState;
@@ -130,7 +128,6 @@ export interface Project {
 	};
 	language: LanguageType;
 	layer: LayerType;
-	platform: PlatformType;
 	root: string;
 	source: string;
 	stack: StackType;

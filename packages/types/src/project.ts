@@ -32,13 +32,13 @@ export interface FileGroup {
 }
 
 export interface TaskOptions {
-	affectedFiles: boolean | 'args' | 'env' | null;
+	affectedFiles?: boolean | 'args' | 'env' | null;
 	affectedPassInputs: boolean;
 	allowFailure: boolean;
-	cache: boolean;
-	cacheKey: string | null;
-	cacheLifetime: string | null;
-	envFiles: string[] | null;
+	cache: boolean | 'local' | 'remote';
+	cacheKey?: string | null;
+	cacheLifetime?: string | null;
+	envFiles?: string[] | null;
 	inferInputs: boolean;
 	internal: boolean;
 	interactive: boolean;
@@ -47,19 +47,19 @@ export interface TaskOptions {
 	mergeEnv: TaskMergeStrategy;
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
-	mutex: string | null;
-	os: TaskOperatingSystem[] | null;
-	outputStyle: TaskOutputStyle | null;
+	mutex?: string | null;
+	os?: TaskOperatingSystem[] | null;
+	outputStyle?: TaskOutputStyle | null;
 	persistent: boolean;
 	priority: TaskPriority;
 	retryCount: number;
 	runDepsInParallel: boolean;
 	runInCI: boolean;
 	runFromWorkspaceRoot: boolean;
-	shell: boolean | null;
-	timeout: number | null;
-	unixShell: TaskUnixShell | null;
-	windowsShell: TaskWindowsShell | null;
+	shell?: boolean | null;
+	timeout?: number | null;
+	unixShell?: TaskUnixShell | null;
+	windowsShell?: TaskWindowsShell | null;
 }
 
 export interface TaskState {
@@ -87,25 +87,25 @@ export interface TaskFileOutput {
 export interface TaskGlobOutput {}
 
 export interface Task {
-	args: string[];
+	args?: string[];
 	command: string;
-	deps: TaskDependencyConfig[];
-	description: string | null;
-	env: Record<string, string>;
+	deps?: TaskDependencyConfig[];
+	description?: string | null;
+	env?: Record<string, string>;
 	id: Id;
-	inputs: Input[];
-	inputEnv: string[];
-	inputFiles: Record<string, TaskFileInput>;
-	inputGlobs: Record<string, TaskGlobInput>;
+	inputs?: Input[];
+	inputEnv?: string[];
+	inputFiles?: Record<string, TaskFileInput>;
+	inputGlobs?: Record<string, TaskGlobInput>;
 	options: TaskOptions;
-	outputs: Output[];
-	outputFiles: Record<string, TaskFileOutput>;
-	outputGlobs: Record<string, TaskGlobOutput>;
-	preset: TaskPreset | null;
-	script: string | null;
+	outputs?: Output[];
+	outputFiles?: Record<string, TaskFileOutput>;
+	outputGlobs?: Record<string, TaskGlobOutput>;
+	preset?: TaskPreset | null;
+	script?: string | null;
 	state: TaskState;
 	target: string;
-	toolchains: Id[];
+	toolchains?: Id[];
 	type: TaskType;
 }
 
@@ -115,33 +115,33 @@ export interface TaskFragment {
 }
 
 export interface Project {
-	alias: string | null;
+	alias?: string | null;
 	config: ProjectConfig;
-	dependencies: ProjectDependencyConfig[];
-	fileGroups: Record<string, FileGroup>;
+	dependencies?: ProjectDependencyConfig[];
+	fileGroups?: Record<string, FileGroup>;
 	id: Id;
-	inherited: {
+	inherited?: {
 		order: string[];
 		config: InheritedTasksConfig;
 		layers: Record<string, PartialInheritedTasksConfig>;
 		taskLayers: Record<string, string[]>;
-	};
+	} | null;
 	language: LanguageType;
 	layer: LayerType;
 	root: string;
 	source: string;
 	stack: StackType;
-	tasks: Record<Id, Task>;
-	taskTargets: string[];
-	toolchains: Id[];
+	tasks?: Record<Id, Task>;
+	taskTargets?: string[];
+	toolchains?: Id[];
 }
 
 export interface ProjectFragment {
-	alias: string | null;
-	dependencyScope: DependencyScope;
+	alias?: string | null;
+	dependencyScope?: DependencyScope | null;
 	id: Id;
 	source: string;
-	toolchains: Id[];
+	toolchains?: Id[];
 }
 
 export interface ProjectGraphInner {
@@ -164,15 +164,4 @@ export interface TaskGraphInner {
 
 export interface TaskGraph {
 	graph: TaskGraphInner;
-}
-
-export interface WorkspaceGraph {
-	projects_by_tag: Record<string, string[]>;
-	project_data: Record<string, { alias: string; node_index: number; source: string }>;
-	project_graph: ProjectGraphInner;
-	renamed_project_ids: Record<string, string>;
-	repo_type: 'monorepo-with-root' | 'monorepo' | 'polyrepo';
-	root_project_id: Id | null;
-	task_data: Record<string, { node_index: number }>;
-	task_graph: TaskGraphInner;
 }

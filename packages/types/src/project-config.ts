@@ -4,11 +4,7 @@
 
 import type { Id } from './common';
 import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
-import type {
-	PartialToolchainPluginConfig,
-	ToolchainPluginConfig,
-	UnresolvedVersionSpec,
-} from './toolchain-config';
+import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchain-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';

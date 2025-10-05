@@ -65,7 +65,6 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                     vec![
                         "PartialToolchainPluginConfig".into(),
                         "ToolchainPluginConfig".into(),
-                        "UnresolvedVersionSpec".into(),
                     ],
                 ),
                 ("./common".into(), vec!["Id".into()]),

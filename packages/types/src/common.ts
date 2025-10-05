@@ -9,7 +9,6 @@ export interface Duration {
 
 export interface ToolchainSpec {
 	id: Id;
-	overridden: boolean;
 	req?: string | null;
 }
 

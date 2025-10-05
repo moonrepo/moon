@@ -40,7 +40,7 @@ tasks:
       - '--wsroot'
       - '$workspaceRoot' # Alone
       - '--last'
-      - '$projectType-$language'
+      - '$projectLayer-$language'
   inputs:
     inputs:
       - 'path.ts'
@@ -61,7 +61,7 @@ tasks:
     inputs:
       - 'dir/$language/file'
       - '$unknown.*'
-      - 'file.$projectType'
+      - 'file.$projectLayer'
   outputs:
     outputs:
       - 'path'

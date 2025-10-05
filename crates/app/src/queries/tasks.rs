@@ -1,11 +1,11 @@
 use super::convert_to_regex;
 use moon_affected::Affected;
-use moon_common::{Id, color};
+use moon_common::Id;
 use moon_task::Task;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc};
-use tracing::{debug, warn};
+use tracing::debug;
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct QueryTasksOptions {

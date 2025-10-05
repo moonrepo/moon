@@ -74,12 +74,18 @@ export interface ProjectDockerConfig {
 export type LanguageType =
 	| 'bash'
 	| 'batch'
+	| 'cplusplus'
+	| 'csharp'
+	| 'dotnet'
 	| 'go'
+	| 'java'
 	| 'javascript'
+	| 'kotlin'
 	| 'php'
 	| 'python'
 	| 'ruby'
 	| 'rust'
+	| 'swift'
 	| 'typescript'
 	| 'unknown'
 	| string;
@@ -217,7 +223,7 @@ export interface ProjectConfig {
 	 * The primary programming language of the project.
 	 *
 	 * @default 'unknown'
-	 * @type {'bash' | 'batch' | 'go' | 'javascript' | 'php' | 'python' | 'ruby' | 'rust' | 'typescript' | 'unknown' | string}
+	 * @type {'bash' | 'batch' | 'cplusplus' | 'csharp' | 'dotnet' | 'go' | 'java' | 'javascript' | 'kotlin' | 'php' | 'python' | 'ruby' | 'rust' | 'swift' | 'typescript' | 'unknown' | string}
 	 */
 	language: LanguageType;
 	/**

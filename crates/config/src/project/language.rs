@@ -30,7 +30,7 @@ pub enum LanguageType {
     #[default]
     Unknown,
 
-    /// An custom language.
+    /// A custom language.
     #[variant(fallback)]
     Other(Id),
 }

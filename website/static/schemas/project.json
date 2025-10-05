@@ -348,12 +348,32 @@
           "const": "batch"
         },
         {
+          "title": "CPlusPlus",
+          "const": "cplusplus"
+        },
+        {
+          "title": "CSharp",
+          "const": "csharp"
+        },
+        {
+          "title": "DotNet",
+          "const": "dotnet"
+        },
+        {
           "title": "Go",
           "const": "go"
         },
         {
+          "title": "Java",
+          "const": "java"
+        },
+        {
           "title": "JavaScript",
           "const": "javascript"
+        },
+        {
+          "title": "Kotlin",
+          "const": "kotlin"
         },
         {
           "title": "Php",
@@ -372,6 +392,10 @@
           "const": "rust"
         },
         {
+          "title": "Swift",
+          "const": "swift"
+        },
+        {
           "title": "TypeScript",
           "const": "typescript"
         },
@@ -382,7 +406,7 @@
         },
         {
           "title": "Other",
-          "description": "An unsupported language.",
+          "description": "A custom language.",
           "type": "string"
         }
       ]

@@ -284,7 +284,7 @@ mod token_expander {
             );
             assert_eq!(
                 expander
-                    .replace_variable(&task, Cow::Borrowed("$projectType"))
+                    .replace_variable(&task, Cow::Borrowed("$projectLayer"))
                     .unwrap(),
                 "library"
             );
@@ -456,19 +456,19 @@ mod token_expander {
 
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$project $projectStack $projectType")
+                    .replace_variables(&task, "$project $projectStack $projectLayer")
                     .unwrap(),
                 "project unknown unknown"
             );
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$projectStack $project $projectType")
+                    .replace_variables(&task, "$projectStack $project $projectLayer")
                     .unwrap(),
                 "unknown project unknown"
             );
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$projectType $projectStack $project")
+                    .replace_variables(&task, "$projectLayer $projectStack $project")
                     .unwrap(),
                 "unknown unknown project"
             );

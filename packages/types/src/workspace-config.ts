@@ -42,13 +42,6 @@ export interface ConstraintsConfig {
 	 *
 	 * @default true
 	 */
-	enforceProjectTypeRelationships?: boolean;
-	/**
-	 * Enforces relationships between projects based on each project's
-	 * `layer` setting.
-	 *
-	 * @default true
-	 */
 	enforceLayerRelationships?: boolean;
 	/**
 	 * Enforces relationships between projects based on each project's
@@ -584,13 +577,6 @@ export interface PartialCodeownersConfig {
 
 /** Configures boundaries and constraints between projects. */
 export interface PartialConstraintsConfig {
-	/**
-	 * Enforces relationships between projects based on each project's
-	 * `layer` setting.
-	 *
-	 * @default true
-	 */
-	enforceProjectTypeRelationships?: boolean | null;
 	/**
 	 * Enforces relationships between projects based on each project's
 	 * `layer` setting.

@@ -13,6 +13,7 @@
     instead.
   - Removed the `--platform` flag from all applicable commands. Use the `--toolchain` flag instead.
 - **Configuration**
+  - Removed the `$projectType` token. Use `$projectLayer` instead.
   - Removed the `$taskPlatform` token. Use `$taskToolchain` instead.
   - `moon.yml`
     - Removed the `type` alias. Use `layer` instead.
@@ -21,6 +22,9 @@
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `.moon/toolchain.yml`
     - Removed the `node.addEnginesConstraint` setting.
+  - `.moon/workspace.yml`
+    - Removed the `constraints.enforceProjectTypeRelationships` alias. Use
+      `enforceLayerRelationships` instead.
 - **Projects**
   - The primary `language` is now detected from toolchains, instead of being a hardcoded
     implementation. The result may now differ, as the first toolchain in the list will be used.
@@ -32,6 +36,9 @@
 - **Webhooks**
   - Removed the `tool.*` events. Use `toolchain.*` events instead.
   - Removed the `runtime` field from `dependencies.*` events. Use `toolchain` field instead.
+- **Other**
+  - Removed the `projectType` and `taskPlatform` query properties. Use `projectLayer` and
+    `taskToolchain` instead.
 
 #### 🚀 Updates
 

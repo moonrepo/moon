@@ -553,7 +553,7 @@ toolchain:
             );
 
             assert!(config.toolchain.plugins.contains_key("node"));
-            assert!(config.toolchain.plugins.contains_key("rust"));
+            assert!(config.toolchain.plugins.contains_key("typescript"));
 
             if let ProjectToolchainEntry::Config(node) =
                 config.toolchain.plugins.get("node").unwrap()

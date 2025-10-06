@@ -12,10 +12,7 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("RUST_BACKTRACE", "1");
     cmd.env("NO_COLOR", "1");
     // Store plugins in the sandbox
-    cmd.env(
-        "MOON_HOME",
-        path.join(".moon-home").to_string_lossy().to_string(),
-    );
+    cmd.env("MOON_HOME", path.join(".moon-home"));
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");
@@ -25,6 +22,7 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage
     cmd.env("MOON_LOG", "trace");
+    cmd.env("MOON_DEBUG_PROCESS_ENV", "true");
     // Advanced debugging
     // cmd.env("PROTO_LOG", "trace");
     // cmd.env("MOON_DEBUG_WASM", "true");

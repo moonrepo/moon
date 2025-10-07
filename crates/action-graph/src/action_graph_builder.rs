@@ -25,6 +25,17 @@ use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
+macro_rules! insert_node_if_missing {
+    ($builder:ident, $node:expr) => {{
+        let node = $node;
+
+        match $builder.get_index_from_node(&node) {
+            Some(index) => index,
+            None => $builder.insert_node(node),
+        }
+    }};
+}
+
 macro_rules! insert_node_or_exit {
     ($builder:ident, $node:expr) => {{
         let node = $node;
@@ -138,7 +149,14 @@ impl<'query> ActionGraphBuilder<'query> {
         (context, ActionGraph::new(self.graph))
     }
 
-    pub fn get_spec(&self, project: &Project, toolchain_id: &Id) -> Option<ToolchainSpec> {
+    pub fn get_spec(&self, toolchain_id: &Id, project: Option<&Project>) -> Option<ToolchainSpec> {
+        match project {
+            Some(project) => self.get_project_spec(toolchain_id, project),
+            None => self.get_workspace_spec(toolchain_id),
+        }
+    }
+
+    pub fn get_project_spec(&self, toolchain_id: &Id, project: &Project) -> Option<ToolchainSpec> {
         if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
@@ -152,10 +170,10 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        self.get_root_spec(toolchain_id)
+        self.get_workspace_spec(toolchain_id)
     }
 
-    pub fn get_root_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
+    pub fn get_workspace_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = self
             .app_context
             .toolchain_config
@@ -238,7 +256,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+        let setup_toolchain_index = self.setup_toolchain(spec, Some(project)).await?;
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
 
@@ -285,7 +303,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
             // Only create this action if the plugin supports it
             if toolchain.has_func("install_dependencies").await {
-                let index = insert_node_or_exit!(
+                let index = insert_node_if_missing!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: if in_workspace { output.members } else { None },
@@ -336,7 +354,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut indexes = vec![];
 
         for toolchain_id in toolchains {
-            if let Some(spec) = self.get_spec(project, toolchain_id) {
+            if let Some(spec) = self.get_project_spec(toolchain_id, project) {
                 indexes.push(self.install_dependencies(&spec, project).await?);
             }
         }
@@ -785,7 +803,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+        let setup_toolchain_index = self.setup_toolchain(spec, project).await?;
 
         let index = insert_node_or_exit!(
             self,
@@ -815,19 +833,11 @@ impl<'query> ActionGraphBuilder<'query> {
     pub async fn setup_toolchain(
         &mut self,
         spec: &ToolchainSpec,
+        project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
         if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return Ok(None);
-        }
-
-        let node = ActionNode::setup_toolchain(SetupToolchainNode {
-            toolchain: spec.to_owned(),
-        });
-
-        // Check if the node exists to avoid all the overhead below
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(Some(index));
         }
 
         let toolchain_registry = &self.app_context.toolchain_registry;
@@ -849,9 +859,9 @@ impl<'query> ActionGraphBuilder<'query> {
                     let require_id = Id::new(require_id)?;
 
                     if require_id != spec.id
-                        && let Some(dep_spec) = self.get_root_spec(&require_id)
+                        && let Some(dep_spec) = self.get_spec(&require_id, project)
                     {
-                        edges.push(Box::pin(self.setup_toolchain(&dep_spec)).await?);
+                        edges.push(Box::pin(self.setup_toolchain(&dep_spec, project)).await?);
                     } else {
                         return Err(ActionGraphError::MissingToolchainRequirement {
                             id: spec.id.to_string(),
@@ -874,7 +884,12 @@ impl<'query> ActionGraphBuilder<'query> {
             edges.push(self.setup_proto().await?);
         }
 
-        let index = self.insert_node(node);
+        let index = insert_node_if_missing!(
+            self,
+            ActionNode::setup_toolchain(SetupToolchainNode {
+                toolchain: spec.to_owned(),
+            })
+        );
 
         self.link_optional_requirements(index, edges);
 

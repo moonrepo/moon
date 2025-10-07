@@ -4,7 +4,6 @@ use iocraft::prelude::element;
 use moon_action::ActionStatus;
 use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use moon_toolchain::ToolchainSpec;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -28,15 +27,11 @@ pub async fn setup(session: MoonSession) -> AppResult {
     let mut toolchain_count = 0;
 
     // Add new toolchain plugin setups
-    for (toolchain_id, config) in &session.toolchain_config.plugins {
-        let spec = if let Some(version) = &config.version {
-            ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned())
-        } else {
-            ToolchainSpec::new_global(toolchain_id.to_owned())
-        };
-
-        action_graph_builder.setup_toolchain(&spec).await?;
-        toolchain_count += 1;
+    for toolchain_id in session.toolchain_config.plugins.keys() {
+        if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
+            action_graph_builder.setup_toolchain(&spec, None).await?;
+            toolchain_count += 1;
+        }
     }
 
     // Early exit if no toolchains are configured

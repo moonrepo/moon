@@ -179,6 +179,49 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_multiple_toolchain_versions() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec1 = create_tier_spec(3);
+            let mut spec2 = create_tier_spec(3);
+            spec2.req = Some(create_unresolved_version(Version::new(4, 5, 6)));
+
+            let project = wg.get_project("bar").unwrap();
+            builder
+                .install_dependencies(&spec1, &project)
+                .await
+                .unwrap();
+            builder
+                .install_dependencies(&spec2, &project)
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: spec1.clone()
+                    }),
+                    ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::new(),
+                        toolchain_id: spec1.id,
+                    })
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_env_chain_if_defined() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());
@@ -2112,7 +2155,7 @@ mod action_graph_builder {
 
             let ts = ToolchainSpec::new_global(Id::raw("tc-tier1"));
 
-            builder.setup_toolchain(&ts).await.unwrap();
+            builder.setup_toolchain(&ts, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2130,7 +2173,7 @@ mod action_graph_builder {
 
             let ts = ToolchainSpec::new_global(Id::raw("tc-tier2"));
 
-            builder.setup_toolchain(&ts).await.unwrap();
+            builder.setup_toolchain(&ts, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2152,8 +2195,8 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await.unwrap();
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&system, None).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2188,11 +2231,11 @@ mod action_graph_builder {
             let node4 = node1.clone();
             let node5 = node2.clone();
 
-            builder.setup_toolchain(&node1).await.unwrap();
-            builder.setup_toolchain(&node2).await.unwrap();
-            builder.setup_toolchain(&node3).await.unwrap();
-            builder.setup_toolchain(&node4).await.unwrap();
-            builder.setup_toolchain(&node5).await.unwrap();
+            builder.setup_toolchain(&node1, None).await.unwrap();
+            builder.setup_toolchain(&node2, None).await.unwrap();
+            builder.setup_toolchain(&node3, None).await.unwrap();
+            builder.setup_toolchain(&node4, None).await.unwrap();
+            builder.setup_toolchain(&node5, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2219,8 +2262,8 @@ mod action_graph_builder {
 
             let node = create_tier_spec(3);
 
-            builder.setup_toolchain(&node).await.unwrap();
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2256,8 +2299,8 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await.unwrap();
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&system, None).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2287,8 +2330,8 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await.unwrap();
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&system, None).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2321,8 +2364,8 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&system).await.unwrap();
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&system, None).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2350,7 +2393,7 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 
@@ -2384,7 +2427,7 @@ mod action_graph_builder {
                 create_unresolved_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_toolchain(&node).await.unwrap();
+            builder.setup_toolchain(&node, None).await.unwrap();
 
             let (_, graph) = builder.build();
 

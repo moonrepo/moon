@@ -313,10 +313,11 @@ mod windows {
         let sandbox = create_empty_sandbox();
         sandbox.enable_git();
 
+        let mock = WorkspaceMocker::new(sandbox.path());
         let mut config = create_config();
         config.hook_format = VcsHookFormat::Bash;
 
-        HooksGenerator::new(&load_git(sandbox.path()), &config, sandbox.path())
+        HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
             .generate()
             .await
             .unwrap();

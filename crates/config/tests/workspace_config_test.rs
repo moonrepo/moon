@@ -85,7 +85,7 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "invalid format, try a supported extension")]
+        #[should_panic(expected = "invalid file format, try a supported extension")]
         fn not_a_yaml_file() {
             test_load_config(FILENAME, "extends: './file.txt'", |path| {
                 load_config_from_root(path)
@@ -93,7 +93,7 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "invalid format, try a supported extension")]
+        #[should_panic(expected = "invalid file format, try a supported extension")]
         fn not_a_yaml_url() {
             test_load_config(
                 FILENAME,

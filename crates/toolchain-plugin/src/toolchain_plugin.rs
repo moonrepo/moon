@@ -362,6 +362,23 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn is_installed_in_proto(
+        &self,
+        spec: Option<&UnresolvedVersionSpec>,
+    ) -> miette::Result<bool> {
+        if let (Some(tool), Some(spec)) = (&self.tool, spec) {
+            let mut tool = tool.write().await;
+            let spec = ToolSpec::new(spec.to_owned());
+
+            tool.resolve_version(&spec, false).await?;
+
+            return Ok(tool.is_installed());
+        }
+
+        Ok(false)
+    }
+
+    #[instrument(skip(self))]
     pub async fn locate_dependencies_root(
         &self,
         input: LocateDependenciesRootInput,

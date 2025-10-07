@@ -1,6 +1,7 @@
+use moon_app_context::AppContext;
+use moon_cache_item::{CacheItem, cache_item};
 use moon_common::{color, consts, is_docker, path};
 use moon_config::{VcsConfig, VcsHookFormat};
-use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
@@ -28,20 +29,30 @@ impl ShellType {
     }
 }
 
+cache_item!(
+    pub struct HooksState {
+        pub hook_names: Vec<String>,
+    }
+);
+
 pub struct HooksGenerator<'app> {
+    app_context: &'app AppContext,
     config: &'app VcsConfig,
     output_dir: PathBuf,
     shell: ShellType,
-    vcs: &'app BoxedVcs,
 }
 
 impl<'app> HooksGenerator<'app> {
-    pub fn new(vcs: &'app BoxedVcs, config: &'app VcsConfig, workspace_root: &Path) -> Self {
+    pub fn new(
+        app_context: &'app AppContext,
+        config: &'app VcsConfig,
+        workspace_root: &Path,
+    ) -> Self {
         Self {
+            app_context,
             config,
             output_dir: workspace_root.join(consts::CONFIG_DIRNAME).join("hooks"),
             shell: ShellType::detect(),
-            vcs,
         }
     }
 
@@ -49,23 +60,31 @@ impl<'app> HooksGenerator<'app> {
     pub async fn cleanup(self) -> miette::Result<()> {
         debug!("Cleaning up {} hooks", self.config.manager);
 
-        let hooks_dir = self.vcs.get_hooks_dir().await?;
+        // Remove external files
+        debug!(dir = ?self.output_dir, "Removing external hooks");
 
-        for hook_name in self.config.hooks.keys() {
-            let hook_path = hooks_dir.join(hook_name);
+        self.cleanup_previous_state().await?;
 
-            if hook_path.exists() {
-                debug!(file = ?hook_path, "Removing {} hook", color::file(hook_name));
+        self.remove_from_vcs(&self.get_hook_names()).await?;
 
-                fs::remove_file(&hook_path)?;
-            }
-        }
-
-        debug!(dir = ?self.output_dir, "Removing local hooks");
+        // Remove internal files
+        debug!(dir = ?self.output_dir, "Removing internal hooks");
 
         fs::remove_dir_all(&self.output_dir)?;
 
         Ok(())
+    }
+
+    pub async fn cleanup_previous_state(&self) -> miette::Result<CacheItem<HooksState>> {
+        let state = self
+            .app_context
+            .cache_engine
+            .state
+            .load_state::<HooksState>("vcsHooks.json")?;
+
+        self.remove_from_vcs(&state.data.hook_names).await?;
+
+        Ok(state)
     }
 
     #[instrument(skip_all)]
@@ -73,7 +92,7 @@ impl<'app> HooksGenerator<'app> {
         // Do not generate if there is no `.git` folder, otherwise this
         // will create an invalid `.git` folder, which in turn enables moon caching
         // and causes downstream issues!
-        if !self.vcs.is_enabled() {
+        if !self.app_context.vcs.is_enabled() {
             if is_docker() {
                 warn!(
                     "In a Docker container/image and .git does not exist, not generating {} hooks",
@@ -89,22 +108,27 @@ impl<'app> HooksGenerator<'app> {
             return Ok(false);
         }
 
+        let mut state = self.cleanup_previous_state().await?;
+
         debug!("Generating {} hooks", self.config.manager);
 
-        self.sync_to_vcs(self.create_hooks()?).await?;
+        self.add_to_vcs(self.create_hook_files()?).await?;
+
+        state.data.hook_names = self.get_hook_names();
+        state.save()?;
 
         Ok(true)
     }
 
     pub async fn verify_hooks_exist(&self) -> miette::Result<bool> {
-        let hooks_dir = self.vcs.get_hooks_dir().await?;
+        let hooks_dir = self.app_context.vcs.get_hooks_dir().await?;
 
         for (hook_name, commands) in &self.config.hooks {
             if commands.is_empty() {
                 continue;
             }
 
-            if !self.create_internal_hook_path(hook_name).exists()
+            if !self.get_internal_hook_path(hook_name).exists()
                 || !hooks_dir.join(hook_name).exists()
             {
                 return Ok(false);
@@ -114,7 +138,7 @@ impl<'app> HooksGenerator<'app> {
         Ok(true)
     }
 
-    fn create_internal_hook_path(&self, hook_name: &str) -> PathBuf {
+    fn get_internal_hook_path(&self, hook_name: &str) -> PathBuf {
         self.output_dir.join(if self.is_bash_format() {
             format!("{hook_name}.sh")
         } else {
@@ -122,29 +146,13 @@ impl<'app> HooksGenerator<'app> {
         })
     }
 
-    fn create_hooks(&self) -> miette::Result<FxHashMap<&'app String, PathBuf>> {
-        let mut hooks = FxHashMap::default();
-
-        for (hook_name, commands) in &self.config.hooks {
-            if commands.is_empty() {
-                continue;
-            }
-
-            let hook_path = self.create_internal_hook_path(hook_name);
-
-            debug!(file = ?hook_path, "Creating {} hook", color::file(hook_name));
-
-            self.create_hook_file(&hook_path, commands, true)?;
-
-            hooks.insert(hook_name, hook_path);
-        }
-
-        Ok(hooks)
+    fn get_hook_names(&self) -> Vec<String> {
+        self.config.hooks.keys().cloned().collect()
     }
 
-    async fn sync_to_vcs(&self, hooks: FxHashMap<&'app String, PathBuf>) -> miette::Result<()> {
-        let hooks_dir = self.vcs.get_hooks_dir().await?;
-        let work_root = self.vcs.get_working_root().await?;
+    async fn add_to_vcs(&self, hooks: FxHashMap<&'app String, PathBuf>) -> miette::Result<()> {
+        let hooks_dir = self.app_context.vcs.get_hooks_dir().await?;
+        let work_root = self.app_context.vcs.get_working_root().await?;
 
         for (hook_name, internal_path) in hooks {
             let external_path = hooks_dir.join(hook_name);
@@ -193,6 +201,22 @@ impl<'app> HooksGenerator<'app> {
                         powershell_exe, external_command.display()
                     ),
                 )?;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn remove_from_vcs(&self, hook_names: &[String]) -> miette::Result<()> {
+        let hooks_dir = self.app_context.vcs.get_hooks_dir().await?;
+
+        for hook_name in hook_names {
+            let hook_path = hooks_dir.join(hook_name);
+
+            if hook_path.exists() {
+                debug!(file = ?hook_path, "Removing {} hook", color::file(hook_name));
+
+                fs::remove_file(&hook_path)?;
             }
         }
 
@@ -277,6 +301,28 @@ impl<'app> HooksGenerator<'app> {
         self.create_file(file_path, content)?;
 
         Ok(())
+    }
+
+    fn create_hook_files(&self) -> miette::Result<FxHashMap<&'app String, PathBuf>> {
+        let mut hooks = FxHashMap::default();
+
+        fs::remove_dir_all(&self.output_dir)?;
+
+        for (hook_name, commands) in &self.config.hooks {
+            if commands.is_empty() {
+                continue;
+            }
+
+            let hook_path = self.get_internal_hook_path(hook_name);
+
+            debug!(file = ?hook_path, "Creating {} hook", color::file(hook_name));
+
+            self.create_hook_file(&hook_path, commands, true)?;
+
+            hooks.insert(hook_name, hook_path);
+        }
+
+        Ok(hooks)
     }
 
     fn is_bash_format(&self) -> bool {

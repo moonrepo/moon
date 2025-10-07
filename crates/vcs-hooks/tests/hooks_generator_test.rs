@@ -1,14 +1,10 @@
 use moon_config::VcsConfig;
-use moon_vcs::{BoxedVcs, Git};
+use moon_test_utils2::WorkspaceMocker;
 use moon_vcs_hooks::HooksGenerator;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::fs;
 use std::path::Path;
-
-fn load_git(root: &Path) -> BoxedVcs {
-    Box::new(Git::load(root, "master", &[]).unwrap())
-}
 
 fn create_config() -> VcsConfig {
     VcsConfig {
@@ -24,14 +20,18 @@ fn create_config() -> VcsConfig {
 }
 
 async fn run_generator(root: &Path) {
-    HooksGenerator::new(&load_git(root), &create_config(), root)
+    let mock = WorkspaceMocker::new(root);
+
+    HooksGenerator::new(&mock.mock_app_context(), &create_config(), root)
         .generate()
         .await
         .unwrap();
 }
 
 async fn clean_generator(root: &Path) {
-    HooksGenerator::new(&load_git(root), &create_config(), root)
+    let mock = WorkspaceMocker::new(root);
+
+    HooksGenerator::new(&mock.mock_app_context(), &create_config(), root)
         .cleanup()
         .await
         .unwrap();
@@ -41,9 +41,10 @@ async fn clean_generator(root: &Path) {
 async fn doesnt_generate_when_no_hooks() {
     let sandbox = create_empty_sandbox();
     sandbox.enable_git();
+    let mock = WorkspaceMocker::new(sandbox.path());
 
     HooksGenerator::new(
-        &load_git(sandbox.path()),
+        &mock.mock_app_context(),
         &VcsConfig::default(),
         sandbox.path(),
     )
@@ -58,9 +59,10 @@ async fn doesnt_generate_when_no_hooks() {
 async fn doesnt_generate_when_no_commands() {
     let sandbox = create_empty_sandbox();
     sandbox.enable_git();
+    let mock = WorkspaceMocker::new(sandbox.path());
 
     HooksGenerator::new(
-        &load_git(sandbox.path()),
+        &mock.mock_app_context(),
         &VcsConfig {
             hooks: FxHashMap::from_iter([
                 ("pre-commit".into(), vec![]),
@@ -97,6 +99,41 @@ async fn cleans_up_hooks() {
     assert!(!pre_commit.exists());
     assert!(!post_push.exists());
     assert!(!local_hooks.exists());
+}
+
+#[tokio::test]
+async fn removes_stale_hooks_on_subsequent_runs() {
+    let sandbox = create_empty_sandbox();
+    sandbox.enable_git();
+
+    let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+    let post_push = sandbox.path().join(".git/hooks/post-push");
+    let local_hooks = sandbox.path().join(".moon/hooks");
+
+    let mock = WorkspaceMocker::new(sandbox.path());
+    let mut config = create_config();
+
+    // First
+    HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
+        .generate()
+        .await
+        .unwrap();
+
+    assert!(pre_commit.exists());
+    assert!(post_push.exists());
+    assert!(local_hooks.exists());
+
+    // Second
+    config.hooks.remove("pre-commit");
+
+    HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
+        .generate()
+        .await
+        .unwrap();
+
+    assert!(!pre_commit.exists());
+    assert!(post_push.exists());
+    assert!(local_hooks.exists());
 }
 
 #[cfg(unix)]
@@ -276,10 +313,11 @@ mod windows {
         let sandbox = create_empty_sandbox();
         sandbox.enable_git();
 
+        let mock = WorkspaceMocker::new(sandbox.path());
         let mut config = create_config();
         config.hook_format = VcsHookFormat::Bash;
 
-        HooksGenerator::new(&load_git(sandbox.path()), &config, sandbox.path())
+        HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
             .generate()
             .await
             .unwrap();

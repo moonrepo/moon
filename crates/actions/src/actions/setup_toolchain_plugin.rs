@@ -13,6 +13,7 @@ use tracing::{debug, instrument};
 hash_content!(
     struct SetupToolchainHash<'action> {
         action_node: &'action SetupToolchainNode,
+        installed_in_proto: bool,
     }
 );
 
@@ -58,7 +59,7 @@ pub async fn setup_toolchain_plugin(
         debug!(
             toolchain_id = node.toolchain.id.as_str(),
             version = node.toolchain.req.as_ref().map(|v| v.to_string()),
-            "Skipping toolchain setup as the toolchain does not support tier 3 (downloading and installing tools)"
+            "Skipping toolchain setup as the toolchain does not support tier 3 (downloading and installing)"
         );
 
         return Ok(ActionStatus::Skipped);
@@ -68,14 +69,18 @@ pub async fn setup_toolchain_plugin(
     let Some(_lock) = create_hash_and_return_lock_if_changed(
         action,
         &app_context,
-        SetupToolchainHash { action_node: node },
+        SetupToolchainHash {
+            action_node: node,
+            installed_in_proto: toolchain
+                .is_installed_in_proto(node.toolchain.req.as_ref())
+                .await?,
+        },
     )
     .await?
     else {
         debug!(
             toolchain_id = node.toolchain.id.as_str(),
-            "No {} toolchain changes since last run, skipping toolchain setup",
-            toolchain.metadata.name
+            "Skipping toolchain setup as there are no changes since last run",
         );
 
         return Ok(ActionStatus::Skipped);

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where deleting a tool from proto's store would not trigger a re-install within
+  moon.
+- Fixed an issue where configuration `extends` did not support query strings in URLs.
+- Fixed an issue where stale VCS hooks would not be removed.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.53.2](https://github.com/moonrepo/proto/releases/tag/v0.53.2) (from 0.53.0).
+
 ## 1.41.2
 
 #### 🐞 Fixes

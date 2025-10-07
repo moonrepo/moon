@@ -5099,10 +5099,12 @@ name = "moon_vcs_hooks"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_app_context",
+ "moon_cache_item",
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_vcs",
+ "moon_test_utils2",
  "rustc-hash",
  "serde",
  "starbase_sandbox",
@@ -6053,9 +6055,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.53.2"
+version = "0.53.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d54ad44ca2403655916ec636d33e16be3809341adda21e43c9ae0d4115c002b"
+checksum = "5f4254a704fbda2faf329bc209a906a77fc39f725626a43698a3d673ef7d32dc"
 dependencies = [
  "convert_case",
  "docker_credential",
@@ -6095,9 +6097,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.31.1"
+version = "0.31.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af545a208b69b44dbd66e927836461e3dc2e0ee103bf1805b4723e279e7604ad"
+checksum = "6e11cd06c96422c3c9820a891d7cd02de4e6d2a4705868fca71a516e4955687e"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -6113,9 +6115,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.41.1"
+version = "0.41.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0176ac903180338d93cbf36918f018f0af7c1e6a87efd80abc2cbfd6c9ded2a"
+checksum = "d52280ea6eb1eda82eed3c26e275e69e924e8d96dbfefba18cb25b0a3ccd5a44"
 dependencies = [
  "extism",
  "proto_core",
@@ -6830,9 +6832,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.12"
+version = "0.18.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe968b13534878e9c8b42013520b926430f45d1823fff8feaaef542e7dc49969"
+checksum = "cb718abfcc6e3553351c76d5182cde1342358dee5f0393a5a55c6ffb00a93738"
 dependencies = [
  "garde",
  "indexmap",
@@ -6857,9 +6859,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.18.11"
+version = "0.18.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8dad8ec65bab250820fa9616523d9216a1d9f37092293d9223f6ccc3e6f9b301"
+checksum = "392fe379d2bd8661ef0a97cd9ce470b0561559460f21d544a9f16ef79e426dc1"
 dependencies = [
  "convert_case",
  "darling 0.21.3",
@@ -6870,9 +6872,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.10.6"
+version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bedeb0ba9745d6271e7c0dbac7a225a8bd915c23f293acb8ba345e3bf031ed0"
+checksum = "145fc73996eeb44c83cbaf7c360212b398390faaaf8640150b465f2ea40940e6"
 dependencies = [
  "indexmap",
  "regex",

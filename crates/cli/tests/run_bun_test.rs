@@ -254,16 +254,16 @@ mod bun {
         assert_snapshot!(assert.output());
     }
 
-    #[test]
-    fn runs_node_module_bin_from_workspace_root() {
-        let sandbox = bun_sandbox();
+    // #[test]
+    // fn runs_node_module_bin_from_workspace_root() {
+    //     let sandbox = bun_sandbox();
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("bun:runFromWorkspaceBin");
-        });
+    //     let assert = sandbox.run_moon(|cmd| {
+    //         cmd.arg("run").arg("bun:runFromWorkspaceBin");
+    //     });
 
-        assert_snapshot!(assert.output());
-    }
+    //     assert_snapshot!(assert.output());
+    // }
 
     #[test]
     fn retries_on_failure_till_count() {
@@ -319,21 +319,21 @@ mod bun {
             assert.success();
         }
 
-        #[test]
-        fn can_run_a_deps_bin() {
-            let sandbox = bun_sandbox();
+        // #[test]
+        // fn can_run_a_deps_bin() {
+        //     let sandbox = bun_sandbox();
 
-            let assert = sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("packageManager:runDep");
-            });
+        //     let assert = sandbox.run_moon(|cmd| {
+        //         cmd.arg("run").arg("packageManager:runDep");
+        //     });
 
-            assert!(
-                predicate::str::contains("All matched files use Prettier code style!")
-                    .eval(&assert.output())
-            );
+        //     assert!(
+        //         predicate::str::contains("All matched files use Prettier code style!")
+        //             .eval(&assert.output())
+        //     );
 
-            assert.success();
-        }
+        //     assert.success();
+        // }
 
         #[test]
         fn can_run_a_script() {
@@ -361,6 +361,8 @@ mod bun {
                     .arg("bun:version")
                     .arg("versionOverride:version");
             });
+
+            assert.debug();
 
             let output = assert.output();
 

@@ -22,10 +22,10 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage
     cmd.env("MOON_LOG", "trace");
-    cmd.env("MOON_DEBUG_PROCESS_ENV", "true");
     // Advanced debugging
     // cmd.env("PROTO_LOG", "trace");
     // cmd.env("MOON_DEBUG_WASM", "true");
+    // cmd.env("MOON_DEBUG_PROCESS_ENV", "true");
     cmd
 }
 

@@ -3,13 +3,9 @@ source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
-▪▪▪▪ node:mjs
-stdout
-▪▪▪▪ node:mjs (100ms)
+▪▪▪▪ node:npm
+8.19.0
+▪▪▪▪ node:npm (100ms)
 
 Tasks: 1 completed
  Time: 100ms
-
-stderr
-
-

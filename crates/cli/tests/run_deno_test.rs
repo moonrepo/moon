@@ -251,6 +251,8 @@ mod deno {
                     .arg("versionOverride:version");
             });
 
+            assert.debug();
+
             let output = assert.output();
 
             assert!(predicate::str::contains("2.1.9").eval(&output));

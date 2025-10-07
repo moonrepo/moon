@@ -7,7 +7,7 @@ About ──────────────────
   Target: tasks:lint
   Project: tasks
   Task: lint
-  Toolchains: node, typescript
+  Toolchain: typescript
   Type: build
   Depends on: —
 

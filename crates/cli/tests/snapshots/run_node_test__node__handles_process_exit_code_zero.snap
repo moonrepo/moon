@@ -3,13 +3,12 @@ source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
-▪▪▪▪ node:standard
+▪▪▪▪ node:exitCodeZero
 stdout
-▪▪▪▪ node:standard (100ms)
+This should appear!
+▪▪▪▪ node:exitCodeZero (100ms)
 
 Tasks: 1 completed
  Time: 100ms
 
 stderr
-
-

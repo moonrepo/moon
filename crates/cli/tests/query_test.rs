@@ -284,8 +284,8 @@ mod projects {
                 "foo",
                 "metadata",
                 "noConfig",
-                "platforms",
                 "tasks",
+                "toolchains",
             ]
         );
     }
@@ -728,7 +728,7 @@ mod tasks {
         projects.sort();
 
         assert_eq!(tasks, string_vec!["lint", "test"]);
-        assert_eq!(projects, string_vec!["metadata", "platforms", "tasks"]);
+        assert_eq!(projects, string_vec!["metadata", "tasks", "toolchains"]);
     }
 
     #[test]
@@ -819,7 +819,7 @@ mod tasks {
 
         assert_eq!(
             targets,
-            string_vec!["metadata:test", "platforms:system", "tasks:test"]
+            string_vec!["metadata:test", "tasks:test", "toolchains:system"]
         );
         assert_eq!(json.options.id.unwrap(), "te(st|m)".to_string());
     }
@@ -847,7 +847,7 @@ mod tasks {
 
         assert_eq!(
             targets,
-            string_vec!["metadata:build", "metadata:test", "platforms:system"]
+            string_vec!["metadata:build", "metadata:test", "toolchains:system"]
         );
         assert_eq!(json.options.command.unwrap(), "noop".to_string());
     }
@@ -867,7 +867,7 @@ mod tasks {
             cmd.arg("query")
                 .arg("tasks")
                 .arg("--json")
-                .args(["--toolchain", "node"]);
+                .args(["--toolchain", "(node|type)"]);
         });
 
         let json: QueryTasksResult = json::parse(assert.output()).unwrap();
@@ -875,9 +875,9 @@ mod tasks {
 
         assert_eq!(
             targets,
-            string_vec!["platforms:node", "tasks:lint", "tasks:test"]
+            string_vec!["tasks:lint", "tasks:test", "toolchains:node"]
         );
-        assert_eq!(json.options.toolchain.unwrap(), "node".to_string());
+        assert_eq!(json.options.toolchain.unwrap(), "(node|type)".to_string());
     }
 
     #[test]
@@ -895,7 +895,7 @@ mod tasks {
             cmd.arg("query")
                 .arg("tasks")
                 .arg("--json")
-                .args(["--project", "a(d|t)"]);
+                .args(["--project", "a(d|i)"]);
         });
 
         let json: QueryTasksResult = json::parse(assert.output()).unwrap();
@@ -906,11 +906,11 @@ mod tasks {
             string_vec![
                 "metadata:build",
                 "metadata:test",
-                "platforms:node",
-                "platforms:system"
+                "toolchains:node",
+                "toolchains:system"
             ]
         );
-        assert_eq!(json.options.project.unwrap(), "a(d|t)".to_string());
+        assert_eq!(json.options.project.unwrap(), "a(d|i)".to_string());
     }
 
     #[test]

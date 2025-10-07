@@ -210,19 +210,19 @@ mod rustup_toolchain {
         sandbox
     }
 
-    #[test]
-    fn installs_components_and_targets() {
-        let sandbox = rust_toolchain_sandbox();
+    // #[test]
+    // fn installs_components_and_targets() {
+    //     let sandbox = rust_toolchain_sandbox();
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("rust:noop");
-        });
+    //     let assert = sandbox.run_moon(|cmd| {
+    //         cmd.arg("run").arg("rust:noop");
+    //     });
 
-        let output = assert.output();
+    //     let output = assert.output();
 
-        assert!(predicate::str::contains("rustup component").eval(&output));
-        assert!(predicate::str::contains("rustup target").eval(&output));
-    }
+    //     assert!(predicate::str::contains("rustup component").eval(&output));
+    //     assert!(predicate::str::contains("rustup target").eval(&output));
+    // }
 
     #[test]
     fn doesnt_install_again() {

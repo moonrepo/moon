@@ -3,13 +3,11 @@ source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
-▪▪▪▪ node:cjs
+▪▪▪▪ node:processExitZero
 stdout
-▪▪▪▪ node:cjs (100ms)
+▪▪▪▪ node:processExitZero (100ms)
 
 Tasks: 1 completed
  Time: 100ms
 
 stderr
-
-

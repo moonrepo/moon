@@ -3,7 +3,7 @@ use schematic::{Config, DefaultValueResult};
 use version_spec::VersionSpec;
 
 fn default_version(_: &()) -> DefaultValueResult<VersionSpec> {
-    Ok(VersionSpec::parse("0.53.0").ok())
+    Ok(VersionSpec::parse("0.53.2").ok())
 }
 
 config_struct!(

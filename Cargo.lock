@@ -6053,9 +6053,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.53.2"
+version = "0.53.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d54ad44ca2403655916ec636d33e16be3809341adda21e43c9ae0d4115c002b"
+checksum = "5f4254a704fbda2faf329bc209a906a77fc39f725626a43698a3d673ef7d32dc"
 dependencies = [
  "convert_case",
  "docker_credential",
@@ -6095,9 +6095,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.31.1"
+version = "0.31.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af545a208b69b44dbd66e927836461e3dc2e0ee103bf1805b4723e279e7604ad"
+checksum = "6e11cd06c96422c3c9820a891d7cd02de4e6d2a4705868fca71a516e4955687e"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -6113,9 +6113,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.41.1"
+version = "0.41.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0176ac903180338d93cbf36918f018f0af7c1e6a87efd80abc2cbfd6c9ded2a"
+checksum = "d52280ea6eb1eda82eed3c26e275e69e924e8d96dbfefba18cb25b0a3ccd5a44"
 dependencies = [
  "extism",
  "proto_core",

@@ -8,6 +8,10 @@
   moon.
 - Fixed an issue where configuration `extends` did not support query strings in URLs.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.53.2](https://github.com/moonrepo/proto/releases/tag/v0.53.2) (from 0.53.0).
+
 ## 1.41.2
 
 #### 🐞 Fixes

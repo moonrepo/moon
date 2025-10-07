@@ -7,6 +7,7 @@
 - Fixed an issue where deleting a tool from proto's store would not trigger a re-install within
   moon.
 - Fixed an issue where configuration `extends` did not support query strings in URLs.
+- Fixed an issue where stale VCS hooks would not be removed.
 
 #### ⚙️ Internal
 

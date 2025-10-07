@@ -5099,10 +5099,12 @@ name = "moon_vcs_hooks"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_app_context",
+ "moon_cache_item",
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_vcs",
+ "moon_test_utils2",
  "rustc-hash",
  "serde",
  "starbase_sandbox",

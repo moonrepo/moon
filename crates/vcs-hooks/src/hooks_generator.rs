@@ -306,6 +306,8 @@ impl<'app> HooksGenerator<'app> {
     fn create_hook_files(&self) -> miette::Result<FxHashMap<&'app String, PathBuf>> {
         let mut hooks = FxHashMap::default();
 
+        fs::remove_dir_all(&self.output_dir)?;
+
         for (hook_name, commands) in &self.config.hooks {
             if commands.is_empty() {
                 continue;

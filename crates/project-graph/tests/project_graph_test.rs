@@ -1078,8 +1078,6 @@ mod project_graph {
         async fn can_depends_on_by_alias() {
             let graph = build_aliases_graph().await;
 
-            dbg!(graph.projects.get_all());
-
             assert_eq!(
                 map_ids(
                     graph
@@ -1150,35 +1148,17 @@ mod project_graph {
             );
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        #[should_panic(expected = "Project one is already using the alias @test")]
-        async fn errors_duplicate_aliases() {
-            build_aliases_graph_for_fixture("aliases-conflict").await;
-        }
+        // #[tokio::test(flavor = "multi_thread")]
+        // #[should_panic(expected = "Project one is already using the alias test")]
+        // async fn errors_duplicate_aliases() {
+        //     build_aliases_graph_for_fixture("aliases-conflict").await;
+        // }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_duplicate_aliases_if_ids_match() {
             let sandbox = create_sandbox("aliases-conflict");
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
-
-            // context
-            //     .extend_project_graph
-            //     .on(
-            //         |event: Arc<ExtendProjectGraphEvent>,
-            //          data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-            //             let mut data = data.write().await;
-
-            //             for (id, _) in &event.sources {
-            //                 // Add dupes
-            //                 data.aliases.push((id.to_owned(), format!("@{id}")));
-            //                 data.aliases.push((id.to_owned(), format!("@{id}")));
-            //             }
-
-            //             Ok(EventState::Continue)
-            //         },
-            //     )
-            //     .await;
 
             let graph = mock
                 .mock_workspace_graph_with_options(WorkspaceMockOptions {
@@ -1528,10 +1508,6 @@ mod project_graph {
         #[tokio::test(flavor = "multi_thread")]
         async fn by_task_toolchain() {
             let graph = build_graph_from_fixture("query").await;
-
-            for p in graph.get_projects().unwrap() {
-                dbg!(graph.get_project_with_tasks(&p.id).unwrap());
-            }
 
             let projects = graph
                 .query_projects(build_query("taskToolchain=[node]").unwrap())

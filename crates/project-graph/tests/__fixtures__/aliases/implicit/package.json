@@ -1,4 +1,5 @@
 {
+  "name": "implicit",
   "peerDependencies": {
     "one": "workspace:*"
   },

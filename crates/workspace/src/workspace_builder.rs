@@ -829,6 +829,8 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .await?
         {
+            dbg!(&output);
+
             for (project_id, mut project_extend) in output.extended_projects {
                 if !self.project_data.contains_key(&project_id) {
                     return Err(ProjectGraphError::UnconfiguredID(project_id.to_string()).into());
@@ -855,6 +857,8 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         debug!("Loaded {} project aliases", self.aliases.len());
+
+        dbg!(&self.project_data);
 
         Ok(())
     }

@@ -1005,7 +1005,6 @@ mod project_graph {
         }
     }
 
-    #[cfg(windows)]
     mod aliases {
         use super::*;
 
@@ -1015,68 +1014,11 @@ mod project_graph {
 
         async fn build_aliases_graph_for_fixture(fixture: &str) -> WorkspaceGraph {
             let sandbox = create_sandbox(fixture);
-            let mock = create_workspace_mocker(sandbox.path());
-            let context = mock.mock_workspace_builder_context();
+            let mock = create_workspace_mocker(sandbox.path())
+                .with_default_projects()
+                .with_all_toolchains();
 
-            // asdsd
-            // // Set aliases for projects
-            // context
-            //     .extend_project_graph
-            //     .on(
-            //         |event: Arc<ExtendProjectGraphEvent>,
-            //          data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-            //             let mut data = data.write().await;
-
-            //             for (id, source) in &event.sources {
-            //                 let alias_path = source.join("alias").to_path(&event.workspace_root);
-
-            //                 if alias_path.exists() {
-            //                     data.aliases.push((
-            //                         id.to_owned(),
-            //                         fs::read_file(alias_path).unwrap().trim().to_owned(),
-            //                     ));
-            //                 }
-            //             }
-
-            //             Ok(EventState::Continue)
-            //         },
-            //     )
-            //     .await;
-
-            // // Set implicit deps for projects
-            // context
-            //     .extend_project
-            //     .on(
-            //         |event: Arc<ExtendProjectEvent>,
-            //          data: Arc<RwLock<ExtendProjectData>>| async move {
-            //             let mut data = data.write().await;
-
-            //             if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
-            //                 data.dependencies.push(ProjectDependencyConfig {
-            //                     id: Id::raw("@three"),
-            //                     scope: DependencyScope::Build,
-            //                     ..Default::default()
-            //                 });
-            //             }
-
-            //             if event.project_id == "implicit" {
-            //                 data.dependencies.push(ProjectDependencyConfig {
-            //                     id: Id::raw("@one"),
-            //                     scope: DependencyScope::Peer,
-            //                     ..Default::default()
-            //                 });
-            //             }
-
-            //             Ok(EventState::Continue)
-            //         },
-            //     )
-            //     .await;
-
-            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
-                context: Some(context),
-                ..Default::default()
-            })
-            .await
+            mock.mock_workspace_graph().await
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1088,9 +1030,9 @@ mod project_graph {
             assert_eq!(
                 graph.projects.aliases(),
                 FxHashMap::from_iter([
-                    ("@one", &Id::raw("alias-one")),
-                    ("@two", &Id::raw("alias-two")),
-                    ("@three", &Id::raw("alias-three")),
+                    ("one", &Id::raw("alias-one")),
+                    ("two", &Id::raw("alias-two")),
+                    ("three", &Id::raw("alias-three")),
                 ])
             );
         }
@@ -1114,20 +1056,20 @@ mod project_graph {
         async fn can_get_projects_by_alias() {
             let graph = build_aliases_graph().await;
 
-            assert!(graph.get_project("@one").is_ok());
-            assert!(graph.get_project("@two").is_ok());
-            assert!(graph.get_project("@three").is_ok());
+            assert!(graph.get_project("one").is_ok());
+            assert!(graph.get_project("two").is_ok());
+            assert!(graph.get_project("three").is_ok());
 
             assert_eq!(
-                graph.get_project("@one").unwrap(),
+                graph.get_project("one").unwrap(),
                 graph.get_project("alias-one").unwrap()
             );
             assert_eq!(
-                graph.get_project("@two").unwrap(),
+                graph.get_project("two").unwrap(),
                 graph.get_project("alias-two").unwrap()
             );
             assert_eq!(
-                graph.get_project("@three").unwrap(),
+                graph.get_project("three").unwrap(),
                 graph.get_project("alias-three").unwrap()
             );
         }
@@ -1136,13 +1078,15 @@ mod project_graph {
         async fn can_depends_on_by_alias() {
             let graph = build_aliases_graph().await;
 
+            dbg!(graph.projects.get_all());
+
             assert_eq!(
                 map_ids(
                     graph
                         .projects
                         .dependencies_of(&graph.get_project("explicit").unwrap())
                 ),
-                ["alias-one", "alias-two"]
+                ["alias-two", "alias-one"]
             );
 
             assert_eq!(
@@ -1243,8 +1187,8 @@ mod project_graph {
                 })
                 .await;
 
-            assert!(graph.get_project("@one").is_ok());
-            assert!(graph.get_project("@two").is_ok());
+            assert!(graph.get_project("one").is_ok());
+            assert!(graph.get_project("two").is_ok());
         }
     }
 

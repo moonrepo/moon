@@ -247,10 +247,7 @@ impl ToolchainConfig {
             // "pnpm",
             // "yarn",
         ] {
-            if !self.plugins.contains_key(id) {
-                self.plugins
-                    .insert(Id::raw(id), ToolchainPluginConfig::default());
-            }
+            self.plugins.entry(Id::raw(id)).or_default();
         }
 
         Ok(())

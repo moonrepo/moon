@@ -1,0 +1,8 @@
+{
+  "peerDependencies": {
+    "one": "workspace:*"
+  },
+  "optionalDependencies": {
+    "three": "workspace:*"
+  }
+}

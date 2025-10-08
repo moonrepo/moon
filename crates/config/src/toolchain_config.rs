@@ -141,7 +141,18 @@ impl ToolchainConfig {
 
                 let prebuilts_dir = env::var("WASM_PREBUILTS_DIR")
                     .map(PathBuf::from)
-                    .unwrap_or_else(|_| env::current_dir().unwrap().join("../../wasm/prebuilts"));
+                    .unwrap_or_else(|_| {
+                        let root = env::current_dir().unwrap();
+
+                        // repo root
+                        if root.join("wasm/prebuilts").exists() {
+                            root.join("wasm/prebuilts")
+                        }
+                        // within a crate
+                        else {
+                            root.join("../../wasm/prebuilts")
+                        }
+                    });
                 let wasm_path = prebuilts_dir.join(format!("{name}.wasm"));
 
                 if wasm_path.exists() {

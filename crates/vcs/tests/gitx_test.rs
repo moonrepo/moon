@@ -705,7 +705,7 @@ mod gitx {
                 BTreeMap::from([
                     (
                         WorkspaceRelativePathBuf::from(".gitignore"),
-                        "f52a54dd23c2cd13a81eaf1693774355b00389e6".to_owned()
+                        "2c085d1d2fb7e1d865a5c1161f0fbbcb682af240".to_owned()
                     ),
                     (
                         WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt"),

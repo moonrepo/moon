@@ -139,6 +139,12 @@ impl ToolchainConfig {
                 use std::env;
                 use std::path::PathBuf;
 
+                dbg!(
+                    "MOON_WASM_PREBUILTS_DIR",
+                    env::var("MOON_WASM_PREBUILTS_DIR")
+                );
+                dbg!("CURRENT_DIR", env::current_dir().unwrap());
+
                 let prebuilts_dir = env::var("MOON_WASM_PREBUILTS_DIR")
                     .map(PathBuf::from)
                     .unwrap_or_else(|_| env::current_dir().unwrap().join("wasm/prebuilts"));

@@ -1,3 +1,4 @@
+use crate::components::create_progress_loader;
 use crate::session::MoonSession;
 use clap::Args;
 use miette::IntoDiagnostic;
@@ -5,20 +6,42 @@ use moon_common::consts::CONFIG_DIRNAME;
 use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::yaml::{self, YamlMapping, YamlValue};
-use tracing::instrument;
+use std::sync::atomic::{AtomicBool, Ordering};
+use tracing::{instrument, warn};
 
 #[derive(Args, Clone, Debug)]
-pub struct MigrateV2Args {}
+pub struct MigrateV2Args {
+    #[arg(long, help = "Skip migrating configuration files")]
+    skip_config: bool,
+}
 
 #[instrument(skip_all)]
 pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
+    let progress = create_progress_loader(session.get_console()?, "Migrating to moon v2!").await;
+
     // Configuration
-    migrate_toolchain_config(&session)?;
+    if !args.skip_config {
+        progress.set_message("Migrating configuration files...");
+
+        migrate_workspace_config(&session)?;
+        migrate_toolchain_config(&session)?;
+    }
+
+    progress.stop().await?;
 
     Ok(None)
 }
 
 // CONFIGURATION
+
+fn warn_pkl_config_files() {
+    static PKL_WARNED: AtomicBool = AtomicBool::new(false);
+
+    if !PKL_WARNED.load(Ordering::Relaxed) {
+        warn!("Pkl based configuration files cannot be automatically migrated!");
+        PKL_WARNED.store(true, Ordering::Release);
+    }
+}
 
 fn replace_config_tokens(content: String) -> String {
     content
@@ -116,6 +139,15 @@ fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
 }
 
 fn migrate_toolchain_config(session: &MoonSession) -> miette::Result<()> {
+    if session
+        .workspace_root
+        .join(CONFIG_DIRNAME)
+        .join("toolchain.pkl")
+        .exists()
+    {
+        warn_pkl_config_files();
+    }
+
     let config_path = session
         .workspace_root
         .join(CONFIG_DIRNAME)
@@ -172,6 +204,41 @@ fn migrate_toolchain_config(session: &MoonSession) -> miette::Result<()> {
     }
 
     yaml::write_file_with_config(&config_path, &YamlValue::Mapping(new_data))?;
+
+    Ok(())
+}
+
+fn migrate_workspace_config(session: &MoonSession) -> miette::Result<()> {
+    if session
+        .workspace_root
+        .join(CONFIG_DIRNAME)
+        .join("workspace.pkl")
+        .exists()
+    {
+        warn_pkl_config_files();
+    }
+
+    let config_path = session
+        .workspace_root
+        .join(CONFIG_DIRNAME)
+        .join("workspace.yml");
+
+    if !config_path.exists() {
+        return Ok(());
+    }
+
+    // Replace static values first
+    let mut content = fs::read_file(&config_path)?;
+
+    content = replace_config_tokens(content).replace(
+        "enforceProjectTypeRelationships",
+        "enforceLayerRelationships",
+    );
+
+    // Replace dynamic values second
+    let data: YamlValue = yaml::serde_yml::from_str(&content).into_diagnostic()?;
+
+    yaml::write_file_with_config(&config_path, &data)?;
 
     Ok(())
 }

@@ -4,7 +4,6 @@ use iocraft::prelude::element;
 use moon_action::ActionStatus;
 use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use moon_platform::{PlatformManager, ToolchainSpec};
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -27,33 +26,10 @@ pub async fn setup(session: MoonSession) -> AppResult {
 
     let mut toolchain_count = 0;
 
-    // Add legacy platform toolchains (for backward compatibility)
-    let platform_manager = PlatformManager::read();
-    for platform in platform_manager.list() {
-        // Legacy platforms don't expose runtime directly, we need to check if they have toolchains
-        if platform.is_toolchain_enabled().unwrap_or(false) {
-            let runtime = platform.get_runtime_from_config(None);
-            // Only setup non-system runtimes that have specific versions
-            if !runtime.is_system() && !runtime.requirement.is_global() {
-                action_graph_builder
-                    .setup_toolchain_legacy(&runtime)
-                    .await?;
-                toolchain_count += 1;
-            }
-        }
-    }
-
     // Add new toolchain plugin setups
-    for (toolchain_id, config) in &session.toolchain_config.plugins {
-        // Check if plugin has a valid version configuration
-        if let Some(version) = &config.version {
-            let spec = ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned());
-            action_graph_builder.setup_toolchain(&spec).await?;
-            toolchain_count += 1;
-        } else {
-            // For global toolchains, we still create the action but it will likely be skipped
-            let spec = ToolchainSpec::new_global(toolchain_id.to_owned());
-            action_graph_builder.setup_toolchain(&spec).await?;
+    for toolchain_id in session.toolchain_config.plugins.keys() {
+        if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
+            action_graph_builder.setup_toolchain(&spec, None).await?;
             toolchain_count += 1;
         }
     }

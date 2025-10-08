@@ -6,7 +6,7 @@ tags: [one]
 tasks:
   dev:
     command: dev
-    platform: node
+    toolchain: node
     local: true
   build:
     command: build

@@ -12,7 +12,6 @@ import type {
 	Input,
 	Output,
 	PartialInheritedTasksConfig,
-	PlatformType,
 	TaskDependencyConfig,
 	TaskDependencyType,
 	TaskMergeStrategy,
@@ -36,7 +35,7 @@ export interface TaskOptions {
 	affectedFiles?: boolean | 'args' | 'env' | null;
 	affectedPassInputs: boolean;
 	allowFailure: boolean;
-	cache: boolean;
+	cache: boolean | 'local' | 'remote';
 	cacheKey?: string | null;
 	cacheLifetime?: string | null;
 	envFiles?: string[] | null;
@@ -102,7 +101,6 @@ export interface Task {
 	outputs?: Output[];
 	outputFiles?: Record<string, TaskFileOutput>;
 	outputGlobs?: Record<string, TaskGlobOutput>;
-	platform: PlatformType;
 	preset?: TaskPreset | null;
 	script?: string | null;
 	state: TaskState;
@@ -130,7 +128,6 @@ export interface Project {
 	} | null;
 	language: LanguageType;
 	layer: LayerType;
-	platform: PlatformType;
 	root: string;
 	source: string;
 	stack: StackType;
@@ -167,15 +164,4 @@ export interface TaskGraphInner {
 
 export interface TaskGraph {
 	graph: TaskGraphInner;
-}
-
-export interface WorkspaceGraph {
-	projects_by_tag: Record<string, string[]>;
-	project_data: Record<string, { alias: string; node_index: number; source: string }>;
-	project_graph: ProjectGraphInner;
-	renamed_project_ids: Record<string, string>;
-	repo_type: 'monorepo-with-root' | 'monorepo' | 'polyrepo';
-	root_project_id: Id | null;
-	task_data: Record<string, { node_index: number }>;
-	task_graph: TaskGraphInner;
 }

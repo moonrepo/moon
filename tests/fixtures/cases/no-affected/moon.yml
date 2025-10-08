@@ -1,7 +1,7 @@
 tasks:
   primary:
     command: node ./affected.js
-    platform: node
+    toolchain: node
     options:
       affectedFiles: true
       affectedPassInputs: true
@@ -9,7 +9,7 @@ tasks:
       - file.txt
   misconfigured:
     command: node ./affected.js
-    platform: node
+    toolchain: node
     options:
       affectedFiles: true
     inputs:

@@ -15,7 +15,11 @@ pub async fn check_for_new_version(
         return Ok(None);
     }
 
-    match Launchpad::instance()
+    let Some(launchpad) = Launchpad::instance() else {
+        return Ok(None);
+    };
+
+    match launchpad
         .check_version(cache_engine, false, manifest_url)
         .await
     {

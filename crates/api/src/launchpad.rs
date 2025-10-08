@@ -98,8 +98,8 @@ impl Launchpad {
         Ok(())
     }
 
-    pub fn instance() -> Arc<Launchpad> {
-        Arc::clone(INSTANCE.get().unwrap())
+    pub fn instance() -> Option<Arc<Launchpad>> {
+        INSTANCE.get().map(Arc::clone)
     }
 
     #[instrument(skip_all)]

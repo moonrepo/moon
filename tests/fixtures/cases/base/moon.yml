@@ -5,18 +5,18 @@ tasks:
     command: noop
   runFromProject:
     command: echo 'from project'
-    platform: system
+    toolchain: system
   runFromWorkspace:
     command: echo 'from workspace'
-    platform: system
+    toolchain: system
     options:
       runFromWorkspaceRoot: true
   localOnly:
     command: node --version
-    platform: node
+    toolchain: node
     local: true
   internalOnly:
     command: node --version
-    platform: node
+    toolchain: node
     options:
       internal: true

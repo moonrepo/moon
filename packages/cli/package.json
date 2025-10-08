@@ -25,9 +25,6 @@
     "url": "https://github.com/moonrepo/moon",
     "directory": "packages/cli"
   },
-  "scripts": {
-    "__postinstall__": "node ./postinstall-old.js"
-  },
   "dependencies": {
     "detect-libc": "^2.0.4"
   },

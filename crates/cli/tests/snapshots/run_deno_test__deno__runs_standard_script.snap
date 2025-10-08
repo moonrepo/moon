@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_deno_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ deno install
 ▪▪▪▪ deno:standard
 stdout
 ▪▪▪▪ deno:standard (100ms)
@@ -10,5 +11,3 @@ Tasks: 1 completed
  Time: 100ms
 
 stderr
-
-

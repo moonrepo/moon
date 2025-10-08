@@ -421,20 +421,20 @@ mod mql_build {
         }
     }
 
-    mod project_type {
+    mod project_layer {
         use super::*;
 
         #[test]
         fn valid_value() {
             assert_eq!(
-                build_query("projectType=library").unwrap(),
+                build_query("projectLayer=library").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectType(vec![LayerType::Library]),
+                        field: Field::ProjectLayer(vec![LayerType::Library]),
                         op: ComparisonOperator::Equal,
                     }],
-                    input: Some("projectType=library".into())
+                    input: Some("projectLayer=library".into())
                 }
             );
         }
@@ -442,38 +442,38 @@ mod mql_build {
         #[test]
         fn valid_value_list() {
             assert_eq!(
-                build_query("projectType!=[tool, library]").unwrap(),
+                build_query("projectLayer!=[tool, library]").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectType(vec![LayerType::Tool, LayerType::Library]),
+                        field: Field::ProjectLayer(vec![LayerType::Tool, LayerType::Library]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    input: Some("projectType!=[tool, library]".into())
+                    input: Some("projectLayer!=[tool, library]".into())
                 }
             );
         }
 
         #[test]
-        #[should_panic(expected = "Unknown query value app for field projectType.")]
+        #[should_panic(expected = "Unknown query value app for field projectLayer.")]
         fn invalid_value() {
-            build_query("projectType=app").unwrap();
+            build_query("projectLayer=app").unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Like operators (~ and !~) are not supported for field projectType."
+            expected = "Like operators (~ and !~) are not supported for field projectLayer."
         )]
         fn errors_for_like() {
-            build_query("projectType~library").unwrap();
+            build_query("projectLayer~library").unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Like operators (~ and !~) are not supported for field projectType."
+            expected = "Like operators (~ and !~) are not supported for field projectLayer."
         )]
         fn errors_for_not_like() {
-            build_query("projectType!~tool").unwrap();
+            build_query("projectLayer!~tool").unwrap();
         }
     }
 

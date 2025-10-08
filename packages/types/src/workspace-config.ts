@@ -42,13 +42,6 @@ export interface ConstraintsConfig {
 	 *
 	 * @default true
 	 */
-	enforceProjectTypeRelationships?: boolean;
-	/**
-	 * Enforces relationships between projects based on each project's
-	 * `layer` setting.
-	 *
-	 * @default true
-	 */
 	enforceLayerRelationships?: boolean;
 	/**
 	 * Enforces relationships between projects based on each project's
@@ -82,6 +75,7 @@ export interface DockerScaffoldConfig {
 	 * the workspace skeleton.
 	 *
 	 * @default true
+	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean;
 	/**
@@ -589,13 +583,6 @@ export interface PartialConstraintsConfig {
 	 *
 	 * @default true
 	 */
-	enforceProjectTypeRelationships?: boolean | null;
-	/**
-	 * Enforces relationships between projects based on each project's
-	 * `layer` setting.
-	 *
-	 * @default true
-	 */
 	enforceLayerRelationships?: boolean | null;
 	/**
 	 * Enforces relationships between projects based on each project's
@@ -629,6 +616,7 @@ export interface PartialDockerScaffoldConfig {
 	 * the workspace skeleton.
 	 *
 	 * @default true
+	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean | null;
 	/**

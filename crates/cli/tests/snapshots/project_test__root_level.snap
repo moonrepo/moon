@@ -7,7 +7,7 @@ About ──────────────────
   Project: root
   Alias: test-cases
   Source: .
-  Toolchains: node, typescript
+  Toolchains: javascript, node, npm, typescript
   Language: typescript
   Stack: unknown
   Layer: unknown

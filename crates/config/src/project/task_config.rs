@@ -1,4 +1,3 @@
-use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{Input, OneOrMany, Output};
 use crate::{config_enum, config_struct, config_unit_enum};
@@ -230,13 +229,6 @@ config_struct!(
         /// Options to control task inheritance and execution.
         #[setting(nested)]
         pub options: TaskOptionsConfig,
-
-        /// The platform in which the task will be ran in. The platform determines
-        /// available binaries, lookup paths, and more. When not provided, will
-        /// be automatically detected.
-        #[deprecated(note = "Use `toolchain` instead.")]
-        // TODO: Remove in 2.0
-        pub platform: PlatformType,
 
         /// The preset to apply for the task. Will inherit default options.
         pub preset: Option<TaskPreset>,

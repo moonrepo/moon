@@ -1,4 +1,3 @@
-use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::Input;
 use crate::{config_enum, config_struct, config_unit_enum};
@@ -128,18 +127,12 @@ config_struct!(
         pub language: LanguageType,
 
         /// The layer within the project stack, for categorizing.
-        #[serde(alias = "type")]
         pub layer: LayerType,
 
         /// Defines ownership of source code within the current project, by mapping
         /// file paths and globs to owners. An owner is either a user, team, or group.
         #[setting(nested)]
         pub owners: OwnersConfig,
-
-        /// The default platform for all tasks within the project,
-        /// if their platform is unknown.
-        #[deprecated]
-        pub platform: Option<PlatformType>,
 
         /// Expanded information about the project.
         #[setting(nested)]

@@ -296,9 +296,6 @@ export interface GlobOutput {
 
 export type Output = string | FileOutput | GlobOutput;
 
-/** Platforms that each programming language can belong to. */
-export type PlatformType = 'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown';
-
 /** Preset options to inherit. */
 export type TaskPreset = 'server' | 'watcher';
 
@@ -354,15 +351,6 @@ export interface TaskConfig {
 	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
 	 */
 	outputs: Output[] | null;
-	/**
-	 * The platform in which the task will be ran in. The platform determines
-	 * available binaries, lookup paths, and more. When not provided, will
-	 * be automatically detected.
-	 *
-	 * @default 'unknown'
-	 * @type {'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown'}
-	 */
-	platform: PlatformType;
 	/** The preset to apply for the task. Will inherit default options. */
 	preset: TaskPreset | null;
 	/**
@@ -637,14 +625,6 @@ export interface PartialTaskConfig {
 	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
 	 */
 	outputs?: Output[] | null;
-	/**
-	 * The platform in which the task will be ran in. The platform determines
-	 * available binaries, lookup paths, and more. When not provided, will
-	 * be automatically detected.
-	 *
-	 * @default 'unknown'
-	 */
-	platform?: PlatformType | null;
 	/** The preset to apply for the task. Will inherit default options. */
 	preset?: TaskPreset | null;
 	/**

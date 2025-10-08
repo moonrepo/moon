@@ -9,7 +9,6 @@ export function getIconForStatus(status: ActionStatus): string {
 		case 'cached-from-remote':
 			return '🟦';
 		case 'failed':
-		case 'failed-and-abort':
 		case 'aborted':
 		case 'timed-out':
 			return '🟥';
@@ -26,12 +25,7 @@ export function getIconForStatus(status: ActionStatus): string {
 }
 
 export function hasFailed(status: ActionStatus): boolean {
-	return (
-		status === 'failed' ||
-		status === 'failed-and-abort' ||
-		status === 'aborted' ||
-		status === 'timed-out'
-	);
+	return status === 'failed' || status === 'aborted' || status === 'timed-out';
 }
 
 export function hasPassed(status: ActionStatus): boolean {

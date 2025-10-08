@@ -226,7 +226,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
+                vec![Id::raw("bun"), Id::raw("javascript")]
             );
 
             let project = build_lang_project("bun-config").await;
@@ -234,7 +234,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
+                vec![Id::raw("bun"), Id::raw("javascript")]
             );
         }
 
@@ -245,19 +245,15 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
+                vec![Id::raw("deno"), Id::raw("javascript")]
             );
 
             let project = build_lang_project("deno-config").await;
 
-            assert_eq!(project.language, LanguageType::TypeScript);
+            assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![
-                    Id::raw("typescript"),
-                    Id::raw("unstable_deno"),
-                    Id::raw("unstable_javascript")
-                ]
+                vec![Id::raw("deno"), Id::raw("javascript")]
             );
         }
 
@@ -266,12 +262,12 @@ mod project_builder {
             let project = build_lang_project("go").await;
 
             assert_eq!(project.language, LanguageType::Go);
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_go")]);
+            assert_eq!(project.toolchains, vec![Id::raw("go")]);
 
             let project = build_lang_project("go-config").await;
 
             assert_eq!(project.language, LanguageType::Go);
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_go")]);
+            assert_eq!(project.toolchains, vec![Id::raw("go")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -281,7 +277,7 @@ mod project_builder {
             assert_eq!(project.language, LanguageType::JavaScript);
             assert_eq!(
                 project.toolchains,
-                vec![Id::raw("unstable_javascript"), Id::raw("unstable_node")]
+                vec![Id::raw("javascript"), Id::raw("node")]
             );
 
             let project = build_lang_project("js-config").await;
@@ -290,10 +286,10 @@ mod project_builder {
             assert_eq!(
                 project.toolchains,
                 vec![
-                    Id::raw("unstable_bun"),
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm"),
+                    Id::raw("bun"),
+                    Id::raw("javascript"),
+                    Id::raw("node"),
+                    Id::raw("npm"),
                 ]
             );
         }
@@ -302,10 +298,7 @@ mod project_builder {
         async fn detects_other() {
             let project = build_lang_project("other").await;
 
-            assert_eq!(
-                project.language,
-                LanguageType::Other("kotlin".try_into().unwrap())
-            );
+            assert_eq!(project.language, LanguageType::Kotlin);
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
@@ -318,7 +311,8 @@ mod project_builder {
 
             let project = build_lang_project("php-config").await;
 
-            assert_eq!(project.language, LanguageType::Php);
+            // no php toolchain yet
+            assert_eq!(project.language, LanguageType::Unknown);
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
@@ -331,7 +325,8 @@ mod project_builder {
 
             let project = build_lang_project("python-config").await;
 
-            assert_eq!(project.language, LanguageType::Python);
+            // no python toolchain yet
+            assert_eq!(project.language, LanguageType::Unknown);
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
@@ -344,7 +339,8 @@ mod project_builder {
 
             let project = build_lang_project("ruby-config").await;
 
-            assert_eq!(project.language, LanguageType::Ruby);
+            // no ruby toolchain yet
+            assert_eq!(project.language, LanguageType::Unknown);
             assert_eq!(project.toolchains, vec![Id::raw("system")]);
         }
 
@@ -353,12 +349,12 @@ mod project_builder {
             let project = build_lang_project("rust").await;
 
             assert_eq!(project.language, LanguageType::Rust);
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
 
             let project = build_lang_project("rust-config").await;
 
             assert_eq!(project.language, LanguageType::Rust);
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(project.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -376,10 +372,7 @@ mod project_builder {
             let project = build_lang_project("ts-enabled").await;
 
             assert_eq!(project.language, LanguageType::Unknown);
-            assert_eq!(
-                project.toolchains,
-                vec![Id::raw("system"), Id::raw("typescript")]
-            );
+            assert_eq!(project.toolchains, vec![Id::raw("typescript")]);
 
             let project = build_lang_project("ts-disabled").await;
 
@@ -399,10 +392,10 @@ mod project_builder {
             assert_eq!(
                 project.toolchains,
                 vec![
-                    Id::raw("unstable_bun"),
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm"),
+                    Id::raw("bun"),
+                    Id::raw("javascript"),
+                    Id::raw("node"),
+                    Id::raw("npm"),
                 ]
             );
         }
@@ -412,7 +405,7 @@ mod project_builder {
             let sandbox = create_sandbox("builder");
             let project = build_project_without_inherited("bar", sandbox.path()).await;
 
-            assert_eq!(project.toolchains, vec![Id::raw("unstable_rust"),]);
+            assert_eq!(project.toolchains, vec![Id::raw("rust"),]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -423,41 +416,11 @@ mod project_builder {
             assert_eq!(
                 project.toolchains,
                 vec![
-                    Id::raw("unstable_bun"),
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm"),
+                    Id::raw("bun"),
+                    Id::raw("javascript"),
+                    Id::raw("node"),
+                    Id::raw("npm"),
                 ]
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn fallsback_to_project() {
-            let project = build_lang_project("project-platform").await;
-
-            assert_eq!(
-                project.tasks.get("node-a").unwrap().toolchains,
-                vec![
-                    Id::raw("unstable_bun"),
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm"),
-                ]
-            );
-
-            assert_eq!(
-                project.tasks.get("node-b").unwrap().toolchains,
-                vec![
-                    Id::raw("unstable_bun"),
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm"),
-                ]
-            );
-
-            assert_eq!(
-                project.tasks.get("system").unwrap().toolchains,
-                vec![Id::raw("system")]
             );
         }
     }

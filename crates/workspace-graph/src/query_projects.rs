@@ -95,9 +95,7 @@ impl WorkspaceGraph {
                                 Ok(false)
                             }
                         }
-                        Field::ProjectLayer(types) | Field::ProjectType(types) => {
-                            condition.matches_enum(types, &project.layer)
-                        }
+                        Field::ProjectLayer(types) => condition.matches_enum(types, &project.layer),
                         Field::ProjectName(ids) => condition.matches(ids, &project.id),
                         Field::ProjectSource(sources) => {
                             condition.matches(sources, project.source.as_str())
@@ -115,7 +113,7 @@ impl WorkspaceGraph {
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
                             condition.matches(ids, &target.task_id).unwrap_or_default()
                         })),
-                        Field::TaskPlatform(ids) | Field::TaskToolchain(ids) => Ok(self
+                        Field::TaskToolchain(ids) => Ok(self
                             .tasks
                             .get_all_for_project(&project.id, false)?
                             .iter()

@@ -4,7 +4,6 @@ use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
-use moon_platform::{PlatformManager, Runtime};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
@@ -21,17 +20,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub fn create_node(task: &Task) -> ActionNode {
-    ActionNode::RunTask(Box::new(RunTaskNode::new(
-        task.target.clone(),
-        Runtime::system(),
-    )))
+    ActionNode::RunTask(Box::new(RunTaskNode::new(task.target.clone())))
 }
 
 pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
     pub app_context: Arc<AppContext>,
     pub env_bag: GlobalEnvBag,
-    pub platform_manager: PlatformManager,
     pub project: Arc<Project>,
     pub project_id: String,
     pub task: Arc<Task>,
@@ -49,7 +44,6 @@ impl TaskRunnerContainer {
 
         let app_context = mocker.mock_app_context();
         let workspace_graph = mocker.mock_workspace_graph().await;
-        let platform_manager = mocker.mock_platform_manager().await;
         let project = workspace_graph.get_project(project_id).unwrap();
         let task = workspace_graph
             .get_task_from_project(project_id, task_id)
@@ -59,7 +53,6 @@ impl TaskRunnerContainer {
             sandbox,
             app_context: Arc::new(app_context),
             env_bag: GlobalEnvBag::default(),
-            platform_manager,
             workspace_graph,
             project,
             project_id: project_id.to_owned(),
@@ -127,15 +120,13 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self) -> TaskRunner<'_> {
-        let mut runner = TaskRunner::new(
+        TaskRunner::new(
             &self.app_context,
             &self.workspace_graph.projects,
             &self.project,
             &self.task,
         )
-        .unwrap();
-        runner.set_platform_manager(&self.platform_manager);
-        runner
+        .unwrap()
     }
 
     pub fn create_action_node(&self) -> ActionNode {
@@ -184,7 +175,6 @@ impl TaskRunnerContainer {
     ) -> Command {
         let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
         builder.set_env_bag(&self.env_bag);
-        builder.set_platform_manager(&self.platform_manager);
         builder.build(context, "abc123").await.unwrap()
     }
 }

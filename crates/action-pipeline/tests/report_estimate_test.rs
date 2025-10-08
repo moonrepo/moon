@@ -1,7 +1,8 @@
 use moon_action::*;
 use moon_action_pipeline::reports::estimate::{Estimate, TaskEstimate};
+use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_toolchain::Runtime;
+use moon_toolchain::ToolchainSpec;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -9,11 +10,8 @@ use std::time::Duration;
 const NANOS_PER_MILLI: u32 = 1_000_000;
 const HALF_SECOND: u32 = NANOS_PER_MILLI * 500;
 
-fn create_run_task_action(runtime: Runtime, target: &str) -> Arc<ActionNode> {
-    Arc::new(ActionNode::run_task(RunTaskNode::new(
-        target.into(),
-        runtime,
-    )))
+fn create_run_task_action(target: &str) -> Arc<ActionNode> {
+    Arc::new(ActionNode::run_task(RunTaskNode::new(target.into())))
 }
 
 mod estimate {
@@ -40,7 +38,7 @@ mod estimate {
         let est = Estimate::calculate(
             &[Action {
                 duration: Some(Duration::new(10, 0)),
-                node: create_run_task_action(Runtime::system(), "proj:task"),
+                node: create_run_task_action("proj:task"),
                 ..Action::default()
             }],
             &Duration::new(5, 0),
@@ -67,27 +65,27 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: create_run_task_action(Runtime::system(), "a:build"),
+                    node: create_run_task_action("a:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: create_run_task_action(Runtime::system(), "a:lint"),
+                    node: create_run_task_action("a:lint"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: create_run_task_action(Runtime::system(), "b:build"),
+                    node: create_run_task_action("b:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: create_run_task_action(Runtime::system(), "c:test"),
+                    node: create_run_task_action("c:test"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: create_run_task_action(Runtime::system(), "d:lint"),
+                    node: create_run_task_action("d:lint"),
                     ..Action::default()
                 },
             ],
@@ -122,26 +120,24 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_toolchain_legacy(
-                        SetupToolchainLegacyNode {
-                            runtime: Runtime::system(),
-                        },
-                    )),
+                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::system(),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::install_workspace_deps(
-                        InstallWorkspaceDepsNode {
-                            runtime: Runtime::system(),
-                            root: WorkspaceRelativePathBuf::new(),
-                        },
-                    )),
+                    node: Arc::new(ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::default(),
+                        toolchain_id: Id::raw("system"),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: create_run_task_action(Runtime::system(), "proj:task"),
+                    node: create_run_task_action("proj:task"),
                     ..Action::default()
                 },
             ],
@@ -171,7 +167,7 @@ mod estimate {
         let est = Estimate::calculate(
             &[Action {
                 duration: Some(Duration::new(3, 0)),
-                node: create_run_task_action(Runtime::system(), "proj:task"),
+                node: create_run_task_action("proj:task"),
                 status: ActionStatus::Cached,
                 ..Action::default()
             }],
@@ -199,46 +195,44 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_toolchain_legacy(
-                        SetupToolchainLegacyNode {
-                            runtime: Runtime::system(),
-                        },
-                    )),
+                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::system(),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::install_workspace_deps(
-                        InstallWorkspaceDepsNode {
-                            runtime: Runtime::system(),
-                            root: WorkspaceRelativePathBuf::new(),
-                        },
-                    )),
+                    node: Arc::new(ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::default(),
+                        toolchain_id: Id::raw("system"),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: create_run_task_action(Runtime::system(), "a:build"),
+                    node: create_run_task_action("a:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: create_run_task_action(Runtime::system(), "a:lint"),
+                    node: create_run_task_action("a:lint"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: create_run_task_action(Runtime::system(), "b:build"),
+                    node: create_run_task_action("b:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: create_run_task_action(Runtime::system(), "c:test"),
+                    node: create_run_task_action("c:test"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: create_run_task_action(Runtime::system(), "d:lint"),
+                    node: create_run_task_action("d:lint"),
                     ..Action::default()
                 },
             ],
@@ -277,46 +271,44 @@ mod estimate {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_toolchain_legacy(
-                        SetupToolchainLegacyNode {
-                            runtime: Runtime::system(),
-                        },
-                    )),
+                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::system(),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::install_workspace_deps(
-                        InstallWorkspaceDepsNode {
-                            runtime: Runtime::system(),
-                            root: WorkspaceRelativePathBuf::new(),
-                        },
-                    )),
+                    node: Arc::new(ActionNode::install_dependencies(InstallDependenciesNode {
+                        members: None,
+                        project_id: None,
+                        root: WorkspaceRelativePathBuf::default(),
+                        toolchain_id: Id::raw("system"),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: create_run_task_action(Runtime::system(), "a:build"),
+                    node: create_run_task_action("a:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: create_run_task_action(Runtime::system(), "a:lint"),
+                    node: create_run_task_action("a:lint"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: create_run_task_action(Runtime::system(), "b:build"),
+                    node: create_run_task_action("b:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: create_run_task_action(Runtime::system(), "c:test"),
+                    node: create_run_task_action("c:test"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: create_run_task_action(Runtime::system(), "d:lint"),
+                    node: create_run_task_action("d:lint"),
                     ..Action::default()
                 },
             ],

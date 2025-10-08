@@ -390,10 +390,6 @@ pub struct QueryTasksArgs {
     #[arg(long, help = "Filter tasks with the provided command", help_heading = HEADING_FILTERS)]
     command: Option<String>,
 
-    #[arg(long, help = "Filter tasks that belong to a platform", help_heading = HEADING_FILTERS)]
-    #[deprecated(note = "Use `toolchain` instead.")]
-    platform: Option<String>,
-
     #[arg(long, help = "Filter tasks that belong to a project", help_heading = HEADING_FILTERS)]
     project: Option<String>,
 
@@ -416,8 +412,6 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
         json: args.json,
         command: args.command,
         query: args.query,
-        #[allow(deprecated)]
-        platform: args.platform,
         project: args.project,
         script: args.script,
         toolchain: args.toolchain,

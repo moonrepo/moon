@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moon_common::Id;
 use moon_config::schematic::schema::indexmap::IndexSet;
-use moon_feature_flags::glob_walk;
+use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
@@ -9,7 +9,7 @@ use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
-use starbase_utils::glob::GlobSet;
+use starbase_utils::glob::{GlobSet, GlobWalkOptions};
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -134,7 +134,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(version.to_owned());
 
-            tool.resolve_version(&spec, false).await?;
+            tool.resolve_version_if_different(&spec, false).await?;
 
             if let Some(dir) = tool.locate_exe_file().await?.parent() {
                 paths.insert(dir.to_path_buf());
@@ -216,8 +216,12 @@ impl ToolchainPlugin {
             return Ok(false);
         }
 
-        // Oh no, heavy lookup...
-        let results = glob_walk(dir, &self.metadata.config_file_globs)?;
+        // Oh no, heavy lookup... but at least it's cached
+        let results = glob_walk_with_options(
+            dir,
+            &self.metadata.config_file_globs,
+            GlobWalkOptions::default().cache(),
+        )?;
 
         Ok(!results.is_empty())
     }
@@ -358,6 +362,23 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn is_installed_in_proto(
+        &self,
+        spec: Option<&UnresolvedVersionSpec>,
+    ) -> miette::Result<bool> {
+        if let (Some(tool), Some(spec)) = (&self.tool, spec) {
+            let mut tool = tool.write().await;
+            let spec = ToolSpec::new(spec.to_owned());
+
+            tool.resolve_version_if_different(&spec, false).await?;
+
+            return Ok(tool.is_installed());
+        }
+
+        Ok(false)
+    }
+
+    #[instrument(skip(self))]
     pub async fn locate_dependencies_root(
         &self,
         input: LocateDependenciesRootInput,
@@ -455,7 +476,7 @@ impl ToolchainPlugin {
                 let spec = ToolSpec::new(version.to_owned());
 
                 // Resolve the version first so that it is available
-                input.version = Some(tool.resolve_version(&spec, false).await?);
+                input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
 
                 // Only setup if not already been
                 if !tool.is_setup(&spec).await? {
@@ -531,7 +552,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(version.to_owned());
 
-            input.version = Some(tool.resolve_version(&spec, false).await?);
+            input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
 
             tool.teardown(&spec).await?;
         }

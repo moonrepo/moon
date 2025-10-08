@@ -12,7 +12,7 @@ digraph {
     6 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     7 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     8 [ label="advanced" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    9 [ label="platforms" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    9 [ label="toolchains" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     4 -> 5 [ label="production" arrowhead=box, arrowtail=box]
     6 -> 2 [ label="production" arrowhead=box, arrowtail=box]
     6 -> 7 [ label="production" arrowhead=box, arrowtail=box]

@@ -7,7 +7,7 @@ About ──────────────────
   Project: scripts
   Alias: test-bun-scripts
   Source: scripts
-  Toolchain: bun
+  Toolchains: bun, javascript, npm
   Language: javascript
   Stack: unknown
   Layer: unknown
@@ -22,10 +22,6 @@ Configuration ──────────
 
 Tasks ──────────────────
 
-  build:
-    › bun run build
-  lint-all:
-    › bun run lint:all
   noop:
     › noop
   version:

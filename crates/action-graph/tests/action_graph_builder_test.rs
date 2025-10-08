@@ -224,6 +224,62 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_multiple_toolchain_versions_using_overrides() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let project = wg.get_project("bar").unwrap();
+            builder
+                .install_dependencies(
+                    &builder
+                        .get_project_spec(&Id::raw("rust"), &project)
+                        .unwrap(),
+                    &project,
+                )
+                .await
+                .unwrap();
+
+            let project = wg.get_project("qux").unwrap();
+            builder
+                .install_dependencies(
+                    &builder
+                        .get_project_spec(&Id::raw("rust"), &project)
+                        .unwrap(),
+                    &project,
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::new(
+                            Id::raw("rust"),
+                            UnresolvedVersionSpec::parse("1.70.0").unwrap()
+                        )
+                    }),
+                    ActionNode::setup_toolchain(SetupToolchainNode {
+                        toolchain: ToolchainSpec::new(
+                            Id::raw("rust"),
+                            UnresolvedVersionSpec::parse("1.90.0").unwrap()
+                        )
+                    }),
+                    // No install dependencies because `Cargo.toml`
+                    // is not setup in the fixture!
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_env_chain_if_defined() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());

@@ -37,8 +37,13 @@ impl Deref for MoonSandbox {
 
 fn apply_settings(sandbox: &mut Sandbox) {
     let moon_dir = sandbox.path().join(".moon");
-    let root_dir = std::env::current_dir().unwrap();
-    let wasm_dir = root_dir.join("wasm/prebuilts");
+    let root_dir = std::env::current_dir().unwrap(); // crates/cli
+    let wasm_dir = root_dir
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("wasm/prebuilts");
 
     let mut env = HashMap::new();
     env.insert("RUST_BACKTRACE", "1");

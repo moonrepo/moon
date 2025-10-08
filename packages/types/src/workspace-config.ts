@@ -75,6 +75,7 @@ export interface DockerScaffoldConfig {
 	 * the configuration skeleton.
 	 *
 	 * @default true
+	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean;
 	/**
@@ -614,6 +615,7 @@ export interface PartialDockerScaffoldConfig {
 	 * the configuration skeleton.
 	 *
 	 * @default true
+	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean | null;
 	/**

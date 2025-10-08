@@ -1,8 +1,9 @@
-use crate::components::create_progress_loader;
 use crate::session::MoonSession;
 use clap::Args;
+use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_DIRNAME;
+use moon_console::ui::Confirm;
 use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::yaml::{self, YamlMapping, YamlValue};
@@ -11,23 +12,34 @@ use tracing::{instrument, warn};
 
 #[derive(Args, Clone, Debug)]
 pub struct MigrateV2Args {
-    #[arg(long, help = "Skip migrating configuration files")]
-    skip_config: bool,
+    #[arg(long, help = "Skip prompts and apply all migrations")]
+    yes: bool,
 }
 
 #[instrument(skip_all)]
 pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
-    let progress = create_progress_loader(session.get_console()?, "Migrating to moon v2!").await;
+    let skip_prompts = args.yes;
 
     // Configuration
-    if !args.skip_config {
-        progress.set_message("Migrating configuration files...");
+    let mut confirmed = false;
 
+    if !skip_prompts {
+        session
+            .console
+            .render_interactive(element! {
+                Confirm(
+                    label: "Migrate configuration files?".to_string(),
+                    description: "This will strip comments and re-format the files.".to_string(),
+                    on_confirm: &mut confirmed
+                )
+            })
+            .await?;
+    }
+
+    if confirmed || skip_prompts {
         migrate_workspace_config(&session)?;
         migrate_toolchain_config(&session)?;
     }
-
-    progress.stop().await?;
 
     Ok(None)
 }

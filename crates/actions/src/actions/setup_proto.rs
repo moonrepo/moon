@@ -5,7 +5,7 @@ use moon_common::is_test_env;
 use moon_common::path::exe_name;
 use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
-use moon_platform::is_using_global_toolchains;
+use moon_toolchain::is_using_global_toolchains;
 use proto_core::flow::install::{InstallOptions, ProtoInstallError};
 use proto_core::{Id, ToolContext, ToolSpec, is_offline, load_tool_from_locator};
 use std::sync::Arc;

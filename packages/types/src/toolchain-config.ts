@@ -4,102 +4,6 @@
 
 import type { ExtendsFrom, Id } from './common';
 
-/** Formats that a `package.json` version dependency can be. */
-export type NodeVersionFormat =
-	| 'file'
-	| 'link'
-	| 'star'
-	| 'version'
-	| 'version-caret'
-	| 'version-tilde'
-	| 'workspace'
-	| 'workspace-caret'
-	| 'workspace-tilde';
-
-export type PluginLocator = string;
-
-export type UnresolvedVersionSpec = string;
-
-/**
- * Configures and enables the Bun platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#bun
- */
-export interface BunConfig {
-	/**
-	 * The dependency version format to use when syncing projects
-	 * as dependencies.
-	 *
-	 * @default 'workspace'
-	 * @type {'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde'}
-	 */
-	dependencyVersionFormat: NodeVersionFormat;
-	/** Automatically infer moon tasks from `package.json` scripts. */
-	inferTasksFromScripts: boolean;
-	/** List of arguments to append to `bun install` commands. */
-	installArgs: string[];
-	/** Location of the WASM plugin to use for Bun support. */
-	plugin: PluginLocator | null;
-	/**
-	 * Assumes only the root `package.json` is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootPackageOnly: boolean;
-	/**
-	 * Automatically syncs moon project-to-project relationships as
-	 * dependencies for each `package.json` in the workspace.
-	 *
-	 * @default true
-	 */
-	syncProjectWorkspaceDependencies?: boolean;
-	/**
-	 * The version of Bun to download, install, and run `bun` tasks with.
-	 *
-	 * @envvar MOON_BUN_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
-/** Configures to a tool-specific binary to install. */
-export interface BinConfig {
-	/** Name of the binary, with optional version separated by `@`. */
-	bin: string;
-	/** Force install the binary if it already exists. */
-	force: boolean;
-	/** Only install the binary locally, and not within CI. */
-	local: boolean;
-	/** For supported tools, a custom name to use. */
-	name: string | null;
-}
-
-export type BinEntry = string | BinConfig;
-
-/**
- * Configures and enables the Deno platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#deno
- */
-export interface DenoConfig {
-	/** List of binaries to install into the environment using `deno install`. */
-	bins: BinEntry[];
-	/**
-	 * Relative path to a dependency management file. Used for content hashing.
-	 *
-	 * @default 'deps.ts'
-	 */
-	depsFile?: string;
-	/** List of arguments to append to `deno install` commands. */
-	installArgs: string[];
-	/** Requires and forces the use of `deno.lock` files. */
-	lockfile: boolean;
-	/** Location of the WASM plugin to use for Deno support. */
-	plugin: PluginLocator | null;
-	/**
-	 * The version of Deno to download, install, and run `deno` tasks with.
-	 *
-	 * @envvar MOON_DENO_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
 /** Configures how and where updates will be received. */
 export interface MoonConfig {
 	/**
@@ -116,152 +20,9 @@ export interface MoonConfig {
 	manifestUrl?: string;
 }
 
-/** Options for Bun, when used as a package manager. */
-export interface BunpmConfig {
-	/** List of arguments to append to `bun install` commands. */
-	installArgs: string[];
-	/** Location of the WASM plugin to use for Bun support. */
-	plugin: PluginLocator | null;
-	/**
-	 * The version of Bun to download, install, and run `bun` tasks with.
-	 *
-	 * @envvar MOON_BUN_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
+export type PluginLocator = string;
 
-/** Options for npm, when used as a package manager. */
-export interface NpmConfig {
-	/** List of arguments to append to `npm install` commands. */
-	installArgs?: string[];
-	/** Location of the WASM plugin to use for npm support. */
-	plugin: PluginLocator | null;
-	/**
-	 * The version of npm to download, install, and run `npm` tasks with.
-	 *
-	 * @envvar MOON_NPM_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
-/** The available package managers for Node.js. */
-export type NodePackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
-
-/** Options for pnpm, when used as a package manager. */
-export interface PnpmConfig {
-	/** List of arguments to append to `pnpm install` commands. */
-	installArgs: string[];
-	/** Location of the WASM plugin to use for pnpm support. */
-	plugin: PluginLocator | null;
-	/**
-	 * The version of pnpm to download, install, and run `pnpm` tasks with.
-	 *
-	 * @envvar MOON_PNPM_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
-/** The available version managers for Node.js. */
-export type NodeVersionManager = 'nodenv' | 'nvm';
-
-/** Options for Yarn, when used as a package manager. */
-export interface YarnConfig {
-	/** List of arguments to append to `yarn install` commands. */
-	installArgs: string[];
-	/** Location of the WASM plugin to use for Yarn support. */
-	plugin: PluginLocator | null;
-	/** Plugins to automatically install for Yarn v2 and above. */
-	plugins: string[];
-	/**
-	 * The version of Yarn to download, install, and run `yarn` tasks with.
-	 *
-	 * @envvar MOON_YARN_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
-/**
- * Configures and enables the Node.js platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#node
- */
-export interface NodeConfig {
-	/**
-	 * When `version` is defined, syncs the version as a constraint to
-	 * `package.json` engines.
-	 *
-	 * @default true
-	 */
-	addEnginesConstraint?: boolean;
-	/**
-	 * Arguments to automatically pass to all tasks that execute the
-	 * `node` binary.
-	 */
-	binExecArgs: string[];
-	/** Options for Bun, when used as a package manager. */
-	bun: BunpmConfig | null;
-	/**
-	 * Automatically dedupes the lockfile when dependencies have changed.
-	 *
-	 * @default true
-	 */
-	dedupeOnLockfileChange?: boolean;
-	/**
-	 * The dependency version format to use when syncing projects
-	 * as dependencies.
-	 *
-	 * @default 'workspace'
-	 * @type {'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde'}
-	 */
-	dependencyVersionFormat: NodeVersionFormat;
-	/** Automatically infer moon tasks from `package.json` scripts. */
-	inferTasksFromScripts: boolean;
-	/** Options for npm, when used as a package manager. */
-	npm: NpmConfig;
-	/**
-	 * The package manager to use for installing dependencies.
-	 *
-	 * @default 'npm'
-	 * @type {'bun' | 'npm' | 'pnpm' | 'yarn'}
-	 */
-	packageManager: NodePackageManager;
-	/** Location of the WASM plugin to use for Node.js support. */
-	plugin: PluginLocator | null;
-	/** Options for pnpm, when used as a package manager. */
-	pnpm: PnpmConfig | null;
-	/**
-	 * Assumes only the root `package.json` is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootPackageOnly: boolean;
-	/**
-	 * Automatically syncs the configured package manager version
-	 * to the root `packageManager` field in `package.json`.
-	 *
-	 * @default true
-	 */
-	syncPackageManagerField?: boolean;
-	/**
-	 * Automatically syncs moon project-to-project relationships as
-	 * dependencies for each `package.json` in the workspace.
-	 *
-	 * @default true
-	 */
-	syncProjectWorkspaceDependencies?: boolean;
-	/**
-	 * When `version` is defined, syncs the version to the chosen config.
-	 *
-	 * @default 'nvm'
-	 */
-	syncVersionManagerConfig: NodeVersionManager | null;
-	/**
-	 * The version of Node.js to download, install, and run `node` tasks with.
-	 *
-	 * @envvar MOON_NODE_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-	/** Options for Yarn, when used as a package manager. */
-	yarn: YarnConfig | null;
-}
+export type UnresolvedVersionSpec = string;
 
 export type ToolchainPluginVersionFrom = boolean | string;
 
@@ -269,7 +30,6 @@ export type ToolchainPluginVersionFrom = boolean | string;
 export interface ToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config: Record<string, unknown>;
-	disabled: boolean;
 	/** Location of the WASM plugin to use. */
 	plugin: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
@@ -293,111 +53,13 @@ export interface ProtoConfig {
 	version?: VersionSpec;
 }
 
-/** The available package managers for Python. */
-export type PythonPackageManager = 'pip' | 'uv';
-
-export interface PipConfig {
-	/** List of arguments to append to `pip install` commands. */
-	installArgs: string[];
-}
-
-export interface UvConfig {
-	/** Location of the WASM plugin to use for uv support. */
-	plugin: PluginLocator | null;
-	/** List of arguments to append to `uv sync` commands. */
-	syncArgs: string[];
-	/**
-	 * The version of uv to download, install, and run `uv` tasks with.
-	 *
-	 * @envvar MOON_UV_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
-export interface PythonConfig {
-	/**
-	 * The package manager to use for installing dependencies and managing
-	 * the virtual environment.
-	 *
-	 * @default 'pip'
-	 * @type {'pip' | 'uv'}
-	 */
-	packageManager: PythonPackageManager;
-	/** Options for pip, when used as a package manager. */
-	pip: PipConfig;
-	/** Location of the WASM plugin to use for Python support. */
-	plugin: PluginLocator | null;
-	/**
-	 * Assumes a workspace root virtual environment is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootRequirementsOnly?: boolean;
-	/**
-	 * Assumes a workspace root virtual environment is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootVenvOnly: boolean;
-	/** Options for uv, when used as a package manager. */
-	uv: UvConfig | null;
-	/**
-	 * Defines the virtual environment name, which will be created in the workspace root.
-	 * Project dependencies will be installed into this.
-	 *
-	 * @default '.venv'
-	 */
-	venvName?: string;
-	/**
-	 * The version of Python to download, install, and run `python` tasks with.
-	 *
-	 * @envvar MOON_PYTHON_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
 /**
- * Configures and enables the Rust platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#rust
- */
-export interface RustConfig {
-	/** List of binaries to install into the environment using `cargo binstall`. */
-	bins: BinEntry[];
-	/** The version of `cargo-binstall` to install. Defaults to latest if not defined. */
-	binstallVersion: string | null;
-	/** Rust components to automatically install. */
-	components: string[];
-	/** Location of the WASM plugin to use for Rust support. */
-	plugin: PluginLocator | null;
-	/** When `version` is defined, syncs the version to `rust-toolchain.toml`. */
-	syncToolchainConfig: boolean;
-	/** Rust targets to automatically install. */
-	targets: string[];
-	/**
-	 * The version of Rust to download, install, and run `cargo` tasks with.
-	 *
-	 * @envvar MOON_RUST_VERSION
-	 */
-	version: UnresolvedVersionSpec | null;
-}
-
-/**
- * Configures all tools and platforms.
+ * Configures all toolchains.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
 export interface ToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string;
-	/**
-	 * Configures and enables the Bun platform.
-	 *
-	 * @deprecated Use `unstable_bun` instead.
-	 */
-	bun: BunConfig | null;
-	/**
-	 * Configures and enables the Deno platform.
-	 *
-	 * @deprecated Use `unstable_deno` instead.
-	 */
-	deno: DenoConfig | null;
 	/**
 	 * Extends one or many toolchain configuration files.
 	 * Supports a relative file path or a secure URL.
@@ -405,103 +67,10 @@ export interface ToolchainConfig {
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
-	/**
-	 * Configures and enables the Node.js platform.
-	 *
-	 * @deprecated Use `unstable_node` instead.
-	 */
-	node: NodeConfig | null;
-	/** All configured toolchains by unique ID. */
+	/** Configures toolchains by unique ID. */
 	plugins: Record<Id, ToolchainPluginConfig>;
 	/** Configures how moon integrates with proto. */
 	proto: ProtoConfig;
-	/** Configures and enables the Python platform. */
-	python: PythonConfig | null;
-	/**
-	 * Configures and enables the Rust platform.
-	 *
-	 * @deprecated Use `unstable_rust` instead.
-	 */
-	rust: RustConfig | null;
-}
-
-/**
- * Configures and enables the Bun platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#bun
- */
-export interface PartialBunConfig {
-	/**
-	 * The dependency version format to use when syncing projects
-	 * as dependencies.
-	 *
-	 * @default 'workspace'
-	 */
-	dependencyVersionFormat?: NodeVersionFormat | null;
-	/** Automatically infer moon tasks from `package.json` scripts. */
-	inferTasksFromScripts?: boolean | null;
-	/** List of arguments to append to `bun install` commands. */
-	installArgs?: string[] | null;
-	/** Location of the WASM plugin to use for Bun support. */
-	plugin?: PluginLocator | null;
-	/**
-	 * Assumes only the root `package.json` is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootPackageOnly?: boolean | null;
-	/**
-	 * Automatically syncs moon project-to-project relationships as
-	 * dependencies for each `package.json` in the workspace.
-	 *
-	 * @default true
-	 */
-	syncProjectWorkspaceDependencies?: boolean | null;
-	/**
-	 * The version of Bun to download, install, and run `bun` tasks with.
-	 *
-	 * @envvar MOON_BUN_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/** Configures to a tool-specific binary to install. */
-export interface PartialBinConfig {
-	/** Name of the binary, with optional version separated by `@`. */
-	bin?: string | null;
-	/** Force install the binary if it already exists. */
-	force?: boolean | null;
-	/** Only install the binary locally, and not within CI. */
-	local?: boolean | null;
-	/** For supported tools, a custom name to use. */
-	name?: string | null;
-}
-
-export type PartialBinEntry = string | PartialBinConfig;
-
-/**
- * Configures and enables the Deno platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#deno
- */
-export interface PartialDenoConfig {
-	/** List of binaries to install into the environment using `deno install`. */
-	bins?: PartialBinEntry[] | null;
-	/**
-	 * Relative path to a dependency management file. Used for content hashing.
-	 *
-	 * @default 'deps.ts'
-	 */
-	depsFile?: string | null;
-	/** List of arguments to append to `deno install` commands. */
-	installArgs?: string[] | null;
-	/** Requires and forces the use of `deno.lock` files. */
-	lockfile?: boolean | null;
-	/** Location of the WASM plugin to use for Deno support. */
-	plugin?: PluginLocator | null;
-	/**
-	 * The version of Deno to download, install, and run `deno` tasks with.
-	 *
-	 * @envvar MOON_DENO_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
 }
 
 /** Configures how and where updates will be received. */
@@ -520,150 +89,10 @@ export interface PartialMoonConfig {
 	manifestUrl?: string | null;
 }
 
-/** Options for Bun, when used as a package manager. */
-export interface PartialBunpmConfig {
-	/** List of arguments to append to `bun install` commands. */
-	installArgs?: string[] | null;
-	/** Location of the WASM plugin to use for Bun support. */
-	plugin?: PluginLocator | null;
-	/**
-	 * The version of Bun to download, install, and run `bun` tasks with.
-	 *
-	 * @envvar MOON_BUN_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/** Options for npm, when used as a package manager. */
-export interface PartialNpmConfig {
-	/** List of arguments to append to `npm install` commands. */
-	installArgs?: string[] | null;
-	/** Location of the WASM plugin to use for npm support. */
-	plugin?: PluginLocator | null;
-	/**
-	 * The version of npm to download, install, and run `npm` tasks with.
-	 *
-	 * @envvar MOON_NPM_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/** Options for pnpm, when used as a package manager. */
-export interface PartialPnpmConfig {
-	/** List of arguments to append to `pnpm install` commands. */
-	installArgs?: string[] | null;
-	/** Location of the WASM plugin to use for pnpm support. */
-	plugin?: PluginLocator | null;
-	/**
-	 * The version of pnpm to download, install, and run `pnpm` tasks with.
-	 *
-	 * @envvar MOON_PNPM_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/** Options for Yarn, when used as a package manager. */
-export interface PartialYarnConfig {
-	/** List of arguments to append to `yarn install` commands. */
-	installArgs?: string[] | null;
-	/** Location of the WASM plugin to use for Yarn support. */
-	plugin?: PluginLocator | null;
-	/** Plugins to automatically install for Yarn v2 and above. */
-	plugins?: string[] | null;
-	/**
-	 * The version of Yarn to download, install, and run `yarn` tasks with.
-	 *
-	 * @envvar MOON_YARN_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/**
- * Configures and enables the Node.js platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#node
- */
-export interface PartialNodeConfig {
-	/**
-	 * When `version` is defined, syncs the version as a constraint to
-	 * `package.json` engines.
-	 *
-	 * @default true
-	 */
-	addEnginesConstraint?: boolean | null;
-	/**
-	 * Arguments to automatically pass to all tasks that execute the
-	 * `node` binary.
-	 */
-	binExecArgs?: string[] | null;
-	/** Options for Bun, when used as a package manager. */
-	bun?: PartialBunpmConfig | null;
-	/**
-	 * Automatically dedupes the lockfile when dependencies have changed.
-	 *
-	 * @default true
-	 */
-	dedupeOnLockfileChange?: boolean | null;
-	/**
-	 * The dependency version format to use when syncing projects
-	 * as dependencies.
-	 *
-	 * @default 'workspace'
-	 */
-	dependencyVersionFormat?: NodeVersionFormat | null;
-	/** Automatically infer moon tasks from `package.json` scripts. */
-	inferTasksFromScripts?: boolean | null;
-	/** Options for npm, when used as a package manager. */
-	npm?: PartialNpmConfig | null;
-	/**
-	 * The package manager to use for installing dependencies.
-	 *
-	 * @default 'npm'
-	 */
-	packageManager?: NodePackageManager | null;
-	/** Location of the WASM plugin to use for Node.js support. */
-	plugin?: PluginLocator | null;
-	/** Options for pnpm, when used as a package manager. */
-	pnpm?: PartialPnpmConfig | null;
-	/**
-	 * Assumes only the root `package.json` is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootPackageOnly?: boolean | null;
-	/**
-	 * Automatically syncs the configured package manager version
-	 * to the root `packageManager` field in `package.json`.
-	 *
-	 * @default true
-	 */
-	syncPackageManagerField?: boolean | null;
-	/**
-	 * Automatically syncs moon project-to-project relationships as
-	 * dependencies for each `package.json` in the workspace.
-	 *
-	 * @default true
-	 */
-	syncProjectWorkspaceDependencies?: boolean | null;
-	/**
-	 * When `version` is defined, syncs the version to the chosen config.
-	 *
-	 * @default 'nvm'
-	 */
-	syncVersionManagerConfig?: NodeVersionManager | null;
-	/**
-	 * The version of Node.js to download, install, and run `node` tasks with.
-	 *
-	 * @envvar MOON_NODE_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-	/** Options for Yarn, when used as a package manager. */
-	yarn?: PartialYarnConfig | null;
-}
-
 /** Configures an individual toolchain. */
 export interface PartialToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config?: Record<string, unknown> | null;
-	disabled?: boolean | null;
 	/** Location of the WASM plugin to use. */
 	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
@@ -685,107 +114,13 @@ export interface PartialProtoConfig {
 	version?: VersionSpec | null;
 }
 
-export interface PartialPipConfig {
-	/** List of arguments to append to `pip install` commands. */
-	installArgs?: string[] | null;
-}
-
-export interface PartialUvConfig {
-	/** Location of the WASM plugin to use for uv support. */
-	plugin?: PluginLocator | null;
-	/** List of arguments to append to `uv sync` commands. */
-	syncArgs?: string[] | null;
-	/**
-	 * The version of uv to download, install, and run `uv` tasks with.
-	 *
-	 * @envvar MOON_UV_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-export interface PartialPythonConfig {
-	/**
-	 * The package manager to use for installing dependencies and managing
-	 * the virtual environment.
-	 *
-	 * @default 'pip'
-	 */
-	packageManager?: PythonPackageManager | null;
-	/** Options for pip, when used as a package manager. */
-	pip?: PartialPipConfig | null;
-	/** Location of the WASM plugin to use for Python support. */
-	plugin?: PluginLocator | null;
-	/**
-	 * Assumes a workspace root virtual environment is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootRequirementsOnly?: boolean | null;
-	/**
-	 * Assumes a workspace root virtual environment is used for dependencies.
-	 * Can be used to support the "one version policy" pattern.
-	 */
-	rootVenvOnly?: boolean | null;
-	/** Options for uv, when used as a package manager. */
-	uv?: PartialUvConfig | null;
-	/**
-	 * Defines the virtual environment name, which will be created in the workspace root.
-	 * Project dependencies will be installed into this.
-	 *
-	 * @default '.venv'
-	 */
-	venvName?: string | null;
-	/**
-	 * The version of Python to download, install, and run `python` tasks with.
-	 *
-	 * @envvar MOON_PYTHON_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
 /**
- * Configures and enables the Rust platform.
- * Docs: https://moonrepo.dev/docs/config/toolchain#rust
- */
-export interface PartialRustConfig {
-	/** List of binaries to install into the environment using `cargo binstall`. */
-	bins?: PartialBinEntry[] | null;
-	/** The version of `cargo-binstall` to install. Defaults to latest if not defined. */
-	binstallVersion?: string | null;
-	/** Rust components to automatically install. */
-	components?: string[] | null;
-	/** Location of the WASM plugin to use for Rust support. */
-	plugin?: PluginLocator | null;
-	/** When `version` is defined, syncs the version to `rust-toolchain.toml`. */
-	syncToolchainConfig?: boolean | null;
-	/** Rust targets to automatically install. */
-	targets?: string[] | null;
-	/**
-	 * The version of Rust to download, install, and run `cargo` tasks with.
-	 *
-	 * @envvar MOON_RUST_VERSION
-	 */
-	version?: UnresolvedVersionSpec | null;
-}
-
-/**
- * Configures all tools and platforms.
+ * Configures all toolchains.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
 export interface PartialToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string | null;
-	/**
-	 * Configures and enables the Bun platform.
-	 *
-	 * @deprecated Use `unstable_bun` instead.
-	 */
-	bun?: PartialBunConfig | null;
-	/**
-	 * Configures and enables the Deno platform.
-	 *
-	 * @deprecated Use `unstable_deno` instead.
-	 */
-	deno?: PartialDenoConfig | null;
 	/**
 	 * Extends one or many toolchain configuration files.
 	 * Supports a relative file path or a secure URL.
@@ -793,22 +128,8 @@ export interface PartialToolchainConfig {
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
-	/**
-	 * Configures and enables the Node.js platform.
-	 *
-	 * @deprecated Use `unstable_node` instead.
-	 */
-	node?: PartialNodeConfig | null;
-	/** All configured toolchains by unique ID. */
+	/** Configures toolchains by unique ID. */
 	plugins?: Record<Id, PartialToolchainPluginConfig> | null;
 	/** Configures how moon integrates with proto. */
 	proto?: PartialProtoConfig | null;
-	/** Configures and enables the Python platform. */
-	python?: PartialPythonConfig | null;
-	/**
-	 * Configures and enables the Rust platform.
-	 *
-	 * @deprecated Use `unstable_rust` instead.
-	 */
-	rust?: PartialRustConfig | null;
 }

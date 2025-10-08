@@ -238,9 +238,9 @@ impl ToolchainRegistry {
         let mut futures = FuturesOrdered::new();
 
         for toolchain_id in toolchain_ids {
-            if let Ok(toolchain) = self.load(toolchain_id).await
-                && (skip_func_check || toolchain.has_func(func_name).await)
-            {
+            let toolchain = self.load(toolchain_id).await?;
+
+            if skip_func_check || toolchain.has_func(func_name).await {
                 let mut operation = Operation::new(func_name).unwrap();
                 let id = toolchain.id.clone();
                 let input = input_factory(self, &toolchain);

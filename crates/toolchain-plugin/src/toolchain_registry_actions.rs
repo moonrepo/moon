@@ -1,7 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::{CallResult, ToolchainRegistry};
 use moon_common::Id;
-use moon_config::ProjectConfig;
+use moon_config::{LanguageType, ProjectConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
@@ -25,8 +25,7 @@ use std::path::{Path, PathBuf};
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
-// TODO: Remove the Ok(toolchain) checks once everything is on the registry!
-
+#[derive(Debug)]
 pub struct CommandAugment<'a> {
     pub add_env: bool,
     pub add_path: bool,
@@ -190,7 +189,52 @@ impl ToolchainRegistry {
             .collect())
     }
 
-    pub async fn detect_project_usage<InFn>(
+    pub async fn detect_project_language(&self, dir: &Path) -> miette::Result<LanguageType> {
+        let mut detected = vec![];
+
+        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+            if let Some(language) = &toolchain.metadata.language
+                && toolchain.detect_project_usage(dir)?
+                && !language.is_unknown()
+            {
+                detected.push(language.clone());
+            }
+        }
+
+        if detected.is_empty() {
+            return Ok(LanguageType::Unknown);
+        }
+
+        let language = detected.remove(0);
+
+        if language == LanguageType::JavaScript && detected.contains(&LanguageType::TypeScript) {
+            return Ok(LanguageType::TypeScript);
+        }
+
+        Ok(language)
+    }
+
+    pub async fn detect_project_toolchain_from_language(
+        &self,
+        language: &LanguageType,
+    ) -> miette::Result<Vec<Id>> {
+        let mut detected = vec![];
+
+        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+            if toolchain
+                .metadata
+                .language
+                .as_ref()
+                .is_some_and(|lang| lang == language)
+            {
+                detected.push(toolchain.id.clone());
+            }
+        }
+
+        Ok(detected)
+    }
+
+    pub async fn detect_project_toolchain_from_usage<InFn>(
         &self,
         dir: &Path,
         input_factory: InFn,
@@ -200,11 +244,9 @@ impl ToolchainRegistry {
     {
         let mut detected = FxHashSet::default();
 
-        for id in self.get_plugin_ids() {
-            if let Ok(toolchain) = self.load(id).await
-                && toolchain.detect_project_usage(dir)?
-            {
-                detected.insert(Id::raw(id));
+        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+            if toolchain.detect_project_usage(dir)? {
+                detected.insert(toolchain.id.clone());
             }
         }
 
@@ -232,11 +274,9 @@ impl ToolchainRegistry {
     {
         let mut detected = FxHashSet::default();
 
-        for id in ids {
-            if let Ok(toolchain) = self.load(id).await
-                && toolchain.detect_task_usage(command, args)?
-            {
-                detected.insert(Id::raw(id));
+        for toolchain in self.load_many(ids).await? {
+            if toolchain.detect_task_usage(command, args)? {
+                detected.insert(toolchain.id.clone());
             }
         }
 

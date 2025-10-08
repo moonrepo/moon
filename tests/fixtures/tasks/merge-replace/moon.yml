@@ -1,6 +1,6 @@
 tasks:
   standard:
-    platform: system
+    toolchain: system
     command: newcmd
     deps:
       - buildB:build

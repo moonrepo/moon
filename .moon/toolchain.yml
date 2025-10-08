@@ -1,15 +1,15 @@
 $schema: './cache/schemas/toolchain.json'
 
-unstable_javascript:
+javascript:
   packageManager: 'yarn'
   inferTasksFromScripts: false
   syncPackageManagerField: true
   syncProjectWorkspaceDependencies: true
 
-unstable_node:
+node:
   version: '22.14.0'
 
-unstable_yarn:
+yarn:
   version: '4.8.0'
 
 typescript:

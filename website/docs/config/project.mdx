@@ -209,8 +209,6 @@ owners:
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#layer" />
 
-> This was previously known as `type` and was renamed to `layer` in v1.39.
-
 The layer within a [stack](#stack). Supports the following values:
 
 - `application` - An application of any kind.
@@ -483,24 +481,6 @@ tasks:
     inputs:
       - '@group(configs)'
       - '@group(sources)'
-```
-
-## `platform`
-
-<HeadingApiLink to="/api/types/interface/ProjectConfig#platform" />
-
-:::warning
-
-This setting is deprecated, use [`toolchain.default`](#toolchain-1) instead.
-
-:::
-
-The default [`platform`](#platform-1) for all task's within the current project. When a task's
-`platform` has _not been_ explicitly configured, the platform will fallback to this configured
-value, otherwise the platform will be detected from the project's environment.
-
-```yaml title="moon.yml"
-platform: 'node'
 ```
 
 ## `tasks`
@@ -1021,38 +1001,6 @@ When using globs and moon hydrates an output (a cache hit), all files not matchi
 **deleted**. Ensure that all files critical for the build to function correctly are included.
 
 :::
-
-### `platform`
-
-<HeadingApiLink to="/api/types/interface/TaskConfig#platform" />
-
-:::warning
-
-This setting is deprecated, use [`toolchain`](#toolchain) instead.
-
-:::
-
-The `platform` field defines the platform (language runtime) the command runs on, where to locate
-its executable, and which tool to execute it with. By default moon will set to a value based on the
-project's [`language`](#language) or default [`platform`](#platform).
-
-- `bun` - Command is a binary within `node_modules` and will be executed with Bun.
-  <VersionLabel version="1.17.0" />
-- `deno` - Command is executed with Deno, or is a Deno binary located in `~/.deno/bin`.
-- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
-- `rust` - Command is executed with Cargo, or is a Cargo binary located in `~/.cargo/bin`.
-- `system` - Command is expected to exist within the system's environment / user's shell.
-- `unknown` - When not configured or inferred.
-
-```yaml title="moon.yml" {4}
-tasks:
-  env:
-    command: 'printenv'
-    platform: 'system'
-```
-
-> This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
-> command is ran.
 
 ### `preset`<VersionLabel version="1.28.0" />
 

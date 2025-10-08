@@ -23,7 +23,7 @@ digraph {
     6 -> 3 [ label="build" arrowhead=box, arrowtail=box]
     6 -> 3 [ label="build" arrowhead=box, arrowtail=box]
     8 -> 0 [ label="development" arrowhead=box, arrowtail=box]
-    8 -> 4 [ label="build" arrowhead=box, arrowtail=box]
-    9 -> 0 [ label="production" arrowhead=box, arrowtail=box]
+    8 -> 4 [ label="production" arrowhead=box, arrowtail=box]
     9 -> 3 [ label="development" arrowhead=box, arrowtail=box]
+    9 -> 0 [ label="production" arrowhead=box, arrowtail=box]
 }

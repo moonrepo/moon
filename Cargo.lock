@@ -573,12 +573,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "boxcar"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36f64beae40a84da1b4b26ff2761a5b895c12adc41dc25aaee1c4f2bbfe97a6e"
-
-[[package]]
 name = "bstr"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -752,50 +746,6 @@ dependencies = [
  "once_cell",
  "rustix 1.1.2",
  "winx",
-]
-
-[[package]]
-name = "capacity_builder"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f2d24a6dcf0cd402a21b65d35340f3a49ff3475dc5fdac91d22d2733e6641c6"
-dependencies = [
- "capacity_builder_macros",
- "ecow",
- "hipstr",
- "itoa",
-]
-
-[[package]]
-name = "capacity_builder_macros"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b4a6cae9efc04cc6cbb8faf338d2c497c165c83e74509cf4dbedea948bbf6e5"
-dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
-name = "cargo-lock"
-version = "10.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06acb4f71407ba205a07cb453211e0e6a67b21904e47f6ba1f9589e38f2e454"
-dependencies = [
- "semver",
- "serde",
- "toml 0.8.23",
- "url",
-]
-
-[[package]]
-name = "cargo_toml"
-version = "0.22.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "374b7c592d9c00c1f4972ea58390ac6b18cbb6ab79011f3bdc90a0b82ca06b77"
-dependencies = [
- "serde",
- "toml 0.9.7",
 ]
 
 [[package]]
@@ -994,12 +944,6 @@ name = "clap_lex"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
-
-[[package]]
-name = "clean-path"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaa6b4b263a5d737e9bf6b7c09b72c41a5480aec4d7219af827f6564e950b6a5"
 
 [[package]]
 name = "cmake"
@@ -1504,57 +1448,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deno_error"
-version = "0.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e983933fb4958fbe1e0a63c1e89a2af72b12c409e86404e547955564e6e217b8"
-dependencies = [
- "deno_error_macro",
- "libc",
-]
-
-[[package]]
-name = "deno_error_macro"
-version = "0.5.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1ad5ae3ef15db33e917d6ed54b53d0a98d068c4d1217eb35a4997423203c3ef"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "deno_lockfile"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a03d93aa789e2652a644e3e71638b4e21faafad5f7392dc8f126589d158695"
-dependencies = [
- "async-trait",
- "deno_semver",
- "serde",
- "serde_json",
- "thiserror 2.0.17",
-]
-
-[[package]]
-name = "deno_semver"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4775271f9b5602482698f76d24ea9ed8ba27af7f587a7e9a876916300c542435"
-dependencies = [
- "capacity_builder",
- "deno_error",
- "ecow",
- "hipstr",
- "monch",
- "once_cell",
- "serde",
- "thiserror 2.0.17",
- "url",
-]
-
-[[package]]
 name = "deranged"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1769,15 +1662,6 @@ name = "ec4rs"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b31a881d38439026e3d5dd938ab20328d36e23caca8fd5981c42e4b677f5842"
-
-[[package]]
-name = "ecow"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78e4f79b296fbaab6ce2e22d52cb4c7f010fe0ebe7a32e34fa25885fd797bd02"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "either"
@@ -2455,17 +2339,6 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
-
-[[package]]
-name = "hipstr"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97971ffc85d4c98de12e2608e992a43f5294ebb625fdb045b27c731b64c4c6d6"
-dependencies = [
- "serde",
- "serde_bytes",
- "sptr",
-]
 
 [[package]]
 name = "hmac"
@@ -3540,12 +3413,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "monch"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b52c1b33ff98142aecea13138bd399b68aa7ab5d9546c300988c345004001eea"
-
-[[package]]
 name = "moon_action"
 version = "0.0.1"
 dependencies = [
@@ -3585,12 +3452,12 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_pdk_api",
- "moon_platform",
  "moon_project",
  "moon_query",
  "moon_task",
  "moon_task_args",
  "moon_test_utils2",
+ "moon_toolchain",
  "moon_workspace_graph",
  "petgraph 0.8.3",
  "rustc-hash",
@@ -3659,13 +3526,13 @@ dependencies = [
  "moon_feature_flags",
  "moon_hash",
  "moon_pdk_api",
- "moon_platform",
  "moon_process",
  "moon_project",
  "moon_remote",
  "moon_task_runner",
  "moon_test_utils2",
  "moon_time",
+ "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs_hooks",
  "moon_workspace_graph",
@@ -3747,44 +3614,27 @@ dependencies = [
  "moon_affected",
  "moon_api",
  "moon_app_context",
- "moon_bun_platform",
- "moon_bun_tool",
  "moon_cache",
  "moon_codegen",
  "moon_common",
  "moon_config",
  "moon_console",
- "moon_deno_platform",
- "moon_deno_tool",
  "moon_docker",
  "moon_env",
  "moon_env_var",
  "moon_extension_plugin",
  "moon_feature_flags",
- "moon_lang",
  "moon_mcp",
- "moon_node_lang",
- "moon_node_platform",
- "moon_node_tool",
  "moon_pdk_api",
- "moon_platform",
  "moon_plugin",
  "moon_process",
  "moon_project",
  "moon_project_graph",
- "moon_python_lang",
- "moon_python_platform",
- "moon_python_tool",
  "moon_query",
  "moon_remote",
- "moon_rust_lang",
- "moon_rust_platform",
- "moon_rust_tool",
- "moon_system_platform",
  "moon_task",
  "moon_task_graph",
  "moon_task_runner",
- "moon_tool",
  "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs",
@@ -3801,7 +3651,6 @@ dependencies = [
  "serde",
  "serial_test",
  "starbase",
- "starbase_events",
  "starbase_sandbox",
  "starbase_shell",
  "starbase_styles",
@@ -3833,72 +3682,6 @@ dependencies = [
  "miette 7.6.0",
  "shell-words",
  "thiserror 2.0.17",
-]
-
-[[package]]
-name = "moon_bun_lang"
-version = "0.0.1"
-dependencies = [
- "cached",
- "miette 7.6.0",
- "moon_lang",
- "rustc-hash",
- "serde",
- "starbase_sandbox",
- "starbase_utils",
- "tracing",
- "yarn-lock-parser",
-]
-
-[[package]]
-name = "moon_bun_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_action",
- "moon_action_context",
- "moon_bun_tool",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_hash",
- "moon_javascript_platform",
- "moon_lang",
- "moon_logger",
- "moon_node_lang",
- "moon_platform",
- "moon_process",
- "moon_project",
- "moon_task",
- "moon_tool",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "schematic",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "tracing",
-]
-
-[[package]]
-name = "moon_bun_tool"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_bun_lang",
- "moon_config",
- "moon_console",
- "moon_logger",
- "moon_process",
- "moon_tool",
- "moon_toolchain",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "scc 2.4.0",
- "starbase_utils",
- "tracing",
 ]
 
 [[package]]
@@ -4073,68 +3856,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_deno_lang"
-version = "0.0.1"
-dependencies = [
- "cached",
- "deno_lockfile",
- "miette 7.6.0",
- "moon_lang",
- "moon_logger",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "typescript_tsconfig_json",
-]
-
-[[package]]
-name = "moon_deno_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_action",
- "moon_action_context",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_deno_lang",
- "moon_deno_tool",
- "moon_hash",
- "moon_logger",
- "moon_platform",
- "moon_process",
- "moon_project",
- "moon_task",
- "moon_tool",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "serde",
- "starbase_utils",
- "typescript_tsconfig_json",
-]
-
-[[package]]
-name = "moon_deno_tool"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_deno_lang",
- "moon_process",
- "moon_tool",
- "moon_toolchain",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "starbase_utils",
- "tracing",
-]
-
-[[package]]
 name = "moon_docker"
 version = "0.0.1"
 dependencies = [
@@ -4224,39 +3945,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_javascript_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_args",
- "moon_common",
- "moon_config",
- "moon_node_lang",
- "moon_project",
- "moon_target",
- "moon_toolchain",
- "moon_utils",
- "rustc-hash",
- "starbase_styles",
- "tracing",
-]
-
-[[package]]
-name = "moon_lang"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "rustc-hash",
-]
-
-[[package]]
-name = "moon_logger"
-version = "0.0.1"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "moon_mcp"
 version = "0.0.1"
 dependencies = [
@@ -4274,82 +3962,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.17",
-]
-
-[[package]]
-name = "moon_node_lang"
-version = "0.0.1"
-dependencies = [
- "cached",
- "miette 7.6.0",
- "moon_bun_lang",
- "moon_lang",
- "moon_logger",
- "moon_test_utils",
- "moon_utils",
- "nodejs_package_json",
- "package-lock-json-parser",
- "reqwest",
- "rustc-hash",
- "serde",
- "serde_json",
- "serde_yml",
- "starbase_styles",
- "starbase_utils",
- "tracing",
- "yarn-lock-parser",
-]
-
-[[package]]
-name = "moon_node_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_action",
- "moon_action_context",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_hash",
- "moon_javascript_platform",
- "moon_lang",
- "moon_logger",
- "moon_node_lang",
- "moon_node_tool",
- "moon_platform",
- "moon_process",
- "moon_project",
- "moon_task",
- "moon_tool",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "schematic",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "tracing",
-]
-
-[[package]]
-name = "moon_node_tool"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_config",
- "moon_console",
- "moon_logger",
- "moon_node_lang",
- "moon_process",
- "moon_tool",
- "moon_toolchain",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "scc 2.4.0",
- "starbase_styles",
- "starbase_utils",
- "tracing",
 ]
 
 [[package]]
@@ -4416,25 +4028,6 @@ dependencies = [
  "serde_json",
  "starbase_sandbox",
  "warpgate",
-]
-
-[[package]]
-name = "moon_platform"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "miette 7.6.0",
- "moon_action",
- "moon_action_context",
- "moon_common",
- "moon_config",
- "moon_hash",
- "moon_process",
- "moon_project",
- "moon_task",
- "moon_tool",
- "moon_toolchain",
- "rustc-hash",
 ]
 
 [[package]]
@@ -4562,79 +4155,10 @@ dependencies = [
  "petgraph 0.8.3",
  "rustc-hash",
  "scc 2.4.0",
- "starbase_events",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.17",
  "tokio",
- "tracing",
-]
-
-[[package]]
-name = "moon_python_lang"
-version = "0.0.1"
-dependencies = [
- "cached",
- "miette 7.6.0",
- "moon_lang",
- "moon_logger",
- "moon_test_utils",
- "pep508_rs",
- "pyproject-toml",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
-]
-
-[[package]]
-name = "moon_python_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_action",
- "moon_action_context",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_hash",
- "moon_logger",
- "moon_platform",
- "moon_process",
- "moon_project",
- "moon_python_lang",
- "moon_python_tool",
- "moon_task",
- "moon_test_utils",
- "moon_tool",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "moon_python_tool"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_logger",
- "moon_process",
- "moon_python_lang",
- "moon_tool",
- "moon_toolchain",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "starbase_styles",
- "starbase_utils",
  "tracing",
 ]
 
@@ -4683,91 +4207,6 @@ dependencies = [
  "tracing",
  "uuid",
  "zstd",
-]
-
-[[package]]
-name = "moon_rust_lang"
-version = "0.0.1"
-dependencies = [
- "cached",
- "cargo-lock",
- "cargo_toml",
- "miette 7.6.0",
- "moon_lang",
- "moon_logger",
- "moon_test_utils",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
-]
-
-[[package]]
-name = "moon_rust_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_action",
- "moon_action_context",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_hash",
- "moon_logger",
- "moon_platform",
- "moon_process",
- "moon_project",
- "moon_rust_lang",
- "moon_rust_tool",
- "moon_task",
- "moon_test_utils",
- "moon_tool",
- "moon_utils",
- "proto_core",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "moon_rust_tool"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_logger",
- "moon_process",
- "moon_tool",
- "moon_toolchain",
- "proto_core",
- "rustc-hash",
- "starbase_utils",
- "tracing",
-]
-
-[[package]]
-name = "moon_system_platform"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_action_context",
- "moon_config",
- "moon_console",
- "moon_hash",
- "moon_platform",
- "moon_process",
- "moon_project",
- "moon_task",
- "moon_tool",
- "moon_utils",
- "proto_core",
- "serde",
- "tracing",
 ]
 
 [[package]]
@@ -4918,7 +4357,6 @@ dependencies = [
  "moon_env_var",
  "moon_hash",
  "moon_pdk_api",
- "moon_platform",
  "moon_process",
  "moon_project",
  "moon_project_graph",
@@ -4965,21 +4403,14 @@ dependencies = [
  "moon_action_graph",
  "moon_action_pipeline",
  "moon_app_context",
- "moon_bun_platform",
  "moon_cache",
  "moon_common",
  "moon_config",
  "moon_console",
- "moon_deno_platform",
  "moon_env",
- "moon_node_platform",
- "moon_platform",
  "moon_plugin",
  "moon_project_builder",
  "moon_project_graph",
- "moon_python_platform",
- "moon_rust_platform",
- "moon_system_platform",
  "moon_task_builder",
  "moon_task_graph",
  "moon_toolchain_plugin",
@@ -4987,7 +4418,6 @@ dependencies = [
  "moon_workspace",
  "moon_workspace_graph",
  "proto_core",
- "starbase_events",
  "starbase_sandbox",
 ]
 
@@ -4997,24 +4427,6 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "humantime",
-]
-
-[[package]]
-name = "moon_tool"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "miette 7.6.0",
- "moon_common",
- "moon_lang",
- "moon_process",
- "moon_toolchain",
- "proto_core",
- "rustc-hash",
- "starbase_styles",
- "thiserror 2.0.17",
- "tokio",
- "warpgate",
 ]
 
 [[package]]
@@ -5049,25 +4461,6 @@ dependencies = [
  "starbase_utils",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "moon_utils"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "cached",
- "chrono",
- "dunce",
- "humantime",
- "md5",
- "miette 7.6.0",
- "moon_common",
- "pathdiff",
- "regex",
- "relative-path",
- "semver",
- "starbase_utils",
 ]
 
 [[package]]
@@ -5139,7 +4532,6 @@ dependencies = [
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
- "starbase_events",
  "starbase_utils",
  "thiserror 2.0.17",
  "tracing",
@@ -5202,20 +4594,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nodejs_package_json"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6922a0f0a653370d0811386199a5d4eef2f463479d6a91c96d6e782fd7924cc9"
-dependencies = [
- "indexmap",
- "rustc-hash",
- "semver",
- "serde",
- "serde_json",
- "thiserror 2.0.17",
-]
-
-[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5232,15 +4610,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df9761775871bdef83bee530e60050f7e54b1105350d6884eb0fb4f46c2f9405"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "nom-language"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2de2bc5b451bfedaef92c90b8939a8fff5770bdcc1fafd6239d086aab8fa6b29"
-dependencies = [
- "nom 8.0.0",
 ]
 
 [[package]]
@@ -5539,18 +4908,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c6901729fa79e91a0913333229e9ca5dc725089d1c363b2f4b4760709dc4a52"
 
 [[package]]
-name = "package-lock-json-parser"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8707d34f4a67f9c733970b8afc7b82d8623bc0746ff17b460aa6f2ea5ef487d3"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5644,41 +5001,6 @@ dependencies = [
  "prost",
  "prost-build",
  "serde",
-]
-
-[[package]]
-name = "pep440_rs"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31095ca1f396e3de32745f42b20deef7bc09077f918b085307e8eab6ddd8fb9c"
-dependencies = [
- "once_cell",
- "serde",
- "unicode-width 0.2.1",
- "unscanny",
- "version-ranges",
-]
-
-[[package]]
-name = "pep508_rs"
-version = "0.9.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faee7227064121fcadcd2ff788ea26f0d8f2bd23a0574da11eca23bc935bcc05"
-dependencies = [
- "boxcar",
- "indexmap",
- "itertools 0.13.0",
- "once_cell",
- "pep440_rs",
- "regex",
- "rustc-hash",
- "serde",
- "smallvec",
- "thiserror 1.0.69",
- "unicode-width 0.2.1",
- "url",
- "urlencoding",
- "version-ranges",
 ]
 
 [[package]]
@@ -6055,9 +5377,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.53.3"
+version = "0.53.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f4254a704fbda2faf329bc209a906a77fc39f725626a43698a3d673ef7d32dc"
+checksum = "bc08a45398c89df6ebe1421c614f36b2968618d04a47184aecb3309bca6acf83"
 dependencies = [
  "convert_case",
  "docker_credential",
@@ -6156,20 +5478,6 @@ dependencies = [
  "cranelift-bitset",
  "log",
  "wasmtime-math",
-]
-
-[[package]]
-name = "pyproject-toml"
-version = "0.13.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec768e063102b426e8962989758115e8659485124de9207bc365fab524125d65"
-dependencies = [
- "indexmap",
- "pep440_rs",
- "pep508_rs",
- "serde",
- "thiserror 2.0.17",
- "toml 0.9.7",
 ]
 
 [[package]]
@@ -6962,16 +6270,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_bytes"
-version = "0.11.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5d440709e79d88e51ac01c4b72fc6cb7314017bb7da9eeff678aa94c10e3ea8"
-dependencies = [
- "serde",
- "serde_core",
-]
-
-[[package]]
 name = "serde_core"
 version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7330,7 +6628,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-chrome",
- "tracing-log",
  "tracing-subscriber",
 ]
 
@@ -7371,18 +6668,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "starbase_events"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bddc8bad22acb634ada26db8d5f18e3faee02ca1430ade29160911934635707"
-dependencies = [
- "async-trait",
- "miette 7.6.0",
- "starbase_macros",
- "tokio",
-]
-
-[[package]]
 name = "starbase_id"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7394,18 +6679,6 @@ dependencies = [
  "schematic",
  "serde",
  "thiserror 2.0.17",
-]
-
-[[package]]
-name = "starbase_macros"
-version = "0.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "630f0c56ad661935d1d4f5f3ce1b1517460af89a04a4402ece4dde1fafded356"
-dependencies = [
- "darling 0.21.3",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -8219,21 +7492,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
 
 [[package]]
-name = "typescript_tsconfig_json"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d2f50dae960e572a9349adf4fdd950221cfbdb53e52beb4efb382fccfb910e9"
-dependencies = [
- "clean-path",
- "indexmap",
- "relative-path",
- "rustc-hash",
- "serde",
- "serde_json",
- "starbase_utils",
-]
-
-[[package]]
 name = "ucd-trie"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8358,12 +7616,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
-name = "unscanny"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9df2af067a7953e9c3831320f35c1cc0600c30d44d9f7a12b01db1cd88d6b47"
-
-[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8413,12 +7665,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "urlencoding"
-version = "2.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
-
-[[package]]
 name = "utf-8"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8460,15 +7706,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
-name = "version-ranges"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8d079415ceb2be83fc355adbadafe401307d5c309c7e6ade6638e6f9f42f42d"
-dependencies = [
- "smallvec",
-]
-
-[[package]]
 name = "version_check"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8482,9 +7719,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "version_spec"
-version = "0.9.5"
+version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc7f86cf857fb2d4fa385435d6b930cfa2770adf811c12ddee83a91ed52f6974"
+checksum = "317c1535cf64d5ac71317e5e73afa68c92845b2ee5f89c6ed88b718f90a2a5c5"
 dependencies = [
  "compact_str 0.9.0",
  "human-sort",
@@ -9738,17 +8975,6 @@ name = "yansi"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
-
-[[package]]
-name = "yarn-lock-parser"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46a94a329f3c1ca33731094a08af14c21180556c86292842c57c150a7bd87b59"
-dependencies = [
- "nom 8.0.0",
- "nom-language",
- "thiserror 2.0.17",
-]
 
 [[package]]
 name = "yoke"

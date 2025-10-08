@@ -41,8 +41,6 @@ owners {
 	requiredApprovals = 5
 }
 
-platform = "node"
-
 project {
 	name = "Name"
 	description = "Does something"
@@ -69,7 +67,7 @@ toolchain {
 	}
 }
 
-type = "library"
+layer = "library"
 
 workspace {
 	inheritedTasks {

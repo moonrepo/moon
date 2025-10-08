@@ -2,16 +2,12 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::MoonSession;
 use async_recursion::async_recursion;
 use clap::Args;
+use moon_common::Id;
 use moon_common::consts::*;
-use moon_common::{Id, path};
-use moon_config::LanguageType;
 use moon_pdk_api::{DefineDockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
 use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
-use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
-use moon_toolchain::detect::detect_language_files;
 use rustc_hash::FxHashSet;
-use schematic::ConfigEnum;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
@@ -81,102 +77,6 @@ fn copy_files<F: IntoIterator<Item = String>, G: IntoIterator<Item = String>>(
     Ok(())
 }
 
-fn create_files<I: IntoIterator<Item = String>>(list: I, dest: &Path) -> miette::Result<()> {
-    for file in list {
-        let dest_file = dest.join(&file);
-
-        if dest_file.exists() {
-            continue;
-        }
-
-        let mut data = "";
-
-        if file.ends_with(".json") {
-            data = "{}";
-        }
-
-        fs::write_file(dest.join(file), data.as_bytes())?;
-    }
-
-    Ok(())
-}
-
-fn scaffold_files(
-    session: &MoonSession,
-    src_dir: &Path,
-    out_dir: &Path,
-    shared_globs: &FxHashSet<String>,
-    language: &LanguageType,
-) -> AppResult {
-    let mut files_to_create: FxHashSet<String> = FxHashSet::default();
-    let mut files_to_copy: FxHashSet<String> =
-        FxHashSet::from_iter([".gitignore".into(), ".prototools".into()]);
-    let mut files_to_glob: FxHashSet<String> = FxHashSet::default();
-    files_to_copy.extend(session.config_loader.get_project_file_names());
-    files_to_copy.extend(session.config_loader.get_template_file_names());
-
-    if session
-        .workspace_config
-        .docker
-        .scaffold
-        .copy_toolchain_files
-    {
-        files_to_glob.extend(shared_globs.to_owned());
-
-        // Copy manifest and config files for every type of language,
-        // not just the one the project is configured as!
-        for lang in LanguageType::variants() {
-            files_to_copy.extend(detect_language_files(&lang));
-
-            // These are special cases
-            match lang {
-                LanguageType::JavaScript => {
-                    files_to_glob.insert("postinstall.*".into());
-                }
-                LanguageType::Rust => {
-                    if let Some(cargo_toml) = CargoTomlCache::read(src_dir)? {
-                        let manifests = cargo_toml.get_member_manifest_paths(src_dir)?;
-
-                        // Non-workspace
-                        if manifests.is_empty() {
-                            if &lang == language {
-                                files_to_create.extend(["src/lib.rs".into(), "src/main.rs".into()]);
-                            }
-                        }
-                        // Workspace
-                        else {
-                            for manifest in manifests {
-                                if let Ok(rel_manifest) = manifest.strip_prefix(src_dir) {
-                                    files_to_copy.insert(path::to_string(rel_manifest)?);
-
-                                    let rel_manifest_dir = rel_manifest.parent().unwrap();
-
-                                    if &lang == language {
-                                        files_to_create.extend([
-                                            path::to_string(rel_manifest_dir.join("src/lib.rs"))?,
-                                            path::to_string(rel_manifest_dir.join("src/main.rs"))?,
-                                        ]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                LanguageType::TypeScript => {
-                    files_to_copy.insert("tsconfig.json".into());
-                    files_to_copy.insert("tsconfig.options.json".into());
-                }
-                _ => {}
-            }
-        }
-    }
-
-    copy_files(files_to_copy, files_to_glob, src_dir, out_dir)?;
-    create_files(files_to_create, out_dir)?;
-
-    Ok(None)
-}
-
 #[instrument(skip(session))]
 async fn scaffold_workspace_project(
     session: &MoonSession,
@@ -187,14 +87,6 @@ async fn scaffold_workspace_project(
     let docker_project_root = project.source.to_logical_path(docker_workspace_root);
 
     fs::create_dir_all(&docker_project_root)?;
-
-    scaffold_files(
-        session,
-        &project.root,
-        &docker_project_root,
-        shared_globs,
-        &project.language,
-    )?;
 
     let toolchains = project.get_enabled_toolchains();
 
@@ -239,26 +131,15 @@ async fn scaffold_workspace(
     fs::create_dir_all(&docker_workspace_root)?;
 
     // Copy each project and mimic the folder structure
-    let mut has_root_project = false;
+    // let mut has_root_project = false;
 
     for project in projects {
-        if path::is_root_level_source(&project.source) {
-            has_root_project = true;
-        }
+        // if path::is_root_level_source(&project.source) {
+        //     has_root_project = true;
+        // }
 
         scaffold_workspace_project(session, &docker_workspace_root, &project, &shared_globs)
             .await?;
-    }
-
-    // Copy root lockfiles and configurations
-    if !has_root_project {
-        scaffold_files(
-            session,
-            &session.workspace_root,
-            &docker_workspace_root,
-            &shared_globs,
-            &LanguageType::Unknown,
-        )?;
     }
 
     // Copy moon configuration

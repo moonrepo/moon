@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
+    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, ProjectConfig,
+    ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
     ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
@@ -23,7 +23,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `type`, `owners`, `platform`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {
@@ -49,46 +49,6 @@ tasks:
     command: 'webpack'
     inputs:
       - 'src/**/*'
-  start:
-    <<: *webpack
-    args: 'serve'
-",
-            |path| load_config_from_root(path, "."),
-        );
-
-        let build = config.tasks.get("build").unwrap();
-
-        assert_eq!(build.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskArgs::None);
-        assert_eq!(
-            build.inputs,
-            Some(vec![Input::Glob(stub_glob_input("src/**/*"))])
-        );
-
-        let start = config.tasks.get("start").unwrap();
-
-        assert_eq!(start.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            Some(vec![Input::Glob(stub_glob_input("src/**/*"))])
-        );
-    }
-
-    // TODO: fix this in schematic?
-    #[test]
-    #[should_panic(expected = "unknown field `_webpack`")]
-    fn can_use_references_from_root() {
-        let config = test_load_config(
-            "moon.yml",
-            r"
-_webpack: &webpack
-    command: 'webpack'
-    inputs:
-      - 'src/**/*'
-
-tasks:
-  build: *webpack
   start:
     <<: *webpack
     args: 'serve'
@@ -263,11 +223,11 @@ fileGroups:
 
         #[test]
         fn unsupported_variant_becomes_other() {
-            let config = test_load_config("moon.yml", "language: dotnet", |path| {
+            let config = test_load_config("moon.yml", "language: groovy", |path| {
                 load_config_from_root(path, ".")
             });
 
-            assert_eq!(config.language, LanguageType::Other(Id::raw("dotnet")));
+            assert_eq!(config.language, LanguageType::Other(Id::raw("groovy")));
         }
     }
 
@@ -592,13 +552,17 @@ toolchain:
                 |path| load_config_from_root(path, "."),
             );
 
-            assert!(config.toolchain.node.is_some());
-            assert!(config.toolchain.rust.is_none());
+            assert!(config.toolchain.plugins.contains_key("node"));
+            assert!(config.toolchain.plugins.contains_key("typescript"));
 
-            assert_eq!(
-                config.toolchain.node.unwrap().version,
-                Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
-            );
+            if let ProjectToolchainEntry::Config(node) =
+                config.toolchain.plugins.get("node").unwrap()
+            {
+                assert_eq!(
+                    node.version,
+                    Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
+                );
+            }
 
             if let ProjectToolchainEntry::Config(ts) =
                 config.toolchain.plugins.get("typescript").unwrap()
@@ -771,7 +735,6 @@ workspace:
                         paths: OwnersPaths::List(vec!["dir/".into(), "file.txt".into()]),
                         required_approvals: Some(5)
                     },
-                    platform: Some(PlatformType::Node),
                     project: Some(ProjectMetadataConfig {
                         name: Some("Name".into()),
                         description: "Does something".into(),
@@ -787,19 +750,25 @@ workspace:
                     tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
                     tasks: BTreeMap::default(),
                     toolchain: ProjectToolchainConfig {
-                        deno: Some(ProjectToolchainCommonToolConfig {
-                            version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
-                        }),
-                        plugins: FxHashMap::from_iter([(
-                            Id::raw("typescript"),
-                            ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                                config: BTreeMap::from_iter([(
-                                    "includeSharedTypes".into(),
-                                    serde_json::Value::Bool(true)
-                                )]),
-                                ..Default::default()
-                            })
-                        )]),
+                        plugins: FxHashMap::from_iter([
+                            (
+                                Id::raw("deno"),
+                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                    version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
+                                    ..Default::default()
+                                })
+                            ),
+                            (
+                                Id::raw("typescript"),
+                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                    config: BTreeMap::from_iter([(
+                                        "includeSharedTypes".into(),
+                                        serde_json::Value::Bool(true)
+                                    )]),
+                                    ..Default::default()
+                                })
+                            )
+                        ]),
                         ..Default::default()
                     },
                     layer: LayerType::Library,

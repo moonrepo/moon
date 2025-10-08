@@ -361,7 +361,7 @@ async fn build_command(
 ) -> miette::Result<Command> {
     let app_context = session.get_app_context().await?;
     let action_context = ActionContext::default();
-    let node = ActionNode::run_task(RunTaskNode::new_global(task.target.clone()));
+    let node = ActionNode::run_task(RunTaskNode::new(task.target.clone()));
 
     // Use command builder so that we inherit all paths and env vars
     let builder = CommandBuilder::new(&app_context, project, task, &node);

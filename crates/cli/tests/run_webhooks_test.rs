@@ -37,7 +37,7 @@ async fn sends_webhooks() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_calls(24);
+    mock.assert_calls(36);
 
     assert.success();
 }
@@ -62,7 +62,7 @@ async fn sends_webhooks_for_cache_events() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_calls(48);
+    mock.assert_calls(72);
 
     assert.success();
 }
@@ -103,5 +103,5 @@ async fn all_webhooks_have_same_uuid() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    mock.assert_calls(24);
+    mock.assert_calls(36);
 }

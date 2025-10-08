@@ -263,19 +263,6 @@
         }
       ]
     },
-    "PlatformType": {
-      "description": "Platforms that each programming language can belong to.",
-      "type": "string",
-      "enum": [
-        "bun",
-        "deno",
-        "node",
-        "python",
-        "rust",
-        "system",
-        "unknown"
-      ]
-    },
     "ProjectInput": {
       "description": "An external project input.",
       "type": "object",
@@ -469,16 +456,6 @@
             }
           ],
           "markdownDescription": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs."
-        },
-        "platform": {
-          "title": "platform",
-          "description": "The platform in which the task will be ran in. The platform determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
-          "default": "unknown",
-          "allOf": [
-            {
-              "$ref": "#/definitions/PlatformType"
-            }
-          ]
         },
         "preset": {
           "title": "preset",

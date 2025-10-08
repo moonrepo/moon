@@ -1,4 +1,5 @@
 use crate::config_struct;
+use crate::patterns::merge_iter;
 use crate::project::{
     PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps,
 };
@@ -7,9 +8,9 @@ use crate::shapes::Input;
 use moon_common::{Id, cacheable};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
-use schematic::{Config, MergeResult, merge, validate};
+use schematic::{Config, merge, validate};
 use std::collections::BTreeMap;
-use std::hash::{BuildHasherDefault, Hash};
+use std::hash::BuildHasherDefault;
 use std::path::PathBuf;
 
 #[cfg(feature = "loader")]
@@ -17,21 +18,6 @@ use std::{
     path::Path,
     sync::{Arc, RwLock},
 };
-
-fn merge_fxhashmap<K, V, C>(
-    mut prev: FxHashMap<K, V>,
-    next: FxHashMap<K, V>,
-    _context: &C,
-) -> MergeResult<FxHashMap<K, V>>
-where
-    K: Eq + Hash,
-{
-    for (key, value) in next {
-        prev.insert(key, value);
-    }
-
-    Ok(Some(prev))
-}
 
 config_struct!(
     /// Configures tasks and task related settings that'll be inherited by all
@@ -52,7 +38,7 @@ config_struct!(
 
         /// A mapping of group IDs to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
-        #[setting(merge = merge_fxhashmap)]
+        #[setting(merge = merge_iter)]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
         /// Task dependencies that'll automatically be injected into every

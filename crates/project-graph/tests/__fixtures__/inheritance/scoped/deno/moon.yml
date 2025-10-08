@@ -1,6 +1,7 @@
-platform: deno
+toolchain:
+  default: deno
 
 tasks:
   deno:
     command: deno
-    platform: deno
+    toolchain: deno

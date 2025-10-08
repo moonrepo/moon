@@ -48,8 +48,6 @@ options {
 	retryCount = 3
 }
 
-platform = "bun"
-
 preset = "server"
 
 type = "build"

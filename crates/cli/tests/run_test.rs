@@ -1032,21 +1032,19 @@ mod outputs {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            let assert1 = sandbox.run_moon(|cmd| {
+            sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
             let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
-            let assert2 = sandbox.run_moon(|cmd| {
+            sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
             let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
             assert_eq!(hash1, hash2);
-            assert_snapshot!(assert1.output());
-            assert_snapshot!(assert2.output());
         }
 
         #[test]

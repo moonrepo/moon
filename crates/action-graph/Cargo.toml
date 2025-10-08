@@ -16,11 +16,10 @@ moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_pdk_api = { path = "../pdk-api" }
-# TODO remove
-moon_platform = { path = "../../legacy/core/platform" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_task_args = { path = "../task-args" }
+moon_toolchain = { path = "../toolchain" }
 moon_query = { path = "../query" }
 moon_workspace_graph = { path = "../workspace-graph" }
 graph-cycles = "0.3.0"

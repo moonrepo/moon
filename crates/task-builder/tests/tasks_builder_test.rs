@@ -469,119 +469,6 @@ tasks:
         }
     }
 
-    mod detect_platform_legacy {
-        use super::*;
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn uses_explicitly_configured() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("system").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("bun").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_bun")]);
-
-            let task = tasks.get("node").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_node")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn detects_from_command_name() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("bun-via-cmd").unwrap();
-
-            assert_eq!(
-                task.toolchains,
-                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
-            );
-
-            let task = tasks.get("deno-via-cmd").unwrap();
-
-            assert_eq!(
-                task.toolchains,
-                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
-            );
-
-            let task = tasks.get("node-via-cmd").unwrap();
-
-            assert_eq!(
-                task.toolchains,
-                vec![
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm")
-                ]
-            );
-
-            let task = tasks.get("rust-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_detect_from_command_if_not_toolchain_enabled() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("bun-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("deno-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("node-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("rust-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn unknown_fallsback_to_project_platform() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("unknown").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-
-            let task = tasks.get("unknown-implicit").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn applies_to_global_inherited() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("global-build").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-        }
-    }
-
     mod detect_toolchains {
         use super::*;
 
@@ -598,11 +485,11 @@ tasks:
 
             let task = tasks.get("bun").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_bun")]);
+            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_node")]);
+            assert_eq!(task.toolchains, vec![Id::raw("node")]);
 
             let task = tasks.get("typescript").unwrap();
 
@@ -618,32 +505,25 @@ tasks:
 
             let task = tasks.get("bun-via-cmd").unwrap();
 
-            assert_eq!(
-                task.toolchains,
-                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
-            );
+            assert_eq!(task.toolchains, vec![Id::raw("bun"), Id::raw("javascript")]);
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
             assert_eq!(
                 task.toolchains,
-                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
+                vec![Id::raw("deno"), Id::raw("javascript")]
             );
 
             let task = tasks.get("node-via-cmd").unwrap();
 
             assert_eq!(
                 task.toolchains,
-                vec![
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm")
-                ]
+                vec![Id::raw("javascript"), Id::raw("node"), Id::raw("npm")]
             );
 
             let task = tasks.get("rust-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
 
             // TODO: temp disabled in the typescript plugin
             // let task = tasks.get("typescript-via-cmd").unwrap();
@@ -692,7 +572,7 @@ tasks:
 
             let task = tasks.get("unknown-implicit").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -704,7 +584,7 @@ tasks:
 
             let task = tasks.get("global-build").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
     }
 
@@ -2320,17 +2200,6 @@ tasks:
             let task = tasks.get("no-shell").unwrap();
 
             assert_ne!(task.options.shell, Some(true));
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn cannot_change_platform_legacy() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("scripts").await;
-            let task = tasks.get("custom-platform").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

@@ -11,7 +11,7 @@ digraph {
     5 [ label="SyncProject(server)" ]
     6 [ label="RunTask(client:build)" ]
     7 [ label="SetupProto(1.2.3)" ]
-    8 [ label="SetupToolchain(unstable_rust)" ]
+    8 [ label="SetupToolchain(rust)" ]
     9 [ label="RunTask(server:build)" ]
     10 [ label="RunTask(base:build)" ]
     2 -> 0 [ ]

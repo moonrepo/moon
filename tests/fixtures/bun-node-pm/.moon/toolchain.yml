@@ -2,7 +2,7 @@ bun:
   version: latest
 
 node:
+  version: latest
+
+javascript:
   packageManager: bun
-  version: '20.0.0'
-  bun:
-    version: latest

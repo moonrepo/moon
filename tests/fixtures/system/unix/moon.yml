@@ -4,30 +4,30 @@ tasks:
   ls:
     command: ls
     args: '-1 .'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   echo:
     command: echo
     args: 'hello'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   bash:
     command: bash
     args: ./standard.sh
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   exitNonZero:
     command: bash
     args: ./exitNonZero.sh
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   exitNonZeroInline:
     command: bash -c 'exit 2'
-    platform: system
+    toolchain: system
     options:
       shell: false
     inputs:
@@ -35,13 +35,13 @@ tasks:
   exitZero:
     command: bash
     args: ./exitZero.sh
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   passthroughArgs:
     command: bash
     args: ./args.sh
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   envVars:
@@ -51,25 +51,25 @@ tasks:
       MOON_FOO: abc
       MOON_BAR: '123'
       MOON_BAZ: 'true'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   envVarsMoon:
     command: bash
     args: ./envVarsMoon.sh
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   runFromProject:
     command: bash
     args: ./cwd.sh
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   runFromWorkspace:
     command: bash
     args: ./unix/cwd.sh
-    platform: system
+    toolchain: system
     options:
       runFromWorkspaceRoot: true
     inputs:
@@ -77,14 +77,14 @@ tasks:
   retryCount:
     command: bash
     args: ./exitNonZero.sh
-    platform: system
+    toolchain: system
     options:
       retryCount: 3
     inputs:
       - '*.sh'
   outputs:
     command: bash ./outputs.sh
-    platform: system
+    toolchain: system
     outputs:
       - 'file.txt'
       - 'folder'
@@ -92,75 +92,75 @@ tasks:
       - '*.sh'
   affectedFiles:
     command: bash ./affectedFiles.sh
-    platform: system
+    toolchain: system
     options:
       affectedFiles: true
       affectedPassInputs: true
   affectedFilesArgs:
     command: bash ./affectedFiles.sh
-    platform: system
+    toolchain: system
     options:
       affectedFiles: 'args'
   affectedFilesEnvVar:
     command: bash ./affectedFiles.sh
-    platform: system
+    toolchain: system
     options:
       affectedFiles: 'env'
   multiAmpersand:
     command: 'mkdir foo && mkdir bar'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   multiSemicolon:
     command: 'mkdir foo; mkdir bar'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
 
   # Shell syntax
   syntaxVar:
     command: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
-    platform: system
+    toolchain: system
     env:
       VAR_NAME: substituted-value
     inputs:
       - '*.sh'
   syntaxExpansion:
     command: 'echo ${VAR_NAME:2:2}'
-    platform: system
+    toolchain: system
     env:
       VAR_NAME: abcdef
     inputs:
       - '*.sh'
   syntaxSubstitution:
     command: 'echo $(echo sub)'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
   syntaxSubstitutionTick:
     command: 'echo `echo sub`'
-    platform: system
+    toolchain: system
     inputs:
       - '*.sh'
 
   # Misc
   foo:
     command: bash -c "echo 'foo'"
-    platform: system
+    toolchain: system
     options:
       shell: false
     inputs:
       - '*.sh'
   bar:
     command: sh -c "echo 'bar'"
-    platform: system
+    toolchain: system
     options:
       shell: false
     inputs:
       - '*.sh'
   baz:
     command: /bin/bash -c "echo 'baz'"
-    platform: system
+    toolchain: system
     options:
       shell: false
     inputs:

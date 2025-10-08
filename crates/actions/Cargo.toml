@@ -25,6 +25,7 @@ moon_project = { path = "../project" }
 moon_remote = { path = "../remote" }
 moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
+moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs_hooks = { path = "../vcs-hooks" }
 moon_workspace_graph = { path = "../workspace-graph" }
@@ -38,9 +39,6 @@ serde = { workspace = true }
 starbase_utils = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
-
-# TODO REMOVE
-moon_platform = { path = "../../legacy/core/platform" }
 
 [dev-dependencies]
 moon_test_utils2 = { path = "../test-utils" }

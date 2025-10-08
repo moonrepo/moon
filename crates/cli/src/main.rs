@@ -5,8 +5,7 @@ use lookup::*;
 use mimalloc::MiMalloc;
 use moon_app::commands::debug::DebugCommands;
 use moon_app::commands::docker::DockerCommands;
-use moon_app::commands::migrate::MigrateCommands;
-use moon_app::commands::node::NodeCommands;
+// use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::commands::toolchain::ToolchainCommands;
@@ -100,7 +99,6 @@ async fn main() -> MainResult {
     let _guard = app.setup_tracing(TracingOptions {
         dump_trace: cli.dump,
         filter_modules: get_tracing_modules(),
-        intercept_log: true,
         log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
         show_spans: cli.log.is_verbose(),
@@ -167,21 +165,7 @@ async fn main() -> MainResult {
                 Commands::Generate(args) => commands::generate::generate(session, args).await,
                 Commands::Init(args) => commands::init::init(session, args).await,
                 Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
-                Commands::Migrate {
-                    command,
-                    skip_touched_files_check,
-                } => match command {
-                    MigrateCommands::FromPackageJson(mut args) => {
-                        args.skip_touched_files_check = skip_touched_files_check;
-                        commands::migrate::from_package_json(session, args).await
-                    }
-                    MigrateCommands::FromTurborepo => commands::migrate::from_turborepo().await,
-                },
-                Commands::Node { command } => match command {
-                    NodeCommands::RunScript(args) => {
-                        commands::node::run_script(session, args).await
-                    }
-                },
+                Commands::Migrate { .. } => Ok(None),
                 Commands::Project(args) => commands::project::project(session, args).await,
                 Commands::ProjectGraph(args) => {
                     commands::graph::project::project_graph(session, args).await

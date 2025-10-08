@@ -8,14 +8,8 @@ use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_console::{Console, ConsoleError};
-use moon_platform::PlatformManager;
-use moon_workspace::{
-    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    WorkspaceBuilderContext,
-};
-use starbase_events::{Emitter, EventState};
+use moon_workspace::WorkspaceBuilderContext;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 pub async fn run_action_pipeline(
     session: &MoonSession,
@@ -63,8 +57,6 @@ pub async fn create_workspace_graph_context(
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
         enabled_toolchains: session.toolchain_config.get_enabled(),
-        extend_project: Emitter::<ExtendProjectEvent>::new(),
-        extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,
         toolchain_config: &session.toolchain_config,
         toolchain_registry: session.get_toolchain_registry().await?,
@@ -73,44 +65,6 @@ pub async fn create_workspace_graph_context(
         workspace_config: &session.workspace_config,
         workspace_root: &session.workspace_root,
     };
-
-    context
-        .extend_project
-        .on(
-            |event: Arc<ExtendProjectEvent>, data: Arc<RwLock<ExtendProjectData>>| async move {
-                let mut data = data.write().await;
-
-                for platform in PlatformManager::read().list() {
-                    data.dependencies
-                        .extend(platform.load_project_implicit_dependencies(
-                            &event.project_id,
-                            event.project_source.as_str(),
-                        )?);
-
-                    data.tasks.extend(
-                        platform
-                            .load_project_tasks(&event.project_id, event.project_source.as_str())?,
-                    );
-                }
-
-                Ok(EventState::Continue)
-            },
-        )
-        .await;
-
-    context
-        .extend_project_graph
-        .on(|event: Arc<ExtendProjectGraphEvent>, data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-            let mut data = data.write().await;
-
-
-            for platform in PlatformManager::write().list_mut() {
-                platform.load_project_graph_aliases(&event.sources, &mut data.aliases)?;
-            }
-
-            Ok(EventState::Continue)
-        })
-        .await;
 
     Ok(context)
 }

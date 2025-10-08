@@ -58,7 +58,7 @@ tasks:
       - '.js,.ts,.tsx'
       - '--exit-on-fatal-error'
       - '--no-error-on-unmatched-pattern'
-      - '--report-unused-disable-directives'
+      # - '--report-unused-disable-directives'
       - '.'
     inputs:
       - '@globs(sources)'

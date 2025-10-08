@@ -342,16 +342,8 @@ impl AppSession for MoonSession {
 
         analyze::extract_repo_info(&vcs).await?;
 
+        // Preload
         if self.requires_workspace_configured() {
-            analyze::register_platforms(
-                &self.console,
-                &self.proto_env,
-                &self.toolchain_config,
-                &self.workspace_root,
-            )
-            .await?;
-
-            // Preload
             let _ = self.get_cache_engine()?;
         }
 

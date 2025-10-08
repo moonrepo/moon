@@ -9,7 +9,7 @@ config_struct!(
     pub struct ConstraintsConfig {
         /// Enforces relationships between projects based on each project's
         /// `layer` setting.
-        #[setting(default = true, alias = "enforceProjectTypeRelationships")]
+        #[setting(default = true)]
         pub enforce_layer_relationships: bool,
 
         /// Enforces relationships between projects based on each project's

@@ -6,4 +6,4 @@ toolchain:
 tasks:
   node-library:
     command: node-library
-    platform: node
+    toolchain: node

@@ -5,7 +5,7 @@ use lookup::*;
 use mimalloc::MiMalloc;
 use moon_app::commands::debug::DebugCommands;
 use moon_app::commands::docker::DockerCommands;
-// use moon_app::commands::migrate::MigrateCommands;
+use moon_app::commands::migrate::MigrateCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::commands::toolchain::ToolchainCommands;
@@ -165,7 +165,9 @@ async fn main() -> MainResult {
                 Commands::Generate(args) => commands::generate::generate(session, args).await,
                 Commands::Init(args) => commands::init::init(session, args).await,
                 Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
-                Commands::Migrate { .. } => Ok(None),
+                Commands::Migrate { command, .. } => match command {
+                    MigrateCommands::V2(args) => commands::migrate::v2(session, args).await,
+                },
                 Commands::Project(args) => commands::project::project(session, args).await,
                 Commands::ProjectGraph(args) => {
                     commands::graph::project::project_graph(session, args).await

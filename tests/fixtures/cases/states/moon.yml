@@ -1,9 +1,9 @@
 tasks:
   willFail:
     command: exit 1
-    platform: system
+    toolchain: system
   willFailButAllowed:
     command: exit 1
-    platform: system
+    toolchain: system
     options:
       allowFailure: true

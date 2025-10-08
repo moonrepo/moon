@@ -6,7 +6,7 @@ About ──────────────────
 
   Project: foo
   Source: deps/foo
-  Toolchain: node
+  Toolchain: javascript
   Language: javascript
   Stack: unknown
   Layer: application

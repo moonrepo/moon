@@ -2,4 +2,4 @@ language: javascript
 
 toolchain:
   deno:
-    version: '1.30.0'
+    version: '2.0.0'

@@ -1,6 +1,7 @@
-platform: bun
+toolchain:
+  default: bun
 
 tasks:
   bun:
     command: bun
-    platform: bun
+    toolchain: bun

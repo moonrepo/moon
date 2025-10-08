@@ -3,7 +3,6 @@ use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_pdk_api::TeardownToolchainInput;
-use moon_platform::PlatformManager;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -13,10 +12,6 @@ pub async fn teardown(session: MoonSession) -> AppResult {
         session.get_console()?,
         "Tearing down and uninstalling toolchains...",
     );
-
-    for platform in PlatformManager::write().list_mut() {
-        platform.teardown_toolchain().await?;
-    }
 
     session
         .get_toolchain_registry()

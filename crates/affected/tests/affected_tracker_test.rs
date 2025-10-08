@@ -57,7 +57,7 @@ mod affected_projects {
         state
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn empty_if_no_touched_files() {
         let workspace_graph = build_graph("projects").await;
         let touched_files = FxHashSet::default();
@@ -69,7 +69,7 @@ mod affected_projects {
         assert!(affected.projects.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn tracks_projects() {
         let workspace_graph = build_graph("projects").await;
         let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
@@ -90,7 +90,7 @@ mod affected_projects {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn tracks_multiple_projects() {
         let workspace_graph = build_graph("projects").await;
         let touched_files = FxHashSet::from_iter([
@@ -118,7 +118,7 @@ mod affected_projects {
     mod project_upstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
@@ -137,7 +137,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
@@ -158,7 +158,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
@@ -177,7 +177,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
@@ -199,7 +199,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
@@ -218,7 +218,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
@@ -247,7 +247,7 @@ mod affected_projects {
     mod project_downstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
@@ -266,7 +266,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
@@ -287,7 +287,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
@@ -306,7 +306,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
@@ -327,7 +327,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
@@ -346,7 +346,7 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
@@ -415,7 +415,7 @@ mod affected_tasks {
         state
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn empty_if_no_touched_files() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::default();
@@ -427,7 +427,7 @@ mod affected_tasks {
         assert!(affected.tasks.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn not_affected_if_no_inputs() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
@@ -441,7 +441,7 @@ mod affected_tasks {
         assert!(affected.tasks.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_file() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
@@ -461,7 +461,7 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_file_if_content_matches() {
         let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
         sandbox.create_file("base/file.txt", "bar");
@@ -483,7 +483,7 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn not_affected_by_file_if_content_doesnt_match() {
         let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
         sandbox.create_file("base/file.txt", "foo");
@@ -499,7 +499,7 @@ mod affected_tasks {
         assert!(affected.tasks.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_glob() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
@@ -519,7 +519,7 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_env_var() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::default();
@@ -544,7 +544,7 @@ mod affected_tasks {
         bag.remove("ENV");
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn self_scope() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["self/file.txt".into()]);
@@ -574,7 +574,7 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn parent_scope() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["parent/file.txt".into()]);
@@ -608,7 +608,7 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn marks_dependency_if_dependent_is_touched() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
@@ -637,7 +637,7 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn marks_dependent_if_dependency_is_touched() {
         let workspace_graph = build_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["upstream/file.txt".into()]);
@@ -672,7 +672,7 @@ mod affected_tasks {
     mod task_upstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -697,7 +697,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -726,7 +726,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
@@ -751,7 +751,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -784,7 +784,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
@@ -809,7 +809,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
@@ -847,7 +847,7 @@ mod affected_tasks {
     mod task_downstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -872,7 +872,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -905,7 +905,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
@@ -930,7 +930,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
@@ -963,7 +963,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
@@ -988,7 +988,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
@@ -1031,7 +1031,7 @@ mod affected_tasks {
             state
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn any_file() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["dep/file.txt".into()]);
@@ -1056,7 +1056,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn using_file_group() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
@@ -1085,7 +1085,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn using_filter_glob() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
@@ -1118,7 +1118,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn using_project_deps() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
@@ -1155,7 +1155,7 @@ mod affected_tasks {
     mod ci {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_tracks_for_true() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1176,7 +1176,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_not_ci_tracks_for_true() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1197,7 +1197,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_doesnt_track_for_false() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1212,7 +1212,7 @@ mod affected_tasks {
             assert!(affected.tasks.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_not_ci_tracks_for_false() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1233,7 +1233,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_always_tracks_if_not_touched() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::default();
@@ -1257,7 +1257,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_only_tracks_when_ci() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1278,7 +1278,7 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_only_doesnt_track_when_not_in_ci() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1293,7 +1293,7 @@ mod affected_tasks {
             assert!(affected.tasks.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_doesnt_track_for_skip() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
@@ -1308,7 +1308,7 @@ mod affected_tasks {
             assert!(affected.tasks.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_not_ci_tracks_for_skip() {
             let workspace_graph = build_graph("tasks").await;
             let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);

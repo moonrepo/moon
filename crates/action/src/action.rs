@@ -143,15 +143,11 @@ impl Action {
     pub fn get_prefix(&self) -> &str {
         match &*self.node {
             ActionNode::None => "unknown",
-            ActionNode::InstallDependencies(_)
-            | ActionNode::InstallProjectDeps(_)
-            | ActionNode::InstallWorkspaceDeps(_) => "install-dependencies",
+            ActionNode::InstallDependencies(_) => "install-dependencies",
             ActionNode::RunTask(_) => "run-task",
             ActionNode::SetupEnvironment(_) => "setup-environment",
             ActionNode::SetupProto(_) => "setup-proto",
-            ActionNode::SetupToolchainLegacy(_) | ActionNode::SetupToolchain(_) => {
-                "setup-toolchain"
-            }
+            ActionNode::SetupToolchain(_) => "setup-toolchain",
             ActionNode::SyncProject(_) => "sync-project",
             ActionNode::SyncWorkspace => "sync-workspace",
         }

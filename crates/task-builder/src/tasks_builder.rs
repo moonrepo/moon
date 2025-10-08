@@ -15,14 +15,14 @@ use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
-use moon_toolchain::{detect::detect_task_toolchains, filter_and_resolve_toolchain_ids};
+use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{instrument, trace};
 
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
@@ -401,12 +401,6 @@ impl<'proj> TasksBuilder<'proj> {
                 );
             }
 
-            // Backwards compat
-            #[allow(deprecated)]
-            if !config.platform.is_unknown() {
-                task.platform = config.platform;
-            }
-
             if !config.toolchain.is_empty() {
                 task.toolchains = config.toolchain.to_owned_list();
             }
@@ -744,21 +738,6 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Implicitly detected/inherited toolchains
         if task.toolchains.is_empty() {
-            // Backwards compat for when the user has explicitly configured
-            // the deprecated `platform` setting
-            // TODO: Remove in 2.0
-            #[allow(deprecated)]
-            if !task.platform.is_unknown() {
-                toolchains.insert(task.platform.get_toolchain_id());
-
-                debug!(
-                    task_target = task.target.as_str(),
-                    "The {} task setting has been deprecated, use {} instead",
-                    color::property("platform"),
-                    color::property("toolchain"),
-                );
-            }
-
             toolchains.extend(self.detect_task_toolchains(task).await?);
         }
         // Explicitly configured toolchains
@@ -786,25 +765,20 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     async fn detect_task_toolchains(&self, task: &Task) -> miette::Result<Vec<Id>> {
-        // Detect using legacy first
-        let mut toolchains = detect_task_toolchains(&task.command, self.context.enabled_toolchains);
-
-        // Detect using the registry second
-        toolchains.extend(
-            self.context
-                .toolchain_registry
-                .detect_task_usage(
-                    self.context.enabled_toolchains.iter().collect(),
-                    &task.command,
-                    &task.args,
-                    |registry, toolchain| DefineRequirementsInput {
-                        context: registry.create_context(),
-                        toolchain_config: registry
-                            .create_config(&toolchain.id, self.context.toolchain_config),
-                    },
-                )
-                .await?,
-        );
+        let toolchains = self
+            .context
+            .toolchain_registry
+            .detect_task_usage(
+                self.context.enabled_toolchains.iter().collect(),
+                &task.command,
+                &task.args,
+                |registry, toolchain| DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: registry
+                        .create_config(&toolchain.id, self.context.toolchain_config),
+                },
+            )
+            .await?;
 
         Ok(toolchains)
     }

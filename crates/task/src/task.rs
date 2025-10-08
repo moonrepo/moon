@@ -1,8 +1,8 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, Output, PlatformType, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType,
-    is_false, schematic::RegexSetting,
+    Input, Output, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType, is_false,
+    schematic::RegexSetting,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
@@ -120,9 +120,6 @@ cacheable!(
 
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub output_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
-
-        #[deprecated]
-        pub platform: PlatformType,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub preset: Option<TaskPreset>,
@@ -367,7 +364,6 @@ impl Default for Task {
             outputs: vec![],
             output_files: FxHashMap::default(),
             output_globs: FxHashMap::default(),
-            platform: PlatformType::default(),
             preset: None,
             script: None,
             state: TaskState::default(),

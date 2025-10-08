@@ -7,7 +7,7 @@ About ──────────────────
   Target: tasks:internal
   Project: tasks
   Task: internal
-  Toolchains: node, typescript
+  Toolchain: typescript
   Type: test
   Mode: internal
   Depends on: —

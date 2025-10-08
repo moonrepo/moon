@@ -15,9 +15,6 @@ tasks:
     script: 'foo'
     options:
       shell: false
-  custom-platform:
-    script: 'foo'
-    platform: 'node'
   custom-toolchain:
     script: 'foo'
     toolchain: 'node'

@@ -1,4 +1,5 @@
-platform: 'node'
+toolchain:
+  default: 'node'
 
 tasks:
   run1:

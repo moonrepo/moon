@@ -33,10 +33,10 @@ impl Subscriber for TelemetrySubscriber {
                 }
             }
 
-            if !toolchains.is_empty() {
-                let _ = Launchpad::instance()
-                    .track_toolchain_usage(toolchains)
-                    .await;
+            if !toolchains.is_empty()
+                && let Some(launchpad) = Launchpad::instance()
+            {
+                let _ = launchpad.track_toolchain_usage(toolchains).await;
             }
         }
 

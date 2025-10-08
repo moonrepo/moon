@@ -187,6 +187,7 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let spec1 = create_tier_spec(3);
+
             let mut spec2 = create_tier_spec(3);
             spec2.req = Some(create_unresolved_version(Version::new(4, 5, 6)));
 
@@ -211,6 +212,7 @@ mod action_graph_builder {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         toolchain: spec1.clone()
                     }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec2 }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
                         project_id: None,

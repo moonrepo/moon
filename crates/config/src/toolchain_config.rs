@@ -132,51 +132,41 @@ impl ToolchainConfig {
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
         use proto_core::warpgate::find_debug_locator_with_url_fallback;
 
+        // TODO remove once v2 plugins are published
+        let locate = |name: &str, version: &str| {
+            #[cfg(debug_assertions)]
+            {
+                use std::env;
+                use std::path::PathBuf;
+
+                let prebuilts_dir = env::var("MOON_WASM_PREBUILTS_DIR")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|_| env::current_dir().unwrap().join("wasm/prebuilts"));
+                let wasm_path = prebuilts_dir.join(format!("{name}.wasm"));
+
+                if wasm_path.exists() {
+                    return PluginLocator::File(Box::new(proto_core::FileLocator {
+                        file: format!("file://{}", wasm_path.display()),
+                        path: Some(wasm_path),
+                    }));
+                }
+            }
+
+            find_debug_locator_with_url_fallback(name, version)
+        };
+
         match id.as_str() {
-            "bun" => Some(find_debug_locator_with_url_fallback(
-                "bun_toolchain",
-                "0.2.0",
-            )),
-            "deno" => Some(find_debug_locator_with_url_fallback(
-                "deno_toolchain",
-                "0.1.0",
-            )),
-            "javascript" => Some(find_debug_locator_with_url_fallback(
-                "javascript_toolchain",
-                "0.2.1",
-            )),
-            "go" => Some(find_debug_locator_with_url_fallback(
-                "go_toolchain",
-                "0.2.0",
-            )),
-            "node" => Some(find_debug_locator_with_url_fallback(
-                "node_toolchain",
-                "0.2.0",
-            )),
-            "npm" => Some(find_debug_locator_with_url_fallback(
-                "node_depman_toolchain",
-                "0.2.0",
-            )),
-            "pnpm" => Some(find_debug_locator_with_url_fallback(
-                "node_depman_toolchain",
-                "0.2.0",
-            )),
-            "rust" => Some(find_debug_locator_with_url_fallback(
-                "rust_toolchain",
-                "0.3.0",
-            )),
-            "system" => Some(find_debug_locator_with_url_fallback(
-                "system_toolchain",
-                "0.0.1",
-            )),
-            "typescript" => Some(find_debug_locator_with_url_fallback(
-                "typescript_toolchain",
-                "0.3.0",
-            )),
-            "yarn" => Some(find_debug_locator_with_url_fallback(
-                "node_depman_toolchain",
-                "0.2.0",
-            )),
+            "bun" => Some(locate("bun_toolchain", "0.2.0")),
+            "deno" => Some(locate("deno_toolchain", "0.1.0")),
+            "go" => Some(locate("go_toolchain", "0.2.0")),
+            "javascript" => Some(locate("javascript_toolchain", "0.2.1")),
+            "node" => Some(locate("node_toolchain", "0.2.0")),
+            "npm" => Some(locate("node_depman_toolchain", "0.2.0")),
+            "pnpm" => Some(locate("node_depman_toolchain", "0.2.0")),
+            "rust" => Some(locate("rust_toolchain", "0.3.0")),
+            "system" => Some(locate("system_toolchain", "0.0.1")),
+            "typescript" => Some(locate("typescript_toolchain", "0.3.0")),
+            "yarn" => Some(locate("node_depman_toolchain", "0.2.0")),
             _ => None,
         }
     }

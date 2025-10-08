@@ -9,3 +9,7 @@ releases:
   '@moonrepo/core-windows-x64-msvc': major
   '@moonrepo/report': major
   '@moonrepo/types': major
+
+declined:
+  - '@moonrepo/runtime'
+  - website

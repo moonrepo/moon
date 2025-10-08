@@ -89,16 +89,18 @@ uuid = { version = "1.18.1", features = ["v4"] }
 # proto/plugin related
 extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.53.3"
+proto_core = "0.53.5"
 proto_pdk_api = "0.31.2"
 proto_pdk_test_utils = "0.41.2"
 system_env = "0.8.3"
-version_spec = "0.9.5"
+version_spec = "0.9.6"
 warpgate = "0.28.2"
 warpgate_api = "0.17.1"
 warpgate_pdk = "0.16.1"
 
 # proto_core = { path = "../proto/crates/core" }
+# proto_pdk_api = { path = "../proto/crates/pdk-api" }
+# proto_pdk_test_utils = { path = "../proto/crates/pdk-test-utils" }
 # system_env = { path = "../proto/crates/system-env" }
 # version_spec = { path = "../proto/crates/version-spec" }
 # warpgate = { path = "../proto/crates/warpgate" }

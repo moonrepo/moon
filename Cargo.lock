@@ -5377,9 +5377,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.53.3"
+version = "0.53.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f4254a704fbda2faf329bc209a906a77fc39f725626a43698a3d673ef7d32dc"
+checksum = "bc08a45398c89df6ebe1421c614f36b2968618d04a47184aecb3309bca6acf83"
 dependencies = [
  "convert_case",
  "docker_credential",
@@ -7719,9 +7719,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "version_spec"
-version = "0.9.5"
+version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc7f86cf857fb2d4fa385435d6b930cfa2770adf811c12ddee83a91ed52f6974"
+checksum = "317c1535cf64d5ac71317e5e73afa68c92845b2ee5f89c6ed88b718f90a2a5c5"
 dependencies = [
  "compact_str 0.9.0",
  "human-sort",

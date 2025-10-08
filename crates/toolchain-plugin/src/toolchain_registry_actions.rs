@@ -25,6 +25,7 @@ use std::path::{Path, PathBuf};
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
+#[derive(Debug)]
 pub struct CommandAugment<'a> {
     pub add_env: bool,
     pub add_path: bool,

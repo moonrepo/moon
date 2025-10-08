@@ -859,9 +859,9 @@ impl<'query> ActionGraphBuilder<'query> {
                     let require_id = Id::new(require_id)?;
 
                     if require_id != spec.id
-                        && let Some(dep_spec) = self.get_spec(&require_id, project)
+                        && let Some(require_spec) = self.get_spec(&require_id, project)
                     {
-                        edges.push(Box::pin(self.setup_toolchain(&dep_spec, project)).await?);
+                        edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
                     } else {
                         return Err(ActionGraphError::MissingToolchainRequirement {
                             id: spec.id.to_string(),

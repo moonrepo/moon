@@ -138,7 +138,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(version.to_owned());
 
-            tool.resolve_version(&spec, false).await?;
+            tool.resolve_version_if_different(&spec, false).await?;
 
             if let Some(dir) = tool.locate_exe_file().await?.parent() {
                 paths.insert(dir.to_path_buf());
@@ -374,7 +374,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(spec.to_owned());
 
-            tool.resolve_version(&spec, false).await?;
+            tool.resolve_version_if_different(&spec, false).await?;
 
             return Ok(tool.is_installed());
         }
@@ -480,7 +480,7 @@ impl ToolchainPlugin {
                 let spec = ToolSpec::new(version.to_owned());
 
                 // Resolve the version first so that it is available
-                input.version = Some(tool.resolve_version(&spec, false).await?);
+                input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
 
                 // Only setup if not already been
                 if !tool.is_setup(&spec).await? {
@@ -556,7 +556,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(version.to_owned());
 
-            input.version = Some(tool.resolve_version(&spec, false).await?);
+            input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
 
             tool.teardown(&spec).await?;
         }

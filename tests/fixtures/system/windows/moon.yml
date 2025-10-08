@@ -2,61 +2,79 @@ language: bash
 
 tasks:
   bat:
-    command: cmd.exe /q /c ./standard.bat
+    command: cmd.exe /q /c .\\standard.bat
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   exitNonZero:
-    command: cmd.exe /q /c ./exitNonZero.bat
+    command: cmd.exe /q /c .\\exitNonZero.bat
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   exitZero:
-    command: cmd.exe /q /c ./exitZero.bat
+    command: cmd.exe /q /c .\\exitZero.bat
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   passthroughArgs:
-    command: cmd /q /c ./passthroughArgs.bat
+    command: cmd /q /c .\\passthroughArgs.bat
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   envVars:
-    command: cmd.exe /q /c ./envVars.bat
+    command: cmd.exe /q /c .\\envVars.bat
     env:
       MOON_FOO: abc
       MOON_BAR: '123'
       MOON_BAZ: 'true'
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   envVarsMoon:
-    command: cmd /q /c ./envVarsMoon.bat
+    command: cmd /q /c .\\envVarsMoon.bat
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   runFromProject:
-    command: cmd.exe /q /c ./echo.bat "\\windows"
+    command: cmd.exe /q /c .\\echo.bat "\\windows"
     toolchain: system
+    options:
+      windowsShell: pwsh
     inputs:
       - '*.bat'
   runFromWorkspace:
-    command: cmd /q /c ./windows/echo.bat "\\"
+    command: cmd /q /c .\\windows\\echo.bat "\\"
     toolchain: system
     options:
+      windowsShell: pwsh
       runFromWorkspaceRoot: true
     inputs:
       - '*.bat'
   retryCount:
-    command: cmd.exe /q /c ./exitNonZero.bat
+    command: cmd.exe /q /c .\\exitNonZero.bat
     toolchain: system
     options:
+      windowsShell: pwsh
       retryCount: 3
     inputs:
       - '*.bat'
   outputs:
-    command: cmd.exe /q /c ./outputs.bat
+    command: cmd.exe /q /c .\\outputs.bat
     toolchain: system
+    options:
+      windowsShell: pwsh
     outputs:
       - 'file.txt'
       - 'folder'
@@ -69,6 +87,8 @@ tasks:
       'Write-Output $env:VAR_NAME "in $env:VAR_NAME quotes" prefixed-$env:VAR_NAME
       "$env:VAR_NAME-suffixed"'
     toolchain: system
+    options:
+      windowsShell: pwsh
     env:
       VAR_NAME: substituted-value
     inputs:
@@ -76,21 +96,21 @@ tasks:
 
   # Misc
   foo:
-    command: powershell -c "./echo.ps1 'foo'"
+    command: powershell -c ".\\echo.ps1 'foo'"
     toolchain: system
     options:
       shell: false
     inputs:
       - '*.bat'
   bar:
-    command: powershell.exe -c "./echo.ps1 'bar'"
+    command: powershell.exe -c ".\\echo.ps1 'bar'"
     toolchain: system
     options:
       shell: false
     inputs:
       - '*.bat'
   baz:
-    command: cmd /q /c ./echo.bat 'baz'
+    command: cmd /q /c .\\echo.bat 'baz'
     toolchain: system
     options:
       shell: false

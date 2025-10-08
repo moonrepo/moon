@@ -20,7 +20,7 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("NO_COLOR", "1");
     // Store plugins in the sandbox
     cmd.env("MOON_HOME", path.join(".moon-home"));
-    cmd.env("MOON_WASM_PREBUILTS_DIR", wasm_dir);
+    cmd.env("WASM_PREBUILTS_DIR", wasm_dir);
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");

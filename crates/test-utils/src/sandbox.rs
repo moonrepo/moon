@@ -52,7 +52,7 @@ fn apply_settings(sandbox: &mut Sandbox) {
     env.insert("COLUMNS", "150");
     // Store plugins in the sandbox
     env.insert("MOON_HOME", moon_dir.to_str().unwrap());
-    env.insert("MOON_WASM_PREBUILTS_DIR", wasm_dir.to_str().unwrap());
+    env.insert("WASM_PREBUILTS_DIR", wasm_dir.to_str().unwrap());
     // env.insert("PROTO_HOME", path.join(".proto"));
     // Let our code know we're running tests
     env.insert("MOON_TEST", "true");

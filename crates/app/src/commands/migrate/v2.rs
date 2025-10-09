@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if, clippy::single_match)]
+
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -5,8 +7,9 @@ use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_console::ui::Confirm;
 use starbase::AppResult;
-use starbase_utils::fs;
 use starbase_utils::yaml::{self, YamlMapping, YamlValue};
+use starbase_utils::{fs, glob};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{instrument, warn};
 
@@ -38,7 +41,8 @@ pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
 
     if confirmed || skip_prompts {
         migrate_workspace_config(&session)?;
-        migrate_toolchain_config(&session)?;
+        migrate_toolchain_config_file(&session)?;
+        migrate_tasks_config_files(&session)?;
     }
 
     Ok(None)
@@ -55,18 +59,69 @@ fn warn_pkl_config_files() {
     }
 }
 
-fn replace_config_tokens(content: String) -> String {
-    content
+fn load_config_file(config_path: &Path) -> miette::Result<YamlValue> {
+    let content = fs::read_file(config_path)?
         .replace("$projectType", "$projectLayer")
-        .replace("$taskPlatform", "$taskToolchain")
+        .replace("$taskPlatform", "$taskToolchain");
+
+    let data: YamlValue = yaml::serde_yml::from_str(&content).into_diagnostic()?;
+
+    Ok(data)
 }
 
-fn add_to_root_setting(root: &mut YamlMapping, root_key: &str, key: &str, value: &YamlValue) {
+fn rename_setting(parent: &mut YamlMapping, old: &str, new: &str) {
+    if let Some(value) = parent.get(old) {
+        parent.insert(YamlValue::String(new.to_owned()), value.to_owned());
+    }
+
+    parent.remove_entry(old);
+}
+
+fn upsert_root_setting(root: &mut YamlMapping, root_key: &str, key: &str, value: &YamlValue) {
     root.entry(YamlValue::String(root_key.into()))
         .or_insert(YamlValue::Mapping(Default::default()))
         .as_mapping_mut()
-        .unwrap()
+        .expect("must be an object")
         .insert(YamlValue::String(key.to_owned()), value.to_owned());
+}
+
+fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
+    let fields = value.as_mapping_mut().expect("task must be an object");
+
+    rename_setting(fields, "platform", "toolchain");
+}
+
+fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
+    if session
+        .workspace_root
+        .join(CONFIG_DIRNAME)
+        .join("tasks.pkl")
+        .exists()
+    {
+        warn_pkl_config_files();
+    }
+
+    for config_path in glob::walk_files(
+        session.workspace_root.join(CONFIG_DIRNAME),
+        ["tasks.yml", "tasks/**/*.yml"],
+    )? {
+        let mut config = load_config_file(&config_path)?;
+
+        if let Some(root) = config.as_mapping_mut() {
+            if let Some(tasks) = root
+                .get_mut("tasks")
+                .and_then(|tasks| tasks.as_mapping_mut())
+            {
+                for (id, task) in tasks {
+                    migrate_task_setting(id, task);
+                }
+            }
+        }
+
+        yaml::write_file_with_config(&config_path, &config)?;
+    }
+
+    Ok(())
 }
 
 fn apply_to_javascript_setting(root: &mut YamlMapping, key: &str, value: &YamlValue) {
@@ -75,7 +130,7 @@ fn apply_to_javascript_setting(root: &mut YamlMapping, key: &str, value: &YamlVa
         return;
     }
 
-    add_to_root_setting(
+    upsert_root_setting(
         root,
         "javascript",
         match key {
@@ -87,13 +142,13 @@ fn apply_to_javascript_setting(root: &mut YamlMapping, key: &str, value: &YamlVa
 }
 
 fn migrate_toolchain_bun_setting(root: &mut YamlMapping, setting: &YamlValue) {
-    for (base_key, value) in setting.as_mapping().unwrap() {
+    for (base_key, value) in setting.as_mapping().expect("`bun` must be an object") {
         let key = base_key.as_str().unwrap_or_default();
 
         match key {
             // Keep in toolchain
             "installArgs" | "plugin" | "version" => {
-                add_to_root_setting(root, "bun", key, value);
+                upsert_root_setting(root, "bun", key, value);
             }
             // Move to javascript
             _ => {
@@ -104,7 +159,7 @@ fn migrate_toolchain_bun_setting(root: &mut YamlMapping, setting: &YamlValue) {
 }
 
 fn migrate_toolchain_deno_setting(root: &mut YamlMapping, setting: &YamlValue) {
-    for (base_key, value) in setting.as_mapping().unwrap() {
+    for (base_key, value) in setting.as_mapping().expect("`deno` must be an object") {
         let key = base_key.as_str().unwrap_or_default();
 
         match key {
@@ -112,7 +167,7 @@ fn migrate_toolchain_deno_setting(root: &mut YamlMapping, setting: &YamlValue) {
             "depsFile" | "lockfile" => {}
             // Keep in toolchain
             "installArgs" | "plugin" | "version" => {
-                add_to_root_setting(root, "deno", key, value);
+                upsert_root_setting(root, "deno", key, value);
             }
             _ => {}
         }
@@ -120,7 +175,7 @@ fn migrate_toolchain_deno_setting(root: &mut YamlMapping, setting: &YamlValue) {
 }
 
 fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
-    for (base_key, value) in setting.as_mapping().unwrap() {
+    for (base_key, value) in setting.as_mapping().expect("`node` must be an object") {
         let key = base_key.as_str().unwrap_or_default();
 
         match key {
@@ -128,18 +183,18 @@ fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
             "addEnginesConstraint" => {}
             // Rename
             "binExecArgs" => {
-                add_to_root_setting(root, "node", "executeArgs", value);
+                upsert_root_setting(root, "node", "executeArgs", value);
             }
             // Keep in toolchain
             "installArgs" | "plugin" | "syncVersionManagerConfig" | "version" => {
-                add_to_root_setting(root, "node", key, value);
+                upsert_root_setting(root, "node", key, value);
             }
             // Move to own toolchain
             "bun" | "npm" | "pnpm" | "yarn" => {
                 root.entry(YamlValue::String(key.into()))
                     .or_insert(YamlValue::Mapping(Default::default()))
                     .as_mapping_mut()
-                    .unwrap()
+                    .expect("must be an object")
                     .extend(value.as_mapping().unwrap().to_owned());
             }
             // Move to javascript
@@ -150,7 +205,7 @@ fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
     }
 }
 
-fn migrate_toolchain_config(session: &MoonSession) -> miette::Result<()> {
+fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
     if session
         .workspace_root
         .join(CONFIG_DIRNAME)
@@ -169,13 +224,7 @@ fn migrate_toolchain_config(session: &MoonSession) -> miette::Result<()> {
         return Ok(());
     }
 
-    // Replace static values first
-    let mut content = fs::read_file(&config_path)?;
-
-    content = replace_config_tokens(content);
-
-    // Replace dynamic values second
-    let old_data: YamlValue = yaml::serde_yml::from_str(&content).into_diagnostic()?;
+    let old_data: YamlValue = load_config_file(&config_path)?;
     let mut new_data = YamlMapping::default();
 
     if let Some(root) = old_data.as_mapping() {
@@ -239,18 +288,26 @@ fn migrate_workspace_config(session: &MoonSession) -> miette::Result<()> {
         return Ok(());
     }
 
-    // Replace static values first
-    let mut content = fs::read_file(&config_path)?;
+    let mut config: YamlValue = load_config_file(&config_path)?;
 
-    content = replace_config_tokens(content).replace(
-        "enforceProjectTypeRelationships",
-        "enforceLayerRelationships",
-    );
+    if let Some(root) = config.as_mapping_mut() {
+        for (key, value) in root {
+            match key.as_str().unwrap_or_default() {
+                "constraints" => {
+                    rename_setting(
+                        value
+                            .as_mapping_mut()
+                            .expect("`constraints` must be an object"),
+                        "enforceProjectTypeRelationships",
+                        "enforceLayerRelationships",
+                    );
+                }
+                _ => {}
+            };
+        }
+    }
 
-    // Replace dynamic values second
-    let data: YamlValue = yaml::serde_yml::from_str(&content).into_diagnostic()?;
-
-    yaml::write_file_with_config(&config_path, &data)?;
+    yaml::write_file_with_config(&config_path, &config)?;
 
     Ok(())
 }

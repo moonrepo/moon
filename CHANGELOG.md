@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed another issue where deleting a tool from proto's store would not trigger a re-install within
+  moon.
+
 ## 1.41.3
 
 #### 🐞 Fixes

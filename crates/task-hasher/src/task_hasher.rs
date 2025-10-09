@@ -186,10 +186,16 @@ impl<'task> TaskHasher<'task> {
                 &self.app_context.workspace_root,
                 false,
             )?)
-        } else if !input.filter.is_empty() {
+        } else {
+            let default_globs = vec!["**/*".to_owned()];
+
             files.extend(glob_walk_with_options(
                 &project.root,
-                &input.filter,
+                if input.filter.is_empty() {
+                    &default_globs
+                } else {
+                    &input.filter
+                },
                 GlobWalkOptions::default().cache().files(),
             )?);
         }
@@ -220,6 +226,12 @@ impl<'task> TaskHasher<'task> {
             if workspace_relative_path == output || workspace_relative_path.starts_with(output) {
                 return false;
             }
+        }
+
+        // Input may be in another project, or the workspace,
+        // so the task-level globs should not apply to it
+        if !workspace_relative_path.starts_with(&self.project.source) {
+            return true;
         }
 
         // Filter inputs second

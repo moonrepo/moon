@@ -6,6 +6,8 @@
 
 - Fixed another issue where deleting a tool from proto's store would not trigger a re-install within
   moon.
+- Fixed an issue where `project` input types were not being included in the task hash, resulting in
+  re-runs not working.
 
 ## 1.41.3
 

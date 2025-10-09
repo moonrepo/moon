@@ -1,0 +1,5 @@
+fileGroups:
+  configs:
+    - '*.json'
+  docs:
+    - '*.md'

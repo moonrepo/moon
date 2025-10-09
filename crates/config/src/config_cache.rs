@@ -20,9 +20,9 @@ impl ConfigCache {
     }
 
     pub fn get_temp_path(&self, url: &str) -> PathBuf {
-        let ext = if url.ends_with(".pkl") {
+        let ext = if url.contains(".pkl") {
             ".pkl"
-        } else if url.ends_with(".yaml") || url.ends_with(".yml") {
+        } else if url.contains(".yaml") || url.contains(".yml") {
             ".yml"
         } else {
             ""

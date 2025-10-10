@@ -1038,18 +1038,34 @@ mod project_graph {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn supports_multi_aliases_from_each_toolchain() {
+            let graph = build_aliases_graph().await;
+
+            assert_eq!(
+                graph.get_project("multiple").unwrap().aliases,
+                ["js-toolchain", "rust_toolchain"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_same_as_id() {
             let graph = build_aliases_graph().await;
 
-            assert_eq!(graph.get_project("alias-same-id").unwrap().aliases, None);
+            assert!(
+                graph
+                    .get_project("alias-same-id")
+                    .unwrap()
+                    .aliases
+                    .is_empty()
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_a_project_has_the_id() {
             let graph = build_aliases_graph_for_fixture("aliases-conflict-ids").await;
 
-            assert_eq!(graph.get_project("one").unwrap().aliases, None);
-            assert_eq!(graph.get_project("two").unwrap().aliases, None);
+            assert!(graph.get_project("one").unwrap().aliases.is_empty());
+            assert!(graph.get_project("two").unwrap().aliases.is_empty());
         }
 
         #[tokio::test(flavor = "multi_thread")]

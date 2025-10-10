@@ -83,28 +83,14 @@ impl WorkspaceGraph {
                             if condition.matches(ids, &project.id)? {
                                 Ok(true)
                             } else if !project.aliases.is_empty() {
-                                condition.matches_list(
-                                    ids,
-                                    &project
-                                        .aliases
-                                        .iter()
-                                        .map(|t| t.as_str())
-                                        .collect::<Vec<_>>(),
-                                )
+                                condition.matches_list(ids, &project.aliases)
                             } else {
                                 Ok(false)
                             }
                         }
                         Field::ProjectAlias(aliases) => {
                             if !project.aliases.is_empty() {
-                                condition.matches_list(
-                                    aliases,
-                                    &project
-                                        .aliases
-                                        .iter()
-                                        .map(|t| t.as_str())
-                                        .collect::<Vec<_>>(),
-                                )
+                                condition.matches_list(aliases, &project.aliases)
                             } else {
                                 Ok(false)
                             }
@@ -112,18 +98,10 @@ impl WorkspaceGraph {
                         Field::ProjectLayer(types) => condition.matches_enum(types, &project.layer),
                         Field::ProjectName(ids) => condition.matches(ids, &project.id),
                         Field::ProjectSource(sources) => {
-                            condition.matches(sources, project.source.as_str())
+                            condition.matches(sources, &project.source)
                         }
                         Field::ProjectStack(types) => condition.matches_enum(types, &project.stack),
-                        Field::Tag(tags) => condition.matches_list(
-                            tags,
-                            &project
-                                .config
-                                .tags
-                                .iter()
-                                .map(|t| t.as_str())
-                                .collect::<Vec<_>>(),
-                        ),
+                        Field::Tag(tags) => condition.matches_list(tags, &project.config.tags),
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
                             condition.matches(ids, &target.task_id).unwrap_or_default()
                         })),
@@ -140,9 +118,6 @@ impl WorkspaceGraph {
                                     toolchains.push(stable_id);
                                     toolchains.push(unstable_id);
                                 }
-
-                                let toolchains =
-                                    toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>();
 
                                 condition.matches_list(ids, &toolchains).unwrap_or_default()
                             })),

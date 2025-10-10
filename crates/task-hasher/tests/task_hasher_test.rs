@@ -366,7 +366,7 @@ mod task_hasher {
             let _ = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_external_project() {
             let sandbox = create_sandbox("projects");
             sandbox.enable_git();
@@ -388,7 +388,7 @@ mod task_hasher {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_external_project_using_file_group() {
             let sandbox = create_sandbox("projects");
             sandbox.enable_git();
@@ -403,7 +403,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), ["external/docs.md"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_external_project_using_filter_globs() {
             let sandbox = create_sandbox("projects");
             sandbox.enable_git();

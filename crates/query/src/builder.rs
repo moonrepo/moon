@@ -37,7 +37,13 @@ pub enum Condition<'l> {
 }
 
 impl Condition<'_> {
-    pub fn matches(&self, haystack: &FieldValues, needle: &str) -> miette::Result<bool> {
+    pub fn matches<T: AsRef<str>>(
+        &self,
+        haystack: &FieldValues,
+        needle: T,
+    ) -> miette::Result<bool> {
+        let needle = needle.as_ref();
+
         Ok(match self {
             Condition::Field { op, .. } => match op {
                 ComparisonOperator::Equal => haystack.contains(&Cow::Borrowed(needle)),
@@ -49,7 +55,11 @@ impl Condition<'_> {
         })
     }
 
-    pub fn matches_list(&self, haystack: &FieldValues, needles: &[&str]) -> miette::Result<bool> {
+    pub fn matches_list<T: AsRef<str>>(
+        &self,
+        haystack: &FieldValues,
+        needles: &[T],
+    ) -> miette::Result<bool> {
         for needle in needles {
             if self.matches(haystack, needle)? {
                 return Ok(true);

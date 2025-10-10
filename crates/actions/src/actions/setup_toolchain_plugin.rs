@@ -1,5 +1,5 @@
 use crate::plugins::*;
-use crate::utils::{create_hash_and_return_lock_if_changed, should_skip_action_matching};
+use crate::utils::{create_hash_and_return_lock, should_skip_action_matching};
 use moon_action::{Action, ActionStatus, Operation, SetupToolchainNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
@@ -13,7 +13,6 @@ use tracing::{debug, instrument};
 hash_content!(
     struct SetupToolchainHash<'action> {
         action_node: &'action SetupToolchainNode,
-        installed_in_proto: bool,
     }
 );
 
@@ -65,26 +64,12 @@ pub async fn setup_toolchain_plugin(
         return Ok(ActionStatus::Skipped);
     }
 
-    // Create a lock if we haven't run before
-    let Some(_lock) = create_hash_and_return_lock_if_changed(
+    // Create a lock to avoid collisions
+    let _lock = create_hash_and_return_lock(
         action,
         &app_context,
-        SetupToolchainHash {
-            action_node: node,
-            installed_in_proto: toolchain
-                .is_installed_in_proto(node.toolchain.req.as_ref())
-                .await?,
-        },
-    )
-    .await?
-    else {
-        debug!(
-            toolchain_id = node.toolchain.id.as_str(),
-            "Skipping toolchain setup as there are no changes since last run",
-        );
-
-        return Ok(ActionStatus::Skipped);
-    };
+        SetupToolchainHash { action_node: node },
+    )?;
 
     // Run the install and setup flows
     debug!(

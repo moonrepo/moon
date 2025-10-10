@@ -1,0 +1,17 @@
+dependsOn:
+  - 'external'
+
+tasks:
+  project:
+    inputs:
+      - project: 'external'
+
+  projectFilter:
+    inputs:
+      - project: 'external'
+        filter: ['*.json']
+
+  projectGroup:
+    inputs:
+      - project: 'external'
+        group: 'docs'

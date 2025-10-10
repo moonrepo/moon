@@ -1,38 +1,76 @@
 use moon_action::{Action, ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
+use moon_hash::ContentHasher;
 use serde::Serialize;
 use starbase_utils::fs::FileLock;
+
+pub fn create_hasher(
+    action: &mut Action,
+    app_context: &AppContext,
+    data: impl Serialize,
+) -> miette::Result<ContentHasher> {
+    let mut op = Operation::hash_generation();
+
+    let mut hasher = app_context
+        .cache_engine
+        .hash
+        .create_hasher(action.get_prefix());
+
+    hasher.hash_content(data)?;
+
+    let hash = hasher.generate_hash()?;
+
+    op.meta.set_hash(&hash);
+    op.finish(ActionStatus::Passed);
+
+    action.operations.push(op);
+
+    Ok(hasher)
+}
+
+pub fn create_hash_and_return_lock(
+    action: &mut Action,
+    app_context: &AppContext,
+    data: impl Serialize,
+) -> miette::Result<FileLock> {
+    let mut hasher = create_hasher(action, app_context, data)?;
+
+    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+
+    let lock = app_context.cache_engine.create_lock(format!(
+        "{}-{}",
+        action.get_prefix(),
+        hasher.generate_hash()?
+    ))?;
+
+    Ok(lock)
+}
 
 pub async fn create_hash_and_return_lock_if_changed(
     action: &mut Action,
     app_context: &AppContext,
     data: impl Serialize,
 ) -> miette::Result<Option<FileLock>> {
-    let cache_engine = &app_context.cache_engine;
-
-    // Generate the hash and track the timings
-    let mut hash_op = Operation::hash_generation();
-
-    let mut hasher = cache_engine.hash.create_hasher(action.get_prefix());
-    hasher.hash_content(data)?;
-
+    let mut hasher = create_hasher(action, app_context, data)?;
     let hash = hasher.generate_hash()?;
 
-    hash_op.meta.set_hash(&hash);
-    hash_op.finish(ActionStatus::Passed);
-
-    action.operations.push(hash_op);
-
     // If the hash manifest exists, then it has ran before
-    if cache_engine.hash.get_manifest_path(&hash).exists() {
+    if app_context
+        .cache_engine
+        .hash
+        .get_manifest_path(&hash)
+        .exists()
+    {
         return Ok(None);
     }
 
     // Otherwise save the manifest and return a lock
-    cache_engine.hash.save_manifest(&mut hasher)?;
+    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
 
-    let lock = cache_engine.create_lock(format!("{}-{hash}", action.get_prefix()))?;
+    let lock = app_context
+        .cache_engine
+        .create_lock(format!("{}-{hash}", action.get_prefix()))?;
 
     Ok(Some(lock))
 }

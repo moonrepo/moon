@@ -365,6 +365,58 @@ mod task_hasher {
 
             let _ = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
         }
+
+        #[tokio::test]
+        async fn can_include_external_project() {
+            let sandbox = create_sandbox("projects");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let project = wg.get_project("inputs").unwrap();
+            let task = wg.get_task_from_project("inputs", "project").unwrap();
+
+            let hasher_config = HasherConfig::default();
+            let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+            assert_eq!(
+                get_input_files(result.inputs),
+                [
+                    "external/data.json",
+                    "external/docs.md",
+                    "external/moon.yml"
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn can_include_external_project_using_file_group() {
+            let sandbox = create_sandbox("projects");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let project = wg.get_project("inputs").unwrap();
+            let task = wg.get_task_from_project("inputs", "projectGroup").unwrap();
+
+            let hasher_config = HasherConfig::default();
+            let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+            assert_eq!(get_input_files(result.inputs), ["external/docs.md"]);
+        }
+
+        #[tokio::test]
+        async fn can_include_external_project_using_filter_globs() {
+            let sandbox = create_sandbox("projects");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let project = wg.get_project("inputs").unwrap();
+            let task = wg.get_task_from_project("inputs", "projectFilter").unwrap();
+
+            let hasher_config = HasherConfig::default();
+            let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+            assert_eq!(get_input_files(result.inputs), ["external/data.json"]);
+        }
     }
 
     mod output_filtering {

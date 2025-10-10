@@ -4,7 +4,7 @@ use crate::{CodegenError, filters, funcs};
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{RelativePathBuf, to_virtual_string};
-use moon_config::{ConfigLoader, TemplateConfig, schematic::strip_bom};
+use moon_config::{ConfigLoader, TemplateConfig, schematic::helpers::strip_bom};
 use regex::Regex;
 use serde::Serialize;
 use starbase_utils::{fs, json, yaml};

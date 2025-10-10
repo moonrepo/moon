@@ -82,15 +82,29 @@ impl WorkspaceGraph {
                         Field::Project(ids) => {
                             if condition.matches(ids, &project.id)? {
                                 Ok(true)
-                            } else if let Some(alias) = &project.alias {
-                                condition.matches(ids, alias)
+                            } else if !project.aliases.is_empty() {
+                                condition.matches_list(
+                                    ids,
+                                    &project
+                                        .aliases
+                                        .iter()
+                                        .map(|t| t.as_str())
+                                        .collect::<Vec<_>>(),
+                                )
                             } else {
                                 Ok(false)
                             }
                         }
                         Field::ProjectAlias(aliases) => {
-                            if let Some(alias) = &project.alias {
-                                condition.matches(aliases, alias)
+                            if !project.aliases.is_empty() {
+                                condition.matches_list(
+                                    aliases,
+                                    &project
+                                        .aliases
+                                        .iter()
+                                        .map(|t| t.as_str())
+                                        .collect::<Vec<_>>(),
+                                )
                             } else {
                                 Ok(false)
                             }

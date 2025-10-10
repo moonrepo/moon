@@ -104,19 +104,14 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                         )
                     }.into_any()
                 )
-                #(project.alias.as_ref().map(|alias| {
-                    element! {
-                        Entry(
-                            name: "Alias",
-                            value: element! {
-                                StyledText(
-                                    content: alias,
-                                    style: Style::Label
-                                )
-                            }.into_any()
-                        )
-                    }
-                }))
+                Entry(
+                    name: if project.aliases.len() == 1 {
+                        "Alias"
+                    } else {
+                        "Aliases"
+                    },
+                    content: project.aliases.join(", "),
+                )
                 Entry(
                     name: "Source",
                     value: element! {

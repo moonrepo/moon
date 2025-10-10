@@ -255,7 +255,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut project = Project {
             dependencies,
             file_groups: self.build_file_groups()?,
-            alias: self.alias,
+            aliases: vec![self.alias.unwrap_or_default()], // TODO
             id: self.id.to_owned(),
             language: self.language,
             root: self.root,
@@ -416,9 +416,9 @@ fn resolve_project_dependencies(project: &mut Project, root_project_id: Option<&
                             .iter()
                             .any(|dep| &dep.id == dep_project_id)
                         || project
-                            .alias
-                            .as_ref()
-                            .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                            .aliases
+                            .iter()
+                            .any(|alias| alias.as_str() == dep_project_id.as_str())
                 },
             ) {
                 deps.push(dep_config);

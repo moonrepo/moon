@@ -115,7 +115,7 @@ export interface TaskFragment {
 }
 
 export interface Project {
-	alias?: string | null;
+	aliases?: string[] | null;
 	config: ProjectConfig;
 	dependencies?: ProjectDependencyConfig[];
 	fileGroups?: Record<string, FileGroup>;

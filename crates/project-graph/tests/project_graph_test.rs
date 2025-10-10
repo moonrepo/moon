@@ -1041,15 +1041,15 @@ mod project_graph {
         async fn doesnt_set_alias_if_same_as_id() {
             let graph = build_aliases_graph().await;
 
-            assert_eq!(graph.get_project("alias-same-id").unwrap().alias, None);
+            assert_eq!(graph.get_project("alias-same-id").unwrap().aliases, None);
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_a_project_has_the_id() {
             let graph = build_aliases_graph_for_fixture("aliases-conflict-ids").await;
 
-            assert_eq!(graph.get_project("one").unwrap().alias, None);
-            assert_eq!(graph.get_project("two").unwrap().alias, None);
+            assert_eq!(graph.get_project("one").unwrap().aliases, None);
+            assert_eq!(graph.get_project("two").unwrap().aliases, None);
         }
 
         #[tokio::test(flavor = "multi_thread")]

@@ -39,8 +39,15 @@
 - **Other**
   - Removed the `projectType` and `taskPlatform` query properties. Use `projectLayer` and
     `taskToolchain` instead.
+- **WASM API**
+  - Renamed `ProjectFragment.alias` to `ProjectFragment.aliases` and changed its type from
+    `Option<String>` to `Vec<String>`.
 
 #### 🚀 Updates
 
+- **Projects**
+  - Updated projects to support multiple aliases (one from each applicable toolchain).
+    - Added a `$projectAliases` token, which is a comma-separated list of all aliases.
+    - The `$projectAlias` token now returns the first alias, if it exists.
 - **WASM API**
   - Added `RegisterToolchainOutput.language` field.

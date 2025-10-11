@@ -224,7 +224,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 (
                     id,
                     ProjectMetadata {
-                        alias: data.alias,
+                        aliases: data.aliases,
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
                         source: data.source,
@@ -429,11 +429,9 @@ impl<'app> WorkspaceBuilder<'app> {
             }
         }
 
-        // Inherit alias before building in case the project
+        // Inherit aliases before building in case the project
         // references itself in tasks or dependencies
-        if let Some(alias) = &build_data.alias {
-            builder.set_alias(alias);
-        }
+        builder.set_aliases(build_data.aliases.iter().cloned().collect());
 
         let project = builder.build().await?;
 
@@ -908,7 +906,8 @@ impl<'app> WorkspaceBuilder<'app> {
         self.project_data
             .get_mut(&id)
             .expect("Project build data not found!")
-            .alias = Some(alias.clone());
+            .aliases
+            .insert(alias.clone());
 
         self.aliases.insert(alias, id);
 

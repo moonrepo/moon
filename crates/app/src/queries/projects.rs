@@ -62,10 +62,13 @@ fn load_with_regex(
         }
 
         if let Some(regex) = &alias_regex
-            && let Some(alias) = &project.alias
-            && !regex.is_match(alias)
+            && !project.aliases.is_empty()
         {
-            continue;
+            let has_alias = project.aliases.iter().any(|alias| regex.is_match(alias));
+
+            if !has_alias {
+                continue;
+            }
         }
 
         if let Some(regex) = &source_regex

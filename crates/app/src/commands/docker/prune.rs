@@ -121,7 +121,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                         packages: instance
                             .projects
                             .iter()
-                            .flat_map(|project| project.alias.clone())
+                            .flat_map(|project| project.aliases.clone())
                             .collect(),
                         production: true,
                         project: in_project.as_ref().map(|project| project.to_fragment()),

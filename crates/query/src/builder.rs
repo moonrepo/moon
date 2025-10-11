@@ -129,7 +129,7 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                         Field::Language(build_criteria_enum::<LanguageType>(&field, &op, value)?)
                     }
                     "project" => Field::Project(value),
-                    "projectAlias" => Field::ProjectAlias(value),
+                    "projectAlias" | "projectAliases" => Field::ProjectAlias(value),
                     "projectLayer" => {
                         Field::ProjectLayer(build_criteria_enum::<LayerType>(&field, &op, value)?)
                     }
@@ -140,7 +140,7 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     }
                     "tag" => Field::Tag(value),
                     "task" => Field::Task(value),
-                    "taskToolchain" => Field::TaskToolchain(value),
+                    "taskToolchain" | "taskToolchains" => Field::TaskToolchain(value),
                     "taskType" => {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }

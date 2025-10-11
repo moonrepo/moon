@@ -33,8 +33,6 @@ inputs = new Listing {
 	"@dirs(name)"
 }
 
-`local` = true
-
 outputs = new Listing {
 	"$workspaceRoot"
 	"file.txt"

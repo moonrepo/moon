@@ -585,7 +585,6 @@ generator:
                 FILENAME,
                 r"
 hasher:
-  batchSize: 1000
   warnOnMissingInputs: false
 ",
                 load_config_from_root,
@@ -667,7 +666,7 @@ notifier:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "runner: {}", load_config_from_root);
+            let config = test_load_config(FILENAME, "pipeline: {}", load_config_from_root);
 
             assert_eq!(config.pipeline.cache_lifetime, "7 days");
             assert!(config.pipeline.inherit_colors_for_piped_tasks);
@@ -678,7 +677,7 @@ notifier:
             let config = test_load_config(
                 FILENAME,
                 r"
-runner:
+pipeline:
   cacheLifetime: 10 hours
   inheritColorsForPipedTasks: false
 ",
@@ -722,12 +721,12 @@ vcs:
 
         #[test]
         #[should_panic(expected = "unknown variant `mercurial`, expected `git`")]
-        fn errors_on_invalid_manager() {
+        fn errors_on_invalid_client() {
             test_load_config(
                 FILENAME,
                 r"
 vcs:
-  manager: mercurial
+  client: mercurial
 ",
                 load_config_from_root,
             );

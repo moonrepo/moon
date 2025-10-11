@@ -106,7 +106,7 @@ config_struct!(
         pub schema: String,
 
         /// Other projects that this project depends on.
-        #[setting(nested)]
+        #[setting(nested, alias = "deps")]
         pub depends_on: Vec<ProjectDependsOn>,
 
         /// Configures Docker integration for this project.

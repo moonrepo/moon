@@ -169,7 +169,7 @@ mod token_expander {
             let metadata = project.config.project.get_or_insert(Default::default());
 
             metadata.title = Some("name".into());
-            metadata.description = "description".into();
+            metadata.description = Some("description".into());
             metadata.channel = Some("#channel".into());
             metadata.owner = Some("owner".into());
             metadata.maintainers.push("user1".into());

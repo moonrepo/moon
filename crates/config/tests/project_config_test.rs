@@ -2,9 +2,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, ProjectConfig,
-    ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
-    ToolchainPluginConfig,
+    ConfigLoader, DependencyScope, GlobPath, Input, LanguageType, LayerType, OwnersPaths,
+    PortablePath, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry,
+    TaskArgs, ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
@@ -23,7 +23,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `deps`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {
@@ -150,7 +150,7 @@ dependsOn:
         }
 
         #[test]
-        #[should_panic(expected = "expected a project name or dependency config object")]
+        #[should_panic(expected = "expected a project identifier or dependency config object")]
         fn errors_on_invalid_object_scope() {
             test_load_config(
                 "moon.yml",
@@ -291,7 +291,10 @@ owners:
 
             assert_eq!(
                 config.owners.paths,
-                OwnersPaths::List(vec!["file.txt".into(), "dir/**/*".into()])
+                OwnersPaths::List(vec![
+                    GlobPath::parse("file.txt").unwrap(),
+                    GlobPath::parse("dir/**/*").unwrap()
+                ])
             );
         }
 
@@ -311,8 +314,14 @@ owners:
             assert_eq!(
                 config.owners.paths,
                 OwnersPaths::Map(IndexMap::from_iter([
-                    ("file.txt".into(), vec!["a".into(), "b".into()]),
-                    ("dir/**/*".into(), vec!["c".into(), "d".into()]),
+                    (
+                        GlobPath::parse("file.txt").unwrap(),
+                        vec!["a".into(), "b".into()]
+                    ),
+                    (
+                        GlobPath::parse("dir/**/*").unwrap(),
+                        vec!["c".into(), "d".into()]
+                    ),
                 ]))
             );
         }
@@ -354,14 +363,6 @@ owners:
         use serde_json::Value;
 
         #[test]
-        #[should_panic(expected = "must not be empty")]
-        fn errors_if_empty() {
-            test_load_config("moon.yml", "project: {}", |path| {
-                load_config_from_root(path, ".")
-            });
-        }
-
-        #[test]
         fn can_set_only_description() {
             let config = test_load_config(
                 "moon.yml",
@@ -374,7 +375,7 @@ project:
 
             let meta = config.project.unwrap();
 
-            assert_eq!(meta.description, "Text");
+            assert_eq!(meta.description.unwrap(), "Text");
         }
 
         #[test]
@@ -383,7 +384,7 @@ project:
                 "moon.yml",
                 r"
 project:
-  name: Name
+  title: Name
   description: Description
   owner: team
   maintainers: [a, b, c]
@@ -395,7 +396,7 @@ project:
             let meta = config.project.unwrap();
 
             assert_eq!(meta.title.unwrap(), "Name");
-            assert_eq!(meta.description, "Description");
+            assert_eq!(meta.description.unwrap(), "Description");
             assert_eq!(meta.owner.unwrap(), "team");
             assert_eq!(meta.maintainers, vec!["a", "b", "c"]);
             assert_eq!(meta.channel.unwrap(), "#abc");
@@ -408,9 +409,8 @@ project:
                 r"
 project:
   description: 'Test'
-  metadata:
-    bool: true
-    string: 'abc'
+  bool: true
+  string: 'abc'
 ",
                 |path| load_config_from_root(path, "."),
             );
@@ -687,8 +687,8 @@ workspace:
         use std::collections::BTreeMap;
 
         #[test]
-        #[allow(deprecated)]
         fn loads_pkl() {
+            use starbase_sandbox::pretty_assertions::assert_eq;
             let config = test_config(locate_fixture("pkl"), |path| {
                 ConfigLoader::default().load_project_config(path)
             });
@@ -732,12 +732,15 @@ workspace:
                         custom_groups: FxHashMap::default(),
                         default_owner: Some("owner".into()),
                         optional: true,
-                        paths: OwnersPaths::List(vec!["dir/".into(), "file.txt".into()]),
+                        paths: OwnersPaths::List(vec![
+                            GlobPath::parse("dir/").unwrap(),
+                            GlobPath::parse("file.txt").unwrap()
+                        ]),
                         required_approvals: Some(5)
                     },
                     project: Some(ProjectMetadataConfig {
                         title: Some("Name".into()),
-                        description: "Does something".into(),
+                        description: Some("Does something".into()),
                         owner: Some("team".into()),
                         maintainers: vec![],
                         channel: Some("#team".into()),

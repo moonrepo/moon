@@ -30,7 +30,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `dependsOn`, `deps`, `env`, `inputs`, `outputs`, `options`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", load_config_from_code);

@@ -42,14 +42,12 @@ owners {
 }
 
 project {
-	name = "Name"
+	title = "Name"
 	description = "Does something"
 	owner = "team"
 	channel = "#team"
-	metadata {
-		["bool"] = true
-		["string"] = "abc"
-	}
+	bool = true
+	string = "abc"
 }
 
 stack = "frontend"

@@ -3,7 +3,6 @@ mod utils;
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
 use moon_target::Target;
-use moon_task::Task;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use utils::TasksBuilderContainer;
@@ -28,7 +27,6 @@ mod tasks_builder {
             ]
         );
         assert_eq!(build.outputs, vec![Output::File(stub_file_output("out"))]);
-        assert!(!build.state.local_only);
 
         let run = tasks.get("local-run").unwrap();
 
@@ -41,7 +39,6 @@ mod tasks_builder {
             ]
         );
         assert_eq!(run.outputs, vec![]);
-        assert!(run.state.local_only);
 
         let test = tasks.get("local-test").unwrap();
 
@@ -53,7 +50,6 @@ mod tasks_builder {
                 Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
             ]
         );
-        assert!(!test.state.local_only);
     }
 
     mod inheritance {
@@ -76,7 +72,6 @@ mod tasks_builder {
                 ]
             );
             assert_eq!(build.outputs, vec![Output::File(stub_file_output("out"))]);
-            assert!(!build.state.local_only);
 
             let run = tasks.get("local-run").unwrap();
 
@@ -89,7 +84,6 @@ mod tasks_builder {
                 ]
             );
             assert_eq!(run.outputs, vec![]);
-            assert!(run.state.local_only);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -798,74 +792,6 @@ tasks:
             let task = tasks.get("retry-custom").unwrap();
 
             assert_eq!(task.options.retry_count, 3);
-        }
-    }
-
-    mod local_mode {
-        use super::*;
-
-        fn is_local(task: &Task) {
-            assert!(task.state.local_only);
-            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
-            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
-            assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn infers_from_task_name() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("local-mode").await;
-
-            is_local(tasks.get("dev").unwrap());
-            is_local(tasks.get("start").unwrap());
-            is_local(tasks.get("serve").unwrap());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_override_options() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("local-mode").await;
-
-            let cache = tasks.get("override-cache").unwrap();
-
-            assert!(cache.state.local_only);
-            assert_eq!(cache.options.cache, TaskOptionCache::Enabled(true));
-
-            let style = tasks.get("override-style").unwrap();
-
-            assert!(style.state.local_only);
-            assert_eq!(style.options.output_style, Some(TaskOutputStyle::Hash));
-
-            let persistent = tasks.get("override-persistent").unwrap();
-
-            assert!(persistent.state.local_only);
-            assert!(!persistent.options.persistent);
-
-            let ci = tasks.get("override-ci").unwrap();
-
-            assert!(ci.state.local_only);
-            assert!(ci.options.run_in_ci.is_enabled());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_override_global_task() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("local-mode").await;
-
-            let build = tasks.get("global-build").unwrap();
-
-            assert!(build.state.local_only);
-
-            let run = tasks.get("global-run").unwrap();
-
-            assert!(!run.state.local_only);
         }
     }
 

@@ -118,7 +118,16 @@ export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none'
 export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
 
 /** A list of available shells on Unix. */
-export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'ion' | 'murex' | 'nu' | 'pwsh' | 'xonsh' | 'zsh';
+export type TaskUnixShell =
+	| 'bash'
+	| 'elvish'
+	| 'fish'
+	| 'ion'
+	| 'murex'
+	| 'nu'
+	| 'pwsh'
+	| 'xonsh'
+	| 'zsh';
 
 /** A list of available shells on Windows. */
 export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pwsh' | 'xonsh';
@@ -358,8 +367,8 @@ export interface TaskConfig {
 	 * it will exit early. An input can be a literal file path, a glob pattern,
 	 * environment variable, and more.
 	 *
-	 * When not provided, all files within the project are considered inputs
-	 * (`**/*`). When an empty list, no files are considered. Otherwise, an
+	 * When not provided, all files within the project are considered inputs.
+	 * When an empty list, no files are considered. Otherwise, an
 	 * explicit list of inputs are considered.
 	 */
 	inputs: Input[] | null;
@@ -668,8 +677,8 @@ export interface PartialTaskConfig {
 	 * it will exit early. An input can be a literal file path, a glob pattern,
 	 * environment variable, and more.
 	 *
-	 * When not provided, all files within the project are considered inputs
-	 * (`**/*`). When an empty list, no files are considered. Otherwise, an
+	 * When not provided, all files within the project are considered inputs.
+	 * When an empty list, no files are considered. Otherwise, an
 	 * explicit list of inputs are considered.
 	 */
 	inputs?: Input[] | null;

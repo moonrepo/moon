@@ -1060,7 +1060,7 @@
         },
         "inputs": {
           "title": "inputs",
-          "description": "A list of inputs that will be hashing and compared against changed files to determine affected status. If affected, the task will run, otherwise it will exit early. An input can be a literal file path, a glob pattern, environment variable, and more.  When not provided, all files within the project are considered inputs (**/*). When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
+          "description": "A list of inputs that will be hashing and compared against changed files to determine affected status. If affected, the task will run, otherwise it will exit early. An input can be a literal file path, a glob pattern, environment variable, and more.  When not provided, all files within the project are considered inputs. When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
           "anyOf": [
             {
               "type": "array",
@@ -1071,8 +1071,7 @@
             {
               "type": "null"
             }
-          ],
-          "markdownDescription": "A list of inputs that will be hashing and compared against changed files to determine affected status. If affected, the task will run, otherwise it will exit early. An input can be a literal file path, a glob pattern, environment variable, and more.  When not provided, all files within the project are considered inputs (`**/*`). When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered."
+          ]
         },
         "options": {
           "title": "options",

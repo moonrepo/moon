@@ -219,8 +219,8 @@ config_struct!(
         /// it will exit early. An input can be a literal file path, a glob pattern,
         /// environment variable, and more.
         ///
-        /// When not provided, all files within the project are considered inputs
-        /// (`**/*`). When an empty list, no files are considered. Otherwise, an
+        /// When not provided, all files within the project are considered inputs.
+        /// When an empty list, no files are considered. Otherwise, an
         /// explicit list of inputs are considered.
         pub inputs: Option<Vec<Input>>,
 

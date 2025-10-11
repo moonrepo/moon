@@ -11,7 +11,7 @@ fileGroups:
 tasks:
   dev:
     command: 'vite dev'
-    local: true
+    preset: 'server'
 
   build:
     command: 'vite build'
@@ -28,7 +28,7 @@ tasks:
       - '5000'
     deps:
       - '~:build'
-    local: true
+    preset: 'server'
 
 workspace:
   inheritedTasks:

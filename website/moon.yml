@@ -28,7 +28,7 @@ tasks:
     command: 'docusaurus start'
     deps:
       - '^:build'
-    local: true
+    preset: 'server'
 
   typecheck:
     command: 'tsc --build --pretty'

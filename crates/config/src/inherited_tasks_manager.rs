@@ -2,23 +2,13 @@ use crate::config_finder::ConfigFinder;
 use crate::inherited_tasks_config::*;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{Input, OneOrMany};
-use moon_common::{Id, cacheable, color, path::standardize_separators};
+use moon_common::{Id, color, path::standardize_separators};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
 use schematic::{Config, ConfigError, PartialConfig};
 use std::hash::BuildHasherDefault;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-
-cacheable!(
-    #[derive(Clone, Debug, Default)]
-    pub struct InheritedTasksResult {
-        pub order: Vec<String>,
-        pub config: InheritedTasksConfig,
-        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
-        pub task_layers: FxHashMap<String, Vec<String>>,
-    }
-);
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksEntry {

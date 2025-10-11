@@ -3,8 +3,9 @@ use crate::patterns::merge_iter;
 use crate::shapes::Input;
 use crate::task_config::{TaskConfig, TaskDependency, validate_deps};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use moon_common::Id;
+use moon_common::{Id, cacheable};
 use rustc_hash::FxHashMap;
+use schematic::schema::indexmap::IndexMap;
 use schematic::{Config, merge, validate};
 use std::collections::BTreeMap;
 
@@ -50,5 +51,15 @@ config_struct!(
         /// @since 1.20.0
         #[setting(nested)]
         pub task_options: Option<TaskOptionsConfig>,
+    }
+);
+
+cacheable!(
+    #[derive(Clone, Debug, Default)]
+    pub struct InheritedTasksResult {
+        pub order: Vec<String>,
+        pub config: InheritedTasksConfig,
+        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
+        pub task_layers: FxHashMap<String, Vec<String>>,
     }
 );

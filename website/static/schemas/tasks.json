@@ -490,13 +490,20 @@
           "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },
@@ -505,13 +512,20 @@
           "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },

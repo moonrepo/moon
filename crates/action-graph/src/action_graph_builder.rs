@@ -992,16 +992,21 @@ impl<'query> ActionGraphBuilder<'query> {
             return;
         }
 
-        trace!(
-            index = index.index(),
-            requires = ?edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
-            "Linking requirements for index"
-        );
+        let mut added_edges = vec![];
 
         for edge in edges {
-            // Use `update_edge` instead of `add_edge` as it avoids
-            // duplicate edges from being inserted
-            self.graph.update_edge(index, edge, ());
+            if self.graph.find_edge(index, edge).is_none() {
+                self.graph.add_edge(index, edge, ());
+                added_edges.push(edge);
+            }
+        }
+
+        if !added_edges.is_empty() {
+            trace!(
+                index = index.index(),
+                requires = ?added_edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
+                "Linking requirements for index"
+            );
         }
     }
 

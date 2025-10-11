@@ -211,6 +211,8 @@ export interface ProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string;
 	/** Other projects that this project depends on. */
+	deps?: ProjectDependsOn[];
+	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
 	/**
 	 * Configures Docker integration for this project.
@@ -439,6 +441,8 @@ export interface PartialProjectWorkspaceConfig {
 export interface PartialProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
+	/** Other projects that this project depends on. */
+	deps?: PartialProjectDependsOn[] | null;
 	/** Other projects that this project depends on. */
 	dependsOn?: PartialProjectDependsOn[] | null;
 	/**

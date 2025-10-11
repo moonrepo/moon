@@ -16,6 +16,14 @@
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
+    "deps": {
+      "title": "deps",
+      "description": "Other projects that this project depends on.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ProjectDependsOn"
+      }
+    },
     "docker": {
       "title": "docker",
       "description": "Configures Docker integration for this project. @since 1.27.0",
@@ -1127,13 +1135,20 @@
           "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },
@@ -1142,13 +1157,20 @@
           "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },

@@ -392,12 +392,12 @@ export interface TaskConfig {
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
 	 */
-	toolchains?: Id | Id[];
+	toolchain?: Id | Id[] | null;
 	/**
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
 	 */
-	toolchain: Id | Id[];
+	toolchains: Id | Id[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.
@@ -702,12 +702,12 @@ export interface PartialTaskConfig {
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
 	 */
-	toolchains?: Id | Id[] | null;
+	toolchain?: Id | Id[] | null;
 	/**
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
 	 */
-	toolchain?: Id | Id[] | null;
+	toolchains?: Id | Id[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.

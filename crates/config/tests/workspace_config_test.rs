@@ -3,7 +3,7 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, ExtensionConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
+    ConfigLoader, ExtensionPluginConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
     WorkspaceConfig, WorkspaceProjects,
 };
 use proto_core::warpgate::UrlLocator;
@@ -807,7 +807,7 @@ extensions:
 
             assert_eq!(
                 config.extensions.get("test-id").unwrap(),
-                &ExtensionConfig {
+                &ExtensionPluginConfig {
                     config: FxHashMap::default(),
                     plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                         url: "https://domain.com".into()
@@ -832,7 +832,7 @@ extensions:
 
             assert_eq!(
                 config.extensions.get("test-id").unwrap(),
-                &ExtensionConfig {
+                &ExtensionPluginConfig {
                     config: FxHashMap::from_iter([
                         ("fooBar".into(), serde_json::Value::String("abc".into())),
                         ("bar-baz".into(), serde_json::Value::Bool(true)),
@@ -866,9 +866,9 @@ extensions:
                         "*".to_owned(),
                         vec!["@admins".to_owned()]
                     )]),
-                    order_by: CodeownersOrderBy::ProjectName,
+                    order_by: CodeownersOrderBy::ProjectId,
                     required_approvals: Some(1),
-                    sync_on_run: true,
+                    sync: true,
                 }
             );
             assert_eq!(
@@ -906,7 +906,6 @@ extensions:
             assert_eq!(
                 config.hasher,
                 HasherConfig {
-                    batch_size: 1000,
                     ignore_patterns: vec![GlobPath("*.map".into())],
                     ignore_missing_patterns: vec![GlobPath(".env".into())],
                     optimization: HasherOptimization::Performance,
@@ -953,10 +952,10 @@ extensions:
                         ]
                     )]),
                     hook_format: VcsHookFormat::Native,
-                    manager: VcsManager::Git,
+                    client: VcsClient::Git,
                     provider: VcsProvider::GitLab,
                     remote_candidates: vec!["main".into(), "origin/main".into()],
-                    sync_hooks: true,
+                    sync: true,
                 }
             );
         }

@@ -1892,7 +1892,7 @@ mod sync_codeowners {
     fn creates_if_enabled() {
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.codeowners = Some(PartialCodeownersConfig {
-                sync_on_run: Some(true),
+                sync: Some(true),
                 ..PartialCodeownersConfig::default()
             });
         });
@@ -1910,7 +1910,7 @@ mod sync_codeowners {
     fn creates_for_gitlab() {
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.codeowners = Some(PartialCodeownersConfig {
-                sync_on_run: Some(true),
+                sync: Some(true),
                 ..PartialCodeownersConfig::default()
             });
             workspace_config.vcs = Some(PartialVcsConfig {
@@ -1932,7 +1932,7 @@ mod sync_codeowners {
     fn creates_for_bitbucket() {
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.codeowners = Some(PartialCodeownersConfig {
-                sync_on_run: Some(true),
+                sync: Some(true),
                 ..PartialCodeownersConfig::default()
             });
             workspace_config.vcs = Some(PartialVcsConfig {
@@ -1974,7 +1974,7 @@ mod sync_vcs_hooks {
                     "pre-commit".into(),
                     vec!["moon check --all".into()],
                 )])),
-                sync_hooks: Some(true),
+                sync: Some(true),
                 ..Default::default()
             });
         });

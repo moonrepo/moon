@@ -133,7 +133,7 @@ config_struct!(
 
         /// Configures extensions that can be executed with `moon ext`.
         #[setting(nested)]
-        pub extensions: FxHashMap<Id, ExtensionConfig>,
+        pub extensions: FxHashMap<Id, ExtensionPluginConfig>,
 
         /// Configures the generator for scaffolding from templates.
         #[setting(nested)]

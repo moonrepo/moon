@@ -6,20 +6,20 @@ import type { ExtendsFrom, Id } from './common';
 import type { PluginLocator } from './toolchain-config';
 
 /** How to order ownership rules within the generated file. */
-export type CodeownersOrderBy = 'file-source' | 'project-name';
+export type CodeownersOrderBy = 'file-source' | 'project-id';
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
 export interface CodeownersConfig {
 	/**
-	 * Paths that are applied globally to all projects. Can be relative
-	 * from the workspace root, or a wildcard match for any depth.
+	 * A map of global file paths and glob patterns to a list of owners.
+	 * Can be relative from the workspace root, or a wildcard match for any depth.
 	 */
 	globalPaths: Record<string, string[]>;
 	/**
 	 * How to order ownership rules within the generated file.
 	 *
 	 * @default 'file-source'
-	 * @type {'file-source' | 'project-name'}
+	 * @type {'file-source' | 'project-id'}
 	 */
 	orderBy: CodeownersOrderBy;
 	/**
@@ -29,10 +29,10 @@ export interface CodeownersConfig {
 	 */
 	requiredApprovals: number | null;
 	/**
-	 * Generates a `CODEOWNERS` file after aggregating all ownership
-	 * rules from each project in the workspace.
+	 * Automatically generate a `CODEOWNERS` file during a sync operation,
+	 * after aggregating all ownership rules from each project in the workspace.
 	 */
-	syncOnRun: boolean;
+	sync: boolean;
 }
 
 /** Configures boundaries and constraints between projects. */
@@ -73,7 +73,7 @@ export interface DockerPruneConfig {
 export interface DockerScaffoldConfig {
 	/**
 	 * Copy toolchain specific configs/manifests/files into
-	 * the workspace skeleton.
+	 * the configuration skeleton.
 	 *
 	 * @default true
 	 * @deprecated
@@ -81,7 +81,7 @@ export interface DockerScaffoldConfig {
 	copyToolchainFiles?: boolean;
 	/**
 	 * List of glob patterns, relative from the workspace root,
-	 * to include (or exclude) in the workspace skeleton.
+	 * to include (or exclude) in the configuration skeleton.
 	 */
 	include: string[];
 }
@@ -97,16 +97,6 @@ export interface DockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
 	/**
-	 * @default true
-	 * @deprecated
-	 */
-	actionPipelineV2?: boolean;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	disallowRunInCiMismatch?: boolean;
-	/**
 	 * Enable faster glob file system walking.
 	 *
 	 * @default true
@@ -119,30 +109,10 @@ export interface ExperimentsConfig {
 	 * @default true
 	 */
 	gitV2?: boolean;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	interweavedTaskInheritance?: boolean;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	strictProjectAliases?: boolean;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	strictProjectIds?: boolean;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	taskOutputBoundaries?: boolean;
 }
 
 /** Configures an individual extension. */
-export interface ExtensionConfig {
+export interface ExtensionPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config: Record<string, unknown>;
 	/** Location of the WASM plugin to use. */
@@ -166,13 +136,6 @@ export type HasherWalkStrategy = 'glob' | 'vcs';
 
 /** Configures aspects of the content hashing engine. */
 export interface HasherConfig {
-	/**
-	 * The number of files to include in each hash operation.
-	 *
-	 * @default 2500
-	 * @deprecated
-	 */
-	batchSize?: number;
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
@@ -215,7 +178,7 @@ export type NotifierEventType = 'never' | 'always' | 'failure' | 'success' | 'ta
 /** Configures how and where notifications are sent. */
 export interface NotifierConfig {
 	/**
-	 * Display an OS notification for certain pipeline events.
+	 * Display an OS notification for certain action pipeline events.
 	 * @since 1.38.0
 	 *
 	 * @default 'never'
@@ -224,25 +187,16 @@ export interface NotifierConfig {
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 * @since 1.38.0
-	 *
-	 * @default false
 	 */
-	webhookAcknowledge?: boolean;
+	webhookAcknowledge: boolean;
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl: string | null;
 }
 
 export type PipelineActionSwitch = null | boolean | Id[];
 
-/** Configures aspects of the task runner (also known as the action pipeline). */
+/** Configures aspects of the action pipeline. */
 export interface PipelineConfig {
-	/**
-	 * List of target's for tasks without outputs, that should be
-	 * cached and persisted.
-	 *
-	 * @deprecated
-	 */
-	archivableTargets: string[];
 	/**
 	 * Automatically clean the cache after every task run.
 	 * @since 1.24.0
@@ -263,13 +217,13 @@ export interface PipelineConfig {
 	 */
 	inheritColorsForPipedTasks?: boolean;
 	/**
-	 * Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
-	 * each running task when changes to lockfiles and manifests are detected.
+	 * Run the `InstallDependencies` actions for each running task
+	 * when changes to lockfiles and manifests are detected.
 	 * @since 1.34.0
 	 */
 	installDependencies: PipelineActionSwitch;
 	/**
-	 * Threshold in milliseconds in which to force kill running child
+	 * A threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
 	 * of 0 will not kill the process and let them run to completion.
 	 *
@@ -325,7 +279,7 @@ export type RemoteApi = 'grpc' | 'http';
  * @since 1.32.0
  */
 export interface RemoteAuthConfig {
-	/** HTTP headers to inject into every request. */
+	/** A map of HTTP headers to inject into every request. */
 	headers: Record<string, string>;
 	/**
 	 * The name of an environment variable to use as a bearer token.
@@ -486,14 +440,14 @@ export interface RemoteConfig {
 	tls: RemoteTlsConfig | null;
 }
 
+/** The VCS being utilized by the repository. */
+export type VcsClient = 'git';
+
 /**
  * The format to use for generated VCS hook files.
  * @since 1.29.0
  */
 export type VcsHookFormat = 'bash' | 'native';
-
-/** The VCS being utilized by the repository. */
-export type VcsManager = 'git';
 
 /**
  * The upstream version control provider, where the repository
@@ -503,6 +457,13 @@ export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
 export interface VcsConfig {
+	/**
+	 * The VCS client being utilized by the repository.
+	 *
+	 * @default 'git'
+	 * @type {'git'}
+	 */
+	client: VcsClient;
 	/**
 	 * The default branch / base.
 	 *
@@ -518,17 +479,10 @@ export interface VcsConfig {
 	 */
 	hookFormat: VcsHookFormat;
 	/**
-	 * A mapping of hooks to commands to run when the hook is triggered.
+	 * A map of hooks to a list of commands to run when the hook is triggered.
 	 * @since 1.9.0
 	 */
 	hooks: Record<string, string[]>;
-	/**
-	 * The VCS client being utilized by the repository.
-	 *
-	 * @default 'git'
-	 * @type {'git'}
-	 */
-	manager: VcsManager;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
@@ -541,10 +495,11 @@ export interface VcsConfig {
 	/** List of remote's in which to compare branches against. */
 	remoteCandidates?: string[];
 	/**
-	 * Generates hooks and scripts based on the `hooks` setting.
+	 * Automatically generate hooks and scripts during a sync operation,
+	 * based on the `hooks` setting.
 	 * @since 1.9.0
 	 */
-	syncHooks: boolean;
+	sync: boolean;
 }
 
 /**
@@ -575,7 +530,7 @@ export interface WorkspaceConfig {
 	 */
 	extends: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
-	extensions: Record<Id, ExtensionConfig>;
+	extensions: Record<Id, ExtensionPluginConfig>;
 	/** Configures the generator for scaffolding from templates. */
 	generator: GeneratorConfig;
 	/** Configures aspects of the content hashing engine. */
@@ -609,8 +564,8 @@ export interface WorkspaceConfig {
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
 export interface PartialCodeownersConfig {
 	/**
-	 * Paths that are applied globally to all projects. Can be relative
-	 * from the workspace root, or a wildcard match for any depth.
+	 * A map of global file paths and glob patterns to a list of owners.
+	 * Can be relative from the workspace root, or a wildcard match for any depth.
 	 */
 	globalPaths?: Record<string, string[]> | null;
 	/**
@@ -626,10 +581,10 @@ export interface PartialCodeownersConfig {
 	 */
 	requiredApprovals?: number | null;
 	/**
-	 * Generates a `CODEOWNERS` file after aggregating all ownership
-	 * rules from each project in the workspace.
+	 * Automatically generate a `CODEOWNERS` file during a sync operation,
+	 * after aggregating all ownership rules from each project in the workspace.
 	 */
-	syncOnRun?: boolean | null;
+	sync?: boolean | null;
 }
 
 /** Configures boundaries and constraints between projects. */
@@ -670,7 +625,7 @@ export interface PartialDockerPruneConfig {
 export interface PartialDockerScaffoldConfig {
 	/**
 	 * Copy toolchain specific configs/manifests/files into
-	 * the workspace skeleton.
+	 * the configuration skeleton.
 	 *
 	 * @default true
 	 * @deprecated
@@ -678,7 +633,7 @@ export interface PartialDockerScaffoldConfig {
 	copyToolchainFiles?: boolean | null;
 	/**
 	 * List of glob patterns, relative from the workspace root,
-	 * to include (or exclude) in the workspace skeleton.
+	 * to include (or exclude) in the configuration skeleton.
 	 */
 	include?: string[] | null;
 }
@@ -694,16 +649,6 @@ export interface PartialDockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
 	/**
-	 * @default true
-	 * @deprecated
-	 */
-	actionPipelineV2?: boolean | null;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	disallowRunInCiMismatch?: boolean | null;
-	/**
 	 * Enable faster glob file system walking.
 	 *
 	 * @default true
@@ -716,30 +661,10 @@ export interface PartialExperimentsConfig {
 	 * @default true
 	 */
 	gitV2?: boolean | null;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	interweavedTaskInheritance?: boolean | null;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	strictProjectAliases?: boolean | null;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	strictProjectIds?: boolean | null;
-	/**
-	 * @default true
-	 * @deprecated
-	 */
-	taskOutputBoundaries?: boolean | null;
 }
 
 /** Configures an individual extension. */
-export interface PartialExtensionConfig {
+export interface PartialExtensionPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config?: Record<string, unknown> | null;
 	/** Location of the WASM plugin to use. */
@@ -757,13 +682,6 @@ export interface PartialGeneratorConfig {
 
 /** Configures aspects of the content hashing engine. */
 export interface PartialHasherConfig {
-	/**
-	 * The number of files to include in each hash operation.
-	 *
-	 * @default 2500
-	 * @deprecated
-	 */
-	batchSize?: number | null;
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
@@ -801,7 +719,7 @@ export interface PartialHasherConfig {
 /** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
 	/**
-	 * Display an OS notification for certain pipeline events.
+	 * Display an OS notification for certain action pipeline events.
 	 * @since 1.38.0
 	 *
 	 * @default 'never'
@@ -810,8 +728,6 @@ export interface PartialNotifierConfig {
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 * @since 1.38.0
-	 *
-	 * @default false
 	 */
 	webhookAcknowledge?: boolean | null;
 	/** A secure URL in which to send webhooks to. */
@@ -820,15 +736,8 @@ export interface PartialNotifierConfig {
 
 export type PartialPipelineActionSwitch = null | boolean | Id[];
 
-/** Configures aspects of the task runner (also known as the action pipeline). */
+/** Configures aspects of the action pipeline. */
 export interface PartialPipelineConfig {
-	/**
-	 * List of target's for tasks without outputs, that should be
-	 * cached and persisted.
-	 *
-	 * @deprecated
-	 */
-	archivableTargets?: string[] | null;
 	/**
 	 * Automatically clean the cache after every task run.
 	 * @since 1.24.0
@@ -849,13 +758,13 @@ export interface PartialPipelineConfig {
 	 */
 	inheritColorsForPipedTasks?: boolean | null;
 	/**
-	 * Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
-	 * each running task when changes to lockfiles and manifests are detected.
+	 * Run the `InstallDependencies` actions for each running task
+	 * when changes to lockfiles and manifests are detected.
 	 * @since 1.34.0
 	 */
 	installDependencies?: PartialPipelineActionSwitch | null;
 	/**
-	 * Threshold in milliseconds in which to force kill running child
+	 * A threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
 	 * of 0 will not kill the process and let them run to completion.
 	 *
@@ -908,7 +817,7 @@ export type PartialWorkspaceProjects =
  * @since 1.32.0
  */
 export interface PartialRemoteAuthConfig {
-	/** HTTP headers to inject into every request. */
+	/** A map of HTTP headers to inject into every request. */
 	headers?: Record<string, string> | null;
 	/**
 	 * The name of an environment variable to use as a bearer token.
@@ -1064,6 +973,12 @@ export interface PartialRemoteConfig {
 /** Configures the version control system (VCS). */
 export interface PartialVcsConfig {
 	/**
+	 * The VCS client being utilized by the repository.
+	 *
+	 * @default 'git'
+	 */
+	client?: VcsClient | null;
+	/**
 	 * The default branch / base.
 	 *
 	 * @default 'master'
@@ -1077,16 +992,10 @@ export interface PartialVcsConfig {
 	 */
 	hookFormat?: VcsHookFormat | null;
 	/**
-	 * A mapping of hooks to commands to run when the hook is triggered.
+	 * A map of hooks to a list of commands to run when the hook is triggered.
 	 * @since 1.9.0
 	 */
 	hooks?: Record<string, string[]> | null;
-	/**
-	 * The VCS client being utilized by the repository.
-	 *
-	 * @default 'git'
-	 */
-	manager?: VcsManager | null;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
@@ -1098,10 +1007,11 @@ export interface PartialVcsConfig {
 	/** List of remote's in which to compare branches against. */
 	remoteCandidates?: string[] | null;
 	/**
-	 * Generates hooks and scripts based on the `hooks` setting.
+	 * Automatically generate hooks and scripts during a sync operation,
+	 * based on the `hooks` setting.
 	 * @since 1.9.0
 	 */
-	syncHooks?: boolean | null;
+	sync?: boolean | null;
 }
 
 /**
@@ -1132,7 +1042,7 @@ export interface PartialWorkspaceConfig {
 	 */
 	extends?: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
-	extensions?: Record<Id, PartialExtensionConfig> | null;
+	extensions?: Record<Id, PartialExtensionPluginConfig> | null;
 	/** Configures the generator for scaffolding from templates. */
 	generator?: PartialGeneratorConfig | null;
 	/** Configures aspects of the content hashing engine. */

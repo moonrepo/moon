@@ -62,7 +62,7 @@
       "description": "Configures extensions that can be executed with moon ext.",
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/definitions/ExtensionConfig"
+        "$ref": "#/definitions/ExtensionPluginConfig"
       },
       "propertyNames": {
         "$ref": "#/definitions/Id"
@@ -169,7 +169,7 @@
       "properties": {
         "globalPaths": {
           "title": "globalPaths",
-          "description": "Paths that are applied globally to all projects. Can be relative from the workspace root, or a wildcard match for any depth.",
+          "description": "A map of global file paths and glob patterns to a list of owners. Can be relative from the workspace root, or a wildcard match for any depth.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -203,11 +203,11 @@
             }
           ]
         },
-        "syncOnRun": {
-          "title": "syncOnRun",
-          "description": "Generates a CODEOWNERS file after aggregating all ownership rules from each project in the workspace.",
+        "sync": {
+          "title": "sync",
+          "description": "Automatically generate a CODEOWNERS file during a sync operation, after aggregating all ownership rules from each project in the workspace.",
           "type": "boolean",
-          "markdownDescription": "Generates a `CODEOWNERS` file after aggregating all ownership rules from each project in the workspace."
+          "markdownDescription": "Automatically generate a `CODEOWNERS` file during a sync operation, after aggregating all ownership rules from each project in the workspace."
         }
       },
       "additionalProperties": false,
@@ -218,7 +218,7 @@
       "type": "string",
       "enum": [
         "file-source",
-        "project-name"
+        "project-id"
       ]
     },
     "ConstraintsConfig": {
@@ -300,14 +300,14 @@
       "properties": {
         "copyToolchainFiles": {
           "title": "copyToolchainFiles",
-          "description": "Copy toolchain specific configs/manifests/files into the workspace skeleton.",
+          "description": "Copy toolchain specific configs/manifests/files into the configuration skeleton.",
           "default": true,
           "deprecated": true,
           "type": "boolean"
         },
         "include": {
           "title": "include",
-          "description": "List of glob patterns, relative from the workspace root, to include (or exclude) in the workspace skeleton.",
+          "description": "List of glob patterns, relative from the workspace root, to include (or exclude) in the configuration skeleton.",
           "type": "array",
           "items": {
             "type": "string"
@@ -320,18 +320,6 @@
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
       "properties": {
-        "actionPipelineV2": {
-          "title": "actionPipelineV2",
-          "default": true,
-          "deprecated": true,
-          "type": "boolean"
-        },
-        "disallowRunInCiMismatch": {
-          "title": "disallowRunInCiMismatch",
-          "default": true,
-          "deprecated": true,
-          "type": "boolean"
-        },
         "fasterGlobWalk": {
           "title": "fasterGlobWalk",
           "description": "Enable faster glob file system walking.",
@@ -342,30 +330,6 @@
           "title": "gitV2",
           "description": "Enable a faster and more accurate Git implementation. Supports submodules, subtrees, and worktrees.",
           "default": true,
-          "type": "boolean"
-        },
-        "interweavedTaskInheritance": {
-          "title": "interweavedTaskInheritance",
-          "default": true,
-          "deprecated": true,
-          "type": "boolean"
-        },
-        "strictProjectAliases": {
-          "title": "strictProjectAliases",
-          "default": true,
-          "deprecated": true,
-          "type": "boolean"
-        },
-        "strictProjectIds": {
-          "title": "strictProjectIds",
-          "default": true,
-          "deprecated": true,
-          "type": "boolean"
-        },
-        "taskOutputBoundaries": {
-          "title": "taskOutputBoundaries",
-          "default": true,
-          "deprecated": true,
           "type": "boolean"
         }
       },
@@ -384,7 +348,7 @@
         }
       ]
     },
-    "ExtensionConfig": {
+    "ExtensionPluginConfig": {
       "description": "Configures an individual extension.",
       "type": "object",
       "properties": {
@@ -440,13 +404,6 @@
       "description": "Configures aspects of the content hashing engine.",
       "type": "object",
       "properties": {
-        "batchSize": {
-          "title": "batchSize",
-          "description": "The number of files to include in each hash operation.",
-          "default": 2500,
-          "deprecated": true,
-          "type": "number"
-        },
         "ignoreMissingPatterns": {
           "title": "ignoreMissingPatterns",
           "description": "When warnOnMissingInputs is enabled, filters missing file paths from logging a warning. @since 1.10.0",
@@ -519,7 +476,7 @@
       "properties": {
         "terminalNotifications": {
           "title": "terminalNotifications",
-          "description": "Display an OS notification for certain pipeline events. @since 1.38.0",
+          "description": "Display an OS notification for certain action pipeline events. @since 1.38.0",
           "default": "never",
           "anyOf": [
             {
@@ -533,7 +490,6 @@
         "webhookAcknowledge": {
           "title": "webhookAcknowledge",
           "description": "Whether webhook requests require acknowledgment (2xx response). @since 1.38.0",
-          "default": false,
           "type": "boolean"
         },
         "webhookUrl": {
@@ -580,18 +536,9 @@
       ]
     },
     "PipelineConfig": {
-      "description": "Configures aspects of the task runner (also known as the action pipeline).",
+      "description": "Configures aspects of the action pipeline.",
       "type": "object",
       "properties": {
-        "archivableTargets": {
-          "title": "archivableTargets",
-          "description": "List of target's for tasks without outputs, that should be cached and persisted.",
-          "deprecated": true,
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "autoCleanCache": {
           "title": "autoCleanCache",
           "description": "Automatically clean the cache after every task run. @since 1.24.0",
@@ -612,17 +559,17 @@
         },
         "installDependencies": {
           "title": "installDependencies",
-          "description": "Run the InstallWorkspaceDeps and InstallProjectDeps actions for each running task when changes to lockfiles and manifests are detected. @since 1.34.0",
+          "description": "Run the InstallDependencies actions for each running task when changes to lockfiles and manifests are detected. @since 1.34.0",
           "allOf": [
             {
               "$ref": "#/definitions/PipelineActionSwitch"
             }
           ],
-          "markdownDescription": "Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for each running task when changes to lockfiles and manifests are detected. @since 1.34.0"
+          "markdownDescription": "Run the `InstallDependencies` actions for each running task when changes to lockfiles and manifests are detected. @since 1.34.0"
         },
         "killProcessThreshold": {
           "title": "killProcessThreshold",
-          "description": "Threshold in milliseconds in which to force kill running child processes after the pipeline receives an external signal. A value of 0 will not kill the process and let them run to completion.",
+          "description": "A threshold in milliseconds in which to force kill running child processes after the pipeline receives an external signal. A value of 0 will not kill the process and let them run to completion.",
           "default": 2000,
           "type": "number"
         },
@@ -676,7 +623,7 @@
       "properties": {
         "headers": {
           "title": "headers",
-          "description": "HTTP headers to inject into every request.",
+          "description": "A map of HTTP headers to inject into every request.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -885,10 +832,27 @@
       "additionalProperties": false,
       "markdownDescription": "Configures for server-only authentication with TLS. @since 1.30.0"
     },
+    "VcsClient": {
+      "description": "The VCS being utilized by the repository.",
+      "type": "string",
+      "enum": [
+        "git"
+      ]
+    },
     "VcsConfig": {
       "description": "Configures the version control system (VCS).",
       "type": "object",
       "properties": {
+        "client": {
+          "title": "client",
+          "description": "The VCS client being utilized by the repository.",
+          "default": "git",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsClient"
+            }
+          ]
+        },
         "defaultBranch": {
           "title": "defaultBranch",
           "description": "The default branch / base.",
@@ -907,7 +871,7 @@
         },
         "hooks": {
           "title": "hooks",
-          "description": "A mapping of hooks to commands to run when the hook is triggered. @since 1.9.0",
+          "description": "A map of hooks to a list of commands to run when the hook is triggered. @since 1.9.0",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -918,16 +882,6 @@
           "propertyNames": {
             "type": "string"
           }
-        },
-        "manager": {
-          "title": "manager",
-          "description": "The VCS client being utilized by the repository.",
-          "default": "git",
-          "allOf": [
-            {
-              "$ref": "#/definitions/VcsManager"
-            }
-          ]
         },
         "provider": {
           "title": "provider",
@@ -947,11 +901,11 @@
             "type": "string"
           }
         },
-        "syncHooks": {
-          "title": "syncHooks",
-          "description": "Generates hooks and scripts based on the hooks setting. @since 1.9.0",
+        "sync": {
+          "title": "sync",
+          "description": "Automatically generate hooks and scripts during a sync operation, based on the hooks setting. @since 1.9.0",
           "type": "boolean",
-          "markdownDescription": "Generates hooks and scripts based on the `hooks` setting. @since 1.9.0"
+          "markdownDescription": "Automatically generate hooks and scripts during a sync operation, based on the `hooks` setting. @since 1.9.0"
         }
       },
       "additionalProperties": false
@@ -962,13 +916,6 @@
       "enum": [
         "bash",
         "native"
-      ]
-    },
-    "VcsManager": {
-      "description": "The VCS being utilized by the repository.",
-      "type": "string",
-      "enum": [
-        "git"
       ]
     },
     "VcsProvider": {

@@ -34,7 +34,7 @@ config_struct!(
     /// @since 1.32.0
     #[derive(Config)]
     pub struct RemoteAuthConfig {
-        /// HTTP headers to inject into every request.
+        /// A map of HTTP headers to inject into every request.
         pub headers: FxHashMap<String, String>,
 
         /// The name of an environment variable to use as a bearer token.
@@ -79,6 +79,7 @@ config_struct!(
         /// When local, only download matching blobs and do not upload new
         /// blobs. Blobs will only be uploaded in CI environments.
         /// @since 1.40.0
+        #[setting(parse_env = env::parse_bool)]
         pub local_read_only: bool,
 
         /// When downloading blobs, verify the digests/hashes in the response

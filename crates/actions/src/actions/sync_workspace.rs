@@ -66,7 +66,7 @@ pub async fn sync_workspace(
         }));
     }
 
-    if app_context.workspace_config.codeowners.sync_on_run {
+    if app_context.workspace_config.codeowners.sync {
         debug!(
             "Syncing code owners ({} enabled)",
             color::property("codeowners.syncOnRun"),
@@ -86,10 +86,10 @@ pub async fn sync_workspace(
         }));
     }
 
-    if app_context.workspace_config.vcs.sync_hooks {
+    if app_context.workspace_config.vcs.sync {
         debug!(
             "Syncing {} hooks ({} enabled)",
-            app_context.workspace_config.vcs.manager,
+            app_context.workspace_config.vcs.client,
             color::property("vcs.syncHooks"),
         );
 

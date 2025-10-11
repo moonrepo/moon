@@ -27,7 +27,7 @@ config_struct!(
     /// Configures how and where notifications are sent.
     #[derive(Config)]
     pub struct NotifierConfig {
-        /// Display an OS notification for certain pipeline events.
+        /// Display an OS notification for certain action pipeline events.
         /// @since 1.38.0
         pub terminal_notifications: Option<NotifierEventType>,
 
@@ -37,7 +37,6 @@ config_struct!(
 
         /// Whether webhook requests require acknowledgment (2xx response).
         /// @since 1.38.0
-        #[setting(default = false)]
         pub webhook_acknowledge: bool,
     }
 );

@@ -1,6 +1,5 @@
 use crate::{config_enum, config_struct};
 use moon_common::Id;
-use moon_target::Target;
 use schematic::Config;
 
 config_enum!(
@@ -39,14 +38,9 @@ impl From<bool> for PipelineActionSwitch {
 }
 
 config_struct!(
-    /// Configures aspects of the task runner (also known as the action pipeline).
+    /// Configures aspects of the action pipeline.
     #[derive(Config)]
     pub struct PipelineConfig {
-        /// List of target's for tasks without outputs, that should be
-        /// cached and persisted.
-        #[deprecated]
-        pub archivable_targets: Vec<Target>,
-
         /// Automatically clean the cache after every task run.
         /// @since 1.24.0
         #[setting(default = true)]
@@ -60,13 +54,13 @@ config_struct!(
         #[setting(default = true)]
         pub inherit_colors_for_piped_tasks: bool,
 
-        /// Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
-        /// each running task when changes to lockfiles and manifests are detected.
+        /// Run the `InstallDependencies` actions for each running task
+        /// when changes to lockfiles and manifests are detected.
         /// @since 1.34.0
         #[setting(nested)]
         pub install_dependencies: PipelineActionSwitch,
 
-        /// Threshold in milliseconds in which to force kill running child
+        /// A threshold in milliseconds in which to force kill running child
         /// processes after the pipeline receives an external signal. A value
         /// of 0 will not kill the process and let them run to completion.
         #[setting(default = 2000)]

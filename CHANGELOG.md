@@ -20,12 +20,19 @@
     - Removed the `platform` setting. Use `toolchain.default` instead.
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `moon.*`, `.moon/tasks.*`, `.moon/tasks/**/*`
-    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
+    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchains` instead.
   - `.moon/toolchain.*`
     - Removed the `node.addEnginesConstraint` setting.
   - `.moon/workspace.*`
+    - Renamed the `codeowners.orderBy` variant "project-name" to "project-id".
+    - Renamed the `codeowners.syncOnRun` setting to `codeowners.sync`.
+    - Renamed the `runner` setting to `pipeline`.
+    - Renamed the `vcs.manager` setting to `vcs.client`.
+    - Renamed the `vcs.syncHooks` setting to `vcs.sync`.
     - Removed the `constraints.enforceProjectTypeRelationships` alias. Use
-      `enforceLayerRelationships` instead.
+      `constraints.enforceLayerRelationships` instead.
+    - Removed the `hasher.batchSize` setting.
+    - Removed the `pipeline.archivableTargets` setting.
 - **Projects**
   - The primary `language` is now detected from toolchains, instead of being a hardcoded
     implementation. The result may now differ, as the first toolchain in the list will be used.

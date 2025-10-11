@@ -4,21 +4,33 @@
 
 import type { Id } from './common';
 
-/** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
+/**
+ * Configures the leading frontmatter within a template file.
+ * Docs: https://moonrepo.dev/docs/config/template#frontmatter
+ */
 export interface TemplateFrontmatterConfig {
 	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
 	$schema?: string;
+	/** Force overwrite a file at the destination if there is a conflict. */
 	force: boolean;
+	/** Skip writing this file to the destination. */
 	skip: boolean;
+	/** Override the destination using a relative file path. */
 	to: string | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
+/**
+ * Configures the leading frontmatter within a template file.
+ * Docs: https://moonrepo.dev/docs/config/template#frontmatter
+ */
 export interface PartialTemplateFrontmatterConfig {
 	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
 	$schema?: string | null;
+	/** Force overwrite a file at the destination if there is a conflict. */
 	force?: boolean | null;
+	/** Skip writing this file to the destination. */
 	skip?: boolean | null;
+	/** Override the destination using a relative file path. */
 	to?: string | null;
 }
 

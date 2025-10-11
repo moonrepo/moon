@@ -69,18 +69,18 @@
       "type": "string"
     },
     "MoonConfig": {
-      "description": "Configures how and where updates will be received.",
+      "description": "Configures how and where moon updates will be received.",
       "type": "object",
       "properties": {
         "downloadUrl": {
           "title": "downloadUrl",
-          "description": "A secure URL for downloading the moon binary.",
+          "description": "A secure URL for downloading the moon binary itself.",
           "default": "https://github.com/moonrepo/moon/releases/latest/download",
           "type": "string"
         },
         "manifestUrl": {
           "title": "manifestUrl",
-          "description": "A secure URL to lookup the latest version.",
+          "description": "A secure URL to lookup the latest available version.",
           "default": "https://launch.moonrepo.app/moon/check_version",
           "type": "string"
         }

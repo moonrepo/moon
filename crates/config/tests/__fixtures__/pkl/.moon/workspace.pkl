@@ -2,9 +2,9 @@ codeowners {
 	globalPaths = new Mapping {
 		["*"] = List("@admins")
 	}
-	orderBy = "project-name"
+	orderBy = "project-id"
 	requiredApprovals = 1
-	syncOnRun = true
+	sync = true
 }
 
 constraints {

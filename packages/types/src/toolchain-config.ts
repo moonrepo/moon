@@ -4,16 +4,16 @@
 
 import type { ExtendsFrom, Id } from './common';
 
-/** Configures how and where updates will be received. */
+/** Configures how and where moon updates will be received. */
 export interface MoonConfig {
 	/**
-	 * A secure URL for downloading the moon binary.
+	 * A secure URL for downloading the moon binary itself.
 	 *
 	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
 	 */
 	downloadUrl?: string;
 	/**
-	 * A secure URL to lookup the latest version.
+	 * A secure URL to lookup the latest available version.
 	 *
 	 * @default 'https://launch.moonrepo.app/moon/check_version'
 	 */
@@ -74,16 +74,16 @@ export interface ToolchainConfig {
 	proto: ProtoConfig;
 }
 
-/** Configures how and where updates will be received. */
+/** Configures how and where moon updates will be received. */
 export interface PartialMoonConfig {
 	/**
-	 * A secure URL for downloading the moon binary.
+	 * A secure URL for downloading the moon binary itself.
 	 *
 	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
 	 */
 	downloadUrl?: string | null;
 	/**
-	 * A secure URL to lookup the latest version.
+	 * A secure URL to lookup the latest available version.
 	 *
 	 * @default 'https://launch.moonrepo.app/moon/check_version'
 	 */

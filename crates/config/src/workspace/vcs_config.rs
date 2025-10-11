@@ -31,6 +31,7 @@ config_unit_enum!(
 
 config_unit_enum!(
     /// The format to use for generated VCS hook files.
+    /// @since 1.29.0
     #[derive(ConfigEnum)]
     pub enum VcsHookFormat {
         Bash,
@@ -48,9 +49,11 @@ config_struct!(
         pub default_branch: String,
 
         /// A mapping of hooks to commands to run when the hook is triggered.
+        /// @since 1.9.0
         pub hooks: FxHashMap<String, Vec<String>>,
 
         /// The format to use for generated VCS hook files.
+        /// @since 1.29.0
         pub hook_format: VcsHookFormat,
 
         /// The VCS client being utilized by the repository.
@@ -58,6 +61,7 @@ config_struct!(
 
         /// The upstream version control provider, where the repository
         /// source code is stored.
+        /// @since 1.8.0
         pub provider: VcsProvider,
 
         /// List of remote's in which to compare branches against.
@@ -65,6 +69,7 @@ config_struct!(
         pub remote_candidates: Vec<String>,
 
         /// Generates hooks and scripts based on the `hooks` setting.
+        /// @since 1.9.0
         pub sync_hooks: bool,
     }
 );

@@ -108,6 +108,7 @@ config_struct!(
         pub depends_on: Vec<ProjectDependsOn>,
 
         /// Configures Docker integration for this project.
+        /// @since 1.27.0
         #[setting(nested)]
         pub docker: ProjectDockerConfig,
 
@@ -119,8 +120,9 @@ config_struct!(
         /// environment variables, that can be referenced from tasks.
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
-        /// Overrides the ID within the project graph, as defined in
+        /// Overrides the identifier within the project graph, as defined in
         /// the workspace `projects` setting.
+        /// @since 1.18.0
         pub id: Option<Id>,
 
         /// The primary programming language of the project.
@@ -131,6 +133,7 @@ config_struct!(
 
         /// Defines ownership of source code within the current project, by mapping
         /// file paths and globs to owners. An owner is either a user, team, or group.
+        /// @since 1.8.0
         #[setting(nested)]
         pub owners: OwnersConfig,
 
@@ -139,6 +142,7 @@ config_struct!(
         pub project: Option<ProjectMetadataConfig>,
 
         /// The technology stack of the project, for categorizing.
+        /// @since 1.22.0
         pub stack: StackType,
 
         /// A list of tags that this project belongs to, for categorizing,

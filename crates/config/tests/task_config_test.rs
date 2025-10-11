@@ -928,7 +928,6 @@ options:
                         Input::Glob(stub_glob_input("/file.*")),
                         Input::TokenFunc("@dirs(name)".into())
                     ]),
-                    local: Some(true),
                     outputs: Some(vec![
                         Output::TokenVar("$workspaceRoot".into()),
                         Output::File(stub_file_output("file.txt")),

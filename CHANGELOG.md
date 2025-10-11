@@ -31,6 +31,8 @@
     implementation. The result may now differ, as the first toolchain in the list will be used.
     Additionally, languages that don't have a toolchain yet, like PHP or Ruby, will not be detected
     and must be explicitly configured.
+- **Tasks**
+  - Removed the `local` setting. Use the `preset` setting instead.
 - **Toolchains**
   - Removed the legacy built-in platform system. WASM plugins have replaced their functionality.
     - Some configuration settings may have changed. Refer to the documentation.
@@ -50,5 +52,7 @@
   - Updated projects to support multiple aliases (one from each applicable toolchain).
     - Added a `$projectAliases` token, which is a comma-separated list of all aliases.
     - The `$projectAlias` token now returns the first alias, if it exists.
+- **Tasks**
+  - Added a `mergeToolchains` task option to control how toolchains are inherited.
 - **WASM API**
   - Added `RegisterToolchainOutput.language` field.

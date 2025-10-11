@@ -36,7 +36,7 @@ config_enum!(
 generate_switch!(TaskOptionAffectedFiles, ["args", "env"]);
 
 config_enum!(
-    /// The mode in which to apply task caching.
+    /// The environment in which to apply task caching.
     #[serde(expecting = "expected `local`, `remote`, or a boolean")]
     pub enum TaskOptionCache {
         /// Only cache locally.
@@ -70,9 +70,9 @@ config_enum!(
     pub enum TaskOptionEnvFile {
         /// Uses an `.env` file in the project root.
         Enabled(bool),
-        /// Explicit path to an `.env` file.
+        /// An explicit path to an `.env` file.
         File(FilePath),
-        /// List of explicit `.env` file paths.
+        /// A list of explicit `.env` file paths.
         Files(Vec<FilePath>),
     }
 );
@@ -111,11 +111,11 @@ config_enum!(
     /// The pattern in which to run the task automatically in CI.
     #[serde(expecting = "expected `always`, `affected`, or a boolean")]
     pub enum TaskOptionRunInCI {
-        /// Always run, regardless of affected.
+        /// Always run, regardless of affected status.
         Always,
-        /// Only run if affected by touched files.
+        /// Only run if affected by changed files.
         Affected,
-        /// Only run in CI and not locally if affected by touched files.
+        /// Only run in CI and not locally if affected by changed files.
         Only,
         /// Skip running in CI but run locally and allow task relationships to be valid.
         Skip,
@@ -177,7 +177,8 @@ impl TaskOperatingSystem {
 }
 
 config_unit_enum!(
-    /// The priority levels a task can be bucketed into.
+    /// The priority levels a task can be bucketed into when running
+    /// in the action pipeline.
     #[derive(ConfigEnum)]
     pub enum TaskPriority {
         Critical = 0,
@@ -231,21 +232,22 @@ config_unit_enum!(
 );
 
 config_struct!(
-    /// Options to control task inheritance and execution.
+    /// Options to control task inheritance, execution, and more.
     #[derive(Config)]
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
-        /// When affected and no files are matching, pass the task inputs
+        /// When affected and no files are matching, pass the task's inputs
         /// as arguments to the command, instead of `.`.
         pub affected_pass_inputs: Option<bool>,
 
-        /// Allows the task to fail without failing the entire pipeline.
+        /// Allow the task to fail without failing the entire action pipeline.
+        /// @since 1.13.0
         pub allow_failure: Option<bool>,
 
-        /// Caches the `outputs` of the task. Defaults to `true` if outputs
-        /// are configured for the task.
+        /// Cache the `outputs` of the task for incremental builds.
+        /// Defaults to `true` if outputs are configured for the task.
         pub cache: Option<TaskOptionCache>,
 
         /// A custom key to include in the cache hashing process. Can be
@@ -254,23 +256,27 @@ config_struct!(
 
         /// Lifetime to cache the task itself, in the format of "1h", "30m", etc.
         /// If not defined, caches live forever, or until inputs change.
+        /// @since 1.29.0
         pub cache_lifetime: Option<String>,
 
-        /// Loads and sets environment variables from the `.env` file when
+        /// Loads and sets environment variables from the `.env` file(s) when
         /// running the task.
         pub env_file: Option<TaskOptionEnvFile>,
 
         /// Automatically infer inputs from file groups or environment variables
         /// that were utilized within `command`, `script`, `args`, and `env`.
+        /// @since 1.31.0
         pub infer_inputs: Option<bool>,
 
         /// Marks the task as interactive, so that it will run in isolation,
         /// and have direct access to stdin.
+        /// @since 1.12.0
         #[setting(validate = validate_interactive)]
         pub interactive: Option<bool>,
 
-        /// Marks the task as internal, which disables it from begin ran
-        /// from the command line, but can be depended on.
+        /// Marks the task as internal, which disables it from being ran
+        /// from the command line, but can still be depended on by other tasks.
+        /// @since 1.23.0
         pub internal: Option<bool>,
 
         /// The default strategy to use when merging `args`, `deps`, `env`,
@@ -293,8 +299,13 @@ config_struct!(
         /// The strategy to use when merging `outputs` with an inherited task.
         pub merge_outputs: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `toolchains` with an inherited task.
+        /// @since 2.0.0
+        pub merge_toolchains: Option<TaskMergeStrategy>,
+
         /// Creates an exclusive lock on a virtual resource, preventing other
         /// tasks using the same resource from running concurrently.
+        /// @since 1.24.0
         pub mutex: Option<String>,
 
         /// The operating system in which to only run this task on.
@@ -306,10 +317,11 @@ config_struct!(
 
         /// Marks the task as persistent (continuously running). This is ideal
         /// for watchers, servers, or never-ending processes.
+        /// @since 1.6.0
         pub persistent: Option<bool>,
 
         /// Marks the task with a certain priority, which determines the order
-        /// in which it is ran within the pipeline.
+        /// in which it is ran within the action pipeline.
         pub priority: Option<TaskPriority>,
 
         /// The number of times a failing task will be retried to succeed.
@@ -320,7 +332,8 @@ config_struct!(
         /// This _does not_ apply to indirect or transient dependencies.
         pub run_deps_in_parallel: Option<bool>,
 
-        /// Whether to run the task in CI or not, when executing `moon ci` or `moon run`.
+        /// Whether to run the task in CI or not, when executing `moon ci`,
+        /// `moon check`, or `moon run`.
         #[serde(rename = "runInCI")]
         pub run_in_ci: Option<TaskOptionRunInCI>,
 
@@ -328,16 +341,18 @@ config_struct!(
         pub run_from_workspace_root: Option<bool>,
 
         /// Runs the task within a shell. When not defined, runs the task
-        /// directly while relying on `PATH` resolution.
+        /// directly while relying on native `PATH` resolution.
         pub shell: Option<bool>,
 
         /// The maximum time in seconds that a task can run before being cancelled.
         pub timeout: Option<u64>,
 
         /// The shell to run the task in when on a Unix-based machine.
+        /// @since 1.21.0
         pub unix_shell: Option<TaskUnixShell>,
 
         /// The shell to run the task in when on a Windows machine.
+        /// @since 1.21.0
         pub windows_shell: Option<TaskWindowsShell>,
     }
 );

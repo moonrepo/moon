@@ -88,7 +88,7 @@ config_unit_enum!(
 );
 
 config_enum!(
-    /// Configures a command to execute, and its arguments.
+    /// Configures a command and its arguments to execute.
     #[derive(Config)]
     #[serde(untagged, expecting = "expected a string or a list of strings")]
     pub enum TaskArgs {
@@ -121,13 +121,14 @@ config_struct!(
         #[setting(nested)]
         pub args: TaskArgs,
 
-        /// A mapping of environment variables specific to this dependency.
+        /// A map of environment variables specific to this dependency.
         pub env: FxHashMap<String, String>,
 
         /// The target of the depended on task.
         pub target: Target,
 
-        /// Marks the dependency is optional when being inherited from the top-level.
+        /// Marks the dependency as optional when being inherited from the top-level.
+        /// @since 1.20.0
         pub optional: Option<bool>,
     }
 );
@@ -152,7 +153,7 @@ impl TaskDependencyConfig {
 }
 
 config_enum!(
-    /// Configures another task that a task depends on.
+    /// Configures another task that this task depends on.
     #[derive(Config)]
     #[serde(
         untagged,
@@ -181,15 +182,16 @@ config_struct!(
     /// Configures a task to be ran within the action pipeline.
     #[derive(Config)]
     pub struct TaskConfig {
-        /// Extends settings from a sibling task by ID.
+        /// Extends settings from a sibling task by identifier.
         pub extends: Option<Id>,
 
         /// A human-readable description about the task.
+        /// @since 1.22.0
         pub description: Option<String>,
 
-        /// The command or command line to execute when the task is ran.
-        /// Supports the command name, with or without arguments. Can be
-        /// defined as a string, or a list of individual arguments.
+        /// The command line to execute when the task is ran.
+        /// Supports the command (executable) with or without arguments.
+        /// Can be defined as a string, or a list of individual arguments.
         #[setting(nested, validate = validate_command)]
         pub command: TaskArgs,
 
@@ -201,32 +203,32 @@ config_struct!(
         /// Other tasks that this task depends on, and must run to completion
         /// before this task is ran. Can depend on sibling tasks, or tasks in
         /// other projects, using targets.
-        #[setting(nested, validate = validate_deps)]
+        #[setting(nested, validate = validate_deps, alias = "dependsOn")]
         pub deps: Option<Vec<TaskDependency>>,
 
-        /// A mapping of environment variables that will be set when the
-        /// task is ran.
+        /// A map of environment variables that will be set in the child
+        /// process when the task is ran.
         pub env: Option<FxHashMap<String, String>>,
 
+        /// Internal only. Inputs defined through task inheritance.
         #[setting(skip, merge = merge::append_vec)]
         pub global_inputs: Vec<Input>,
 
-        /// Inputs and sources that will mark the task as affected when comparing
-        /// against touched files. When not provided, all files within the project
-        /// are considered an input. When an empty list, no files are considered.
-        /// Otherwise, an explicit list of inputs are considered.
+        /// A list of inputs that will be hashing and compared against changed files
+        /// to determine affected status. If affected, the task will run, otherwise
+        /// it will exit early. An input can be a literal file path, a glob pattern,
+        /// environment variable, and more.
+        ///
+        /// When not provided, all files within the project are considered inputs
+        /// (`**/*`). When an empty list, no files are considered. Otherwise, an
+        /// explicit list of inputs are considered.
         pub inputs: Option<Vec<Input>>,
 
-        /// Marks the task as local only. Local tasks do not run in CI, do not have
-        /// `options.cache` enabled, and are marked as `options.persistent`.
-        #[deprecated = "Use `preset` instead."]
-        pub local: Option<bool>,
-
-        /// Outputs that will be created when the task has successfully ran.
-        /// When `cache` is enabled, the outputs will be persisted for subsequent runs.
+        /// A list of outputs that will be created when the task has successfully ran.
+        /// An output can be a literal file path, or a glob pattern.
         pub outputs: Option<Vec<Output>>,
 
-        /// Options to control task inheritance and execution.
+        /// Options to control task inheritance, execution, and more.
         #[setting(nested)]
         pub options: TaskOptionsConfig,
 
@@ -234,19 +236,19 @@ config_struct!(
         pub preset: Option<TaskPreset>,
 
         /// A script to run within a shell. A script is anything from a single command,
-        /// to multiple commands (&&, etc), or shell specific syntax. Does not support
-        /// arguments, merging, or inheritance.
+        /// to multiple commands, or shell specific syntax. Does not support
+        /// arguments, merging, or inheritance. This overrides `command` and `args`.
+        /// @since 1.27.0
         pub script: Option<String>,
 
-        /// List of additional toolchain(s) in which the task will be ran in.
-        /// The toolchain determines available binaries, lookup paths, and more.
-        /// This list will be merged with detected toolchains.
-        #[serde(alias = "toolchains")]
+        /// A toolchain, or list of toolchains, in which the task will inherit
+        /// functionality from.
+        #[setting(alias = "toolchains")]
         pub toolchain: OneOrMany<Id>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
-        /// will be automatically determined.
-        #[serde(rename = "type")]
+        /// will be automatically determined based on configured outputs.
+        #[setting(rename = "type")]
         pub type_of: Option<TaskType>,
     }
 );

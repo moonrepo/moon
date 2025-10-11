@@ -80,6 +80,7 @@ config_struct!(
 
         /// Extends one or many toolchain configuration files.
         /// Supports a relative file path or a secure URL.
+        /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 

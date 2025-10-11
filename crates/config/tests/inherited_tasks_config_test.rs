@@ -1189,6 +1189,7 @@ mod task_manager {
                         merge_env: Some(TaskMergeStrategy::Replace),
                         merge_inputs: Some(TaskMergeStrategy::Preserve),
                         merge_outputs: None,
+                        merge_toolchains: Some(TaskMergeStrategy::Append),
                         mutex: Some("lock".into()),
                         os: Some(OneOrMany::Many(vec![
                             TaskOperatingSystem::Linux,

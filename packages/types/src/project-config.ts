@@ -6,7 +6,7 @@ import type { Id } from './common';
 import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
 import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchain-config';
 
-/** The scope and or relationship of the dependency. */
+/** The relationship scope of a dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
 
 /**
@@ -17,7 +17,7 @@ export type DependencySource = 'explicit' | 'implicit';
 
 /** Expanded information about a project dependency. */
 export interface ProjectDependencyConfig {
-	/** ID of the depended on project. */
+	/** Identifier of the depended on project. */
 	id: Id;
 	/**
 	 * Scope of the dependency relationship.
@@ -39,26 +39,35 @@ export interface ProjectDependencyConfig {
 
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
-/** Configures `Dockerfile` generation. */
+/**
+ * Configures `Dockerfile` generation.
+ * @since 1.27.0
+ */
 export interface ProjectDockerFileConfig {
-	/** A task within the current project for building the project. */
+	/** A task identifier within the current project for building the project. */
 	buildTask: Id | null;
-	/** The base Docker image. */
+	/** The base Docker image name. */
 	image: string | null;
-	/** A task within the current project for starting the project. */
+	/** A task identifier within the current project for starting the project. */
 	startTask: Id | null;
 }
 
-/** Configures aspects of the Docker scaffolding process. */
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * @since 1.27.0
+ */
 export interface ProjectDockerScaffoldConfig {
 	/**
-	 * List of glob patterns, relative from the project root,
+	 * A list of glob patterns, relative from the project root,
 	 * to include (or exclude) in the sources skeleton.
 	 */
 	include: string[];
 }
 
-/** Configures our Docker integration. */
+/**
+ * Configures our Docker integration.
+ * @since 1.27.0
+ */
 export interface ProjectDockerConfig {
 	/** Configures aspects of the `Dockerfile` generation process. */
 	file: ProjectDockerFileConfig;
@@ -100,11 +109,11 @@ export type OwnersPaths = string[] | Record<string, string[]>;
 
 /**
  * Defines ownership of source code within the current project, by mapping
- * file paths and globs to owners. An owner is either a user, team, or group.
+ * file paths and glob patterns to owners. An owner is either a user, team, or group.
  */
 export interface OwnersConfig {
 	/**
-	 * Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
+	 * Bitbucket only. A map of custom groups (prefixed with `@@@`),
 	 * to a list of user and normal groups.
 	 */
 	customGroups: Record<string, string[]>;
@@ -113,9 +122,9 @@ export interface OwnersConfig {
 	/** GitLab only. Marks the code owners section as optional. */
 	optional: boolean;
 	/**
-	 * A mapping of file paths and file globs to owners.
+	 * A list or map of file paths and glob patterns to owners.
 	 * When a list, the `defaultOwner` is the owner, and each item is a path.
-	 * When an object, the key is a path, and the value is a list of owners.
+	 * When a map, the key is a path, and the value is a list of owners.
 	 */
 	paths: OwnersPaths;
 	/**
@@ -153,37 +162,42 @@ export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 
 
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
-/** Overrides top-level toolchain settings, scoped to this project. */
+/** Overrides workspace-level toolchain settings, scoped to this project. */
 export interface ProjectToolchainConfig {
 	/**
-	 * The default toolchain(s) to inherit for the project,
-	 * and all of its tasks.
+	 * A single toolchain, or list of toolchains, to inherit for
+	 * this project and all of its tasks.
+	 * @since 1.31.0
 	 */
 	defaults?: Id | Id[] | null;
 	/**
-	 * The default toolchain(s) to inherit for the project,
-	 * and all of its tasks.
+	 * A single toolchain, or list of toolchains, to inherit for
+	 * this project and all of its tasks.
+	 * @since 1.31.0
 	 */
 	default: Id | Id[] | null;
-	/** Overrides toolchains by their ID. */
+	/** Overrides workspace-level toolchains by their identifier. */
 	plugins: Record<Id, ProjectToolchainEntry>;
 }
 
-/** Controls how tasks are inherited. */
+/** Controls how workspace-level tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
-	/** Excludes inheriting tasks by ID. */
+	/** Excludes inheriting tasks by their identifier. */
 	exclude: Id[];
 	/**
-	 * Only inherits tasks by ID, and ignores the rest.
-	 * When not defined, inherits all matching tasks.
-	 * When an empty list, inherits no tasks.
+	 * Only inherits tasks with the provided identifiers,
+	 * and ignores the rest. When not defined, inherits
+	 * all matching tasks. When an empty list, inherits no tasks.
 	 */
 	include: Id[] | null;
-	/** Renames inherited tasks to a new ID. */
+	/**
+	 * Renames inherited tasks by mapping their existing
+	 * identifier to a new identifier, scoped to this project.
+	 */
 	rename: Record<Id, Id>;
 }
 
-/** Overrides top-level workspace settings, scoped to this project. */
+/** Overrides workspace settings, scoped to this project. */
 export interface ProjectWorkspaceConfig {
 	/** Controls how tasks are inherited. */
 	inheritedTasks: ProjectWorkspaceInheritedTasksConfig;
@@ -198,7 +212,10 @@ export interface ProjectConfig {
 	$schema?: string;
 	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
-	/** Configures Docker integration for this project. */
+	/**
+	 * Configures Docker integration for this project.
+	 * @since 1.27.0
+	 */
 	docker: ProjectDockerConfig;
 	/**
 	 * A mapping of environment variables that will be set for
@@ -211,8 +228,9 @@ export interface ProjectConfig {
 	 */
 	fileGroups: Record<Id, Input[]>;
 	/**
-	 * Overrides the ID within the project graph, as defined in
+	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.
+	 * @since 1.18.0
 	 */
 	id: Id | null;
 	/**
@@ -232,12 +250,14 @@ export interface ProjectConfig {
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
+	 * @since 1.8.0
 	 */
 	owners: OwnersConfig;
 	/** Expanded information about the project. */
 	project: ProjectMetadataConfig | null;
 	/**
 	 * The technology stack of the project, for categorizing.
+	 * @since 1.22.0
 	 *
 	 * @default 'unknown'
 	 * @type {'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown'}
@@ -258,7 +278,7 @@ export interface ProjectConfig {
 
 /** Expanded information about a project dependency. */
 export interface PartialProjectDependencyConfig {
-	/** ID of the depended on project. */
+	/** Identifier of the depended on project. */
 	id?: Id | null;
 	/**
 	 * Scope of the dependency relationship.
@@ -278,26 +298,35 @@ export interface PartialProjectDependencyConfig {
 
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
-/** Configures `Dockerfile` generation. */
+/**
+ * Configures `Dockerfile` generation.
+ * @since 1.27.0
+ */
 export interface PartialProjectDockerFileConfig {
-	/** A task within the current project for building the project. */
+	/** A task identifier within the current project for building the project. */
 	buildTask?: Id | null;
-	/** The base Docker image. */
+	/** The base Docker image name. */
 	image?: string | null;
-	/** A task within the current project for starting the project. */
+	/** A task identifier within the current project for starting the project. */
 	startTask?: Id | null;
 }
 
-/** Configures aspects of the Docker scaffolding process. */
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * @since 1.27.0
+ */
 export interface PartialProjectDockerScaffoldConfig {
 	/**
-	 * List of glob patterns, relative from the project root,
+	 * A list of glob patterns, relative from the project root,
 	 * to include (or exclude) in the sources skeleton.
 	 */
 	include?: string[] | null;
 }
 
-/** Configures our Docker integration. */
+/**
+ * Configures our Docker integration.
+ * @since 1.27.0
+ */
 export interface PartialProjectDockerConfig {
 	/** Configures aspects of the `Dockerfile` generation process. */
 	file?: PartialProjectDockerFileConfig | null;
@@ -309,11 +338,11 @@ export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
 /**
  * Defines ownership of source code within the current project, by mapping
- * file paths and globs to owners. An owner is either a user, team, or group.
+ * file paths and glob patterns to owners. An owner is either a user, team, or group.
  */
 export interface PartialOwnersConfig {
 	/**
-	 * Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
+	 * Bitbucket only. A map of custom groups (prefixed with `@@@`),
 	 * to a list of user and normal groups.
 	 */
 	customGroups?: Record<string, string[]> | null;
@@ -322,9 +351,9 @@ export interface PartialOwnersConfig {
 	/** GitLab only. Marks the code owners section as optional. */
 	optional?: boolean | null;
 	/**
-	 * A mapping of file paths and file globs to owners.
+	 * A list or map of file paths and glob patterns to owners.
 	 * When a list, the `defaultOwner` is the owner, and each item is a path.
-	 * When an object, the key is a path, and the value is a list of owners.
+	 * When a map, the key is a path, and the value is a list of owners.
 	 */
 	paths?: PartialOwnersPaths | null;
 	/**
@@ -359,37 +388,42 @@ export interface PartialProjectMetadataConfig {
 
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
-/** Overrides top-level toolchain settings, scoped to this project. */
+/** Overrides workspace-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainConfig {
 	/**
-	 * The default toolchain(s) to inherit for the project,
-	 * and all of its tasks.
+	 * A single toolchain, or list of toolchains, to inherit for
+	 * this project and all of its tasks.
+	 * @since 1.31.0
 	 */
 	defaults?: Id | Id[] | null;
 	/**
-	 * The default toolchain(s) to inherit for the project,
-	 * and all of its tasks.
+	 * A single toolchain, or list of toolchains, to inherit for
+	 * this project and all of its tasks.
+	 * @since 1.31.0
 	 */
 	default?: Id | Id[] | null;
-	/** Overrides toolchains by their ID. */
+	/** Overrides workspace-level toolchains by their identifier. */
 	plugins?: Record<Id, PartialProjectToolchainEntry> | null;
 }
 
-/** Controls how tasks are inherited. */
+/** Controls how workspace-level tasks are inherited. */
 export interface PartialProjectWorkspaceInheritedTasksConfig {
-	/** Excludes inheriting tasks by ID. */
+	/** Excludes inheriting tasks by their identifier. */
 	exclude?: Id[] | null;
 	/**
-	 * Only inherits tasks by ID, and ignores the rest.
-	 * When not defined, inherits all matching tasks.
-	 * When an empty list, inherits no tasks.
+	 * Only inherits tasks with the provided identifiers,
+	 * and ignores the rest. When not defined, inherits
+	 * all matching tasks. When an empty list, inherits no tasks.
 	 */
 	include?: Id[] | null;
-	/** Renames inherited tasks to a new ID. */
+	/**
+	 * Renames inherited tasks by mapping their existing
+	 * identifier to a new identifier, scoped to this project.
+	 */
 	rename?: Record<Id, Id> | null;
 }
 
-/** Overrides top-level workspace settings, scoped to this project. */
+/** Overrides workspace settings, scoped to this project. */
 export interface PartialProjectWorkspaceConfig {
 	/** Controls how tasks are inherited. */
 	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
@@ -404,7 +438,10 @@ export interface PartialProjectConfig {
 	$schema?: string | null;
 	/** Other projects that this project depends on. */
 	dependsOn?: PartialProjectDependsOn[] | null;
-	/** Configures Docker integration for this project. */
+	/**
+	 * Configures Docker integration for this project.
+	 * @since 1.27.0
+	 */
 	docker?: PartialProjectDockerConfig | null;
 	/**
 	 * A mapping of environment variables that will be set for
@@ -417,8 +454,9 @@ export interface PartialProjectConfig {
 	 */
 	fileGroups?: Record<Id, Input[]> | null;
 	/**
-	 * Overrides the ID within the project graph, as defined in
+	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.
+	 * @since 1.18.0
 	 */
 	id?: Id | null;
 	/**
@@ -436,12 +474,14 @@ export interface PartialProjectConfig {
 	/**
 	 * Defines ownership of source code within the current project, by mapping
 	 * file paths and globs to owners. An owner is either a user, team, or group.
+	 * @since 1.8.0
 	 */
 	owners?: PartialOwnersConfig | null;
 	/** Expanded information about the project. */
 	project?: PartialProjectMetadataConfig | null;
 	/**
 	 * The technology stack of the project, for categorizing.
+	 * @since 1.22.0
 	 *
 	 * @default 'unknown'
 	 */

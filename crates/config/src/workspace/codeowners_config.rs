@@ -27,6 +27,7 @@ config_struct!(
 
         /// Bitbucket and GitLab only. The number of approvals required for the
         /// request to be satisfied. This will be applied to all paths.
+        /// @since 1.28.0
         pub required_approvals: Option<u8>,
 
         /// Generates a `CODEOWNERS` file after aggregating all ownership

@@ -5,24 +5,26 @@ use schematic::Config;
 
 config_struct!(
     /// Configures `Dockerfile` generation.
+    /// @since 1.27.0
     #[derive(Config)]
     pub struct ProjectDockerFileConfig {
-        /// A task within the current project for building the project.
+        /// A task identifier within the current project for building the project.
         pub build_task: Option<Id>,
 
-        /// The base Docker image.
+        /// The base Docker image name.
         pub image: Option<String>,
 
-        /// A task within the current project for starting the project.
+        /// A task identifier within the current project for starting the project.
         pub start_task: Option<Id>,
     }
 );
 
 config_struct!(
     /// Configures aspects of the Docker scaffolding process.
+    /// @since 1.27.0
     #[derive(Config)]
     pub struct ProjectDockerScaffoldConfig {
-        /// List of glob patterns, relative from the project root,
+        /// A list of glob patterns, relative from the project root,
         /// to include (or exclude) in the sources skeleton.
         pub include: Vec<GlobPath>,
     }
@@ -30,6 +32,7 @@ config_struct!(
 
 config_struct!(
     /// Configures our Docker integration.
+    /// @since 1.27.0
     #[derive(Config)]
     pub struct ProjectDockerConfig {
         /// Configures aspects of the `Dockerfile` generation process.

@@ -38,10 +38,12 @@ config_struct!(
         /// Filters file paths that match a configured glob pattern
         /// when a hash is being generated. Patterns are workspace relative,
         /// so prefixing with `**` is recommended.
+        /// @since 1.10.0
         pub ignore_patterns: Vec<GlobPath>,
 
         /// When `warnOnMissingInputs` is enabled, filters missing file
         /// paths from logging a warning.
+        /// @since 1.10.0
         pub ignore_missing_patterns: Vec<GlobPath>,
 
         /// The optimization to use when hashing.

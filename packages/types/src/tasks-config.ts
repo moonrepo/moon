@@ -87,9 +87,12 @@ export type TaskArgs = null | string | string[];
 export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args: TaskArgs;
-	/** A mapping of environment variables specific to this dependency. */
+	/** A map of environment variables specific to this dependency. */
 	env: Record<string, string>;
-	/** Marks the dependency is optional when being inherited from the top-level. */
+	/**
+	 * Marks the dependency as optional when being inherited from the top-level.
+	 * @since 1.20.0
+	 */
 	optional: boolean | null;
 	/** The target of the depended on task. */
 	target: string;
@@ -108,38 +111,35 @@ export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
 /** The style in which task output will be printed to the console. */
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
-/** The priority levels a task can be bucketed into. */
+/**
+ * The priority levels a task can be bucketed into when running
+ * in the action pipeline.
+ */
 export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
 
 /** A list of available shells on Unix. */
-export type TaskUnixShell =
-	| 'bash'
-	| 'elvish'
-	| 'fish'
-	| 'ion'
-	| 'murex'
-	| 'nu'
-	| 'pwsh'
-	| 'xonsh'
-	| 'zsh';
+export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'ion' | 'murex' | 'nu' | 'pwsh' | 'xonsh' | 'zsh';
 
 /** A list of available shells on Windows. */
 export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pwsh' | 'xonsh';
 
-/** Options to control task inheritance and execution. */
+/** Options to control task inheritance, execution, and more. */
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles: boolean | 'args' | 'env' | null;
 	/**
-	 * When affected and no files are matching, pass the task inputs
+	 * When affected and no files are matching, pass the task's inputs
 	 * as arguments to the command, instead of `.`.
 	 */
 	affectedPassInputs: boolean | null;
-	/** Allows the task to fail without failing the entire pipeline. */
+	/**
+	 * Allow the task to fail without failing the entire action pipeline.
+	 * @since 1.13.0
+	 */
 	allowFailure: boolean | null;
 	/**
-	 * Caches the `outputs` of the task. Defaults to `true` if outputs
-	 * are configured for the task.
+	 * Cache the `outputs` of the task for incremental builds.
+	 * Defaults to `true` if outputs are configured for the task.
 	 */
 	cache: boolean | 'local' | 'remote' | null;
 	/**
@@ -150,26 +150,30 @@ export interface TaskOptionsConfig {
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.
+	 * @since 1.29.0
 	 */
 	cacheLifetime: string | null;
 	/**
-	 * Loads and sets environment variables from the `.env` file when
+	 * Loads and sets environment variables from the `.env` file(s) when
 	 * running the task.
 	 */
 	envFile: TaskOptionEnvFile | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
+	 * @since 1.31.0
 	 */
 	inferInputs: boolean | null;
 	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.
+	 * @since 1.12.0
 	 */
 	interactive: boolean | null;
 	/**
-	 * Marks the task as internal, which disables it from begin ran
-	 * from the command line, but can be depended on.
+	 * Marks the task as internal, which disables it from being ran
+	 * from the command line, but can still be depended on by other tasks.
+	 * @since 1.23.0
 	 */
 	internal: boolean | null;
 	/**
@@ -211,8 +215,16 @@ export interface TaskOptionsConfig {
 	 */
 	mergeOutputs: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `toolchains` with an inherited task.
+	 * @since 2.0.0
+	 *
+	 * @default 'append'
+	 */
+	mergeToolchains: TaskMergeStrategy | null;
+	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
+	 * @since 1.24.0
 	 */
 	mutex: string | null;
 	/** The operating system in which to only run this task on. */
@@ -227,11 +239,12 @@ export interface TaskOptionsConfig {
 	/**
 	 * Marks the task as persistent (continuously running). This is ideal
 	 * for watchers, servers, or never-ending processes.
+	 * @since 1.6.0
 	 */
 	persistent: boolean | null;
 	/**
 	 * Marks the task with a certain priority, which determines the order
-	 * in which it is ran within the pipeline.
+	 * in which it is ran within the action pipeline.
 	 *
 	 * @default 'normal'
 	 */
@@ -249,23 +262,28 @@ export interface TaskOptionsConfig {
 	runDepsInParallel: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot: boolean | null;
-	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
+	/**
+	 * Whether to run the task in CI or not, when executing `moon ci`,
+	 * `moon check`, or `moon run`.
+	 */
 	runInCI: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
-	 * directly while relying on `PATH` resolution.
+	 * directly while relying on native `PATH` resolution.
 	 */
 	shell: boolean | null;
 	/** The maximum time in seconds that a task can run before being cancelled. */
 	timeout: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
+	 * @since 1.21.0
 	 *
 	 * @default 'bash'
 	 */
 	unixShell: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
+	 * @since 1.21.0
 	 *
 	 * @default 'pwsh'
 	 */
@@ -305,9 +323,9 @@ export interface TaskConfig {
 	 */
 	args: TaskArgs;
 	/**
-	 * The command or command line to execute when the task is ran.
-	 * Supports the command name, with or without arguments. Can be
-	 * defined as a string, or a list of individual arguments.
+	 * The command line to execute when the task is ran.
+	 * Supports the command (executable) with or without arguments.
+	 * Can be defined as a string, or a list of individual arguments.
 	 */
 	command: TaskArgs;
 	/**
@@ -315,60 +333,65 @@ export interface TaskConfig {
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
 	 * other projects, using targets.
 	 */
+	dependsOn?: TaskDependency[] | null;
+	/**
+	 * Other tasks that this task depends on, and must run to completion
+	 * before this task is ran. Can depend on sibling tasks, or tasks in
+	 * other projects, using targets.
+	 */
 	deps: TaskDependency[] | null;
-	/** A human-readable description about the task. */
+	/**
+	 * A human-readable description about the task.
+	 * @since 1.22.0
+	 */
 	description: string | null;
 	/**
-	 * A mapping of environment variables that will be set when the
-	 * task is ran.
+	 * A map of environment variables that will be set in the child
+	 * process when the task is ran.
 	 */
 	env: Record<string, string> | null;
-	/** Extends settings from a sibling task by ID. */
+	/** Extends settings from a sibling task by identifier. */
 	extends: Id | null;
 	/**
-	 * Inputs and sources that will mark the task as affected when comparing
-	 * against touched files. When not provided, all files within the project
-	 * are considered an input. When an empty list, no files are considered.
-	 * Otherwise, an explicit list of inputs are considered.
+	 * A list of inputs that will be hashing and compared against changed files
+	 * to determine affected status. If affected, the task will run, otherwise
+	 * it will exit early. An input can be a literal file path, a glob pattern,
+	 * environment variable, and more.
+	 *
+	 * When not provided, all files within the project are considered inputs
+	 * (`**/*`). When an empty list, no files are considered. Otherwise, an
+	 * explicit list of inputs are considered.
 	 */
 	inputs: Input[] | null;
-	/**
-	 * Marks the task as local only. Local tasks do not run in CI, do not have
-	 * `options.cache` enabled, and are marked as `options.persistent`.
-	 *
-	 * @deprecated Use `preset` instead.
-	 */
-	local: boolean | null;
-	/** Options to control task inheritance and execution. */
+	/** Options to control task inheritance, execution, and more. */
 	options: TaskOptionsConfig;
 	/**
-	 * Outputs that will be created when the task has successfully ran.
-	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
+	 * A list of outputs that will be created when the task has successfully ran.
+	 * An output can be a literal file path, or a glob pattern.
 	 */
 	outputs: Output[] | null;
 	/** The preset to apply for the task. Will inherit default options. */
 	preset: TaskPreset | null;
 	/**
 	 * A script to run within a shell. A script is anything from a single command,
-	 * to multiple commands (&&, etc), or shell specific syntax. Does not support
-	 * arguments, merging, or inheritance.
+	 * to multiple commands, or shell specific syntax. Does not support
+	 * arguments, merging, or inheritance. This overrides `command` and `args`.
+	 * @since 1.27.0
 	 */
 	script: string | null;
 	/**
-	 * List of additional toolchain(s) in which the task will be ran in.
-	 * The toolchain determines available binaries, lookup paths, and more.
-	 * This list will be merged with detected toolchains.
+	 * A toolchain, or list of toolchains, in which the task will inherit
+	 * functionality from.
 	 */
 	toolchains?: Id | Id[];
 	/**
-	 * List of additional toolchain(s) in which the task will be ran in.
-	 * The toolchain determines available binaries, lookup paths, and more.
-	 * This list will be merged with detected toolchains.
+	 * A toolchain, or list of toolchains, in which the task will inherit
+	 * functionality from.
 	 */
 	toolchain: Id | Id[];
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
-	 * will be automatically determined.
+	 * will be automatically determined based on configured outputs.
 	 *
 	 * @default 'test'
 	 */
@@ -386,6 +409,7 @@ export interface InheritedTasksConfig {
 	/**
 	 * Extends one or many task configuration files. Supports a relative
 	 * file path or a secure URL.
+	 * @since 1.12.0
 	 */
 	extends: ExtendsFrom | null;
 	/**
@@ -403,7 +427,10 @@ export interface InheritedTasksConfig {
 	 * task that inherits this configuration.
 	 */
 	implicitInputs: Input[];
-	/** Default task options for all inherited tasks. */
+	/**
+	 * Default task options for all inherited tasks.
+	 * @since 1.20.0
+	 */
 	taskOptions: TaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
 	tasks: Record<Id, TaskConfig>;
@@ -415,9 +442,12 @@ export type PartialTaskArgs = null | string | string[];
 export interface PartialTaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args?: PartialTaskArgs | null;
-	/** A mapping of environment variables specific to this dependency. */
+	/** A map of environment variables specific to this dependency. */
 	env?: Record<string, string> | null;
-	/** Marks the dependency is optional when being inherited from the top-level. */
+	/**
+	 * Marks the dependency as optional when being inherited from the top-level.
+	 * @since 1.20.0
+	 */
 	optional?: boolean | null;
 	/** The target of the depended on task. */
 	target?: string | null;
@@ -425,20 +455,23 @@ export interface PartialTaskDependencyConfig {
 
 export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 
-/** Options to control task inheritance and execution. */
+/** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: boolean | 'args' | 'env' | null;
 	/**
-	 * When affected and no files are matching, pass the task inputs
+	 * When affected and no files are matching, pass the task's inputs
 	 * as arguments to the command, instead of `.`.
 	 */
 	affectedPassInputs?: boolean | null;
-	/** Allows the task to fail without failing the entire pipeline. */
+	/**
+	 * Allow the task to fail without failing the entire action pipeline.
+	 * @since 1.13.0
+	 */
 	allowFailure?: boolean | null;
 	/**
-	 * Caches the `outputs` of the task. Defaults to `true` if outputs
-	 * are configured for the task.
+	 * Cache the `outputs` of the task for incremental builds.
+	 * Defaults to `true` if outputs are configured for the task.
 	 */
 	cache?: boolean | 'local' | 'remote' | null;
 	/**
@@ -449,26 +482,30 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.
+	 * @since 1.29.0
 	 */
 	cacheLifetime?: string | null;
 	/**
-	 * Loads and sets environment variables from the `.env` file when
+	 * Loads and sets environment variables from the `.env` file(s) when
 	 * running the task.
 	 */
 	envFile?: TaskOptionEnvFile | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
+	 * @since 1.31.0
 	 */
 	inferInputs?: boolean | null;
 	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.
+	 * @since 1.12.0
 	 */
 	interactive?: boolean | null;
 	/**
-	 * Marks the task as internal, which disables it from begin ran
-	 * from the command line, but can be depended on.
+	 * Marks the task as internal, which disables it from being ran
+	 * from the command line, but can still be depended on by other tasks.
+	 * @since 1.23.0
 	 */
 	internal?: boolean | null;
 	/**
@@ -510,8 +547,16 @@ export interface PartialTaskOptionsConfig {
 	 */
 	mergeOutputs?: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `toolchains` with an inherited task.
+	 * @since 2.0.0
+	 *
+	 * @default 'append'
+	 */
+	mergeToolchains?: TaskMergeStrategy | null;
+	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
+	 * @since 1.24.0
 	 */
 	mutex?: string | null;
 	/** The operating system in which to only run this task on. */
@@ -526,11 +571,12 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * Marks the task as persistent (continuously running). This is ideal
 	 * for watchers, servers, or never-ending processes.
+	 * @since 1.6.0
 	 */
 	persistent?: boolean | null;
 	/**
 	 * Marks the task with a certain priority, which determines the order
-	 * in which it is ran within the pipeline.
+	 * in which it is ran within the action pipeline.
 	 *
 	 * @default 'normal'
 	 */
@@ -548,23 +594,28 @@ export interface PartialTaskOptionsConfig {
 	runDepsInParallel?: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot?: boolean | null;
-	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
+	/**
+	 * Whether to run the task in CI or not, when executing `moon ci`,
+	 * `moon check`, or `moon run`.
+	 */
 	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
-	 * directly while relying on `PATH` resolution.
+	 * directly while relying on native `PATH` resolution.
 	 */
 	shell?: boolean | null;
 	/** The maximum time in seconds that a task can run before being cancelled. */
 	timeout?: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
+	 * @since 1.21.0
 	 *
 	 * @default 'bash'
 	 */
 	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
+	 * @since 1.21.0
 	 *
 	 * @default 'pwsh'
 	 */
@@ -579,9 +630,9 @@ export interface PartialTaskConfig {
 	 */
 	args?: PartialTaskArgs | null;
 	/**
-	 * The command or command line to execute when the task is ran.
-	 * Supports the command name, with or without arguments. Can be
-	 * defined as a string, or a list of individual arguments.
+	 * The command line to execute when the task is ran.
+	 * Supports the command (executable) with or without arguments.
+	 * Can be defined as a string, or a list of individual arguments.
 	 */
 	command?: PartialTaskArgs | null;
 	/**
@@ -589,60 +640,65 @@ export interface PartialTaskConfig {
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
 	 * other projects, using targets.
 	 */
+	dependsOn?: PartialTaskDependency[] | null;
+	/**
+	 * Other tasks that this task depends on, and must run to completion
+	 * before this task is ran. Can depend on sibling tasks, or tasks in
+	 * other projects, using targets.
+	 */
 	deps?: PartialTaskDependency[] | null;
-	/** A human-readable description about the task. */
+	/**
+	 * A human-readable description about the task.
+	 * @since 1.22.0
+	 */
 	description?: string | null;
 	/**
-	 * A mapping of environment variables that will be set when the
-	 * task is ran.
+	 * A map of environment variables that will be set in the child
+	 * process when the task is ran.
 	 */
 	env?: Record<string, string> | null;
-	/** Extends settings from a sibling task by ID. */
+	/** Extends settings from a sibling task by identifier. */
 	extends?: Id | null;
 	/**
-	 * Inputs and sources that will mark the task as affected when comparing
-	 * against touched files. When not provided, all files within the project
-	 * are considered an input. When an empty list, no files are considered.
-	 * Otherwise, an explicit list of inputs are considered.
+	 * A list of inputs that will be hashing and compared against changed files
+	 * to determine affected status. If affected, the task will run, otherwise
+	 * it will exit early. An input can be a literal file path, a glob pattern,
+	 * environment variable, and more.
+	 *
+	 * When not provided, all files within the project are considered inputs
+	 * (`**/*`). When an empty list, no files are considered. Otherwise, an
+	 * explicit list of inputs are considered.
 	 */
 	inputs?: Input[] | null;
-	/**
-	 * Marks the task as local only. Local tasks do not run in CI, do not have
-	 * `options.cache` enabled, and are marked as `options.persistent`.
-	 *
-	 * @deprecated Use `preset` instead.
-	 */
-	local?: boolean | null;
-	/** Options to control task inheritance and execution. */
+	/** Options to control task inheritance, execution, and more. */
 	options?: PartialTaskOptionsConfig | null;
 	/**
-	 * Outputs that will be created when the task has successfully ran.
-	 * When `cache` is enabled, the outputs will be persisted for subsequent runs.
+	 * A list of outputs that will be created when the task has successfully ran.
+	 * An output can be a literal file path, or a glob pattern.
 	 */
 	outputs?: Output[] | null;
 	/** The preset to apply for the task. Will inherit default options. */
 	preset?: TaskPreset | null;
 	/**
 	 * A script to run within a shell. A script is anything from a single command,
-	 * to multiple commands (&&, etc), or shell specific syntax. Does not support
-	 * arguments, merging, or inheritance.
+	 * to multiple commands, or shell specific syntax. Does not support
+	 * arguments, merging, or inheritance. This overrides `command` and `args`.
+	 * @since 1.27.0
 	 */
 	script?: string | null;
 	/**
-	 * List of additional toolchain(s) in which the task will be ran in.
-	 * The toolchain determines available binaries, lookup paths, and more.
-	 * This list will be merged with detected toolchains.
+	 * A toolchain, or list of toolchains, in which the task will inherit
+	 * functionality from.
 	 */
 	toolchains?: Id | Id[] | null;
 	/**
-	 * List of additional toolchain(s) in which the task will be ran in.
-	 * The toolchain determines available binaries, lookup paths, and more.
-	 * This list will be merged with detected toolchains.
+	 * A toolchain, or list of toolchains, in which the task will inherit
+	 * functionality from.
 	 */
 	toolchain?: Id | Id[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
-	 * will be automatically determined.
+	 * will be automatically determined based on configured outputs.
 	 *
 	 * @default 'test'
 	 */
@@ -660,6 +716,7 @@ export interface PartialInheritedTasksConfig {
 	/**
 	 * Extends one or many task configuration files. Supports a relative
 	 * file path or a secure URL.
+	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
 	/**
@@ -677,7 +734,10 @@ export interface PartialInheritedTasksConfig {
 	 * task that inherits this configuration.
 	 */
 	implicitInputs?: Input[] | null;
-	/** Default task options for all inherited tasks. */
+	/**
+	 * Default task options for all inherited tasks.
+	 * @since 1.20.0
+	 */
 	taskOptions?: PartialTaskOptionsConfig | null;
 	/** A mapping of tasks by ID to parameters required for running the task. */
 	tasks?: Record<Id, PartialTaskConfig> | null;

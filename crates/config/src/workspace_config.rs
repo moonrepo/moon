@@ -108,6 +108,7 @@ config_struct!(
         pub schema: String,
 
         /// Configures code ownership rules for generating a `CODEOWNERS` file.
+        /// @since 1.8.0
         #[setting(nested)]
         pub codeowners: CodeownersConfig,
 
@@ -116,6 +117,7 @@ config_struct!(
         pub constraints: ConstraintsConfig,
 
         /// Configures Docker integration for the workspace.
+        /// @since 1.27.0
         #[setting(nested)]
         pub docker: DockerConfig,
 
@@ -125,6 +127,7 @@ config_struct!(
 
         /// Extends one or many workspace configuration file. Supports a relative
         /// file path or a secure URL.
+        /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 

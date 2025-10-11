@@ -33,6 +33,7 @@ config_struct!(
 
         /// Extends one or many task configuration files. Supports a relative
         /// file path or a secure URL.
+        /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 
@@ -56,6 +57,7 @@ config_struct!(
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         /// Default task options for all inherited tasks.
+        /// @since 1.20.0
         #[setting(nested)]
         pub task_options: Option<TaskOptionsConfig>,
     }

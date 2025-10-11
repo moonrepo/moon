@@ -48,6 +48,7 @@ config_struct!(
         pub archivable_targets: Vec<Target>,
 
         /// Automatically clean the cache after every task run.
+        /// @since 1.24.0
         #[setting(default = true)]
         pub auto_clean_cache: bool,
 
@@ -61,6 +62,7 @@ config_struct!(
 
         /// Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
         /// each running task when changes to lockfiles and manifests are detected.
+        /// @since 1.34.0
         #[setting(nested)]
         pub install_dependencies: PipelineActionSwitch,
 
@@ -75,15 +77,18 @@ config_struct!(
 
         /// Run the `SyncProject` actions in the pipeline for each owning project
         /// of a running task.
+        /// @since 1.34.0
         #[setting(nested)]
         pub sync_projects: PipelineActionSwitch,
 
         /// When creating `SyncProject` actions, recursively create a `SyncProject`
         /// action for each project dependency, and link them as a relationship.
+        /// @since 1.34.0
         #[setting(default = true)]
         pub sync_project_dependencies: bool,
 
         /// Run the `SyncWorkspace` action before all actions in the pipeline.
+        /// @since 1.34.0
         #[setting(default = true)]
         pub sync_workspace: bool,
     }

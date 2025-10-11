@@ -18,6 +18,7 @@ fn path_is_required<D, C>(
 
 config_unit_enum!(
     /// The API format of the remote service.
+    /// @since 1.32.0
     #[derive(ConfigEnum)]
     pub enum RemoteApi {
         /// gRPC(S) endpoints.
@@ -30,6 +31,7 @@ config_unit_enum!(
 
 config_struct!(
     /// Configures basic HTTP authentication.
+    /// @since 1.32.0
     #[derive(Config)]
     pub struct RemoteAuthConfig {
         /// HTTP headers to inject into every request.
@@ -43,6 +45,7 @@ config_struct!(
 
 config_unit_enum!(
     /// Supported blob compression levels for gRPC APIs.
+    /// @since 1.31.0
     #[derive(ConfigEnum)]
     pub enum RemoteCompression {
         /// No compression.
@@ -61,10 +64,12 @@ impl RemoteCompression {
 
 config_struct!(
     /// Configures the action cache (AC) and content addressable cache (CAS).
+    /// @since 1.30.0
     #[derive(Config)]
     #[config(env_prefix = "MOON_REMOTE_CACHE_")]
     pub struct RemoteCacheConfig {
         /// The compression format to use when uploading/downloading blobs.
+        /// @since 1.31.0
         pub compression: RemoteCompression,
 
         /// Unique instance name for blobs. Will be used as a folder name.
@@ -73,11 +78,13 @@ config_struct!(
 
         /// When local, only download matching blobs and do not upload new
         /// blobs. Blobs will only be uploaded in CI environments.
+        /// @since 1.40.0
         pub local_read_only: bool,
 
         /// When downloading blobs, verify the digests/hashes in the response
         /// match the associated blob contents. This will reduce performance
         /// but ensure partial or corrupted blobs won't cause failures.
+        /// @since 1.36.0
         #[setting(parse_env = env::parse_bool)]
         pub verify_integrity: bool,
     }
@@ -85,6 +92,7 @@ config_struct!(
 
 config_struct!(
     /// Configures for server-only authentication with TLS.
+    /// @since 1.30.0
     #[derive(Config)]
     #[config(env_prefix = "MOON_REMOTE_TLS_")]
     pub struct RemoteTlsConfig {
@@ -105,6 +113,7 @@ config_struct!(
 
 config_struct!(
     /// Configures for both server and client authentication with mTLS.
+    /// @since 1.30.0
     #[derive(Config)]
     #[config(env_prefix = "MOON_REMOTE_MTLS_")]
     pub struct RemoteMtlsConfig {
@@ -135,13 +144,16 @@ config_struct!(
 
 config_struct!(
     /// Configures the remote service, powered by the Bazel Remote Execution API.
+    /// @since 1.30.0
     #[derive(Config)]
     pub struct RemoteConfig {
         /// The API format of the remote service.
+        /// @since 1.32.0
         #[setting(env = "MOON_REMOTE_API")]
         pub api: RemoteApi,
 
         /// Connect to the host using basic HTTP authentication.
+        /// @since 1.32.0
         #[setting(nested)]
         pub auth: Option<RemoteAuthConfig>,
 

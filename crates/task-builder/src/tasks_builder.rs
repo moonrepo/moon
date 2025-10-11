@@ -267,12 +267,10 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
-        let mut is_local = false;
         let mut preset = None;
         let mut args_sets = vec![];
 
         if id == "dev" || id == "serve" || id == "start" {
-            is_local = true;
             preset = Some(TaskPreset::Server);
         }
 
@@ -281,11 +279,6 @@ impl<'proj> TasksBuilder<'proj> {
         for link in &chain {
             if let Some(pre) = link.config.preset {
                 preset = Some(pre);
-            }
-
-            #[allow(deprecated)]
-            if let Some(local) = link.config.local {
-                is_local = local;
             }
 
             let (command, base_args) = self.get_command_and_args(link.config)?;
@@ -300,21 +293,8 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        if is_local {
-            trace!(
-                task_target = target.as_str(),
-                "Marking task as local (using server preset)"
-            );
-
-            // Backwards compatibility
-            if preset.is_none() {
-                preset = Some(TaskPreset::Server);
-            }
-        }
-
         task.preset = preset;
         task.options = self.build_task_options(id, preset)?;
-        task.state.local_only = is_local;
         task.state.root_level = is_root_level_source(self.project_source);
 
         // Aggregate all values that are inherited from the global task configs,
@@ -490,8 +470,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         task.type_of = if !task.outputs.is_empty() {
             TaskType::Build
-        } else if is_local
-            || preset.is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
+        } else if preset.is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
         {
             TaskType::Run
         } else {
@@ -636,6 +615,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge_outputs) = &config.merge_outputs {
                 options.merge_outputs = *merge_outputs;
+            }
+
+            if let Some(merge_toolchains) = &config.merge_toolchains {
+                options.merge_toolchains = *merge_toolchains;
             }
 
             if let Some(mutex) = &config.mutex {

@@ -63,6 +63,7 @@ export interface ToolchainConfig {
 	/**
 	 * Extends one or many toolchain configuration files.
 	 * Supports a relative file path or a secure URL.
+	 * @since 1.12.0
 	 */
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
@@ -124,6 +125,7 @@ export interface PartialToolchainConfig {
 	/**
 	 * Extends one or many toolchain configuration files.
 	 * Supports a relative file path or a secure URL.
+	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */

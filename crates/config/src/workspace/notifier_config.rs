@@ -28,6 +28,7 @@ config_struct!(
     #[derive(Config)]
     pub struct NotifierConfig {
         /// Display an OS notification for certain pipeline events.
+        /// @since 1.38.0
         pub terminal_notifications: Option<NotifierEventType>,
 
         /// A secure URL in which to send webhooks to.
@@ -35,6 +36,7 @@ config_struct!(
         pub webhook_url: Option<String>,
 
         /// Whether webhook requests require acknowledgment (2xx response).
+        /// @since 1.38.0
         #[setting(default = false)]
         pub webhook_acknowledge: bool,
     }

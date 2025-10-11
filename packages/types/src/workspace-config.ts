@@ -25,6 +25,7 @@ export interface CodeownersConfig {
 	/**
 	 * Bitbucket and GitLab only. The number of approvals required for the
 	 * request to be satisfied. This will be applied to all paths.
+	 * @since 1.28.0
 	 */
 	requiredApprovals: number | null;
 	/**
@@ -175,12 +176,14 @@ export interface HasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
+	 * @since 1.10.0
 	 */
 	ignoreMissingPatterns: string[];
 	/**
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
 	 * so prefixing with `**` is recommended.
+	 * @since 1.10.0
 	 */
 	ignorePatterns: string[];
 	/**
@@ -213,12 +216,14 @@ export type NotifierEventType = 'never' | 'always' | 'failure' | 'success' | 'ta
 export interface NotifierConfig {
 	/**
 	 * Display an OS notification for certain pipeline events.
+	 * @since 1.38.0
 	 *
 	 * @default 'never'
 	 */
 	terminalNotifications: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
+	 * @since 1.38.0
 	 *
 	 * @default false
 	 */
@@ -240,6 +245,7 @@ export interface PipelineConfig {
 	archivableTargets: string[];
 	/**
 	 * Automatically clean the cache after every task run.
+	 * @since 1.24.0
 	 *
 	 * @default true
 	 */
@@ -259,6 +265,7 @@ export interface PipelineConfig {
 	/**
 	 * Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
 	 * each running task when changes to lockfiles and manifests are detected.
+	 * @since 1.34.0
 	 */
 	installDependencies: PipelineActionSwitch;
 	/**
@@ -274,6 +281,7 @@ export interface PipelineConfig {
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
+	 * @since 1.34.0
 	 *
 	 * @default true
 	 */
@@ -281,10 +289,12 @@ export interface PipelineConfig {
 	/**
 	 * Run the `SyncProject` actions in the pipeline for each owning project
 	 * of a running task.
+	 * @since 1.34.0
 	 */
 	syncProjects: PipelineActionSwitch;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
+	 * @since 1.34.0
 	 *
 	 * @default true
 	 */
@@ -304,10 +314,16 @@ export interface WorkspaceProjectsConfig {
 
 export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<Id, string>;
 
-/** The API format of the remote service. */
+/**
+ * The API format of the remote service.
+ * @since 1.32.0
+ */
 export type RemoteApi = 'grpc' | 'http';
 
-/** Configures basic HTTP authentication. */
+/**
+ * Configures basic HTTP authentication.
+ * @since 1.32.0
+ */
 export interface RemoteAuthConfig {
 	/** HTTP headers to inject into every request. */
 	headers: Record<string, string>;
@@ -319,13 +335,20 @@ export interface RemoteAuthConfig {
 	token: string | null;
 }
 
-/** Supported blob compression levels for gRPC APIs. */
+/**
+ * Supported blob compression levels for gRPC APIs.
+ * @since 1.31.0
+ */
 export type RemoteCompression = 'none' | 'zstd';
 
-/** Configures the action cache (AC) and content addressable cache (CAS). */
+/**
+ * Configures the action cache (AC) and content addressable cache (CAS).
+ * @since 1.30.0
+ */
 export interface RemoteCacheConfig {
 	/**
 	 * The compression format to use when uploading/downloading blobs.
+	 * @since 1.31.0
 	 *
 	 * @default 'none'
 	 * @envvar MOON_REMOTE_CACHE_COMPRESSION
@@ -342,6 +365,7 @@ export interface RemoteCacheConfig {
 	/**
 	 * When local, only download matching blobs and do not upload new
 	 * blobs. Blobs will only be uploaded in CI environments.
+	 * @since 1.40.0
 	 *
 	 * @envvar MOON_REMOTE_CACHE_LOCAL_READ_ONLY
 	 */
@@ -350,13 +374,17 @@ export interface RemoteCacheConfig {
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance
 	 * but ensure partial or corrupted blobs won't cause failures.
+	 * @since 1.36.0
 	 *
 	 * @envvar MOON_REMOTE_CACHE_VERIFY_INTEGRITY
 	 */
 	verifyIntegrity: boolean;
 }
 
-/** Configures for both server and client authentication with mTLS. */
+/**
+ * Configures for both server and client authentication with mTLS.
+ * @since 1.30.0
+ */
 export interface RemoteMtlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
@@ -394,7 +422,10 @@ export interface RemoteMtlsConfig {
 	domain: string | null;
 }
 
-/** Configures for server-only authentication with TLS. */
+/**
+ * Configures for server-only authentication with TLS.
+ * @since 1.30.0
+ */
 export interface RemoteTlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
@@ -418,17 +449,24 @@ export interface RemoteTlsConfig {
 	domain: string | null;
 }
 
-/** Configures the remote service, powered by the Bazel Remote Execution API. */
+/**
+ * Configures the remote service, powered by the Bazel Remote Execution API.
+ * @since 1.30.0
+ */
 export interface RemoteConfig {
 	/**
 	 * The API format of the remote service.
+	 * @since 1.32.0
 	 *
 	 * @default 'grpc'
 	 * @envvar MOON_REMOTE_API
 	 * @type {'grpc' | 'http'}
 	 */
 	api: RemoteApi;
-	/** Connect to the host using basic HTTP authentication. */
+	/**
+	 * Connect to the host using basic HTTP authentication.
+	 * @since 1.32.0
+	 */
 	auth: RemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content addressable cache (CAS). */
 	cache: RemoteCacheConfig;
@@ -448,7 +486,10 @@ export interface RemoteConfig {
 	tls: RemoteTlsConfig | null;
 }
 
-/** The format to use for generated VCS hook files. */
+/**
+ * The format to use for generated VCS hook files.
+ * @since 1.29.0
+ */
 export type VcsHookFormat = 'bash' | 'native';
 
 /** The VCS being utilized by the repository. */
@@ -470,12 +511,16 @@ export interface VcsConfig {
 	defaultBranch?: string;
 	/**
 	 * The format to use for generated VCS hook files.
+	 * @since 1.29.0
 	 *
 	 * @default 'native'
 	 * @type {'bash' | 'native'}
 	 */
 	hookFormat: VcsHookFormat;
-	/** A mapping of hooks to commands to run when the hook is triggered. */
+	/**
+	 * A mapping of hooks to commands to run when the hook is triggered.
+	 * @since 1.9.0
+	 */
 	hooks: Record<string, string[]>;
 	/**
 	 * The VCS client being utilized by the repository.
@@ -487,6 +532,7 @@ export interface VcsConfig {
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
+	 * @since 1.8.0
 	 *
 	 * @default 'github'
 	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
@@ -494,7 +540,10 @@ export interface VcsConfig {
 	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */
 	remoteCandidates?: string[];
-	/** Generates hooks and scripts based on the `hooks` setting. */
+	/**
+	 * Generates hooks and scripts based on the `hooks` setting.
+	 * @since 1.9.0
+	 */
 	syncHooks: boolean;
 }
 
@@ -505,17 +554,24 @@ export interface VcsConfig {
 export interface WorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema?: string;
-	/** Configures code ownership rules for generating a `CODEOWNERS` file. */
+	/**
+	 * Configures code ownership rules for generating a `CODEOWNERS` file.
+	 * @since 1.8.0
+	 */
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
-	/** Configures Docker integration for the workspace. */
+	/**
+	 * Configures Docker integration for the workspace.
+	 * @since 1.27.0
+	 */
 	docker: DockerConfig;
 	/** Configures experiments across the entire moon workspace. */
 	experiments: ExperimentsConfig;
 	/**
 	 * Extends one or many workspace configuration file. Supports a relative
 	 * file path or a secure URL.
+	 * @since 1.12.0
 	 */
 	extends: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */
@@ -566,6 +622,7 @@ export interface PartialCodeownersConfig {
 	/**
 	 * Bitbucket and GitLab only. The number of approvals required for the
 	 * request to be satisfied. This will be applied to all paths.
+	 * @since 1.28.0
 	 */
 	requiredApprovals?: number | null;
 	/**
@@ -710,12 +767,14 @@ export interface PartialHasherConfig {
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
+	 * @since 1.10.0
 	 */
 	ignoreMissingPatterns?: string[] | null;
 	/**
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
 	 * so prefixing with `**` is recommended.
+	 * @since 1.10.0
 	 */
 	ignorePatterns?: string[] | null;
 	/**
@@ -743,12 +802,14 @@ export interface PartialHasherConfig {
 export interface PartialNotifierConfig {
 	/**
 	 * Display an OS notification for certain pipeline events.
+	 * @since 1.38.0
 	 *
 	 * @default 'never'
 	 */
 	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
+	 * @since 1.38.0
 	 *
 	 * @default false
 	 */
@@ -770,6 +831,7 @@ export interface PartialPipelineConfig {
 	archivableTargets?: string[] | null;
 	/**
 	 * Automatically clean the cache after every task run.
+	 * @since 1.24.0
 	 *
 	 * @default true
 	 */
@@ -789,6 +851,7 @@ export interface PartialPipelineConfig {
 	/**
 	 * Run the `InstallWorkspaceDeps` and `InstallProjectDeps` actions for
 	 * each running task when changes to lockfiles and manifests are detected.
+	 * @since 1.34.0
 	 */
 	installDependencies?: PartialPipelineActionSwitch | null;
 	/**
@@ -804,6 +867,7 @@ export interface PartialPipelineConfig {
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
+	 * @since 1.34.0
 	 *
 	 * @default true
 	 */
@@ -811,10 +875,12 @@ export interface PartialPipelineConfig {
 	/**
 	 * Run the `SyncProject` actions in the pipeline for each owning project
 	 * of a running task.
+	 * @since 1.34.0
 	 */
 	syncProjects?: PartialPipelineActionSwitch | null;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
+	 * @since 1.34.0
 	 *
 	 * @default true
 	 */
@@ -837,7 +903,10 @@ export type PartialWorkspaceProjects =
 	| string[]
 	| Record<Id, string>;
 
-/** Configures basic HTTP authentication. */
+/**
+ * Configures basic HTTP authentication.
+ * @since 1.32.0
+ */
 export interface PartialRemoteAuthConfig {
 	/** HTTP headers to inject into every request. */
 	headers?: Record<string, string> | null;
@@ -849,10 +918,14 @@ export interface PartialRemoteAuthConfig {
 	token?: string | null;
 }
 
-/** Configures the action cache (AC) and content addressable cache (CAS). */
+/**
+ * Configures the action cache (AC) and content addressable cache (CAS).
+ * @since 1.30.0
+ */
 export interface PartialRemoteCacheConfig {
 	/**
 	 * The compression format to use when uploading/downloading blobs.
+	 * @since 1.31.0
 	 *
 	 * @default 'none'
 	 * @envvar MOON_REMOTE_CACHE_COMPRESSION
@@ -868,6 +941,7 @@ export interface PartialRemoteCacheConfig {
 	/**
 	 * When local, only download matching blobs and do not upload new
 	 * blobs. Blobs will only be uploaded in CI environments.
+	 * @since 1.40.0
 	 *
 	 * @envvar MOON_REMOTE_CACHE_LOCAL_READ_ONLY
 	 */
@@ -876,13 +950,17 @@ export interface PartialRemoteCacheConfig {
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance
 	 * but ensure partial or corrupted blobs won't cause failures.
+	 * @since 1.36.0
 	 *
 	 * @envvar MOON_REMOTE_CACHE_VERIFY_INTEGRITY
 	 */
 	verifyIntegrity?: boolean | null;
 }
 
-/** Configures for both server and client authentication with mTLS. */
+/**
+ * Configures for both server and client authentication with mTLS.
+ * @since 1.30.0
+ */
 export interface PartialRemoteMtlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
@@ -920,7 +998,10 @@ export interface PartialRemoteMtlsConfig {
 	domain?: string | null;
 }
 
-/** Configures for server-only authentication with TLS. */
+/**
+ * Configures for server-only authentication with TLS.
+ * @since 1.30.0
+ */
 export interface PartialRemoteTlsConfig {
 	/**
 	 * If true, assume that the server supports HTTP/2,
@@ -944,16 +1025,23 @@ export interface PartialRemoteTlsConfig {
 	domain?: string | null;
 }
 
-/** Configures the remote service, powered by the Bazel Remote Execution API. */
+/**
+ * Configures the remote service, powered by the Bazel Remote Execution API.
+ * @since 1.30.0
+ */
 export interface PartialRemoteConfig {
 	/**
 	 * The API format of the remote service.
+	 * @since 1.32.0
 	 *
 	 * @default 'grpc'
 	 * @envvar MOON_REMOTE_API
 	 */
 	api?: RemoteApi | null;
-	/** Connect to the host using basic HTTP authentication. */
+	/**
+	 * Connect to the host using basic HTTP authentication.
+	 * @since 1.32.0
+	 */
 	auth?: PartialRemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content addressable cache (CAS). */
 	cache?: PartialRemoteCacheConfig | null;
@@ -983,11 +1071,15 @@ export interface PartialVcsConfig {
 	defaultBranch?: string | null;
 	/**
 	 * The format to use for generated VCS hook files.
+	 * @since 1.29.0
 	 *
 	 * @default 'native'
 	 */
 	hookFormat?: VcsHookFormat | null;
-	/** A mapping of hooks to commands to run when the hook is triggered. */
+	/**
+	 * A mapping of hooks to commands to run when the hook is triggered.
+	 * @since 1.9.0
+	 */
 	hooks?: Record<string, string[]> | null;
 	/**
 	 * The VCS client being utilized by the repository.
@@ -998,13 +1090,17 @@ export interface PartialVcsConfig {
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
+	 * @since 1.8.0
 	 *
 	 * @default 'github'
 	 */
 	provider?: VcsProvider | null;
 	/** List of remote's in which to compare branches against. */
 	remoteCandidates?: string[] | null;
-	/** Generates hooks and scripts based on the `hooks` setting. */
+	/**
+	 * Generates hooks and scripts based on the `hooks` setting.
+	 * @since 1.9.0
+	 */
 	syncHooks?: boolean | null;
 }
 
@@ -1015,17 +1111,24 @@ export interface PartialVcsConfig {
 export interface PartialWorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema?: string | null;
-	/** Configures code ownership rules for generating a `CODEOWNERS` file. */
+	/**
+	 * Configures code ownership rules for generating a `CODEOWNERS` file.
+	 * @since 1.8.0
+	 */
 	codeowners?: PartialCodeownersConfig | null;
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
-	/** Configures Docker integration for the workspace. */
+	/**
+	 * Configures Docker integration for the workspace.
+	 * @since 1.27.0
+	 */
 	docker?: PartialDockerConfig | null;
 	/** Configures experiments across the entire moon workspace. */
 	experiments?: PartialExperimentsConfig | null;
 	/**
 	 * Extends one or many workspace configuration file. Supports a relative
 	 * file path or a secure URL.
+	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
 	/** Configures extensions that can be executed with `moon ext`. */

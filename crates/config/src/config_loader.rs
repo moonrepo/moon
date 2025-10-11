@@ -6,7 +6,6 @@ use crate::inherited_tasks_config::{
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
 use crate::template_config::TemplateConfig;
 use crate::toolchain_config::ToolchainConfig;
-use crate::validate::check_yml_extension;
 use crate::workspace_config::WorkspaceConfig;
 use moon_common::color;
 use moon_common::consts::CONFIG_DIRNAME;
@@ -162,7 +161,7 @@ impl ConfigLoader {
     ) -> miette::Result<PartialInheritedTasksConfig> {
         Ok(self
             .create_tasks_loader(workspace_root)?
-            .file_optional(check_yml_extension(path.as_ref()))?
+            .file_optional(path.as_ref())?
             .load_partial(&())?)
     }
 
@@ -241,14 +240,7 @@ impl ConfigLoader {
         files: Vec<PathBuf>,
     ) -> miette::Result<()> {
         for file in files {
-            if file
-                .extension()
-                .is_some_and(|ext| ext == "yml" || ext == "yaml")
-            {
-                loader.file_optional(check_yml_extension(&file))?;
-            } else {
-                loader.file_optional(file)?;
-            }
+            loader.file_optional(file)?;
         }
 
         Ok(())

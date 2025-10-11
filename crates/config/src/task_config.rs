@@ -1,5 +1,5 @@
-use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{Input, OneOrMany, Output};
+use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use moon_target::{Target, TargetScope};

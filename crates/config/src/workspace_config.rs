@@ -2,7 +2,7 @@ use crate::shapes::{FilePath, GlobPath, PortablePath};
 use crate::{config_enum, config_struct, workspace::*};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{Config, PathSegment, ValidateError, validate};
+use schematic::{Config, PathSegment, ValidateError, env, validate};
 use semver::VersionReq;
 
 // We can't use serde based types in the enum below to handle validation,
@@ -66,11 +66,11 @@ config_struct!(
     /// Configures projects in the workspace, using both globs and explicit source paths.
     #[derive(Config)]
     pub struct WorkspaceProjectsConfig {
-        /// A list of globs in which to locate project directories.
-        /// Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
+        /// A list of glob patterns in which to locate project directories.
+        /// Can be suffixed with a `moon.*` config file to only find distinct projects.
         pub globs: Vec<String>,
 
-        /// A mapping of project IDs to relative file paths to each project directory.
+        /// A map of project identifiers to relative file paths to each project directory.
         pub sources: FxHashMap<Id, String>,
     }
 );
@@ -83,14 +83,14 @@ config_enum!(
         expecting = "expected a list of globs, a map of projects, or both"
     )]
     pub enum WorkspaceProjects {
-        /// Using both globs and explicit source paths.
+        /// Using both glob patterns and file source paths.
         #[setting(nested)]
         Both(WorkspaceProjectsConfig),
 
-        /// Using globs. Suffix with `moon.yml` or `moon.pkl` to be distinct.
+        /// Using glob patterns. Suffix with `moon.*` to be distinct.
         Globs(Vec<String>),
 
-        /// Using a mapping of IDs to source paths.
+        /// Using a map of identifiers to file source paths.
         #[setting(default)]
         Sources(FxHashMap<Id, String>),
     }
@@ -122,16 +122,18 @@ config_struct!(
         pub docker: DockerConfig,
 
         /// Configures experiments across the entire moon workspace.
+        /// @since 1.11.0
         #[setting(nested)]
         pub experiments: ExperimentsConfig,
 
-        /// Extends one or many workspace configuration file. Supports a relative
-        /// file path or a secure URL.
+        /// Extends one or many workspace configuration file.
+        /// Supports a relative file path or a secure URL.
         /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 
-        /// Configures extensions that can be executed with `moon ext`.
+        /// Configures and enables extension plugins.
+        /// @since 1.20.0
         #[setting(nested)]
         pub extensions: FxHashMap<Id, ExtensionPluginConfig>,
 
@@ -148,7 +150,7 @@ config_struct!(
         pub notifier: NotifierConfig,
 
         /// Configures aspects of the action pipeline.
-        #[setting(nested, alias = "runner")]
+        #[setting(nested)]
         pub pipeline: PipelineConfig,
 
         /// Configures all projects within the workspace to create a project graph.
@@ -158,14 +160,15 @@ config_struct!(
         pub projects: WorkspaceProjects,
 
         /// Configures aspects of the remote service.
-        #[setting(nested, rename = "unstable_remote")]
+        #[setting(nested)]
         pub remote: RemoteConfig,
 
         /// Collects anonymous usage information, and checks for new moon versions.
-        #[setting(default = true)]
+        #[setting(default = true, env = "MOON_TELEMETRY", parse_env = env::parse_bool)]
         pub telemetry: bool,
 
-        /// Configures the version control system (VCS).
+        /// Configures the version control system (VCS). Also known as
+        /// source code management (SCM).
         #[setting(nested)]
         pub vcs: VcsConfig,
 

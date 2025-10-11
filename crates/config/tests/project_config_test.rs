@@ -394,7 +394,7 @@ project:
 
             let meta = config.project.unwrap();
 
-            assert_eq!(meta.name.unwrap(), "Name");
+            assert_eq!(meta.title.unwrap(), "Name");
             assert_eq!(meta.description, "Description");
             assert_eq!(meta.owner.unwrap(), "team");
             assert_eq!(meta.maintainers, vec!["a", "b", "c"]);
@@ -736,7 +736,7 @@ workspace:
                         required_approvals: Some(5)
                     },
                     project: Some(ProjectMetadataConfig {
-                        name: Some("Name".into()),
+                        title: Some("Name".into()),
                         description: "Does something".into(),
                         owner: Some("team".into()),
                         maintainers: vec![],

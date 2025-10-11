@@ -37,7 +37,7 @@ impl ProjectToolchainEntry {
 }
 
 config_struct!(
-    /// Overrides workspace-level toolchain settings, scoped to this project.
+    /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ProjectToolchainConfig {

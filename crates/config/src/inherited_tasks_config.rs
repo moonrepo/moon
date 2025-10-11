@@ -1,10 +1,9 @@
 use crate::config_struct;
 use crate::patterns::merge_iter;
-use crate::project::{
-    PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps,
-};
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::Input;
+use crate::task_config::{TaskConfig, TaskDependency, validate_deps};
+use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use moon_common::{Id, cacheable};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};

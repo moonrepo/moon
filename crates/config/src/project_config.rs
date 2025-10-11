@@ -1,9 +1,10 @@
 use crate::project::*;
 use crate::shapes::Input;
+use crate::task_config::TaskConfig;
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{Config, ConfigEnum, ValidateError, validate};
+use schematic::{Config, ConfigEnum, ValidateError};
 use std::collections::BTreeMap;
 
 fn validate_channel<D, C>(
@@ -33,7 +34,7 @@ config_unit_enum!(
 );
 
 config_unit_enum!(
-    /// The layer within the project stack, for categorizing.
+    /// The layer within the technology stack, for categorizing.
     #[derive(ConfigEnum)]
     pub enum LayerType {
         Application,
@@ -50,13 +51,13 @@ config_unit_enum!(
 config_struct!(
     /// Expanded information about the project.
     #[derive(Config)]
+    #[config(allow_unknown_fields)]
     pub struct ProjectMetadataConfig {
-        /// A human-readable name of the project.
-        pub name: Option<String>,
+        /// A human-readable title of the project.
+        pub title: Option<String>,
 
-        /// A description on what the project does, and why it exists.
-        #[setting(validate = validate::not_empty)]
-        pub description: String,
+        /// A description on what the project does and why it exists.
+        pub description: Option<String>,
 
         /// The owner of the project. Can be an individual, team, or
         /// organization. The format is unspecified.
@@ -65,12 +66,13 @@ config_struct!(
         /// The individual maintainers of the project. The format is unspecified.
         pub maintainers: Vec<String>,
 
-        /// The Slack, Discord, etc, channel to discuss the project.
+        /// The Slack, Discord, IRC, etc, channel to discuss the project.
         /// Must start with a `#`.
         #[setting(validate = validate_channel)]
         pub channel: Option<String>,
 
         /// Custom metadata fields.
+        #[setting(flatten)]
         pub metadata: FxHashMap<String, serde_json::Value>,
     }
 );
@@ -80,13 +82,13 @@ config_enum!(
     #[derive(Config)]
     #[serde(
         untagged,
-        expecting = "expected a project name or dependency config object"
+        expecting = "expected a project identifier or dependency config object"
     )]
     pub enum ProjectDependsOn {
-        /// A project referenced by ID.
+        /// A project referenced by identifier.
         String(Id),
 
-        /// A project referenced by ID, with additional parameters to pass through.
+        /// A project referenced by identifier, with additional parameters.
         #[setting(nested)]
         Object(ProjectDependencyConfig),
     }
@@ -112,11 +114,11 @@ config_struct!(
         #[setting(nested)]
         pub docker: ProjectDockerConfig,
 
-        /// A mapping of environment variables that will be set for
+        /// A map of environment variables that will be inherited by
         /// all tasks within the project.
         pub env: FxHashMap<String, String>,
 
-        /// A mapping of group IDs to a list of file paths, globs, and
+        /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
@@ -128,7 +130,7 @@ config_struct!(
         /// The primary programming language of the project.
         pub language: LanguageType,
 
-        /// The layer within the project stack, for categorizing.
+        /// The layer within the technology stack, for categorizing.
         pub layer: LayerType,
 
         /// Defines ownership of source code within the current project, by mapping
@@ -149,7 +151,8 @@ config_struct!(
         /// boundary enforcement, and task inheritance.
         pub tags: Vec<Id>,
 
-        /// A mapping of tasks by ID to parameters required for running the task.
+        /// A map of identifiers to task objects. Tasks represent the work-unit
+        /// of a project, and can be ran in the action pipeline.
         #[setting(nested)]
         pub tasks: BTreeMap<Id, TaskConfig>,
 

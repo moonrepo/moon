@@ -16,8 +16,12 @@
   - Removed the `$projectType` token. Use `$projectLayer` instead.
   - Removed the `$taskPlatform` token. Use `$taskToolchain` instead.
   - `moon.*`
+    - Renamed the `project.name` setting to `project.title`.
     - Removed the `type` alias. Use `layer` instead.
     - Removed the `platform` setting. Use `toolchain.default` instead.
+    - Removed the `project.metadata` setting. All custom metadata fields can now be defined at the
+      root of the `project` object.
+    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `moon.*`, `.moon/tasks.*`, `.moon/tasks/**/*`
     - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchains` instead.
@@ -27,6 +31,7 @@
     - Renamed the `codeowners.orderBy` variant "project-name" to "project-id".
     - Renamed the `codeowners.syncOnRun` setting to `codeowners.sync`.
     - Renamed the `runner` setting to `pipeline`.
+    - Renamed the `unstable_remote` setting to `remote`.
     - Renamed the `vcs.manager` setting to `vcs.client`.
     - Renamed the `vcs.syncHooks` setting to `vcs.sync`.
     - Removed the `constraints.enforceProjectTypeRelationships` alias. Use

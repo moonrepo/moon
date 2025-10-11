@@ -1033,6 +1033,8 @@ mod project_graph {
                     ("one", &Id::raw("alias-one")),
                     ("two", &Id::raw("alias-two")),
                     ("three", &Id::raw("alias-three")),
+                    ("rust_toolchain", &Id::raw("multiple")),
+                    ("js-toolchain", &Id::raw("multiple")),
                 ])
             );
         }
@@ -1043,7 +1045,7 @@ mod project_graph {
 
             assert_eq!(
                 graph.get_project("multiple").unwrap().aliases,
-                ["js-toolchain", "rust_toolchain"]
+                ["rust_toolchain", "js-toolchain"]
             );
         }
 

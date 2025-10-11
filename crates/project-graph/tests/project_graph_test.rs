@@ -1033,7 +1033,19 @@ mod project_graph {
                     ("one", &Id::raw("alias-one")),
                     ("two", &Id::raw("alias-two")),
                     ("three", &Id::raw("alias-three")),
+                    ("rust_toolchain", &Id::raw("multiple")),
+                    ("js-toolchain", &Id::raw("multiple")),
                 ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_multi_aliases_from_each_toolchain() {
+            let graph = build_aliases_graph().await;
+
+            assert_eq!(
+                graph.get_project("multiple").unwrap().aliases,
+                ["rust_toolchain", "js-toolchain"]
             );
         }
 
@@ -1041,15 +1053,21 @@ mod project_graph {
         async fn doesnt_set_alias_if_same_as_id() {
             let graph = build_aliases_graph().await;
 
-            assert_eq!(graph.get_project("alias-same-id").unwrap().alias, None);
+            assert!(
+                graph
+                    .get_project("alias-same-id")
+                    .unwrap()
+                    .aliases
+                    .is_empty()
+            );
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_a_project_has_the_id() {
             let graph = build_aliases_graph_for_fixture("aliases-conflict-ids").await;
 
-            assert_eq!(graph.get_project("one").unwrap().alias, None);
-            assert_eq!(graph.get_project("two").unwrap().alias, None);
+            assert!(graph.get_project("one").unwrap().aliases.is_empty());
+            assert!(graph.get_project("two").unwrap().aliases.is_empty());
         }
 
         #[tokio::test(flavor = "multi_thread")]

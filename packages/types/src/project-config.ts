@@ -95,7 +95,7 @@ export type LanguageType =
 	| 'unknown'
 	| string;
 
-/** The layer within the project stack, for categorizing. */
+/** The layer within the technology stack, for categorizing. */
 export type LayerType =
 	| 'application'
 	| 'automation'
@@ -138,23 +138,23 @@ export interface OwnersConfig {
 /** Expanded information about the project. */
 export interface ProjectMetadataConfig {
 	/**
-	 * The Slack, Discord, etc, channel to discuss the project.
+	 * The Slack, Discord, IRC, etc, channel to discuss the project.
 	 * Must start with a `#`.
 	 */
 	channel: string | null;
-	/** A description on what the project does, and why it exists. */
-	description: string;
+	/** A description on what the project does and why it exists. */
+	description: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers: string[];
 	/** Custom metadata fields. */
 	metadata: Record<string, unknown>;
-	/** A human-readable name of the project. */
-	name: string | null;
 	/**
 	 * The owner of the project. Can be an individual, team, or
 	 * organization. The format is unspecified.
 	 */
 	owner: string | null;
+	/** A human-readable title of the project. */
+	title: string | null;
 }
 
 /** The technology stack of the project, for categorizing. */
@@ -162,7 +162,7 @@ export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 
 
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
-/** Overrides workspace-level toolchain settings, scoped to this project. */
+/** Overrides top-level toolchain settings, scoped to this project. */
 export interface ProjectToolchainConfig {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
@@ -218,12 +218,12 @@ export interface ProjectConfig {
 	 */
 	docker: ProjectDockerConfig;
 	/**
-	 * A mapping of environment variables that will be set for
+	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
 	 */
 	env: Record<string, string>;
 	/**
-	 * A mapping of group IDs to a list of file paths, globs, and
+	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
 	fileGroups: Record<Id, Input[]>;
@@ -241,7 +241,7 @@ export interface ProjectConfig {
 	 */
 	language: LanguageType;
 	/**
-	 * The layer within the project stack, for categorizing.
+	 * The layer within the technology stack, for categorizing.
 	 *
 	 * @default 'unknown'
 	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
@@ -268,7 +268,10 @@ export interface ProjectConfig {
 	 * boundary enforcement, and task inheritance.
 	 */
 	tags: Id[];
-	/** A mapping of tasks by ID to parameters required for running the task. */
+	/**
+	 * A map of identifiers to task objects. Tasks represent the work-unit
+	 * of a project, and can be ran in the action pipeline.
+	 */
 	tasks: Record<Id, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain: ProjectToolchainConfig;
@@ -367,28 +370,28 @@ export interface PartialOwnersConfig {
 /** Expanded information about the project. */
 export interface PartialProjectMetadataConfig {
 	/**
-	 * The Slack, Discord, etc, channel to discuss the project.
+	 * The Slack, Discord, IRC, etc, channel to discuss the project.
 	 * Must start with a `#`.
 	 */
 	channel?: string | null;
-	/** A description on what the project does, and why it exists. */
+	/** A description on what the project does and why it exists. */
 	description?: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers?: string[] | null;
 	/** Custom metadata fields. */
 	metadata?: Record<string, unknown> | null;
-	/** A human-readable name of the project. */
-	name?: string | null;
 	/**
 	 * The owner of the project. Can be an individual, team, or
 	 * organization. The format is unspecified.
 	 */
 	owner?: string | null;
+	/** A human-readable title of the project. */
+	title?: string | null;
 }
 
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
-/** Overrides workspace-level toolchain settings, scoped to this project. */
+/** Overrides top-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainConfig {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
@@ -444,12 +447,12 @@ export interface PartialProjectConfig {
 	 */
 	docker?: PartialProjectDockerConfig | null;
 	/**
-	 * A mapping of environment variables that will be set for
+	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
 	 */
 	env?: Record<string, string> | null;
 	/**
-	 * A mapping of group IDs to a list of file paths, globs, and
+	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
 	fileGroups?: Record<Id, Input[]> | null;
@@ -466,7 +469,7 @@ export interface PartialProjectConfig {
 	 */
 	language?: LanguageType | null;
 	/**
-	 * The layer within the project stack, for categorizing.
+	 * The layer within the technology stack, for categorizing.
 	 *
 	 * @default 'unknown'
 	 */
@@ -491,7 +494,10 @@ export interface PartialProjectConfig {
 	 * boundary enforcement, and task inheritance.
 	 */
 	tags?: Id[] | null;
-	/** A mapping of tasks by ID to parameters required for running the task. */
+	/**
+	 * A map of identifiers to task objects. Tasks represent the work-unit
+	 * of a project, and can be ran in the action pipeline.
+	 */
 	tasks?: Record<Id, PartialTaskConfig> | null;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain?: PartialProjectToolchainConfig | null;

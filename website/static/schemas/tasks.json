@@ -10,7 +10,7 @@
     },
     "extends": {
       "title": "extends",
-      "description": "Extends one or many task configuration files. Supports a relative file path or a secure URL. @since 1.12.0",
+      "description": "Extends one or many tasks configuration files. Supports a relative file path or a secure URL. @since 1.12.0",
       "anyOf": [
         {
           "$ref": "#/definitions/ExtendsFrom"
@@ -22,7 +22,7 @@
     },
     "fileGroups": {
       "title": "fileGroups",
-      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
+      "description": "A map of group identifiers to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -36,19 +36,21 @@
     },
     "implicitDeps": {
       "title": "implicitDeps",
-      "description": "Task dependencies that'll automatically be injected into every task that inherits this configuration.",
+      "description": "Task dependencies (deps) that will be automatically injected into every task that inherits this configuration.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/TaskDependency"
-      }
+      },
+      "markdownDescription": "Task dependencies (`deps`) that will be automatically injected into every task that inherits this configuration."
     },
     "implicitInputs": {
       "title": "implicitInputs",
-      "description": "Task inputs that'll automatically be injected into every task that inherits this configuration.",
+      "description": "Task inputs (inputs) that will be automatically injected into every task that inherits this configuration.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/Input"
-      }
+      },
+      "markdownDescription": "Task inputs (`inputs`) that will be automatically injected into every task that inherits this configuration."
     },
     "taskOptions": {
       "title": "taskOptions",
@@ -64,14 +66,15 @@
     },
     "tasks": {
       "title": "tasks",
-      "description": "A mapping of tasks by ID to parameters required for running the task.",
+      "description": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       },
       "propertyNames": {
         "$ref": "#/definitions/Id"
-      }
+      },
+      "markdownDescription": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline."
     }
   },
   "additionalProperties": false,

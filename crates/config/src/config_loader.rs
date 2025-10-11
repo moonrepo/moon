@@ -1,8 +1,7 @@
 use crate::config_cache::ConfigCache;
 use crate::config_finder::ConfigFinder;
-use crate::inherited_tasks_config::{
-    InheritedTasksConfig, InheritedTasksManager, PartialInheritedTasksConfig,
-};
+use crate::inherited_tasks_config::{InheritedTasksConfig, PartialInheritedTasksConfig};
+use crate::inherited_tasks_manager::InheritedTasksManager;
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
 use crate::template_config::TemplateConfig;
 use crate::toolchain_config::ToolchainConfig;

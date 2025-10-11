@@ -407,23 +407,23 @@ export interface InheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string;
 	/**
-	 * Extends one or many task configuration files. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many tasks configuration files.
+	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
 	extends: ExtendsFrom | null;
 	/**
-	 * A mapping of group IDs to a list of file paths, globs, and
+	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
 	fileGroups: Record<Id, Input[]>;
 	/**
-	 * Task dependencies that'll automatically be injected into every
+	 * Task dependencies (`deps`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
 	implicitDeps: TaskDependency[];
 	/**
-	 * Task inputs that'll automatically be injected into every
+	 * Task inputs (`inputs`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
 	implicitInputs: Input[];
@@ -432,7 +432,10 @@ export interface InheritedTasksConfig {
 	 * @since 1.20.0
 	 */
 	taskOptions: TaskOptionsConfig | null;
-	/** A mapping of tasks by ID to parameters required for running the task. */
+	/**
+	 * A map of identifiers to task objects. Tasks represent the work-unit
+	 * of a project, and can be ran in the action pipeline.
+	 */
 	tasks: Record<Id, TaskConfig>;
 }
 
@@ -714,23 +717,23 @@ export interface PartialInheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
 	/**
-	 * Extends one or many task configuration files. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many tasks configuration files.
+	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
 	/**
-	 * A mapping of group IDs to a list of file paths, globs, and
+	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
 	fileGroups?: Record<Id, Input[]> | null;
 	/**
-	 * Task dependencies that'll automatically be injected into every
+	 * Task dependencies (`deps`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
 	implicitDeps?: PartialTaskDependency[] | null;
 	/**
-	 * Task inputs that'll automatically be injected into every
+	 * Task inputs (`inputs`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
 	implicitInputs?: Input[] | null;
@@ -739,6 +742,9 @@ export interface PartialInheritedTasksConfig {
 	 * @since 1.20.0
 	 */
 	taskOptions?: PartialTaskOptionsConfig | null;
-	/** A mapping of tasks by ID to parameters required for running the task. */
+	/**
+	 * A map of identifiers to task objects. Tasks represent the work-unit
+	 * of a project, and can be ran in the action pipeline.
+	 */
 	tasks?: Record<Id, PartialTaskConfig> | null;
 }

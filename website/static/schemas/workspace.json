@@ -38,7 +38,7 @@
     },
     "experiments": {
       "title": "experiments",
-      "description": "Configures experiments across the entire moon workspace.",
+      "description": "Configures experiments across the entire moon workspace. @since 1.11.0",
       "allOf": [
         {
           "$ref": "#/definitions/ExperimentsConfig"
@@ -59,15 +59,14 @@
     },
     "extensions": {
       "title": "extensions",
-      "description": "Configures extensions that can be executed with moon ext.",
+      "description": "Configures and enables extension plugins. @since 1.20.0",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/ExtensionPluginConfig"
       },
       "propertyNames": {
         "$ref": "#/definitions/Id"
-      },
-      "markdownDescription": "Configures extensions that can be executed with `moon ext`."
+      }
     },
     "generator": {
       "title": "generator",
@@ -114,6 +113,15 @@
         }
       ]
     },
+    "remote": {
+      "title": "remote",
+      "description": "Configures aspects of the remote service.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RemoteConfig"
+        }
+      ]
+    },
     "runner": {
       "title": "runner",
       "deprecated": true,
@@ -129,18 +137,9 @@
       "default": true,
       "type": "boolean"
     },
-    "unstable_remote": {
-      "title": "unstable_remote",
-      "description": "Configures aspects of the remote service.",
-      "allOf": [
-        {
-          "$ref": "#/definitions/RemoteConfig"
-        }
-      ]
-    },
     "vcs": {
       "title": "vcs",
-      "description": "Configures the version control system (VCS).",
+      "description": "Configures the version control system (VCS). Also known as source code management (SCM).",
       "allOf": [
         {
           "$ref": "#/definitions/VcsConfig"
@@ -957,16 +956,16 @@
       "properties": {
         "globs": {
           "title": "globs",
-          "description": "A list of globs in which to locate project directories. Can be suffixed with moon.yml or moon.pkl to only find distinct projects.",
+          "description": "A list of glob patterns in which to locate project directories. Can be suffixed with a moon.* config file to only find distinct projects.",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "markdownDescription": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects."
+          "markdownDescription": "A list of glob patterns in which to locate project directories. Can be suffixed with a `moon.*` config file to only find distinct projects."
         },
         "sources": {
           "title": "sources",
-          "description": "A mapping of project IDs to relative file paths to each project directory.",
+          "description": "A map of project identifiers to relative file paths to each project directory.",
           "type": "object",
           "additionalProperties": {
             "type": "string"

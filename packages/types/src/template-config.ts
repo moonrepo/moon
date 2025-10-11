@@ -170,12 +170,12 @@ export interface TemplateConfig {
 	destination: string | null;
 	/** Extends one or many other templates. */
 	extends: Id | Id[];
-	/** Overrides the ID of the template, instead of using the folder name. */
+	/** Overrides the identifier of the template, instead of using the folder name. */
 	id: Id | null;
 	/** A human-readable title for the template. */
 	title: string;
 	/**
-	 * A mapping of variables that'll be interpolated within each template file.
+	 * A map of variables that'll be interpolated within each template file.
 	 * Variables can also be populated by passing command line arguments.
 	 */
 	variables: Record<string, TemplateVariable>;
@@ -317,12 +317,12 @@ export interface PartialTemplateConfig {
 	destination?: string | null;
 	/** Extends one or many other templates. */
 	extends?: Id | Id[] | null;
-	/** Overrides the ID of the template, instead of using the folder name. */
+	/** Overrides the identifier of the template, instead of using the folder name. */
 	id?: Id | null;
 	/** A human-readable title for the template. */
 	title?: string | null;
 	/**
-	 * A mapping of variables that'll be interpolated within each template file.
+	 * A map of variables that'll be interpolated within each template file.
 	 * Variables can also be populated by passing command line arguments.
 	 */
 	variables?: Record<string, PartialTemplateVariable> | null;

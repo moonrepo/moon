@@ -31,7 +31,7 @@
     },
     "plugins": {
       "title": "plugins",
-      "description": "Configures toolchains by unique ID.",
+      "description": "Configures and integrates toolchains into the system using a unique identifier.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/ToolchainPluginConfig"
@@ -155,19 +155,19 @@
         },
         "versionFromPrototools": {
           "title": "versionFromPrototools",
-          "description": "Inherit the version from the root .prototools. When true, matches using the same ID, otherwise a string can be provided for a custom ID.",
+          "description": "Inherit the version from the root .prototools. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier.",
           "allOf": [
             {
               "$ref": "#/definitions/ToolchainPluginVersionFrom"
             }
           ],
-          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same ID, otherwise a string can be provided for a custom ID."
+          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
       "additionalProperties": false
     },
     "ToolchainPluginVersionFrom": {
-      "description": "Strategy in which to inherit a version from .prototools.",
+      "description": "The strategy in which to inherit a version from .prototools.",
       "anyOf": [
         {
           "type": "boolean"
@@ -176,7 +176,7 @@
           "type": "string"
         }
       ],
-      "markdownDescription": "Strategy in which to inherit a version from `.prototools`."
+      "markdownDescription": "The strategy in which to inherit a version from `.prototools`."
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

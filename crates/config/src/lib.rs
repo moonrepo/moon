@@ -6,6 +6,8 @@ mod config_finder;
 #[cfg(feature = "loader")]
 mod config_loader;
 mod inherited_tasks_config;
+#[cfg(feature = "loader")]
+mod inherited_tasks_manager;
 mod macros;
 pub mod patterns;
 mod project;
@@ -27,6 +29,8 @@ pub use config_finder::*;
 #[cfg(feature = "loader")]
 pub use config_loader::*;
 pub use inherited_tasks_config::*;
+#[cfg(feature = "loader")]
+pub use inherited_tasks_manager::*;
 pub use project::*;
 pub use project_config::*;
 pub use schematic;

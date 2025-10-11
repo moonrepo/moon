@@ -258,11 +258,11 @@ export interface PipelineConfig {
 /** Configures projects in the workspace, using both globs and explicit source paths. */
 export interface WorkspaceProjectsConfig {
 	/**
-	 * A list of globs in which to locate project directories.
-	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
+	 * A list of glob patterns in which to locate project directories.
+	 * Can be suffixed with a `moon.*` config file to only find distinct projects.
 	 */
 	globs: string[];
-	/** A mapping of project IDs to relative file paths to each project directory. */
+	/** A map of project identifiers to relative file paths to each project directory. */
 	sources: Record<Id, string>;
 }
 
@@ -521,15 +521,21 @@ export interface WorkspaceConfig {
 	 * @since 1.27.0
 	 */
 	docker: DockerConfig;
-	/** Configures experiments across the entire moon workspace. */
+	/**
+	 * Configures experiments across the entire moon workspace.
+	 * @since 1.11.0
+	 */
 	experiments: ExperimentsConfig;
 	/**
-	 * Extends one or many workspace configuration file. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many workspace configuration file.
+	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
 	extends: ExtendsFrom | null;
-	/** Configures extensions that can be executed with `moon ext`. */
+	/**
+	 * Configures and enables extension plugins.
+	 * @since 1.20.0
+	 */
 	extensions: Record<Id, ExtensionPluginConfig>;
 	/** Configures the generator for scaffolding from templates. */
 	generator: GeneratorConfig;
@@ -538,8 +544,6 @@ export interface WorkspaceConfig {
 	/** Configures how and where notifications are sent. */
 	notifier: NotifierConfig;
 	/** Configures aspects of the action pipeline. */
-	runner?: PipelineConfig;
-	/** Configures aspects of the action pipeline. */
 	pipeline: PipelineConfig;
 	/**
 	 * Configures all projects within the workspace to create a project graph.
@@ -547,15 +551,19 @@ export interface WorkspaceConfig {
 	 * or both values.
 	 */
 	projects: WorkspaceProjects;
+	/** Configures aspects of the remote service. */
+	remote: RemoteConfig;
 	/**
 	 * Collects anonymous usage information, and checks for new moon versions.
 	 *
 	 * @default true
+	 * @envvar MOON_TELEMETRY
 	 */
 	telemetry?: boolean;
-	/** Configures aspects of the remote service. */
-	unstable_remote: RemoteConfig;
-	/** Configures the version control system (VCS). */
+	/**
+	 * Configures the version control system (VCS). Also known as
+	 * source code management (SCM).
+	 */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
 	versionConstraint: string | null;
@@ -799,11 +807,11 @@ export interface PartialPipelineConfig {
 /** Configures projects in the workspace, using both globs and explicit source paths. */
 export interface PartialWorkspaceProjectsConfig {
 	/**
-	 * A list of globs in which to locate project directories.
-	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
+	 * A list of glob patterns in which to locate project directories.
+	 * Can be suffixed with a `moon.*` config file to only find distinct projects.
 	 */
 	globs?: string[] | null;
-	/** A mapping of project IDs to relative file paths to each project directory. */
+	/** A map of project identifiers to relative file paths to each project directory. */
 	sources?: Record<Id, string> | null;
 }
 
@@ -1033,15 +1041,21 @@ export interface PartialWorkspaceConfig {
 	 * @since 1.27.0
 	 */
 	docker?: PartialDockerConfig | null;
-	/** Configures experiments across the entire moon workspace. */
+	/**
+	 * Configures experiments across the entire moon workspace.
+	 * @since 1.11.0
+	 */
 	experiments?: PartialExperimentsConfig | null;
 	/**
-	 * Extends one or many workspace configuration file. Supports a relative
-	 * file path or a secure URL.
+	 * Extends one or many workspace configuration file.
+	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/** Configures extensions that can be executed with `moon ext`. */
+	/**
+	 * Configures and enables extension plugins.
+	 * @since 1.20.0
+	 */
 	extensions?: Record<Id, PartialExtensionPluginConfig> | null;
 	/** Configures the generator for scaffolding from templates. */
 	generator?: PartialGeneratorConfig | null;
@@ -1050,8 +1064,6 @@ export interface PartialWorkspaceConfig {
 	/** Configures how and where notifications are sent. */
 	notifier?: PartialNotifierConfig | null;
 	/** Configures aspects of the action pipeline. */
-	runner?: PartialPipelineConfig | null;
-	/** Configures aspects of the action pipeline. */
 	pipeline?: PartialPipelineConfig | null;
 	/**
 	 * Configures all projects within the workspace to create a project graph.
@@ -1059,15 +1071,19 @@ export interface PartialWorkspaceConfig {
 	 * or both values.
 	 */
 	projects?: PartialWorkspaceProjects | null;
+	/** Configures aspects of the remote service. */
+	remote?: PartialRemoteConfig | null;
 	/**
 	 * Collects anonymous usage information, and checks for new moon versions.
 	 *
 	 * @default true
+	 * @envvar MOON_TELEMETRY
 	 */
 	telemetry?: boolean | null;
-	/** Configures aspects of the remote service. */
-	unstable_remote?: PartialRemoteConfig | null;
-	/** Configures the version control system (VCS). */
+	/**
+	 * Configures the version control system (VCS). Also known as
+	 * source code management (SCM).
+	 */
 	vcs?: PartialVcsConfig | null;
 	/** Requires a specific version of the `moon` binary. */
 	versionConstraint?: string | null;

@@ -36,8 +36,8 @@ export interface ToolchainPluginConfig {
 	version: UnresolvedVersionSpec | null;
 	/**
 	 * Inherit the version from the root `.prototools`.
-	 * When true, matches using the same ID, otherwise a
-	 * string can be provided for a custom ID.
+	 * When true, matches using the same identifier, otherwise a
+	 * string can be provided for a custom identifier.
 	 */
 	versionFromPrototools: ToolchainPluginVersionFrom;
 }
@@ -68,7 +68,10 @@ export interface ToolchainConfig {
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
-	/** Configures toolchains by unique ID. */
+	/**
+	 * Configures and integrates toolchains into the system using
+	 * a unique identifier.
+	 */
 	plugins: Record<Id, ToolchainPluginConfig>;
 	/** Configures how moon integrates with proto. */
 	proto: ProtoConfig;
@@ -100,8 +103,8 @@ export interface PartialToolchainPluginConfig {
 	version?: UnresolvedVersionSpec | null;
 	/**
 	 * Inherit the version from the root `.prototools`.
-	 * When true, matches using the same ID, otherwise a
-	 * string can be provided for a custom ID.
+	 * When true, matches using the same identifier, otherwise a
+	 * string can be provided for a custom identifier.
 	 */
 	versionFromPrototools?: ToolchainPluginVersionFrom | null;
 }
@@ -130,7 +133,10 @@ export interface PartialToolchainConfig {
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
-	/** Configures toolchains by unique ID. */
+	/**
+	 * Configures and integrates toolchains into the system using
+	 * a unique identifier.
+	 */
 	plugins?: Record<Id, PartialToolchainPluginConfig> | null;
 	/** Configures how moon integrates with proto. */
 	proto?: PartialProtoConfig | null;

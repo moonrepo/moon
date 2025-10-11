@@ -27,7 +27,7 @@
     },
     "env": {
       "title": "env",
-      "description": "A mapping of environment variables that will be set for all tasks within the project.",
+      "description": "A map of environment variables that will be inherited by all tasks within the project.",
       "type": "object",
       "additionalProperties": {
         "type": "string"
@@ -38,7 +38,7 @@
     },
     "fileGroups": {
       "title": "fileGroups",
-      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
+      "description": "A map of group identifiers to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -75,7 +75,7 @@
     },
     "layer": {
       "title": "layer",
-      "description": "The layer within the project stack, for categorizing.",
+      "description": "The layer within the technology stack, for categorizing.",
       "default": "unknown",
       "allOf": [
         {
@@ -124,14 +124,15 @@
     },
     "tasks": {
       "title": "tasks",
-      "description": "A mapping of tasks by ID to parameters required for running the task.",
+      "description": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       },
       "propertyNames": {
         "$ref": "#/definitions/Id"
-      }
+      },
+      "markdownDescription": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline."
     },
     "toolchain": {
       "title": "toolchain",
@@ -412,7 +413,7 @@
       ]
     },
     "LayerType": {
-      "description": "The layer within the project stack, for categorizing.",
+      "description": "The layer within the technology stack, for categorizing.",
       "type": "string",
       "enum": [
         "application",
@@ -721,7 +722,7 @@
       "properties": {
         "channel": {
           "title": "channel",
-          "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a #.",
+          "description": "The Slack, Discord, IRC, etc, channel to discuss the project. Must start with a #.",
           "anyOf": [
             {
               "type": "string"
@@ -730,12 +731,19 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`."
+          "markdownDescription": "The Slack, Discord, IRC, etc, channel to discuss the project. Must start with a `#`."
         },
         "description": {
           "title": "description",
-          "description": "A description on what the project does, and why it exists.",
-          "type": "string"
+          "description": "A description on what the project does and why it exists.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "maintainers": {
           "title": "maintainers",
@@ -763,19 +771,6 @@
             "type": "string"
           }
         },
-        "name": {
-          "title": "name",
-          "description": "A human-readable name of the project.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "A human-readable name of the project."
-        },
         "owner": {
           "title": "owner",
           "description": "The owner of the project. Can be an individual, team, or organization. The format is unspecified.",
@@ -787,12 +782,25 @@
               "type": "null"
             }
           ]
+        },
+        "title": {
+          "title": "title",
+          "description": "A human-readable title of the project.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A human-readable title of the project."
         }
       },
       "additionalProperties": false
     },
     "ProjectToolchainConfig": {
-      "description": "Overrides workspace-level toolchain settings, scoped to this project.",
+      "description": "Overrides top-level toolchain settings, scoped to this project.",
       "type": "object",
       "properties": {
         "default": {
@@ -853,7 +861,7 @@
         }
       },
       "additionalProperties": false,
-      "markdownDescription": "Overrides workspace-level toolchain settings, scoped to this project."
+      "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
     "ProjectToolchainEntry": {
       "description": "Variants a project-level toolchain can be configured.",
@@ -1805,19 +1813,19 @@
         },
         "versionFromPrototools": {
           "title": "versionFromPrototools",
-          "description": "Inherit the version from the root .prototools. When true, matches using the same ID, otherwise a string can be provided for a custom ID.",
+          "description": "Inherit the version from the root .prototools. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier.",
           "allOf": [
             {
               "$ref": "#/definitions/ToolchainPluginVersionFrom"
             }
           ],
-          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same ID, otherwise a string can be provided for a custom ID."
+          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
       "additionalProperties": false
     },
     "ToolchainPluginVersionFrom": {
-      "description": "Strategy in which to inherit a version from .prototools.",
+      "description": "The strategy in which to inherit a version from .prototools.",
       "anyOf": [
         {
           "type": "boolean"
@@ -1826,7 +1834,7 @@
           "type": "string"
         }
       ],
-      "markdownDescription": "Strategy in which to inherit a version from `.prototools`."
+      "markdownDescription": "The strategy in which to inherit a version from `.prototools`."
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

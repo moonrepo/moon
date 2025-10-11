@@ -85,15 +85,7 @@ fn does_task_match_criteria(task: &Task, query: &Criteria) -> miette::Result<boo
                         }
                     }
                     Field::Task(ids) => condition.matches(ids, &task.id),
-                    Field::TaskToolchain(ids) => {
-                        let toolchains = task
-                            .toolchains
-                            .iter()
-                            .map(|t| t.as_str())
-                            .collect::<Vec<_>>();
-
-                        condition.matches_list(ids, &toolchains)
-                    }
+                    Field::TaskToolchain(ids) => condition.matches_list(ids, &task.toolchains),
                     Field::TaskType(types) => condition.matches_enum(types, &task.type_of),
                     _ => Ok(false),
                 };

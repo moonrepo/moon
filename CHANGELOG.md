@@ -21,6 +21,7 @@
     - Removed the `platform` setting. Use `toolchain.default` instead.
     - Removed the `project.metadata` setting. All custom metadata fields can now be defined at the
       root of the `project` object.
+    - Removed the `tasks.*.local` setting. Use `tasks.*.preset` instead.
     - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `moon.*`, `.moon/tasks.*`, `.moon/tasks/**/*`
@@ -60,6 +61,9 @@
 
 #### 🚀 Updates
 
+- **Configuration**
+  - `moon.yml`
+    - Added a `tasks.*.options.mergeToolchains` setting to control how toolchains are inherited.
 - **Projects**
   - Updated projects to support multiple aliases (one from each applicable toolchain).
     - Added a `$projectAliases` token, which is a comma-separated list of all aliases.

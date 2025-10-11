@@ -498,7 +498,7 @@ mod task_manager {
         TaskConfig {
             command: TaskArgs::String(command.replace("tag-", "")),
             global_inputs,
-            toolchain: OneOrMany::Many(toolchains),
+            toolchains: Some(OneOrMany::Many(toolchains)),
             ..TaskConfig::default()
         }
     }

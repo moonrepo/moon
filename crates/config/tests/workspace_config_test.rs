@@ -851,7 +851,6 @@ extensions:
         use starbase_sandbox::locate_fixture;
         use std::str::FromStr;
 
-        #[allow(deprecated)]
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {

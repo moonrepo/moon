@@ -1,5 +1,3 @@
-#![allow(deprecated)] // For local
-
 mod utils;
 
 use moon_common::Id;

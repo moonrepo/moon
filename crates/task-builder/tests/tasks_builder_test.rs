@@ -512,7 +512,7 @@ tasks:
 
             assert_eq!(
                 task.toolchains,
-                vec![Id::raw("javascript"), Id::raw("node"), Id::raw("npm")]
+                vec![Id::raw("npm"), Id::raw("node"), Id::raw("javascript")]
             );
 
             let task = tasks.get("rust-via-cmd").unwrap();
@@ -702,13 +702,6 @@ tasks:
             let tasks = container.build_tasks("options").await;
 
             let task = tasks.get("interactive").unwrap();
-
-            // assert!(!task.options.cache);
-            // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
-            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
-
-            let task = tasks.get("interactive-local").unwrap();
 
             // assert!(!task.options.cache);
             // assert!(!task.options.persistent);
@@ -1079,6 +1072,10 @@ tasks:
                     Output::File(stub_file_output("local")),
                 ]
             );
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["global", "local"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1092,8 +1089,6 @@ tasks:
 
             assert_eq!(task.args, vec!["a", "b", "c", "x", "y", "z"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![
@@ -1101,8 +1096,6 @@ tasks:
                     TaskDependencyConfig::new(Target::parse("local:build").unwrap()),
                 ]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1112,8 +1105,6 @@ tasks:
                     ("LOCAL".into(), "true".into()),
                 ])
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.inputs,
@@ -1125,8 +1116,6 @@ tasks:
                 ]
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.outputs,
                 vec![
@@ -1134,6 +1123,8 @@ tasks:
                     Output::File(stub_file_output("local")),
                 ]
             );
+
+            assert_eq!(task.toolchains, vec!["global", "local"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1189,6 +1180,10 @@ tasks:
                     Output::File(stub_file_output("global")),
                 ]
             );
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1202,8 +1197,6 @@ tasks:
 
             assert_eq!(task.args, vec!["x", "y", "z", "a", "b", "c"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![
@@ -1211,8 +1204,6 @@ tasks:
                     TaskDependencyConfig::new(Target::parse("global:build").unwrap()),
                 ]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1222,8 +1213,6 @@ tasks:
                     ("LOCAL".into(), "true".into()),
                 ])
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.inputs,
@@ -1235,8 +1224,6 @@ tasks:
                 ]
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.outputs,
                 vec![
@@ -1244,6 +1231,8 @@ tasks:
                     Output::File(stub_file_output("global")),
                 ]
             );
+
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1290,6 +1279,10 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("local"))]);
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["local"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1303,16 +1296,12 @@ tasks:
 
             assert_eq!(task.args, vec!["x", "y", "z"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig::new(
                     Target::parse("local:build").unwrap()
                 )]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1321,8 +1310,6 @@ tasks:
                     ("LOCAL".into(), "true".into()),
                 ])
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.inputs,
@@ -1333,9 +1320,9 @@ tasks:
                 ]
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("local"))]);
+
+            assert_eq!(task.toolchains, vec!["local"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1366,6 +1353,11 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert!(task.outputs.is_empty());
+
+            let task = tasks.get("toolchains").unwrap();
+
+            // fallback
+            assert_eq!(task.toolchains, ["system"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1378,24 +1370,17 @@ tasks:
             let task = tasks.get("all").unwrap();
 
             assert!(task.args.is_empty());
-
-            let task = tasks.get("all").unwrap();
-
             assert!(task.deps.is_empty());
-
-            let task = tasks.get("all").unwrap();
-
             assert!(task.env.is_empty());
-
-            let task = tasks.get("all").unwrap();
 
             // inherited
             assert_eq!(task.inputs.len(), 2);
             assert!(task.state.empty_inputs);
 
-            let task = tasks.get("all").unwrap();
-
             assert!(task.outputs.is_empty());
+
+            // fallback
+            assert_eq!(task.toolchains, ["system"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1444,6 +1429,10 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1458,16 +1447,12 @@ tasks:
             assert_eq!(task.command, "noop");
             assert_eq!(task.args, vec!["a", "b", "c"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig::new(
                     Target::parse("global:build").unwrap()
                 )]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1476,8 +1461,6 @@ tasks:
                     ("KEY2".into(), "value2".into()),
                 ])
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.inputs,
@@ -1489,9 +1472,9 @@ tasks:
             );
             assert!(!task.state.empty_inputs);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            assert_eq!(task.args, vec!["a", "b", "c"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1538,6 +1521,10 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1551,16 +1538,12 @@ tasks:
 
             assert_eq!(task.args, vec!["a", "b", "c"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig::new(
                     Target::parse("global:build").unwrap()
                 )]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1569,8 +1552,6 @@ tasks:
                     ("KEY2".into(), "value2".into()),
                 ])
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.inputs,
@@ -1581,9 +1562,9 @@ tasks:
                 ]
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            assert_eq!(task.toolchains, vec!["global"]);
         }
     }
 
@@ -1942,19 +1923,6 @@ tasks:
             assert!(task.options.run_in_ci.is_enabled());
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn handles_local() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("extends").await;
-            let task = tasks.get("extend-local").unwrap();
-
-            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
-            assert!(task.options.run_in_ci.is_enabled());
-            assert!(!task.options.persistent);
         }
 
         #[tokio::test(flavor = "multi_thread")]

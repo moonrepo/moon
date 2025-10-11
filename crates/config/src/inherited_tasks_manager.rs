@@ -168,8 +168,8 @@ impl InheritedTasksManager {
                                 .push(Input::parse(format!("/{source_path}"))?);
 
                             // Automatically set the toolchain
-                            if task.toolchain.is_none() {
-                                task.toolchain = Some(OneOrMany::Many(toolchains.to_owned()));
+                            if task.toolchains.is_none() {
+                                task.toolchains = Some(OneOrMany::Many(toolchains.to_owned()));
                             }
                         }
 

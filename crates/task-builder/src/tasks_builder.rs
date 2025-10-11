@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
+use indexmap::IndexSet;
 use moon_common::{
     Id, color,
     path::{WorkspaceRelativePath, is_root_level_source},
@@ -313,6 +314,7 @@ impl<'proj> TasksBuilder<'proj> {
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
         let mut has_configured_inputs = false;
+        let mut has_set_type = false;
 
         for (index, link) in chain.iter().enumerate() {
             let config = link.config;
@@ -381,12 +383,23 @@ impl<'proj> TasksBuilder<'proj> {
                 );
             }
 
-            if !config.toolchain.is_empty() {
-                task.toolchains = config.toolchain.to_owned_list();
+            if let Some(toolchains) = &config.toolchains {
+                task.toolchains = self.merge_vec(
+                    task.toolchains,
+                    toolchains.to_owned_list(),
+                    task.options.merge_toolchains,
+                    index,
+                    true,
+                );
             }
 
             if config.description.is_some() {
                 task.description = config.description.clone();
+            }
+
+            if let Some(ty) = config.type_of {
+                task.type_of = ty;
+                has_set_type = true;
             }
         }
 
@@ -468,14 +481,17 @@ impl<'proj> TasksBuilder<'proj> {
             );
         }
 
-        task.type_of = if !task.outputs.is_empty() {
-            TaskType::Build
-        } else if preset.is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
-        {
-            TaskType::Run
-        } else {
-            TaskType::Test
-        };
+        if !has_set_type {
+            task.type_of = if !task.outputs.is_empty() {
+                TaskType::Build
+            } else if preset
+                .is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
+            {
+                TaskType::Run
+            } else {
+                TaskType::Test
+            };
+        }
 
         if task.options.shell.is_none() {
             // Windows requires a shell for path resolution to work correctly
@@ -595,6 +611,7 @@ impl<'proj> TasksBuilder<'proj> {
                 options.merge_env = *merge;
                 options.merge_inputs = *merge;
                 options.merge_outputs = *merge;
+                options.merge_toolchains = *merge;
             }
 
             if let Some(merge_args) = &config.merge_args {
@@ -721,7 +738,7 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {
-        let mut toolchains = FxHashSet::default();
+        let mut toolchains = IndexSet::<Id>::default();
 
         // Implicitly detected/inherited toolchains
         if task.toolchains.is_empty() {
@@ -738,15 +755,11 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         // Resolve them to valid identifiers
-        let mut toolchains = filter_and_resolve_toolchain_ids(
+        task.toolchains = filter_and_resolve_toolchain_ids(
             self.context.enabled_toolchains,
             toolchains.into_iter().collect(),
             true,
         );
-
-        toolchains.sort();
-
-        task.toolchains = toolchains;
 
         Ok(())
     }

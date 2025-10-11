@@ -338,7 +338,6 @@ impl Task {
 }
 
 impl Default for Task {
-    #[allow(deprecated)]
     fn default() -> Self {
         Self {
             args: vec![],

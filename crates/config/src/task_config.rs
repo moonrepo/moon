@@ -243,8 +243,8 @@ config_struct!(
 
         /// A toolchain, or list of toolchains, in which the task will inherit
         /// functionality from.
-        #[setting(alias = "toolchains")]
-        pub toolchain: OneOrMany<Id>,
+        #[setting(alias = "toolchain")]
+        pub toolchains: Option<OneOrMany<Id>>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined based on configured outputs.

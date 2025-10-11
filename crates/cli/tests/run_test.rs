@@ -567,16 +567,14 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")
                 .arg("runFromProject")
-                .arg("localOnly")
-                // Allows local to run
-                .env_remove("CI")
+                .arg("runFromWorkspace")
                 .current_dir(sandbox.path().join("base"));
         });
 
         let output = assert.output();
 
         assert!(predicate::str::contains("base:runFromProject").eval(&output));
-        assert!(predicate::str::contains("base:localOnly").eval(&output));
+        assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
         assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
     }
 

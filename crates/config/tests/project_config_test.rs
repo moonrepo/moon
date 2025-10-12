@@ -552,11 +552,11 @@ toolchain:
                 |path| load_config_from_root(path, "."),
             );
 
-            assert!(config.toolchain.plugins.contains_key("node"));
-            assert!(config.toolchain.plugins.contains_key("typescript"));
+            assert!(config.toolchains.plugins.contains_key("node"));
+            assert!(config.toolchains.plugins.contains_key("typescript"));
 
             if let ProjectToolchainEntry::Config(node) =
-                config.toolchain.plugins.get("node").unwrap()
+                config.toolchains.plugins.get("node").unwrap()
             {
                 assert_eq!(
                     node.version,
@@ -565,7 +565,7 @@ toolchain:
             }
 
             if let ProjectToolchainEntry::Config(ts) =
-                config.toolchain.plugins.get("typescript").unwrap()
+                config.toolchains.plugins.get("typescript").unwrap()
             {
                 assert_eq!(
                     ts.config.get("routeOutDirToCache").unwrap(),
@@ -586,7 +586,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Disabled
             );
         }
@@ -603,7 +603,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Enabled(false)
             );
         }
@@ -620,7 +620,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Enabled(true)
             );
         }
@@ -639,7 +639,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Config(ToolchainPluginConfig {
                     version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                     config: BTreeMap::from_iter([("custom".into(), serde_json::Value::Bool(true))]),
@@ -752,7 +752,7 @@ workspace:
                     stack: StackType::Frontend,
                     tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
                     tasks: BTreeMap::default(),
-                    toolchain: ProjectToolchainConfig {
+                    toolchains: ProjectToolchainsConfig {
                         plugins: FxHashMap::from_iter([
                             (
                                 Id::raw("deno"),

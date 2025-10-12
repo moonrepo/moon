@@ -157,7 +157,7 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     pub fn get_project_spec(&self, toolchain_id: &Id, project: &Project) -> Option<ToolchainSpec> {
-        if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
+        if let Some(config) = project.config.toolchains.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
             }

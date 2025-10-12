@@ -158,7 +158,7 @@ config_struct!(
 
         /// Overrides top-level toolchain settings, scoped to this project.
         #[setting(nested)]
-        pub toolchain: ProjectToolchainConfig,
+        pub toolchains: ProjectToolchainsConfig,
 
         /// Overrides top-level workspace settings, scoped to this project.
         #[setting(nested)]

@@ -40,7 +40,7 @@ config_struct!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Config)]
     #[config(allow_unknown_fields)]
-    pub struct ProjectToolchainConfig {
+    pub struct ProjectToolchainsConfig {
         /// A single toolchain, or list of toolchains, to inherit for
         /// this project and all of its tasks.
         /// @since 1.31.0
@@ -53,7 +53,7 @@ config_struct!(
     }
 );
 
-impl ProjectToolchainConfig {
+impl ProjectToolchainsConfig {
     pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ProjectToolchainEntry> {
         let (stable_id, unstable_id) = Id::stable_and_unstable(id);
 

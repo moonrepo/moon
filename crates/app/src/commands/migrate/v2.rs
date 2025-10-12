@@ -40,7 +40,7 @@ pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
     }
 
     if confirmed || skip_prompts {
-        migrate_workspace_config(&session)?;
+        migrate_workspace_config_file(&session)?;
         migrate_toolchain_config_file(&session)?;
         migrate_tasks_config_files(&session)?;
     }
@@ -69,42 +69,81 @@ fn load_config_file(config_path: &Path) -> miette::Result<YamlValue> {
     Ok(data)
 }
 
-fn rename_setting(parent: &mut YamlMapping, old: &str, new: &str) {
-    if let Some(value) = parent.get(old) {
-        parent.insert(YamlValue::String(new.to_owned()), value.to_owned());
-    }
+fn change_setting(
+    parent: &mut YamlMapping,
+    key: &str,
+    create_missing: bool,
+    mut op: impl FnMut(&mut YamlMapping, &str),
+) {
+    let mut node = parent;
+    let key_parts = key.split('.').collect::<Vec<_>>();
 
-    parent.remove_entry(old);
+    for (index, key_part) in key_parts.iter().enumerate() {
+        if index == key_parts.len() - 1 {
+            op(node, key_part);
+        } else if !node.contains_key(key_part) && !create_missing {
+            return;
+        } else {
+            let entry = node
+                .entry(YamlValue::String(key_part.to_string()))
+                .or_insert_with(|| YamlValue::Mapping(Default::default()));
+
+            if let Some(next_node) = entry.as_mapping_mut() {
+                node = next_node;
+            } else {
+                return;
+            }
+        }
+    }
+}
+
+fn remove_setting(parent: &mut YamlMapping, key: &str) {
+    change_setting(parent, key, false, |node, key_part| {
+        node.remove(key_part);
+    });
+}
+
+fn rename_setting(parent: &mut YamlMapping, old_key: &str, new_key: &str) {
+    let mut value = None;
+
+    change_setting(parent, old_key, false, |node, key_part| {
+        value = node.remove(key_part);
+    });
+
+    if let Some(value) = value {
+        change_setting(parent, new_key, true, |node, key_part| {
+            node.insert(YamlValue::String(key_part.into()), value.clone());
+        });
+    }
 }
 
 fn upsert_root_setting(root: &mut YamlMapping, root_key: &str, key: &str, value: &YamlValue) {
-    root.entry(YamlValue::String(root_key.into()))
-        .or_insert(YamlValue::Mapping(Default::default()))
-        .as_mapping_mut()
-        .expect("must be an object")
-        .insert(YamlValue::String(key.to_owned()), value.to_owned());
+    change_setting(
+        root,
+        format!("{root_key}.{key}").as_str(),
+        true,
+        |node, key_part| {
+            node.insert(YamlValue::String(key_part.to_owned()), value.to_owned());
+        },
+    );
 }
 
 fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
-    let fields = value.as_mapping_mut().expect("task must be an object");
+    let task = value.as_mapping_mut().expect("task must be an object");
 
-    rename_setting(fields, "platform", "toolchain");
+    rename_setting(task, "platform", "toolchains");
 }
 
 fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
-    if session
-        .workspace_root
-        .join(CONFIG_DIRNAME)
-        .join("tasks.pkl")
-        .exists()
-    {
-        warn_pkl_config_files();
-    }
-
     for config_path in glob::walk_files(
         session.workspace_root.join(CONFIG_DIRNAME),
-        ["tasks.yml", "tasks/**/*.yml"],
+        ["tasks.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
     )? {
+        if config_path.extension().is_some_and(|ext| ext == "pkl") {
+            warn_pkl_config_files();
+            continue;
+        }
+
         let mut config = load_config_file(&config_path)?;
 
         if let Some(root) = config.as_mapping_mut() {
@@ -192,7 +231,7 @@ fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
             // Move to own toolchain
             "bun" | "npm" | "pnpm" | "yarn" => {
                 root.entry(YamlValue::String(key.into()))
-                    .or_insert(YamlValue::Mapping(Default::default()))
+                    .or_insert_with(|| YamlValue::Mapping(Default::default()))
                     .as_mapping_mut()
                     .expect("must be an object")
                     .extend(value.as_mapping().unwrap().to_owned());
@@ -269,7 +308,7 @@ fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
     Ok(())
 }
 
-fn migrate_workspace_config(session: &MoonSession) -> miette::Result<()> {
+fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
     if session
         .workspace_root
         .join(CONFIG_DIRNAME)
@@ -291,23 +330,54 @@ fn migrate_workspace_config(session: &MoonSession) -> miette::Result<()> {
     let mut config: YamlValue = load_config_file(&config_path)?;
 
     if let Some(root) = config.as_mapping_mut() {
-        for (key, value) in root {
-            match key.as_str().unwrap_or_default() {
-                "constraints" => {
-                    rename_setting(
-                        value
-                            .as_mapping_mut()
-                            .expect("`constraints` must be an object"),
-                        "enforceProjectTypeRelationships",
-                        "enforceLayerRelationships",
-                    );
-                }
-                _ => {}
-            };
-        }
+        rename_setting(
+            root,
+            "constraints.enforceProjectTypeRelationships",
+            "constraints.enforceLayerRelationships",
+        );
     }
 
     yaml::write_file_with_config(&config_path, &config)?;
+
+    Ok(())
+}
+
+fn migrate_project_config_files(session: &MoonSession) -> miette::Result<()> {
+    for config_path in glob::walk_files(&session.workspace_root, ["**/moon.{pkl,yml}"])? {
+        if config_path.extension().is_some_and(|ext| ext == "pkl") {
+            warn_pkl_config_files();
+            continue;
+        }
+
+        let mut config = load_config_file(&config_path)?;
+
+        if let Some(root) = config.as_mapping_mut() {
+            rename_setting(root, "platform", "toolchain.default");
+            rename_setting(root, "type", "layer");
+
+            if let Some(toolchains) = root
+                .get_mut("toolchain")
+                .and_then(|toolchains| toolchains.as_mapping_mut())
+            {
+                for (_, toolchain) in toolchains {
+                    if let Some(map) = toolchain.as_mapping_mut() {
+                        remove_setting(map, "disabled");
+                    }
+                }
+            }
+
+            if let Some(tasks) = root
+                .get_mut("tasks")
+                .and_then(|tasks| tasks.as_mapping_mut())
+            {
+                for (id, task) in tasks {
+                    migrate_task_setting(id, task);
+                }
+            }
+        }
+
+        yaml::write_file_with_config(&config_path, &config)?;
+    }
 
     Ok(())
 }

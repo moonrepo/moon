@@ -334,7 +334,7 @@ config_struct!(
 
         /// Whether to run the task in CI or not, when executing `moon ci`,
         /// `moon check`, or `moon run`.
-        #[serde(rename = "runInCI")]
+        #[setting(rename = "runInCI")]
         pub run_in_ci: Option<TaskOptionRunInCI>,
 
         /// Runs the task from the workspace root, instead of the project root.

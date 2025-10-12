@@ -59,13 +59,6 @@ impl ToolchainPluginConfig {
     }
 }
 
-// fn default_plugins<C>(_ctx: &C) -> DefaultValueResult<FxHashMap<Id, ToolchainPluginConfig>> {
-//     Ok(Some(FxHashMap::from_iter([(
-//         Id::raw("system"),
-//         ToolchainPluginConfig::default(),
-//     )])))
-// }
-
 config_struct!(
     /// Configures all toolchains.
     /// Docs: https://moonrepo.dev/docs/config/toolchain

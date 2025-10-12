@@ -22,10 +22,9 @@
     - Removed the `platform` setting. Use `toolchains.default` instead.
     - Removed the `project.metadata` setting. All custom metadata fields can now be defined at the
       root of the `project` object.
-    - Removed the `tasks.*.local` setting. Use `tasks.*.preset` instead.
-    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchains` instead.
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `moon.*`, `.moon/tasks.*`, `.moon/tasks/**/*`
+    - Removed the `tasks.*.local` setting. Use `tasks.*.preset` instead.
     - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchains` instead.
   - `.moon/toolchain.*`
     - Removed the `node.addEnginesConstraint` setting.

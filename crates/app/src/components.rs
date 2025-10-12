@@ -9,6 +9,7 @@ use moon_action_pipeline::ActionPipeline;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_console::{Console, ConsoleError};
 use moon_workspace::WorkspaceBuilderContext;
+use std::ops::Deref;
 use std::sync::Arc;
 
 pub async fn run_action_pipeline(
@@ -69,7 +70,10 @@ pub async fn create_workspace_graph_context(
     Ok(context)
 }
 
-pub fn create_progress_loader(console: Arc<Console>, message: impl AsRef<str>) -> ProgressInstance {
+pub async fn create_progress_loader(
+    console: Arc<Console>,
+    message: impl AsRef<str>,
+) -> ProgressInstance {
     let reporter = Arc::new(ProgressReporter::default());
     let reporter_clone = OwnedOrShared::Shared(reporter.clone());
     let message = message.as_ref().to_owned();
@@ -86,6 +90,9 @@ pub fn create_progress_loader(console: Arc<Console>, message: impl AsRef<str>) -
             .await
     });
 
+    // Wait a bit for the component to be rendered
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
     ProgressInstance { handle, reporter }
 }
 
@@ -100,5 +107,13 @@ impl ProgressInstance {
         self.handle.await.into_diagnostic()??;
 
         Ok(())
+    }
+}
+
+impl Deref for ProgressInstance {
+    type Target = ProgressReporter;
+
+    fn deref(&self) -> &Self::Target {
+        &self.reporter
     }
 }

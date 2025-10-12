@@ -11,7 +11,8 @@ pub async fn teardown(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
         "Tearing down and uninstalling toolchains...",
-    );
+    )
+    .await;
 
     session
         .get_toolchain_registry()

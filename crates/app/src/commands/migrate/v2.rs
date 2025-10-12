@@ -43,6 +43,7 @@ pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
         migrate_workspace_config_file(&session)?;
         migrate_toolchain_config_file(&session)?;
         migrate_tasks_config_files(&session)?;
+        migrate_project_config_files(&session)?;
     }
 
     Ok(None)

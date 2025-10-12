@@ -31,12 +31,12 @@
   - `.moon/workspace.*`
     - Renamed the `codeowners.orderBy` variant "project-name" to "project-id".
     - Renamed the `codeowners.syncOnRun` setting to `codeowners.sync`.
+    - Renamed the `constraints.enforceProjectTypeRelationships` to
+      `constraints.enforceLayerRelationships`.
     - Renamed the `runner` setting to `pipeline`.
     - Renamed the `unstable_remote` setting to `remote`.
     - Renamed the `vcs.manager` setting to `vcs.client`.
     - Renamed the `vcs.syncHooks` setting to `vcs.sync`.
-    - Removed the `constraints.enforceProjectTypeRelationships` alias. Use
-      `constraints.enforceLayerRelationships` instead.
     - Removed the `hasher.batchSize` setting.
     - Removed the `pipeline.archivableTargets` setting.
 - **Projects**

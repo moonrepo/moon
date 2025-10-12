@@ -15,14 +15,15 @@
 - **Configuration**
   - Removed the `$projectType` token. Use `$projectLayer` instead.
   - Removed the `$taskPlatform` token. Use `$taskToolchain` instead.
-  - `moon.yml`
+  - `moon.*`
     - Removed the `type` alias. Use `layer` instead.
     - Removed the `platform` setting. Use `toolchain.default` instead.
-    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
-  - `.moon/toolchain.yml`
+  - `moon.*`, `.moon/tasks.*`, `.moon/tasks/**/*`
+    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
+  - `.moon/toolchain.*`
     - Removed the `node.addEnginesConstraint` setting.
-  - `.moon/workspace.yml`
+  - `.moon/workspace.*`
     - Removed the `constraints.enforceProjectTypeRelationships` alias. Use
       `enforceLayerRelationships` instead.
 - **Projects**

@@ -239,7 +239,7 @@ impl MoonSession {
     pub fn requires_workspace_configured(&self) -> bool {
         !matches!(
             self.cli.command,
-            Commands::Completions(_) | Commands::Init(_)
+            Commands::Completions(_) | Commands::Init(_) | Commands::Migrate { .. }
         )
     }
 

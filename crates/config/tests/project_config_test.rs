@@ -23,7 +23,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `deps`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `deps`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchains`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {
@@ -543,7 +543,7 @@ tasks:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
   node:
     version: '18.0.0'
   typescript:
@@ -579,7 +579,7 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example: null
 ",
                 |path| load_config_from_root(path, "."),
@@ -596,7 +596,7 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example: false
 ",
                 |path| load_config_from_root(path, "."),
@@ -613,7 +613,7 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example: true
 ",
                 |path| load_config_from_root(path, "."),
@@ -630,7 +630,7 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example:
         version: '1.2.3'
         custom: true

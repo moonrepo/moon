@@ -37,8 +37,12 @@
     - Renamed the `unstable_remote` setting to `remote`.
     - Renamed the `vcs.manager` setting to `vcs.client`.
     - Renamed the `vcs.syncHooks` setting to `vcs.sync`.
+    - Removed the `docker.scaffold.copyToolchainFiles` setting.
     - Removed the `hasher.batchSize` setting.
     - Removed the `pipeline.archivableTargets` setting.
+- **Docker**
+  - Renamed the `.moon/docker/workspace` directory to `.moon/docker/configs`, to better reflect its
+    purpose.
 - **Projects**
   - The primary `language` is now detected from toolchains, instead of being a hardcoded
     implementation. The result may now differ, as the first toolchain in the list will be used.

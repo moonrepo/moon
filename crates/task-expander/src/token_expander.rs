@@ -512,13 +512,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 result.value = match arg {
                     "channel" => metadata.and_then(|md| md.channel.clone()),
-                    "description" => metadata.and_then(|md| {
-                        if md.description.is_empty() {
-                            None
-                        } else {
-                            Some(md.description.clone())
-                        }
-                    }),
+                    "description" => metadata.and_then(|md| md.description.clone()),
                     "maintainers" => metadata.and_then(|md| {
                         if md.maintainers.is_empty() {
                             None
@@ -526,7 +520,7 @@ impl<'graph> TokenExpander<'graph> {
                             Some(md.maintainers.join(","))
                         }
                     }),
-                    "name" => metadata.and_then(|md| md.name.clone()),
+                    "name" | "title" => metadata.and_then(|md| md.title.clone()),
                     "owner" => metadata.and_then(|md| md.owner.clone()),
                     custom_field => metadata.and_then(|md| {
                         md.metadata.get(custom_field).map(|value| value.to_string())
@@ -591,7 +585,7 @@ impl<'graph> TokenExpander<'graph> {
             "projectAliases" => Cow::Owned(project.aliases.join(",")),
             "projectChannel" => get_metadata(|md| md.channel.as_deref()),
             "projectLayer" => Cow::Owned(project.layer.to_string()),
-            "projectName" => get_metadata(|md| md.name.as_deref()),
+            "projectName" | "projectTitle" => get_metadata(|md| md.title.as_deref()),
             "projectOwner" => get_metadata(|md| md.owner.as_deref()),
             "projectRoot" => Cow::Owned(self.stringify_path(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),

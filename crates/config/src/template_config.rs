@@ -269,14 +269,14 @@ config_struct!(
         /// Extends one or many other templates.
         pub extends: OneOrMany<Id>,
 
-        /// Overrides the ID of the template, instead of using the folder name.
+        /// Overrides the identifier of the template, instead of using the folder name.
         pub id: Option<Id>,
 
         /// A human-readable title for the template.
         #[setting(validate = validate::not_empty)]
         pub title: String,
 
-        /// A mapping of variables that'll be interpolated within each template file.
+        /// A map of variables that'll be interpolated within each template file.
         /// Variables can also be populated by passing command line arguments.
         #[setting(nested)]
         pub variables: FxHashMap<String, TemplateVariable>,

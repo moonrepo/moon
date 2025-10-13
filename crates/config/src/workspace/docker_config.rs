@@ -23,13 +23,12 @@ config_struct!(
     #[derive(Config)]
     pub struct DockerScaffoldConfig {
         /// Copy toolchain specific configs/manifests/files into
-        /// the workspace skeleton.
+        /// the configuration skeleton.
         #[setting(default = true)]
-        #[deprecated] // TODO
         pub copy_toolchain_files: bool,
 
         /// List of glob patterns, relative from the workspace root,
-        /// to include (or exclude) in the workspace skeleton.
+        /// to include (or exclude) in the configuration skeleton.
         pub include: Vec<GlobPath>,
     }
 );

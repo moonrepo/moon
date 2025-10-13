@@ -10,7 +10,7 @@
     },
     "extends": {
       "title": "extends",
-      "description": "Extends one or many task configuration files. Supports a relative file path or a secure URL.",
+      "description": "Extends one or many tasks configuration files. Supports a relative file path or a secure URL. @since 1.12.0",
       "anyOf": [
         {
           "$ref": "#/definitions/ExtendsFrom"
@@ -22,7 +22,7 @@
     },
     "fileGroups": {
       "title": "fileGroups",
-      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
+      "description": "A map of group identifiers to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -36,23 +36,25 @@
     },
     "implicitDeps": {
       "title": "implicitDeps",
-      "description": "Task dependencies that'll automatically be injected into every task that inherits this configuration.",
+      "description": "Task dependencies (deps) that will be automatically injected into every task that inherits this configuration.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/TaskDependency"
-      }
+      },
+      "markdownDescription": "Task dependencies (`deps`) that will be automatically injected into every task that inherits this configuration."
     },
     "implicitInputs": {
       "title": "implicitInputs",
-      "description": "Task inputs that'll automatically be injected into every task that inherits this configuration.",
+      "description": "Task inputs (inputs) that will be automatically injected into every task that inherits this configuration.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/Input"
-      }
+      },
+      "markdownDescription": "Task inputs (`inputs`) that will be automatically injected into every task that inherits this configuration."
     },
     "taskOptions": {
       "title": "taskOptions",
-      "description": "Default task options for all inherited tasks.",
+      "description": "Default task options for all inherited tasks. @since 1.20.0",
       "anyOf": [
         {
           "$ref": "#/definitions/TaskOptionsConfig"
@@ -64,14 +66,15 @@
     },
     "tasks": {
       "title": "tasks",
-      "description": "A mapping of tasks by ID to parameters required for running the task.",
+      "description": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       },
       "propertyNames": {
         "$ref": "#/definitions/Id"
-      }
+      },
+      "markdownDescription": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline."
     }
   },
   "additionalProperties": false,
@@ -320,7 +323,7 @@
       "additionalProperties": false
     },
     "TaskArgs": {
-      "description": "Configures a command to execute, and its arguments.",
+      "description": "Configures a command and its arguments to execute.",
       "anyOf": [
         {
           "type": "null"
@@ -351,10 +354,25 @@
         },
         "command": {
           "title": "command",
-          "description": "The command or command line to execute when the task is ran. Supports the command name, with or without arguments. Can be defined as a string, or a list of individual arguments.",
+          "description": "The command line to execute when the task is ran. Supports the command (executable) with or without arguments. Can be defined as a string, or a list of individual arguments.",
           "allOf": [
             {
               "$ref": "#/definitions/TaskArgs"
+            }
+          ]
+        },
+        "dependsOn": {
+          "title": "dependsOn",
+          "description": "Other tasks that this task depends on, and must run to completion before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskDependency"
+              }
+            },
+            {
+              "type": "null"
             }
           ]
         },
@@ -375,7 +393,7 @@
         },
         "description": {
           "title": "description",
-          "description": "A human-readable description about the task.",
+          "description": "A human-readable description about the task. @since 1.22.0",
           "anyOf": [
             {
               "type": "string"
@@ -387,7 +405,7 @@
         },
         "env": {
           "title": "env",
-          "description": "A mapping of environment variables that will be set when the task is ran.",
+          "description": "A map of environment variables that will be set in the child process when the task is ran.",
           "anyOf": [
             {
               "type": "object",
@@ -405,7 +423,7 @@
         },
         "extends": {
           "title": "extends",
-          "description": "Extends settings from a sibling task by ID.",
+          "description": "Extends settings from a sibling task by identifier.",
           "anyOf": [
             {
               "$ref": "#/definitions/Id"
@@ -417,7 +435,7 @@
         },
         "inputs": {
           "title": "inputs",
-          "description": "Inputs and sources that will mark the task as affected when comparing against touched files. When not provided, all files within the project are considered an input. When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
+          "description": "A list of inputs that will be hashing and compared against changed files to determine affected status. If affected, the task will run, otherwise it will exit early. An input can be a literal file path, a glob pattern, environment variable, and more.  When not provided, all files within the project are considered inputs. When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
           "anyOf": [
             {
               "type": "array",
@@ -430,23 +448,9 @@
             }
           ]
         },
-        "local": {
-          "title": "local",
-          "description": "Marks the task as local only. Local tasks do not run in CI, do not have options.cache enabled, and are marked as options.persistent.",
-          "deprecated": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`."
-        },
         "options": {
           "title": "options",
-          "description": "Options to control task inheritance and execution.",
+          "description": "Options to control task inheritance, execution, and more.",
           "allOf": [
             {
               "$ref": "#/definitions/TaskOptionsConfig"
@@ -455,7 +459,7 @@
         },
         "outputs": {
           "title": "outputs",
-          "description": "Outputs that will be created when the task has successfully ran. When cache is enabled, the outputs will be persisted for subsequent runs.",
+          "description": "A list of outputs that will be created when the task has successfully ran. An output can be a literal file path, or a glob pattern.",
           "anyOf": [
             {
               "type": "array",
@@ -466,8 +470,7 @@
             {
               "type": "null"
             }
-          ],
-          "markdownDescription": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs."
+          ]
         },
         "preset": {
           "title": "preset",
@@ -483,7 +486,7 @@
         },
         "script": {
           "title": "script",
-          "description": "A script to run within a shell. A script is anything from a single command, to multiple commands (&&, etc), or shell specific syntax. Does not support arguments, merging, or inheritance.",
+          "description": "A script to run within a shell. A script is anything from a single command, to multiple commands, or shell specific syntax. Does not support arguments, merging, or inheritance. This overrides command and args. @since 1.27.0",
           "anyOf": [
             {
               "type": "string"
@@ -491,41 +494,56 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "A script to run within a shell. A script is anything from a single command, to multiple commands, or shell specific syntax. Does not support arguments, merging, or inheritance. This overrides `command` and `args`. @since 1.27.0"
         },
         "toolchain": {
           "title": "toolchain",
-          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
+          "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },
         "toolchains": {
           "title": "toolchains",
-          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
+          "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },
         "type": {
           "title": "type",
-          "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",
+          "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined based on configured outputs.",
           "default": "test",
           "anyOf": [
             {
@@ -540,7 +558,7 @@
       "additionalProperties": false
     },
     "TaskDependency": {
-      "description": "Configures another task that a task depends on.",
+      "description": "Configures another task that this task depends on.",
       "anyOf": [
         {
           "type": "string"
@@ -565,7 +583,7 @@
         },
         "env": {
           "title": "env",
-          "description": "A mapping of environment variables specific to this dependency.",
+          "description": "A map of environment variables specific to this dependency.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -576,7 +594,7 @@
         },
         "optional": {
           "title": "optional",
-          "description": "Marks the dependency is optional when being inherited from the top-level.",
+          "description": "Marks the dependency as optional when being inherited from the top-level. @since 1.20.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -585,7 +603,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Marks the dependency is optional when being inherited from the top-level."
+          "markdownDescription": "Marks the dependency as optional when being inherited from the top-level. @since 1.20.0"
         },
         "target": {
           "title": "target",
@@ -631,7 +649,7 @@
       ]
     },
     "TaskOptionsConfig": {
-      "description": "Options to control task inheritance and execution.",
+      "description": "Options to control task inheritance, execution, and more.",
       "type": "object",
       "properties": {
         "affectedFiles": {
@@ -659,7 +677,7 @@
         },
         "affectedPassInputs": {
           "title": "affectedPassInputs",
-          "description": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of ..",
+          "description": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of ..",
           "anyOf": [
             {
               "type": "boolean"
@@ -668,11 +686,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of `.`."
+          "markdownDescription": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",
-          "description": "Allows the task to fail without failing the entire pipeline.",
+          "description": "Allow the task to fail without failing the entire action pipeline. @since 1.13.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -684,7 +702,7 @@
         },
         "cache": {
           "title": "cache",
-          "description": "Caches the outputs of the task. Defaults to true if outputs are configured for the task.",
+          "description": "Cache the outputs of the task for incremental builds. Defaults to true if outputs are configured for the task.",
           "anyOf": [
             {
               "anyOf": [
@@ -704,7 +722,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Caches the `outputs` of the task. Defaults to `true` if outputs are configured for the task."
+          "markdownDescription": "Cache the `outputs` of the task for incremental builds. Defaults to `true` if outputs are configured for the task."
         },
         "cacheKey": {
           "title": "cacheKey",
@@ -720,7 +738,7 @@
         },
         "cacheLifetime": {
           "title": "cacheLifetime",
-          "description": "Lifetime to cache the task itself, in the format of \"1h\", \"30m\", etc. If not defined, caches live forever, or until inputs change.",
+          "description": "Lifetime to cache the task itself, in the format of \"1h\", \"30m\", etc. If not defined, caches live forever, or until inputs change. @since 1.29.0",
           "anyOf": [
             {
               "type": "string"
@@ -732,7 +750,7 @@
         },
         "envFile": {
           "title": "envFile",
-          "description": "Loads and sets environment variables from the .env file when running the task.",
+          "description": "Loads and sets environment variables from the .env file(s) when running the task.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -741,11 +759,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Loads and sets environment variables from the `.env` file when running the task."
+          "markdownDescription": "Loads and sets environment variables from the `.env` file(s) when running the task."
         },
         "inferInputs": {
           "title": "inferInputs",
-          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env.",
+          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env. @since 1.31.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -754,11 +772,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`."
+          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`. @since 1.31.0"
         },
         "interactive": {
           "title": "interactive",
-          "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin.",
+          "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin. @since 1.12.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -770,7 +788,7 @@
         },
         "internal": {
           "title": "internal",
-          "description": "Marks the task as internal, which disables it from begin ran from the command line, but can be depended on.",
+          "description": "Marks the task as internal, which disables it from being ran from the command line, but can still be depended on by other tasks. @since 1.23.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -864,9 +882,23 @@
           ],
           "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
         },
+        "mergeToolchains": {
+          "title": "mergeToolchains",
+          "description": "The strategy to use when merging toolchains with an inherited task. @since 2.0.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `toolchains` with an inherited task. @since 2.0.0"
+        },
         "mutex": {
           "title": "mutex",
-          "description": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently.",
+          "description": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently. @since 1.24.0",
           "anyOf": [
             {
               "type": "string"
@@ -913,7 +945,7 @@
         },
         "persistent": {
           "title": "persistent",
-          "description": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes.",
+          "description": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes. @since 1.6.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -922,11 +954,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes."
+          "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes. @since 1.6.0"
         },
         "priority": {
           "title": "priority",
-          "description": "Marks the task with a certain priority, which determines the order in which it is ran within the pipeline.",
+          "description": "Marks the task with a certain priority, which determines the order in which it is ran within the action pipeline.",
           "default": "normal",
           "anyOf": [
             {
@@ -976,7 +1008,7 @@
         },
         "runInCI": {
           "title": "runInCI",
-          "description": "Whether to run the task in CI or not, when executing moon ci or moon run.",
+          "description": "Whether to run the task in CI or not, when executing moon ci, moon check, or moon run.",
           "anyOf": [
             {
               "anyOf": [
@@ -998,11 +1030,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci` or `moon run`."
+          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`, `moon check`, or `moon run`."
         },
         "shell": {
           "title": "shell",
-          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on PATH resolution.",
+          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on native PATH resolution.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1011,7 +1043,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution."
+          "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on native `PATH` resolution."
         },
         "timeout": {
           "title": "timeout",
@@ -1027,7 +1059,7 @@
         },
         "unixShell": {
           "title": "unixShell",
-          "description": "The shell to run the task in when on a Unix-based machine.",
+          "description": "The shell to run the task in when on a Unix-based machine. @since 1.21.0",
           "default": "bash",
           "anyOf": [
             {
@@ -1037,11 +1069,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "The shell to run the task in when on a Unix-based machine."
+          "markdownDescription": "The shell to run the task in when on a Unix-based machine. @since 1.21.0"
         },
         "windowsShell": {
           "title": "windowsShell",
-          "description": "The shell to run the task in when on a Windows machine.",
+          "description": "The shell to run the task in when on a Windows machine. @since 1.21.0",
           "default": "pwsh",
           "anyOf": [
             {
@@ -1075,7 +1107,7 @@
       ]
     },
     "TaskPriority": {
-      "description": "The priority levels a task can be bucketed into.",
+      "description": "The priority levels a task can be bucketed into when running in the action pipeline.",
       "type": "string",
       "enum": [
         "critical",

@@ -1,4 +1,4 @@
 language: javascript
 layer: library
-toolchain:
+toolchains:
   default: node

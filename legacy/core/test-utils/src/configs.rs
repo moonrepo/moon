@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 use crate::create_inputs;
 use moon_common::Id;
 use moon_config::*;

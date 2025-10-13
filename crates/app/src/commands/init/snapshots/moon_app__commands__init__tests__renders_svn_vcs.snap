@@ -11,5 +11,5 @@ projects:
   - 'apps/*'
   - 'packages/*'
 vcs:
-  manager: 'svn'
+  client: 'svn'
   defaultBranch: 'trunk'

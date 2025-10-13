@@ -1,6 +1,5 @@
 #![allow(clippy::from_over_into)]
 
-use crate::validate::{validate_child_relative_path, validate_relative_path};
 use moon_common::path::RelativePathBuf;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
@@ -9,7 +8,6 @@ use std::ops::Deref;
 use std::path::Path;
 use std::str::FromStr;
 
-/// Return true of the provided file looks like a glob pattern.
 pub fn is_glob_like(value: &str) -> bool {
     if value.starts_with('!') || value.contains("**") || value.contains('*') {
         return true;
@@ -30,6 +28,26 @@ pub fn is_glob_like(value: &str) -> bool {
     value.contains('?') || value.contains('|')
 }
 
+pub fn validate_relative_path(value: &str) -> Result<(), ParseError> {
+    let path = Path::new(value);
+
+    if path.has_root() || path.is_absolute() {
+        return Err(ParseError::new("absolute paths are not supported"));
+    }
+
+    Ok(())
+}
+
+pub fn validate_child_relative_path(value: &str) -> Result<(), ParseError> {
+    if value.contains("..") {
+        return Err(ParseError::new(
+            "parent directory traversal (..) is not supported",
+        ));
+    }
+
+    Ok(())
+}
+
 pub trait PortablePath: Sized {
     fn parse(path: impl AsRef<str>) -> Result<Self, ParseError>;
 
@@ -42,7 +60,7 @@ pub trait PortablePath: Sized {
 
 macro_rules! path_type {
     ($name:ident) => {
-        #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+        #[derive(Clone, Debug, Default, Deserialize, Hash, Serialize)]
         #[serde(into = "String", try_from = "String")]
         pub struct $name(pub RelativePathBuf);
 

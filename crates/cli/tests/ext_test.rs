@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::PartialExtensionConfig;
+use moon_config::PartialExtensionPluginConfig;
 use moon_test_utils::{create_sandbox_with_config, create_sandbox_with_factory, predicates};
 use proto_core::{PluginLocator, warpgate::FileLocator};
 use rustc_hash::FxHashMap;
@@ -48,7 +48,7 @@ mod ext_download {
                 .get_or_insert(FxHashMap::default())
                 .insert(
                     Id::raw("example"),
-                    PartialExtensionConfig {
+                    PartialExtensionPluginConfig {
                         plugin: None,
                         config: None,
                     },
@@ -73,7 +73,7 @@ mod ext_download {
                 .get_or_insert(FxHashMap::default())
                 .insert(
                     Id::raw("example"),
-                    PartialExtensionConfig {
+                    PartialExtensionPluginConfig {
                         plugin: Some(PluginLocator::File(Box::new(FileLocator {
                             file: "invalid.wasm".into(),
                             path: Some(PathBuf::from("invalid.wasm")),

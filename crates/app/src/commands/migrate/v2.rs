@@ -133,6 +133,13 @@ fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
     let task = value.as_mapping_mut().expect("task must be an object");
 
     rename_setting(task, "platform", "toolchains");
+
+    if task.remove("local").is_some() && !task.contains_key("preset") {
+        task.insert(
+            YamlValue::String("preset".into()),
+            YamlValue::String("server".into()),
+        );
+    }
 }
 
 fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
@@ -331,11 +338,18 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
     let mut config: YamlValue = load_config_file(&config_path)?;
 
     if let Some(root) = config.as_mapping_mut() {
+        rename_setting(root, "codeowners.syncOnRun", "codeowners.sync");
         rename_setting(
             root,
             "constraints.enforceProjectTypeRelationships",
             "constraints.enforceLayerRelationships",
         );
+        remove_setting(root, "hasher.batchSize");
+        rename_setting(root, "runner", "pipeline");
+        remove_setting(root, "pipeline.archivableTargets");
+        rename_setting(root, "unstable_remote", "remote");
+        rename_setting(root, "vcs.manager", "client");
+        rename_setting(root, "vcs.syncHooks", "sync");
     }
 
     yaml::write_file_with_config(&config_path, &config)?;
@@ -353,11 +367,21 @@ fn migrate_project_config_files(session: &MoonSession) -> miette::Result<()> {
         let mut config = load_config_file(&config_path)?;
 
         if let Some(root) = config.as_mapping_mut() {
-            rename_setting(root, "platform", "toolchain.default");
+            rename_setting(root, "toolchain", "toolchains");
+            rename_setting(root, "platform", "toolchains.default");
             rename_setting(root, "type", "layer");
 
+            if let Some(project) = root
+                .get_mut("project")
+                .and_then(|project| project.as_mapping_mut())
+            {
+                if let Some(YamlValue::Mapping(metadata)) = project.remove("metadata") {
+                    project.extend(metadata);
+                }
+            }
+
             if let Some(toolchains) = root
-                .get_mut("toolchain")
+                .get_mut("toolchains")
                 .and_then(|toolchains| toolchains.as_mapping_mut())
             {
                 for (_, toolchain) in toolchains {

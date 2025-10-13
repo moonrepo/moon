@@ -139,7 +139,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut toolchains = FxHashSet::default();
 
         // 1 - Explicitly configured by the user
-        if let Some(default_ids) = &config.toolchain.default {
+        if let Some(default_ids) = &config.toolchains.default {
             toolchains.extend(default_ids.to_owned_list());
         }
 
@@ -168,7 +168,7 @@ impl<'app> ProjectBuilder<'app> {
         );
 
         // Filter down the toolchains list based on the project config
-        for (plugin_id, override_config) in &config.toolchain.plugins {
+        for (plugin_id, override_config) in &config.toolchains.plugins {
             if override_config.is_enabled() {
                 toolchains.insert(plugin_id.to_owned());
             } else {

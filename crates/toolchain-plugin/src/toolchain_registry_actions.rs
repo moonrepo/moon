@@ -143,7 +143,7 @@ impl ToolchainRegistry {
         }
 
         if let Some(project_config) = project_config {
-            for (id, config) in &project_config.toolchain.plugins {
+            for (id, config) in &project_config.toolchains.plugins {
                 if !config.is_enabled() {
                     map.remove(id);
                     continue;

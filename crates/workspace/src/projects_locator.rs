@@ -1,7 +1,6 @@
 use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
 use moon_common::{Id, color, consts};
-use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use moon_feature_flags::glob_walk_with_options;
 use starbase_utils::fs;
 use starbase_utils::glob::GlobWalkOptions;
@@ -18,7 +17,7 @@ fn is_hidden(path: &str) -> bool {
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry> {
+fn infer_project_id_and_source(path: &str) -> miette::Result<(Id, WorkspaceRelativePathBuf)> {
     let (id, source) = if let Some(index) = path.rfind('/') {
         (&path[index + 1..], path)
     } else {
@@ -34,7 +33,7 @@ fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry>
 pub fn locate_projects_with_globs<'glob, I, V>(
     context: &WorkspaceBuilderContext,
     globs: I,
-    sources: &mut ProjectsSourcesList,
+    sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
 ) -> miette::Result<()>
 where
     I: IntoIterator<Item = &'glob V>,

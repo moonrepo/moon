@@ -9,6 +9,7 @@ releases:
   '@moonrepo/core-windows-x64-msvc': major
   '@moonrepo/report': major
   '@moonrepo/types': major
+  '@moonrepo/visualizer': minor
 
 declined:
   - '@moonrepo/runtime'

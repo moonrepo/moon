@@ -11,10 +11,6 @@ tasks:
     toolchain: system
     options:
       runFromWorkspaceRoot: true
-  localOnly:
-    command: node --version
-    toolchain: node
-    local: true
   internalOnly:
     command: node --version
     toolchain: node

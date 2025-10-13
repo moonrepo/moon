@@ -44,9 +44,6 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
 
     let mut modes = vec![];
 
-    if task.is_local() {
-        modes.push("local");
-    }
     if task.is_internal() {
         modes.push("internal");
     }

@@ -8,6 +8,7 @@ use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 
 config_enum!(
+    /// Variants a project-level toolchain can be configured.
     #[derive(Config)]
     #[serde(untagged)]
     pub enum ProjectToolchainEntry {
@@ -39,19 +40,20 @@ config_struct!(
     /// Overrides top-level toolchain settings, scoped to this project.
     #[derive(Config)]
     #[config(allow_unknown_fields)]
-    pub struct ProjectToolchainConfig {
-        /// The default toolchain(s) to inherit for the project,
-        /// and all of its tasks.
-        #[serde(alias = "defaults")]
+    pub struct ProjectToolchainsConfig {
+        /// A single toolchain, or list of toolchains, to inherit for
+        /// this project and all of its tasks.
+        /// @since 1.31.0
+        #[setting(alias = "defaults")]
         pub default: Option<OneOrMany<Id>>,
 
-        /// Overrides toolchains by their ID.
+        /// Overrides workspace-level toolchains by their identifier.
         #[setting(flatten, nested, merge = merge_plugin_partials)]
         pub plugins: FxHashMap<Id, ProjectToolchainEntry>,
     }
 );
 
-impl ProjectToolchainConfig {
+impl ProjectToolchainsConfig {
     pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ProjectToolchainEntry> {
         let (stable_id, unstable_id) = Id::stable_and_unstable(id);
 
@@ -62,24 +64,25 @@ impl ProjectToolchainConfig {
 }
 
 config_struct!(
-    /// Controls how tasks are inherited.
+    /// Controls how workspace-level tasks are inherited.
     #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
-        /// Excludes inheriting tasks by ID.
+        /// Excludes inheriting tasks by their identifier.
         pub exclude: Vec<Id>,
 
-        /// Only inherits tasks by ID, and ignores the rest.
-        /// When not defined, inherits all matching tasks.
-        /// When an empty list, inherits no tasks.
+        /// Only inherits tasks with the provided identifiers,
+        /// and ignores the rest. When not defined, inherits
+        /// all matching tasks. When an empty list, inherits no tasks.
         pub include: Option<Vec<Id>>,
 
-        /// Renames inherited tasks to a new ID.
+        /// Renames inherited tasks by mapping their existing
+        /// identifier to a new identifier, scoped to this project.
         pub rename: FxHashMap<Id, Id>,
     }
 );
 
 config_struct!(
-    /// Overrides top-level workspace settings, scoped to this project.
+    /// Overrides workspace settings, scoped to this project.
     #[derive(Config)]
     pub struct ProjectWorkspaceConfig {
         /// Controls how tasks are inherited.

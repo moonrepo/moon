@@ -7,7 +7,7 @@ tasks:
   dev:
     command: dev
     toolchain: node
-    local: true
+    preset: server
   build:
     command: build
     outputs: [dist]

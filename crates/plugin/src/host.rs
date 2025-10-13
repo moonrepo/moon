@@ -292,7 +292,7 @@ fn load_toolchain_config_by_id(
             let default_config = ToolchainPluginConfig::default();
             let config = project
                 .config
-                .toolchain
+                .toolchains
                 .get_plugin_config(&toolchain_id)
                 .and_then(|entry| match entry {
                     ProjectToolchainEntry::Config(cfg) => Some(cfg),

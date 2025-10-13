@@ -1,5 +1,5 @@
 language: javascript
 
-toolchain:
+toolchains:
   deno:
     version: '2.0.0'

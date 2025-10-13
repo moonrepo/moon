@@ -1,6 +1,6 @@
 extends: './base-0.yml'
 
-runner:
+pipeline:
   logRunningCommand: true
 
 vcs:

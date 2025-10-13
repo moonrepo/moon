@@ -261,7 +261,10 @@ impl WorkspaceMocker {
         mut op: impl FnMut(&mut TasksBuilder),
     ) -> BTreeMap<Id, Task> {
         let toolchain_registry = self.mock_toolchain_registry();
-        let enabled_toolchains = self.toolchain_config.get_enabled();
+
+        let mut enabled_toolchains = self.toolchain_config.get_enabled();
+        enabled_toolchains.push(Id::raw("local"));
+        enabled_toolchains.push(Id::raw("global"));
 
         let mut builder = TasksBuilder::new(
             &project.id,

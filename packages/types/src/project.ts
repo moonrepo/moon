@@ -47,6 +47,7 @@ export interface TaskOptions {
 	mergeEnv: TaskMergeStrategy;
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
+	mergeToolchains: TaskMergeStrategy;
 	mutex?: string | null;
 	os?: TaskOperatingSystem[] | null;
 	outputStyle?: TaskOutputStyle | null;
@@ -66,7 +67,6 @@ export interface TaskState {
 	defaultInputs?: boolean;
 	emptyInputs?: boolean;
 	expanded?: boolean;
-	localOnly?: boolean;
 	rootLevel?: boolean;
 }
 

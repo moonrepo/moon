@@ -168,8 +168,8 @@ mod token_expander {
 
             let metadata = project.config.project.get_or_insert(Default::default());
 
-            metadata.name = Some("name".into());
-            metadata.description = "description".into();
+            metadata.title = Some("name".into());
+            metadata.description = Some("description".into());
             metadata.channel = Some("#channel".into());
             metadata.owner = Some("owner".into());
             metadata.maintainers.push("user1".into());
@@ -203,7 +203,7 @@ mod token_expander {
 
             let metadata = project.config.project.get_or_insert(Default::default());
 
-            metadata.name = Some("name".into());
+            metadata.title = Some("name".into());
             metadata
                 .metadata
                 .insert("name".into(), JsonValue::String("custom-name".into()));
@@ -564,7 +564,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 
@@ -639,7 +639,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 
@@ -964,7 +964,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 
@@ -1923,7 +1923,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 

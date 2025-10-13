@@ -2,9 +2,9 @@ codeowners {
 	globalPaths = new Mapping {
 		["*"] = List("@admins")
 	}
-	orderBy = "project-name"
+	orderBy = "project-id"
 	requiredApprovals = 1
-	syncOnRun = true
+	sync = true
 }
 
 constraints {
@@ -31,7 +31,6 @@ generator {
 }
 
 hasher {
-	batchSize = 1000
 	ignorePatterns = List("*.map")
 	ignoreMissingPatterns = Set(".env")
 	optimization = "performance"
@@ -64,13 +63,13 @@ vcs {
 	hooks = new Mapping {
 		["pre-commit"] = List("moon check --all --affected", "moon run :pre-commit")
 	}
-	manager = "git"
+	client = "git"
 	provider = "gitlab"
 	remoteCandidates = new Listing {
 		"main"
 		"origin/main"
 	}
-	syncHooks = true
+	sync = true
 }
 
 versionConstraint = ">=1.2.3"

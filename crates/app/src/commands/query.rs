@@ -334,7 +334,7 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
                                         .config
                                         .project
                                         .as_ref()
-                                        .map(|cfg| cfg.description.as_str())
+                                        .and_then(|cfg| cfg.description.as_deref())
                                         .unwrap_or(""),
                                 )
                             }

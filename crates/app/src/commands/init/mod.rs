@@ -49,7 +49,7 @@ fn create_default_context() -> Context {
     let mut context = Context::new();
     context.insert("projects", &BTreeMap::<String, String>::new());
     context.insert("project_globs", &vec!["apps/*", "packages/*"]);
-    context.insert("vcs_manager", &"git");
+    context.insert("vcs_client", &"git");
     context.insert("vcs_provider", &"github");
     context.insert("vcs_default_branch", &"master");
     context
@@ -149,7 +149,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     let git = Git::load(&options.dir, "master", &[])?;
 
     let mut context = create_default_context();
-    context.insert("vcs_manager", "git");
+    context.insert("vcs_client", "git");
     context.insert(
         "vcs_provider",
         &detect_vcs_provider(git.get_repository_root().await?),
@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn renders_git_vcs() {
         let mut context = create_default_context();
-        context.insert("vcs_manager", &"git");
+        context.insert("vcs_client", &"git");
         context.insert("vcs_default_branch", &"main");
 
         assert_snapshot!(render_workspace_template(&context).unwrap());
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn renders_svn_vcs() {
         let mut context = create_default_context();
-        context.insert("vcs_manager", &"svn");
+        context.insert("vcs_client", &"svn");
         context.insert("vcs_default_branch", &"trunk");
 
         assert_snapshot!(render_workspace_template(&context).unwrap());
@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn renders_gitlab() {
         let mut context = create_default_context();
-        context.insert("vcs_manager", &"git");
+        context.insert("vcs_client", &"git");
         context.insert("vcs_provider", &"gitlab");
         context.insert("vcs_default_branch", &"main");
 
@@ -259,7 +259,7 @@ mod tests {
     #[test]
     fn renders_bitbucket() {
         let mut context = create_default_context();
-        context.insert("vcs_manager", &"git");
+        context.insert("vcs_client", &"git");
         context.insert("vcs_provider", &"bitbucket");
         context.insert("vcs_default_branch", &"main");
 

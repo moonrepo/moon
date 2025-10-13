@@ -43,16 +43,20 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
             #(config.project.as_ref().map(|meta| {
                 element! {
                     Section(title: "Metadata") {
-                        View(margin_bottom: 1) {
-                            StyledText(
-                                content: &meta.description,
-                            )
-                        }
-                        #(meta.name.as_ref().map(|name| {
+                        #(meta.description.as_ref().map(|description| {
+                            element! {
+                                View(margin_bottom: 1) {
+                                    StyledText(
+                                        content: description,
+                                    )
+                                }
+                            }
+                        }))
+                        #(meta.title.as_ref().map(|title| {
                             element! {
                                 Entry(
-                                    name: "Name",
-                                    content: name.to_string(),
+                                    name: "Title",
+                                    content: title.to_string(),
                                 )
                             }
                         }))

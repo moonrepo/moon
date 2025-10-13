@@ -11,7 +11,7 @@ tasks:
       - 'src/**/*'
   global-run:
     command: 'global-run'
-    local: true
+    preset: server
 
 taskOptions:
   retryCount: 10

@@ -1,6 +1,6 @@
 language: typescript
 
-toolchain:
+toolchains:
   default: bun
 
 tasks:

@@ -16,21 +16,36 @@
   - Removed the `$projectType` token. Use `$projectLayer` instead.
   - Removed the `$taskPlatform` token. Use `$taskToolchain` instead.
   - `moon.*`
+    - Renamed the `project.name` setting to `project.title`.
+    - Renamed the `toolchain` setting to `toolchains`.
     - Removed the `type` alias. Use `layer` instead.
-    - Removed the `platform` setting. Use `toolchain.default` instead.
+    - Removed the `platform` setting. Use `toolchains.default` instead.
+    - Removed the `project.metadata` setting. All custom metadata fields can now be defined at the
+      root of the `project` object.
     - Removed the `toolchain.*.disabled` setting. Set the toolchain to null/false instead.
   - `moon.*`, `.moon/tasks.*`, `.moon/tasks/**/*`
-    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchain` instead.
+    - Removed the `tasks.*.local` setting. Use `tasks.*.preset` instead.
+    - Removed the `tasks.*.platform` setting. Use `tasks.*.toolchains` instead.
   - `.moon/toolchain.*`
     - Removed the `node.addEnginesConstraint` setting.
   - `.moon/workspace.*`
-    - Removed the `constraints.enforceProjectTypeRelationships` alias. Use
-      `enforceLayerRelationships` instead.
+    - Renamed the `codeowners.orderBy` variant "project-name" to "project-id".
+    - Renamed the `codeowners.syncOnRun` setting to `codeowners.sync`.
+    - Renamed the `constraints.enforceProjectTypeRelationships` to
+      `constraints.enforceLayerRelationships`.
+    - Renamed the `runner` setting to `pipeline`.
+    - Renamed the `unstable_remote` setting to `remote`.
+    - Renamed the `vcs.manager` setting to `vcs.client`.
+    - Renamed the `vcs.syncHooks` setting to `vcs.sync`.
+    - Removed the `hasher.batchSize` setting.
+    - Removed the `pipeline.archivableTargets` setting.
 - **Projects**
   - The primary `language` is now detected from toolchains, instead of being a hardcoded
     implementation. The result may now differ, as the first toolchain in the list will be used.
     Additionally, languages that don't have a toolchain yet, like PHP or Ruby, will not be detected
     and must be explicitly configured.
+- **Tasks**
+  - Removed the `local` setting. Use the `preset` setting instead.
 - **Toolchains**
   - Removed the legacy built-in platform system. WASM plugins have replaced their functionality.
     - Some configuration settings may have changed. Refer to the documentation.
@@ -46,9 +61,14 @@
 
 #### 🚀 Updates
 
+- **Configuration**
+  - `moon.yml`
+    - Added a `tasks.*.options.mergeToolchains` setting to control how toolchains are inherited.
 - **Projects**
   - Updated projects to support multiple aliases (one from each applicable toolchain).
     - Added a `$projectAliases` token, which is a comma-separated list of all aliases.
     - The `$projectAlias` token now returns the first alias, if it exists.
+- **Tasks**
+  - Added a `mergeToolchains` task option to control how toolchains are inherited.
 - **WASM API**
   - Added `RegisterToolchainOutput.language` field.

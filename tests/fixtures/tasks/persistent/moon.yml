@@ -4,7 +4,7 @@ tasks:
   local:
     command: dev
     deps: [buildA:build]
-    local: true
+    preset: server
   persistent:
     command: dev
     options:
@@ -12,11 +12,11 @@ tasks:
   devMiddleman:
     command: boop
     deps: [local]
-    local: true
+    preset: server
   dev:
     command: noop
     deps:
       - devMiddleman
       - persistent
       - buildC:build
-    local: true
+    preset: server

@@ -12,8 +12,7 @@ use moon_common::{
 };
 use moon_config::{
     ConfigLoader, DependencyScope, InheritedTasksManager, ProjectDependencyConfig,
-    ProjectsSourcesList, TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-    finalize_config,
+    TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
@@ -717,7 +716,10 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn load_project_build_data(&mut self, sources: ProjectsSourcesList) -> miette::Result<()> {
+    fn load_project_build_data(
+        &mut self,
+        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+    ) -> miette::Result<()> {
         let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon", false);
         let config_names = context.config_loader.get_project_file_names();

@@ -8,7 +8,7 @@ config_struct!(
     /// Configures an individual extension.
     #[derive(Config)]
     #[config(allow_unknown_fields)]
-    pub struct ExtensionConfig {
+    pub struct ExtensionPluginConfig {
         /// Location of the WASM plugin to use.
         #[setting(required)]
         pub plugin: Option<PluginLocator>,
@@ -19,17 +19,17 @@ config_struct!(
     }
 );
 
-impl ExtensionConfig {
+impl ExtensionPluginConfig {
     pub fn get_plugin_locator(&self) -> &PluginLocator {
         self.plugin.as_ref().unwrap()
     }
 }
 
-pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
+pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionPluginConfig> {
     FxHashMap::from_iter([
         (
             Id::raw("download"),
-            ExtensionConfig {
+            ExtensionPluginConfig {
                 plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                     url: "https://github.com/moonrepo/plugins/releases/download/download_extension-v0.0.11/download_extension.wasm".into()
                 }))),
@@ -38,7 +38,7 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
         ),
          (
             Id::raw("migrate-nx"),
-            ExtensionConfig {
+            ExtensionPluginConfig {
                 plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                     url: "https://github.com/moonrepo/plugins/releases/download/migrate_nx_extension-v0.0.11/migrate_nx_extension.wasm".into()
                 }))),
@@ -47,7 +47,7 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
         ),
         (
             Id::raw("migrate-turborepo"),
-            ExtensionConfig {
+            ExtensionPluginConfig {
                 plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                     url: "https://github.com/moonrepo/plugins/releases/download/migrate_turborepo_extension-v0.1.8/migrate_turborepo_extension.wasm".into()
                 }))),

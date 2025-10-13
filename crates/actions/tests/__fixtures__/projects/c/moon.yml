@@ -1,5 +1,5 @@
 # With toolchain that's disabled
-toolchain:
+toolchains:
   default: 'tc-tier3'
   tc-tier3: false
 

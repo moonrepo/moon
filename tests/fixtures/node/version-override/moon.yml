@@ -1,5 +1,5 @@
 language: javascript
 
-toolchain:
+toolchains:
   node:
     version: '19.0.0'

@@ -1,6 +1,6 @@
 layer: library
 
-toolchain:
+toolchains:
   default: system
 
 tasks:

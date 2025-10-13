@@ -85,7 +85,7 @@ impl Project {
     pub fn get_enabled_toolchains(&self) -> Vec<&Id> {
         self.toolchains
             .iter()
-            .filter(|id| match self.config.toolchain.get_plugin_config(*id) {
+            .filter(|id| match self.config.toolchains.get_plugin_config(*id) {
                 None => true,
                 Some(cfg) => cfg.is_enabled(),
             })
@@ -97,7 +97,7 @@ impl Project {
     pub fn get_enabled_toolchains_for_task<'task>(&self, task: &'task Task) -> Vec<&'task Id> {
         task.toolchains
             .iter()
-            .filter(|id| match self.config.toolchain.get_plugin_config(*id) {
+            .filter(|id| match self.config.toolchains.get_plugin_config(*id) {
                 None => true,
                 Some(cfg) => cfg.is_enabled(),
             })

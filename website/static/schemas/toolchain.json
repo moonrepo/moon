@@ -10,7 +10,7 @@
     },
     "extends": {
       "title": "extends",
-      "description": "Extends one or many toolchain configuration files. Supports a relative file path or a secure URL.",
+      "description": "Extends one or many toolchain configuration files. Supports a relative file path or a secure URL. @since 1.12.0",
       "anyOf": [
         {
           "$ref": "#/definitions/ExtendsFrom"
@@ -31,7 +31,7 @@
     },
     "plugins": {
       "title": "plugins",
-      "description": "Configures toolchains by unique ID.",
+      "description": "Configures and integrates toolchains into the system using a unique identifier.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/ToolchainPluginConfig"
@@ -69,18 +69,18 @@
       "type": "string"
     },
     "MoonConfig": {
-      "description": "Configures how and where updates will be received.",
+      "description": "Configures how and where moon updates will be received.",
       "type": "object",
       "properties": {
         "downloadUrl": {
           "title": "downloadUrl",
-          "description": "A secure URL for downloading the moon binary.",
+          "description": "A secure URL for downloading the moon binary itself.",
           "default": "https://github.com/moonrepo/moon/releases/latest/download",
           "type": "string"
         },
         "manifestUrl": {
           "title": "manifestUrl",
-          "description": "A secure URL to lookup the latest version.",
+          "description": "A secure URL to lookup the latest available version.",
           "default": "https://launch.moonrepo.app/moon/check_version",
           "type": "string"
         }
@@ -155,19 +155,19 @@
         },
         "versionFromPrototools": {
           "title": "versionFromPrototools",
-          "description": "Inherit the version from the root .prototools. When true, matches using the same ID, otherwise a string can be provided for a custom ID.",
+          "description": "Inherit the version from the root .prototools. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier.",
           "allOf": [
             {
               "$ref": "#/definitions/ToolchainPluginVersionFrom"
             }
           ],
-          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same ID, otherwise a string can be provided for a custom ID."
+          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
       "additionalProperties": false
     },
     "ToolchainPluginVersionFrom": {
-      "description": "Strategy in which to inherit a version from .prototools.",
+      "description": "The strategy in which to inherit a version from .prototools.",
       "anyOf": [
         {
           "type": "boolean"
@@ -176,7 +176,7 @@
           "type": "string"
         }
       ],
-      "markdownDescription": "Strategy in which to inherit a version from `.prototools`."
+      "markdownDescription": "The strategy in which to inherit a version from `.prototools`."
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

@@ -2,6 +2,7 @@ use crate::config_struct;
 use schematic::Config;
 
 config_struct!(
+    /// Configures the leading frontmatter within a template file.
     /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
     #[derive(Config)]
     pub struct TemplateFrontmatterConfig {
@@ -11,8 +12,13 @@ config_struct!(
         )]
         pub schema: String,
 
+        /// Force overwrite a file at the destination if there is a conflict.
         pub force: bool,
+
+        /// Override the destination using a relative file path.
         pub to: Option<String>,
+
+        /// Skip writing this file to the destination.
         pub skip: bool,
     }
 );

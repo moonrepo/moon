@@ -38,6 +38,6 @@ tasks:
     command: 'bin --flag'
     toolchain: tc-tier2
 
-toolchain:
+toolchains:
   tc-custom:
     version: '4.5.6'

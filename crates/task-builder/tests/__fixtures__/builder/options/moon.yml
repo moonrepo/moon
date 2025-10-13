@@ -33,8 +33,8 @@ tasks:
   interactive:
     options:
       interactive: true
-  interactive-local:
-    local: true
+  interactive-preset:
+    preset: server
     options:
       interactive: true
   interactive-override:

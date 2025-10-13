@@ -3,7 +3,7 @@ use moon_common::Id;
 use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
-    /// The scope and or relationship of the dependency.
+    /// The relationship scope of a dependency.
     #[derive(ConfigEnum, PartialOrd, Ord)]
     pub enum DependencyScope {
         Build,
@@ -32,7 +32,7 @@ config_struct!(
     /// Expanded information about a project dependency.
     #[derive(Config)]
     pub struct ProjectDependencyConfig {
-        /// ID of the depended on project.
+        /// Identifier of the depended on project.
         pub id: Id,
 
         /// Scope of the dependency relationship.

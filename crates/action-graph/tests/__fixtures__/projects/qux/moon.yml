@@ -1,5 +1,5 @@
 language: rust
 
-toolchain:
+toolchains:
   rust:
     version: '1.90.0'

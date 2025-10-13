@@ -2,7 +2,7 @@ use crate::{config_enum, config_struct};
 use schematic::{Config, validate};
 
 config_struct!(
-    /// Configures to a tool-specific binary to install.
+    /// Configures to a tool-specific global binary to install.
     #[derive(Config)]
     pub struct BinConfig {
         /// Name of the binary, with optional version separated by `@`.
@@ -21,14 +21,14 @@ config_struct!(
 );
 
 config_enum!(
-    /// Configures to a tool-specific binary to install.
+    /// Configures to a tool-specific global binary to install.
     #[derive(Config)]
     #[serde(untagged, expecting = "expecting a bin name, or bin config object")]
     pub enum BinEntry {
-        /// Name of a binary to install.
+        /// Name of the binary to install.
         Name(String),
 
-        /// Expanded configuration for a binary to install.
+        /// Expanded configuration for the binary to install.
         #[setting(nested)]
         Config(BinConfig),
     }

@@ -4251,6 +4251,7 @@ dependencies = [
 name = "moon_task_builder"
 version = "0.0.1"
 dependencies = [
+ "indexmap",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
@@ -4433,11 +4434,11 @@ dependencies = [
 name = "moon_toolchain"
 version = "0.0.1"
 dependencies = [
+ "indexmap",
  "moon_common",
  "moon_config",
  "moon_env_var",
  "regex",
- "rustc-hash",
  "serde",
 ]
 

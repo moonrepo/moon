@@ -3,7 +3,7 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, ExtensionConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
+    ConfigLoader, ExtensionPluginConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
     WorkspaceConfig, WorkspaceProjects,
 };
 use proto_core::warpgate::UrlLocator;
@@ -585,7 +585,6 @@ generator:
                 FILENAME,
                 r"
 hasher:
-  batchSize: 1000
   warnOnMissingInputs: false
 ",
                 load_config_from_root,
@@ -667,7 +666,7 @@ notifier:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "runner: {}", load_config_from_root);
+            let config = test_load_config(FILENAME, "pipeline: {}", load_config_from_root);
 
             assert_eq!(config.pipeline.cache_lifetime, "7 days");
             assert!(config.pipeline.inherit_colors_for_piped_tasks);
@@ -678,7 +677,7 @@ notifier:
             let config = test_load_config(
                 FILENAME,
                 r"
-runner:
+pipeline:
   cacheLifetime: 10 hours
   inheritColorsForPipedTasks: false
 ",
@@ -722,12 +721,12 @@ vcs:
 
         #[test]
         #[should_panic(expected = "unknown variant `mercurial`, expected `git`")]
-        fn errors_on_invalid_manager() {
+        fn errors_on_invalid_client() {
             test_load_config(
                 FILENAME,
                 r"
 vcs:
-  manager: mercurial
+  client: mercurial
 ",
                 load_config_from_root,
             );
@@ -807,7 +806,7 @@ extensions:
 
             assert_eq!(
                 config.extensions.get("test-id").unwrap(),
-                &ExtensionConfig {
+                &ExtensionPluginConfig {
                     config: FxHashMap::default(),
                     plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                         url: "https://domain.com".into()
@@ -832,7 +831,7 @@ extensions:
 
             assert_eq!(
                 config.extensions.get("test-id").unwrap(),
-                &ExtensionConfig {
+                &ExtensionPluginConfig {
                     config: FxHashMap::from_iter([
                         ("fooBar".into(), serde_json::Value::String("abc".into())),
                         ("bar-baz".into(), serde_json::Value::Bool(true)),
@@ -852,7 +851,6 @@ extensions:
         use starbase_sandbox::locate_fixture;
         use std::str::FromStr;
 
-        #[allow(deprecated)]
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
@@ -866,9 +864,9 @@ extensions:
                         "*".to_owned(),
                         vec!["@admins".to_owned()]
                     )]),
-                    order_by: CodeownersOrderBy::ProjectName,
+                    order_by: CodeownersOrderBy::ProjectId,
                     required_approvals: Some(1),
-                    sync_on_run: true,
+                    sync: true,
                 }
             );
             assert_eq!(
@@ -906,7 +904,6 @@ extensions:
             assert_eq!(
                 config.hasher,
                 HasherConfig {
-                    batch_size: 1000,
                     ignore_patterns: vec![GlobPath("*.map".into())],
                     ignore_missing_patterns: vec![GlobPath(".env".into())],
                     optimization: HasherOptimization::Performance,
@@ -953,10 +950,10 @@ extensions:
                         ]
                     )]),
                     hook_format: VcsHookFormat::Native,
-                    manager: VcsManager::Git,
+                    client: VcsClient::Git,
                     provider: VcsProvider::GitLab,
                     remote_candidates: vec!["main".into(), "origin/main".into()],
-                    sync_hooks: true,
+                    sync: true,
                 }
             );
         }

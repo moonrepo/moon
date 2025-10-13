@@ -1,5 +1,3 @@
-#![allow(deprecated)]
-
 mod utils;
 
 use httpmock::prelude::*;

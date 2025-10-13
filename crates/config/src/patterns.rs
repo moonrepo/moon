@@ -12,7 +12,6 @@ macro_rules! pattern {
 
 // Environment variables
 
-pattern!(ENV_VAR, "\\$([A-Z0-9_]+)"); // $ENV_VAR
 pattern!(ENV_VAR_DISTINCT, "^\\$([A-Z0-9_]+)$"); // $ENV_VAR
 pattern!(ENV_VAR_GLOB_DISTINCT, "^\\$([A-Z0-9_*]+)$"); // $ENV_*
 

@@ -163,7 +163,7 @@ mod sync_workspace {
 
             assert!(!code_file.exists());
 
-            ws.workspace_config.codeowners.sync_on_run = true;
+            ws.workspace_config.codeowners.sync = true;
 
             let status = sync_workspace(
                 &mut action,
@@ -250,7 +250,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            ws.workspace_config.vcs.sync_hooks = true;
+            ws.workspace_config.vcs.sync = true;
             ws.workspace_config
                 .vcs
                 .hooks
@@ -282,7 +282,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            ws.workspace_config.vcs.sync_hooks = true;
+            ws.workspace_config.vcs.sync = true;
             ws.workspace_config
                 .vcs
                 .hooks
@@ -311,7 +311,7 @@ mod sync_workspace {
 
             let mut action = Action::default();
 
-            ws.workspace_config.vcs.sync_hooks = true;
+            ws.workspace_config.vcs.sync = true;
             ws.workspace_config
                 .vcs
                 .hooks

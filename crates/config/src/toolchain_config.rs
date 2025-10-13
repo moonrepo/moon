@@ -10,7 +10,7 @@ use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
 config_enum!(
-    /// Strategy in which to inherit a version from `.prototools`.
+    /// The strategy in which to inherit a version from `.prototools`.
     #[derive(Schematic)]
     #[serde(untagged)]
     pub enum ToolchainPluginVersionFrom {
@@ -37,8 +37,8 @@ config_struct!(
         pub version: Option<UnresolvedVersionSpec>,
 
         /// Inherit the version from the root `.prototools`.
-        /// When true, matches using the same ID, otherwise a
-        /// string can be provided for a custom ID.
+        /// When true, matches using the same identifier, otherwise a
+        /// string can be provided for a custom identifier.
         pub version_from_prototools: ToolchainPluginVersionFrom,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
@@ -59,13 +59,6 @@ impl ToolchainPluginConfig {
     }
 }
 
-// fn default_plugins<C>(_ctx: &C) -> DefaultValueResult<FxHashMap<Id, ToolchainPluginConfig>> {
-//     Ok(Some(FxHashMap::from_iter([(
-//         Id::raw("system"),
-//         ToolchainPluginConfig::default(),
-//     )])))
-// }
-
 config_struct!(
     /// Configures all toolchains.
     /// Docs: https://moonrepo.dev/docs/config/toolchain
@@ -80,6 +73,7 @@ config_struct!(
 
         /// Extends one or many toolchain configuration files.
         /// Supports a relative file path or a secure URL.
+        /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 
@@ -91,7 +85,8 @@ config_struct!(
         #[setting(nested)]
         pub proto: ProtoConfig,
 
-        /// Configures toolchains by unique ID.
+        /// Configures and integrates toolchains into the system using
+        /// a unique identifier.
         #[setting(flatten, nested, merge = merge_plugin_partials)]
         pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     }

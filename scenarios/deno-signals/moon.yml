@@ -2,4 +2,3 @@ tasks:
   dev:
     command: 'deno run --watch -A main.ts'
     toolchain: system
-    local: true

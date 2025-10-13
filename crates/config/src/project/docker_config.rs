@@ -25,7 +25,7 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectDockerScaffoldConfig {
         /// A list of glob patterns, relative from the project root,
-        /// to include (or exclude) in the sources skeleton.
+        /// to include (or exclude) in the "sources" skeleton.
         pub include: Vec<GlobPath>,
     }
 );

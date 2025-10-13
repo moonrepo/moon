@@ -1,4 +1,4 @@
-toolchain:
+toolchains:
   default: bun
 
 tasks:

@@ -1,6 +1,6 @@
 language: typescript
 stack: frontend
 
-toolchain:
+toolchains:
   default: node
   typescript: true

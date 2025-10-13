@@ -15,7 +15,7 @@ tasks:
   exit:
     command: 'node exitCode.mjs'
 
-toolchain:
+toolchains:
   typescript: null
 
 workspace:

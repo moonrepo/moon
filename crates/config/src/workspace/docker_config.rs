@@ -29,7 +29,7 @@ config_struct!(
         pub copy_toolchain_files: bool,
 
         /// List of glob patterns, relative from the workspace root,
-        /// to include (or exclude) in the configuration skeleton.
+        /// to include (or exclude) in the "configs" skeleton.
         pub include: Vec<GlobPath>,
     }
 );

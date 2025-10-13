@@ -787,7 +787,6 @@ vcs:
                         install_toolchain_deps: false
                     },
                     scaffold: DockerScaffoldConfig {
-                        copy_toolchain_files: false,
                         include: vec![GlobPath("*.js".into())]
                     }
                 }

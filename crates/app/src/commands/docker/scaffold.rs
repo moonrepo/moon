@@ -2,8 +2,7 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::MoonSession;
 use async_recursion::async_recursion;
 use clap::Args;
-use moon_common::Id;
-use moon_common::consts::*;
+use moon_common::{Id, consts::*, path};
 use moon_pdk_api::{DefineDockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
 use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
@@ -41,28 +40,12 @@ async fn get_toolchain_globs(
     ))
 }
 
-fn copy_files<F: IntoIterator<Item = String>, G: IntoIterator<Item = String>>(
-    files: F,
-    globs: G,
+fn copy_files<I: IntoIterator<Item = String>>(
+    globs: I,
     source: &Path,
     dest: &Path,
 ) -> miette::Result<()> {
-    let files = files.into_iter().collect::<Vec<_>>();
     let globs = globs.into_iter().collect::<Vec<_>>();
-
-    if !files.is_empty() {
-        for file in files {
-            let abs_file = source.join(&file);
-
-            if file != "." && abs_file.exists() {
-                if abs_file.is_dir() {
-                    fs::copy_dir_all(&abs_file, &abs_file, dest.join(file))?;
-                } else {
-                    fs::copy_file(abs_file, dest.join(file))?;
-                }
-            }
-        }
-    }
 
     if !globs.is_empty() {
         for abs_file in glob::walk_files(source, &globs)? {
@@ -74,19 +57,45 @@ fn copy_files<F: IntoIterator<Item = String>, G: IntoIterator<Item = String>>(
 }
 
 #[instrument(skip(session))]
-async fn scaffold_workspace_project(
+async fn scaffold_configs_root(session: &MoonSession, docker_configs_root: &Path) -> AppResult {
+    let toolchain_registry = session.get_toolchain_registry().await?;
+    let shared_globs = get_toolchain_globs(session, None).await?;
+
+    toolchain_registry
+        .scaffold_docker_many(
+            toolchain_registry.get_plugin_ids(),
+            |registry, toolchain| ScaffoldDockerInput {
+                context: registry.create_context(),
+                docker_config: session.workspace_config.docker.scaffold.clone(),
+                input_dir: toolchain.to_virtual_path(&session.workspace_root),
+                output_dir: toolchain.to_virtual_path(docker_configs_root),
+                phase: ScaffoldDockerPhase::Configs,
+                project: None,
+                toolchain_config: registry.create_config(&toolchain.id, &session.toolchain_config),
+            },
+        )
+        .await?;
+
+    if !shared_globs.is_empty() {
+        copy_files(shared_globs, &session.workspace_root, docker_configs_root)?;
+    }
+
+    Ok(None)
+}
+
+#[instrument(skip(session))]
+async fn scaffold_configs_project(
     session: &MoonSession,
-    docker_workspace_root: &Path,
+    docker_configs_root: &Path,
     project: &Project,
-    shared_globs: &FxHashSet<String>,
 ) -> AppResult {
-    let docker_project_root = project.source.to_logical_path(docker_workspace_root);
-
-    fs::create_dir_all(&docker_project_root)?;
-
+    let docker_project_root = project.source.to_logical_path(docker_configs_root);
+    let shared_globs = get_toolchain_globs(session, Some(project)).await?;
     let toolchains = project.get_enabled_toolchains();
 
     if !toolchains.is_empty() {
+        fs::create_dir_all(&docker_project_root)?;
+
         session
             .get_toolchain_registry()
             .await?
@@ -102,56 +111,61 @@ async fn scaffold_workspace_project(
             .await?;
     }
 
+    if !shared_globs.is_empty() {
+        copy_files(shared_globs, &project.root, &docker_project_root)?;
+    }
+
     Ok(None)
 }
 
 #[instrument(skip(session, project_graph))]
-async fn scaffold_workspace(
+async fn scaffold_configs(
     session: &MoonSession,
     project_graph: &ProjectGraph,
     docker_root: &Path,
 ) -> AppResult {
-    let docker_workspace_root = docker_root.join("workspace");
+    let docker_configs_root = docker_root.join("configs");
     let projects = project_graph.get_all()?;
-    let shared_globs = get_toolchain_globs(session, None).await?;
 
     debug!(
-        scaffold_dir = ?docker_workspace_root,
-        "Scaffolding workspace skeleton, including configuration from all projects"
+        scaffold_dir = ?docker_configs_root,
+        "Scaffolding configs skeleton, copying configuration from all projects"
     );
 
-    fs::create_dir_all(&docker_workspace_root)?;
+    fs::create_dir_all(&docker_configs_root)?;
 
     // Copy each project and mimic the folder structure
-    // let mut has_root_project = false;
+    let mut has_root_project = false;
 
     for project in projects {
-        // if path::is_root_level_source(&project.source) {
-        //     has_root_project = true;
-        // }
+        if path::is_root_level_source(&project.source) {
+            has_root_project = true;
+        }
 
-        scaffold_workspace_project(session, &docker_workspace_root, &project, &shared_globs)
-            .await?;
+        scaffold_configs_project(session, &docker_configs_root, &project).await?;
+    }
+
+    if !has_root_project {
+        scaffold_configs_root(session, &docker_configs_root).await?;
     }
 
     // Copy moon configuration
     debug!(
-        scaffold_dir = ?docker_workspace_root,
+        scaffold_dir = ?docker_configs_root,
         "Copying core moon configuration"
     );
 
     copy_files(
-        [],
         [
             ".moon/*.{pkl,yml}".to_owned(),
             ".moon/tasks/**/*.{pkl,yml}".to_owned(),
         ],
         &session.workspace_root,
-        &docker_workspace_root,
+        &docker_configs_root,
     )?;
 
     // Include via globs
-    let include = session
+    let globs = session
         .workspace_config
         .docker
         .scaffold
@@ -160,13 +174,15 @@ async fn scaffold_workspace(
         .map(|glob| glob.to_string())
         .collect::<Vec<_>>();
 
-    if !include.is_empty() {
+    if !globs.is_empty() {
         debug!(
-            include = ?include,
-            "Including additional files"
+            scaffold_dir = ?docker_configs_root,
+            globs = ?globs,
+            "Copying additional files based on {}",
+            color::property("docker.scaffold.include")
         );
 
-        copy_files([], include, &session.workspace_root, &docker_workspace_root)?;
+        copy_files(globs, &session.workspace_root, &docker_configs_root)?;
     }
 
     Ok(None)
@@ -183,40 +199,33 @@ async fn scaffold_sources_project(
     visited: &mut FxHashSet<Id>,
 ) -> AppResult {
     // Skip if already visited
-    if !visited.insert(project_id.to_owned()) {
+    if visited.contains(project_id) {
         return Ok(None);
     }
 
+    visited.insert(project_id.to_owned());
     manifest.focused_projects.insert(project_id.to_owned());
 
     let project = project_graph.get(project_id)?;
     let toolchains = project.get_enabled_toolchains();
+    let docker_project_root = project.source.to_logical_path(docker_sources_root);
 
-    // Gather globs
-    let mut globs = get_toolchain_globs(session, Some(&project)).await?;
+    // Gather globs and copy
+    let mut globs = project
+        .config
+        .docker
+        .scaffold
+        .include
+        .iter()
+        .map(|glob| glob.to_string())
+        .collect::<Vec<_>>();
 
-    globs.extend([
-        "!node_modules/**/*".into(),
-        "!target/**/*".into(),
-        "!vendor/**/*".into(),
-    ]);
-
-    if project.config.docker.scaffold.include.is_empty() {
-        globs.insert("**/*".into());
-    } else {
-        globs.extend(
-            project
-                .config
-                .docker
-                .scaffold
-                .include
-                .iter()
-                .map(|glob| glob.to_string())
-                .collect::<Vec<_>>(),
-        );
+    if globs.is_empty() {
+        globs.push("**/*".into());
     }
 
     debug!(
+        scaffold_dir = ?docker_project_root,
         project_id = project_id.as_str(),
         globs = ?globs,
         toolchains = ?toolchains,
@@ -224,10 +233,7 @@ async fn scaffold_sources_project(
         color::id(project_id),
     );
 
-    // Copy files
-    let docker_project_root = project.source.to_logical_path(docker_sources_root);
-
-    copy_files([], globs, &project.root, &docker_project_root)?;
+    copy_files(globs, &project.root, &docker_project_root)?;
 
     if !toolchains.is_empty() {
         session
@@ -245,14 +251,14 @@ async fn scaffold_sources_project(
             .await?;
     }
 
-    for dep_cfg in &project.dependencies {
+    for dep_config in &project.dependencies {
         // Avoid root-level projects as it will pull in all sources,
         // which is usually not what users want. If they do want it,
         // they can be explicit in config or on the command line!
-        if !dep_cfg.is_root_scope() {
+        if !dep_config.is_root_scope() {
             debug!(
                 project_id = project_id.as_str(),
-                dep_id = dep_cfg.id.as_str(),
+                dep_id = dep_config.id.as_str(),
                 "Including dependency project"
             );
 
@@ -260,7 +266,7 @@ async fn scaffold_sources_project(
                 session,
                 project_graph,
                 docker_sources_root,
-                &dep_cfg.id,
+                &dep_config.id,
                 manifest,
                 visited,
             )
@@ -283,7 +289,7 @@ async fn scaffold_sources(
     debug!(
         scaffold_dir = ?docker_sources_root,
         projects = ?project_ids.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
-        "Scaffolding sources skeleton, including files from focused projects"
+        "Scaffolding sources skeleton, copying files from focused projects"
     );
 
     let mut manifest = DockerManifest {
@@ -317,7 +323,7 @@ async fn scaffold_sources(
 
     // Sync to the workspace scaffold for staged builds
     json::write_file(
-        docker_root.join("workspace").join(MANIFEST_NAME),
+        docker_root.join("configs").join(MANIFEST_NAME),
         &manifest,
         true,
     )?;
@@ -387,7 +393,7 @@ pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> AppResu
     // Create the skeleton
     let project_graph = session.get_project_graph().await?;
 
-    scaffold_workspace(&session, &project_graph, &docker_root).await?;
+    scaffold_configs(&session, &project_graph, &docker_root).await?;
 
     scaffold_sources(&session, &project_graph, &docker_root, &args.ids).await?;
 

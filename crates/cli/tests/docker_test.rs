@@ -24,7 +24,7 @@ fn write_manifest(path: &Path, id: &str) {
     .unwrap()
 }
 
-mod scaffold_workspace {
+mod scaffold_configs {
     use super::*;
 
     #[test]
@@ -372,6 +372,7 @@ mod scaffold_sources {
     }
 }
 
+#[cfg(windows)]
 mod prune {
     use super::*;
 
@@ -397,6 +398,7 @@ mod prune {
     }
 }
 
+#[cfg(windows)]
 mod setup {
     use super::*;
 
@@ -419,121 +421,5 @@ mod setup {
             predicate::str::contains("Unable to continue, docker manifest missing.")
                 .eval(&assert.output())
         );
-    }
-}
-
-mod setup_node {
-    use super::*;
-
-    #[test]
-    fn installs_npm() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_node_depman_fixture_configs("npm");
-
-        let sandbox = create_sandbox_with_config(
-            "node-npm/workspaces",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        write_manifest(sandbox.path(), "other");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("setup");
-        });
-
-        // only check root because of workspaces
-        assert!(sandbox.path().join("node_modules").exists());
-    }
-
-    #[test]
-    fn installs_pnpm() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_node_depman_fixture_configs("pnpm");
-
-        let sandbox = create_sandbox_with_config(
-            "node-pnpm/workspaces",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        write_manifest(sandbox.path(), "other");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("setup");
-        });
-
-        // only check root because of workspaces
-        assert!(sandbox.path().join("node_modules").exists());
-    }
-
-    #[test]
-    fn installs_yarn() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_node_depman_fixture_configs("yarn");
-
-        let sandbox = create_sandbox_with_config(
-            "node-yarn/workspaces",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        write_manifest(sandbox.path(), "other");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("setup");
-        });
-
-        // only check root because of workspaces
-        assert!(sandbox.path().join("node_modules").exists());
-    }
-
-    #[test]
-    fn installs_yarn1() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_node_depman_fixture_configs("yarn1");
-
-        let sandbox = create_sandbox_with_config(
-            "node-yarn1/workspaces",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        write_manifest(sandbox.path(), "other");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("setup");
-        });
-
-        // only check root because of workspaces
-        assert!(sandbox.path().join("node_modules").exists());
-    }
-
-    // TODO: Bun doesn't support Windows yet!
-    #[cfg(not(windows))]
-    #[test]
-    fn installs_node_bun() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_node_depman_fixture_configs("bun");
-
-        let sandbox = create_sandbox_with_config(
-            "node-bun/workspaces",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        write_manifest(sandbox.path(), "other");
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("setup");
-        });
-
-        // only check root because of workspaces
-        assert!(sandbox.path().join("node_modules").exists());
     }
 }

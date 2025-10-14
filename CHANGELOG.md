@@ -10,6 +10,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where interactive tasks would constantly print the "running for" message.
+- Fixed an issue where touched files that were not staged would not be included in the
+  affected/hashing calculation in CI.
 
 ## 1.41.4
 

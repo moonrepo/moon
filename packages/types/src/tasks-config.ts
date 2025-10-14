@@ -287,6 +287,11 @@ export interface FileOutput {
 export interface GlobOutput {
 	/** The glob pattern. */
 	glob: string;
+	/**
+	 * Mark the file as optional instead of failing with
+	 * an error after running a task and the output doesn't exist.
+	 */
+	optional?: boolean | null;
 }
 
 export type Output = string | FileOutput | GlobOutput;

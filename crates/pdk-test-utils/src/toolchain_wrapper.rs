@@ -177,6 +177,7 @@ impl ToolchainTestWrapper {
     pub async fn parse_lock(&self, mut input: ParseLockInput) -> ParseLockOutput {
         input.context = self.create_context();
         input.path = self.plugin.to_virtual_path(input.path);
+        input.root = self.plugin.to_virtual_path(input.root);
 
         self.plugin
             .call_func_with("parse_lock", input)
@@ -187,6 +188,7 @@ impl ToolchainTestWrapper {
     pub async fn parse_manifest(&self, mut input: ParseManifestInput) -> ParseManifestOutput {
         input.context = self.create_context();
         input.path = self.plugin.to_virtual_path(input.path);
+        input.root = self.plugin.to_virtual_path(input.root);
 
         self.plugin
             .call_func_with("parse_manifest", input)

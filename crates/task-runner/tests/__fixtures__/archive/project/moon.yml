@@ -40,6 +40,12 @@ tasks:
       - '*.txt'
       - '!b.txt'
 
+  glob-outputs-optional:
+    command: noop
+    outputs:
+      - glob: '*.txt'
+        optional: true
+
   negated-outputs-only:
     command: noop
     outputs:

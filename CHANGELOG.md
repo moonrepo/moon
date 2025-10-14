@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added an `optional` parameter to task glob outputs.
 - **WASM API**
   - Added `ParseManifestInput.root` and `ParseLockInput.root` fields.
 

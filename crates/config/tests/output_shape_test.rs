@@ -156,6 +156,14 @@ mod output_shape {
                 Output::parse("glob:///file.*").unwrap(),
                 Output::Glob(stub_glob_output("/file.*"))
             );
+
+            let mut output = stub_glob_output("/file.*");
+            output.optional = Some(true);
+
+            assert_eq!(
+                Output::parse("glob:///file.*?optional").unwrap(),
+                Output::Glob(output)
+            );
         }
 
         #[test]
@@ -175,6 +183,7 @@ mod output_shape {
                 assert_eq!(
                     Output::Glob(GlobOutput {
                         glob: GlobPath(pat.into()),
+                        optional: None,
                     }),
                     Output::Glob(stub_glob_output(pat))
                 );

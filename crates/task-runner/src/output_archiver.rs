@@ -94,7 +94,15 @@ impl OutputArchiver<'_> {
                 .task
                 .get_output_files(&self.app_context.workspace_root, false)?;
 
-            return Ok(!outputs.is_empty());
+            if outputs.is_empty()
+                && !self
+                    .task
+                    .outputs
+                    .iter()
+                    .all(|output| output.is_glob() && output.is_optional())
+            {
+                return Ok(false);
+            }
         }
 
         Ok(true)

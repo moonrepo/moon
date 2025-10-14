@@ -8,6 +8,12 @@
 - **WASM API**
   - Added `ParseManifestInput.root` and `ParseLockInput.root` fields.
 
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added support for Bun v1.3 `package.json` catalogs.
+  - Updated `parse_manifest` to resolve versions from applicable catalogs.
+
 #### 🐞 Fixes
 
 - Fixed an issue where interactive tasks would constantly print the "running for" message.

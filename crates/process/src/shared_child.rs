@@ -14,7 +14,7 @@ pub enum ChildExit {
     Terminated,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SharedChild {
     inner: Arc<Mutex<Child>>,
     signal: Arc<OnceLock<SignalType>>,

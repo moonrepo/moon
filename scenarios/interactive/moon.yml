@@ -1,0 +1,30 @@
+tasks:
+  bun:
+    command: 'bun ./input.mjs'
+    options:
+      cache: false
+      interactive: true
+
+  deno:
+    command: 'deno --allow-env ./input.mjs'
+    options:
+      cache: false
+      interactive: true
+
+  go:
+    command: 'go run ./input.go'
+    options:
+      cache: false
+      interactive: true
+
+  node:
+    command: 'node ./input.mjs'
+    options:
+      cache: false
+      interactive: true
+
+  python:
+    command: 'python ./input.py'
+    options:
+      cache: false
+      interactive: true

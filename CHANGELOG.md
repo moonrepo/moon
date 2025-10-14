@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where interactive tasks would constantly print the "running for" message.
+
 ## 1.41.4
 
 #### 🐞 Fixes

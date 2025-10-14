@@ -249,7 +249,7 @@ impl<'task> CommandExecutor<'task> {
     }
 
     fn monitor_running_status(&mut self) {
-        if self.persistent {
+        if self.persistent || self.interactive {
             return;
         }
 

@@ -223,22 +223,6 @@ async fn apply_toolchain_dependencies(
     let has_parse_manifest = toolchain.has_func("parse_manifest").await;
     let has_parse_lock = toolchain.has_func("parse_lock").await;
 
-    // Load the project manifest
-    for manifest_file_name in &toolchain.metadata.manifest_file_names {
-        let manifest_path = project_root.join(manifest_file_name);
-
-        if manifest_path.exists() && has_parse_manifest {
-            project_manifests.push(
-                toolchain
-                    .parse_manifest(ParseManifestInput {
-                        context: app_context.toolchain_registry.create_context(),
-                        path: toolchain.to_virtual_path(manifest_path),
-                    })
-                    .await?,
-            );
-        }
-    }
-
     // Try and locate a dependency root
     let output = if toolchain.has_func("locate_dependencies_root").await {
         toolchain
@@ -271,6 +255,24 @@ async fn apply_toolchain_dependencies(
                         .parse_lock(ParseLockInput {
                             context: app_context.toolchain_registry.create_context(),
                             path: toolchain.to_virtual_path(lock_path),
+                            root: toolchain.to_virtual_path(&deps_root),
+                        })
+                        .await?,
+                );
+            }
+        }
+
+        // Parse and extract project manifest
+        for manifest_file_name in &toolchain.metadata.manifest_file_names {
+            let manifest_path = project_root.join(manifest_file_name);
+
+            if manifest_path.exists() && has_parse_manifest {
+                project_manifests.push(
+                    toolchain
+                        .parse_manifest(ParseManifestInput {
+                            context: app_context.toolchain_registry.create_context(),
+                            path: toolchain.to_virtual_path(manifest_path),
+                            root: toolchain.to_virtual_path(&deps_root),
                         })
                         .await?,
                 );
@@ -278,18 +280,21 @@ async fn apply_toolchain_dependencies(
         }
 
         // Parse and extract workspace manifest
-        for manifest_file_name in &toolchain.metadata.manifest_file_names {
-            let manifest_path = deps_root.join(manifest_file_name);
+        if deps_root != project_root {
+            for manifest_file_name in &toolchain.metadata.manifest_file_names {
+                let manifest_path = deps_root.join(manifest_file_name);
 
-            if manifest_path.exists() && deps_root != project_root && has_parse_manifest {
-                workspace_manifests.push(
-                    toolchain
-                        .parse_manifest(ParseManifestInput {
-                            context: app_context.toolchain_registry.create_context(),
-                            path: toolchain.to_virtual_path(manifest_path),
-                        })
-                        .await?,
-                );
+                if manifest_path.exists() && has_parse_manifest {
+                    workspace_manifests.push(
+                        toolchain
+                            .parse_manifest(ParseManifestInput {
+                                context: app_context.toolchain_registry.create_context(),
+                                path: toolchain.to_virtual_path(manifest_path),
+                                root: toolchain.to_virtual_path(&deps_root),
+                            })
+                            .await?,
+                    );
+                }
             }
         }
     }

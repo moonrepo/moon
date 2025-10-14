@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- **WASM API**
+  - Added `ParseManifestInput.root` and `ParseLockInput.root` fields.
+
 #### 🐞 Fixes
 
 - Fixed an issue where interactive tasks would constantly print the "running for" message.

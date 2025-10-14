@@ -163,6 +163,10 @@ api_struct!(
 
         /// Virtual path to the manifest file.
         pub path: VirtualPath,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
+        pub root: VirtualPath,
     }
 );
 
@@ -293,8 +297,12 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Virtual path to the lock file.
+        /// Virtual path to the lockfile.
         pub path: VirtualPath,
+
+        /// Virtual path to the dependencies root. This is where
+        /// the lockfile and root manifest should exist.
+        pub root: VirtualPath,
     }
 );
 
@@ -309,7 +317,7 @@ api_struct!(
 );
 
 api_struct!(
-    /// Represents a dependency definition in a lock file.
+    /// Represents a dependency definition in a lockfile.
     #[serde(default)]
     pub struct LockDependency {
         /// A unique hash: checksum, integrity, etc.

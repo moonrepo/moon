@@ -339,6 +339,7 @@ async fn hash_manifest_contents<'action>(
     for manifest_path in manifest_paths {
         let app_context = Arc::clone(app_context);
         let toolchain = Arc::clone(toolchain);
+        let deps_root = deps_root.to_owned();
 
         if let Ok(rel_path) = manifest_path.relative_to(&app_context.workspace_root) {
             hash_content.manifest_paths.insert(rel_path);
@@ -349,6 +350,7 @@ async fn hash_manifest_contents<'action>(
                 .parse_manifest(ParseManifestInput {
                     context: app_context.toolchain_registry.create_context(),
                     path: toolchain.to_virtual_path(manifest_path),
+                    root: toolchain.to_virtual_path(deps_root),
                 })
                 .await
         }));

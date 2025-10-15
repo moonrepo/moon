@@ -52,6 +52,11 @@ config_struct!(
     pub struct GlobOutput {
         /// The glob pattern.
         pub glob: GlobPath,
+
+        /// Mark the file as optional instead of failing with
+        /// an error after running a task and the output doesn't exist.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub optional: Option<bool>,
     }
 );
 
@@ -59,12 +64,20 @@ generate_io_glob_methods!(GlobOutput);
 
 impl GlobOutput {
     pub fn from_uri(uri: Uri) -> Result<Self, ParseError> {
-        let output = Self {
+        let mut output = Self {
             glob: GlobPath::parse(uri.path.replace("__QM__", "?"))?,
+            optional: None,
         };
 
-        if let Some((key, _)) = uri.query.into_iter().next() {
-            return Err(ParseError::new(format!("unknown glob field `{key}`")));
+        for (key, value) in uri.query {
+            match key.as_str() {
+                "optional" => {
+                    output.optional = Some(parse_bool_field(&key, &value)?);
+                }
+                _ => {
+                    return Err(ParseError::new(format!("unknown glob field `{key}`")));
+                }
+            };
         }
 
         Ok(output)
@@ -113,6 +126,14 @@ impl Output {
 
     pub fn is_glob(&self) -> bool {
         matches!(self, Self::Glob(_))
+    }
+
+    pub fn is_optional(&self) -> bool {
+        match self {
+            Output::File(value) => value.optional.unwrap_or_default(),
+            Output::Glob(value) => value.optional.unwrap_or_default(),
+            _ => false,
+        }
     }
 }
 

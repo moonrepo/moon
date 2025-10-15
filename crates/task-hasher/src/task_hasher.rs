@@ -2,8 +2,8 @@ use crate::task_hash::TaskHash;
 use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
+use moon_common::color;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy, Input, ProjectInput};
 use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::glob_walk_with_options;
@@ -154,7 +154,7 @@ impl<'task> TaskHasher<'task> {
 
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
-        if !is_ci() && vcs_enabled {
+        if vcs_enabled {
             for local_file in self.app_context.vcs.get_touched_files().await?.all() {
                 let abs_file = local_file.to_logical_path(workspace_root);
 

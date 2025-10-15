@@ -334,6 +334,18 @@
           "title": "glob",
           "description": "The glob pattern.",
           "type": "string"
+        },
+        "optional": {
+          "title": "optional",
+          "description": "Mark the file as optional instead of failing with an error after running a task and the output doesn't exist.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false

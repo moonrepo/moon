@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `optional` parameter to task glob outputs.
+- **WASM API**
+  - Added `ParseManifestInput.root` and `ParseLockInput.root` fields.
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added support for Bun v1.3 `package.json` catalogs.
+  - Updated `parse_manifest` to resolve versions from applicable catalogs.
+
+#### 🐞 Fixes
+
+- Fixed an issue where interactive tasks would constantly print the "running for" message.
+- Fixed an issue where touched files that were not staged would not be included in the
+  affected/hashing calculation in CI.
+
 ## 1.41.4
 
 #### 🐞 Fixes

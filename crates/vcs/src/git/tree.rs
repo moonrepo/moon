@@ -1,7 +1,7 @@
 use super::common::*;
 use super::git_error::GitError;
+use crate::changed_files::ChangedFiles;
 use crate::process_cache::ProcessCache;
-use crate::touched_files::TouchedFiles;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
@@ -259,7 +259,7 @@ impl GitTree {
         &self,
         base_revision: &str,
         head_revision: &str,
-    ) -> miette::Result<TouchedFiles<PathBuf>> {
+    ) -> miette::Result<ChangedFiles<PathBuf>> {
         let process = self.get_process();
         let mut args = vec![
             "diff",
@@ -283,7 +283,7 @@ impl GitTree {
             .await?;
 
         if output.is_empty() {
-            return Ok(TouchedFiles::default());
+            return Ok(ChangedFiles::default());
         }
 
         let mut added = FxHashSet::default();
@@ -334,7 +334,7 @@ impl GitTree {
             }
         }
 
-        Ok(TouchedFiles {
+        Ok(ChangedFiles {
             added,
             deleted,
             modified,
@@ -483,7 +483,7 @@ impl GitTree {
     //  Submodule:
     //    - Run in the submodule root.
     #[instrument(skip(self))]
-    pub async fn exec_status(&self) -> miette::Result<TouchedFiles<PathBuf>> {
+    pub async fn exec_status(&self) -> miette::Result<ChangedFiles<PathBuf>> {
         let process = self.get_process();
         let output = process
             .run_command(
@@ -507,7 +507,7 @@ impl GitTree {
             .await?;
 
         if output.is_empty() {
-            return Ok(TouchedFiles::default());
+            return Ok(ChangedFiles::default());
         }
 
         let mut added = FxHashSet::default();
@@ -574,7 +574,7 @@ impl GitTree {
             }
         }
 
-        let files = TouchedFiles {
+        let files = ChangedFiles {
             added,
             deleted,
             modified,

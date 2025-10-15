@@ -1,4 +1,4 @@
-use crate::touched_files::TouchedFiles;
+use crate::changed_files::ChangedFiles;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
@@ -47,20 +47,20 @@ pub trait Vcs: Debug {
     async fn get_repository_slug(&self) -> miette::Result<Arc<String>>;
 
     /// Determine touched files from the local index / working tree.
-    async fn get_touched_files(&self) -> miette::Result<TouchedFiles>;
+    async fn get_touched_files(&self) -> miette::Result<ChangedFiles>;
 
     /// Determine touched files between a revision and its self (-1 revision).
     async fn get_touched_files_against_previous_revision(
         &self,
         revision: &str,
-    ) -> miette::Result<TouchedFiles>;
+    ) -> miette::Result<ChangedFiles>;
 
     /// Determine touched files between 2 revisions.
     async fn get_touched_files_between_revisions(
         &self,
         base_revision: &str,
         revision: &str,
-    ) -> miette::Result<TouchedFiles>;
+    ) -> miette::Result<ChangedFiles>;
 
     /// Get the version of the current VCS binary
     async fn get_version(&self) -> miette::Result<Version>;

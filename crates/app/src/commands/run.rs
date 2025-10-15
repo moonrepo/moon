@@ -10,7 +10,7 @@ use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_task::TargetLocator;
-use moon_vcs::TouchedStatus;
+use moon_vcs::ChangedStatus;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use tracing::instrument;
@@ -102,7 +102,7 @@ pub struct RunArgs {
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
-    pub status: Vec<TouchedStatus>,
+    pub status: Vec<ChangedStatus>,
 
     #[arg(
         long,

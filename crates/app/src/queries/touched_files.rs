@@ -2,7 +2,7 @@ use miette::IntoDiagnostic;
 use moon_common::is_ci;
 use moon_common::path::{WorkspaceRelativePathBuf, standardize_separators};
 use moon_env_var::GlobalEnvBag;
-use moon_vcs::{BoxedVcs, TouchedStatus};
+use moon_vcs::{BoxedVcs, ChangedStatus};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
@@ -21,7 +21,7 @@ pub struct QueryTouchedFilesOptions {
     pub head: Option<String>,
     pub json: bool,
     pub local: bool,
-    pub status: Vec<TouchedStatus>,
+    pub status: Vec<ChangedStatus>,
     pub stdin: bool,
 }
 
@@ -110,7 +110,7 @@ pub async fn query_touched_files(
     if options.status.is_empty() {
         debug!(
             "Filtering based on touched status {}",
-            color::symbol(TouchedStatus::All.to_string())
+            color::symbol(ChangedStatus::All.to_string())
         );
 
         touched_files.extend(touched_files_map.all());
@@ -127,13 +127,13 @@ pub async fn query_touched_files(
 
         for status in &options.status {
             touched_files.extend(match status {
-                TouchedStatus::Added => touched_files_map.added.iter().collect(),
-                TouchedStatus::All => touched_files_map.all(),
-                TouchedStatus::Deleted => touched_files_map.deleted.iter().collect(),
-                TouchedStatus::Modified => touched_files_map.modified.iter().collect(),
-                TouchedStatus::Staged => touched_files_map.staged.iter().collect(),
-                TouchedStatus::Unstaged => touched_files_map.unstaged.iter().collect(),
-                TouchedStatus::Untracked => touched_files_map.untracked.iter().collect(),
+                ChangedStatus::Added => touched_files_map.added.iter().collect(),
+                ChangedStatus::All => touched_files_map.all(),
+                ChangedStatus::Deleted => touched_files_map.deleted.iter().collect(),
+                ChangedStatus::Modified => touched_files_map.modified.iter().collect(),
+                ChangedStatus::Staged => touched_files_map.staged.iter().collect(),
+                ChangedStatus::Unstaged => touched_files_map.unstaged.iter().collect(),
+                ChangedStatus::Untracked => touched_files_map.untracked.iter().collect(),
             });
         }
     }

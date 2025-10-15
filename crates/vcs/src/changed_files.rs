@@ -24,7 +24,7 @@ where
 }
 
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct TouchedFiles<T: Hash + Eq + PartialEq = WorkspaceRelativePathBuf> {
+pub struct ChangedFiles<T: Hash + Eq + PartialEq = WorkspaceRelativePathBuf> {
     pub added: FxHashSet<T>,
     pub deleted: FxHashSet<T>,
     pub modified: FxHashSet<T>,
@@ -35,7 +35,7 @@ pub struct TouchedFiles<T: Hash + Eq + PartialEq = WorkspaceRelativePathBuf> {
     pub unstaged: FxHashSet<T>,
 }
 
-impl<T: Hash + Eq + PartialEq> TouchedFiles<T> {
+impl<T: Hash + Eq + PartialEq> ChangedFiles<T> {
     pub fn all(&self) -> FxHashSet<&T> {
         let mut files = FxHashSet::default();
         files.extend(&self.added);
@@ -47,7 +47,7 @@ impl<T: Hash + Eq + PartialEq> TouchedFiles<T> {
         files
     }
 
-    pub fn merge(&mut self, other: TouchedFiles<T>) {
+    pub fn merge(&mut self, other: ChangedFiles<T>) {
         self.added.extend(other.added);
         self.deleted.extend(other.deleted);
         self.modified.extend(other.modified);
@@ -57,12 +57,12 @@ impl<T: Hash + Eq + PartialEq> TouchedFiles<T> {
     }
 }
 
-impl TouchedFiles<PathBuf> {
+impl ChangedFiles<PathBuf> {
     pub fn into_workspace_relative(
         self,
         workspace_root: &PathBuf,
-    ) -> miette::Result<TouchedFiles<WorkspaceRelativePathBuf>> {
-        let mut files = TouchedFiles::default();
+    ) -> miette::Result<ChangedFiles<WorkspaceRelativePathBuf>> {
+        let mut files = ChangedFiles::default();
 
         files.added.extend(map_absolute_to_workspace_relative_paths(
             self.added,
@@ -105,7 +105,7 @@ impl TouchedFiles<PathBuf> {
 
 #[derive(Clone, Copy, Debug, Deserialize, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TouchedStatus {
+pub enum ChangedStatus {
     Added,
     #[default]
     All,
@@ -116,19 +116,19 @@ pub enum TouchedStatus {
     Untracked,
 }
 
-impl fmt::Display for TouchedStatus {
+impl fmt::Display for ChangedStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(
             f,
             "{}",
             match self {
-                TouchedStatus::Added => "added",
-                TouchedStatus::All => "all",
-                TouchedStatus::Deleted => "deleted",
-                TouchedStatus::Modified => "modified",
-                TouchedStatus::Staged => "staged",
-                TouchedStatus::Unstaged => "unstaged",
-                TouchedStatus::Untracked => "untracked",
+                ChangedStatus::Added => "added",
+                ChangedStatus::All => "all",
+                ChangedStatus::Deleted => "deleted",
+                ChangedStatus::Modified => "modified",
+                ChangedStatus::Staged => "staged",
+                ChangedStatus::Unstaged => "unstaged",
+                ChangedStatus::Untracked => "untracked",
             }
         )?;
 
@@ -136,7 +136,7 @@ impl fmt::Display for TouchedStatus {
     }
 }
 
-impl FromStr for TouchedStatus {
+impl FromStr for ChangedStatus {
     type Err = miette::Report;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {

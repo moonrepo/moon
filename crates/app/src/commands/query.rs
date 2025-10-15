@@ -9,7 +9,7 @@ use iocraft::prelude::{Size, element};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::is_ci;
 use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
-use moon_vcs::TouchedStatus;
+use moon_vcs::ChangedStatus;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
@@ -565,7 +565,7 @@ pub struct QueryTouchedFilesArgs {
     remote: Option<bool>,
 
     #[arg(long, help = "Filter files based on a touched status")]
-    status: Vec<TouchedStatus>,
+    status: Vec<ChangedStatus>,
 }
 
 #[instrument(skip_all)]

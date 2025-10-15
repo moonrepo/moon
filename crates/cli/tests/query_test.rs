@@ -6,7 +6,7 @@ use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
     get_cases_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
 };
-use moon_vcs::TouchedStatus;
+use moon_vcs::ChangedStatus;
 use starbase_utils::{json, string_vec};
 
 fn change_branch(sandbox: &Sandbox) {
@@ -1021,7 +1021,7 @@ mod touched_files {
 
         assert_eq!(json.options.base.unwrap(), "master".to_string());
         assert_eq!(json.options.head.unwrap(), "branch".to_string());
-        assert_eq!(json.options.status, vec![TouchedStatus::Deleted]);
+        assert_eq!(json.options.status, vec![ChangedStatus::Deleted]);
     }
 
     #[test]
@@ -1047,9 +1047,9 @@ mod touched_files {
         assert_eq!(
             json.options.status,
             vec![
-                TouchedStatus::Deleted,
-                TouchedStatus::Added,
-                TouchedStatus::Modified
+                ChangedStatus::Deleted,
+                ChangedStatus::Added,
+                ChangedStatus::Modified
             ]
         );
     }

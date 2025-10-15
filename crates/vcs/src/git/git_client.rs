@@ -1,8 +1,8 @@
 use super::common::clean_git_version;
 use super::git_error::GitError;
 use super::tree::*;
+use crate::changed_files::*;
 use crate::process_cache::ProcessCache;
-use crate::touched_files::*;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use git_url_parse::types::provider::GenericProvider;
@@ -393,8 +393,8 @@ impl Vcs for Git {
         Err(GitError::ExtractRepoSlugFailed.into())
     }
 
-    async fn get_touched_files(&self) -> miette::Result<TouchedFiles> {
-        let mut touched_files = TouchedFiles::default();
+    async fn get_touched_files(&self) -> miette::Result<ChangedFiles> {
+        let mut touched_files = ChangedFiles::default();
         let mut set = JoinSet::new();
 
         for tree in self.get_all_trees() {
@@ -411,7 +411,7 @@ impl Vcs for Git {
     async fn get_touched_files_against_previous_revision(
         &self,
         revision: &str,
-    ) -> miette::Result<TouchedFiles> {
+    ) -> miette::Result<ChangedFiles> {
         let revision = if self.is_default_branch(revision) {
             "HEAD"
         } else {
@@ -440,8 +440,8 @@ impl Vcs for Git {
         &self,
         base_revision: &str,
         head_revision: &str, // Can be empty
-    ) -> miette::Result<TouchedFiles> {
-        let mut touched_files = TouchedFiles::default();
+    ) -> miette::Result<ChangedFiles> {
+        let mut touched_files = ChangedFiles::default();
 
         // Determine the merge base revision based on the base/head
         let merge_base = self

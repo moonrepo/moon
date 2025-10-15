@@ -1,5 +1,5 @@
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{TouchedFiles, Vcs, git::*};
+use moon_vcs::{ChangedFiles, Vcs, git::*};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
@@ -293,7 +293,7 @@ mod gitx {
             // Returns nothing
             let files = git.get_touched_files().await.unwrap();
 
-            assert_eq!(files, TouchedFiles::default());
+            assert_eq!(files, ChangedFiles::default());
 
             // Returns all
             sandbox.create_file("root.txt", "");
@@ -303,12 +303,12 @@ mod gitx {
 
             assert_eq!(
                 files,
-                TouchedFiles {
+                ChangedFiles {
                     untracked: create_touched_set([
                         "root.txt",
                         "submodules/mono/packages/a/sub.txt"
                     ]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -521,7 +521,7 @@ mod gitx {
             // Returns nothing
             let files = git.get_touched_files().await.unwrap();
 
-            assert_eq!(files, TouchedFiles::default());
+            assert_eq!(files, ChangedFiles::default());
 
             // Returns all
             sandbox.create_file("root.txt", "");
@@ -532,12 +532,12 @@ mod gitx {
 
             assert_eq!(
                 files,
-                TouchedFiles {
+                ChangedFiles {
                     untracked: create_touched_set([
                         "tree.txt",
                         "submodules/mono/packages/a/sub.txt"
                     ]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -897,7 +897,7 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles::default()
+                ChangedFiles::default()
             );
         }
 
@@ -909,9 +909,9 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     untracked: create_touched_set(["added.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -928,10 +928,10 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     added: create_touched_set(["added.txt"]),
                     staged: create_touched_set(["added.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -944,10 +944,10 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     deleted: create_touched_set(["delete-me.txt"]),
                     unstaged: create_touched_set(["delete-me.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -960,10 +960,10 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     modified: create_touched_set(["existing.txt"]),
                     unstaged: create_touched_set(["existing.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -980,11 +980,11 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     deleted: create_touched_set(["rename-me.txt"]),
                     unstaged: create_touched_set(["rename-me.txt"]),
                     untracked: create_touched_set(["renamed.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -997,10 +997,10 @@ mod gitx {
 
             assert_eq!(
                 git.get_touched_files().await.unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     modified: create_touched_set(["file.js"]),
                     unstaged: create_touched_set(["file.js"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -1021,7 +1021,7 @@ mod gitx {
                 git.get_touched_files_between_revisions("master", "")
                     .await
                     .unwrap(),
-                TouchedFiles::default()
+                ChangedFiles::default()
             );
         }
 
@@ -1040,7 +1040,7 @@ mod gitx {
                     .await
                     .unwrap(),
                 // Untracked isn't captured between branches
-                TouchedFiles::default()
+                ChangedFiles::default()
             );
         }
 
@@ -1062,10 +1062,10 @@ mod gitx {
                 git.get_touched_files_between_revisions("master", "")
                     .await
                     .unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     added: create_touched_set(["added.txt"]),
                     staged: create_touched_set(["added.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -1084,10 +1084,10 @@ mod gitx {
                 git.get_touched_files_between_revisions("master", "")
                     .await
                     .unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     deleted: create_touched_set(["delete-me.txt"]),
                     staged: create_touched_set(["delete-me.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -1106,10 +1106,10 @@ mod gitx {
                 git.get_touched_files_between_revisions("master", "")
                     .await
                     .unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     modified: create_touched_set(["existing.txt"]),
                     staged: create_touched_set(["existing.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }
@@ -1132,10 +1132,10 @@ mod gitx {
                 git.get_touched_files_between_revisions("master", "")
                     .await
                     .unwrap(),
-                TouchedFiles {
+                ChangedFiles {
                     deleted: create_touched_set(["rename-me.txt"]),
                     staged: create_touched_set(["rename-me.txt"]),
-                    ..TouchedFiles::default()
+                    ..ChangedFiles::default()
                 }
             );
         }

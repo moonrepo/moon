@@ -155,6 +155,41 @@ impl Gitx {
     fn get_process(&self) -> &ProcessCache {
         self.worktree.get_process()
     }
+
+    pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
+        let extract_branch = |result: Arc<String>| -> Option<Arc<String>> {
+            if let Some(branch) = result.strip_prefix("origin/") {
+                return Some(Arc::new(branch.to_owned()));
+            } else if let Some(branch) = result.strip_prefix("upstream/") {
+                return Some(Arc::new(branch.to_owned()));
+            }
+
+            None
+        };
+
+        if let Ok(result) = self
+            .get_process()
+            .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
+            .await
+            && let Some(branch) = extract_branch(result)
+        {
+            return Ok(branch);
+        };
+
+        if let Ok(result) = self
+            .get_process()
+            .run(
+                ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
+                true,
+            )
+            .await
+            && let Some(branch) = extract_branch(result)
+        {
+            return Ok(branch);
+        };
+
+        Ok(self.default_branch.clone())
+    }
 }
 
 #[async_trait]

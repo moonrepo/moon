@@ -10,7 +10,7 @@ use moon_console::{
     Console,
     ui::{Confirm, Container, Notice, StyledText, Variant},
 };
-use moon_vcs::{Git, Vcs};
+use moon_vcs::{Vcs, git::Gitx};
 use proto_core::PluginLocator;
 use starbase::AppResult;
 use starbase_utils::fs;
@@ -146,7 +146,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
         return Ok(None);
     }
 
-    let git = Git::load(&options.dir, "master", &[])?;
+    let git = Gitx::load(&options.dir, "master", &[])?;
 
     let mut context = create_default_context();
     context.insert("vcs_client", "git");

@@ -12,7 +12,7 @@ use moon_project_graph::Project;
 use moon_task_builder::*;
 use moon_task_graph::Task;
 use moon_toolchain_plugin::ToolchainRegistry;
-use moon_vcs::{BoxedVcs, Git};
+use moon_vcs::{BoxedVcs, git::Gitx};
 use moon_workspace::*;
 pub use moon_workspace_graph::WorkspaceGraph;
 use proto_core::{ProtoConfig, ProtoEnvironment, warpgate::find_debug_locator};
@@ -368,7 +368,7 @@ impl WorkspaceMocker {
 
     pub fn mock_vcs_adapter(&self) -> BoxedVcs {
         Box::new(
-            Git::load(
+            Gitx::load(
                 &self.workspace_root,
                 &self.workspace_config.vcs.default_branch,
                 &self.workspace_config.vcs.remote_candidates,

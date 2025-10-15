@@ -4707,7 +4707,11 @@ tasks:
 Glob patterns support
 [project and workspace relative file/folder patterns](../concepts/file-pattern#project-relative).
 They can be defined as a literal path, or a `glob://` URI ,
-or as an object with a `glob` property .
+or as an object with a `glob` property . Additionally, the
+following parameters are supported as a URI query or as object fields:
+
+- `optional` (`boolean`) - When archiving and set to `true` and the glob produced no results, will
+  not fail with a missing output error. Defaults to `false`.
 
 ```yaml title="moon.yml"
 tasks:

@@ -5,6 +5,7 @@
 #### 💥 Breaking
 
 - **CLI**
+  - Renamed the `moon query touched-files` command to `moon query changed-files`.
   - Removed scaffolding a toolchain from the `moon init` command. Use the `moon toolchain add`
     command instead.
   - Removed the `moon node` command and sub-commands.
@@ -55,6 +56,7 @@
 - **VCS**
   - The Git v2 implementation is now the default. The legacy Git implementation and the
     `experiments.gitV2` setting have been removed.
+  - Renamed the term "touched files" to "changed files" throughout the codebase and documentation.
 - **Other**
   - Removed the `projectType` and `taskPlatform` query properties. Use `projectLayer` and
     `taskToolchain` instead.

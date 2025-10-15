@@ -5,7 +5,7 @@ use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
 
-fn create_root_sandbox(bare: bool) -> (Sandbox, Gitx) {
+fn create_root_sandbox(bare: bool) -> (Sandbox, Git) {
     let sandbox = create_empty_sandbox();
 
     sandbox.run_git(|cmd| {
@@ -21,12 +21,12 @@ fn create_root_sandbox(bare: bool) -> (Sandbox, Gitx) {
         }
     });
 
-    let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+    let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
     (sandbox, git)
 }
 
-fn create_worktree_sandbox(bare: bool) -> (Sandbox, Gitx) {
+fn create_worktree_sandbox(bare: bool) -> (Sandbox, Git) {
     let sandbox = create_empty_sandbox();
 
     sandbox.run_git(|cmd| {
@@ -51,7 +51,7 @@ fn create_worktree_sandbox(bare: bool) -> (Sandbox, Gitx) {
             .current_dir(sandbox.path().join("trees/one"));
     });
 
-    let git = Gitx::load(
+    let git = Git::load(
         sandbox.path().join("trees/one"),
         "master",
         &["origin".into()],
@@ -61,30 +61,30 @@ fn create_worktree_sandbox(bare: bool) -> (Sandbox, Gitx) {
     (sandbox, git)
 }
 
-fn create_git_sandbox(fixture: &str) -> (Sandbox, Gitx) {
+fn create_git_sandbox(fixture: &str) -> (Sandbox, Git) {
     let sandbox = create_sandbox(fixture);
     sandbox.enable_git();
 
-    let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+    let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
     (sandbox, git)
 }
 
-fn create_git_sandbox_with_ignored(fixture: &str) -> (Sandbox, Gitx) {
+fn create_git_sandbox_with_ignored(fixture: &str) -> (Sandbox, Git) {
     let sandbox = create_sandbox(fixture);
     sandbox.enable_git();
     sandbox.create_file(".gitignore", "foo/*.txt");
 
-    let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+    let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
     (sandbox, git)
 }
 
-fn create_nested_git_sandbox() -> (Sandbox, Gitx) {
+fn create_nested_git_sandbox() -> (Sandbox, Git) {
     let sandbox = create_sandbox("nested");
     sandbox.enable_git();
 
-    let git = Gitx::load(
+    let git = Git::load(
         sandbox.path().join("frontend"),
         "master",
         &["origin".into()],
@@ -559,7 +559,7 @@ mod gitx {
                 ]);
             });
 
-            let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
             assert!(git.submodules.is_empty());
         }
@@ -582,7 +582,7 @@ mod gitx {
         async fn same_dir_if_no_git_dir() {
             let sandbox = create_sandbox("vcs");
 
-            let git = Gitx::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
             assert_eq!(git.worktree.git_dir, sandbox.path().join(".git"));
             assert_eq!(git.worktree.work_dir, sandbox.path());
@@ -595,7 +595,7 @@ mod gitx {
             let sandbox = create_sandbox("vcs");
             sandbox.enable_git();
 
-            let git = Gitx::load(
+            let git = Git::load(
                 sandbox.path().join("nested/moon"),
                 "master",
                 &["origin".into()],

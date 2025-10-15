@@ -17,7 +17,7 @@ use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
-use moon_vcs::{BoxedVcs, git::Gitx};
+use moon_vcs::{BoxedVcs, git::Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
@@ -202,7 +202,7 @@ impl MoonSession {
         if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
 
-            let git: BoxedVcs = Box::new(Gitx::load(
+            let git: BoxedVcs = Box::new(Git::load(
                 &self.workspace_root,
                 &config.default_branch,
                 &config.remote_candidates,

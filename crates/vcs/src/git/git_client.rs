@@ -18,7 +18,7 @@ use tokio::task::JoinSet;
 use tracing::debug;
 
 #[derive(Debug)]
-pub struct Gitx {
+pub struct Git {
     /// Is this a bare repository.
     pub bare: bool,
 
@@ -44,12 +44,12 @@ pub struct Gitx {
     pub worktree: GitTree,
 }
 
-impl Gitx {
+impl Git {
     pub fn load<R: AsRef<Path>, B: AsRef<str>>(
         workspace_root: R,
         default_branch: B,
         remote_candidates: &[String],
-    ) -> miette::Result<Gitx> {
+    ) -> miette::Result<Git> {
         debug!("Using git as a version control system (using v2 implementation)");
 
         let workspace_root = workspace_root.as_ref();
@@ -123,7 +123,7 @@ impl Gitx {
         let submodules = GitTree::load_submodules(&worktree.work_dir)?;
 
         // Create the instance and load ignore files
-        let mut git = Gitx {
+        let mut git = Git {
             bare,
             default_branch: Arc::new(default_branch.as_ref().to_owned()),
             remote_candidates: remote_candidates.to_owned(),
@@ -193,7 +193,7 @@ impl Gitx {
 }
 
 #[async_trait]
-impl Vcs for Gitx {
+impl Vcs for Git {
     async fn get_local_branch(&self) -> miette::Result<Arc<String>> {
         if self.is_version_supported(">=2.22.0").await? {
             return self

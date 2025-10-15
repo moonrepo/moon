@@ -1,6 +1,6 @@
 use crate::app_error::AppError;
 use crate::components::run_action_pipeline;
-use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files_with_stdin};
+use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files_with_stdin};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::Args;
@@ -38,7 +38,7 @@ pub struct CiArgs {
     #[arg(long = "jobTotal", help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
     job_total: Option<usize>,
 
-    #[arg(long, help = "Accept touched files from stdin for affected checks")]
+    #[arg(long, help = "Accept changed files from stdin for affected checks")]
     stdin: bool,
 }
 
@@ -86,12 +86,12 @@ impl CiConsole {
 }
 
 /// Gather a list of files that have been modified between branches.
-async fn gather_touched_files(
+async fn gather_changed_files(
     console: &mut CiConsole,
     session: &MoonSession,
     args: &CiArgs,
 ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
-    console.print_header("Gathering touched files")?;
+    console.print_header("Gathering changed files")?;
 
     let mut base = args.base.clone();
     let mut head = args.head.clone();
@@ -113,14 +113,14 @@ async fn gather_touched_files(
     }
 
     let vcs = session.get_vcs_adapter()?;
-    let result = query_touched_files_with_stdin(
+    let result = query_changed_files_with_stdin(
         &vcs,
-        &QueryTouchedFilesOptions {
+        &QueryChangedFilesOptions {
             default_branch: true,
             base,
             head,
             stdin: args.stdin,
-            ..QueryTouchedFilesOptions::default()
+            ..QueryChangedFilesOptions::default()
         },
     )
     .await?;
@@ -221,12 +221,12 @@ async fn generate_action_graph(
     console: &mut CiConsole,
     session: &MoonSession,
     targets: &TargetList,
-    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    changed_files: FxHashSet<WorkspaceRelativePathBuf>,
 ) -> miette::Result<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
     let mut action_graph_builder = session.build_action_graph().await?;
-    action_graph_builder.set_touched_files(touched_files)?;
+    action_graph_builder.set_changed_files(changed_files)?;
     action_graph_builder.track_affected(UpstreamScope::Deep, DownstreamScope::Deep, true)?;
 
     // Always sync workspace in CI
@@ -269,7 +269,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     };
 
     let workspace_graph = session.get_workspace_graph().await?;
-    let touched_files = gather_touched_files(&mut console, &session, &args).await?;
+    let changed_files = gather_changed_files(&mut console, &session, &args).await?;
     let targets = gather_potential_targets(&mut console, &workspace_graph, &args).await?;
 
     if targets.is_empty() {
@@ -280,7 +280,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
 
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
     let (action_graph, action_context) =
-        generate_action_graph(&mut console, &session, &targets, touched_files).await?;
+        generate_action_graph(&mut console, &session, &targets, changed_files).await?;
 
     // Process all tasks in the graph
     console.print_header("Running pipeline")?;

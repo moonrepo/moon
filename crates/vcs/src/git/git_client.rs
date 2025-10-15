@@ -393,8 +393,8 @@ impl Vcs for Git {
         Err(GitError::ExtractRepoSlugFailed.into())
     }
 
-    async fn get_touched_files(&self) -> miette::Result<ChangedFiles> {
-        let mut touched_files = ChangedFiles::default();
+    async fn get_changed_files(&self) -> miette::Result<ChangedFiles> {
+        let mut changed_files = ChangedFiles::default();
         let mut set = JoinSet::new();
 
         for tree in self.get_all_trees() {
@@ -402,13 +402,13 @@ impl Vcs for Git {
         }
 
         while let Some(result) = set.join_next().await {
-            touched_files.merge(result.into_diagnostic()??);
+            changed_files.merge(result.into_diagnostic()??);
         }
 
-        touched_files.into_workspace_relative(&self.workspace_root)
+        changed_files.into_workspace_relative(&self.workspace_root)
     }
 
-    async fn get_touched_files_against_previous_revision(
+    async fn get_changed_files_against_previous_revision(
         &self,
         revision: &str,
     ) -> miette::Result<ChangedFiles> {
@@ -432,16 +432,16 @@ impl Vcs for Git {
             format!("{revision}~1")
         };
 
-        self.get_touched_files_between_revisions(&prev_revision, revision)
+        self.get_changed_files_between_revisions(&prev_revision, revision)
             .await
     }
 
-    async fn get_touched_files_between_revisions(
+    async fn get_changed_files_between_revisions(
         &self,
         base_revision: &str,
         head_revision: &str, // Can be empty
     ) -> miette::Result<ChangedFiles> {
-        let mut touched_files = ChangedFiles::default();
+        let mut changed_files = ChangedFiles::default();
 
         // Determine the merge base revision based on the base/head
         let merge_base = self
@@ -454,7 +454,7 @@ impl Vcs for Git {
             .unwrap_or(base_revision);
 
         // Load from root repo
-        touched_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
+        changed_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
 
         // Load from each submodule
         if !self.submodules.is_empty() {
@@ -486,12 +486,12 @@ impl Vcs for Git {
 
             if !set.is_empty() {
                 while let Some(result) = set.join_next().await {
-                    touched_files.merge(result.into_diagnostic()??);
+                    changed_files.merge(result.into_diagnostic()??);
                 }
             }
         }
 
-        touched_files.into_workspace_relative(&self.workspace_root)
+        changed_files.into_workspace_relative(&self.workspace_root)
     }
 
     async fn get_version(&self) -> miette::Result<Version> {

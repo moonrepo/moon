@@ -1,6 +1,6 @@
+use moon_app::queries::changed_files::*;
 use moon_app::queries::projects::*;
 use moon_app::queries::tasks::*;
-use moon_app::queries::touched_files::*;
 use moon_common::is_ci;
 use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
@@ -333,7 +333,7 @@ mod projects {
         touch_file(&sandbox);
 
         let query = sandbox.run_moon(|cmd| {
-            cmd.arg("query").arg("touched-files");
+            cmd.arg("query").arg("changed-files");
 
             if !is_ci() {
                 cmd.arg("--local");
@@ -402,7 +402,7 @@ mod projects {
         touch_file(&sandbox);
 
         let query = sandbox.run_moon(|cmd| {
-            cmd.arg("query").arg("touched-files").arg("--json");
+            cmd.arg("query").arg("changed-files").arg("--json");
 
             if !is_ci() {
                 cmd.arg("--local");
@@ -774,7 +774,7 @@ mod tasks {
         touch_file(&sandbox);
 
         let query = sandbox.run_moon(|cmd| {
-            cmd.arg("query").arg("touched-files");
+            cmd.arg("query").arg("changed-files");
 
             if !is_ci() {
                 cmd.arg("--local");
@@ -994,7 +994,7 @@ mod tasks {
     }
 }
 
-mod touched_files {
+mod changed_files {
     use super::*;
 
     #[test]
@@ -1012,12 +1012,12 @@ mod touched_files {
         change_branch(&sandbox);
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("query").arg("touched-files").args([
+            cmd.arg("query").arg("changed-files").args([
                 "--base", "master", "--head", "branch", "--status", "deleted", "--json",
             ]);
         });
 
-        let json: QueryTouchedFilesResult = json::parse(assert.output()).unwrap();
+        let json: QueryChangedFilesResult = json::parse(assert.output()).unwrap();
 
         assert_eq!(json.options.base.unwrap(), "master".to_string());
         assert_eq!(json.options.head.unwrap(), "branch".to_string());
@@ -1037,12 +1037,12 @@ mod touched_files {
         sandbox.enable_git();
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("query").arg("touched-files").args([
+            cmd.arg("query").arg("changed-files").args([
                 "--status", "deleted", "--status", "added", "--status", "modified", "--json",
             ]);
         });
 
-        let json: QueryTouchedFilesResult = json::parse(assert.output()).unwrap();
+        let json: QueryChangedFilesResult = json::parse(assert.output()).unwrap();
 
         assert_eq!(
             json.options.status,

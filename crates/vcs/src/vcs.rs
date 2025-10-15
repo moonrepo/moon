@@ -46,17 +46,17 @@ pub trait Vcs: Debug {
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> miette::Result<Arc<String>>;
 
-    /// Determine touched files from the local index / working tree.
-    async fn get_touched_files(&self) -> miette::Result<ChangedFiles>;
+    /// Determine changed files from the local index / working tree.
+    async fn get_changed_files(&self) -> miette::Result<ChangedFiles>;
 
-    /// Determine touched files between a revision and its self (-1 revision).
-    async fn get_touched_files_against_previous_revision(
+    /// Determine changed files between a revision and its self (-1 revision).
+    async fn get_changed_files_against_previous_revision(
         &self,
         revision: &str,
     ) -> miette::Result<ChangedFiles>;
 
-    /// Determine touched files between 2 revisions.
-    async fn get_touched_files_between_revisions(
+    /// Determine changed files between 2 revisions.
+    async fn get_changed_files_between_revisions(
         &self,
         base_revision: &str,
         revision: &str,

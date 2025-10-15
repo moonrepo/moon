@@ -148,7 +148,7 @@ impl FromStr for ChangedStatus {
             "staged" => Self::Staged,
             "unstaged" => Self::Unstaged,
             "untracked" => Self::Untracked,
-            other => return Err(miette::miette!("Unknown touched status {}", other)),
+            other => return Err(miette::miette!("Unknown changed status {}", other)),
         })
     }
 }

@@ -1,5 +1,5 @@
 use crate::components::run_action_pipeline;
-use crate::queries::touched_files::{QueryTouchedFilesOptions, query_touched_files_with_stdin};
+use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files_with_stdin};
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -29,7 +29,7 @@ pub struct RunArgs {
     #[arg(
         long,
         short = 'f',
-        help = "Force run and ignore touched files and affected status"
+        help = "Force run and ignore changed files and affected status"
     )]
     pub force: bool,
 
@@ -82,7 +82,7 @@ pub struct RunArgs {
     #[arg(
         long,
         env = "MOON_AFFECTED",
-        help = "Only run target if affected by touched files or the environment",
+        help = "Only run target if affected by changed files or the environment",
         help_heading = HEADING_AFFECTED,
         group = "affected-args"
     )]
@@ -98,7 +98,7 @@ pub struct RunArgs {
 
     #[arg(
         long,
-        help = "Filter affected files based on a touched status",
+        help = "Filter affected files based on a changed status",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
@@ -106,7 +106,7 @@ pub struct RunArgs {
 
     #[arg(
         long,
-        help = "Accept touched files from stdin for affected checks",
+        help = "Accept changed files from stdin for affected checks",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
     )]
@@ -143,17 +143,17 @@ pub async fn run_target(
 
     let mut should_run_affected = !args.force && args.affected;
 
-    // Always query for a touched files list as it'll be used by many actions
-    let touched_files = if vcs.is_enabled() {
+    // Always query for a changed files list as it'll be used by many actions
+    let changed_files = if vcs.is_enabled() {
         let local = is_local(args);
-        let result = query_touched_files_with_stdin(
+        let result = query_changed_files_with_stdin(
             &vcs,
-            &QueryTouchedFilesOptions {
+            &QueryChangedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,
                 status: args.status.clone(),
                 stdin: args.stdin,
-                ..QueryTouchedFilesOptions::default()
+                ..QueryChangedFilesOptions::default()
             },
         )
         .await?;
@@ -176,7 +176,7 @@ pub async fn run_target(
         session.build_action_graph().await?
     };
 
-    action_graph_builder.set_touched_files(touched_files)?;
+    action_graph_builder.set_changed_files(changed_files)?;
 
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;
@@ -223,7 +223,7 @@ pub async fn run_target(
             };
 
             format!(
-                "Target(s) {targets_list} not affected by touched files using status {status_list}"
+                "Target(s) {targets_list} not affected by changed files using status {status_list}"
             )
         } else {
             format!("No tasks found for target(s) {targets_list}")

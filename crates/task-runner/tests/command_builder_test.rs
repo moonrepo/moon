@@ -422,12 +422,12 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn includes_touched_in_args() {
+        async fn includes_changed_in_args() {
             let container = TaskRunnerContainer::new("builder", "base").await;
 
             let mut context = ActionContext::default();
             context.affected = Some(Affected::default());
-            context.touched_files.insert("project/file.txt".into());
+            context.changed_files.insert("project/file.txt".into());
 
             let command = container
                 .create_command_with_config(context, |task, _| {
@@ -446,12 +446,12 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn includes_touched_in_args_run_from_workspace_root() {
+        async fn includes_changed_in_args_run_from_workspace_root() {
             let container = TaskRunnerContainer::new("builder", "base").await;
 
             let mut context = ActionContext::default();
             context.affected = Some(Affected::default());
-            context.touched_files.insert("project/file.txt".into());
+            context.changed_files.insert("project/file.txt".into());
 
             let command = container
                 .create_command_with_config(context, |task, _| {
@@ -476,7 +476,7 @@ mod command_builder {
 
             let mut context = ActionContext::default();
             context.affected = Some(Affected::default());
-            context.touched_files.insert("project/other.txt".into());
+            context.changed_files.insert("project/other.txt".into());
 
             let command = container
                 .create_command_with_config(context, |task, _| {
@@ -488,12 +488,12 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn includes_touched_in_env() {
+        async fn includes_changed_in_env() {
             let container = TaskRunnerContainer::new("builder", "base").await;
 
             let mut context = ActionContext::default();
             context.affected = Some(Affected::default());
-            context.touched_files.insert("project/file.txt".into());
+            context.changed_files.insert("project/file.txt".into());
 
             let command = container
                 .create_command_with_config(context, |task, _| {
@@ -513,7 +513,7 @@ mod command_builder {
 
             let mut context = ActionContext::default();
             context.affected = Some(Affected::default());
-            context.touched_files.insert("project/other.txt".into());
+            context.changed_files.insert("project/other.txt".into());
 
             let command = container
                 .create_command_with_config(context, |task, _| {
@@ -550,16 +550,16 @@ mod command_builder {
 
             let mut context = ActionContext::default();
             context.affected = Some(Affected::default());
-            context.touched_files.insert("project/file.txt".into());
-            context.touched_files.insert("project/routes/*.ts".into());
+            context.changed_files.insert("project/file.txt".into());
+            context.changed_files.insert("project/routes/*.ts".into());
             context
-                .touched_files
+                .changed_files
                 .insert("project/routes/[id].ts".into());
             context
-                .touched_files
+                .changed_files
                 .insert("project/routes/$slug.tsx".into());
             context
-                .touched_files
+                .changed_files
                 .insert("project/routes/+page.svelte".into());
 
             let command = container

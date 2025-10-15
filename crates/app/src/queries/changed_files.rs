@@ -15,7 +15,7 @@ use tracing::{debug, trace, warn};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct QueryTouchedFilesOptions {
+pub struct QueryChangedFilesOptions {
     pub base: Option<String>,
     pub default_branch: bool,
     pub head: Option<String>,
@@ -27,9 +27,9 @@ pub struct QueryTouchedFilesOptions {
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(default)]
-pub struct QueryTouchedFilesResult {
+pub struct QueryChangedFilesResult {
     pub files: FxHashSet<WorkspaceRelativePathBuf>,
-    pub options: QueryTouchedFilesOptions,
+    pub options: QueryChangedFilesOptions,
     pub shallow: bool,
 }
 
@@ -37,7 +37,7 @@ pub struct QueryTouchedFilesResult {
 macro_rules! check_shallow {
     ($vcs:ident) => {
         if $vcs.is_shallow_checkout().await? {
-            warn!("Detected a shallow checkout, unable to run Git commands to determine touched files.");
+            warn!("Detected a shallow checkout, unable to run Git commands to determine changed files.");
 
             if is_ci() {
                 warn!("A full Git history is required for affected checks, falling back to an empty files list.");
@@ -45,7 +45,7 @@ macro_rules! check_shallow {
                 warn!("A full Git history is required for affected checks, disabling for now.");
             }
 
-            let mut result = QueryTouchedFilesResult::default();
+            let mut result = QueryChangedFilesResult::default();
             result.shallow = true;
 
             return Ok(result);
@@ -54,10 +54,10 @@ macro_rules! check_shallow {
 }
 
 /// Query a list of files that have been modified between branches.
-pub async fn query_touched_files(
+pub async fn query_changed_files(
     vcs: &BoxedVcs,
-    options: &QueryTouchedFilesOptions,
-) -> miette::Result<QueryTouchedFilesResult> {
+    options: &QueryChangedFilesOptions,
+) -> miette::Result<QueryChangedFilesResult> {
     let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
@@ -79,11 +79,11 @@ pub async fn query_touched_files(
         check_shallow!(vcs);
     }
 
-    // Check locally touched files
-    let touched_files_map = if options.local && base_value.is_none() {
+    // Check locally changed files
+    let changed_files_map = if options.local && base_value.is_none() {
         trace!("Against local index");
 
-        vcs.get_touched_files().await?
+        vcs.get_changed_files().await?
     }
     // Otherwise compare against previous commit
     else if check_against_previous {
@@ -92,7 +92,7 @@ pub async fn query_touched_files(
             current_branch
         );
 
-        vcs.get_touched_files_against_previous_revision(&default_branch)
+        vcs.get_changed_files_against_previous_revision(&default_branch)
             .await?
     }
     // Otherwise against remote between 2 revisions
@@ -102,21 +102,21 @@ pub async fn query_touched_files(
             base, head,
         );
 
-        vcs.get_touched_files_between_revisions(base, head).await?
+        vcs.get_changed_files_between_revisions(base, head).await?
     };
 
-    let mut touched_files = FxHashSet::default();
+    let mut changed_files = FxHashSet::default();
 
     if options.status.is_empty() {
         debug!(
-            "Filtering based on touched status {}",
+            "Filtering based on changed status {}",
             color::symbol(ChangedStatus::All.to_string())
         );
 
-        touched_files.extend(touched_files_map.all());
+        changed_files.extend(changed_files_map.all());
     } else {
         debug!(
-            "Filtering based on touched status {}",
+            "Filtering based on changed status {}",
             options
                 .status
                 .iter()
@@ -126,43 +126,43 @@ pub async fn query_touched_files(
         );
 
         for status in &options.status {
-            touched_files.extend(match status {
-                ChangedStatus::Added => touched_files_map.added.iter().collect(),
-                ChangedStatus::All => touched_files_map.all(),
-                ChangedStatus::Deleted => touched_files_map.deleted.iter().collect(),
-                ChangedStatus::Modified => touched_files_map.modified.iter().collect(),
-                ChangedStatus::Staged => touched_files_map.staged.iter().collect(),
-                ChangedStatus::Unstaged => touched_files_map.unstaged.iter().collect(),
-                ChangedStatus::Untracked => touched_files_map.untracked.iter().collect(),
+            changed_files.extend(match status {
+                ChangedStatus::Added => changed_files_map.added.iter().collect(),
+                ChangedStatus::All => changed_files_map.all(),
+                ChangedStatus::Deleted => changed_files_map.deleted.iter().collect(),
+                ChangedStatus::Modified => changed_files_map.modified.iter().collect(),
+                ChangedStatus::Staged => changed_files_map.staged.iter().collect(),
+                ChangedStatus::Unstaged => changed_files_map.unstaged.iter().collect(),
+                ChangedStatus::Untracked => changed_files_map.untracked.iter().collect(),
             });
         }
     }
 
-    let touched_files: FxHashSet<WorkspaceRelativePathBuf> = touched_files
+    let changed_files: FxHashSet<WorkspaceRelativePathBuf> = changed_files
         .iter()
         .map(|f| WorkspaceRelativePathBuf::from(standardize_separators(f)))
         .collect();
 
     debug!(
-        files = ?touched_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
-        "Found touched files",
+        files = ?changed_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
+        "Found changed files",
     );
 
-    Ok(QueryTouchedFilesResult {
-        files: touched_files,
+    Ok(QueryChangedFilesResult {
+        files: changed_files,
         options: options.to_owned(),
         shallow: false,
     })
 }
 
-pub async fn query_touched_files_with_stdin(
+pub async fn query_changed_files_with_stdin(
     vcs: &BoxedVcs,
-    options: &QueryTouchedFilesOptions,
-) -> miette::Result<QueryTouchedFilesResult> {
-    debug!("Querying for touched files");
+    options: &QueryChangedFilesOptions,
+) -> miette::Result<QueryChangedFilesResult> {
+    debug!("Querying for changed files");
 
     if !options.stdin {
-        return query_touched_files(vcs, options).await;
+        return query_changed_files(vcs, options).await;
     }
 
     let mut buffer = String::new();
@@ -188,7 +188,7 @@ pub async fn query_touched_files_with_stdin(
         if buffer.starts_with('{') {
             debug!("Received from stdin as JSON");
 
-            let result: QueryTouchedFilesResult = json::parse(&buffer)?;
+            let result: QueryChangedFilesResult = json::parse(&buffer)?;
 
             return Ok(result);
         }
@@ -199,28 +199,28 @@ pub async fn query_touched_files_with_stdin(
             let files =
                 FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
 
-            return Ok(QueryTouchedFilesResult {
+            return Ok(QueryChangedFilesResult {
                 files,
                 ..Default::default()
             });
         }
     }
 
-    query_touched_files(vcs, options).await
+    query_changed_files(vcs, options).await
 }
 
-pub async fn load_touched_files(
+pub async fn load_changed_files(
     vcs: &BoxedVcs,
 ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     let ci = is_ci();
 
-    query_touched_files_with_stdin(
+    query_changed_files_with_stdin(
         vcs,
-        &QueryTouchedFilesOptions {
+        &QueryChangedFilesOptions {
             default_branch: ci,
             local: !ci,
             stdin: true,
-            ..QueryTouchedFilesOptions::default()
+            ..QueryChangedFilesOptions::default()
         },
     )
     .await

@@ -94,7 +94,7 @@ fn create_nested_git_sandbox() -> (Sandbox, Git) {
     (sandbox, git)
 }
 
-fn create_touched_set<I: IntoIterator<Item = V>, V: AsRef<str>>(
+fn create_changed_set<I: IntoIterator<Item = V>, V: AsRef<str>>(
     files: I,
 ) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(
@@ -287,11 +287,11 @@ mod gitx {
         }
 
         #[tokio::test]
-        async fn get_touched_files() {
+        async fn get_changed_files() {
             let (sandbox, git) = create_root_sandbox(false);
 
             // Returns nothing
-            let files = git.get_touched_files().await.unwrap();
+            let files = git.get_changed_files().await.unwrap();
 
             assert_eq!(files, ChangedFiles::default());
 
@@ -299,12 +299,12 @@ mod gitx {
             sandbox.create_file("root.txt", "");
             sandbox.create_file("submodules/mono/packages/a/sub.txt", "");
 
-            let files = git.get_touched_files().await.unwrap();
+            let files = git.get_changed_files().await.unwrap();
 
             assert_eq!(
                 files,
                 ChangedFiles {
-                    untracked: create_touched_set([
+                    untracked: create_changed_set([
                         "root.txt",
                         "submodules/mono/packages/a/sub.txt"
                     ]),
@@ -515,11 +515,11 @@ mod gitx {
         }
 
         #[tokio::test]
-        async fn get_touched_files() {
+        async fn get_changed_files() {
             let (sandbox, git) = create_worktree_sandbox(false);
 
             // Returns nothing
-            let files = git.get_touched_files().await.unwrap();
+            let files = git.get_changed_files().await.unwrap();
 
             assert_eq!(files, ChangedFiles::default());
 
@@ -528,12 +528,12 @@ mod gitx {
             sandbox.create_file("trees/one/tree.txt", "");
             sandbox.create_file("trees/one/submodules/mono/packages/a/sub.txt", "");
 
-            let files = git.get_touched_files().await.unwrap();
+            let files = git.get_changed_files().await.unwrap();
 
             assert_eq!(
                 files,
                 ChangedFiles {
-                    untracked: create_touched_set([
+                    untracked: create_changed_set([
                         "tree.txt",
                         "submodules/mono/packages/a/sub.txt"
                     ]),
@@ -888,29 +888,29 @@ mod gitx {
         }
     }
 
-    mod touched_files {
+    mod changed_files {
         use super::*;
 
         #[tokio::test]
         async fn returns_defaults_when_nothing() {
-            let (_sandbox, git) = create_git_sandbox("touched");
+            let (_sandbox, git) = create_git_sandbox("changed");
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles::default()
             );
         }
 
         #[tokio::test]
         async fn handles_untracked() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.create_file("added.txt", "");
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    untracked: create_touched_set(["added.txt"]),
+                    untracked: create_changed_set(["added.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -918,7 +918,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_added() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.create_file("added.txt", "");
 
@@ -927,10 +927,10 @@ mod gitx {
             });
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    added: create_touched_set(["added.txt"]),
-                    staged: create_touched_set(["added.txt"]),
+                    added: create_changed_set(["added.txt"]),
+                    staged: create_changed_set(["added.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -938,15 +938,15 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_deleted() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             fs::remove_file(sandbox.path().join("delete-me.txt")).unwrap();
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    deleted: create_touched_set(["delete-me.txt"]),
-                    unstaged: create_touched_set(["delete-me.txt"]),
+                    deleted: create_changed_set(["delete-me.txt"]),
+                    unstaged: create_changed_set(["delete-me.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -954,15 +954,15 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_modified() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.create_file("existing.txt", "modified");
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    modified: create_touched_set(["existing.txt"]),
-                    unstaged: create_touched_set(["existing.txt"]),
+                    modified: create_changed_set(["existing.txt"]),
+                    unstaged: create_changed_set(["existing.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -970,7 +970,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_renamed() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             fs::rename(
                 sandbox.path().join("rename-me.txt"),
@@ -979,11 +979,11 @@ mod gitx {
             .unwrap();
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    deleted: create_touched_set(["rename-me.txt"]),
-                    unstaged: create_touched_set(["rename-me.txt"]),
-                    untracked: create_touched_set(["renamed.txt"]),
+                    deleted: create_changed_set(["rename-me.txt"]),
+                    unstaged: create_changed_set(["rename-me.txt"]),
+                    untracked: create_changed_set(["renamed.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -996,29 +996,29 @@ mod gitx {
             sandbox.create_file("frontend/file.js", "modified");
 
             assert_eq!(
-                git.get_touched_files().await.unwrap(),
+                git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    modified: create_touched_set(["file.js"]),
-                    unstaged: create_touched_set(["file.js"]),
+                    modified: create_changed_set(["file.js"]),
+                    unstaged: create_changed_set(["file.js"]),
                     ..ChangedFiles::default()
                 }
             );
         }
     }
 
-    mod touched_files_via_diff {
+    mod changed_files_via_diff {
         use super::*;
 
         #[tokio::test]
         async fn returns_defaults_when_nothing() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "current"]);
             });
 
             assert_eq!(
-                git.get_touched_files_between_revisions("master", "")
+                git.get_changed_files_between_revisions("master", "")
                     .await
                     .unwrap(),
                 ChangedFiles::default()
@@ -1027,7 +1027,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_untracked() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "current"]);
@@ -1036,7 +1036,7 @@ mod gitx {
             sandbox.create_file("added.txt", "");
 
             assert_eq!(
-                git.get_touched_files_between_revisions("master", "")
+                git.get_changed_files_between_revisions("master", "")
                     .await
                     .unwrap(),
                 // Untracked isn't captured between branches
@@ -1046,7 +1046,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_added() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "current"]);
@@ -1059,12 +1059,12 @@ mod gitx {
             });
 
             assert_eq!(
-                git.get_touched_files_between_revisions("master", "")
+                git.get_changed_files_between_revisions("master", "")
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    added: create_touched_set(["added.txt"]),
-                    staged: create_touched_set(["added.txt"]),
+                    added: create_changed_set(["added.txt"]),
+                    staged: create_changed_set(["added.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -1072,7 +1072,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_deleted() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "current"]);
@@ -1081,12 +1081,12 @@ mod gitx {
             fs::remove_file(sandbox.path().join("delete-me.txt")).unwrap();
 
             assert_eq!(
-                git.get_touched_files_between_revisions("master", "")
+                git.get_changed_files_between_revisions("master", "")
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    deleted: create_touched_set(["delete-me.txt"]),
-                    staged: create_touched_set(["delete-me.txt"]),
+                    deleted: create_changed_set(["delete-me.txt"]),
+                    staged: create_changed_set(["delete-me.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -1094,7 +1094,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_modified() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "current"]);
@@ -1103,12 +1103,12 @@ mod gitx {
             sandbox.create_file("existing.txt", "modified");
 
             assert_eq!(
-                git.get_touched_files_between_revisions("master", "")
+                git.get_changed_files_between_revisions("master", "")
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    modified: create_touched_set(["existing.txt"]),
-                    staged: create_touched_set(["existing.txt"]),
+                    modified: create_changed_set(["existing.txt"]),
+                    staged: create_changed_set(["existing.txt"]),
                     ..ChangedFiles::default()
                 }
             );
@@ -1116,7 +1116,7 @@ mod gitx {
 
         #[tokio::test]
         async fn handles_renamed() {
-            let (sandbox, git) = create_git_sandbox("touched");
+            let (sandbox, git) = create_git_sandbox("changed");
 
             sandbox.run_git(|cmd| {
                 cmd.args(["checkout", "-b", "current"]);
@@ -1129,12 +1129,12 @@ mod gitx {
             .unwrap();
 
             assert_eq!(
-                git.get_touched_files_between_revisions("master", "")
+                git.get_changed_files_between_revisions("master", "")
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    deleted: create_touched_set(["rename-me.txt"]),
-                    staged: create_touched_set(["rename-me.txt"]),
+                    deleted: create_changed_set(["rename-me.txt"]),
+                    staged: create_changed_set(["rename-me.txt"]),
                     ..ChangedFiles::default()
                 }
             );

@@ -283,7 +283,7 @@ impl<'task> CommandBuilder<'task> {
         let mut abs_files = if context.affected.is_some() {
             self.task.get_affected_files(
                 &self.app.workspace_root,
-                &context.touched_files,
+                &context.changed_files,
                 &self.project.source,
             )?
         } else {

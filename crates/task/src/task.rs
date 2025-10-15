@@ -158,18 +158,18 @@ impl Task {
     }
 
     /// Return a list of project-relative affected files filtered down from
-    /// the provided touched files list.
+    /// the provided changed files list.
     pub fn get_affected_files<S: AsRef<str>>(
         &self,
         workspace_root: &Path,
-        touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
+        changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
         project_source: S,
     ) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
         let globset = self.create_globset()?;
         let project_source = project_source.as_ref();
 
-        for file in touched_files {
+        for file in changed_files {
             // Don't run on files outside of the project
             if file.starts_with(project_source)
                 && (self.input_files.contains_key(file) || globset.matches(file.as_str()))

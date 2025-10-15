@@ -331,7 +331,13 @@ impl Vcs for Git {
             }
         }
 
-        map_absolute_to_workspace_relative_paths(paths, &self.workspace_root)
+        let mut new_paths = vec![];
+
+        for path in paths {
+            new_paths.push(path.relative_to(&self.workspace_root).into_diagnostic()?);
+        }
+
+        Ok(new_paths)
     }
 
     async fn get_hooks_dir(&self) -> miette::Result<PathBuf> {

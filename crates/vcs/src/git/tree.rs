@@ -1,11 +1,11 @@
 use super::common::*;
 use super::git_error::GitError;
-use crate::changed_files::ChangedFiles;
+use crate::changed_files::*;
 use crate::process_cache::ProcessCache;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -286,11 +286,7 @@ impl GitTree {
             return Ok(ChangedFiles::default());
         }
 
-        let mut added = FxHashSet::default();
-        let mut deleted = FxHashSet::default();
-        let mut modified = FxHashSet::default();
-        let mut staged = FxHashSet::default();
-        let mut unstaged = FxHashSet::default();
+        let mut files = FxHashMap::default();
         let mut last_status = "A";
 
         // Lines AND statuses are terminated by a NUL byte
@@ -313,35 +309,31 @@ impl GitTree {
 
             // Paths are relative from the cwd
             let file = self.work_dir.join(line);
+            let mut statuses = vec![];
 
             match x {
                 'A' | 'C' => {
-                    added.insert(file.clone());
-                    staged.insert(file.clone());
+                    statuses.push(ChangedStatus::Added);
+                    statuses.push(ChangedStatus::Staged);
                 }
                 'D' => {
-                    deleted.insert(file.clone());
-                    staged.insert(file.clone());
+                    statuses.push(ChangedStatus::Deleted);
+                    statuses.push(ChangedStatus::Staged);
                 }
                 'M' | 'R' | 'T' => {
-                    modified.insert(file.clone());
-                    staged.insert(file.clone());
+                    statuses.push(ChangedStatus::Modified);
+                    statuses.push(ChangedStatus::Staged);
                 }
                 'U' => {
-                    unstaged.insert(file.clone());
+                    statuses.push(ChangedStatus::Unstaged);
                 }
                 _ => {}
             }
+
+            files.insert(file, statuses);
         }
 
-        Ok(ChangedFiles {
-            added,
-            deleted,
-            modified,
-            staged,
-            unstaged,
-            untracked: FxHashSet::default(),
-        })
+        Ok(ChangedFiles { files })
     }
 
     // https://git-scm.com/docs/git-ls-files
@@ -510,12 +502,7 @@ impl GitTree {
             return Ok(ChangedFiles::default());
         }
 
-        let mut added = FxHashSet::default();
-        let mut deleted = FxHashSet::default();
-        let mut modified = FxHashSet::default();
-        let mut untracked = FxHashSet::default();
-        let mut staged = FxHashSet::default();
-        let mut unstaged = FxHashSet::default();
+        let mut files = FxHashMap::default();
 
         // Lines are terminated by a NUL byte:
         //  XY file\0
@@ -537,53 +524,47 @@ impl GitTree {
 
             // Paths are relative from the cwd
             let file = self.work_dir.join(&line[3..]);
+            let mut statuses = vec![];
 
             match x {
                 'A' | 'C' => {
-                    added.insert(file.clone());
-                    staged.insert(file.clone());
+                    statuses.push(ChangedStatus::Added);
+                    statuses.push(ChangedStatus::Staged);
                 }
                 'D' => {
-                    deleted.insert(file.clone());
-                    staged.insert(file.clone());
+                    statuses.push(ChangedStatus::Deleted);
+                    statuses.push(ChangedStatus::Staged);
                 }
                 'M' | 'R' => {
-                    modified.insert(file.clone());
-                    staged.insert(file.clone());
+                    statuses.push(ChangedStatus::Modified);
+                    statuses.push(ChangedStatus::Staged);
                 }
                 _ => {}
             }
 
             match y {
                 'A' | 'C' => {
-                    added.insert(file.clone());
-                    unstaged.insert(file.clone());
+                    statuses.push(ChangedStatus::Added);
+                    statuses.push(ChangedStatus::Unstaged);
                 }
                 'D' => {
-                    deleted.insert(file.clone());
-                    unstaged.insert(file.clone());
+                    statuses.push(ChangedStatus::Deleted);
+                    statuses.push(ChangedStatus::Unstaged);
                 }
                 'M' | 'R' => {
-                    modified.insert(file.clone());
-                    unstaged.insert(file.clone());
+                    statuses.push(ChangedStatus::Modified);
+                    statuses.push(ChangedStatus::Unstaged);
                 }
                 '?' => {
-                    untracked.insert(file.clone());
+                    statuses.push(ChangedStatus::Untracked);
                 }
                 _ => {}
             }
+
+            files.insert(file, statuses);
         }
 
-        let files = ChangedFiles {
-            added,
-            deleted,
-            modified,
-            staged,
-            unstaged,
-            untracked,
-        };
-
-        Ok(files)
+        Ok(ChangedFiles { files })
     }
 }
 

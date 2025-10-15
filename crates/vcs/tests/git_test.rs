@@ -1,6 +1,6 @@
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
-use moon_vcs::{ChangedFiles, Vcs, git::*};
-use rustc_hash::FxHashSet;
+use moon_vcs::{ChangedFiles, ChangedStatus, Vcs, git::*};
+use rustc_hash::FxHashMap;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
@@ -94,17 +94,24 @@ fn create_nested_git_sandbox() -> (Sandbox, Git) {
     (sandbox, git)
 }
 
-fn create_changed_set<I: IntoIterator<Item = V>, V: AsRef<str>>(
+fn create_changed_map<
+    S: IntoIterator<Item = ChangedStatus>,
+    I: IntoIterator<Item = V>,
+    V: AsRef<str>,
+>(
+    statuses: S,
     files: I,
-) -> FxHashSet<WorkspaceRelativePathBuf> {
-    FxHashSet::from_iter(
+) -> FxHashMap<WorkspaceRelativePathBuf, Vec<ChangedStatus>> {
+    let statuses = statuses.into_iter().collect::<Vec<_>>();
+
+    FxHashMap::from_iter(
         files
             .into_iter()
-            .map(|v| WorkspaceRelativePathBuf::from(v.as_ref())),
+            .map(|v| (WorkspaceRelativePathBuf::from(v.as_ref()), statuses.clone())),
     )
 }
 
-mod gitx {
+mod git {
     use super::*;
 
     #[tokio::test]
@@ -304,11 +311,10 @@ mod gitx {
             assert_eq!(
                 files,
                 ChangedFiles {
-                    untracked: create_changed_set([
-                        "root.txt",
-                        "submodules/mono/packages/a/sub.txt"
-                    ]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Untracked],
+                        ["root.txt", "submodules/mono/packages/a/sub.txt"]
+                    )
                 }
             );
         }
@@ -533,11 +539,10 @@ mod gitx {
             assert_eq!(
                 files,
                 ChangedFiles {
-                    untracked: create_changed_set([
-                        "tree.txt",
-                        "submodules/mono/packages/a/sub.txt"
-                    ]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Untracked],
+                        ["tree.txt", "submodules/mono/packages/a/sub.txt"]
+                    )
                 }
             );
         }
@@ -910,8 +915,7 @@ mod gitx {
             assert_eq!(
                 git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    untracked: create_changed_set(["added.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map([ChangedStatus::Untracked], ["added.txt"]),
                 }
             );
         }
@@ -929,9 +933,10 @@ mod gitx {
             assert_eq!(
                 git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    added: create_changed_set(["added.txt"]),
-                    staged: create_changed_set(["added.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Added, ChangedStatus::Staged],
+                        ["added.txt"]
+                    ),
                 }
             );
         }
@@ -945,9 +950,10 @@ mod gitx {
             assert_eq!(
                 git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    deleted: create_changed_set(["delete-me.txt"]),
-                    unstaged: create_changed_set(["delete-me.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Deleted, ChangedStatus::Unstaged],
+                        ["delete-me.txt"]
+                    ),
                 }
             );
         }
@@ -961,9 +967,10 @@ mod gitx {
             assert_eq!(
                 git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    modified: create_changed_set(["existing.txt"]),
-                    unstaged: create_changed_set(["existing.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Unstaged],
+                        ["existing.txt"]
+                    ),
                 }
             );
         }
@@ -978,15 +985,17 @@ mod gitx {
             )
             .unwrap();
 
-            assert_eq!(
-                git.get_changed_files().await.unwrap(),
-                ChangedFiles {
-                    deleted: create_changed_set(["rename-me.txt"]),
-                    unstaged: create_changed_set(["rename-me.txt"]),
-                    untracked: create_changed_set(["renamed.txt"]),
-                    ..ChangedFiles::default()
-                }
-            );
+            assert_eq!(git.get_changed_files().await.unwrap(), {
+                let mut map = ChangedFiles {
+                    files: create_changed_map(
+                        [ChangedStatus::Deleted, ChangedStatus::Unstaged],
+                        ["rename-me.txt"],
+                    ),
+                };
+                map.files
+                    .insert("renamed.txt".into(), vec![ChangedStatus::Untracked]);
+                map
+            });
         }
 
         #[tokio::test]
@@ -998,9 +1007,10 @@ mod gitx {
             assert_eq!(
                 git.get_changed_files().await.unwrap(),
                 ChangedFiles {
-                    modified: create_changed_set(["file.js"]),
-                    unstaged: create_changed_set(["file.js"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Unstaged],
+                        ["file.js"]
+                    ),
                 }
             );
         }
@@ -1063,9 +1073,10 @@ mod gitx {
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    added: create_changed_set(["added.txt"]),
-                    staged: create_changed_set(["added.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Added, ChangedStatus::Staged],
+                        ["added.txt"]
+                    ),
                 }
             );
         }
@@ -1085,9 +1096,10 @@ mod gitx {
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    deleted: create_changed_set(["delete-me.txt"]),
-                    staged: create_changed_set(["delete-me.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Deleted, ChangedStatus::Staged],
+                        ["delete-me.txt"]
+                    ),
                 }
             );
         }
@@ -1107,9 +1119,10 @@ mod gitx {
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    modified: create_changed_set(["existing.txt"]),
-                    staged: create_changed_set(["existing.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Staged],
+                        ["existing.txt"]
+                    ),
                 }
             );
         }
@@ -1133,9 +1146,10 @@ mod gitx {
                     .await
                     .unwrap(),
                 ChangedFiles {
-                    deleted: create_changed_set(["rename-me.txt"]),
-                    staged: create_changed_set(["rename-me.txt"]),
-                    ..ChangedFiles::default()
+                    files: create_changed_map(
+                        [ChangedStatus::Deleted, ChangedStatus::Staged],
+                        ["rename-me.txt"]
+                    ),
                 }
             );
         }

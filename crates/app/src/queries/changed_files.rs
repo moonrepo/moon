@@ -126,15 +126,7 @@ pub async fn query_changed_files(
         );
 
         for status in &options.status {
-            changed_files.extend(match status {
-                ChangedStatus::Added => changed_files_map.added.iter().collect(),
-                ChangedStatus::All => changed_files_map.all(),
-                ChangedStatus::Deleted => changed_files_map.deleted.iter().collect(),
-                ChangedStatus::Modified => changed_files_map.modified.iter().collect(),
-                ChangedStatus::Staged => changed_files_map.staged.iter().collect(),
-                ChangedStatus::Unstaged => changed_files_map.unstaged.iter().collect(),
-                ChangedStatus::Untracked => changed_files_map.untracked.iter().collect(),
-            });
+            changed_files.extend(changed_files_map.select(*status));
         }
     }
 

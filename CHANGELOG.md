@@ -52,6 +52,9 @@
 - **Webhooks**
   - Removed the `tool.*` events. Use `toolchain.*` events instead.
   - Removed the `runtime` field from `dependencies.*` events. Use `toolchain` field instead.
+- **VCS**
+  - The Git v2 implementation is now the default. The legacy Git implementation and the
+    `experiments.gitV2` setting have been removed.
 - **Other**
   - Removed the `projectType` and `taskPlatform` query properties. Use `projectLayer` and
     `taskToolchain` instead.

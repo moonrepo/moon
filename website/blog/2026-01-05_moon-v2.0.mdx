@@ -1,0 +1,36 @@
+---
+slug: moon-v2.0
+title: moon v2.0 - Official "Phobos" release!
+authors: [milesj]
+tags: []
+# image: ./img/moon/v2.0.png
+---
+
+TODO
+
+<!--truncate-->
+
+## v2
+
+## Breaking changes
+
+TODO
+
+## Projects
+
+### Multiple aliases
+
+In addition to identifiers, projects also support aliases, which are toolchain specific names
+derived from manifest files, for example, the `name` field in `package.json` or `Cargo.toml`. This
+allows you to refer to projects by their native names on the command line, in configuration, and
+more.
+
+Previously, projects only supported a single alias, but now they support multiple aliases, one from
+each applicable toolchain. In addition, we have added a new `$projectAliases` token, which is a
+comma-separated list of all aliases. The existing `$projectAlias` token now returns the first alias,
+if it exists.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.0.0) for a full list of
+changes.

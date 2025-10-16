@@ -5,6 +5,6 @@ tasks:
   a: {}
   # Upstream is node, override it
   b:
-    platform: 'system'
+    toolchain: 'system'
   # Upstream is system, inherit it
   c: {}

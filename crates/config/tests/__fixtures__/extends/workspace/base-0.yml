@@ -1,2 +1,2 @@
-runner:
+pipeline:
   cacheLifetime: '3 hours'

@@ -1,8 +1,8 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, Output, PlatformType, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType,
-    is_false, schematic::RegexSetting,
+    Input, Output, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType, is_false,
+    schematic::RegexSetting,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
@@ -26,10 +26,6 @@ cacheable!(
         // Has the task (and parent project) been expanded
         #[serde(skip_serializing_if = "is_false")]
         pub expanded: bool,
-
-        // Was configured as a local running task
-        #[serde(skip_serializing_if = "is_false")]
-        pub local_only: bool,
 
         // Is task defined in a root-level project
         #[serde(skip_serializing_if = "is_false")]
@@ -120,9 +116,6 @@ cacheable!(
 
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub output_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
-
-        #[deprecated]
-        pub platform: PlatformType,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub preset: Option<TaskPreset>,
@@ -299,11 +292,6 @@ impl Task {
         self.options.interactive
     }
 
-    /// Return true if a local only task.
-    pub fn is_local(&self) -> bool {
-        self.state.local_only
-    }
-
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
         (self.command == "nop" || self.command == "noop" || self.command == "no-op")
@@ -312,7 +300,7 @@ impl Task {
 
     /// Return true if the task is a "run" type.
     pub fn is_run_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Run) || self.is_local()
+        matches!(self.type_of, TaskType::Run)
     }
 
     /// Return true of the task will run in the system toolchain.
@@ -350,7 +338,6 @@ impl Task {
 }
 
 impl Default for Task {
-    #[allow(deprecated)]
     fn default() -> Self {
         Self {
             args: vec![],
@@ -367,7 +354,6 @@ impl Default for Task {
             outputs: vec![],
             output_files: FxHashMap::default(),
             output_globs: FxHashMap::default(),
-            platform: PlatformType::default(),
             preset: None,
             script: None,
             state: TaskState::default(),

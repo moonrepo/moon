@@ -128,6 +128,12 @@ impl ActionPipeline {
         let total_actions = action_graph.get_node_count();
         let start = Instant::now();
 
+        if total_actions == 0 {
+            debug!(total_actions, "No actions available, not running pipeline");
+
+            return Ok(());
+        }
+
         debug!(
             total_actions,
             concurrency = self.concurrency,

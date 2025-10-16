@@ -1,84 +1,119 @@
-use crate::utils::should_skip_action_matching;
-use moon_action::{Action, ActionStatus, SetupToolchainLegacyNode};
+use crate::plugins::*;
+use crate::utils::{create_hash_and_return_lock, should_skip_action_matching};
+use moon_action::{Action, ActionStatus, Operation, SetupToolchainNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
-use moon_cache_item::cache_item;
 use moon_common::color;
-use moon_common::path::encode_component;
-use moon_config::UnresolvedVersionSpec;
-use moon_platform::PlatformManager;
-use moon_time::now_millis;
-use rustc_hash::FxHashMap;
-use std::sync::{Arc, OnceLock};
-use tokio::sync::Mutex;
+use moon_console::Checkpoint;
+use moon_hash::hash_content;
+use moon_pdk_api::SetupToolchainInput;
+use std::sync::Arc;
 use tracing::{debug, instrument};
 
-// Avoid the same tool running in parallel causing issues,
-// so use a global lock keyed by tool ID.
-static LOCKS: OnceLock<scc::HashMap<String, Mutex<()>>> = OnceLock::new();
-
-cache_item!(
-    pub struct ToolCacheState {
-        pub last_versions: FxHashMap<String, UnresolvedVersionSpec>,
-        pub last_version_check_time: u128,
-        pub requirement: Option<UnresolvedVersionSpec>,
+hash_content!(
+    struct SetupToolchainHash<'action> {
+        action_node: &'action SetupToolchainNode,
+        installed_in_proto: bool,
     }
 );
 
-#[instrument(skip(_action, action_context, app_context))]
-pub async fn setup_toolchain(
-    _action: &mut Action,
-    action_context: Arc<ActionContext>,
+#[instrument(skip(action, _action_context, app_context))]
+pub async fn setup_toolchain_plugin(
+    action: &mut Action,
+    _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    node: &SetupToolchainLegacyNode,
+    node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
-    let log_label = node.runtime.label();
-    let cache_engine = &app_context.cache_engine;
-    let action_key = node.runtime.target();
-
-    let _lock = app_context
-        .cache_engine
-        .create_lock(format!("setupToolchain-{action_key}"))?;
-
-    if let Some(value) = should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", &action_key) {
+    // No version configured, use globals on PATH
+    if node.toolchain.is_global() {
         debug!(
+            toolchain_id = node.toolchain.id.as_str(),
+            "Skipping toolchain setup because we'll be using global commands on PATH instead",
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
+
+    // Skip this action if requested by the user
+    if let Some(value) =
+        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.toolchain.target())
+    {
+        debug!(
+            toolchain_id = node.toolchain.id.as_str(),
+            version = node.toolchain.req.as_ref().map(|v| v.to_string()),
             env = value,
-            "Skipping {} toolchain setup because {} is set",
-            log_label,
+            "Skipping toolchain setup because {} is set and matches",
             color::symbol("MOON_SKIP_SETUP_TOOLCHAIN")
         );
 
         return Ok(ActionStatus::Skipped);
     }
 
-    debug!("Setting up {} toolchain", log_label);
+    // Load the toolchain
+    let toolchain = app_context
+        .toolchain_registry
+        .load(&node.toolchain.id)
+        .await?;
 
-    let mut state = cache_engine.state.load_state::<ToolCacheState>(format!(
-        "setupToolchain-{}.json",
-        encode_component(action_key),
-    ))?;
+    if !toolchain.supports_tier_3().await {
+        debug!(
+            toolchain_id = node.toolchain.id.as_str(),
+            version = node.toolchain.req.as_ref().map(|v| v.to_string()),
+            "Skipping toolchain setup as the toolchain does not support tier 3 (downloading and installing)"
+        );
 
-    // Acquire a lock for the toolchain ID
-    let locks = LOCKS.get_or_init(scc::HashMap::default);
-    let entry = locks.entry(node.runtime.id()).or_default();
-    let _lock = entry.lock().await;
+        return Ok(ActionStatus::Skipped);
+    }
 
-    // Install and setup the specific tool + version in the toolchain!
-    let installed_count = PlatformManager::write()
-        .get_by_toolchain_mut(&node.runtime.toolchain)?
-        .setup_tool(
-            &action_context,
-            &node.runtime,
-            &mut state.data.last_versions,
+    // Create a lock if we haven't run before
+    let _lock = create_hash_and_return_lock(
+        action,
+        &app_context,
+        SetupToolchainHash {
+            action_node: node,
+            installed_in_proto: toolchain
+                .is_installed_in_proto(node.toolchain.req.as_ref())
+                .await?,
+        },
+    )?;
+
+    // Run the install and setup flows
+    debug!(
+        toolchain_id = node.toolchain.id.as_str(),
+        version = node.toolchain.req.as_ref().map(|v| v.to_string()),
+        "Setting up {} toolchain",
+        toolchain.metadata.name
+    );
+
+    let setup_op = Operation::setup_operation(action.get_prefix())?;
+    let output = toolchain
+        .setup_toolchain(
+            SetupToolchainInput {
+                configured_version: node.toolchain.req.clone(),
+                context: app_context.toolchain_registry.create_context(),
+                toolchain_config: app_context
+                    .toolchain_registry
+                    .create_config(&toolchain.id, &app_context.toolchain_config),
+                version: None,
+            },
+            || {
+                app_context.console.print_checkpoint(
+                    Checkpoint::Setup,
+                    format!("installing {}", node.toolchain.label()),
+                )
+            },
         )
         .await?;
 
-    // Update the cache with the timestamp
-    state.data.last_version_check_time = now_millis();
-    state.data.requirement = node.runtime.requirement.to_spec();
-    state.save()?;
+    finalize_action_operations(
+        action,
+        &toolchain,
+        setup_op,
+        output.operations,
+        output.changed_files,
+    )?;
 
-    Ok(if installed_count > 0 {
+    Ok(if output.installed {
         ActionStatus::Passed
     } else {
         ActionStatus::Skipped

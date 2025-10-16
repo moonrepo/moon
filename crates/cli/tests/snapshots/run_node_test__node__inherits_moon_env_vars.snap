@@ -1,0 +1,25 @@
+---
+source: crates/cli/tests/run_node_test.rs
+expression: assert.output()
+---
+▪▪▪▪ npm install
+▪▪▪▪ node:envVarsMoon
+MOON_CACHE=read-write
+MOON_CACHE_DIR=<WORKSPACE>/.moon/cache
+MOON_HOME=<WORKSPACE>/.moon-home
+MOON_LOG=trace
+MOON_PROJECT_ID=node
+MOON_PROJECT_ROOT=<WORKSPACE>/base
+MOON_PROJECT_SNAPSHOT=<WORKSPACE>/.moon/cache/states/node/snapshot.json
+MOON_PROJECT_SOURCE=base
+MOON_TARGET=node:envVarsMoon
+MOON_TASK_ID=envVarsMoon
+MOON_TASK_RETRY_ATTEMPT=1
+MOON_TASK_RETRY_TOTAL=1
+MOON_THEME=dark
+MOON_WORKING_DIR=<WORKSPACE>
+MOON_WORKSPACE_ROOT=<WORKSPACE>
+▪▪▪▪ node:envVarsMoon (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

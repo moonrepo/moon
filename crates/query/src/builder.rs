@@ -1,12 +1,11 @@
 use crate::parser::{AstNode, ComparisonOperator, LogicalOperator, parse_query};
 use crate::query_error::QueryError;
-use moon_common::color;
 use moon_config::{LanguageType, LayerType, StackType, TaskType};
 use starbase_utils::glob::GlobSet;
 use std::borrow::Cow;
 use std::cmp::PartialEq;
 use std::str::FromStr;
-use tracing::{debug, instrument};
+use tracing::instrument;
 
 pub type FieldValue<'l> = Cow<'l, str>;
 pub type FieldValues<'l> = Vec<FieldValue<'l>>;
@@ -20,10 +19,8 @@ pub enum Field<'l> {
     ProjectName(FieldValues<'l>),
     ProjectSource(FieldValues<'l>),
     ProjectStack(Vec<StackType>),
-    ProjectType(Vec<LayerType>),
     Tag(FieldValues<'l>),
     Task(FieldValues<'l>),
-    TaskPlatform(FieldValues<'l>),
     TaskToolchain(FieldValues<'l>),
     TaskType(Vec<TaskType>),
 }
@@ -40,7 +37,13 @@ pub enum Condition<'l> {
 }
 
 impl Condition<'_> {
-    pub fn matches(&self, haystack: &FieldValues, needle: &str) -> miette::Result<bool> {
+    pub fn matches<T: AsRef<str>>(
+        &self,
+        haystack: &FieldValues,
+        needle: T,
+    ) -> miette::Result<bool> {
+        let needle = needle.as_ref();
+
         Ok(match self {
             Condition::Field { op, .. } => match op {
                 ComparisonOperator::Equal => haystack.contains(&Cow::Borrowed(needle)),
@@ -52,7 +55,11 @@ impl Condition<'_> {
         })
     }
 
-    pub fn matches_list(&self, haystack: &FieldValues, needles: &[&str]) -> miette::Result<bool> {
+    pub fn matches_list<T: AsRef<str>>(
+        &self,
+        haystack: &FieldValues,
+        needles: &[T],
+    ) -> miette::Result<bool> {
         for needle in needles {
             if self.matches(haystack, needle)? {
                 return Ok(true);
@@ -122,7 +129,7 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                         Field::Language(build_criteria_enum::<LanguageType>(&field, &op, value)?)
                     }
                     "project" => Field::Project(value),
-                    "projectAlias" => Field::ProjectAlias(value),
+                    "projectAlias" | "projectAliases" => Field::ProjectAlias(value),
                     "projectLayer" => {
                         Field::ProjectLayer(build_criteria_enum::<LayerType>(&field, &op, value)?)
                     }
@@ -131,21 +138,9 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     "projectStack" => {
                         Field::ProjectStack(build_criteria_enum::<StackType>(&field, &op, value)?)
                     }
-                    "projectType" => {
-                        Field::ProjectType(build_criteria_enum::<LayerType>(&field, &op, value)?)
-                    }
                     "tag" => Field::Tag(value),
                     "task" => Field::Task(value),
-                    "taskPlatform" => {
-                        debug!(
-                            "The {} query field is deprecated, use {} instead",
-                            color::property("taskPlatform"),
-                            color::property("taskToolchain"),
-                        );
-
-                        Field::TaskPlatform(value)
-                    }
-                    "taskToolchain" => Field::TaskToolchain(value),
+                    "taskToolchain" | "taskToolchains" => Field::TaskToolchain(value),
                     "taskType" => {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }

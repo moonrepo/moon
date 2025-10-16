@@ -12,7 +12,6 @@ import type {
 	Input,
 	Output,
 	PartialInheritedTasksConfig,
-	PlatformType,
 	TaskDependencyConfig,
 	TaskDependencyType,
 	TaskMergeStrategy,
@@ -36,7 +35,7 @@ export interface TaskOptions {
 	affectedFiles?: boolean | 'args' | 'env' | null;
 	affectedPassInputs: boolean;
 	allowFailure: boolean;
-	cache: boolean;
+	cache: boolean | 'local' | 'remote';
 	cacheKey?: string | null;
 	cacheLifetime?: string | null;
 	envFiles?: string[] | null;
@@ -48,6 +47,7 @@ export interface TaskOptions {
 	mergeEnv: TaskMergeStrategy;
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
+	mergeToolchains: TaskMergeStrategy;
 	mutex?: string | null;
 	os?: TaskOperatingSystem[] | null;
 	outputStyle?: TaskOutputStyle | null;
@@ -67,7 +67,6 @@ export interface TaskState {
 	defaultInputs?: boolean;
 	emptyInputs?: boolean;
 	expanded?: boolean;
-	localOnly?: boolean;
 	rootLevel?: boolean;
 }
 
@@ -102,7 +101,6 @@ export interface Task {
 	outputs?: Output[];
 	outputFiles?: Record<string, TaskFileOutput>;
 	outputGlobs?: Record<string, TaskGlobOutput>;
-	platform: PlatformType;
 	preset?: TaskPreset | null;
 	script?: string | null;
 	state: TaskState;
@@ -117,7 +115,7 @@ export interface TaskFragment {
 }
 
 export interface Project {
-	alias?: string | null;
+	aliases?: string[] | null;
 	config: ProjectConfig;
 	dependencies?: ProjectDependencyConfig[];
 	fileGroups?: Record<string, FileGroup>;
@@ -130,7 +128,6 @@ export interface Project {
 	} | null;
 	language: LanguageType;
 	layer: LayerType;
-	platform: PlatformType;
 	root: string;
 	source: string;
 	stack: StackType;
@@ -167,15 +164,4 @@ export interface TaskGraphInner {
 
 export interface TaskGraph {
 	graph: TaskGraphInner;
-}
-
-export interface WorkspaceGraph {
-	projects_by_tag: Record<string, string[]>;
-	project_data: Record<string, { alias: string; node_index: number; source: string }>;
-	project_graph: ProjectGraphInner;
-	renamed_project_ids: Record<string, string>;
-	repo_type: 'monorepo-with-root' | 'monorepo' | 'polyrepo';
-	root_project_id: Id | null;
-	task_data: Record<string, { node_index: number }>;
-	task_graph: TaskGraphInner;
 }

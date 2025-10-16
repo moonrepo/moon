@@ -1,7 +1,7 @@
 tasks:
   global-base:
     command: 'global-base'
-    local: true
+    preset: server
     inputs:
       - 'global-base'
 

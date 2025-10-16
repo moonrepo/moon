@@ -7,7 +7,7 @@ About ──────────────────
   Target: tasks:test
   Project: tasks
   Task: test
-  Toolchains: node, typescript
+  Toolchain: typescript
   Type: test
   Depends on: —
 

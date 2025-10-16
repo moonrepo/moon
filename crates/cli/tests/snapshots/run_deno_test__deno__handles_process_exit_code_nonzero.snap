@@ -1,7 +1,8 @@
 ---
-source: legacy/cli/tests/run_deno_test.rs
+source: crates/cli/tests/run_deno_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ deno install
 ▪▪▪▪ deno:exitCodeNonZero
 stdout
 ▪▪▪▪ deno:exitCodeNonZero (100ms)

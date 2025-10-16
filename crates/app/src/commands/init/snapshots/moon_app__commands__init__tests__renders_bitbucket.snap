@@ -11,6 +11,6 @@ projects:
   - 'apps/*'
   - 'packages/*'
 vcs:
-  manager: 'git'
+  client: 'git'
   provider: 'bitbucket'
   defaultBranch: 'main'

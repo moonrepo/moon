@@ -33,6 +33,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     }
 
     let remote_version = match Launchpad::instance()
+        .unwrap()
         .check_version_without_cache(&session.toolchain_config.moon.manifest_url)
         .await
     {
@@ -92,7 +93,8 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
         format!("Upgrading moon to version {remote_version}..."),
-    );
+    )
+    .await;
 
     // Move the old binary to a versioned path
     let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(BIN_NAME);

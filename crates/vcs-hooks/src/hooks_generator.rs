@@ -58,7 +58,7 @@ impl<'app> HooksGenerator<'app> {
 
     #[instrument(skip_all)]
     pub async fn cleanup(self) -> miette::Result<()> {
-        debug!("Cleaning up {} hooks", self.config.manager);
+        debug!("Cleaning up {} hooks", self.config.client);
 
         // Remove external files
         debug!(dir = ?self.output_dir, "Removing external hooks");
@@ -96,12 +96,12 @@ impl<'app> HooksGenerator<'app> {
             if is_docker() {
                 warn!(
                     "In a Docker container/image and .git does not exist, not generating {} hooks",
-                    self.config.manager
+                    self.config.client
                 );
             } else {
                 debug!(
                     "Not generating {} hooks as .git does not exist",
-                    self.config.manager
+                    self.config.client
                 );
             }
 
@@ -110,7 +110,7 @@ impl<'app> HooksGenerator<'app> {
 
         let mut state = self.cleanup_previous_state().await?;
 
-        debug!("Generating {} hooks", self.config.manager);
+        debug!("Generating {} hooks", self.config.client);
 
         self.add_to_vcs(self.create_hook_files()?).await?;
 
@@ -167,7 +167,7 @@ impl<'app> HooksGenerator<'app> {
                 internal_file = ?internal_path,
                 "Syncing local {} hook to {}",
                 color::file(hook_name),
-                self.config.manager,
+                self.config.client,
             );
 
             // On Unix or a system that supports Bash, we can use the hook file

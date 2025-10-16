@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
+use indexmap::IndexSet;
 use moon_common::{
     Id, color,
     path::{WorkspaceRelativePath, is_root_level_source},
@@ -15,14 +16,14 @@ use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_task_args::parse_task_args;
-use moon_toolchain::{detect::detect_task_toolchains, filter_and_resolve_toolchain_ids};
+use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{instrument, trace};
 
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
@@ -267,12 +268,10 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
-        let mut is_local = false;
         let mut preset = None;
         let mut args_sets = vec![];
 
         if id == "dev" || id == "serve" || id == "start" {
-            is_local = true;
             preset = Some(TaskPreset::Server);
         }
 
@@ -281,11 +280,6 @@ impl<'proj> TasksBuilder<'proj> {
         for link in &chain {
             if let Some(pre) = link.config.preset {
                 preset = Some(pre);
-            }
-
-            #[allow(deprecated)]
-            if let Some(local) = link.config.local {
-                is_local = local;
             }
 
             let (command, base_args) = self.get_command_and_args(link.config)?;
@@ -300,21 +294,8 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        if is_local {
-            trace!(
-                task_target = target.as_str(),
-                "Marking task as local (using server preset)"
-            );
-
-            // Backwards compatibility
-            if preset.is_none() {
-                preset = Some(TaskPreset::Server);
-            }
-        }
-
         task.preset = preset;
         task.options = self.build_task_options(id, preset)?;
-        task.state.local_only = is_local;
         task.state.root_level = is_root_level_source(self.project_source);
 
         // Aggregate all values that are inherited from the global task configs,
@@ -333,6 +314,7 @@ impl<'proj> TasksBuilder<'proj> {
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
         let mut has_configured_inputs = false;
+        let mut has_set_type = false;
 
         for (index, link) in chain.iter().enumerate() {
             let config = link.config;
@@ -401,18 +383,23 @@ impl<'proj> TasksBuilder<'proj> {
                 );
             }
 
-            // Backwards compat
-            #[allow(deprecated)]
-            if !config.platform.is_unknown() {
-                task.platform = config.platform;
-            }
-
-            if !config.toolchain.is_empty() {
-                task.toolchains = config.toolchain.to_owned_list();
+            if let Some(toolchains) = &config.toolchains {
+                task.toolchains = self.merge_vec(
+                    task.toolchains,
+                    toolchains.to_owned_list(),
+                    task.options.merge_toolchains,
+                    index,
+                    true,
+                );
             }
 
             if config.description.is_some() {
                 task.description = config.description.clone();
+            }
+
+            if let Some(ty) = config.type_of {
+                task.type_of = ty;
+                has_set_type = true;
             }
         }
 
@@ -494,15 +481,17 @@ impl<'proj> TasksBuilder<'proj> {
             );
         }
 
-        task.type_of = if !task.outputs.is_empty() {
-            TaskType::Build
-        } else if is_local
-            || preset.is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
-        {
-            TaskType::Run
-        } else {
-            TaskType::Test
-        };
+        if !has_set_type {
+            task.type_of = if !task.outputs.is_empty() {
+                TaskType::Build
+            } else if preset
+                .is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
+            {
+                TaskType::Run
+            } else {
+                TaskType::Test
+            };
+        }
 
         if task.options.shell.is_none() {
             // Windows requires a shell for path resolution to work correctly
@@ -622,6 +611,7 @@ impl<'proj> TasksBuilder<'proj> {
                 options.merge_env = *merge;
                 options.merge_inputs = *merge;
                 options.merge_outputs = *merge;
+                options.merge_toolchains = *merge;
             }
 
             if let Some(merge_args) = &config.merge_args {
@@ -642,6 +632,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge_outputs) = &config.merge_outputs {
                 options.merge_outputs = *merge_outputs;
+            }
+
+            if let Some(merge_toolchains) = &config.merge_toolchains {
+                options.merge_toolchains = *merge_toolchains;
             }
 
             if let Some(mutex) = &config.mutex {
@@ -744,25 +738,10 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     async fn resolve_task_toolchains(&self, task: &mut Task) -> miette::Result<()> {
-        let mut toolchains = FxHashSet::default();
+        let mut toolchains = IndexSet::<Id>::default();
 
         // Implicitly detected/inherited toolchains
         if task.toolchains.is_empty() {
-            // Backwards compat for when the user has explicitly configured
-            // the deprecated `platform` setting
-            // TODO: Remove in 2.0
-            #[allow(deprecated)]
-            if !task.platform.is_unknown() {
-                toolchains.insert(task.platform.get_toolchain_id());
-
-                debug!(
-                    task_target = task.target.as_str(),
-                    "The {} task setting has been deprecated, use {} instead",
-                    color::property("platform"),
-                    color::property("toolchain"),
-                );
-            }
-
             toolchains.extend(self.detect_task_toolchains(task).await?);
         }
         // Explicitly configured toolchains
@@ -776,39 +755,30 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         // Resolve them to valid identifiers
-        let mut toolchains = filter_and_resolve_toolchain_ids(
+        task.toolchains = filter_and_resolve_toolchain_ids(
             self.context.enabled_toolchains,
             toolchains.into_iter().collect(),
             true,
         );
 
-        toolchains.sort();
-
-        task.toolchains = toolchains;
-
         Ok(())
     }
 
     async fn detect_task_toolchains(&self, task: &Task) -> miette::Result<Vec<Id>> {
-        // Detect using legacy first
-        let mut toolchains = detect_task_toolchains(&task.command, self.context.enabled_toolchains);
-
-        // Detect using the registry second
-        toolchains.extend(
-            self.context
-                .toolchain_registry
-                .detect_task_usage(
-                    self.context.enabled_toolchains.iter().collect(),
-                    &task.command,
-                    &task.args,
-                    |registry, toolchain| DefineRequirementsInput {
-                        context: registry.create_context(),
-                        toolchain_config: registry
-                            .create_config(&toolchain.id, self.context.toolchain_config),
-                    },
-                )
-                .await?,
-        );
+        let toolchains = self
+            .context
+            .toolchain_registry
+            .detect_task_usage(
+                self.context.enabled_toolchains.iter().collect(),
+                &task.command,
+                &task.args,
+                |registry, toolchain| DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: registry
+                        .create_config(&toolchain.id, self.context.toolchain_config),
+                },
+            )
+            .await?;
 
         Ok(toolchains)
     }

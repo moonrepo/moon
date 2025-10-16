@@ -11,9 +11,9 @@ projects:
   {{ id }}: '{{ source }}'
 {%- endfor -%}
 
-{% if vcs_manager != "git" or vcs_default_branch != "master" %}
+{% if vcs_client != "git" or vcs_default_branch != "master" %}
 vcs:
-  manager: '{{ vcs_manager }}'
+  client: '{{ vcs_client }}'
 {%- if vcs_provider != "github" %}
   provider: '{{ vcs_provider }}'
 {%- endif %}

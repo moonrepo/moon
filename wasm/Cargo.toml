@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["*"]
-exclude = ["target"]
+exclude = ["target", "prebuilts"]
 
 [workspace.dependencies]
 moon_common = { path = "../crates/common" }
@@ -9,12 +9,12 @@ moon_config = { path = "../crates/config" }
 moon_pdk = { path = "../crates/pdk" }
 moon_pdk_api = { path = "../crates/pdk-api" }
 moon_target = { path = "../crates/target" }
-extism = "=1.10.0"
+extism = "=1.12.0"
 extism-pdk = "1.4.1"
 
 [profile.release]
 codegen-units = 1
 debug = false
 lto = true
-opt-level = "s"
+opt-level = 3
 panic = "abort"

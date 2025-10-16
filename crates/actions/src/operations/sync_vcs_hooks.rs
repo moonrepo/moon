@@ -8,7 +8,7 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
     let generator = HooksGenerator::new(app_context, vcs_config, &app_context.workspace_root);
 
     // Generate the hash
-    let mut hooks_hash = HooksHash::new(&vcs_config.manager);
+    let mut hooks_hash = HooksHash::new(&vcs_config.client);
 
     for (hook_name, commands) in &vcs_config.hooks {
         hooks_hash.add_hook(hook_name, commands);

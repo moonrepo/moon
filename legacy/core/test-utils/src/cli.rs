@@ -6,16 +6,21 @@ use std::path::Path;
 
 pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command {
     let path = path.as_ref();
+    let root_dir = std::env::current_dir().unwrap(); // crates/cli
+    let wasm_dir = root_dir
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("wasm/prebuilts");
 
     let mut cmd = std::process::Command::new(cargo_bin("moon"));
     cmd.current_dir(path);
     cmd.env("RUST_BACKTRACE", "1");
     cmd.env("NO_COLOR", "1");
     // Store plugins in the sandbox
-    cmd.env(
-        "MOON_HOME",
-        path.join(".moon-home").to_string_lossy().to_string(),
-    );
+    cmd.env("MOON_HOME", path.join(".moon-home"));
+    cmd.env("WASM_PREBUILTS_DIR", wasm_dir);
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");
@@ -28,6 +33,7 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     // Advanced debugging
     // cmd.env("PROTO_LOG", "trace");
     // cmd.env("MOON_DEBUG_WASM", "true");
+    // cmd.env("MOON_DEBUG_PROCESS_ENV", "true");
     cmd
 }
 

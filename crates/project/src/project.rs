@@ -4,7 +4,7 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    DependencyScope, InheritedTasksResult, LanguageType, LayerType, PlatformType, ProjectConfig,
+    DependencyScope, InheritedTasksResult, LanguageType, LayerType, ProjectConfig,
     ProjectDependencyConfig, StackType,
 };
 use moon_file_group::FileGroup;
@@ -17,10 +17,10 @@ cacheable!(
     #[derive(Clone, Debug, Default)]
     #[serde(default)]
     pub struct Project {
-        /// Unique alias of the project, alongside its official ID.
+        /// Unique alias(es) of the project, alongside its official identifier.
         /// This is typically for language specific semantics, like `name` from `package.json`.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub alias: Option<String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub aliases: Vec<String>,
 
         /// Project configuration loaded from "moon.*", if it exists.
         pub config: ProjectConfig,
@@ -44,19 +44,12 @@ cacheable!(
         pub language: LanguageType,
 
         /// The type of layer within the stack. Is used for layer constraints.
-        #[serde(alias = "type")]
         pub layer: LayerType,
-
-        /// Default platform to run tasks against.
-        // TODO REMOVE
-        #[deprecated]
-        pub platform: PlatformType,
 
         /// Absolute path to the project's root folder.
         pub root: PathBuf,
 
         /// Relative path from the workspace root to the project root.
-        /// Is the RHS of the `projects` setting.
         pub source: WorkspaceRelativePathBuf,
 
         /// The technology stack of the project.
@@ -92,7 +85,7 @@ impl Project {
     pub fn get_enabled_toolchains(&self) -> Vec<&Id> {
         self.toolchains
             .iter()
-            .filter(|id| match self.config.toolchain.get_plugin_config(*id) {
+            .filter(|id| match self.config.toolchains.get_plugin_config(*id) {
                 None => true,
                 Some(cfg) => cfg.is_enabled(),
             })
@@ -104,7 +97,7 @@ impl Project {
     pub fn get_enabled_toolchains_for_task<'task>(&self, task: &'task Task) -> Vec<&'task Id> {
         task.toolchains
             .iter()
-            .filter(|id| match self.config.toolchain.get_plugin_config(*id) {
+            .filter(|id| match self.config.toolchains.get_plugin_config(*id) {
                 None => true,
                 Some(cfg) => cfg.is_enabled(),
             })
@@ -139,13 +132,13 @@ impl Project {
     /// Return true if the provided locator string (an ID or alias) matches the
     /// current project.
     pub fn matches_locator(&self, locator: &str) -> bool {
-        self.id.as_str() == locator || self.alias.as_ref().is_some_and(|alias| alias == locator)
+        self.id.as_str() == locator || self.aliases.iter().any(|alias| alias == locator)
     }
 
     /// Convert the project into a fragment.
     pub fn to_fragment(&self) -> ProjectFragment {
         ProjectFragment {
-            alias: self.alias.clone(),
+            aliases: self.aliases.clone(),
             dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),
@@ -156,7 +149,7 @@ impl Project {
 
 impl PartialEq for Project {
     fn eq(&self, other: &Self) -> bool {
-        self.alias == other.alias
+        self.aliases == other.aliases
             && self.file_groups == other.file_groups
             && self.id == other.id
             && self.language == other.language
@@ -180,8 +173,8 @@ cacheable!(
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct ProjectFragment {
         /// Alias of the project.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub alias: Option<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub aliases: Vec<String>,
 
         /// When treated as a dependency for another project,
         /// the scope of that dependency relationship.

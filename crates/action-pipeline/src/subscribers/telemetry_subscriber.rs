@@ -33,14 +33,10 @@ impl Subscriber for TelemetrySubscriber {
                 }
             }
 
-            for platform in self.toolchain_config.get_enabled_platforms() {
-                toolchains.insert(platform.to_string().to_lowercase(), "legacy".to_owned());
-            }
-
-            if !toolchains.is_empty() {
-                let _ = Launchpad::instance()
-                    .track_toolchain_usage(toolchains)
-                    .await;
+            if !toolchains.is_empty()
+                && let Some(launchpad) = Launchpad::instance()
+            {
+                let _ = launchpad.track_toolchain_usage(toolchains).await;
             }
         }
 

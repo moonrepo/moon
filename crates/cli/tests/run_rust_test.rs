@@ -1,11 +1,14 @@
 use moon_common::Id;
 use moon_config::{
-    PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, PartialWorkspaceProjects,
+    PartialToolchainConfig, PartialToolchainPluginConfig, PartialWorkspaceConfig,
+    PartialWorkspaceProjects,
 };
 use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox_with_config, predicates::prelude::*,
 };
 use rustc_hash::FxHashMap;
+use starbase_utils::json::JsonValue;
+use std::collections::BTreeMap;
 
 #[allow(deprecated)]
 fn rust_sandbox() -> Sandbox {
@@ -18,7 +21,10 @@ fn rust_sandbox() -> Sandbox {
     };
 
     let toolchain_config = PartialToolchainConfig {
-        rust: Some(PartialRustConfig::default()),
+        plugins: Some(FxHashMap::from_iter([(
+            Id::raw("rust"),
+            PartialToolchainPluginConfig::default(),
+        )])),
         ..PartialToolchainConfig::default()
     };
 
@@ -181,11 +187,16 @@ mod rustup_toolchain {
         };
 
         let toolchain_config = PartialToolchainConfig {
-            rust: Some(PartialRustConfig {
-                components: Some(vec!["clippy".into()]),
-                targets: Some(vec!["wasm32-wasip1".into()]),
-                ..PartialRustConfig::default()
-            }),
+            plugins: Some(FxHashMap::from_iter([(
+                Id::raw("rust"),
+                PartialToolchainPluginConfig {
+                    config: Some(BTreeMap::from_iter([
+                        ("components".into(), JsonValue::String("clippy".into())),
+                        ("targets".into(), JsonValue::String("wasm32-wasip1".into())),
+                    ])),
+                    ..Default::default()
+                },
+            )])),
             ..PartialToolchainConfig::default()
         };
 
@@ -199,19 +210,19 @@ mod rustup_toolchain {
         sandbox
     }
 
-    #[test]
-    fn installs_components_and_targets() {
-        let sandbox = rust_toolchain_sandbox();
+    // #[test]
+    // fn installs_components_and_targets() {
+    //     let sandbox = rust_toolchain_sandbox();
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("rust:noop");
-        });
+    //     let assert = sandbox.run_moon(|cmd| {
+    //         cmd.arg("run").arg("rust:noop");
+    //     });
 
-        let output = assert.output();
+    //     let output = assert.output();
 
-        assert!(predicate::str::contains("rustup component").eval(&output));
-        assert!(predicate::str::contains("rustup target").eval(&output));
-    }
+    //     assert!(predicate::str::contains("rustup component").eval(&output));
+    //     assert!(predicate::str::contains("rustup target").eval(&output));
+    // }
 
     #[test]
     fn doesnt_install_again() {

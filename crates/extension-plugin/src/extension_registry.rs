@@ -1,6 +1,6 @@
 use crate::extension_plugin::ExtensionPlugin;
 use moon_common::Id;
-use moon_config::ExtensionConfig;
+use moon_config::ExtensionPluginConfig;
 use moon_plugin::{MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config};
 use rustc_hash::FxHashMap;
 use std::ops::Deref;
@@ -9,7 +9,7 @@ use tracing::trace;
 
 #[derive(Debug)]
 pub struct ExtensionRegistry {
-    pub configs: FxHashMap<Id, ExtensionConfig>,
+    pub configs: FxHashMap<Id, ExtensionPluginConfig>,
     registry: Arc<PluginRegistry<ExtensionPlugin>>,
 }
 
@@ -33,7 +33,7 @@ impl ExtensionRegistry {
         }
     }
 
-    pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ExtensionConfig>) {
+    pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ExtensionPluginConfig>) {
         for (id, config) in configs {
             self.configs.insert(id.to_owned(), config.to_owned());
         }

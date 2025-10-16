@@ -116,9 +116,9 @@ impl TaskDepsBuilder<'_> {
                         self.root_project_id,
                         |dep_project_id| {
                             project
-                                .alias
-                                .as_ref()
-                                .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                                .aliases
+                                .iter()
+                                .any(|alias| alias.as_str() == dep_project_id.as_str())
                                 || project
                                     .dependencies
                                     .iter()

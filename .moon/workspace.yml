@@ -18,11 +18,7 @@ generator:
     # - './.moon/templates'
     - './tests/fixtures/generator/templates'
 
-runner:
-  archivableTargets:
-    - ':lint'
-    - ':test'
-    - ':typecheck'
+pipeline:
   logRunningCommand: true
 
 vcs:
@@ -40,7 +36,7 @@ docker:
 notifier:
   terminalNotifications: 'always'
 
-unstable_remote:
+remote:
   # DEPOT
   host: 'grpcs://cache.depot.dev'
   auth:

@@ -6,7 +6,7 @@ About ──────────────────
 
   Project: basic
   Source: basic
-  Toolchain: node
+  Toolchain: javascript
   Language: javascript
   Stack: unknown
   Layer: unknown

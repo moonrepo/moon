@@ -156,7 +156,7 @@ async fn apply_toolchain(
 
     // Has a version override
     if let Some(version) = project_config
-        .toolchain
+        .toolchains
         .get_plugin_config(toolchain.id.as_str())
         .and_then(|config| config.get_version())
     {

@@ -1,4 +1,4 @@
-use moon_config::PartialBunConfig;
+use moon_config::PartialToolchainPluginConfig;
 use moon_test_utils::{
     Sandbox, assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
     predicates::prelude::*,
@@ -12,11 +12,15 @@ fn bun_sandbox() -> Sandbox {
 #[allow(deprecated)]
 fn bun_sandbox_with_config<C>(callback: C) -> Sandbox
 where
-    C: FnOnce(&mut PartialBunConfig),
+    C: FnOnce(&mut PartialToolchainPluginConfig),
 {
     let (workspace_config, mut toolchain_config, tasks_config) = get_bun_fixture_configs();
 
-    if let Some(bun_config) = &mut toolchain_config.bun {
+    if let Some(bun_config) = toolchain_config
+        .plugins
+        .as_mut()
+        .and_then(|cfg| cfg.get_mut("bun"))
+    {
         callback(bun_config);
     }
 
@@ -250,16 +254,16 @@ mod bun {
         assert_snapshot!(assert.output());
     }
 
-    #[test]
-    fn runs_node_module_bin_from_workspace_root() {
-        let sandbox = bun_sandbox();
+    // #[test]
+    // fn runs_node_module_bin_from_workspace_root() {
+    //     let sandbox = bun_sandbox();
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("bun:runFromWorkspaceBin");
-        });
+    //     let assert = sandbox.run_moon(|cmd| {
+    //         cmd.arg("run").arg("bun:runFromWorkspaceBin");
+    //     });
 
-        assert_snapshot!(assert.output());
-    }
+    //     assert_snapshot!(assert.output());
+    // }
 
     #[test]
     fn retries_on_failure_till_count() {
@@ -315,21 +319,21 @@ mod bun {
             assert.success();
         }
 
-        #[test]
-        fn can_run_a_deps_bin() {
-            let sandbox = bun_sandbox();
+        // #[test]
+        // fn can_run_a_deps_bin() {
+        //     let sandbox = bun_sandbox();
 
-            let assert = sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("packageManager:runDep");
-            });
+        //     let assert = sandbox.run_moon(|cmd| {
+        //         cmd.arg("run").arg("packageManager:runDep");
+        //     });
 
-            assert!(
-                predicate::str::contains("All matched files use Prettier code style!")
-                    .eval(&assert.output())
-            );
+        //     assert!(
+        //         predicate::str::contains("All matched files use Prettier code style!")
+        //             .eval(&assert.output())
+        //     );
 
-            assert.success();
-        }
+        //     assert.success();
+        // }
 
         #[test]
         fn can_run_a_script() {

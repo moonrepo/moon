@@ -15,9 +15,8 @@ tasks:
   exit:
     command: 'node exitCode.mjs'
 
-toolchain:
-  typescript:
-    disabled: true
+toolchains:
+  typescript: null
 
 workspace:
   inheritedTasks:

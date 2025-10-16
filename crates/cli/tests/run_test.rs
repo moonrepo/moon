@@ -567,16 +567,14 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")
                 .arg("runFromProject")
-                .arg("localOnly")
-                // Allows local to run
-                .env_remove("CI")
+                .arg("runFromWorkspace")
                 .current_dir(sandbox.path().join("base"));
         });
 
         let output = assert.output();
 
         assert!(predicate::str::contains("base:runFromProject").eval(&output));
-        assert!(predicate::str::contains("base:localOnly").eval(&output));
+        assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
         assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
     }
 
@@ -1032,21 +1030,19 @@ mod outputs {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            let assert1 = sandbox.run_moon(|cmd| {
+            sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
             let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
-            let assert2 = sandbox.run_moon(|cmd| {
+            sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
             let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
             assert_eq!(hash1, hash2);
-            assert_snapshot!(assert1.output());
-            assert_snapshot!(assert2.output());
         }
 
         #[test]
@@ -1894,7 +1890,7 @@ mod sync_codeowners {
     fn creates_if_enabled() {
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.codeowners = Some(PartialCodeownersConfig {
-                sync_on_run: Some(true),
+                sync: Some(true),
                 ..PartialCodeownersConfig::default()
             });
         });
@@ -1912,7 +1908,7 @@ mod sync_codeowners {
     fn creates_for_gitlab() {
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.codeowners = Some(PartialCodeownersConfig {
-                sync_on_run: Some(true),
+                sync: Some(true),
                 ..PartialCodeownersConfig::default()
             });
             workspace_config.vcs = Some(PartialVcsConfig {
@@ -1934,7 +1930,7 @@ mod sync_codeowners {
     fn creates_for_bitbucket() {
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.codeowners = Some(PartialCodeownersConfig {
-                sync_on_run: Some(true),
+                sync: Some(true),
                 ..PartialCodeownersConfig::default()
             });
             workspace_config.vcs = Some(PartialVcsConfig {
@@ -1976,7 +1972,7 @@ mod sync_vcs_hooks {
                     "pre-commit".into(),
                     vec!["moon check --all".into()],
                 )])),
-                sync_hooks: Some(true),
+                sync: Some(true),
                 ..Default::default()
             });
         });

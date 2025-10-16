@@ -2,7 +2,7 @@ use crate::context::*;
 use crate::is_false;
 use crate::prompts::*;
 use moon_common::Id;
-use moon_config::{DockerPruneConfig, DockerScaffoldConfig};
+use moon_config::{DockerPruneConfig, DockerScaffoldConfig, LanguageType};
 use moon_project::ProjectFragment;
 use rustc_hash::FxHashMap;
 use schematic::Schema;
@@ -42,6 +42,15 @@ api_struct!(
         /// Will be used for task usage detection.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub exe_names: Vec<String>,
+
+        /// The programming language this toolchain applies to. This value
+        /// will be used for 2 purposes:
+        ///   - If the project language is unknown, it will use this value
+        ///     if the project is toolchain aware based on file detection.
+        ///   - If the project language is defined, it will infer the
+        ///     the toolchain from this value.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub language: Option<LanguageType>,
 
         /// The name(s) of the lock file used for dependency installs.
         /// Will be used for project usage detection.

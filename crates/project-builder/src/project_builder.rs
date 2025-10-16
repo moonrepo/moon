@@ -7,16 +7,13 @@ use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
-use moon_toolchain::detect::{
-    detect_project_language, detect_project_toolchains, get_project_toolchains,
-};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
@@ -38,7 +35,7 @@ pub struct ProjectBuilder<'app> {
     // Values to be continually built
     id: &'app Id,
     source: &'app WorkspaceRelativePath,
-    alias: Option<String>,
+    aliases: Vec<String>,
     root: PathBuf,
 
     pub language: LanguageType,
@@ -75,7 +72,7 @@ impl<'app> ProjectBuilder<'app> {
             context,
             id,
             source,
-            alias: None,
+            aliases: vec![],
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
@@ -116,16 +113,23 @@ impl<'app> ProjectBuilder<'app> {
     /// Inherit the local config and then detect applicable language and toolchain fields.
     #[instrument(skip_all)]
     pub async fn inherit_local_config(&mut self, config: &ProjectConfig) -> miette::Result<()> {
+        let mut infer_toolchain_from_language = true;
+
         // Use configured language or detect from environment
-        self.language = if config.language == LanguageType::Unknown {
-            let language = detect_project_language(&self.root);
+        self.language = if config.language.is_unknown() {
+            let language = self
+                .context
+                .toolchain_registry
+                .detect_project_language(&self.root)
+                .await?;
 
             trace!(
                 project_id = self.id.as_str(),
                 language = ?language,
-                "Unknown project language, detecting from environment",
+                "Unknown project language, attempted to detect from environment",
             );
 
+            infer_toolchain_from_language = false;
             language
         } else {
             config.language.clone()
@@ -135,55 +139,36 @@ impl<'app> ProjectBuilder<'app> {
         let mut toolchains = FxHashSet::default();
 
         // 1 - Explicitly configured by the user
-        #[allow(deprecated)]
-        if let Some(default_ids) = &config.toolchain.default {
-            for default_id in default_ids.to_list() {
-                toolchains.extend(get_project_toolchains(default_id));
-            }
-        } else if let Some(platform) = &config.platform {
-            let default_id = platform.get_toolchain_id();
+        if let Some(default_ids) = &config.toolchains.default {
+            toolchains.extend(default_ids.to_owned_list());
+        }
 
-            toolchains.extend(get_project_toolchains(&default_id));
-
-            debug!(
-                project_id = self.id.as_str(),
-                "The {} project setting has been deprecated, use {} instead, or rely on configuration/environment detection instead",
-                color::property("platform"),
-                color::property("toolchain.default"),
+        // 2 - Inferred from the language
+        if infer_toolchain_from_language && !self.language.is_unknown() {
+            toolchains.extend(
+                self.context
+                    .toolchain_registry
+                    .detect_project_toolchain_from_language(&self.language)
+                    .await?,
             );
         }
 
-        // 2 - Infer from language if nothing configured
-        if toolchains.is_empty() {
-            // TODO deprecate in v2
-            toolchains.extend(detect_project_toolchains(
-                self.context.workspace_root,
-                &self.root,
-                &self.language,
-            ));
-
-            trace!(
-                project_id = self.id.as_str(),
-                language = ?self.language,
-                toolchains = ?toolchains.iter().map(|tc| tc.as_str()).collect::<Vec<_>>(),
-                "Unknown toolchain, inferring from project language",
-            );
-        }
-
-        // 3 - Detect from plugins
+        // 2 - Detected from plugins
         toolchains.extend(
             self.context
                 .toolchain_registry
-                .detect_project_usage(&self.root, |registry, toolchain| DefineRequirementsInput {
-                    context: registry.create_context(),
-                    toolchain_config: registry
-                        .create_config(&toolchain.id, self.context.toolchain_config),
+                .detect_project_toolchain_from_usage(&self.root, |registry, toolchain| {
+                    DefineRequirementsInput {
+                        context: registry.create_context(),
+                        toolchain_config: registry
+                            .create_config(&toolchain.id, self.context.toolchain_config),
+                    }
                 })
                 .await?,
         );
 
         // Filter down the toolchains list based on the project config
-        for (plugin_id, override_config) in &config.toolchain.plugins {
+        for (plugin_id, override_config) in &config.toolchains.plugins {
             if override_config.is_enabled() {
                 toolchains.insert(plugin_id.to_owned());
             } else {
@@ -249,8 +234,8 @@ impl<'app> ProjectBuilder<'app> {
         self
     }
 
-    pub fn set_alias(&mut self, alias: impl AsRef<str>) -> &mut Self {
-        self.alias = Some(alias.as_ref().into());
+    pub fn set_aliases(&mut self, aliases: Vec<String>) -> &mut Self {
+        self.aliases = aliases.to_owned();
         self
     }
 
@@ -270,7 +255,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut project = Project {
             dependencies,
             file_groups: self.build_file_groups()?,
-            alias: self.alias,
+            aliases: self.aliases,
             id: self.id.to_owned(),
             language: self.language,
             root: self.root,
@@ -431,9 +416,9 @@ fn resolve_project_dependencies(project: &mut Project, root_project_id: Option<&
                             .iter()
                             .any(|dep| &dep.id == dep_project_id)
                         || project
-                            .alias
-                            .as_ref()
-                            .is_some_and(|alias| alias.as_str() == dep_project_id.as_str())
+                            .aliases
+                            .iter()
+                            .any(|alias| alias.as_str() == dep_project_id.as_str())
                 },
             ) {
                 deps.push(dep_config);

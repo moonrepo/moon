@@ -15,4 +15,4 @@ tasks:
       - 'out'
   global-node:
     command: 'global-node'
-    platform: 'node'
+    toolchain: 'node'

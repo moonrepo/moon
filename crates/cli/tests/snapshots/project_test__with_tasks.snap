@@ -6,7 +6,7 @@ About ──────────────────
 
   Project: tasks
   Source: tasks
-  Toolchains: node, typescript
+  Toolchain: typescript
   Language: typescript
   Stack: unknown
   Layer: unknown

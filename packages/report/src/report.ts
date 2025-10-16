@@ -50,8 +50,6 @@ export function prepareReportActions(report: RunReport, slowThreshold: number): 
 			if (attempts.length > 1) {
 				comments.push(`${attempts.length} attempts`);
 			}
-		} else if (action.attempts && action.attempts.length > 1) {
-			comments.push(`${action.attempts.length} attempts`);
 		}
 
 		if (isSlow(action, slowThreshold)) {
@@ -60,11 +58,11 @@ export function prepareReportActions(report: RunReport, slowThreshold: number): 
 
 		return {
 			comments,
-			duration: action.duration,
+			duration: action.duration ?? null,
 			icon: getIconForStatus(action.status),
 			label: action.label ?? '<unknown>',
 			status: action.status,
-			time: formatDuration(action.duration),
+			time: action.duration ? formatDuration(action.duration) : '0s',
 		};
 	});
 }

@@ -43,16 +43,20 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
             #(config.project.as_ref().map(|meta| {
                 element! {
                     Section(title: "Metadata") {
-                        View(margin_bottom: 1) {
-                            StyledText(
-                                content: &meta.description,
-                            )
-                        }
-                        #(meta.name.as_ref().map(|name| {
+                        #(meta.description.as_ref().map(|description| {
+                            element! {
+                                View(margin_bottom: 1) {
+                                    StyledText(
+                                        content: description,
+                                    )
+                                }
+                            }
+                        }))
+                        #(meta.title.as_ref().map(|title| {
                             element! {
                                 Entry(
-                                    name: "Name",
-                                    content: name.to_string(),
+                                    name: "Title",
+                                    content: title.to_string(),
                                 )
                             }
                         }))
@@ -104,16 +108,15 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                         )
                     }.into_any()
                 )
-                #(project.alias.as_ref().map(|alias| {
+                #((!project.aliases.is_empty()).then(|| {
                     element! {
                         Entry(
-                            name: "Alias",
-                            value: element! {
-                                StyledText(
-                                    content: alias,
-                                    style: Style::Label
-                                )
-                            }.into_any()
+                            name: if project.aliases.len() == 1 {
+                                "Alias"
+                            } else {
+                                "Aliases"
+                            },
+                            content: project.aliases.join(", "),
                         )
                     }
                 }))

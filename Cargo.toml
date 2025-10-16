@@ -1,17 +1,6 @@
 [workspace]
 resolver = "3"
-members = [
-    "crates/*",
-    "legacy/core/*",
-
-    # Languages
-    "legacy/bun/*",
-    "legacy/deno/*",
-    "legacy/javascript/*",
-    "legacy/node/*",
-    "legacy/rust/*",
-    "legacy/system/*",
-]
+members = ["crates/*", "legacy/core/*"]
 exclude = ["tests/fixtures", "wasm/test-plugin"]
 default-members = ["crates/cli"]
 
@@ -70,7 +59,6 @@ starbase_archive = { version = "0.11.6", default-features = false, features = [
     "zip-all",
 ] }
 starbase_console = { version = "0.6.13", features = ["miette"] }
-starbase_events = "0.7.3"
 starbase_id = { version = "0.2.3", features = ["miette", "schematic"] }
 starbase_sandbox = "0.9.9"
 starbase_shell = "0.10.2"
@@ -88,6 +76,7 @@ tokio = { version = "1.47.1", default-features = false, features = [
     "rt-multi-thread",
     "rt",
     "signal",
+    "sync",
     "time",
     "tracing",
 ] }
@@ -100,16 +89,18 @@ uuid = { version = "1.18.1", features = ["v4"] }
 # proto/plugin related
 extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.53.3"
+proto_core = "0.53.5"
 proto_pdk_api = "0.31.2"
 proto_pdk_test_utils = "0.41.2"
 system_env = "0.8.3"
-version_spec = "0.9.5"
+version_spec = "0.9.6"
 warpgate = "0.28.2"
 warpgate_api = "0.17.1"
 warpgate_pdk = "0.16.1"
 
 # proto_core = { path = "../proto/crates/core" }
+# proto_pdk_api = { path = "../proto/crates/pdk-api" }
+# proto_pdk_test_utils = { path = "../proto/crates/pdk-test-utils" }
 # system_env = { path = "../proto/crates/system-env" }
 # version_spec = { path = "../proto/crates/version-spec" }
 # warpgate = { path = "../proto/crates/warpgate" }

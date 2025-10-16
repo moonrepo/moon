@@ -6,7 +6,7 @@ use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
 use petgraph::graph::{DiGraph, NodeIndex};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use scc::HashMap;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
@@ -18,7 +18,7 @@ pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
 
 #[derive(Clone, Debug, Default)]
 pub struct ProjectMetadata {
-    pub alias: Option<String>,
+    pub aliases: FxHashSet<String>,
     pub index: NodeIndex,
     pub original_id: Option<Id>,
     pub source: WorkspaceRelativePathBuf,
@@ -69,10 +69,15 @@ impl ProjectGraph {
 
     /// Return a map of aliases to their project IDs. Projects without aliases are omitted.
     pub fn aliases(&self) -> FxHashMap<&str, &Id> {
-        self.metadata
-            .iter()
-            .filter_map(|(id, metadata)| metadata.alias.as_ref().map(|alias| (alias.as_str(), id)))
-            .collect()
+        let mut map = FxHashMap::default();
+
+        for (id, metadata) in &self.metadata {
+            for alias in &metadata.aliases {
+                map.insert(alias.as_str(), id);
+            }
+        }
+
+        map
     }
 
     /// Return a project with the provided ID or alias from the graph.
@@ -240,11 +245,7 @@ impl ProjectGraph {
             self.metadata
                 .iter()
                 .find_map(|(id, metadata)| {
-                    if metadata
-                        .alias
-                        .as_ref()
-                        .is_some_and(|alias| alias == id_or_alias)
-                    {
+                    if metadata.aliases.contains(id_or_alias) {
                         Some(id.as_str())
                     } else {
                         None

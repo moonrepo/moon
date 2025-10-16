@@ -1,9 +1,6 @@
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
-use moon_common::{
-    color,
-    path::{self, WorkspaceRelativePathBuf},
-};
+use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
@@ -17,7 +14,7 @@ use std::borrow::Cow;
 use std::env;
 use std::mem;
 use std::path::Path;
-use tracing::{debug, instrument, warn};
+use tracing::{instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct ExpandedResult {
@@ -515,13 +512,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 result.value = match arg {
                     "channel" => metadata.and_then(|md| md.channel.clone()),
-                    "description" => metadata.and_then(|md| {
-                        if md.description.is_empty() {
-                            None
-                        } else {
-                            Some(md.description.clone())
-                        }
-                    }),
+                    "description" => metadata.and_then(|md| md.description.clone()),
                     "maintainers" => metadata.and_then(|md| {
                         if md.maintainers.is_empty() {
                             None
@@ -529,7 +520,7 @@ impl<'graph> TokenExpander<'graph> {
                             Some(md.maintainers.join(","))
                         }
                     }),
-                    "name" => metadata.and_then(|md| md.name.clone()),
+                    "name" | "title" => metadata.and_then(|md| md.title.clone()),
                     "owner" => metadata.and_then(|md| md.owner.clone()),
                     custom_field => metadata.and_then(|md| {
                         md.metadata.get(custom_field).map(|value| value.to_string())
@@ -577,15 +568,6 @@ impl<'graph> TokenExpander<'graph> {
                 None => Cow::Owned(String::new()),
             };
 
-        if variable == "taskPlatform" {
-            debug!(
-                task_target = task.target.as_str(),
-                "The {} token variable is deprecated, use {} instead",
-                color::property("taskPlatform"),
-                color::property("taskToolchain"),
-            );
-        }
-
         let replaced_value = match variable {
             // Env
             "arch" => Cow::Borrowed(env::consts::ARCH),
@@ -596,13 +578,14 @@ impl<'graph> TokenExpander<'graph> {
             // Project
             "language" => Cow::Owned(project.language.to_string()),
             "project" => Cow::Borrowed(project.id.as_str()),
-            "projectAlias" => match project.alias.as_ref() {
+            "projectAlias" => match project.aliases.first() {
                 Some(alias) => Cow::Borrowed(alias.as_str()),
                 None => Cow::Owned(String::new()),
             },
+            "projectAliases" => Cow::Owned(project.aliases.join(",")),
             "projectChannel" => get_metadata(|md| md.channel.as_deref()),
-            "projectLayer" | "projectType" => Cow::Owned(project.layer.to_string()),
-            "projectName" => get_metadata(|md| md.name.as_deref()),
+            "projectLayer" => Cow::Owned(project.layer.to_string()),
+            "projectName" | "projectTitle" => get_metadata(|md| md.title.as_deref()),
             "projectOwner" => get_metadata(|md| md.owner.as_deref()),
             "projectRoot" => Cow::Owned(self.stringify_path(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
@@ -610,7 +593,7 @@ impl<'graph> TokenExpander<'graph> {
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),
             "task" => Cow::Borrowed(task.id.as_str()),
-            "taskPlatform" | "taskToolchain" => match task.toolchains.first() {
+            "taskToolchain" => match task.toolchains.first() {
                 Some(tc) => Cow::Borrowed(tc.as_str()),
                 None => Cow::Owned("unknown".into()),
             },

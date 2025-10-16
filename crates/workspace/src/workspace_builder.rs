@@ -12,8 +12,7 @@ use moon_common::{
 };
 use moon_config::{
     ConfigLoader, DependencyScope, InheritedTasksManager, ProjectDependencyConfig,
-    ProjectsSourcesList, TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-    finalize_config,
+    TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
@@ -31,7 +30,6 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use starbase_events::Emitter;
 use starbase_utils::glob::GlobWalkOptions;
 use starbase_utils::json;
 use std::sync::Arc;
@@ -41,8 +39,6 @@ use tracing::{debug, instrument, trace};
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
-    pub extend_project: Emitter<ExtendProjectEvent>,
-    pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
@@ -227,7 +223,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 (
                     id,
                     ProjectMetadata {
-                        alias: data.alias,
+                        aliases: data.aliases,
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
                         source: data.source,
@@ -417,24 +413,6 @@ impl<'app> WorkspaceBuilder<'app> {
 
         builder.inherit_global_config(context.inherited_tasks)?;
 
-        // Inherit from legacy platforms
-        let extended_data = context
-            .extend_project
-            .emit(ExtendProjectEvent {
-                project_id: id.to_owned(),
-                project_source: build_data.source.to_owned(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?;
-
-        for dep_config in extended_data.dependencies {
-            builder.extend_with_dependency(dep_config);
-        }
-
-        for (task_id, task_config) in extended_data.tasks {
-            builder.extend_with_task(task_id, task_config);
-        }
-
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {
             for dep_config in &extended_data.dependencies {
@@ -450,11 +428,9 @@ impl<'app> WorkspaceBuilder<'app> {
             }
         }
 
-        // Inherit alias before building in case the project
+        // Inherit aliases before building in case the project
         // references itself in tasks or dependencies
-        if let Some(alias) = &build_data.alias {
-            builder.set_alias(alias);
-        }
+        builder.set_aliases(build_data.aliases.iter().cloned().collect());
 
         let project = builder.build().await?;
 
@@ -740,7 +716,10 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn load_project_build_data(&mut self, sources: ProjectsSourcesList) -> miette::Result<()> {
+    fn load_project_build_data(
+        &mut self,
+        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+    ) -> miette::Result<()> {
         let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon", false);
         let config_names = context.config_loader.get_project_file_names();
@@ -836,24 +815,6 @@ impl<'app> WorkspaceBuilder<'app> {
 
         debug!("Extending project graph");
 
-        // From platforms
-        let aliases = context
-            .extend_project_graph
-            .emit(ExtendProjectGraphEvent {
-                sources: self
-                    .project_data
-                    .iter()
-                    .map(|(id, build_data)| (id.to_owned(), build_data.source.to_owned()))
-                    .collect(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?
-            .aliases;
-
-        for (project_id, alias) in aliases {
-            self.track_alias(project_id, alias)?;
-        }
-
         // From toolchains
         for output in context
             .toolchain_registry
@@ -947,7 +908,8 @@ impl<'app> WorkspaceBuilder<'app> {
         self.project_data
             .get_mut(&id)
             .expect("Project build data not found!")
-            .alias = Some(alias.clone());
+            .aliases
+            .insert(alias.clone());
 
         self.aliases.insert(alias, id);
 

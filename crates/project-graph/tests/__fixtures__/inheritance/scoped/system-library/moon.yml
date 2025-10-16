@@ -1,6 +1,9 @@
 layer: library
 
+toolchains:
+  default: system
+
 tasks:
   system-library:
     command: system-library
-    platform: system
+    toolchain: system

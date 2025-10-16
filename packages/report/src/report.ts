@@ -29,7 +29,7 @@ export function sortReport(report: RunReport, sortBy: 'label' | 'time', sortDir:
 
 export interface PreparedAction {
 	comments: string[];
-	duration: Duration | null;
+	duration: Duration | null | undefined;
 	icon: string;
 	label: string;
 	status: ActionStatus;
@@ -64,7 +64,7 @@ export function prepareReportActions(report: RunReport, slowThreshold: number): 
 			icon: getIconForStatus(action.status),
 			label: action.label ?? '<unknown>',
 			status: action.status,
-			time: formatDuration(action.duration),
+			time: action.duration ? formatDuration(action.duration) : 'n/a',
 		};
 	});
 }

@@ -27,6 +27,7 @@ export interface WebhookPayload<T extends EventType, E> {
 	event: E;
 	type: T;
 	uuid: string;
+	trace: string;
 }
 
 export type EventType =

@@ -39,7 +39,7 @@ export function hasPassed(status: ActionStatus): boolean {
 }
 
 export function isFlaky(action: Action): boolean {
-	return action.flaky || false;
+	return action.flaky ?? false;
 }
 
 export function isSlow(action: Action, slowThreshold: number): boolean {

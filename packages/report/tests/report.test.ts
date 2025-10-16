@@ -111,6 +111,7 @@ function mockReport(): RunReport {
 			},
 			percent: 0,
 		},
+		status: 'completed',
 	};
 }
 

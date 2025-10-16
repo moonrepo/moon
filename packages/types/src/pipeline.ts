@@ -46,7 +46,7 @@ export interface OperationMetaArchiveCreation {
 
 export interface OperationMetaHashGeneration {
 	type: 'hash-generation';
-	hash: string;
+	hash?: string;
 }
 
 export interface OperationMetaMutexAcquisition {
@@ -80,9 +80,12 @@ export type OperationMeta =
 	| OperationMetaTaskExecution;
 
 export interface Operation {
-	duration: Duration | null;
-	finishedAt: string | null;
+	duration?: Duration | null;
+	finishedAt?: string | null;
+	id?: Id | null;
 	meta: OperationMeta;
+	operations?: Operation[];
+	plugin?: Id | null;
 	startedAt: string;
 	status: ActionStatus;
 }
@@ -94,15 +97,15 @@ export interface Action {
 	/** @deprecated */
 	attempts: Attempt[] | null;
 	createdAt: string;
-	duration: Duration | null;
-	error: string | null;
-	finishedAt: string | null;
+	duration?: Duration | null;
+	error?: string | null;
+	finishedAt?: string | null;
 	flaky: boolean;
 	label: string;
 	node: ActionNode;
 	nodeIndex: number;
 	operations: Operation[];
-	startedAt: string | null;
+	startedAt?: string | null;
 	status: ActionStatus;
 }
 
@@ -138,6 +141,7 @@ export interface RunReport {
 			}
 		>;
 	};
+	status: ActionPipelineStatus;
 }
 
 // NODES
@@ -157,7 +161,8 @@ export type ActionNode =
 export interface ActionNodeInstallDependencies {
 	action: 'install-dependencies';
 	params: {
-		projectId: Id | null;
+		members?: string[] | null;
+		projectId?: Id | null;
 		root: string;
 		toolchainId: Id;
 	};
@@ -193,9 +198,9 @@ export interface ActionNodeRunTask {
 }
 
 export interface ActionNodeSetupEnvironment {
-	action: 'install-environment';
+	action: 'setup-environment';
 	params: {
-		projectId: Id | null;
+		projectId?: Id | null;
 		root: string;
 		toolchainId: Id;
 	};

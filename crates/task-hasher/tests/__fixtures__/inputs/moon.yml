@@ -5,7 +5,7 @@ tasks:
     command: noop
     inputs: []
 
-  touched:
+  changed:
     command: noop
     inputs:
       - 'created.txt'

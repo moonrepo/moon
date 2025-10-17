@@ -1105,7 +1105,7 @@ mod action_graph_builder {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn doesnt_graph_if_not_affected_by_touched_files() {
+            async fn doesnt_graph_if_not_affected_by_changed_files() {
                 let sandbox = create_sandbox("projects");
                 let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
@@ -1115,8 +1115,8 @@ mod action_graph_builder {
                 let task = create_task("bar", "build");
 
                 // Empty set works fine, just needs to be some
-                let touched_files = FxHashSet::default();
-                builder.set_touched_files(touched_files).unwrap();
+                let changed_files = FxHashSet::default();
+                builder.set_changed_files(changed_files).unwrap();
                 builder.set_affected().unwrap();
 
                 builder
@@ -1136,7 +1136,7 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn graphs_if_affected_by_touched_files() {
+            async fn graphs_if_affected_by_changed_files() {
                 let sandbox = create_sandbox("projects");
                 let mut container = ActionGraphContainer::new(sandbox.path());
                 let mut builder = container
@@ -1149,8 +1149,8 @@ mod action_graph_builder {
                 task.input_files
                     .insert(file.clone(), TaskFileInput::default());
 
-                let touched_files = FxHashSet::from_iter([file]);
-                builder.set_touched_files(touched_files).unwrap();
+                let changed_files = FxHashSet::from_iter([file]);
+                builder.set_changed_files(changed_files).unwrap();
                 builder.set_affected().unwrap();
                 builder.mock_affected(|affected| {
                     affected
@@ -1178,9 +1178,9 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps-affected", "b").unwrap();
 
-                let touched_files =
+                let changed_files =
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]);
-                builder.set_touched_files(touched_files).unwrap();
+                builder.set_changed_files(changed_files).unwrap();
                 builder.set_affected().unwrap();
                 builder.mock_affected(|affected| {
                     affected

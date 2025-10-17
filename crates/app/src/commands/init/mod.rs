@@ -10,7 +10,7 @@ use moon_console::{
     Console,
     ui::{Confirm, Container, Notice, StyledText, Variant},
 };
-use moon_vcs::{Git, Vcs};
+use moon_vcs::{Vcs, git::Git};
 use proto_core::PluginLocator;
 use starbase::AppResult;
 use starbase_utils::fs;

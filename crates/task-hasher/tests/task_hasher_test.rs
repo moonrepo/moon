@@ -255,7 +255,7 @@ mod task_hasher {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn includes_local_touched_files() {
+        async fn includes_local_changed_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
             sandbox.create_file("created.txt", "");
@@ -266,7 +266,7 @@ mod task_hasher {
 
             let (wg, app) = mock_workspace(sandbox.path()).await;
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_from_project("root", "touched").unwrap();
+            let task = wg.get_task_from_project("root", "changed").unwrap();
 
             let hasher_config = HasherConfig::default();
 

@@ -1364,7 +1364,7 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("not affected by changed files").eval(&output));
         assert!(predicate::str::contains("status all").eval(&output));
     }
 
@@ -1385,7 +1385,7 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("not affected by changed files").eval(&output));
         assert!(predicate::str::contains("status untracked, deleted").eval(&output));
     }
 
@@ -1468,7 +1468,7 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("not affected by changed files").eval(&output));
     }
 
     #[test]
@@ -1486,7 +1486,7 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("not affected by changed files").eval(&output));
     }
 
     #[test]
@@ -1577,7 +1577,7 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("not affected by touched files").eval(&output));
+        assert!(predicate::str::contains("not affected by changed files").eval(&output));
         assert!(predicate::str::contains("status deleted").eval(&output));
     }
 
@@ -1679,7 +1679,7 @@ mod affected {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by touched files").eval(&output));
+            assert!(predicate::str::contains("not affected by changed files").eval(&output));
             assert!(predicate::str::contains("status all").eval(&output));
         }
 
@@ -1716,7 +1716,7 @@ mod affected {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by touched files").eval(&output));
+            assert!(predicate::str::contains("not affected by changed files").eval(&output));
             assert!(predicate::str::contains("status deleted").eval(&output));
         }
     }

@@ -64,8 +64,8 @@ pub struct ActionContext {
     /// @mutable
     pub target_states: scc::HashMap<Target, TargetState>,
 
-    /// Files that have currently been touched.
-    pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    /// Files that have currently been changed.
+    pub changed_files: FxHashSet<WorkspaceRelativePathBuf>,
 }
 
 impl ActionContext {

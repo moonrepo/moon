@@ -215,13 +215,6 @@ pub enum Commands {
     Migrate {
         #[command(subcommand)]
         command: MigrateCommands,
-
-        #[arg(
-            long,
-            global = true,
-            help = "Disable the check for touched/dirty files"
-        )]
-        skip_touched_files_check: bool,
     },
 
     // moon query <operation>

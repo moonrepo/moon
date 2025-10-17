@@ -277,14 +277,14 @@ async fn create_hash_content<'action>(
 
     // Extract dependencies from all applicable manifests
     for manifest_file_name in &toolchain.metadata.manifest_file_names {
-        let has_touched_manifests = action_context
-            .touched_files
+        let has_changed_manifests = action_context
+            .changed_files
             .iter()
             .any(|file| file.as_str().ends_with(manifest_file_name));
 
-        // If no manifests touched, then do nothing and avoid all
+        // If no manifests changed, then do nothing and avoid all
         // this overhead! We can assume no dependencies have changed
-        if has_touched_manifests {
+        if has_changed_manifests {
             hash_manifest_contents(
                 app_context,
                 toolchain,

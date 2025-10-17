@@ -10,11 +10,11 @@ use std::fmt;
 pub enum AffectedBy {
     AlreadyMarked,
     AlwaysAffected,
+    ChangedFile(WorkspaceRelativePathBuf),
     DownstreamProject(Id),
     DownstreamTask(Target),
     EnvironmentVariable(String),
     Task(Target),
-    TouchedFile(WorkspaceRelativePathBuf),
     UpstreamProject(Id),
     UpstreamTask(Target),
 }
@@ -92,7 +92,7 @@ impl AffectedProjectState {
                 AffectedBy::DownstreamProject(id) => {
                     state.downstream.insert(id);
                 }
-                AffectedBy::TouchedFile(file) => {
+                AffectedBy::ChangedFile(file) => {
                     state.files.insert(file);
                 }
                 AffectedBy::UpstreamProject(id) => {
@@ -144,7 +144,7 @@ impl AffectedTaskState {
                 AffectedBy::EnvironmentVariable(name) => {
                     state.env.insert(name);
                 }
-                AffectedBy::TouchedFile(file) => {
+                AffectedBy::ChangedFile(file) => {
                     state.files.insert(file);
                 }
                 AffectedBy::UpstreamTask(target) => {

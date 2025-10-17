@@ -1,15 +1,15 @@
+pub use crate::queries::changed_files::*;
 pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::query_hash_diff;
 pub use crate::queries::projects::*;
 pub use crate::queries::tasks::*;
-pub use crate::queries::touched_files::*;
 use crate::session::MoonSession;
 use clap::{ArgAction, Args, Subcommand};
 use iocraft::prelude::{Size, element};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::is_ci;
 use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
-use moon_vcs::TouchedStatus;
+use moon_vcs::ChangedStatus;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
@@ -49,10 +49,10 @@ pub enum QueryCommands {
     Tasks(QueryTasksArgs),
 
     #[command(
-        name = "touched-files",
-        about = "Query for touched files between revisions."
+        name = "changed-files",
+        about = "Query for changed files between revisions."
     )]
-    TouchedFiles(QueryTouchedFilesArgs),
+    ChangedFiles(QueryChangedFilesArgs),
 }
 
 #[derive(Args, Clone, Debug)]
@@ -161,7 +161,7 @@ pub struct QueryProjectsArgs {
 
     #[arg(
         long,
-        help = "Filter projects that are affected based on touched files",
+        help = "Filter projects that are affected based on changed files",
         help_heading = HEADING_AFFECTED,
         group = "affected-args"
     )]
@@ -241,9 +241,9 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
     // Filter down to affected projects only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
-        let touched_files = load_touched_files(&vcs).await?;
+        let changed_files = load_changed_files(&vcs).await?;
         let workspace_graph = session.get_workspace_graph().await?;
-        let mut affected_tracker = AffectedTracker::new(workspace_graph, touched_files);
+        let mut affected_tracker = AffectedTracker::new(workspace_graph, changed_files);
 
         #[allow(deprecated)]
         if args.dependents {
@@ -356,7 +356,7 @@ pub struct QueryTasksArgs {
     // Affected
     #[arg(
         long,
-        help = "Filter tasks that are affected based on touched files",
+        help = "Filter tasks that are affected based on changed files",
         help_heading = HEADING_AFFECTED,
         group = "affected-args"
     )]
@@ -422,10 +422,10 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
     // Filter down to affected tasks only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
-        let touched_files = load_touched_files(&vcs).await?;
+        let changed_files = load_changed_files(&vcs).await?;
         let workspace_graph = session.get_workspace_graph().await?;
 
-        let mut affected_tracker = AffectedTracker::new(workspace_graph, touched_files);
+        let mut affected_tracker = AffectedTracker::new(workspace_graph, changed_files);
         affected_tracker.with_task_scopes(args.upstream, args.downstream);
         affected_tracker.track_tasks()?;
 
@@ -531,7 +531,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
 }
 
 #[derive(Args, Clone, Debug)]
-pub struct QueryTouchedFilesArgs {
+pub struct QueryChangedFilesArgs {
     #[arg(long, help = "Base branch, commit, or revision to compare against")]
     base: Option<String>,
 
@@ -564,17 +564,17 @@ pub struct QueryTouchedFilesArgs {
     )]
     remote: Option<bool>,
 
-    #[arg(long, help = "Filter files based on a touched status")]
-    status: Vec<TouchedStatus>,
+    #[arg(long, help = "Filter files based on a changed status")]
+    status: Vec<ChangedStatus>,
 }
 
 #[instrument(skip_all)]
-pub async fn touched_files(session: MoonSession, args: QueryTouchedFilesArgs) -> AppResult {
+pub async fn changed_files(session: MoonSession, args: QueryChangedFilesArgs) -> AppResult {
     let console = &session.console;
     let vcs = session.get_vcs_adapter()?;
     let ci = is_ci();
 
-    let options = QueryTouchedFilesOptions {
+    let options = QueryChangedFilesOptions {
         base: args.base,
         default_branch: args.default_branch.unwrap_or_else(is_ci),
         head: args.head,
@@ -588,9 +588,9 @@ pub async fn touched_files(session: MoonSession, args: QueryTouchedFilesArgs) ->
         stdin: false,
     };
 
-    debug!("Querying for touched files");
+    debug!("Querying for changed files");
 
-    let result = query_touched_files(&vcs, &options).await?;
+    let result = query_changed_files(&vcs, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     if args.json {

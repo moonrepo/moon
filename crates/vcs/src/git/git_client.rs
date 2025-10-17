@@ -1,8 +1,8 @@
 use super::common::clean_git_version;
 use super::git_error::GitError;
 use super::tree::*;
+use crate::changed_files::*;
 use crate::process_cache::ProcessCache;
-use crate::touched_files::*;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use git_url_parse::types::provider::GenericProvider;
@@ -18,7 +18,7 @@ use tokio::task::JoinSet;
 use tracing::debug;
 
 #[derive(Debug)]
-pub struct Gitx {
+pub struct Git {
     /// Is this a bare repository.
     pub bare: bool,
 
@@ -44,12 +44,12 @@ pub struct Gitx {
     pub worktree: GitTree,
 }
 
-impl Gitx {
+impl Git {
     pub fn load<R: AsRef<Path>, B: AsRef<str>>(
         workspace_root: R,
         default_branch: B,
         remote_candidates: &[String],
-    ) -> miette::Result<Gitx> {
+    ) -> miette::Result<Git> {
         debug!("Using git as a version control system (using v2 implementation)");
 
         let workspace_root = workspace_root.as_ref();
@@ -123,7 +123,7 @@ impl Gitx {
         let submodules = GitTree::load_submodules(&worktree.work_dir)?;
 
         // Create the instance and load ignore files
-        let mut git = Gitx {
+        let mut git = Git {
             bare,
             default_branch: Arc::new(default_branch.as_ref().to_owned()),
             remote_candidates: remote_candidates.to_owned(),
@@ -155,10 +155,45 @@ impl Gitx {
     fn get_process(&self) -> &ProcessCache {
         self.worktree.get_process()
     }
+
+    pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
+        let extract_branch = |result: Arc<String>| -> Option<Arc<String>> {
+            if let Some(branch) = result.strip_prefix("origin/") {
+                return Some(Arc::new(branch.to_owned()));
+            } else if let Some(branch) = result.strip_prefix("upstream/") {
+                return Some(Arc::new(branch.to_owned()));
+            }
+
+            None
+        };
+
+        if let Ok(result) = self
+            .get_process()
+            .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
+            .await
+            && let Some(branch) = extract_branch(result)
+        {
+            return Ok(branch);
+        };
+
+        if let Ok(result) = self
+            .get_process()
+            .run(
+                ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
+                true,
+            )
+            .await
+            && let Some(branch) = extract_branch(result)
+        {
+            return Ok(branch);
+        };
+
+        Ok(self.default_branch.clone())
+    }
 }
 
 #[async_trait]
-impl Vcs for Gitx {
+impl Vcs for Git {
     async fn get_local_branch(&self) -> miette::Result<Arc<String>> {
         if self.is_version_supported(">=2.22.0").await? {
             return self
@@ -296,7 +331,13 @@ impl Vcs for Gitx {
             }
         }
 
-        map_absolute_to_workspace_relative_paths(paths, &self.workspace_root)
+        let mut new_paths = vec![];
+
+        for path in paths {
+            new_paths.push(path.relative_to(&self.workspace_root).into_diagnostic()?);
+        }
+
+        Ok(new_paths)
     }
 
     async fn get_hooks_dir(&self) -> miette::Result<PathBuf> {
@@ -358,8 +399,8 @@ impl Vcs for Gitx {
         Err(GitError::ExtractRepoSlugFailed.into())
     }
 
-    async fn get_touched_files(&self) -> miette::Result<TouchedFiles> {
-        let mut touched_files = TouchedFiles::default();
+    async fn get_changed_files(&self) -> miette::Result<ChangedFiles> {
+        let mut changed_files = ChangedFiles::default();
         let mut set = JoinSet::new();
 
         for tree in self.get_all_trees() {
@@ -367,16 +408,16 @@ impl Vcs for Gitx {
         }
 
         while let Some(result) = set.join_next().await {
-            touched_files.merge(result.into_diagnostic()??);
+            changed_files.merge(result.into_diagnostic()??);
         }
 
-        touched_files.into_workspace_relative(&self.workspace_root)
+        changed_files.into_workspace_relative(&self.workspace_root)
     }
 
-    async fn get_touched_files_against_previous_revision(
+    async fn get_changed_files_against_previous_revision(
         &self,
         revision: &str,
-    ) -> miette::Result<TouchedFiles> {
+    ) -> miette::Result<ChangedFiles> {
         let revision = if self.is_default_branch(revision) {
             "HEAD"
         } else {
@@ -397,16 +438,16 @@ impl Vcs for Gitx {
             format!("{revision}~1")
         };
 
-        self.get_touched_files_between_revisions(&prev_revision, revision)
+        self.get_changed_files_between_revisions(&prev_revision, revision)
             .await
     }
 
-    async fn get_touched_files_between_revisions(
+    async fn get_changed_files_between_revisions(
         &self,
         base_revision: &str,
         head_revision: &str, // Can be empty
-    ) -> miette::Result<TouchedFiles> {
-        let mut touched_files = TouchedFiles::default();
+    ) -> miette::Result<ChangedFiles> {
+        let mut changed_files = ChangedFiles::default();
 
         // Determine the merge base revision based on the base/head
         let merge_base = self
@@ -419,7 +460,7 @@ impl Vcs for Gitx {
             .unwrap_or(base_revision);
 
         // Load from root repo
-        touched_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
+        changed_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
 
         // Load from each submodule
         if !self.submodules.is_empty() {
@@ -451,12 +492,12 @@ impl Vcs for Gitx {
 
             if !set.is_empty() {
                 while let Some(result) = set.join_next().await {
-                    touched_files.merge(result.into_diagnostic()??);
+                    changed_files.merge(result.into_diagnostic()??);
                 }
             }
         }
 
-        touched_files.into_workspace_relative(&self.workspace_root)
+        changed_files.into_workspace_relative(&self.workspace_root)
     }
 
     async fn get_version(&self) -> miette::Result<Version> {

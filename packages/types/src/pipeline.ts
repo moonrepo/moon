@@ -137,12 +137,12 @@ export interface Affected {
 
 export interface ActionContext {
 	affected?: Affected | null;
+	changedFiles: string[];
 	initialTargets: string[];
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;
 	targetStates: Record<string, TargetState>;
-	touchedFiles: string[];
 }
 
 export interface RunReport {

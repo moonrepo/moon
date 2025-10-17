@@ -37,13 +37,13 @@ export interface GetTasksToolResponse {
 	tasks: Task[];
 }
 
-export interface GetTouchedFilesTool {
+export interface GetChangedFilesTool {
 	base?: string;
 	head?: string;
 	remote?: boolean;
 }
 
-export interface GetTouchedFilesToolResponse {
+export interface GetChangedFilesToolResponse {
 	files: string[];
 }
 

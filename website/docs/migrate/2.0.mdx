@@ -1,0 +1,240 @@
+---
+title: Migrate to moon v2.0
+sidebar_label: v2.0
+toc_max_heading_level: 6
+---
+
+## CLI
+
+### Commands
+
+- Removed "scaffolding a toolchain" from the `moon init` command. Use the `moon toolchain add`
+  command instead.
+- Removed the `moon node` command and sub-commands.
+- Removed the `moon migrate from-package-json` command.
+- Removed the `moon migrate from-turborepo` command. Use the `migrate-turborepo` extension instead.
+
+### Arguments, options, and flags
+
+- Removed the `--platform` flag from all applicable commands. Use the `--toolchain` flag instead.
+
+## Workspace
+
+### Configuration: `.moon/workspace.*`
+
+- Renamed setting values:
+  - `codeowners.orderBy` value `project-name` -> `project-id`
+- Renamed settings:
+  - `codeowners.syncOnRun` -> `codeowners.sync`
+  - `constraints.enforceProjectTypeRelationships` -> `constraints.enforceLayerRelationships`
+  - `runner` -> `pipeline`
+  - `unstable_remote` -> `remote`
+  - `vcs.manager` -> `vcs.client`
+  - `vcs.syncHooks` -> `vcs.sync`
+- Removed settings:
+  - `experiments.*`
+  - `hasher.batchSize`
+  - `pipeline.archivableTargets`
+
+## Toolchains
+
+### Configuration: `.moon/toolchain.*`
+
+All toolchains have been stabilized, so the `unstable_` prefix must be removed.
+
+#### JavaScript
+
+The `bun`, `deno`, and `node` toolchains now require the `javascript` toolchain to be defined as
+well. All shared settings have been moved to the `javascript` toolchain.
+
+In addition, all `node` package managers are no longer nested under the `node` toolchain, but are
+now top-level settings. These are only required when the `javascript.packageManager` setting is
+defined.
+
+- Moved settings:
+  - `bun.dependencyVersionFormat` -> `javascript.dependencyVersionFormat`
+  - `bun.inferTasksFromScripts` -> `javascript.inferTasksFromScripts`
+  - `bun.rootPackageOnly` -> `javascript.rootPackageDependenciesOnly`
+  - `bun.syncProjectWorkspaceDependencies` -> `javascript.syncProjectWorkspaceDependencies`
+  - `node.dependencyVersionFormat` -> `javascript.dependencyVersionFormat`
+  - `node.dedupeOnLockfileChange` -> `javascript.dedupeOnLockfileChange`
+  - `node.inferTasksFromScripts` -> `javascript.inferTasksFromScripts`
+  - `node.packageManager` -> `javascript.packageManager`
+  - `node.rootPackageOnly` -> `javascript.rootPackageDependenciesOnly`
+  - `node.syncPackageManagerField` -> `javascript.syncPackageManagerField`
+  - `node.syncProjectWorkspaceDependencies` -> `javascript.syncProjectWorkspaceDependencies`
+  - `node.bun` -> `bun`
+  - `node.npm` -> `npm`
+  - `node.pnpm` -> `pnpm`
+  - `node.yarn` -> `yarn`
+- Renamed settings:
+  - `node.binExecArgs` -> `node.executeArgs`
+- Removed settings:
+  - `bun.packagesRoot`
+  - `deno.depsFile`
+  - `deno.lockfile`
+  - `node.addEnginesConstraint`
+  - `node.packagesRoot`
+
+```yaml title=".moon/toolchain.yml"
+# Before
+node:
+  version: '22.14.0'
+  packageManager: 'yarn'
+  inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+  yarn:
+    version: '4.8.0'
+
+# After
+javascript:
+  packageManager: 'yarn'
+  inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+
+node:
+  version: '22.14.0'
+
+yarn:
+  version: '4.8.0'
+```
+
+## Project
+
+### Configuration: `moon.*`
+
+- Renamed settings:
+  - `project.name` -> `project.title`
+  - `type` -> `layer`
+  - `toolchain` -> `toolchains`
+  - `platform` -> `toolchains.default`
+- Removed settings:
+  - [`project.metadata`](#custom-metadata)
+  - [`toolchain.*.disabled`](#toolchain-disabling)
+
+### Language detection
+
+The primary `language` is now detected from toolchains, instead of being a hardcoded implementation.
+The result may now differ, as the first toolchain in the list will be used. Additionally, languages
+that don't have a toolchain yet, like PHP or Ruby, will not be detected and must be explicitly
+configured.
+
+```yaml title="moon.yml"
+# After
+language: 'ruby'
+```
+
+### Custom metadata
+
+The `project.metadata` setting has been removed, but all custom metadata fields can now be defined
+at the root of the `project` setting.
+
+```yaml title="moon.yml"
+# Before
+project:
+  metadata:
+    customField: 'value'
+
+# After
+project:
+  customField: 'value'
+```
+
+### Toolchain disabling
+
+The `toolchain.*.disabled` setting was removed. Instead set the toolchain itself to null/false.
+
+```yaml title="moon.yml"
+# Before
+toolchain:
+  typescript:
+    disabled: true
+
+# After
+toolchains:
+  typescript: null
+```
+
+## Tasks
+
+### Configuration: `moon.*`, `.moon/tasks`
+
+- Renamed tokens:
+  - `$projectName` -> `$projectTitle`
+  - `$projectType` -> `$projectLayer`
+  - `$taskPlatform` -> `$taskToolchain`
+- Renamed settings:
+  - [`tasks.*.local`](#local-mode) -> `tasks.*.preset` using `server` value
+  - `tasks.*.platform` -> `tasks.*.toolchains`
+
+### Local mode
+
+The `local` task setting has been removed as the name was confusing. Users assumed it meant "only
+run locally", but it actually meant "this is a persistent server that should only run locally".
+Instead, use the `preset` setting with a value of `server`.
+
+```yaml title="moon.yml"
+# Before
+tasks:
+  dev:
+    command: 'start-dev'
+    local: true
+
+# Before
+tasks:
+  dev:
+    command: 'start-dev'
+    preset: 'server'
+```
+
+If you want a task that is simply "local only" without other options changes, use `options.runInCI`
+directly.
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'start-dev'
+    options:
+      runInCI: false
+```
+
+## Other changes
+
+### Changed (touched) files
+
+We renamed the terminology "touched files" to "changed files" throughout the codebase and
+documentation. This better aligns with common VCS terminology and reduces confusion. Because of
+this, the following changes were made:
+
+- Renamed the `moon query touched-files` CLI command to `moon query changed-files`.
+- Renamed the `get_touched_files` MCP tool to `get_changed_files`.
+- Renamed the `touchedFiles` run report field to `changedFiles`.
+
+```shell
+# Before
+$ moon query touched-files
+
+# After
+$ moon query changed-files
+```
+
+### Query language (MQL)
+
+- Renamed fields:
+  - `projectType` -> `projectLayer`
+  - `taskPlatform` -> `taskToolchain`
+
+```shell
+# Before
+projectType=application && taskPlatform=node
+
+# After
+projectLayer=application && taskToolchain=node
+```
+
+### Webhooks
+
+- Removed the `tool.*` events. Use `toolchain.*` events instead.
+- Removed the `runtime` field from `dependencies.*` events. Use the `toolchain` field instead.

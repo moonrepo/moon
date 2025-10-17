@@ -12,14 +12,12 @@ use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, Workspac
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
-use moon_feature_flags::{FeatureFlags, Flag};
 use moon_plugin::MoonHostData;
 use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
-use moon_vcs::gitx::Gitx;
-use moon_vcs::{BoxedVcs, Git};
+use moon_vcs::{BoxedVcs, git::Git};
 use moon_workspace::WorkspaceBuilder;
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
@@ -204,19 +202,11 @@ impl MoonSession {
         if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
 
-            let git: BoxedVcs = if FeatureFlags::instance().is_enabled(Flag::GitV2) {
-                Box::new(Gitx::load(
-                    &self.workspace_root,
-                    &config.default_branch,
-                    &config.remote_candidates,
-                )?)
-            } else {
-                Box::new(Git::load(
-                    &self.workspace_root,
-                    &config.default_branch,
-                    &config.remote_candidates,
-                )?)
-            };
+            let git: BoxedVcs = Box::new(Git::load(
+                &self.workspace_root,
+                &config.default_branch,
+                &config.remote_candidates,
+            )?);
 
             let _ = self.vcs_adapter.set(Arc::new(git));
         }

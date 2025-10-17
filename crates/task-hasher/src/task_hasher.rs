@@ -155,7 +155,7 @@ impl<'task> TaskHasher<'task> {
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
         if vcs_enabled {
-            for local_file in self.app_context.vcs.get_touched_files().await?.all() {
+            for local_file in self.app_context.vcs.get_changed_files().await?.all() {
                 let abs_file = local_file.to_logical_path(workspace_root);
 
                 // Deleted files are listed in `git status` but are

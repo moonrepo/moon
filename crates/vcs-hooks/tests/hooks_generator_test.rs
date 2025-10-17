@@ -256,8 +256,10 @@ mod unix {
         assert!(pre_commit.exists());
         assert!(post_push.exists());
 
-        let pre_commit = sandbox.path().join(".git/worktrees/tree/hooks/pre-commit");
-        let post_push = sandbox.path().join(".git/worktrees/tree/hooks/post-push");
+        // let pre_commit = sandbox.path().join(".git/worktrees/tree/hooks/pre-commit");
+        // let post_push = sandbox.path().join(".git/worktrees/tree/hooks/post-push");
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
 
         assert!(pre_commit.exists());
         assert!(post_push.exists());

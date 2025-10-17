@@ -96,7 +96,7 @@ pub struct ActionGraphBuilder<'query> {
 
     // Affected tracking
     affected: Option<AffectedTracker>,
-    touched_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
+    changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
     // initial_targets: FxHashSet<Target>,
@@ -121,7 +121,7 @@ impl<'query> ActionGraphBuilder<'query> {
             options,
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
-            touched_files: None,
+            changed_files: None,
             workspace_graph,
         })
     }
@@ -142,8 +142,8 @@ impl<'query> ActionGraphBuilder<'query> {
             context.primary_targets = mem::take(&mut self.primary_targets);
         }
 
-        if let Some(files) = self.touched_files.take() {
-            context.touched_files = files.to_owned();
+        if let Some(files) = self.changed_files.take() {
+            context.changed_files = files.to_owned();
         }
 
         (context, ActionGraph::new(self.graph))
@@ -192,9 +192,9 @@ impl<'query> ActionGraphBuilder<'query> {
         if self.affected.is_none() {
             self.affected = Some(AffectedTracker::new(
                 Arc::clone(&self.workspace_graph),
-                self.touched_files
+                self.changed_files
                     .as_ref()
-                    .expect("Touched files are required for affected tracking.")
+                    .expect("Changed files are required for affected tracking.")
                     .to_owned(),
             ));
         }
@@ -208,11 +208,11 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    pub fn set_touched_files(
+    pub fn set_changed_files(
         &mut self,
-        touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+        changed_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<()> {
-        self.touched_files = Some(touched_files);
+        self.changed_files = Some(changed_files);
 
         Ok(())
     }

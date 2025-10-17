@@ -179,7 +179,6 @@ pub async fn load_tasks_configs(
 pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
     FeatureFlags::default()
         .set(Flag::FastGlobWalk, config.experiments.faster_glob_walk)
-        .set(Flag::GitV2, config.experiments.git_v2)
         .register();
 
     Ok(())

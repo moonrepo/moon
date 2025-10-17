@@ -91,7 +91,7 @@ and provide a first-class developer experience.
 - **Action pipeline** - Executes actions in parallel and in order using a thread pool and our
   dependency graph.
 - **Action distribution** - Distributes actions across multiple machines to increase throughput.
-- **Incremental builds** - With our smart hashing, only rebuild projects that have been touched
+- **Incremental builds** - With our smart hashing, only rebuild projects that have been changed
   since the last build.
 
 #### Notification

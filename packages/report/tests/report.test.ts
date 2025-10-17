@@ -87,7 +87,7 @@ function mockReport(): RunReport {
 			primaryTargets: [],
 			profile: null,
 			targetStates: {},
-			touchedFiles: [],
+			changedFiles: [],
 		},
 		duration: {
 			secs: 0,

@@ -344,6 +344,7 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
             "constraints.enforceProjectTypeRelationships",
             "constraints.enforceLayerRelationships",
         );
+        remove_setting(root, "experiments.gitV2");
         remove_setting(root, "hasher.batchSize");
         rename_setting(root, "runner", "pipeline");
         remove_setting(root, "pipeline.archivableTargets");

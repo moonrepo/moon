@@ -207,6 +207,11 @@ const sidebars: SidebarsConfig = {
 				keywords: ['cli', 'commands'],
 			},
 		},
+		{
+			type: 'category',
+			label: 'Migration',
+			items: ['migrate/2.0'],
+		},
 		'cheat-sheet',
 		'comparison',
 		'terminology',

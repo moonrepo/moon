@@ -16,6 +16,29 @@ TODO
 
 TODO
 
+## Toolchains
+
+The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
+Toolchains are now powered by WASM plugins, instead of hard-coded in core, allowing for more
+flexibility, extensibility, and the ability for the community to create their own toolchains!
+
+Moving to a plugin based system enables us to support more languages, more features, deeper
+integration, as well as more complex workflows. For example, in the future we can now easily support
+release workflows (changelogs, versioning, publishing) as part of a toolchain.
+
+Just to demonstrate how powerful the plugin system is, it currently supports all the following
+features:
+
+- Extending the project graph with project dependencies and aliases
+- Extending task commands and scripts before they're executed
+- Integrates with our Docker flow for pruning and scaffolding
+- Runs operations during the project/workspace sync processes
+- Locates a root dependencies directory for package manager workspaces
+- Parses manifest and lock files to extract dependencies and metadata
+- Sets up the environment and auto-installs dependencies
+- Hook into the task hashing process
+- Manages downloading and installing tools (via proto)
+
 ## Projects
 
 ### Multiple aliases
@@ -29,6 +52,33 @@ Previously, projects only supported a single alias, but now they support multipl
 each applicable toolchain. In addition, we have added a new `$projectAliases` token, which is a
 comma-separated list of all aliases. The existing `$projectAlias` token now returns the first alias,
 if it exists.
+
+## Tasks
+
+### Toolchain merging
+
+A task can now be associated with multiple toolchains (javascript, node, npm), unlike the previous
+platform system which only allowed for 1 platform (node). This change allows for more flexibility
+but also requires more granular control over how toolchains are inherited. To accommodate this,
+we've added a `mergeToolchains` task option:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    toolchains: ['javascript']
+    options:
+      mergeToolchains: 'replace'
+```
+
+## VCS
+
+### New implementation
+
+In moon v1 we were running an experiment that utilizes a new Git implementation, which we dubbed Git
+v2. We've made this the default implementation and removed the legacy implementation. This new
+implementation is faster, more reliable, and has better support for complex repositories (worktrees,
+submodules, etc). The `experiments.gitV2` setting should now be removed.
 
 ## Other changes
 

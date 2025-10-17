@@ -148,11 +148,11 @@ const sidebars: SidebarsConfig = {
 					type: 'category',
 					label: 'query',
 					items: [
+						'commands/query/changed-files',
 						'commands/query/hash',
 						'commands/query/hash-diff',
 						'commands/query/projects',
 						'commands/query/tasks',
-						'commands/query/touched-files',
 					],
 					link: {
 						type: 'generated-index',
@@ -206,6 +206,11 @@ const sidebars: SidebarsConfig = {
 				slug: '/commands',
 				keywords: ['cli', 'commands'],
 			},
+		},
+		{
+			type: 'category',
+			label: 'Migration',
+			items: ['migrate/2.0'],
 		},
 		'cheat-sheet',
 		'comparison',

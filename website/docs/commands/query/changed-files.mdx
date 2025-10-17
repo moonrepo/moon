@@ -1,9 +1,9 @@
 ---
-title: query touched-files
-sidebar_label: touched-files
+title: query changed-files
+sidebar_label: changed-files
 ---
 
-Use the `moon query touched-files` sub-command to query for a list of touched files (added,
+Use the `moon query changed-files` sub-command to query for a list of changed files (added,
 modified, deleted, etc) using the current VCS state. These are the same queries that
 [`moon ci`](../ci) and [`moon run`](../run) use under the hood.
 
@@ -13,18 +13,18 @@ Touches files are determined using the following logic:
   [`vcs.defaultBranch`](../../config/workspace#defaultbranch), then compare against the previous
   revision of the default branch (`HEAD~1`). This is what [continuous integration](../../guides/ci)
   uses.
-- If `--local` is provided, touched files are based on your local index only (`git status`).
+- If `--local` is provided, changed files are based on your local index only (`git status`).
 - Otherwise, then compare the defined base (`--base`) against head (`--head`).
 
 ```shell
 # Return all files
-$ moon query touched-files
+$ moon query changed-files
 
 # Return deleted files
-$ moon query touched-files --status deleted
+$ moon query changed-files --status deleted
 
 # Return all files between 2 revisions
-$ moon query touched-files --base <branch> --head <commit>
+$ moon query changed-files --base <branch> --head <commit>
 ```
 
 By default, this will output a list of absolute file paths, separated by new lines.
@@ -53,7 +53,7 @@ structure:
 - `--json` - Display the files in JSON format.
 - `--local` - Gather files from the local state instead of remote.
 - `--remote` - Gather files from the remote state instead of local.
-- `--status <type>` - Filter files based on a touched status. Can be passed multiple times.
+- `--status <type>` - Filter files based on a changed status. Can be passed multiple times.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`
 
 ### Configuration

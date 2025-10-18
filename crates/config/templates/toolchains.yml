@@ -1,5 +1,5 @@
 # https://moonrepo.dev/docs/config/toolchain
-$schema: './cache/schemas/toolchain.json'
+$schema: './cache/schemas/toolchains.json'
 
 # extends: './shared/toolchain.yml'
 

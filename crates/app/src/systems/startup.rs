@@ -2,7 +2,7 @@ use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_common::consts::*;
 use moon_config::{
-    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
+    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
 };
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
@@ -125,12 +125,12 @@ pub async fn load_workspace_config(
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
 #[instrument(skip(config_loader, proto_env))]
-pub async fn load_toolchain_config(
+pub async fn load_toolchains_config(
     config_loader: ConfigLoader,
     proto_env: Arc<ProtoEnvironment>,
     workspace_root: &Path,
     working_dir: &Path,
-) -> miette::Result<Arc<ToolchainConfig>> {
+) -> miette::Result<Arc<ToolchainsConfig>> {
     debug!(
         "Attempting to load {} (optional)",
         color::file(config_loader.get_debug_label("toolchain", true))
@@ -140,7 +140,7 @@ pub async fn load_toolchain_config(
     let cwd = working_dir.to_owned();
     let config = load_config_blocking(move || {
         config_loader
-            .load_toolchain_config(root, proto_env.load_file_manager()?.get_local_config(&cwd)?)
+            .load_toolchains_config(root, proto_env.load_file_manager()?.get_local_config(&cwd)?)
     })
     .await
     .into_diagnostic()??;

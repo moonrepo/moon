@@ -3,7 +3,7 @@ use crate::get_fixtures_path;
 use assert_cmd::Command;
 pub use assert_fs::TempDir;
 use assert_fs::prelude::*;
-use moon_config::{PartialInheritedTasksConfig, PartialToolchainConfig, PartialWorkspaceConfig};
+use moon_config::{PartialInheritedTasksConfig, PartialToolchainsConfig, PartialWorkspaceConfig};
 use starbase_utils::glob;
 use std::fs;
 use std::path::Path;
@@ -131,7 +131,7 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
 pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
     workspace_config: Option<PartialWorkspaceConfig>,
-    toolchain_config: Option<PartialToolchainConfig>,
+    toolchain_config: Option<PartialToolchainsConfig>,
     tasks_config: Option<PartialInheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
@@ -142,7 +142,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     );
 
     sandbox.create_file(
-        ".moon/toolchain.yml",
+        ".moon/toolchains.yml",
         serde_yml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
     );
 
@@ -157,7 +157,7 @@ pub fn create_sandbox_with_factory<
     T: AsRef<str>,
     F: FnOnce(
         &mut PartialWorkspaceConfig,
-        &mut PartialToolchainConfig,
+        &mut PartialToolchainsConfig,
         &mut PartialInheritedTasksConfig,
     ),
 >(
@@ -165,7 +165,7 @@ pub fn create_sandbox_with_factory<
     factory: F,
 ) -> Sandbox {
     let mut workspace_config = PartialWorkspaceConfig::default();
-    let mut toolchain_config = PartialToolchainConfig::default();
+    let mut toolchain_config = PartialToolchainsConfig::default();
     let mut tasks_config = PartialInheritedTasksConfig::default();
 
     factory(

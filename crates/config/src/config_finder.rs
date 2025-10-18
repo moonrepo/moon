@@ -74,15 +74,15 @@ impl ConfigFinder {
         self.get_file_names("template")
     }
 
-    pub fn get_toolchain_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
-        self.get_toolchain_file_names()
+    pub fn get_toolchains_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
+        self.get_toolchains_file_names()
             .into_iter()
             .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
             .collect()
     }
 
-    pub fn get_toolchain_file_names(&self) -> Vec<String> {
-        self.get_file_names("toolchain")
+    pub fn get_toolchains_file_names(&self) -> Vec<String> {
+        self.get_file_names("toolchains")
     }
 
     pub fn get_workspace_files(&self, workspace_root: &Path) -> Vec<PathBuf> {

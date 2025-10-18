@@ -5,7 +5,7 @@ use crate::inherited_tasks_config::{InheritedTasksConfig, PartialInheritedTasksC
 use crate::inherited_tasks_manager::InheritedTasksManager;
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
 use crate::template_config::TemplateConfig;
-use crate::toolchain_config::ToolchainConfig;
+use crate::toolchains_config::ToolchainsConfig;
 use crate::workspace_config::WorkspaceConfig;
 use moon_common::color;
 use moon_common::consts::CONFIG_DIRNAME;
@@ -90,12 +90,12 @@ impl ConfigLoader {
         Ok(loader)
     }
 
-    pub fn create_toolchain_loader<P: AsRef<Path>>(
+    pub fn create_toolchains_loader<P: AsRef<Path>>(
         &self,
         workspace_root: P,
-    ) -> miette::Result<Loader<ToolchainConfig>> {
+    ) -> miette::Result<Loader<ToolchainsConfig>> {
         let workspace_root = workspace_root.as_ref();
-        let mut loader = Loader::<ToolchainConfig>::new();
+        let mut loader = Loader::<ToolchainsConfig>::new();
 
         loader
             .set_cacher(ConfigCache::new(workspace_root))
@@ -104,7 +104,10 @@ impl ConfigLoader {
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(&mut loader, self.finder.get_toolchain_files(workspace_root))?;
+        self.prepare_loader(
+            &mut loader,
+            self.finder.get_toolchains_files(workspace_root),
+        )?;
 
         Ok(loader)
     }
@@ -244,12 +247,12 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    pub fn load_toolchain_config<P: AsRef<Path>>(
+    pub fn load_toolchains_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
         proto_config: &proto_core::ProtoConfig,
-    ) -> miette::Result<ToolchainConfig> {
-        let mut result = self.create_toolchain_loader(workspace_root)?.load()?;
+    ) -> miette::Result<ToolchainsConfig> {
+        let mut result = self.create_toolchains_loader(workspace_root)?.load()?;
 
         #[cfg(feature = "proto")]
         {

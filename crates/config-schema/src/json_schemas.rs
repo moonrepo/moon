@@ -83,7 +83,7 @@ fn generate_toolchain(
         }
     }
 
-    generator.add::<ToolchainConfig>();
+    generator.add::<ToolchainsConfig>();
 
     // Inject the currently enabled toolchains into `ToolchainConfig`
     if !toolchains.is_empty()

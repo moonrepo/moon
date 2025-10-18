@@ -9,7 +9,7 @@ use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
 use moon_config::{
-    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
+    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
 };
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
@@ -57,7 +57,7 @@ pub struct MoonSession {
     // Configs
     pub extensions_config: Arc<ExtensionsConfig>,
     pub tasks_config: Arc<InheritedTasksManager>,
-    pub toolchain_config: Arc<ToolchainConfig>,
+    pub toolchains_config: Arc<ToolchainsConfig>,
     pub workspace_config: Arc<WorkspaceConfig>,
 
     // Paths
@@ -81,7 +81,7 @@ impl MoonSession {
             proto_env: Arc::new(ProtoEnvironment::default()),
             task_graph: OnceLock::new(),
             tasks_config: Arc::new(InheritedTasksManager::default()),
-            toolchain_config: Arc::new(ToolchainConfig::default()),
+            toolchains_config: Arc::new(ToolchainsConfig::default()),
             toolchain_registry: OnceLock::new(),
             working_dir: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
@@ -124,7 +124,9 @@ impl MoonSession {
             console: self.get_console()?,
             moon_env: Arc::clone(&self.moon_env),
             proto_env: Arc::clone(&self.proto_env),
-            toolchain_config: Arc::clone(&self.toolchain_config),
+            extensions_config: Arc::clone(&self.extensions_config),
+            extension_registry: self.get_extension_registry().await?,
+            toolchains_config: Arc::clone(&self.toolchains_config),
             toolchain_registry: self.get_toolchain_registry().await?,
             vcs: self.get_vcs_adapter()?,
             workspace_config: Arc::clone(&self.workspace_config),
@@ -152,7 +154,8 @@ impl MoonSession {
             let mut registry = ExtensionRegistry::new(MoonHostData {
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-                toolchain_config: Arc::clone(&self.toolchain_config),
+                extensions_config: Arc::clone(&self.extensions_config),
+                toolchains_config: Arc::clone(&self.toolchains_config),
                 workspace_config: Arc::clone(&self.workspace_config),
                 workspace_graph: Arc::new(OnceLock::new()),
             });
@@ -187,14 +190,15 @@ impl MoonSession {
                 MoonHostData {
                     moon_env: Arc::clone(&self.moon_env),
                     proto_env: Arc::clone(&self.proto_env),
-                    toolchain_config: Arc::clone(&self.toolchain_config),
+                    extensions_config: Arc::clone(&self.extensions_config),
+                    toolchains_config: Arc::clone(&self.toolchains_config),
                     workspace_config: Arc::clone(&self.workspace_config),
                     workspace_graph: Arc::new(OnceLock::new()),
                 },
-                self.toolchain_config.clone(),
+                self.toolchains_config.clone(),
             );
 
-            registry.inherit_configs(&self.toolchain_config.plugins);
+            registry.inherit_configs(&self.toolchains_config.plugins);
 
             Arc::new(registry)
         });
@@ -305,7 +309,7 @@ impl AppSession for MoonSession {
                 startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),
                 startup::load_tasks_configs(self.config_loader.clone(), &self.workspace_root),
                 startup::load_extensions_config(self.config_loader.clone(), &self.workspace_root),
-                startup::load_toolchain_config(
+                startup::load_toolchains_config(
                     self.config_loader.clone(),
                     self.proto_env.clone(),
                     &self.workspace_root,
@@ -315,7 +319,7 @@ impl AppSession for MoonSession {
 
             self.workspace_config = workspace_config;
             self.extensions_config = extensions_config;
-            self.toolchain_config = toolchain_config;
+            self.toolchains_config = toolchain_config;
             self.tasks_config = tasks_config;
         }
 
@@ -358,7 +362,7 @@ impl AppSession for MoonSession {
             execute::check_for_new_version(
                 &self.console,
                 &cache_engine,
-                &self.toolchain_config.moon.manifest_url,
+                &self.toolchains_config.moon.manifest_url,
             )
             .await?;
         }
@@ -386,7 +390,7 @@ impl fmt::Debug for MoonSession {
             .field("moon_env", &self.moon_env)
             .field("proto_env", &self.proto_env)
             .field("tasks_config", &self.tasks_config)
-            .field("toolchain_config", &self.toolchain_config)
+            .field("toolchain_config", &self.toolchains_config)
             .field("working_dir", &self.working_dir)
             .field("workspace_config", &self.workspace_config)
             .field("workspace_root", &self.workspace_root)

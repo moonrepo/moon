@@ -165,7 +165,7 @@ async fn apply_toolchain(
     }
     // Or an inherited version
     else if let Some(version) = app_context
-        .toolchain_config
+        .toolchains_config
         .get_plugin_config(toolchain.id.as_str())
         .and_then(|config| config.version.as_ref())
     {
@@ -195,7 +195,7 @@ async fn apply_toolchain(
                 task,
                 toolchain_config: app_context.toolchain_registry.create_merged_config(
                     &toolchain.id,
-                    &app_context.toolchain_config,
+                    &app_context.toolchains_config,
                     &project_config,
                 ),
             })
@@ -231,7 +231,7 @@ async fn apply_toolchain_dependencies(
                 starting_dir: toolchain.to_virtual_path(&project_root),
                 toolchain_config: app_context.toolchain_registry.create_merged_config(
                     &toolchain.id,
-                    &app_context.toolchain_config,
+                    &app_context.toolchains_config,
                     project_config,
                 ),
             })

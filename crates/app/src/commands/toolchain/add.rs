@@ -4,7 +4,7 @@ use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;
-use moon_config::ToolchainConfig;
+use moon_config::ToolchainsConfig;
 use moon_console::ui::{Container, Entry, Notice, Section, Style, StyledText, Variant};
 use moon_pdk_api::{ConditionType, InitializeToolchainInput, SettingCondition, SettingPrompt};
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
@@ -37,7 +37,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
     let Some(locator) = args
         .plugin
         .clone()
-        .or_else(|| ToolchainConfig::get_plugin_locator(&args.id))
+        .or_else(|| ToolchainsConfig::get_plugin_locator(&args.id))
     else {
         return Err(AppError::PluginLocatorRequired.into());
     };
@@ -54,7 +54,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
     // Update toolchain file
     let toolchain_config_path = &session
         .config_loader
-        .get_toolchain_files(&session.workspace_root)[0];
+        .get_toolchains_files(&session.workspace_root)[0];
 
     if toolchain_config_path.exists() {
         fs::append_file(toolchain_config_path, format!("\n\n{template}"))?;
@@ -67,7 +67,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
             Notice(variant: Variant::Success) {
                 StyledText(
                     content: format!(
-                        "Added toolchain <id>{}</id> to <file>.moon/toolchain.yml</file>!", toolchain.id
+                        "Added toolchain <id>{}</id> to <file>.moon/toolchains.yml</file>!", toolchain.id
                     )
                 )
             }

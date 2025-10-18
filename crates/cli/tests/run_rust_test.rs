@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::{
-    PartialToolchainConfig, PartialToolchainPluginConfig, PartialWorkspaceConfig,
+    PartialToolchainPluginConfig, PartialToolchainsConfig, PartialWorkspaceConfig,
     PartialWorkspaceProjects,
 };
 use moon_test_utils::{
@@ -20,18 +20,18 @@ fn rust_sandbox() -> Sandbox {
         ..PartialWorkspaceConfig::default()
     };
 
-    let toolchain_config = PartialToolchainConfig {
+    let toolchains_config = PartialToolchainsConfig {
         plugins: Some(FxHashMap::from_iter([(
             Id::raw("rust"),
             PartialToolchainPluginConfig::default(),
         )])),
-        ..PartialToolchainConfig::default()
+        ..PartialToolchainsConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(
         "rust/cases",
         Some(workspace_config),
-        Some(toolchain_config),
+        Some(toolchains_config),
         None,
     );
     sandbox.enable_git();
@@ -186,7 +186,7 @@ mod rustup_toolchain {
             ..PartialWorkspaceConfig::default()
         };
 
-        let toolchain_config = PartialToolchainConfig {
+        let toolchains_config = PartialToolchainsConfig {
             plugins: Some(FxHashMap::from_iter([(
                 Id::raw("rust"),
                 PartialToolchainPluginConfig {
@@ -197,13 +197,13 @@ mod rustup_toolchain {
                     ..Default::default()
                 },
             )])),
-            ..PartialToolchainConfig::default()
+            ..PartialToolchainsConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(
             "rust/toolchain",
             Some(workspace_config),
-            Some(toolchain_config),
+            Some(toolchains_config),
             None,
         );
         sandbox.enable_git();

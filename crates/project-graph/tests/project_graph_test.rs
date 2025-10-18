@@ -437,7 +437,7 @@ mod project_graph {
             #[tokio::test(flavor = "multi_thread")]
             async fn with_toolchain_changes() {
                 test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/toolchain.yml", "# Changes");
+                    sandbox.create_file(".moon/toolchains.yml", "# Changes");
                 })
                 .await;
             }

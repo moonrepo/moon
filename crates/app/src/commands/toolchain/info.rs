@@ -3,7 +3,7 @@ use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_common::{Id, is_test_env};
-use moon_config::ToolchainConfig;
+use moon_config::ToolchainsConfig;
 use moon_console::ui::*;
 use moon_toolchain_plugin::ToolchainPlugin;
 use proto_core::PluginLocator;
@@ -24,7 +24,7 @@ pub struct ToolchainInfoArgs {
 pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
     let Some(locator) = args
         .plugin
-        .or_else(|| ToolchainConfig::get_plugin_locator(&args.id))
+        .or_else(|| ToolchainsConfig::get_plugin_locator(&args.id))
     else {
         return Err(AppError::PluginLocatorRequired.into());
     };

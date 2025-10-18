@@ -1,4 +1,4 @@
-$schema: './cache/schemas/toolchain.json'
+$schema: './cache/schemas/toolchains.json'
 
 javascript:
   packageManager: 'yarn'

@@ -211,13 +211,14 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    #[cfg(feature = "proto")]
     pub fn load_toolchain_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
         proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
         let mut result = self.create_toolchain_loader(workspace_root)?.load()?;
+
+        #[cfg(feature = "proto")]
         result.config.inherit_proto(proto_config)?;
 
         Ok(result.config)

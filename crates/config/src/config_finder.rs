@@ -3,9 +3,26 @@ use schematic::ConfigError;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ConfigFinder {
-    _ignored: bool,
+    extensions: Vec<String>,
+}
+
+impl Default for ConfigFinder {
+    fn default() -> Self {
+        Self {
+            // In resolution order
+            extensions: vec![
+                "yml".into(),
+                "yaml".into(),
+                "json".into(),
+                // TODO add to schematic
+                // "jsonc".into(),
+                "toml".into(),
+                "pkl".into(),
+            ],
+        }
+    }
 }
 
 impl ConfigFinder {
@@ -70,6 +87,7 @@ impl ConfigFinder {
 
     pub fn get_debug_label(&self, name: &str, top_level: bool) -> String {
         let mut label = String::new();
+        let ext_glob = format!(".{{{}}}", self.extensions.join(","));
 
         if top_level {
             label.push_str(CONFIG_DIRNAME);
@@ -77,13 +95,16 @@ impl ConfigFinder {
         }
 
         label.push_str(name);
-        label.push_str(".{pkl,yml}");
+        label.push_str(&ext_glob);
 
         label
     }
 
     pub fn get_file_names(&self, name: &str) -> Vec<String> {
-        vec![format!("{name}.yml"), format!("{name}.pkl")]
+        self.extensions
+            .iter()
+            .map(|ext| format!("{name}.{ext}"))
+            .collect()
     }
 
     #[allow(clippy::only_used_in_recursion)]
@@ -114,7 +135,7 @@ impl ConfigFinder {
                 // so avoid failing when trying to parse it as a config
                 if path
                     .extension()
-                    .is_some_and(|ext| ext == "yml" || ext == "yaml" || ext == "pkl")
+                    .is_some_and(|ext| self.extensions.iter().any(|e| ext == e.as_str()))
                 {
                     files.push(path);
                 }

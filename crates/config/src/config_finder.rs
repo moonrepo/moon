@@ -26,6 +26,17 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
+    pub fn get_extensions_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
+        self.get_extensions_file_names()
+            .into_iter()
+            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
+            .collect()
+    }
+
+    pub fn get_extensions_file_names(&self) -> Vec<String> {
+        self.get_file_names("extensions")
+    }
+
     pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
         self.get_project_file_names()
             .into_iter()

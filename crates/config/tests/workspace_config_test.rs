@@ -3,10 +3,9 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, ExtensionPluginConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, FilePath, GlobPath, TemplateLocator, VcsProvider, WorkspaceConfig,
+    WorkspaceProjects,
 };
-use proto_core::warpgate::UrlLocator;
 use rustc_hash::FxHashMap;
 use schematic::ConfigLoader as BaseLoader;
 use semver::Version;
@@ -742,105 +741,6 @@ vcs:
             test_load_config(FILENAME, "versionConstraint: '@1.0.0'", |path| {
                 load_config_from_root(path)
             });
-        }
-    }
-
-    mod extensions {
-        use super::*;
-        use proto_core::PluginLocator;
-
-        //         #[test]
-        //         #[should_panic(
-        //             expected = "Invalid plugin identifier bad.id, must be a valid kebab-case string"
-        //         )]
-        //         fn errors_invalid_id() {
-        //             test_load_config(
-        //                 FILENAME,
-        //                 r"
-        // extensions:
-        //     bad.id: 'https://domain.com'
-        // ",
-        //                 |path| load_config_from_root(path),
-        //             );
-        //         }
-
-        #[test]
-        #[should_panic(expected = "extensions.id.plugin: Missing plugin protocol.")]
-        fn errors_invalid_locator() {
-            test_load_config(
-                FILENAME,
-                r"
-extensions:
-    id:
-        plugin: 'missing-scope'
-",
-                load_config_from_root,
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "extensions.id.plugin: this setting is required")]
-        fn errors_missing_locator() {
-            test_load_config(
-                FILENAME,
-                r"
-extensions:
-    id:
-        foo: 'bar'
-",
-                load_config_from_root,
-            );
-        }
-
-        #[test]
-        fn can_set_with_object() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-extensions:
-    test-id:
-        plugin: 'https://domain.com'
-",
-                load_config_from_root,
-            );
-
-            assert_eq!(
-                config.extensions.get("test-id").unwrap(),
-                &ExtensionPluginConfig {
-                    config: FxHashMap::default(),
-                    plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://domain.com".into()
-                    }))),
-                }
-            );
-        }
-
-        #[test]
-        fn can_set_additional_object_config() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-extensions:
-    test-id:
-        plugin: 'https://domain.com'
-        fooBar: 'abc'
-        bar-baz: true
-",
-                load_config_from_root,
-            );
-
-            assert_eq!(
-                config.extensions.get("test-id").unwrap(),
-                &ExtensionPluginConfig {
-                    config: FxHashMap::from_iter([
-                        ("fooBar".into(), serde_json::Value::String("abc".into())),
-                        ("bar-baz".into(), serde_json::Value::Bool(true)),
-                    ]),
-                    plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://domain.com".into()
-                    }))),
-                }
-            );
         }
     }
 

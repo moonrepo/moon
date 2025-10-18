@@ -8,7 +8,9 @@ use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::is_formatted_output;
-use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{
+    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
+};
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
@@ -53,6 +55,7 @@ pub struct MoonSession {
     workspace_lock: Arc<Mutex<()>>,
 
     // Configs
+    pub extensions_config: Arc<ExtensionsConfig>,
     pub tasks_config: Arc<InheritedTasksManager>,
     pub toolchain_config: Arc<ToolchainConfig>,
     pub workspace_config: Arc<WorkspaceConfig>,
@@ -71,6 +74,7 @@ impl MoonSession {
             cli_version: Version::parse(&cli_version).unwrap(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
+            extensions_config: Arc::new(ExtensionsConfig::default()),
             extension_registry: OnceLock::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceLock::new(),
@@ -153,7 +157,7 @@ impl MoonSession {
                 workspace_graph: Arc::new(OnceLock::new()),
             });
 
-            registry.inherit_configs(&self.workspace_config.extensions);
+            registry.inherit_configs(&self.extensions_config.plugins);
 
             Arc::new(registry)
         });
@@ -297,9 +301,10 @@ impl AppSession for MoonSession {
         // Load configs
 
         if self.requires_workspace_configured() {
-            let (workspace_config, tasks_config, toolchain_config) = try_join!(
+            let (workspace_config, tasks_config, extensions_config, toolchain_config) = try_join!(
                 startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),
                 startup::load_tasks_configs(self.config_loader.clone(), &self.workspace_root),
+                startup::load_extensions_config(self.config_loader.clone(), &self.workspace_root),
                 startup::load_toolchain_config(
                     self.config_loader.clone(),
                     self.proto_env.clone(),
@@ -309,6 +314,7 @@ impl AppSession for MoonSession {
             )?;
 
             self.workspace_config = workspace_config;
+            self.extensions_config = extensions_config;
             self.toolchain_config = toolchain_config;
             self.tasks_config = tasks_config;
         }

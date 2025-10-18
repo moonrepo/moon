@@ -1,5 +1,6 @@
 use crate::config_cache::ConfigCache;
 use crate::config_finder::ConfigFinder;
+use crate::extensions_config::ExtensionsConfig;
 use crate::inherited_tasks_config::{InheritedTasksConfig, PartialInheritedTasksConfig};
 use crate::inherited_tasks_manager::InheritedTasksManager;
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
@@ -18,6 +19,28 @@ pub struct ConfigLoader {
 }
 
 impl ConfigLoader {
+    pub fn create_extensions_loader<P: AsRef<Path>>(
+        &self,
+        workspace_root: P,
+    ) -> miette::Result<Loader<ExtensionsConfig>> {
+        let workspace_root = workspace_root.as_ref();
+        let mut loader = Loader::<ExtensionsConfig>::new();
+
+        loader
+            .set_cacher(ConfigCache::new(workspace_root))
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/extensions",
+            ))
+            .set_root(workspace_root);
+
+        self.prepare_loader(
+            &mut loader,
+            self.finder.get_extensions_files(workspace_root),
+        )?;
+
+        Ok(loader)
+    }
+
     pub fn create_project_loader<P: AsRef<Path>>(
         &self,
         project_root: P,
@@ -103,6 +126,16 @@ impl ConfigLoader {
         self.prepare_loader(&mut loader, self.finder.get_workspace_files(workspace_root))?;
 
         Ok(loader)
+    }
+
+    pub fn load_extensions_config<P: AsRef<Path>>(
+        &self,
+        workspace_root: P,
+    ) -> miette::Result<ExtensionsConfig> {
+        let mut result = self.create_extensions_loader(workspace_root)?.load()?;
+        result.config.inherit_default_plugins();
+
+        Ok(result.config)
     }
 
     pub fn load_project_config<P: AsRef<Path>>(
@@ -219,7 +252,14 @@ impl ConfigLoader {
         let mut result = self.create_toolchain_loader(workspace_root)?.load()?;
 
         #[cfg(feature = "proto")]
-        result.config.inherit_proto(proto_config)?;
+        {
+            result.config.inherit_proto(proto_config)?;
+        }
+
+        #[cfg(not(feature = "proto"))]
+        {
+            result.config.inherit_system_plugin();
+        }
 
         Ok(result.config)
     }
@@ -228,8 +268,7 @@ impl ConfigLoader {
         &self,
         workspace_root: P,
     ) -> miette::Result<WorkspaceConfig> {
-        let mut result = self.create_workspace_loader(workspace_root)?.load()?;
-        result.config.inherit_default_plugins();
+        let result = self.create_workspace_loader(workspace_root)?.load()?;
 
         Ok(result.config)
     }

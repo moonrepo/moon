@@ -6,5 +6,5 @@ export * from './project';
 export * from './project-config';
 export * from './tasks-config';
 export * from './template-config';
-export * from './toolchain-config';
+export * from './toolchains-config';
 export * from './workspace-config';

@@ -14,6 +14,15 @@ fn create_jsonschema_renderer() -> JsonSchemaRenderer {
     })
 }
 
+fn generate_extensions(out_dir: &Path) -> miette::Result<()> {
+    let mut generator = SchemaGenerator::default();
+    generator.add::<ExtensionsConfig>();
+    generator.generate(
+        out_dir.join("extensions.json"),
+        create_jsonschema_renderer(),
+    )
+}
+
 fn generate_project(out_dir: &Path, toolchains: &FxHashMap<String, Schema>) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
 
@@ -26,9 +35,9 @@ fn generate_project(out_dir: &Path, toolchains: &FxHashMap<String, Schema>) -> m
 
     generator.add::<ProjectConfig>();
 
-    // Inject the currently enabled toolchains into `ProjectToolchainConfig`
+    // Inject the currently enabled toolchains into `ProjectToolchainsConfig`
     if !toolchains.is_empty()
-        && let Some(config) = generator.schemas.get_mut("ProjectToolchainConfig")
+        && let Some(config) = generator.schemas.get_mut("ProjectToolchainsConfig")
         && let SchemaType::Struct(inner) = &mut config.ty
     {
         for (id, schema) in toolchains {
@@ -70,13 +79,13 @@ fn generate_template(out_dir: &Path) -> miette::Result<()> {
     )
 }
 
-fn generate_toolchain(
+fn generate_toolchains(
     out_dir: &Path,
     toolchains: &FxHashMap<String, Schema>,
 ) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
 
-    // Must come before `ToolchainConfig`
+    // Must come before `ToolchainsConfig`
     for schema in toolchains.values() {
         if schema.name.is_some() {
             generator.add_schema(schema);
@@ -85,9 +94,9 @@ fn generate_toolchain(
 
     generator.add::<ToolchainsConfig>();
 
-    // Inject the currently enabled toolchains into `ToolchainConfig`
+    // Inject the currently enabled toolchains into `ToolchainsConfig`
     if !toolchains.is_empty()
-        && let Some(config) = generator.schemas.get_mut("ToolchainConfig")
+        && let Some(config) = generator.schemas.get_mut("ToolchainsConfig")
         && let SchemaType::Struct(inner) = &mut config.ty
     {
         for (id, schema) in toolchains {
@@ -110,7 +119,10 @@ fn generate_toolchain(
         }
     }
 
-    generator.generate(out_dir.join("toolchain.json"), create_jsonschema_renderer())
+    generator.generate(
+        out_dir.join("toolchains.json"),
+        create_jsonschema_renderer(),
+    )
 }
 
 fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
@@ -142,10 +154,11 @@ pub fn generate_json_schemas(
 ) -> miette::Result<bool> {
     let out_dir = out_dir.as_ref();
 
+    generate_extensions(out_dir)?;
     generate_project(out_dir, &toolchain_schemas)?;
     generate_tasks(out_dir)?;
     generate_template(out_dir)?;
-    generate_toolchain(out_dir, &toolchain_schemas)?;
+    generate_toolchains(out_dir, &toolchain_schemas)?;
     generate_workspace(out_dir)?;
 
     Ok(true)

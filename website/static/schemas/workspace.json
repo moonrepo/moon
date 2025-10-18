@@ -57,17 +57,6 @@
         }
       ]
     },
-    "extensions": {
-      "title": "extensions",
-      "description": "Configures and enables extension plugins. @since 1.20.0",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/ExtensionPluginConfig"
-      },
-      "propertyNames": {
-        "$ref": "#/definitions/Id"
-      }
-    },
     "generator": {
       "title": "generator",
       "description": "Configures the generator for scaffolding from templates.",
@@ -301,7 +290,6 @@
           "title": "copyToolchainFiles",
           "description": "Copy toolchain specific configs/manifests/files into the configuration skeleton.",
           "default": true,
-          "deprecated": true,
           "type": "boolean"
         },
         "include": {
@@ -324,12 +312,6 @@
           "description": "Enable faster glob file system walking.",
           "default": true,
           "type": "boolean"
-        },
-        "gitV2": {
-          "title": "gitV2",
-          "description": "Enable a faster and more accurate Git implementation. Supports submodules, subtrees, and worktrees.",
-          "default": true,
-          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -346,43 +328,6 @@
           }
         }
       ]
-    },
-    "ExtensionPluginConfig": {
-      "description": "Configures an individual extension.",
-      "type": "object",
-      "properties": {
-        "config": {
-          "title": "config",
-          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        "plugin": {
-          "title": "plugin",
-          "description": "Location of the WASM plugin to use.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PluginLocator"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
     },
     "GeneratorConfig": {
       "description": "Configures the generator for scaffolding from templates.",
@@ -603,10 +548,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "PluginLocator": {
-      "description": "Strategies and protocols for locating plugins.",
-      "type": "string"
     },
     "RemoteApi": {
       "description": "The API format of the remote service. @since 1.32.0",

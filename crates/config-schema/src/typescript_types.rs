@@ -6,6 +6,22 @@ use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use std::collections::HashMap;
 use std::path::Path;
 
+fn generate_extensions(out_dir: &Path) -> miette::Result<()> {
+    let mut generator = SchemaGenerator::default();
+    generator.add::<ExtensionsConfig>();
+    generator.generate(
+        out_dir.join("extensions-config.ts"),
+        TypeScriptRenderer::new(TypeScriptOptions {
+            exclude_references: vec!["Id".into(), "ExtendsFrom".into(), "PluginLocator".into()],
+            external_types: HashMap::from_iter([
+                ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),
+                ("./toolchains-config".into(), vec!["PluginLocator".into()]),
+            ]),
+            ..Default::default()
+        }),
+    )
+}
+
 fn generate_project(out_dir: &Path) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
     generator.add::<ProjectDependencyConfig>();
@@ -61,7 +77,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                     ],
                 ),
                 (
-                    "./toolchain-config".into(),
+                    "./toolchains-config".into(),
                     vec![
                         "PartialToolchainPluginConfig".into(),
                         "ToolchainPluginConfig".into(),
@@ -108,12 +124,12 @@ fn generate_template(out_dir: &Path) -> miette::Result<()> {
     )
 }
 
-fn generate_toolchain(out_dir: &Path) -> miette::Result<()> {
+fn generate_toolchains(out_dir: &Path) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
-    generator.add::<ToolchainConfig>();
-    generator.add::<PartialToolchainConfig>();
+    generator.add::<ToolchainsConfig>();
+    generator.add::<PartialToolchainsConfig>();
     generator.generate(
-        out_dir.join("toolchain-config.ts"),
+        out_dir.join("toolchains-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
             exclude_references: vec!["Id".into(), "ExtendsFrom".into()],
             external_types: HashMap::from_iter([(
@@ -135,7 +151,7 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
             exclude_references: vec!["Id".into(), "ExtendsFrom".into(), "PluginLocator".into()],
             external_types: HashMap::from_iter([
                 ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),
-                ("./toolchain-config".into(), vec!["PluginLocator".into()]),
+                ("./toolchains-config".into(), vec!["PluginLocator".into()]),
             ]),
             ..Default::default()
         }),
@@ -145,10 +161,11 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
 pub fn generate_typescript_types(out_dir: impl AsRef<Path>) -> miette::Result<()> {
     let out_dir = out_dir.as_ref();
 
+    generate_extensions(out_dir)?;
     generate_project(out_dir)?;
     generate_tasks(out_dir)?;
     generate_template(out_dir)?;
-    generate_toolchain(out_dir)?;
+    generate_toolchains(out_dir)?;
     generate_workspace(out_dir)?;
 
     Ok(())

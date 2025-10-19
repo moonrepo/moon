@@ -91,9 +91,7 @@ pub async fn setup_toolchain_plugin(
             SetupToolchainInput {
                 configured_version: node.toolchain.req.clone(),
                 context: app_context.toolchain_registry.create_context(),
-                toolchain_config: app_context
-                    .toolchain_registry
-                    .create_config(&toolchain.id, &app_context.toolchains_config),
+                toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
                 version: None,
             },
             || {

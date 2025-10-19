@@ -2,7 +2,7 @@ use convert_case::{Case, Casing};
 use moon_action::{Action, ActionStatus, Operation};
 use moon_common::Id;
 use moon_pdk_api::{Operation as PluginOperation, OperationStatus, SyncOutput};
-use moon_plugin::{CallResult, Plugin};
+use moon_plugin::CallResult;
 use moon_time::chrono::{DateTime, Local};
 use moon_toolchain_plugin::ToolchainPlugin;
 use std::path::PathBuf;

@@ -34,11 +34,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                 |registry, toolchain| LocateDependenciesRootInput {
                     context: registry.create_context(),
                     starting_dir: toolchain.to_virtual_path(&project.root),
-                    toolchain_config: registry.create_merged_config(
-                        &toolchain.id,
-                        &session.toolchains_config,
-                        &project.config,
-                    ),
+                    toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
                 },
             )
             .await?
@@ -94,8 +90,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                             .map(|project| project.to_fragment())
                             .collect(),
                         root: toolchain.to_virtual_path(&instance.deps_root),
-                        toolchain_config: toolchain_registry
-                            .create_config(&toolchain.id, &app_context.toolchains_config),
+                        toolchain_config: toolchain_registry.create_config(&toolchain.id),
                     })
                     .await?;
             }
@@ -127,13 +122,9 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                         project: in_project.as_ref().map(|project| project.to_fragment()),
                         root: toolchain.to_virtual_path(&instance.deps_root),
                         toolchain_config: match &in_project {
-                            Some(project) => toolchain_registry.create_merged_config(
-                                &toolchain.id,
-                                &app_context.toolchains_config,
-                                &project.config,
-                            ),
-                            None => toolchain_registry
-                                .create_config(&toolchain.id, &app_context.toolchains_config),
+                            Some(project) => toolchain_registry
+                                .create_merged_config(&toolchain.id, &project.config),
+                            None => toolchain_registry.create_config(&toolchain.id),
                         },
                     })
                     .await?;

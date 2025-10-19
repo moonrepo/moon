@@ -107,16 +107,13 @@ pub async fn sync_workspace(
     if toolchain_registry.has_plugin_configs() {
         debug!("Syncing operations from toolchains");
 
-        let app_context = Arc::clone(&app_context);
-
         operation_futures.push(task::spawn(async move {
             let mut ops = vec![];
 
             for sync_result in toolchain_registry
                 .sync_workspace_all(|registry, toolchain| SyncWorkspaceInput {
                     context: registry.create_context(),
-                    toolchain_config: registry
-                        .create_config(&toolchain.id, &app_context.toolchains_config),
+                    toolchain_config: registry.create_config(&toolchain.id),
                 })
                 .await?
             {

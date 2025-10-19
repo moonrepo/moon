@@ -3893,12 +3893,14 @@ name = "moon_extension_plugin"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "futures",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
  "moon_pdk_api",
  "moon_plugin",
  "rustc-hash",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]
@@ -4521,6 +4523,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env_var",
+ "moon_extension_plugin",
  "moon_feature_flags",
  "moon_hash",
  "moon_pdk_api",

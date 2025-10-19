@@ -90,6 +90,7 @@ impl<'task> CommandBuilder<'task> {
         command.args(&task.args);
         command.envs_if_not_global(&task.env);
 
+        // TODO
         match &task.script {
             Some(script) => {
                 command.bin = script.into();
@@ -107,13 +108,31 @@ impl<'task> CommandBuilder<'task> {
                             script: script.clone(),
                             project: project.to_fragment(),
                             task: task.to_fragment(),
-                            toolchain_config: registry.create_merged_config(
-                                &toolchain.id,
-                                &self.app.toolchains_config,
-                                &project.config,
-                            ),
+                            toolchain_config: registry
+                                .create_merged_config(&toolchain.id, &project.config),
                             ..Default::default()
                         }
+                    })
+                    .await?
+                {
+                    if let Some(new_script) = params.script {
+                        command.bin = new_script.into();
+                    }
+
+                    self.extend_with_env(&mut command, params.env, params.env_remove);
+                    self.extend_with_paths(&mut command, params.paths);
+                }
+
+                for params in self
+                    .app
+                    .extension_registry
+                    .extend_task_script_all(|registry, extension| ExtendTaskScriptInput {
+                        context: registry.create_context(),
+                        script: script.clone(),
+                        project: project.to_fragment(),
+                        task: task.to_fragment(),
+                        extension_config: registry.create_config(&extension.id),
+                        ..Default::default()
                     })
                     .await?
                 {
@@ -136,13 +155,36 @@ impl<'task> CommandBuilder<'task> {
                             args: task.args.clone(),
                             project: project.to_fragment(),
                             task: task.to_fragment(),
-                            toolchain_config: registry.create_merged_config(
-                                &toolchain.id,
-                                &self.app.toolchains_config,
-                                &project.config,
-                            ),
+                            toolchain_config: registry
+                                .create_merged_config(&toolchain.id, &project.config),
                             ..Default::default()
                         }
+                    })
+                    .await?
+                {
+                    if let Some(new_bin) = params.command {
+                        command.bin = new_bin.into();
+                    }
+
+                    if let Some(new_args) = params.args {
+                        self.extend_with_args(&mut command, new_args);
+                    }
+
+                    self.extend_with_env(&mut command, params.env, params.env_remove);
+                    self.extend_with_paths(&mut command, params.paths);
+                }
+
+                for params in self
+                    .app
+                    .extension_registry
+                    .extend_task_command_all(|registry, extension| ExtendTaskCommandInput {
+                        context: registry.create_context(),
+                        command: task.command.clone(),
+                        args: task.args.clone(),
+                        project: project.to_fragment(),
+                        task: task.to_fragment(),
+                        extension_config: registry.create_config(&extension.id),
+                        ..Default::default()
                     })
                     .await?
                 {

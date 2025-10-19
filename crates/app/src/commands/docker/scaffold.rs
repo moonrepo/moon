@@ -30,12 +30,8 @@ async fn get_toolchain_globs(
         .define_docker_metadata_all(|registry, toolchain| DefineDockerMetadataInput {
             context: registry.create_context(),
             toolchain_config: match project {
-                Some(proj) => registry.create_merged_config(
-                    &toolchain.id,
-                    &session.toolchains_config,
-                    &proj.config,
-                ),
-                None => registry.create_config(&toolchain.id, &session.toolchains_config),
+                Some(proj) => registry.create_merged_config(&toolchain.id, &proj.config),
+                None => registry.create_config(&toolchain.id),
             },
         })
         .await?;
@@ -101,11 +97,7 @@ async fn scaffold_workspace_project(
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Configs,
                 project: project.to_fragment(),
-                toolchain_config: registry.create_merged_config(
-                    &toolchain.id,
-                    &session.toolchains_config,
-                    &project.config,
-                ),
+                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
     }
@@ -248,11 +240,7 @@ async fn scaffold_sources_project(
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Sources,
                 project: project.to_fragment(),
-                toolchain_config: registry.create_merged_config(
-                    &toolchain.id,
-                    &session.toolchains_config,
-                    &project.config,
-                ),
+                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
     }

@@ -1,8 +1,14 @@
 use crate::extension_plugin::ExtensionPlugin;
+use futures::StreamExt;
+use futures::stream::FuturesOrdered;
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_config::ExtensionsConfig;
-use moon_plugin::{MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config};
+use moon_pdk_api::Operation;
+use moon_plugin::{
+    CallResult, MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config,
+};
+use starbase_utils::json::JsonValue;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
@@ -32,6 +38,14 @@ impl ExtensionRegistry {
             config,
             registry: Arc::new(PluginRegistry::new(PluginType::Extension, host_data)),
         }
+    }
+
+    pub fn create_config(&self, id: &str) -> JsonValue {
+        if let Some(config) = self.config.get_plugin_config(id) {
+            return config.to_json();
+        }
+
+        JsonValue::default()
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&Id> {
@@ -129,69 +143,69 @@ impl ExtensionRegistry {
     }
 
     // This method looks crazy, but it basically loads and executes each requested
-    // toolchain in parallel, and returns the results in the order they were
+    // extension in parallel, and returns the results in the order they were
     // requested. We had to utilize generics and factory functions to make this
     // easy to use at each call site.
-    // pub(crate) async fn call_func_all<I, Id, InFn, In, OutFn, OutFut, Out>(
-    //     &self,
-    //     func_name: &str,
-    //     toolchain_ids: I,
-    //     input_factory: InFn,
-    //     output_factory: OutFn,
-    // ) -> miette::Result<Vec<CallResult<Out>>>
-    // where
-    //     I: IntoIterator<Item = Id>,
-    //     Id: AsRef<str> + Clone,
-    //     InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
-    //     OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
-    //     OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
-    //     Out: Send + 'static,
-    // {
-    //     let mut results = vec![];
+    pub(crate) async fn call_func_all<I, Id, InFn, In, OutFn, OutFut, Out>(
+        &self,
+        func_name: &str,
+        plugin_ids: I,
+        input_factory: InFn,
+        output_factory: OutFn,
+    ) -> miette::Result<Vec<CallResult<ExtensionPlugin, Out>>>
+    where
+        I: IntoIterator<Item = Id>,
+        Id: AsRef<str> + Clone,
+        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> In,
+        OutFn: Fn(Arc<ExtensionPlugin>, In) -> OutFut,
+        OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
+        Out: Send + 'static,
+    {
+        let mut results = vec![];
 
-    //     if self.config.plugins.is_empty() {
-    //         return Ok(results);
-    //     }
+        if !self.has_plugin_configs() {
+            return Ok(results);
+        }
 
-    //     let toolchain_ids = toolchain_ids.into_iter().collect::<Vec<_>>();
+        let plugin_ids = plugin_ids.into_iter().collect::<Vec<_>>();
 
-    //     // Load the plugins on-demand when we need them
-    //     self.load_many(toolchain_ids.clone()).await?;
+        // Load the plugins on-demand when we need them
+        self.load_many(plugin_ids.clone()).await?;
 
-    //     // Use ordered futures because we need the results to
-    //     // be in a deterministic order for operations to work
-    //     // correct, like hashing
-    //     let mut futures = FuturesOrdered::new();
+        // Use ordered futures because we need the results to
+        // be in a deterministic order for operations to work
+        // correct, like hashing
+        let mut futures = FuturesOrdered::new();
 
-    //     for toolchain_id in toolchain_ids {
-    //         let toolchain = self.load(toolchain_id).await?;
+        for plugin_id in plugin_ids {
+            let extension = self.load(plugin_id).await?;
 
-    //         if skip_func_check || toolchain.has_func(func_name).await {
-    //             let mut operation = Operation::new(func_name).unwrap();
-    //             let id = toolchain.id.clone();
-    //             let input = input_factory(self, &toolchain);
-    //             let future = output_factory(toolchain.clone(), input);
+            if extension.has_func(func_name).await {
+                let mut operation = Operation::new(func_name).unwrap();
+                let id = extension.id.clone();
+                let input = input_factory(self, &extension);
+                let future = output_factory(extension.clone(), input);
 
-    //             futures.push_back(tokio::spawn(async move {
-    //                 let result = future.await;
-    //                 operation.finish_with_result(&result);
+                futures.push_back(tokio::spawn(async move {
+                    let result = future.await;
+                    operation.finish_with_result(&result);
 
-    //                 Ok::<_, miette::Report>(CallResult {
-    //                     id,
-    //                     operation,
-    //                     output: result?,
-    //                     toolchain,
-    //                 })
-    //             }));
-    //         }
-    //     }
+                    Ok::<_, miette::Report>(CallResult {
+                        id,
+                        operation,
+                        output: result?,
+                        plugin: extension,
+                    })
+                }));
+            }
+        }
 
-    //     while let Some(result) = futures.next().await {
-    //         results.push(result.into_diagnostic()??);
-    //     }
+        while let Some(result) = futures.next().await {
+            results.push(result.into_diagnostic()??);
+        }
 
-    //     Ok(results)
-    // }
+        Ok(results)
+    }
 }
 
 impl Deref for ExtensionRegistry {

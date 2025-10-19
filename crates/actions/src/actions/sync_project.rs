@@ -78,13 +78,8 @@ pub async fn sync_project(
                 context: registry.create_context(),
                 project_dependencies: dependency_fragments.clone(),
                 project: project.to_fragment(),
-                toolchain_config: registry.create_merged_config(
-                    &toolchain.id,
-                    &app_context.toolchains_config,
-                    &project.config,
-                ),
-                toolchain_workspace_config: registry
-                    .create_config(&toolchain.id, &app_context.toolchains_config),
+                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
+                toolchain_workspace_config: registry.create_config(&toolchain.id),
             }
         })
         .await?

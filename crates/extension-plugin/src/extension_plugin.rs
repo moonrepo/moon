@@ -3,6 +3,7 @@ use moon_common::Id;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use std::fmt;
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::instrument;
@@ -101,6 +102,14 @@ impl Plugin for ExtensionPlugin {
 
     fn get_type(&self) -> PluginType {
         PluginType::Extension
+    }
+}
+
+impl Deref for ExtensionPlugin {
+    type Target = PluginContainer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.plugin
     }
 }
 

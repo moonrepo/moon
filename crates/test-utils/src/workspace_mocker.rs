@@ -411,6 +411,8 @@ impl WorkspaceMocker {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchains_config.get_enabled(),
+            extensions_config: &self.extensions_config,
+            extension_registry: Arc::new(self.mock_extension_registry()),
             inherited_tasks: &self.inherited_tasks,
             toolchains_config: &self.toolchains_config,
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),

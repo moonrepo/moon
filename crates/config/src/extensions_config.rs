@@ -61,6 +61,14 @@ impl ExtensionsConfig {
             self.plugins.entry(id).or_insert(extension);
         }
     }
+
+    pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ExtensionPluginConfig> {
+        self.plugins.get(id.as_ref())
+    }
+
+    pub fn is_plugin(&self, id: &str) -> bool {
+        self.plugins.contains_key(id)
+    }
 }
 
 fn default_extensions() -> FxHashMap<Id, ExtensionPluginConfig> {

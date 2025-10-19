@@ -16,6 +16,17 @@ TODO
 
 TODO
 
+## Extensions
+
+Extensions are a WASM plugin based system that has existed for some time now, but they only
+supported a single functionality: custom execution through the [`moon ext`](/docs/commands/ext)
+command. With the introduction of toolchain plugins, we wanted to expand the extension system to
+allow for more flexibility and use cases.
+
+To start, we're intoducing a new `.moon/extensions.*` configuration file, that will contain all
+extensions, similar to how toolchains are configured in `.moon/toolchains.*`. Because of this
+change, the `extensions` setting has been removed from the workspace configuration.
+
 ## Toolchains
 
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.

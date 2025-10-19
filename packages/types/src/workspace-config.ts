@@ -3,7 +3,6 @@
 /* eslint-disable */
 
 import type { ExtendsFrom, Id } from './common';
-import type { PluginLocator } from './toolchains-config';
 
 /** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-id';

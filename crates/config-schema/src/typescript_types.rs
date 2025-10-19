@@ -148,11 +148,11 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
     generator.generate(
         out_dir.join("workspace-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
-            exclude_references: vec!["Id".into(), "ExtendsFrom".into(), "PluginLocator".into()],
-            external_types: HashMap::from_iter([
-                ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),
-                ("./toolchains-config".into(), vec!["PluginLocator".into()]),
-            ]),
+            exclude_references: vec!["Id".into(), "ExtendsFrom".into()],
+            external_types: HashMap::from_iter([(
+                "./common".into(),
+                vec!["Id".into(), "ExtendsFrom".into()],
+            )]),
             ..Default::default()
         }),
     )

@@ -2,8 +2,9 @@ use convert_case::{Case, Casing};
 use moon_action::{Action, ActionStatus, Operation};
 use moon_common::Id;
 use moon_pdk_api::{Operation as PluginOperation, OperationStatus, SyncOutput};
+use moon_plugin::{CallResult, Plugin};
 use moon_time::chrono::{DateTime, Local};
-use moon_toolchain_plugin::{CallResult, ToolchainPlugin};
+use moon_toolchain_plugin::ToolchainPlugin;
 use std::path::PathBuf;
 
 pub fn convert_plugin_operation(
@@ -79,13 +80,15 @@ pub fn finalize_action_operations(
     Ok(())
 }
 
-pub fn finalize_sync_operation(sync_result: CallResult<SyncOutput>) -> miette::Result<Operation> {
+pub fn finalize_sync_operation(
+    sync_result: CallResult<ToolchainPlugin, SyncOutput>,
+) -> miette::Result<Operation> {
     // Add an operation for the overall sync
-    let mut op = convert_plugin_operation(&sync_result.toolchain, sync_result.operation)?;
+    let mut op = convert_plugin_operation(&sync_result.plugin, sync_result.operation)?;
 
     // Inherit plugin operations
     op.operations.extend(convert_plugin_operations(
-        &sync_result.toolchain,
+        &sync_result.plugin,
         sync_result.output.operations,
     )?);
 

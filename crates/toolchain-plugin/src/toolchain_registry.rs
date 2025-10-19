@@ -2,11 +2,12 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use futures::{StreamExt, stream::FuturesOrdered};
 use miette::IntoDiagnostic;
 use moon_common::Id;
-use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainPluginConfig, ToolchainsConfig};
+use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainsConfig};
 use moon_pdk_api::Operation;
-use moon_plugin::{MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config};
+use moon_plugin::{
+    CallResult, MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config,
+};
 use proto_core::{ToolContext, inject_proto_manifest_config};
-use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue};
 use std::future::Future;
 use std::ops::Deref;
@@ -17,7 +18,6 @@ use tracing::{debug, trace};
 #[derive(Debug)]
 pub struct ToolchainRegistry {
     pub config: Arc<ToolchainsConfig>,
-    pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 
@@ -25,7 +25,6 @@ impl Default for ToolchainRegistry {
     fn default() -> Self {
         Self {
             config: Default::default(),
-            plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(
                 PluginType::Toolchain,
                 MoonHostData::default(),
@@ -38,14 +37,7 @@ impl ToolchainRegistry {
     pub fn new(host_data: MoonHostData, config: Arc<ToolchainsConfig>) -> Self {
         Self {
             config,
-            plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
-        }
-    }
-
-    pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ToolchainPluginConfig>) {
-        for (id, config) in configs {
-            self.plugins.insert(id.to_owned(), config.to_owned());
         }
     }
 
@@ -77,11 +69,11 @@ impl ToolchainRegistry {
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&Id> {
-        self.plugins.keys().collect()
+        self.config.plugins.keys().collect()
     }
 
-    pub fn has_plugins(&self) -> bool {
-        !self.plugins.is_empty()
+    pub fn has_plugin_configs(&self) -> bool {
+        !self.config.plugins.is_empty()
     }
 
     pub async fn load<T>(&self, id: T) -> miette::Result<Arc<ToolchainPlugin>>
@@ -91,7 +83,7 @@ impl ToolchainRegistry {
         let id = Id::raw(id.as_ref());
 
         if !self.is_registered(&id) {
-            if !self.plugins.contains_key(&id) {
+            if !self.config.plugins.contains_key(&id) {
                 return Err(PluginError::UnknownId {
                     id: id.to_string(),
                     ty: PluginType::Toolchain,
@@ -106,13 +98,13 @@ impl ToolchainRegistry {
     }
 
     pub async fn load_all(&self) -> miette::Result<Vec<Arc<ToolchainPlugin>>> {
-        if !self.has_plugins() {
+        if !self.has_plugin_configs() {
             return Ok(vec![]);
         }
 
         debug!("Loading all toolchain plugins");
 
-        self.load_many(self.get_plugin_ids()).await
+        self.load_many(self.config.plugins.keys()).await
     }
 
     pub async fn load_many<I, T>(&self, ids: I) -> miette::Result<Vec<Arc<ToolchainPlugin>>>
@@ -131,7 +123,7 @@ impl ToolchainRegistry {
                 continue;
             }
 
-            let Some(config) = self.plugins.get(&id) else {
+            let Some(config) = self.config.get_plugin_config(&id) else {
                 continue;
             };
 
@@ -186,7 +178,7 @@ impl ToolchainRegistry {
         toolchain_ids: I,
         input_factory: InFn,
         output_factory: OutFn,
-    ) -> miette::Result<Vec<CallResult<Out>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, Out>>>
     where
         I: IntoIterator<Item = Id>,
         Id: AsRef<str> + Clone,
@@ -212,7 +204,7 @@ impl ToolchainRegistry {
         input_factory: InFn,
         output_factory: OutFn,
         skip_func_check: bool,
-    ) -> miette::Result<Vec<CallResult<Out>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, Out>>>
     where
         I: IntoIterator<Item = Id>,
         Id: AsRef<str> + Clone,
@@ -223,7 +215,7 @@ impl ToolchainRegistry {
     {
         let mut results = vec![];
 
-        if !self.has_plugins() {
+        if self.config.plugins.is_empty() {
             return Ok(results);
         }
 
@@ -254,7 +246,7 @@ impl ToolchainRegistry {
                         id,
                         operation,
                         output: result?,
-                        toolchain,
+                        plugin: toolchain,
                     })
                 }));
             }
@@ -274,11 +266,4 @@ impl Deref for ToolchainRegistry {
     fn deref(&self) -> &Self::Target {
         &self.registry
     }
-}
-
-pub struct CallResult<T> {
-    pub id: Id,
-    pub operation: Operation,
-    pub output: T,
-    pub toolchain: Arc<ToolchainPlugin>,
 }

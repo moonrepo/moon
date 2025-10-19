@@ -104,7 +104,7 @@ pub async fn sync_workspace(
         }));
     }
 
-    if toolchain_registry.has_plugins() {
+    if toolchain_registry.has_plugin_configs() {
         debug!("Syncing operations from toolchains");
 
         let app_context = Arc::clone(&app_context);

@@ -3,6 +3,7 @@ use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_common::{Id, IdExt};
 use moon_pdk_api::MoonContext;
+use moon_pdk_api::Operation;
 use proto_core::is_offline;
 use scc::hash_map::Entry;
 use starbase_utils::fs;
@@ -253,4 +254,11 @@ impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
             .field("virtual_paths", &self.virtual_paths)
             .finish()
     }
+}
+
+pub struct CallResult<P: Plugin, T> {
+    pub id: Id,
+    pub operation: Operation,
+    pub output: T,
+    pub plugin: Arc<P>,
 }

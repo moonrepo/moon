@@ -369,20 +369,21 @@ impl WorkspaceMocker {
     }
 
     pub fn mock_extension_registry(&self) -> ExtensionRegistry {
-        let mut registry = ExtensionRegistry::new(MoonHostData {
-            moon_env: Arc::new(self.moon_env.clone()),
-            proto_env: Arc::new(self.proto_env.clone()),
-            extensions_config: Arc::new(self.extensions_config.clone()),
-            toolchains_config: Arc::new(self.toolchains_config.clone()),
-            workspace_config: Arc::new(self.workspace_config.clone()),
-            workspace_graph: Arc::new(OnceLock::new()),
-        });
-        registry.inherit_configs(&self.extensions_config.plugins);
-        registry
+        ExtensionRegistry::new(
+            MoonHostData {
+                moon_env: Arc::new(self.moon_env.clone()),
+                proto_env: Arc::new(self.proto_env.clone()),
+                extensions_config: Arc::new(self.extensions_config.clone()),
+                toolchains_config: Arc::new(self.toolchains_config.clone()),
+                workspace_config: Arc::new(self.workspace_config.clone()),
+                workspace_graph: Arc::new(OnceLock::new()),
+            },
+            Arc::new(self.extensions_config.clone()),
+        )
     }
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
-        let mut registry = ToolchainRegistry::new(
+        ToolchainRegistry::new(
             MoonHostData {
                 moon_env: Arc::new(self.moon_env.clone()),
                 proto_env: Arc::new(self.proto_env.clone()),
@@ -392,9 +393,7 @@ impl WorkspaceMocker {
                 workspace_graph: Arc::new(OnceLock::new()),
             },
             Arc::new(self.toolchains_config.clone()),
-        );
-        registry.inherit_configs(&self.toolchains_config.plugins);
-        registry
+        )
     }
 
     pub fn mock_vcs_adapter(&self) -> BoxedVcs {

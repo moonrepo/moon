@@ -311,7 +311,15 @@ fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
         }
     }
 
-    yaml::write_file_with_config(&config_path, &YamlValue::Mapping(new_data))?;
+    fs::remove_file(config_path)?;
+
+    yaml::write_file_with_config(
+        session
+            .workspace_root
+            .join(CONFIG_DIRNAME)
+            .join("toolchains.yml"),
+        &YamlValue::Mapping(new_data),
+    )?;
 
     Ok(())
 }
@@ -336,6 +344,7 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
     }
 
     let mut config: YamlValue = load_config_file(&config_path)?;
+    let mut extensions = None;
 
     if let Some(root) = config.as_mapping_mut() {
         rename_setting(root, "codeowners.syncOnRun", "codeowners.sync");
@@ -345,6 +354,9 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
             "constraints.enforceLayerRelationships",
         );
         remove_setting(root, "experiments.gitV2");
+        change_setting(root, "extensions", false, |node, key| {
+            extensions = node.remove(key);
+        });
         remove_setting(root, "hasher.batchSize");
         rename_setting(root, "runner", "pipeline");
         remove_setting(root, "pipeline.archivableTargets");
@@ -354,6 +366,16 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
     }
 
     yaml::write_file_with_config(&config_path, &config)?;
+
+    if let Some(extensions) = extensions {
+        yaml::write_file_with_config(
+            session
+                .workspace_root
+                .join(CONFIG_DIRNAME)
+                .join("extensions.yml"),
+            &extensions,
+        )?;
+    }
 
     Ok(())
 }

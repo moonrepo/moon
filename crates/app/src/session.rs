@@ -305,7 +305,7 @@ impl AppSession for MoonSession {
         // Load configs
 
         if self.requires_workspace_configured() {
-            let (workspace_config, tasks_config, extensions_config, toolchain_config) = try_join!(
+            let (workspace_config, tasks_config, extensions_config, toolchains_config) = try_join!(
                 startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),
                 startup::load_tasks_configs(self.config_loader.clone(), &self.workspace_root),
                 startup::load_extensions_config(self.config_loader.clone(), &self.workspace_root),
@@ -319,7 +319,7 @@ impl AppSession for MoonSession {
 
             self.workspace_config = workspace_config;
             self.extensions_config = extensions_config;
-            self.toolchains_config = toolchain_config;
+            self.toolchains_config = toolchains_config;
             self.tasks_config = tasks_config;
         }
 
@@ -390,7 +390,8 @@ impl fmt::Debug for MoonSession {
             .field("moon_env", &self.moon_env)
             .field("proto_env", &self.proto_env)
             .field("tasks_config", &self.tasks_config)
-            .field("toolchain_config", &self.toolchains_config)
+            .field("extensions_config", &self.extensions_config)
+            .field("toolchains_config", &self.toolchains_config)
             .field("working_dir", &self.working_dir)
             .field("workspace_config", &self.workspace_config)
             .field("workspace_root", &self.workspace_root)

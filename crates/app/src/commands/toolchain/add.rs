@@ -52,22 +52,30 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
     let template = init_toolchain(&session, &args, &toolchain_registry, &toolchain).await?;
 
     // Update toolchain file
-    let toolchain_config_path = &session
+    let config_paths = &session
         .config_loader
-        .get_toolchains_files(&session.workspace_root)[0];
+        .get_toolchains_files(&session.workspace_root);
 
-    if toolchain_config_path.exists() {
-        fs::append_file(toolchain_config_path, format!("\n\n{template}"))?;
-    } else {
-        fs::write_file(toolchain_config_path, template)?;
-    }
+    let config_path = match config_paths.iter().find(|path| path.exists()) {
+        Some(path) => {
+            fs::append_file(path, format!("\n\n{template}"))?;
+            path
+        }
+        None => {
+            let path = &config_paths[0];
+            fs::write_file(path, template)?;
+            path
+        }
+    };
 
     session.console.render(element! {
         Container {
             Notice(variant: Variant::Success) {
                 StyledText(
                     content: format!(
-                        "Added toolchain <id>{}</id> to <file>.moon/toolchains.yml</file>!", toolchain.id
+                        "Added toolchain <id>{}</id> to <file>{}</file>!",
+                        toolchain.id,
+                        config_path.strip_prefix(&session.workspace_root).unwrap().display(),
                     )
                 )
             }

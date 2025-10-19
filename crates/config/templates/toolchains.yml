@@ -1,6 +1,6 @@
 # https://moonrepo.dev/docs/config/toolchain
 $schema: './cache/schemas/toolchains.json'
 
-# extends: './shared/toolchain.yml'
+# extends: './shared/toolchains.yml'
 
 {# Comment only exists to keep syntax intact #}

@@ -133,7 +133,7 @@ pub async fn load_toolchains_config(
 ) -> miette::Result<Arc<ToolchainsConfig>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(config_loader.get_debug_label("toolchain", true))
+        color::file(config_loader.get_debug_label("toolchains", true))
     );
 
     let root = workspace_root.to_owned();

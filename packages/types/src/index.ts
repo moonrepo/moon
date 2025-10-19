@@ -1,5 +1,6 @@
 export * from './common';
 export * from './events';
+export * from './extensions-config';
 export * from './mcp';
 export * from './pipeline';
 export * from './project';

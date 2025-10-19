@@ -1,19 +1,18 @@
 use convert_case::{Case, Casing};
 use moon_action::{Action, ActionStatus, Operation};
-use moon_common::Id;
 use moon_pdk_api::{Operation as PluginOperation, OperationStatus, SyncOutput};
-use moon_plugin::CallResult;
+use moon_plugin::{CallResult, Plugin};
 use moon_time::chrono::{DateTime, Local};
-use moon_toolchain_plugin::ToolchainPlugin;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-pub fn convert_plugin_operation(
-    toolchain: &ToolchainPlugin,
+pub fn convert_plugin_operation<P: Plugin>(
+    plugin: &Arc<P>,
     base: PluginOperation,
 ) -> miette::Result<Operation> {
     let mut op = Operation::sync_operation(base.id.to_case(Case::Kebab))?;
 
-    op.plugin = Some(Id::new(&toolchain.id)?);
+    op.plugin = Some(plugin.get_id().to_owned());
 
     op.started_at = base
         .started_at
@@ -35,14 +34,14 @@ pub fn convert_plugin_operation(
     Ok(op)
 }
 
-pub fn convert_plugin_operations(
-    toolchain: &ToolchainPlugin,
+pub fn convert_plugin_operations<P: Plugin>(
+    plugin: &Arc<P>,
     base: Vec<PluginOperation>,
 ) -> miette::Result<Vec<Operation>> {
     let mut ops = vec![];
 
     for item in base {
-        ops.push(convert_plugin_operation(toolchain, item)?);
+        ops.push(convert_plugin_operation(plugin, item)?);
     }
 
     Ok(ops)
@@ -54,14 +53,14 @@ pub fn inherit_changed_files(op: &mut Operation, files: Vec<PathBuf>) {
     }
 }
 
-pub fn finalize_action_operations(
+pub fn finalize_action_operations<P: Plugin>(
     action: &mut Action,
-    toolchain: &ToolchainPlugin,
+    plugin: &Arc<P>,
     mut op: Operation,
     plugin_ops: Vec<PluginOperation>,
     changed_files: Vec<PathBuf>,
 ) -> miette::Result<()> {
-    op.plugin = Some(Id::new(&toolchain.id)?);
+    op.plugin = Some(plugin.get_id().to_owned());
 
     if op.status == ActionStatus::Running {
         op.finish(ActionStatus::Passed);
@@ -70,7 +69,7 @@ pub fn finalize_action_operations(
     // Inherit plugin operations
     action
         .operations
-        .extend(convert_plugin_operations(toolchain, plugin_ops)?);
+        .extend(convert_plugin_operations(plugin, plugin_ops)?);
 
     // Inherit changed files
     inherit_changed_files(&mut op, changed_files);
@@ -80,8 +79,8 @@ pub fn finalize_action_operations(
     Ok(())
 }
 
-pub fn finalize_sync_operation(
-    sync_result: CallResult<ToolchainPlugin, SyncOutput>,
+pub fn finalize_sync_operation<P: Plugin>(
+    sync_result: CallResult<P, SyncOutput>,
 ) -> miette::Result<Operation> {
     // Add an operation for the overall sync
     let mut op = convert_plugin_operation(&sync_result.plugin, sync_result.operation)?;

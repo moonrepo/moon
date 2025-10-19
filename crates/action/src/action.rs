@@ -3,6 +3,7 @@ use crate::operation_list::OperationList;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -120,6 +121,18 @@ impl Action {
             &self.status,
             ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut
         )
+    }
+
+    pub fn get_changed_files(&self) -> Vec<&PathBuf> {
+        let mut files = vec![];
+
+        for op in &self.operations.0 {
+            if let Some(changed) = op.get_file_state() {
+                files.extend(&changed.changed_files);
+            }
+        }
+
+        files
     }
 
     pub fn get_duration(&self) -> &Duration {

@@ -2,8 +2,7 @@ use crate::host::*;
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_common::{Id, IdExt};
-use moon_pdk_api::MoonContext;
-use moon_pdk_api::Operation;
+use moon_pdk_api::{MoonContext, Operation};
 use proto_core::is_offline;
 use scc::hash_map::Entry;
 use starbase_utils::fs;
@@ -28,7 +27,10 @@ pub struct PluginRegistry<T: Plugin> {
 
 impl<T: Plugin> PluginRegistry<T> {
     pub fn new(type_of: PluginType, host_data: MoonHostData) -> Self {
-        debug!(plugin = type_of.get_label(), "Creating plugin registry");
+        debug!(
+            plugin_type = type_of.get_label(),
+            "Creating plugin registry"
+        );
 
         // Create the loader
         let mut loader = PluginLoader::new(

@@ -69,10 +69,6 @@ impl ExtensionTestWrapper {
     ) -> ExtendTaskCommandOutput {
         input.context = self.create_context();
 
-        input.globals_dir = input
-            .globals_dir
-            .map(|path| self.plugin.to_virtual_path(path));
-
         if input.project.id.is_empty() {
             input.project = self.create_project_fragment();
         }
@@ -92,10 +88,6 @@ impl ExtensionTestWrapper {
         mut input: ExtendTaskScriptInput,
     ) -> ExtendTaskScriptOutput {
         input.context = self.create_context();
-
-        input.globals_dir = input
-            .globals_dir
-            .map(|path| self.plugin.to_virtual_path(path));
 
         if input.project.id.is_empty() {
             input.project = self.create_project_fragment();

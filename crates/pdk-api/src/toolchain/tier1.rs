@@ -127,7 +127,12 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
+        /// Workspace extension configuration.
+        /// Is null when within toolchains.
+        pub extension_config: serde_json::Value,
+
         /// Workspace toolchain configuration.
+        /// Is null when within extensions.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -138,6 +143,10 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
+        /// Workspace extension configuration.
+        /// Is null when within toolchains.
+        pub extension_config: serde_json::Value,
+
         /// Other projects that the project being synced depends on.
         pub project_dependencies: Vec<ProjectFragment>,
 
@@ -145,7 +154,7 @@ api_struct!(
         pub project: ProjectFragment,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. Is null when within extensions.
         pub toolchain_config: serde_json::Value,
 
         /// Workspace only toolchain configuration.

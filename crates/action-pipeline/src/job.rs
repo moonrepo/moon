@@ -32,7 +32,6 @@ impl Job {
             self.action_context,
             self.app_context,
             self.context.workspace_graph.clone(),
-            self.context.toolchain_registry.clone(),
             self.context.emitter.clone(),
         )
         .await

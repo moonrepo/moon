@@ -17,6 +17,36 @@ pub struct ExtensionPlugin {
     plugin: Arc<PluginContainer>,
 }
 
+#[async_trait]
+impl Plugin for ExtensionPlugin {
+    async fn new(registration: PluginRegistration) -> miette::Result<Self> {
+        let plugin = Arc::new(registration.container);
+
+        let metadata: RegisterExtensionOutput = plugin
+            .cache_func_with(
+                "register_extension",
+                RegisterExtensionInput {
+                    id: registration.id.clone(),
+                },
+            )
+            .await?;
+
+        Ok(Self {
+            id: registration.id,
+            metadata,
+            plugin,
+        })
+    }
+
+    fn get_id(&self) -> &Id {
+        &self.id
+    }
+
+    fn get_type(&self) -> PluginType {
+        PluginType::Extension
+    }
+}
+
 impl ExtensionPlugin {
     fn handle_output_file(&self, file: &mut PathBuf) {
         *file = self.plugin.from_virtual_path(&file);
@@ -77,31 +107,23 @@ impl ExtensionPlugin {
 
         Ok(output)
     }
-}
 
-#[async_trait]
-impl Plugin for ExtensionPlugin {
-    async fn new(registration: PluginRegistration) -> miette::Result<Self> {
-        let plugin = Arc::new(registration.container);
+    #[instrument(skip(self))]
+    pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<SyncOutput> {
+        let mut output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
 
-        let metadata: RegisterExtensionOutput = plugin
-            .cache_func_with(
-                "register_extension",
-                RegisterExtensionInput {
-                    id: registration.id.clone(),
-                },
-            )
-            .await?;
+        self.handle_output_files(&mut output.changed_files);
 
-        Ok(Self {
-            id: registration.id,
-            metadata,
-            plugin,
-        })
+        Ok(output)
     }
 
-    fn get_type(&self) -> PluginType {
-        PluginType::Extension
+    #[instrument(skip(self))]
+    pub async fn sync_workspace(&self, input: SyncWorkspaceInput) -> miette::Result<SyncOutput> {
+        let mut output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
+
+        self.handle_output_files(&mut output.changed_files);
+
+        Ok(output)
     }
 }
 

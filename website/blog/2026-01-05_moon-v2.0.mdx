@@ -27,6 +27,17 @@ To start, we're intoducing a new `.moon/extensions.*` configuration file, that w
 extensions, similar to how toolchains are configured in `.moon/toolchains.*`. Because of this
 change, the `extensions` setting has been removed from the workspace configuration.
 
+### New APIs
+
+With extensions now being first-class citizens in moon, we've expanded the PDK API to allow for more
+functionality. Extensions can now utilize the following API functions, similar to toolchains:
+
+- `extend_project_graph` - Extend projects with aliases, dependencies, and tasks.
+- `extend_task_command` - Extend the task command before it's executed.
+- `extend_task_script` - Extend the task script before it's executed.
+- `sync_project` - Run operations during the project sync process.
+- `sync_workspace` - Run operations during the workspace sync process.
+
 ## Toolchains
 
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.

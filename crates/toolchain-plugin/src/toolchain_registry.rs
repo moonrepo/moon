@@ -99,7 +99,7 @@ impl ToolchainRegistry {
 
         debug!("Loading all toolchain plugins");
 
-        self.load_many(self.config.plugins.keys()).await
+        self.load_many(self.get_plugin_ids()).await
     }
 
     pub async fn load_many<I, T>(&self, ids: I) -> miette::Result<Vec<Arc<ToolchainPlugin>>>

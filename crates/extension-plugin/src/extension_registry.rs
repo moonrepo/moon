@@ -66,7 +66,7 @@ impl ExtensionRegistry {
             if !self.config.plugins.contains_key(&id) {
                 return Err(PluginError::UnknownId {
                     id: id.to_string(),
-                    ty: PluginType::Toolchain,
+                    ty: PluginType::Extension,
                 }
                 .into());
             }
@@ -82,7 +82,7 @@ impl ExtensionRegistry {
             return Ok(vec![]);
         }
 
-        debug!("Loading all toolchain plugins");
+        debug!("Loading all extension plugins");
 
         self.load_many(self.get_plugin_ids()).await
     }

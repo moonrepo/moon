@@ -6,12 +6,13 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_common::is_ci;
 use moon_pdk_api::SyncWorkspaceInput;
 use moon_remote::RemoteService;
-use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tokio::task;
+use tracing::warn;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
@@ -20,7 +21,6 @@ pub async fn sync_workspace(
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
-    toolchain_registry: Arc<ToolchainRegistry>,
 ) -> miette::Result<ActionStatus> {
     let _lock = app_context.cache_engine.create_lock(action.get_prefix())?;
 
@@ -104,16 +104,44 @@ pub async fn sync_workspace(
         }));
     }
 
-    if toolchain_registry.has_plugin_configs() {
+    if app_context.toolchain_registry.has_plugin_configs() {
         debug!("Syncing operations from toolchains");
+
+        let app_context = Arc::clone(&app_context);
 
         operation_futures.push(task::spawn(async move {
             let mut ops = vec![];
 
-            for sync_result in toolchain_registry
+            for sync_result in app_context
+                .toolchain_registry
                 .sync_workspace_all(|registry, toolchain| SyncWorkspaceInput {
                     context: registry.create_context(),
                     toolchain_config: registry.create_config(&toolchain.id),
+                    ..Default::default()
+                })
+                .await?
+            {
+                ops.push(finalize_sync_operation(sync_result)?);
+            }
+
+            Ok(ops)
+        }));
+    }
+
+    if app_context.extension_registry.has_plugin_configs() {
+        debug!("Syncing operations from extensions");
+
+        let app_context = Arc::clone(&app_context);
+
+        operation_futures.push(task::spawn(async move {
+            let mut ops = vec![];
+
+            for sync_result in app_context
+                .extension_registry
+                .sync_workspace_all(|registry, extension| SyncWorkspaceInput {
+                    context: registry.create_context(),
+                    extension_config: registry.create_config(&extension.id),
+                    ..Default::default()
                 })
                 .await?
             {
@@ -126,6 +154,19 @@ pub async fn sync_workspace(
 
     for future in operation_futures {
         action.operations.extend(future.await.into_diagnostic()??);
+    }
+
+    // If files have been modified in CI, we should update the status to warning,
+    // as these modifications should be committed to the repo!
+    let changed_files = action.get_changed_files();
+
+    if !changed_files.is_empty() && is_ci() {
+        warn!(
+            changed_files = ?changed_files,
+            "Files were modified during workspace sync that should be committed to the repository"
+        );
+
+        return Ok(ActionStatus::Invalid);
     }
 
     Ok(ActionStatus::Passed)

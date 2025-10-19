@@ -3898,6 +3898,7 @@ dependencies = [
  "moon_pdk_api",
  "moon_plugin",
  "rustc-hash",
+ "tokio",
  "tracing",
 ]
 
@@ -4038,6 +4039,7 @@ dependencies = [
  "async-trait",
  "convert_case",
  "extism",
+ "futures",
  "miette 7.6.0",
  "moon_common",
  "moon_config",

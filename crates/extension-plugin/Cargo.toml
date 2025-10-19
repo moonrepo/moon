@@ -16,6 +16,7 @@ moon_plugin = { path = "../plugin" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

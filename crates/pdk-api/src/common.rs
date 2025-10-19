@@ -160,7 +160,7 @@ api_struct!(
         pub context: MoonContext,
 
         /// Virtual path to a global executables directory
-        /// for the current toolchain.
+        /// for the current toolchain. Not available in extensions.
         pub globals_dir: Option<VirtualPath>,
 
         /// Fragment of the project that the task belongs to.

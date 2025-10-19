@@ -3,6 +3,7 @@ use moon_common::Id;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use std::fmt;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -16,6 +17,16 @@ pub struct ExtensionPlugin {
 }
 
 impl ExtensionPlugin {
+    fn handle_output_file(&self, file: &mut PathBuf) {
+        *file = self.plugin.from_virtual_path(&file);
+    }
+
+    fn handle_output_files(&self, files: &mut [PathBuf]) {
+        for file in files {
+            self.handle_output_file(file);
+        }
+    }
+
     #[instrument(skip(self, context))]
     pub async fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
         self.plugin
@@ -23,6 +34,47 @@ impl ExtensionPlugin {
             .await?;
 
         Ok(())
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_project_graph(
+        &self,
+        input: ExtendProjectGraphInput,
+    ) -> miette::Result<ExtendProjectGraphOutput> {
+        let mut output: ExtendProjectGraphOutput = self
+            .plugin
+            .cache_func_with("extend_project_graph", input)
+            .await?;
+
+        self.handle_output_files(&mut output.input_files);
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_command(
+        &self,
+        input: ExtendTaskCommandInput,
+    ) -> miette::Result<ExtendTaskCommandOutput> {
+        let output: ExtendTaskCommandOutput = self
+            .plugin
+            .cache_func_with("extend_task_command", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn extend_task_script(
+        &self,
+        input: ExtendTaskScriptInput,
+    ) -> miette::Result<ExtendTaskScriptOutput> {
+        let output: ExtendTaskScriptOutput = self
+            .plugin
+            .cache_func_with("extend_task_script", input)
+            .await?;
+
+        Ok(output)
     }
 }
 

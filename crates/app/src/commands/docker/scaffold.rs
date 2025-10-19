@@ -32,10 +32,10 @@ async fn get_toolchain_globs(
             toolchain_config: match project {
                 Some(proj) => registry.create_merged_config(
                     &toolchain.id,
-                    &session.toolchain_config,
+                    &session.toolchains_config,
                     &proj.config,
                 ),
-                None => registry.create_config(&toolchain.id, &session.toolchain_config),
+                None => registry.create_config(&toolchain.id, &session.toolchains_config),
             },
         })
         .await?;
@@ -103,7 +103,7 @@ async fn scaffold_workspace_project(
                 project: project.to_fragment(),
                 toolchain_config: registry.create_merged_config(
                     &toolchain.id,
-                    &session.toolchain_config,
+                    &session.toolchains_config,
                     &project.config,
                 ),
             })
@@ -250,7 +250,7 @@ async fn scaffold_sources_project(
                 project: project.to_fragment(),
                 toolchain_config: registry.create_merged_config(
                     &toolchain.id,
-                    &session.toolchain_config,
+                    &session.toolchains_config,
                     &project.config,
                 ),
             })

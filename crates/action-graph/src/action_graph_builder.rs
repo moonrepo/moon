@@ -176,7 +176,7 @@ impl<'query> ActionGraphBuilder<'query> {
     pub fn get_workspace_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = self
             .app_context
-            .toolchain_config
+            .toolchains_config
             .get_plugin_config(toolchain_id)
         {
             return Some(match &config.version {
@@ -271,7 +271,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 starting_dir: toolchain.to_virtual_path(&project.root),
                 toolchain_config: toolchain_registry.create_merged_config(
                     &toolchain.id,
-                    &self.app_context.toolchain_config,
+                    &self.app_context.toolchains_config,
                     &project.config,
                 ),
             })
@@ -821,7 +821,7 @@ impl<'query> ActionGraphBuilder<'query> {
     pub async fn setup_proto(&mut self) -> miette::Result<Option<NodeIndex>> {
         let index = insert_node_or_exit!(
             self,
-            ActionNode::setup_proto(self.app_context.toolchain_config.proto.version.clone())
+            ActionNode::setup_proto(self.app_context.toolchains_config.proto.version.clone())
         );
 
         Ok(Some(index))
@@ -848,7 +848,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 .define_requirements(DefineRequirementsInput {
                     context: toolchain_registry.create_context(),
                     toolchain_config: toolchain_registry
-                        .create_config(&toolchain.id, &self.app_context.toolchain_config),
+                        .create_config(&toolchain.id, &self.app_context.toolchains_config),
                 })
                 .await?;
 
@@ -878,7 +878,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         edges.push(self.sync_workspace().await?);
 
-        if spec.req.is_some() || self.app_context.toolchain_config.requires_proto() {
+        if spec.req.is_some() || self.app_context.toolchains_config.requires_proto() {
             edges.push(self.setup_proto().await?);
         }
 

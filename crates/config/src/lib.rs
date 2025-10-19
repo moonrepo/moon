@@ -5,6 +5,7 @@ mod config_cache;
 mod config_finder;
 #[cfg(feature = "loader")]
 mod config_loader;
+mod extensions_config;
 mod inherited_tasks_config;
 #[cfg(feature = "loader")]
 mod inherited_tasks_manager;
@@ -21,13 +22,14 @@ mod template_config;
 mod templates;
 pub mod test_utils;
 mod toolchain;
-mod toolchain_config;
+mod toolchains_config;
 mod workspace;
 mod workspace_config;
 
 pub use config_finder::*;
 #[cfg(feature = "loader")]
 pub use config_loader::*;
+pub use extensions_config::*;
 pub use inherited_tasks_config::*;
 #[cfg(feature = "loader")]
 pub use inherited_tasks_manager::*;
@@ -43,7 +45,7 @@ pub use template_config::*;
 #[cfg(feature = "template")]
 pub use templates::*;
 pub use toolchain::*;
-pub use toolchain_config::*;
+pub use toolchains_config::*;
 pub use version_spec::{CalVer, SemVer, UnresolvedVersionSpec, VersionSpec};
 pub use workspace::*;
 pub use workspace_config::*;

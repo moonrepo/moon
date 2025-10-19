@@ -10,7 +10,7 @@ use moon_config::{
     InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig, ProjectInput,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
-    TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig, is_glob_like,
+    TaskOutputStyle, TaskPreset, TaskType, ToolchainsConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
@@ -72,7 +72,7 @@ fn extract_config<'builder, 'proj>(
 pub struct TasksBuilderContext<'proj> {
     pub enabled_toolchains: &'proj [Id],
     pub monorepo: bool,
-    pub toolchain_config: &'proj ToolchainConfig,
+    pub toolchains_config: &'proj ToolchainsConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
     pub workspace_root: &'proj Path,
 }
@@ -771,7 +771,7 @@ impl<'proj> TasksBuilder<'proj> {
                 |registry, toolchain| DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: registry
-                        .create_config(&toolchain.id, self.context.toolchain_config),
+                        .create_config(&toolchain.id, self.context.toolchains_config),
                 },
             )
             .await?;

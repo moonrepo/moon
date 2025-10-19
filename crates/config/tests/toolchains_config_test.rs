@@ -1,7 +1,7 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_config::{ConfigLoader, ToolchainConfig, ToolchainPluginConfig};
+use moon_config::{ConfigLoader, ToolchainPluginConfig, ToolchainsConfig};
 use proto_core::{
     Id, PluginLocator, ProtoConfig, ToolContext, UnresolvedVersionSpec, warpgate::FileLocator,
 };
@@ -12,10 +12,10 @@ use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::path::Path;
 use utils::*;
 
-const FILENAME: &str = ".moon/toolchain.yml";
+const FILENAME: &str = ".moon/toolchains.yml";
 
-fn load_config_from_file(path: &Path) -> ToolchainConfig {
-    BaseLoader::<ToolchainConfig>::new()
+fn load_config_from_file(path: &Path) -> ToolchainsConfig {
+    BaseLoader::<ToolchainsConfig>::new()
         .file(path)
         .unwrap()
         .load()
@@ -23,8 +23,8 @@ fn load_config_from_file(path: &Path) -> ToolchainConfig {
         .config
 }
 
-fn load_config_from_root(root: &Path, proto: &ProtoConfig) -> miette::Result<ToolchainConfig> {
-    ConfigLoader::default().load_toolchain_config(root, proto)
+fn load_config_from_root(root: &Path, proto: &ProtoConfig) -> miette::Result<ToolchainsConfig> {
+    ConfigLoader::default().load_toolchains_config(root, proto)
 }
 
 mod toolchain_config {
@@ -117,7 +117,7 @@ node: {}";
             let url = server.url("/config.yml");
 
             sandbox.create_file(
-                ".moon/toolchain.yml",
+                ".moon/toolchains.yml",
                 format!(
                     r"
 extends: '{url}'
@@ -151,7 +151,7 @@ deno: {{}}
             let temp_dir = sandbox.path().join(".moon/cache/temp");
             let url = server.url("/config.yml");
 
-            sandbox.create_file(".moon/toolchain.yml", format!(r"extends: '{url}'"));
+            sandbox.create_file(".moon/toolchains.yml", format!(r"extends: '{url}'"));
 
             assert!(!temp_dir.exists());
 
@@ -310,7 +310,7 @@ plugin:
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
                 let proto = proto_core::ProtoConfig::default();
-                ConfigLoader::default().load_toolchain_config(path, &proto)
+                ConfigLoader::default().load_toolchains_config(path, &proto)
             });
 
             assert_eq!(

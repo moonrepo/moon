@@ -36,7 +36,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                     starting_dir: toolchain.to_virtual_path(&project.root),
                     toolchain_config: registry.create_merged_config(
                         &toolchain.id,
-                        &session.toolchain_config,
+                        &session.toolchains_config,
                         &project.config,
                     ),
                 },
@@ -95,7 +95,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                             .collect(),
                         root: toolchain.to_virtual_path(&instance.deps_root),
                         toolchain_config: toolchain_registry
-                            .create_config(&toolchain.id, &app_context.toolchain_config),
+                            .create_config(&toolchain.id, &app_context.toolchains_config),
                     })
                     .await?;
             }
@@ -129,11 +129,11 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                         toolchain_config: match &in_project {
                             Some(project) => toolchain_registry.create_merged_config(
                                 &toolchain.id,
-                                &app_context.toolchain_config,
+                                &app_context.toolchains_config,
                                 &project.config,
                             ),
                             None => toolchain_registry
-                                .create_config(&toolchain.id, &app_context.toolchain_config),
+                                .create_config(&toolchain.id, &app_context.toolchains_config),
                         },
                     })
                     .await?;

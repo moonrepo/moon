@@ -127,7 +127,7 @@ pub async fn install_dependencies(
         root: toolchain.to_virtual_path(&deps_root),
         toolchain_config: app_context
             .toolchain_registry
-            .create_config(&toolchain.id, &app_context.toolchain_config),
+            .create_config(&toolchain.id, &app_context.toolchains_config),
         ..Default::default()
     };
 
@@ -138,7 +138,7 @@ pub async fn install_dependencies(
             input.project = Some(project.to_fragment());
             input.toolchain_config = app_context.toolchain_registry.create_merged_config(
                 &toolchain.id,
-                &app_context.toolchain_config,
+                &app_context.toolchains_config,
                 &project.config,
             );
 

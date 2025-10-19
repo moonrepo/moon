@@ -209,7 +209,7 @@ const sidebars: SidebarsConfig = {
 		},
 		{
 			type: 'category',
-			label: 'Migration',
+			label: 'Migrations',
 			items: ['migrate/2.0'],
 		},
 		'cheat-sheet',

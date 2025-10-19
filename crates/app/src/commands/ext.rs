@@ -1,4 +1,3 @@
-use crate::app_error::AppError;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
@@ -17,13 +16,6 @@ pub struct ExtArgs {
 
 #[instrument(skip_all)]
 pub async fn ext(session: MoonSession, args: ExtArgs) -> AppResult {
-    if !session.workspace_config.extensions.contains_key(&args.id) {
-        return Err(AppError::UnknownExtension {
-            id: args.id.to_string(),
-        }
-        .into());
-    }
-
     let extension_registry = session.get_extension_registry().await?;
 
     // Load the plugin

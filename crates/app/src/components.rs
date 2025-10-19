@@ -57,9 +57,9 @@ pub async fn create_workspace_graph_context(
 ) -> miette::Result<WorkspaceBuilderContext<'_>> {
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
-        enabled_toolchains: session.toolchain_config.get_enabled(),
+        enabled_toolchains: session.toolchains_config.get_enabled(),
         inherited_tasks: &session.tasks_config,
-        toolchain_config: &session.toolchain_config,
+        toolchains_config: &session.toolchains_config,
         toolchain_registry: session.get_toolchain_registry().await?,
         vcs: Some(session.get_vcs_adapter()?),
         working_dir: &session.working_dir,

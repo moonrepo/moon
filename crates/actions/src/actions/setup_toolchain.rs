@@ -93,7 +93,7 @@ pub async fn setup_toolchain_plugin(
                 context: app_context.toolchain_registry.create_context(),
                 toolchain_config: app_context
                     .toolchain_registry
-                    .create_config(&toolchain.id, &app_context.toolchain_config),
+                    .create_config(&toolchain.id, &app_context.toolchains_config),
                 version: None,
             },
             || {

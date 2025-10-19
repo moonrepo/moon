@@ -27,7 +27,7 @@ pub async fn setup(session: MoonSession) -> AppResult {
     let mut toolchain_count = 0;
 
     // Add new toolchain plugin setups
-    for toolchain_id in session.toolchain_config.plugins.keys() {
+    for toolchain_id in session.toolchains_config.plugins.keys() {
         if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
             action_graph_builder.setup_toolchain(&spec, None).await?;
             toolchain_count += 1;

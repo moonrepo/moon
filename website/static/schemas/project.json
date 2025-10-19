@@ -142,12 +142,12 @@
       },
       "markdownDescription": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline."
     },
-    "toolchain": {
-      "title": "toolchain",
+    "toolchains": {
+      "title": "toolchains",
       "description": "Overrides top-level toolchain settings, scoped to this project.",
       "allOf": [
         {
-          "$ref": "#/definitions/ProjectToolchainConfig"
+          "$ref": "#/definitions/ProjectToolchainsConfig"
         }
       ],
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
@@ -819,7 +819,22 @@
       },
       "additionalProperties": false
     },
-    "ProjectToolchainConfig": {
+    "ProjectToolchainEntry": {
+      "description": "Variants a project-level toolchain can be configured.",
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/definitions/ToolchainPluginConfig"
+        }
+      ],
+      "markdownDescription": "Variants a project-level toolchain can be configured."
+    },
+    "ProjectToolchainsConfig": {
       "description": "Overrides top-level toolchain settings, scoped to this project.",
       "type": "object",
       "properties": {
@@ -882,21 +897,6 @@
       },
       "additionalProperties": false,
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
-    },
-    "ProjectToolchainEntry": {
-      "description": "Variants a project-level toolchain can be configured.",
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "boolean"
-        },
-        {
-          "$ref": "#/definitions/ToolchainPluginConfig"
-        }
-      ],
-      "markdownDescription": "Variants a project-level toolchain can be configured."
     },
     "ProjectWorkspaceConfig": {
       "description": "Overrides workspace settings, scoped to this project.",

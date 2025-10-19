@@ -3,7 +3,6 @@
 /* eslint-disable */
 
 import type { ExtendsFrom, Id } from './common';
-import type { PluginLocator } from './toolchain-config';
 
 /** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-id';
@@ -76,7 +75,6 @@ export interface DockerScaffoldConfig {
 	 * the configuration skeleton.
 	 *
 	 * @default true
-	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean;
 	/**
@@ -102,21 +100,6 @@ export interface ExperimentsConfig {
 	 * @default true
 	 */
 	fasterGlobWalk?: boolean;
-	/**
-	 * Enable a faster and more accurate Git implementation.
-	 * Supports submodules, subtrees, and worktrees.
-	 *
-	 * @default true
-	 */
-	gitV2?: boolean;
-}
-
-/** Configures an individual extension. */
-export interface ExtensionPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config: Record<string, unknown>;
-	/** Location of the WASM plugin to use. */
-	plugin: PluginLocator | null;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -532,11 +515,6 @@ export interface WorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends: ExtendsFrom | null;
-	/**
-	 * Configures and enables extension plugins.
-	 * @since 1.20.0
-	 */
-	extensions: Record<Id, ExtensionPluginConfig>;
 	/** Configures the generator for scaffolding from templates. */
 	generator: GeneratorConfig;
 	/** Configures aspects of the content hashing engine. */
@@ -636,7 +614,6 @@ export interface PartialDockerScaffoldConfig {
 	 * the configuration skeleton.
 	 *
 	 * @default true
-	 * @deprecated
 	 */
 	copyToolchainFiles?: boolean | null;
 	/**
@@ -662,21 +639,6 @@ export interface PartialExperimentsConfig {
 	 * @default true
 	 */
 	fasterGlobWalk?: boolean | null;
-	/**
-	 * Enable a faster and more accurate Git implementation.
-	 * Supports submodules, subtrees, and worktrees.
-	 *
-	 * @default true
-	 */
-	gitV2?: boolean | null;
-}
-
-/** Configures an individual extension. */
-export interface PartialExtensionPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config?: Record<string, unknown> | null;
-	/** Location of the WASM plugin to use. */
-	plugin?: PluginLocator | null;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -1052,11 +1014,6 @@ export interface PartialWorkspaceConfig {
 	 * @since 1.12.0
 	 */
 	extends?: ExtendsFrom | null;
-	/**
-	 * Configures and enables extension plugins.
-	 * @since 1.20.0
-	 */
-	extensions?: Record<Id, PartialExtensionPluginConfig> | null;
 	/** Configures the generator for scaffolding from templates. */
 	generator?: PartialGeneratorConfig | null;
 	/** Configures aspects of the content hashing engine. */

@@ -48,15 +48,6 @@ pub enum AppError {
     #[error("Unable to determine your current working directory.")]
     MissingWorkingDir,
 
-    #[diagnostic(code(app::extensions::unknown_id))]
-    #[error(
-        "The extension {} does not exist. Configure the {} setting in {} and try again.",
-        .id.style(Style::Id),
-        "extensions".style(Style::Property),
-        ".moon/workspace.yml".style(Style::File),
-    )]
-    UnknownExtension { id: String },
-
     #[diagnostic(code(app::upgrade::requires_internet))]
     #[error("Upgrading moon requires an internet connection!")]
     UpgradeRequiresInternet,

@@ -132,11 +132,6 @@ config_struct!(
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 
-        /// Configures and enables extension plugins.
-        /// @since 1.20.0
-        #[setting(nested)]
-        pub extensions: FxHashMap<Id, ExtensionPluginConfig>,
-
         /// Configures the generator for scaffolding from templates.
         #[setting(nested)]
         pub generator: GeneratorConfig,
@@ -176,11 +171,3 @@ config_struct!(
         pub version_constraint: Option<VersionReq>,
     }
 );
-
-impl WorkspaceConfig {
-    pub fn inherit_default_plugins(&mut self) {
-        for (id, extension) in default_extensions() {
-            self.extensions.entry(id).or_insert(extension);
-        }
-    }
-}

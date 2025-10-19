@@ -7,8 +7,8 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 // Turn everything off by default
-pub fn get_default_toolchain() -> PartialToolchainConfig {
-    PartialToolchainConfig {
+pub fn get_default_toolchain() -> PartialToolchainsConfig {
+    PartialToolchainsConfig {
         plugins: Some(FxHashMap::from_iter([
             (
                 Id::raw("javascript"),
@@ -59,13 +59,13 @@ pub fn get_default_toolchain() -> PartialToolchainConfig {
                 },
             ),
         ])),
-        ..PartialToolchainConfig::default()
+        ..PartialToolchainsConfig::default()
     }
 }
 
 pub fn get_cases_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -137,7 +137,7 @@ pub fn get_cases_fixture_configs() -> (
 
 pub fn get_projects_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -175,7 +175,7 @@ pub fn get_projects_fixture_configs() -> (
 
 pub fn get_project_graph_aliases_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -209,7 +209,7 @@ pub fn get_project_graph_aliases_fixture_configs() -> (
 
 pub fn get_tasks_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -336,7 +336,7 @@ pub fn get_tasks_fixture_configs() -> (
 
 pub fn get_bun_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -403,7 +403,7 @@ pub fn get_bun_fixture_configs() -> (
 
 pub fn get_deno_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -465,7 +465,7 @@ pub fn get_deno_fixture_configs() -> (
 
 pub fn get_node_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -526,7 +526,7 @@ pub fn get_node_fixture_configs() -> (
 
 pub fn get_python_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
@@ -580,7 +580,7 @@ pub fn get_node_depman_fixture_configs(
     depman: &str,
 ) -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
@@ -672,7 +672,7 @@ pub fn get_node_depman_fixture_configs(
 
 pub fn get_typescript_fixture_configs() -> (
     PartialWorkspaceConfig,
-    PartialToolchainConfig,
+    PartialToolchainsConfig,
     PartialInheritedTasksConfig,
 ) {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();

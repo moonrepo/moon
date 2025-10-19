@@ -1,6 +1,9 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
 use moon_common::{Id, color};
-use moon_config::{ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig, WorkspaceConfig};
+use moon_config::{
+    ExtensionsConfig, ProjectToolchainEntry, ToolchainPluginConfig, ToolchainsConfig,
+    WorkspaceConfig,
+};
 use moon_env::MoonEnvironment;
 use moon_target::Target;
 use moon_workspace_graph::WorkspaceGraph;
@@ -15,7 +18,8 @@ use warpgate::host::{HostData, create_host_functions as create_shared_host_funct
 pub struct MoonHostData {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
-    pub toolchain_config: Arc<ToolchainConfig>,
+    pub extensions_config: Arc<ExtensionsConfig>,
+    pub toolchains_config: Arc<ToolchainsConfig>,
     pub workspace_config: Arc<WorkspaceConfig>,
     pub workspace_graph: Arc<OnceLock<Arc<WorkspaceGraph>>>,
 }
@@ -25,7 +29,8 @@ impl fmt::Debug for MoonHostData {
         f.debug_struct("MoonHostData")
             .field("moon_env", &self.moon_env)
             .field("proto_env", &self.proto_env)
-            .field("toolchain_config", &self.toolchain_config)
+            .field("extensions_config", &self.extensions_config)
+            .field("toolchains_config", &self.toolchains_config)
             .field("workspace_config", &self.workspace_config)
             .finish()
     }
@@ -304,7 +309,7 @@ fn load_toolchain_config_by_id(
         }
         None => {
             let config = data
-                .toolchain_config
+                .toolchains_config
                 .get_plugin_config(&toolchain_id)
                 .ok_or_else(|| {
                     Error::msg(format!(

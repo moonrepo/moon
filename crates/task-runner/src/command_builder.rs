@@ -109,7 +109,7 @@ impl<'task> CommandBuilder<'task> {
                             task: task.to_fragment(),
                             toolchain_config: registry.create_merged_config(
                                 &toolchain.id,
-                                &self.app.toolchain_config,
+                                &self.app.toolchains_config,
                                 &project.config,
                             ),
                             ..Default::default()
@@ -138,7 +138,7 @@ impl<'task> CommandBuilder<'task> {
                             task: task.to_fragment(),
                             toolchain_config: registry.create_merged_config(
                                 &toolchain.id,
-                                &self.app.toolchain_config,
+                                &self.app.toolchains_config,
                                 &project.config,
                             ),
                             ..Default::default()

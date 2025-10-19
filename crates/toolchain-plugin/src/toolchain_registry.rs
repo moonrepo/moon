@@ -2,7 +2,7 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use futures::{StreamExt, stream::FuturesOrdered};
 use miette::IntoDiagnostic;
 use moon_common::Id;
-use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
+use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainPluginConfig, ToolchainsConfig};
 use moon_pdk_api::Operation;
 use moon_plugin::{MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config};
 use proto_core::{ToolContext, inject_proto_manifest_config};
@@ -16,7 +16,7 @@ use tracing::{debug, trace};
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {
-    pub config: Arc<ToolchainConfig>,
+    pub config: Arc<ToolchainsConfig>,
     pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
@@ -35,7 +35,7 @@ impl Default for ToolchainRegistry {
 }
 
 impl ToolchainRegistry {
-    pub fn new(host_data: MoonHostData, config: Arc<ToolchainConfig>) -> Self {
+    pub fn new(host_data: MoonHostData, config: Arc<ToolchainsConfig>) -> Self {
         Self {
             config,
             plugins: FxHashMap::default(),
@@ -49,8 +49,8 @@ impl ToolchainRegistry {
         }
     }
 
-    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> JsonValue {
-        if let Some(config) = toolchain_config.get_plugin_config(id) {
+    pub fn create_config(&self, id: &str, toolchains_config: &ToolchainsConfig) -> JsonValue {
+        if let Some(config) = toolchains_config.get_plugin_config(id) {
             return config.to_json();
         }
 
@@ -60,10 +60,10 @@ impl ToolchainRegistry {
     pub fn create_merged_config(
         &self,
         id: &str,
-        toolchain_config: &ToolchainConfig,
+        toolchains_config: &ToolchainsConfig,
         project_config: &ProjectConfig,
     ) -> JsonValue {
-        let mut data = self.create_config(id, toolchain_config);
+        let mut data = self.create_config(id, toolchains_config);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
             project_config.toolchains.get_plugin_config(id)

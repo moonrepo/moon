@@ -1,6 +1,6 @@
 use crate::patterns::merge_plugin_partials;
 use crate::shapes::OneOrMany;
-use crate::toolchain_config::ToolchainPluginConfig;
+use crate::toolchains_config::ToolchainPluginConfig;
 use crate::{config_enum, config_struct};
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;

@@ -1,7 +1,9 @@
 use crate::config_struct;
+use crate::patterns::{merge_iter, merge_plugin_partials};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::Config;
+use schematic::{Config, validate};
+use serde_json::Value;
 use warpgate_api::{PluginLocator, UrlLocator};
 
 config_struct!(
@@ -14,7 +16,7 @@ config_struct!(
         pub plugin: Option<PluginLocator>,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
-        #[setting(flatten)]
+        #[setting(flatten, merge = merge_iter)]
         pub config: FxHashMap<String, serde_json::Value>,
     }
 );
@@ -23,9 +25,45 @@ impl ExtensionPluginConfig {
     pub fn get_plugin_locator(&self) -> &PluginLocator {
         self.plugin.as_ref().unwrap()
     }
+
+    pub fn to_json(&self) -> Value {
+        Value::Object(self.config.clone().into_iter().collect())
+    }
 }
 
-pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionPluginConfig> {
+config_struct!(
+    /// Configures all extensions.
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    pub struct ExtensionsConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/extensions.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
+
+        /// Extends one or many extensions configuration files.
+        /// Supports a relative file path or a secure URL.
+        /// @since 2.0.0
+        #[setting(extend, validate = validate::extends_from)]
+        pub extends: Option<schematic::ExtendsFrom>,
+
+        /// Configures and integrates extensions into the system using
+        /// a unique identifier.
+        #[setting(flatten, nested, merge = merge_plugin_partials)]
+        pub plugins: FxHashMap<Id, ExtensionPluginConfig>,
+    }
+);
+
+impl ExtensionsConfig {
+    pub fn inherit_default_plugins(&mut self) {
+        for (id, extension) in default_extensions() {
+            self.plugins.entry(id).or_insert(extension);
+        }
+    }
+}
+
+fn default_extensions() -> FxHashMap<Id, ExtensionPluginConfig> {
     FxHashMap::from_iter([
         (
             Id::raw("download"),

@@ -12,7 +12,7 @@ use moon_common::{
 };
 use moon_config::{
     ConfigLoader, DependencyScope, InheritedTasksManager, ProjectDependencyConfig,
-    TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
+    TaskDependencyType, ToolchainsConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
 };
 use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
@@ -40,7 +40,7 @@ pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
     pub inherited_tasks: &'app InheritedTasksManager,
-    pub toolchain_config: &'app ToolchainConfig,
+    pub toolchains_config: &'app ToolchainsConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
     pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
@@ -399,7 +399,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 enabled_toolchains: &context.enabled_toolchains,
                 monorepo: self.repo_type.is_monorepo(),
                 root_project_id: self.root_project_id.as_ref(),
-                toolchain_config: context.toolchain_config,
+                toolchains_config: context.toolchains_config,
                 toolchain_registry: context.toolchain_registry.clone(),
                 workspace_root: context.workspace_root,
             },
@@ -825,7 +825,7 @@ impl<'app> WorkspaceBuilder<'app> {
                     .iter()
                     .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
                     .collect(),
-                toolchain_config: registry.create_config(&toolchain.id, context.toolchain_config),
+                toolchain_config: registry.create_config(&toolchain.id, context.toolchains_config),
             })
             .await?
         {

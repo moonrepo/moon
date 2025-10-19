@@ -5,7 +5,7 @@ expression: "fs::read_to_string(config).unwrap()"
 # https://moonrepo.dev/docs/config/toolchain
 $schema: './cache/schemas/toolchain.json'
 
-# extends: './shared/toolchain.yml'
+# extends: './shared/toolchains.yml'
 
 node:
   version: '20.0.0'

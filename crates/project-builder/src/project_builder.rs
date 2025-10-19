@@ -1,7 +1,7 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
     ConfigLoader, DependencySource, InheritedTasksManager, InheritedTasksResult, LanguageType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
+    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainsConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -20,7 +20,7 @@ pub struct ProjectBuilderContext<'app> {
     pub enabled_toolchains: &'app [Id],
     pub monorepo: bool,
     pub root_project_id: Option<&'app Id>,
-    pub toolchain_config: &'app ToolchainConfig,
+    pub toolchains_config: &'app ToolchainsConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
     pub workspace_root: &'app Path,
 }
@@ -161,7 +161,7 @@ impl<'app> ProjectBuilder<'app> {
                     DefineRequirementsInput {
                         context: registry.create_context(),
                         toolchain_config: registry
-                            .create_config(&toolchain.id, self.context.toolchain_config),
+                            .create_config(&toolchain.id, self.context.toolchains_config),
                     }
                 })
                 .await?,
@@ -376,7 +376,7 @@ impl<'app> ProjectBuilder<'app> {
             TasksBuilderContext {
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,
-                toolchain_config: self.context.toolchain_config,
+                toolchains_config: self.context.toolchains_config,
                 toolchain_registry: self.context.toolchain_registry.clone(),
                 workspace_root: self.context.workspace_root,
             },

@@ -3,6 +3,6 @@ source: crates/cli/tests/run_test.rs
 expression: "vec![hash_vcs, hash_glob]"
 ---
 [
-    "9177ef5eedceef54cb51c351bb9a3236938fa6ba0a00cd1d8d97fa5e055058c7",
-    "97361c6b61bbb071d4c14367d47ea74e9babf8d957950e85f9f813f105a04165",
+    "44cdc5824eabe7059174537a6139274e8139fb20fa2a16b852571db7d665d21b",
+    "28f6510d88fdcf406303fb2ad2e8134f09e15d5752c4eb366cae5bfad3d923dc",
 ]

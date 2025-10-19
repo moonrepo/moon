@@ -2,17 +2,17 @@ use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
 use moon_api::Launchpad;
 use moon_common::is_ci;
-use moon_config::ToolchainConfig;
+use moon_config::ToolchainsConfig;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
 pub struct TelemetrySubscriber {
-    toolchain_config: Arc<ToolchainConfig>,
+    toolchains_config: Arc<ToolchainsConfig>,
 }
 
 impl TelemetrySubscriber {
-    pub fn new(toolchain_config: Arc<ToolchainConfig>) -> Self {
-        Self { toolchain_config }
+    pub fn new(toolchains_config: Arc<ToolchainsConfig>) -> Self {
+        Self { toolchains_config }
     }
 }
 
@@ -27,7 +27,7 @@ impl Subscriber for TelemetrySubscriber {
         if matches!(event, Event::PipelineStarted { .. }) {
             let mut toolchains = BTreeMap::default();
 
-            for (id, plugin) in &self.toolchain_config.plugins {
+            for (id, plugin) in &self.toolchains_config.plugins {
                 if let Some(locator) = &plugin.plugin {
                     toolchains.insert(id.to_string(), locator.to_string());
                 }

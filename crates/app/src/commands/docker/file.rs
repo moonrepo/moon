@@ -228,7 +228,7 @@ async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Res
                 context: toolchain_registry.create_context(),
                 toolchain_config: toolchain_registry.create_merged_config(
                     toolchain_id,
-                    &session.toolchain_config,
+                    &session.toolchains_config,
                     &project.config,
                 ),
             })

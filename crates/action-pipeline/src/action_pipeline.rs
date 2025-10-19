@@ -469,7 +469,7 @@ impl ActionPipeline {
 
             self.emitter
                 .subscribe(TelemetrySubscriber::new(Arc::clone(
-                    &self.app_context.toolchain_config,
+                    &self.app_context.toolchains_config,
                 )))
                 .await;
         }

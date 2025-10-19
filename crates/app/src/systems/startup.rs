@@ -1,7 +1,9 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_common::consts::*;
-use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{
+    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
+};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::{FeatureFlags, Flag};
@@ -123,27 +125,46 @@ pub async fn load_workspace_config(
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
 #[instrument(skip(config_loader, proto_env))]
-pub async fn load_toolchain_config(
+pub async fn load_toolchains_config(
     config_loader: ConfigLoader,
     proto_env: Arc<ProtoEnvironment>,
     workspace_root: &Path,
     working_dir: &Path,
-) -> miette::Result<Arc<ToolchainConfig>> {
+) -> miette::Result<Arc<ToolchainsConfig>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(config_loader.get_debug_label("toolchain", true))
+        color::file(config_loader.get_debug_label("toolchains", true))
     );
 
     let root = workspace_root.to_owned();
     let cwd = working_dir.to_owned();
     let config = load_config_blocking(move || {
         config_loader
-            .load_toolchain_config(root, proto_env.load_file_manager()?.get_local_config(&cwd)?)
+            .load_toolchains_config(root, proto_env.load_file_manager()?.get_local_config(&cwd)?)
     })
     .await
     .into_diagnostic()??;
 
     GlobalEnvBag::instance().set("PROTO_CLI_VERSION", config.proto.version.to_string());
+
+    Ok(Arc::new(config))
+}
+
+/// Load the extensions configuration file from the `.moon` directory if it exists.
+#[instrument(skip(config_loader))]
+pub async fn load_extensions_config(
+    config_loader: ConfigLoader,
+    workspace_root: &Path,
+) -> miette::Result<Arc<ExtensionsConfig>> {
+    debug!(
+        "Attempting to load {} (optional)",
+        color::file(config_loader.get_debug_label("extensions", true))
+    );
+
+    let root = workspace_root.to_owned();
+    let config = load_config_blocking(move || config_loader.load_extensions_config(root))
+        .await
+        .into_diagnostic()??;
 
     Ok(Arc::new(config))
 }

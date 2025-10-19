@@ -34,7 +34,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
 
     let remote_version = match Launchpad::instance()
         .unwrap()
-        .check_version_without_cache(&session.toolchain_config.moon.manifest_url)
+        .check_version_without_cache(&session.toolchains_config.moon.manifest_url)
         .await
     {
         Ok(Some(result)) if result.update_available => result.remote_version,
@@ -114,7 +114,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         file.set_permissions(perms).into_diagnostic()?;
     }
 
-    let download_url = &session.toolchain_config.moon.download_url;
+    let download_url = &session.toolchains_config.moon.download_url;
 
     debug!(
         download_url = &download_url,

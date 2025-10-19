@@ -17,6 +17,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "proto"] }
 moon_console = { path = "../console" }
 moon_env = { path = "../env" }
+moon_extension_plugin = { path = "../extension-plugin" }
 moon_plugin = { path = "../plugin" }
 moon_project_builder = { path = "../project-builder" }
 moon_project_graph = { path = "../project-graph" }

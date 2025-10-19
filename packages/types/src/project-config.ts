@@ -4,7 +4,7 @@
 
 import type { Id } from './common';
 import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
-import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchain-config';
+import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchains-config';
 
 /** The relationship scope of a dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -163,7 +163,7 @@ export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
-export interface ProjectToolchainConfig {
+export interface ProjectToolchainsConfig {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
@@ -276,7 +276,7 @@ export interface ProjectConfig {
 	 */
 	tasks: Record<Id, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
-	toolchain: ProjectToolchainConfig;
+	toolchains: ProjectToolchainsConfig;
 	/** Overrides top-level workspace settings, scoped to this project. */
 	workspace: ProjectWorkspaceConfig;
 }
@@ -394,7 +394,7 @@ export interface PartialProjectMetadataConfig {
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
-export interface PartialProjectToolchainConfig {
+export interface PartialProjectToolchainsConfig {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
@@ -504,7 +504,7 @@ export interface PartialProjectConfig {
 	 */
 	tasks?: Record<Id, PartialTaskConfig> | null;
 	/** Overrides top-level toolchain settings, scoped to this project. */
-	toolchain?: PartialProjectToolchainConfig | null;
+	toolchains?: PartialProjectToolchainsConfig | null;
 	/** Overrides top-level workspace settings, scoped to this project. */
 	workspace?: PartialProjectWorkspaceConfig | null;
 }

@@ -64,7 +64,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/toolchain
     #[derive(Config)]
     #[config(allow_unknown_fields)]
-    pub struct ToolchainConfig {
+    pub struct ToolchainsConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/toolchain.json",
             rename = "$schema"
@@ -92,7 +92,7 @@ config_struct!(
     }
 );
 
-impl ToolchainConfig {
+impl ToolchainsConfig {
     pub fn get_enabled(&self) -> Vec<Id> {
         let mut tools = self.plugins.keys().cloned().collect::<Vec<_>>();
         tools.push(Id::raw("system"));
@@ -113,7 +113,7 @@ impl ToolchainConfig {
 }
 
 #[cfg(feature = "proto")]
-impl ToolchainConfig {
+impl ToolchainsConfig {
     pub fn requires_proto(&self) -> bool {
         for config in self.plugins.values() {
             if config.version.is_some() {
@@ -264,7 +264,7 @@ impl ToolchainConfig {
                 }
                 other => {
                     return Err(ConfigError::Validator {
-                        location: ".moon/toolchain.yml".into(),
+                        location: ".moon/toolchains.yml".into(),
                         error: Box::new(ValidatorError {
                             errors: vec![ValidateError {
                                 message:

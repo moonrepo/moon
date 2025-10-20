@@ -31,7 +31,6 @@ mod sync_workspace {
             ActionContext::default().into(),
             ws.mock_app_context().into(),
             ws.mock_workspace_graph().await.into(),
-            ws.mock_toolchain_registry().into(),
         )
         .await
         .unwrap();
@@ -52,7 +51,6 @@ mod sync_workspace {
             ActionContext::default().into(),
             ws.mock_app_context().into(),
             ws.mock_workspace_graph().await.into(),
-            ws.mock_toolchain_registry().into(),
         )
         .await
         .unwrap();
@@ -116,7 +114,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -144,7 +141,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -170,7 +166,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -200,7 +195,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -231,7 +225,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -261,7 +254,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -293,7 +285,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -322,7 +313,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();

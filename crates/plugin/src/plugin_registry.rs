@@ -63,7 +63,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
         debug!(
-            plugin = self.type_of.get_label(),
+            plugin_type = self.type_of.get_label(),
             id = id.as_str(),
             path = ?wasm_file,
             "Creating plugin manifest from WASM file",
@@ -144,7 +144,7 @@ impl<T: Plugin> PluginRegistry<T> {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
                 debug!(
-                    plugin = self.type_of.get_label(),
+                    plugin_type = self.type_of.get_label(),
                     id = entry.key().as_str(),
                     "Attempting to load and register plugin",
                 );
@@ -169,7 +169,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 op(&mut manifest)?;
 
                 debug!(
-                    plugin = self.type_of.get_label(),
+                    plugin_type = self.type_of.get_label(),
                     id = entry.key().as_str(),
                     "Updated plugin manifest, attempting to register plugin",
                 );
@@ -194,7 +194,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 .await?;
 
                 debug!(
-                    plugin = self.type_of.get_label(),
+                    plugin_type = self.type_of.get_label(),
                     id = orig_id,
                     "Registered plugin",
                 );
@@ -228,7 +228,7 @@ impl<T: Plugin> PluginRegistry<T> {
         }
 
         debug!(
-            plugin = self.type_of.get_label(),
+            plugin_type = self.type_of.get_label(),
             id = id.as_str(),
             "Registered plugin",
         );

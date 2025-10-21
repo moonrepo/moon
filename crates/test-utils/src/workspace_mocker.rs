@@ -158,6 +158,26 @@ impl WorkspaceMocker {
         })
     }
 
+    pub fn with_test_extensions(self) -> Self {
+        self.update_extensions_config(|config| {
+            for id in ["ext-sync"] {
+                let file_name = id.replace("-", "_");
+
+                config.plugins.insert(
+                    Id::raw(id),
+                    ExtensionPluginConfig {
+                        plugin: Some(
+                            find_debug_locator(&file_name).expect(
+                                "Development plugins missing, build with `just build-wasm`!",
+                            ),
+                        ),
+                        ..Default::default()
+                    },
+                );
+            }
+        })
+    }
+
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchains_config(|config| {
             for id in [

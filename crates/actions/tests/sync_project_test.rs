@@ -8,9 +8,7 @@ use starbase_sandbox::{Sandbox, create_sandbox};
 
 fn create_workspace() -> (Sandbox, WorkspaceMocker) {
     let sandbox = create_sandbox("projects");
-    let mocker = WorkspaceMocker::new(sandbox.path())
-        .with_default_projects()
-        .with_test_toolchains();
+    let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
 
     (sandbox, mocker)
 }
@@ -152,13 +150,79 @@ mod sync_project {
         assert_eq!(status, ActionStatus::Skipped);
     }
 
+    mod extensions {
+        use super::*;
+
+        #[serial_test::serial]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_all_always() {
+            let (sandbox, mut ws) = create_workspace();
+            ws = ws.with_test_extensions();
+
+            let mut action = Action::default();
+
+            let status = sync_project(
+                &mut action,
+                ActionContext::default().into(),
+                ws.mock_app_context().into(),
+                ws.mock_workspace_graph().await.into(),
+                &SyncProjectNode {
+                    project_id: Id::raw("b"),
+                },
+            )
+            .await
+            .unwrap();
+
+            // Is invalid in CI because files changed
+            assert_eq!(
+                status,
+                if is_ci() {
+                    ActionStatus::Invalid
+                } else {
+                    ActionStatus::Passed
+                }
+            );
+
+            // All toolchains inherit from tc-tier1
+            assert_eq!(
+                action
+                    .operations
+                    .iter()
+                    .filter_map(|op| op.plugin.as_ref().map(|id| id.as_str()))
+                    .collect::<Vec<_>>(),
+                ["ext-sync"]
+            );
+
+            // Verify operation and changed files
+            let op = action
+                .operations
+                .iter()
+                .find(|op| op.plugin.as_ref().is_some_and(|id| id == "ext-sync"))
+                .unwrap();
+
+            assert!(
+                op.get_file_state()
+                    .unwrap()
+                    .changed_files
+                    .contains(&sandbox.path().join("file-ext.txt"))
+            );
+
+            let nested_op = op.operations.first().unwrap();
+
+            assert_eq!(nested_op.status, ActionStatus::Passed);
+            assert_eq!(nested_op.id.as_ref().unwrap(), "sync-project-test");
+        }
+    }
+
     mod toolchains {
         use super::*;
 
         #[serial_test::serial]
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_run_if_not_configured() {
-            let (_sandbox, ws) = create_workspace();
+            let (_sandbox, mut ws) = create_workspace();
+            ws = ws.with_test_toolchains();
+
             let mut action = Action::default();
 
             let status = sync_project(
@@ -186,7 +250,9 @@ mod sync_project {
         #[serial_test::serial]
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_run_if_disabled_by_override() {
-            let (_sandbox, ws) = create_workspace();
+            let (_sandbox, mut ws) = create_workspace();
+            ws = ws.with_test_toolchains();
+
             let mut action = Action::default();
 
             let status = sync_project(
@@ -214,7 +280,9 @@ mod sync_project {
         #[serial_test::serial]
         #[tokio::test(flavor = "multi_thread")]
         async fn runs_when_enabled() {
-            let (sandbox, ws) = create_workspace();
+            let (sandbox, mut ws) = create_workspace();
+            ws = ws.with_test_toolchains();
+
             let mut action = Action::default();
 
             let status = sync_project(

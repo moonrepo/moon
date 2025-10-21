@@ -1,6 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::actions::sync_workspace;
+use moon_common::is_ci;
 use moon_env_var::GlobalEnvBag;
 use moon_test_utils2::WorkspaceMocker;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -12,6 +13,15 @@ fn create_workspace() -> (Sandbox, WorkspaceMocker) {
         .with_test_toolchains();
 
     (sandbox, mocker)
+}
+
+// Is invalid in CI because files changed
+fn get_status() -> ActionStatus {
+    if is_ci() {
+        ActionStatus::Invalid
+    } else {
+        ActionStatus::Passed
+    }
 }
 
 mod sync_workspace {
@@ -55,7 +65,7 @@ mod sync_workspace {
         .await
         .unwrap();
 
-        assert_eq!(status, ActionStatus::Passed);
+        assert_eq!(status, get_status());
 
         // All toolchains inherit from tc-tier1
         let mut ids = action
@@ -120,7 +130,7 @@ mod sync_workspace {
 
             assert!(schemas_dir.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
     }
 
@@ -147,7 +157,7 @@ mod sync_workspace {
 
             assert!(!code_file.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
 
         #[serial_test::serial]
@@ -172,7 +182,7 @@ mod sync_workspace {
 
             assert!(code_file.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
     }
 
@@ -201,7 +211,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
 
         #[serial_test::serial]
@@ -231,7 +241,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
 
         #[serial_test::serial]
@@ -260,7 +270,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
 
         #[serial_test::serial]
@@ -291,7 +301,7 @@ mod sync_workspace {
 
             assert!(hooks_dir.exists());
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
         }
 
         #[serial_test::serial]
@@ -317,7 +327,7 @@ mod sync_workspace {
             .await
             .unwrap();
 
-            assert_eq!(status, ActionStatus::Passed);
+            assert_eq!(status, get_status());
             assert!(
                 action
                     .operations

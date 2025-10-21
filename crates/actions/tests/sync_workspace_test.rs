@@ -179,7 +179,7 @@ mod sync_workspace {
 
             assert!(schemas_dir.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
     }
 
@@ -206,7 +206,7 @@ mod sync_workspace {
 
             assert!(!code_file.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
 
         #[serial_test::serial]
@@ -231,7 +231,7 @@ mod sync_workspace {
 
             assert!(code_file.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
     }
 
@@ -260,7 +260,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
 
         #[serial_test::serial]
@@ -290,7 +290,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
 
         #[serial_test::serial]
@@ -319,7 +319,7 @@ mod sync_workspace {
 
             assert!(!hooks_dir.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
 
         #[serial_test::serial]
@@ -350,7 +350,7 @@ mod sync_workspace {
 
             assert!(hooks_dir.exists());
 
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
         }
 
         #[serial_test::serial]
@@ -376,10 +376,7 @@ mod sync_workspace {
             .await
             .unwrap();
 
-            dbg!(&status, &action);
-            sandbox.debug_files();
-
-            assert_eq!(status, get_status());
+            assert_eq!(status, ActionStatus::Passed);
             assert!(
                 action
                     .operations

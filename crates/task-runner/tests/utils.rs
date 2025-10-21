@@ -37,10 +37,17 @@ pub struct TaskRunnerContainer {
 impl TaskRunnerContainer {
     pub async fn new_for_project(fixture: &str, project_id: &str, task_id: &str) -> Self {
         let sandbox = create_sandbox(fixture);
-        let mocker = WorkspaceMocker::new(sandbox.path())
+        let mut mocker = WorkspaceMocker::new(sandbox.path())
             .load_default_configs()
-            .with_global_envs()
-            .with_test_toolchains();
+            .with_global_envs();
+
+        if fixture.contains("toolchain") {
+            mocker = mocker.with_test_toolchains();
+        }
+
+        if fixture.contains("extension") {
+            mocker = mocker.with_test_extensions();
+        }
 
         let app_context = mocker.mock_app_context();
         let workspace_graph = mocker.mock_workspace_graph().await;

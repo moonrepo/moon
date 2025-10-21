@@ -160,7 +160,7 @@ impl WorkspaceMocker {
 
     pub fn with_test_extensions(self) -> Self {
         self.update_extensions_config(|config| {
-            for id in ["ext-sync"] {
+            for id in ["ext-sync", "ext-task"] {
                 let file_name = id.replace("-", "_");
 
                 config.plugins.insert(

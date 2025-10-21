@@ -383,6 +383,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ext_task"
+version = "0.0.1"
+dependencies = [
+ "extism-pdk",
+ "moon_common",
+ "moon_config",
+ "moon_pdk",
+ "moon_pdk_api",
+ "moon_target",
+]
+
+[[package]]
 name = "extism-convert"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

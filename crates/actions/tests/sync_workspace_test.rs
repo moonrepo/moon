@@ -376,6 +376,9 @@ mod sync_workspace {
             .await
             .unwrap();
 
+            dbg!(&status, &action);
+            sandbox.debug_files();
+
             assert_eq!(status, get_status());
             assert!(
                 action

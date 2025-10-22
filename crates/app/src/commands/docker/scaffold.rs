@@ -71,7 +71,7 @@ async fn scaffold_configs_root(session: &MoonSession, docker_configs_root: &Path
                 output_dir: toolchain.to_virtual_path(docker_configs_root),
                 phase: ScaffoldDockerPhase::Configs,
                 project: None,
-                toolchain_config: registry.create_config(&toolchain.id, &session.toolchain_config),
+                toolchain_config: registry.create_config(&toolchain.id),
             },
         )
         .await?;
@@ -105,7 +105,7 @@ async fn scaffold_configs_project(
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Configs,
-                project: project.to_fragment(),
+                project: Some(project.to_fragment()),
                 toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
@@ -245,7 +245,7 @@ async fn scaffold_sources_project(
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Sources,
-                project: project.to_fragment(),
+                project: Some(project.to_fragment()),
                 toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
             })
             .await?;

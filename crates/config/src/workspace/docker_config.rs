@@ -22,12 +22,6 @@ config_struct!(
     /// Configures aspects of the Docker scaffolding process.
     #[derive(Config)]
     pub struct DockerScaffoldConfig {
-        /// Copy toolchain specific configs/manifests/files into
-        /// the configuration skeleton.
-        #[setting(default = true)]
-        #[deprecated] // TODO
-        pub copy_toolchain_files: bool,
-
         /// List of glob patterns, relative from the workspace root,
         /// to include (or exclude) in the "configs" skeleton.
         pub include: Vec<GlobPath>,

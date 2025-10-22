@@ -47,7 +47,13 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
 
     // Ensure the project exists
     let project = workspace_graph.get_project(&args.id)?;
-    let tasks = workspace_graph.get_tasks_from_project(&project.id)?;
+
+    let mut task_ids = project
+        .task_targets
+        .iter()
+        .map(|task| &task.task_id)
+        .collect::<Vec<_>>();
+    task_ids.sort();
 
     // Build the options
     let mut options = GenerateDockerfileOptions {
@@ -91,16 +97,13 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     } else if args.defaults {
         project.config.docker.file.build_task.as_ref()
     } else {
-        let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
-        ids.sort();
-
         let default_index = project
             .config
             .docker
             .file
             .build_task
             .as_ref()
-            .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
+            .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
         let mut index = default_index.unwrap_or(0);
 
         console
@@ -108,7 +111,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
                 Select(
                     label: "Build task?",
                     options: {
-                        let mut options = ids.iter().map(SelectOption::new).collect::<Vec<_>>();
+                        let mut options = task_ids.iter().map(SelectOption::new).collect::<Vec<_>>();
                         options.push(SelectOption::new("(none)"));
                         options
                     },
@@ -118,10 +121,10 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
             })
             .await?;
 
-        if index == ids.len() {
+        if index == task_ids.len() {
             None
         } else {
-            Some(ids[index])
+            Some(task_ids[index])
         }
     };
 
@@ -143,16 +146,13 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     } else if args.defaults {
         project.config.docker.file.start_task.as_ref()
     } else {
-        let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
-        ids.sort();
-
         let default_index = project
             .config
             .docker
             .file
             .start_task
             .as_ref()
-            .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
+            .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
         let mut index = default_index.unwrap_or(0);
 
         console
@@ -160,7 +160,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
                 Select(
                     label: "Start task?",
                     options: {
-                        let mut options = ids.iter().map(SelectOption::new).collect::<Vec<_>>();
+                        let mut options = task_ids.iter().map(SelectOption::new).collect::<Vec<_>>();
                         options.push(SelectOption::new("(none)"));
                         options
                     },
@@ -170,10 +170,10 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
             })
             .await?;
 
-        if index == ids.len() {
+        if index == task_ids.len() {
             None
         } else {
-            Some(ids[index])
+            Some(task_ids[index])
         }
     };
 
@@ -197,7 +197,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
 
     debug!(
         dockerfile = ?out_file,
-        project = options.project.as_str(),
+        project_id = options.project.as_str(),
         "Generating Dockerfile in project",
     );
 
@@ -215,35 +215,23 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
 }
 
 async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Result<String> {
-    let Some(toolchain_id) = project.toolchains.first() else {
-        return Ok("scratch".into());
-    };
-
     let toolchain_registry = session.get_toolchain_registry().await?;
-    let toolchain = toolchain_registry.load(&toolchain_id).await?;
 
-    if toolchain.has_func("define_docker_metadata").await {
-        let metadata = toolchain
-            .define_docker_metadata(DefineDockerMetadataInput {
-                context: toolchain_registry.create_context(),
-                toolchain_config: toolchain_registry
-                    .create_merged_config(toolchain_id, &project.config),
-            })
-            .await?;
+    for toolchain in toolchain_registry.load_many(&project.toolchains).await? {
+        if toolchain.has_func("define_docker_metadata").await {
+            let metadata = toolchain
+                .define_docker_metadata(DefineDockerMetadataInput {
+                    context: toolchain_registry.create_context(),
+                    toolchain_config: toolchain_registry
+                        .create_merged_config(&toolchain.id, &project.config),
+                })
+                .await?;
 
-        if let Some(image) = metadata.default_image {
-            return Ok(image);
+            if let Some(image) = metadata.default_image {
+                return Ok(image);
+            }
         }
     }
 
-    let image = match toolchain_id.as_str() {
-        "bun" => "oven/bun:latest",
-        "deno" => "denoland/deno:latest",
-        "node" => "node:latest",
-        "python" => "python:latest",
-        "rust" => "rust:latest",
-        _ => "scratch",
-    };
-
-    Ok(image.into())
+    Ok("scratch".into())
 }

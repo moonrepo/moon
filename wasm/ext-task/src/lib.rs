@@ -45,6 +45,14 @@ pub fn extend_task_command(
         "path" => {
             output.paths.push("/extended/path".into());
         }
+        "test-ext-and-tc" => {
+            if input.args.iter().any(|arg| arg == "from-tc") {
+                output.args = Some(Extend::Prepend(vec!["from-ext".into()]));
+            }
+
+            output.env.insert("FROM_TC".into(), "overwritten".into());
+            output.env.insert("FROM_EXT".into(), "original".into());
+        }
         _ => {}
     };
 

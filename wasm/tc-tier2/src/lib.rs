@@ -93,6 +93,10 @@ pub fn extend_task_command(
         "path" => {
             output.paths.push("/extended/path".into());
         }
+        "test-ext-and-tc" => {
+            output.args = Some(Extend::Append(vec!["from-tc".into()]));
+            output.env.insert("FROM_TC".into(), "original".into());
+        }
         _ => {}
     };
 

@@ -39,7 +39,8 @@ impl TaskRunnerContainer {
         let sandbox = create_sandbox(fixture);
         let mut mocker = WorkspaceMocker::new(sandbox.path())
             .load_default_configs()
-            .with_global_envs();
+            .with_global_envs()
+            .with_default_projects();
 
         if fixture.contains("toolchain") {
             mocker = mocker.with_test_toolchains();

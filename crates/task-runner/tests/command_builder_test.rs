@@ -55,6 +55,16 @@ mod command_builder {
         );
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn extensions_can_extend_toolchain_changes() {
+        let container = TaskRunnerContainer::new("toolchain-extension", "test-ext-and-tc").await;
+        let command = container.create_command(ActionContext::default()).await;
+
+        assert_eq!(get_args(&command), vec!["from-ext", "from-tc"]);
+        assert_eq!(get_env(&command, "FROM_TC").unwrap(), "overwritten");
+        assert_eq!(get_env(&command, "FROM_EXT").unwrap(), "original");
+    }
+
     mod command {
         use super::*;
 

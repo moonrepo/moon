@@ -155,7 +155,6 @@ impl ActionPipeline {
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
-            toolchain_registry: Arc::clone(&self.app_context.toolchain_registry),
             workspace_graph: self.workspace_graph.clone(),
         };
 

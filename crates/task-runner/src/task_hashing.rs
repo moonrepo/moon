@@ -193,11 +193,9 @@ async fn apply_toolchain(
                 context: app_context.toolchain_registry.create_context(),
                 project,
                 task,
-                toolchain_config: app_context.toolchain_registry.create_merged_config(
-                    &toolchain.id,
-                    &app_context.toolchains_config,
-                    &project_config,
-                ),
+                toolchain_config: app_context
+                    .toolchain_registry
+                    .create_merged_config(&toolchain.id, &project_config),
             })
             .await?;
 
@@ -229,11 +227,9 @@ async fn apply_toolchain_dependencies(
             .locate_dependencies_root(LocateDependenciesRootInput {
                 context: app_context.toolchain_registry.create_context(),
                 starting_dir: toolchain.to_virtual_path(&project_root),
-                toolchain_config: app_context.toolchain_registry.create_merged_config(
-                    &toolchain.id,
-                    &app_context.toolchains_config,
-                    project_config,
-                ),
+                toolchain_config: app_context
+                    .toolchain_registry
+                    .create_merged_config(&toolchain.id, project_config),
             })
             .await?
     } else {

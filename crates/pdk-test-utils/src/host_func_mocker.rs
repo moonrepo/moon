@@ -5,6 +5,7 @@ use std::sync::Arc;
 #[allow(clippy::enum_variant_names)]
 #[derive(PartialEq)]
 pub enum MoonHostFunction {
+    LoadExtensionConfig,
     LoadProject,
     LoadProjects,
     LoadTask,
@@ -15,6 +16,7 @@ pub enum MoonHostFunction {
 impl MoonHostFunction {
     pub fn as_str(&self) -> &str {
         match self {
+            Self::LoadExtensionConfig => "load_extension_config_by_id",
             Self::LoadProject => "load_project_by_id",
             Self::LoadProjects => "load_projects_by_id",
             Self::LoadTask => "load_task_by_target",
@@ -24,6 +26,7 @@ impl MoonHostFunction {
     }
 }
 
+pub type LoadExtensionConfigHostFunc = Arc<dyn Fn(String) -> Value>;
 pub type LoadProjectHostFunc = Arc<dyn Fn(String) -> Value>;
 pub type LoadProjectsHostFunc = Arc<dyn Fn(Vec<String>) -> Value>;
 pub type LoadTaskHostFunc = Arc<dyn Fn(String) -> Value>;
@@ -32,6 +35,7 @@ pub type LoadToolchainConfigHostFunc = Arc<dyn Fn(String, Option<String>) -> Val
 
 #[derive(Clone, Default)]
 pub struct MockedHostFuncs {
+    load_extension_config: Option<LoadExtensionConfigHostFunc>,
     load_project: Option<LoadProjectHostFunc>,
     load_projects: Option<LoadProjectsHostFunc>,
     load_task: Option<LoadTaskHostFunc>,
@@ -40,6 +44,10 @@ pub struct MockedHostFuncs {
 }
 
 impl MockedHostFuncs {
+    pub fn mock_load_extension_config(&mut self, func: impl Fn(String) -> Value + 'static) {
+        self.load_extension_config = Some(Arc::new(func));
+    }
+
     pub fn mock_load_project(&mut self, func: impl Fn(String) -> Value + 'static) {
         self.load_project = Some(Arc::new(func));
     }
@@ -75,6 +83,14 @@ pub fn mocked_host_func_impl(
     let (func_type, mocked_funcs) = &*data;
 
     let value = match func_type {
+        MoonHostFunction::LoadExtensionConfig => {
+            let extension_id: String = plugin.memory_get_val(&inputs[0])?;
+
+            mocked_funcs
+                .load_extension_config
+                .as_ref()
+                .map_or(json!({}), |func| func(extension_id))
+        }
         MoonHostFunction::LoadProject => {
             let id: String = plugin.memory_get_val(&inputs[0])?;
 

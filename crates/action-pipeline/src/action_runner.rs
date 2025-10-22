@@ -4,7 +4,6 @@ use moon_action_context::ActionContext;
 use moon_actions::actions::*;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tracing::{instrument, trace};
@@ -15,7 +14,6 @@ pub async fn run_action(
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
-    toolchain_registry: Arc<ToolchainRegistry>,
     emitter: Arc<EventEmitter>,
 ) -> miette::Result<()> {
     action.start();
@@ -38,14 +36,8 @@ pub async fn run_action(
         ActionNode::SyncWorkspace => {
             emitter.emit(Event::WorkspaceSyncing).await?;
 
-            let result = sync_workspace(
-                action,
-                action_context,
-                app_context,
-                workspace_graph.clone(),
-                toolchain_registry,
-            )
-            .await;
+            let result =
+                sync_workspace(action, action_context, app_context, workspace_graph.clone()).await;
 
             emitter
                 .emit(Event::WorkspaceSynced {

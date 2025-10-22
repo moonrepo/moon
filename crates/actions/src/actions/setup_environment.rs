@@ -69,9 +69,7 @@ pub async fn setup_environment(
         project: None,
         globals_dir: None, // Get's set in the plugin
         root: toolchain.to_virtual_path(node.root.to_logical_path(&app_context.workspace_root)),
-        toolchain_config: app_context
-            .toolchain_registry
-            .create_config(&toolchain.id, &app_context.toolchains_config),
+        toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
     };
 
     let project = match &node.project_id {
@@ -79,11 +77,9 @@ pub async fn setup_environment(
             let project = workspace_graph.get_project(project_id)?;
 
             input.project = Some(project.to_fragment());
-            input.toolchain_config = app_context.toolchain_registry.create_merged_config(
-                &toolchain.id,
-                &app_context.toolchains_config,
-                &project.config,
-            );
+            input.toolchain_config = app_context
+                .toolchain_registry
+                .create_merged_config(&toolchain.id, &project.config);
 
             Some(project)
         }

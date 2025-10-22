@@ -9,8 +9,63 @@ use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
 use rustc_hash::FxHashMap;
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
+
+#[derive(Default)]
+struct CommandParams {
+    exe: String,
+    args: VecDeque<String>,
+    env: FxHashMap<String, String>,
+    env_remove: Vec<String>,
+    paths: VecDeque<PathBuf>,
+}
+
+impl CommandParams {
+    fn extend_args(&mut self, args: Extend<Vec<String>>) {
+        match args {
+            Extend::Empty => {
+                self.args.clear();
+            }
+            Extend::Append(next) => {
+                self.args.extend(next);
+            }
+            Extend::Prepend(next) => {
+                for arg in next.into_iter().rev() {
+                    self.args.push_front(arg);
+                }
+            }
+            Extend::Replace(next) => {
+                self.args.clear();
+                self.args.extend(next);
+            }
+        }
+    }
+
+    fn extend_env(&mut self, env: FxHashMap<String, String>, env_remove: Vec<String>) {
+        self.env.extend(env);
+        self.env_remove.extend(env_remove);
+    }
+
+    fn extend_paths(&mut self, paths: Vec<PathBuf>) {
+        if paths.is_empty() {
+            return;
+        }
+
+        // Normalize separators since WASM always uses forward slashes
+        #[cfg(windows)]
+        let paths = paths.into_iter().map(|path| {
+            PathBuf::from(moon_common::path::normalize_separators(
+                path.to_string_lossy(),
+            ))
+        });
+
+        for path in paths.into_iter().rev() {
+            self.paths.push_front(path);
+        }
+    }
+}
 
 pub struct CommandBuilder<'task> {
     app: &'task AppContext,
@@ -86,79 +141,133 @@ impl<'task> CommandBuilder<'task> {
         let task = self.task;
         let toolchain_ids = project.get_enabled_toolchains_for_task(task);
 
-        let mut command = Command::new(&task.command);
-        command.args(&task.args);
-        command.envs_if_not_global(&task.env);
+        let mut escape_args = true;
+        let mut params = CommandParams::default();
+        params.args.extend(task.args.clone());
+        params.env.extend(task.env.clone());
 
         match &task.script {
             Some(script) => {
-                command.bin = script.into();
-                command.args.clear();
+                params.exe = script.into();
+                params.args.clear();
 
                 // Scripts should be used as-is
-                command.escape_args = false;
+                escape_args = false;
 
-                for params in self
+                for output in self
                     .app
                     .toolchain_registry
                     .extend_task_script_many(toolchain_ids, |registry, toolchain| {
                         ExtendTaskScriptInput {
                             context: registry.create_context(),
-                            script: script.clone(),
+                            script: params.exe.clone(),
                             project: project.to_fragment(),
                             task: task.to_fragment(),
-                            toolchain_config: registry.create_merged_config(
-                                &toolchain.id,
-                                &self.app.toolchains_config,
-                                &project.config,
-                            ),
+                            toolchain_config: registry
+                                .create_merged_config(&toolchain.id, &project.config),
                             ..Default::default()
                         }
                     })
                     .await?
                 {
-                    if let Some(new_script) = params.script {
-                        command.bin = new_script.into();
+                    if let Some(new_script) = output.script {
+                        params.exe = new_script;
                     }
 
-                    self.extend_with_env(&mut command, params.env, params.env_remove);
-                    self.extend_with_paths(&mut command, params.paths);
+                    params.extend_env(output.env, output.env_remove);
+                    params.extend_paths(output.paths);
+                }
+
+                for output in self
+                    .app
+                    .extension_registry
+                    .extend_task_script_all(|registry, extension| ExtendTaskScriptInput {
+                        context: registry.create_context(),
+                        script: params.exe.clone(),
+                        project: project.to_fragment(),
+                        task: task.to_fragment(),
+                        extension_config: registry.create_config(&extension.id),
+                        ..Default::default()
+                    })
+                    .await?
+                {
+                    if let Some(new_script) = output.script {
+                        params.exe = new_script;
+                    }
+
+                    params.extend_env(output.env, output.env_remove);
+                    params.extend_paths(output.paths);
                 }
             }
             None => {
-                for params in self
+                params.exe = task.command.clone();
+
+                for output in self
                     .app
                     .toolchain_registry
                     .extend_task_command_many(toolchain_ids, |registry, toolchain| {
                         ExtendTaskCommandInput {
                             context: registry.create_context(),
-                            command: task.command.clone(),
-                            args: task.args.clone(),
+                            command: params.exe.clone(),
+                            args: params.args.clone().into_iter().collect(),
                             project: project.to_fragment(),
                             task: task.to_fragment(),
-                            toolchain_config: registry.create_merged_config(
-                                &toolchain.id,
-                                &self.app.toolchains_config,
-                                &project.config,
-                            ),
+                            toolchain_config: registry
+                                .create_merged_config(&toolchain.id, &project.config),
                             ..Default::default()
                         }
                     })
                     .await?
                 {
-                    if let Some(new_bin) = params.command {
-                        command.bin = new_bin.into();
+                    if let Some(new_bin) = output.command {
+                        params.exe = new_bin;
                     }
 
-                    if let Some(new_args) = params.args {
-                        self.extend_with_args(&mut command, new_args);
+                    if let Some(new_args) = output.args {
+                        params.extend_args(new_args);
                     }
 
-                    self.extend_with_env(&mut command, params.env, params.env_remove);
-                    self.extend_with_paths(&mut command, params.paths);
+                    params.extend_env(output.env, output.env_remove);
+                    params.extend_paths(output.paths);
+                }
+
+                for output in self
+                    .app
+                    .extension_registry
+                    .extend_task_command_all(|registry, extension| ExtendTaskCommandInput {
+                        context: registry.create_context(),
+                        command: params.exe.clone(),
+                        args: params.args.clone().into_iter().collect(),
+                        project: project.to_fragment(),
+                        task: task.to_fragment(),
+                        extension_config: registry.create_config(&extension.id),
+                        ..Default::default()
+                    })
+                    .await?
+                {
+                    if let Some(new_bin) = output.command {
+                        params.exe = new_bin;
+                    }
+
+                    if let Some(new_args) = output.args {
+                        params.extend_args(new_args);
+                    }
+
+                    params.extend_env(output.env, output.env_remove);
+                    params.extend_paths(output.paths);
                 }
             }
         };
+
+        let mut command = Command::new(params.exe);
+        command.escape_args = escape_args;
+        command.args(params.args);
+        command.prepend_paths(params.paths);
+        command.envs_if_not_global(params.env);
+
+        for key in params.env_remove {
+            command.env_remove(key);
+        }
 
         Ok(command)
     }
@@ -391,59 +500,5 @@ impl<'task> CommandBuilder<'task> {
             .await?;
 
         Ok(())
-    }
-
-    fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {
-        match args {
-            Extend::Empty => {
-                command.args.clear();
-            }
-            Extend::Append(next) => {
-                command.args(next);
-            }
-            Extend::Prepend(next) => {
-                let prev = std::mem::take(&mut command.args);
-                command.args(next);
-                command.args(prev);
-            }
-            Extend::Replace(next) => {
-                command.args.clear();
-                command.args(next);
-            }
-        }
-    }
-
-    fn extend_with_env(
-        &self,
-        command: &mut Command,
-        env: FxHashMap<String, String>,
-        env_remove: Vec<String>,
-    ) {
-        command.envs_if_not_global(env);
-
-        for key in env_remove {
-            command.env_remove(key);
-        }
-    }
-
-    fn extend_with_paths(&self, command: &mut Command, next_paths: Vec<PathBuf>) {
-        if next_paths.is_empty() {
-            return;
-        }
-
-        // Normalize separators since WASM always uses forward slashes
-        #[cfg(windows)]
-        {
-            command.prepend_paths(next_paths.into_iter().map(|path| {
-                PathBuf::from(moon_common::path::normalize_separators(
-                    path.to_string_lossy(),
-                ))
-            }));
-        }
-
-        #[cfg(unix)]
-        {
-            command.prepend_paths(next_paths);
-        }
     }
 }

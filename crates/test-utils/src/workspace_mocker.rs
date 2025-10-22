@@ -158,6 +158,26 @@ impl WorkspaceMocker {
         })
     }
 
+    pub fn with_test_extensions(self) -> Self {
+        self.update_extensions_config(|config| {
+            for id in ["ext-sync", "ext-task"] {
+                let file_name = id.replace("-", "_");
+
+                config.plugins.insert(
+                    Id::raw(id),
+                    ExtensionPluginConfig {
+                        plugin: Some(
+                            find_debug_locator(&file_name).expect(
+                                "Development plugins missing, build with `just build-wasm`!",
+                            ),
+                        ),
+                        ..Default::default()
+                    },
+                );
+            }
+        })
+    }
+
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchains_config(|config| {
             for id in [
@@ -369,20 +389,21 @@ impl WorkspaceMocker {
     }
 
     pub fn mock_extension_registry(&self) -> ExtensionRegistry {
-        let mut registry = ExtensionRegistry::new(MoonHostData {
-            moon_env: Arc::new(self.moon_env.clone()),
-            proto_env: Arc::new(self.proto_env.clone()),
-            extensions_config: Arc::new(self.extensions_config.clone()),
-            toolchains_config: Arc::new(self.toolchains_config.clone()),
-            workspace_config: Arc::new(self.workspace_config.clone()),
-            workspace_graph: Arc::new(OnceLock::new()),
-        });
-        registry.inherit_configs(&self.extensions_config.plugins);
-        registry
+        ExtensionRegistry::new(
+            MoonHostData {
+                moon_env: Arc::new(self.moon_env.clone()),
+                proto_env: Arc::new(self.proto_env.clone()),
+                extensions_config: Arc::new(self.extensions_config.clone()),
+                toolchains_config: Arc::new(self.toolchains_config.clone()),
+                workspace_config: Arc::new(self.workspace_config.clone()),
+                workspace_graph: Arc::new(OnceLock::new()),
+            },
+            Arc::new(self.extensions_config.clone()),
+        )
     }
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
-        let mut registry = ToolchainRegistry::new(
+        ToolchainRegistry::new(
             MoonHostData {
                 moon_env: Arc::new(self.moon_env.clone()),
                 proto_env: Arc::new(self.proto_env.clone()),
@@ -392,9 +413,7 @@ impl WorkspaceMocker {
                 workspace_graph: Arc::new(OnceLock::new()),
             },
             Arc::new(self.toolchains_config.clone()),
-        );
-        registry.inherit_configs(&self.toolchains_config.plugins);
-        registry
+        )
     }
 
     pub fn mock_vcs_adapter(&self) -> BoxedVcs {
@@ -412,6 +431,8 @@ impl WorkspaceMocker {
         WorkspaceBuilderContext {
             config_loader: &self.config_loader,
             enabled_toolchains: self.toolchains_config.get_enabled(),
+            extensions_config: &self.extensions_config,
+            extension_registry: Arc::new(self.mock_extension_registry()),
             inherited_tasks: &self.inherited_tasks,
             toolchains_config: &self.toolchains_config,
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),

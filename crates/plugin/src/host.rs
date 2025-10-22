@@ -41,6 +41,13 @@ pub fn create_host_functions(data: MoonHostData, shared_data: HostData) -> Vec<F
     functions.extend(create_shared_host_functions(shared_data));
     functions.extend(vec![
         Function::new(
+            "load_extension_config_by_id",
+            [ValType::I64],
+            [ValType::I64],
+            UserData::new(data.clone()),
+            load_extension_config_by_id,
+        ),
+        Function::new(
             "load_project_by_id",
             [ValType::I64],
             [ValType::I64],
@@ -254,6 +261,47 @@ fn load_tasks(
     );
 
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&tasks)?)?;
+
+    Ok(())
+}
+
+#[instrument(name = "host_load_extension_config_by_id", skip_all)]
+fn load_extension_config_by_id(
+    plugin: &mut CurrentPlugin,
+    inputs: &[Val],
+    outputs: &mut [Val],
+    user_data: UserData<MoonHostData>,
+) -> Result<(), Error> {
+    let uuid = plugin.id().to_string();
+    let extension_id = Id::new(plugin.memory_get_val::<String>(&inputs[0])?)?;
+
+    trace!(
+        plugin = &uuid,
+        extension_id = extension_id.as_str(),
+        "Calling host function {}",
+        color::label("load_extension_config_by_id"),
+    );
+
+    let data = user_data.get()?;
+    let data = data.lock().unwrap();
+
+    let config = data
+        .extensions_config
+        .get_plugin_config(&extension_id)
+        .ok_or_else(|| {
+            Error::msg(format!(
+                "Unable to load extension configuration. Extension {extension_id} does not exist."
+            ))
+        })?;
+
+    plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
+
+    trace!(
+        plugin = &uuid,
+        extension_id = extension_id.as_str(),
+        "Called host function {}",
+        color::label("load_extension_config_by_id"),
+    );
 
     Ok(())
 }

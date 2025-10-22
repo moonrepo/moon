@@ -2,7 +2,7 @@ use crate::host::*;
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_common::{Id, IdExt};
-use moon_pdk_api::MoonContext;
+use moon_pdk_api::{MoonContext, Operation};
 use proto_core::is_offline;
 use scc::hash_map::Entry;
 use starbase_utils::fs;
@@ -27,7 +27,10 @@ pub struct PluginRegistry<T: Plugin> {
 
 impl<T: Plugin> PluginRegistry<T> {
     pub fn new(type_of: PluginType, host_data: MoonHostData) -> Self {
-        debug!(plugin = type_of.get_label(), "Creating plugin registry");
+        debug!(
+            plugin_type = type_of.get_label(),
+            "Creating plugin registry"
+        );
 
         // Create the loader
         let mut loader = PluginLoader::new(
@@ -60,7 +63,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
         debug!(
-            plugin = self.type_of.get_label(),
+            plugin_type = self.type_of.get_label(),
             id = id.as_str(),
             path = ?wasm_file,
             "Creating plugin manifest from WASM file",
@@ -141,7 +144,7 @@ impl<T: Plugin> PluginRegistry<T> {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
                 debug!(
-                    plugin = self.type_of.get_label(),
+                    plugin_type = self.type_of.get_label(),
                     id = entry.key().as_str(),
                     "Attempting to load and register plugin",
                 );
@@ -166,7 +169,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 op(&mut manifest)?;
 
                 debug!(
-                    plugin = self.type_of.get_label(),
+                    plugin_type = self.type_of.get_label(),
                     id = entry.key().as_str(),
                     "Updated plugin manifest, attempting to register plugin",
                 );
@@ -191,7 +194,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 .await?;
 
                 debug!(
-                    plugin = self.type_of.get_label(),
+                    plugin_type = self.type_of.get_label(),
                     id = orig_id,
                     "Registered plugin",
                 );
@@ -225,7 +228,7 @@ impl<T: Plugin> PluginRegistry<T> {
         }
 
         debug!(
-            plugin = self.type_of.get_label(),
+            plugin_type = self.type_of.get_label(),
             id = id.as_str(),
             "Registered plugin",
         );
@@ -253,4 +256,11 @@ impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
             .field("virtual_paths", &self.virtual_paths)
             .finish()
     }
+}
+
+pub struct CallResult<P: Plugin, T> {
+    pub id: Id,
+    pub operation: Operation,
+    pub output: T,
+    pub plugin: Arc<P>,
 }

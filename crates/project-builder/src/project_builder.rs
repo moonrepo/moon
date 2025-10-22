@@ -160,8 +160,7 @@ impl<'app> ProjectBuilder<'app> {
                 .detect_project_toolchain_from_usage(&self.root, |registry, toolchain| {
                     DefineRequirementsInput {
                         context: registry.create_context(),
-                        toolchain_config: registry
-                            .create_config(&toolchain.id, self.context.toolchains_config),
+                        toolchain_config: registry.create_config(&toolchain.id),
                     }
                 })
                 .await?,

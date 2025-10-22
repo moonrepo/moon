@@ -11,9 +11,11 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectDependencyConfig,
-    TaskDependencyType, ToolchainsConfig, WorkspaceConfig, WorkspaceProjects, finalize_config,
+    ConfigLoader, DependencyScope, ExtensionsConfig, InheritedTasksManager,
+    ProjectDependencyConfig, TaskDependencyType, ToolchainsConfig, WorkspaceConfig,
+    WorkspaceProjects, finalize_config,
 };
+use moon_extension_plugin::ExtensionRegistry;
 use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::ExtendProjectGraphInput;
 use moon_project::{Project, ProjectError};
@@ -39,6 +41,8 @@ use tracing::{debug, instrument, trace};
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
+    pub extensions_config: &'app ExtensionsConfig,
+    pub extension_registry: Arc<ExtensionRegistry>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchains_config: &'app ToolchainsConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
@@ -812,23 +816,43 @@ impl<'app> WorkspaceBuilder<'app> {
 
     async fn extend_project_build_data(&mut self) -> miette::Result<()> {
         let context = self.context();
+        let mut outputs = vec![];
 
         debug!("Extending project graph");
 
+        let project_sources = self
+            .project_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
+            .collect::<BTreeMap<_, _>>();
+
         // From toolchains
-        for output in context
-            .toolchain_registry
-            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
-                context: registry.create_context(),
-                project_sources: self
-                    .project_data
-                    .iter()
-                    .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
-                    .collect(),
-                toolchain_config: registry.create_config(&toolchain.id, context.toolchains_config),
-            })
-            .await?
-        {
+        outputs.extend(
+            context
+                .toolchain_registry
+                .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
+                    context: registry.create_context(),
+                    project_sources: project_sources.clone(),
+                    toolchain_config: registry.create_config(&toolchain.id),
+                    ..Default::default()
+                })
+                .await?,
+        );
+
+        // From extensions
+        outputs.extend(
+            context
+                .extension_registry
+                .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
+                    context: registry.create_context(),
+                    project_sources: project_sources.clone(),
+                    extension_config: registry.create_config(&extension.id),
+                    ..Default::default()
+                })
+                .await?,
+        );
+
+        for output in outputs {
             for (project_id, mut project_extend) in output.extended_projects {
                 if !self.project_data.contains_key(&project_id) {
                     return Err(ProjectGraphError::UnconfiguredID(project_id.to_string()).into());

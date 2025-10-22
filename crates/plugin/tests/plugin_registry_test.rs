@@ -12,12 +12,18 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 #[derive(Debug)]
-struct TestPlugin;
+struct TestPlugin {
+    id: Id,
+}
 
 #[async_trait]
 impl Plugin for TestPlugin {
-    async fn new(_reg: PluginRegistration) -> miette::Result<Self> {
-        Ok(TestPlugin)
+    async fn new(reg: PluginRegistration) -> miette::Result<Self> {
+        Ok(TestPlugin { id: reg.id })
+    }
+
+    fn get_id(&self) -> &Id {
+        &self.id
     }
 
     fn get_type(&self) -> PluginType {

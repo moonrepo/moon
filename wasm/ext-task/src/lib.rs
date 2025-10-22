@@ -2,62 +2,14 @@ use extism_pdk::*;
 use moon_pdk::get_plugin_id;
 use moon_pdk_api::*;
 
-pub use tc_tier1::*;
-
-fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
-    let outer = match path {
-        VirtualPath::Real(inner) => inner,
-        // Don't use `path` since it gets replaced with the virtual
-        // path, which masks the folder we're actually in on the host
-        VirtualPath::Virtual {
-            real_prefix: inner, ..
-        } => inner,
-    };
-
-    // // `ends_with` or `file_name` didn't work on Windows...
-    // let value = outer.to_string_lossy();
-    // let res = value.ends_with("in") || value.ends_with("in-root") || value.ends_with("out");
-
-    // res
-
-    outer
-        .file_name()
-        .and_then(|file| file.to_str())
-        .is_some_and(|value| value == "in" || value == "in-root" || value == "out")
-}
-
 #[plugin_fn]
-pub fn locate_dependencies_root(
-    Json(input): Json<LocateDependenciesRootInput>,
-) -> FnResult<Json<LocateDependenciesRootOutput>> {
-    // Working dir is set to the project root.
-    let cwd = input.context.working_dir;
-
-    // Testing the `dep-workspace` fixture. The "in" project
-    // is in the workspace, while "out" is not.
-    let is_deps_workspace = is_testing_deps_workspace(&cwd);
-
-    Ok(Json(LocateDependenciesRootOutput {
-        members: if is_deps_workspace {
-            Some(vec!["in".into()])
-        } else {
-            None
-        },
-        // We need a root for the `InstallDependencies`
-        // action to work, otherwise it aborts early
-        root: if is_deps_workspace {
-            input.context.workspace_root.virtual_path()
-        } else {
-            cwd.virtual_path()
-        },
+pub fn register_extension(
+    Json(input): Json<RegisterExtensionInput>,
+) -> FnResult<Json<RegisterExtensionOutput>> {
+    Ok(Json(RegisterExtensionOutput {
+        name: input.id.to_string(),
+        ..Default::default()
     }))
-}
-
-#[plugin_fn]
-pub fn install_dependencies(
-    Json(_): Json<InstallDependenciesInput>,
-) -> FnResult<Json<InstallDependenciesOutput>> {
-    Ok(Json(InstallDependenciesOutput::default()))
 }
 
 #[plugin_fn]
@@ -94,8 +46,12 @@ pub fn extend_task_command(
             output.paths.push("/extended/path".into());
         }
         "test-ext-and-tc" => {
-            output.args = Some(Extend::Append(vec!["from-tc".into()]));
-            output.env.insert("FROM_TC".into(), "original".into());
+            if input.args.iter().any(|arg| arg == "from-tc") {
+                output.args = Some(Extend::Prepend(vec!["from-ext".into()]));
+            }
+
+            output.env.insert("FROM_TC".into(), "overwritten".into());
+            output.env.insert("FROM_EXT".into(), "original".into());
         }
         _ => {}
     };

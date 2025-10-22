@@ -1,5 +1,5 @@
 use crate::toolchain_plugin::ToolchainPlugin;
-use crate::toolchain_registry::{CallResult, ToolchainRegistry};
+use crate::toolchain_registry::ToolchainRegistry;
 use moon_common::Id;
 use moon_config::{LanguageType, ProjectConfig};
 use moon_env_var::GlobalEnvBag;
@@ -11,6 +11,7 @@ use moon_pdk_api::{
     ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
     SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
+use moon_plugin::CallResult;
 use moon_process::Command;
 use moon_toolchain::{
     get_version_env_key, get_version_env_value, is_using_global_toolchain,
@@ -129,7 +130,7 @@ impl ToolchainRegistry {
     ) -> FxHashMap<Id, CommandAugment<'a>> {
         let mut map = FxHashMap::default();
 
-        for (id, config) in &self.plugins {
+        for (id, config) in &self.config.plugins {
             if let Some(version) = &config.version {
                 map.insert(
                     Id::raw(id),
@@ -439,7 +440,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<LocateDependenciesRootOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, LocateDependenciesRootOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> LocateDependenciesRootInput,
     {
@@ -478,7 +479,7 @@ impl ToolchainRegistry {
     pub async fn setup_toolchain_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<SetupToolchainOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SetupToolchainOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SetupToolchainInput,
     {
@@ -497,7 +498,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<SyncOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SyncOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncProjectInput,
     {
@@ -513,7 +514,7 @@ impl ToolchainRegistry {
     pub async fn sync_workspace_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<SyncOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SyncOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncWorkspaceInput,
     {
@@ -531,7 +532,7 @@ impl ToolchainRegistry {
     pub async fn teardown_toolchain_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<()>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ()>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
     {

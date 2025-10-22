@@ -20,6 +20,7 @@ moon_env_var = { path = "../env-var" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }
+moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_remote = { path = "../remote" }

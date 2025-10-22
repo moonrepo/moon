@@ -65,12 +65,7 @@ pub async fn sync_project(
         dependencies.insert(dep_config.id.to_owned(), dep_project);
     }
 
-    // TODO
     // Sync the projects and return true if any files have been mutated
-    let mut mutated_files = false;
-    let mut changed_files = vec![];
-
-    // Loop through each toolchain and sync
     for sync_result in app_context
         .toolchain_registry
         .sync_project_many(project.get_enabled_toolchains(), |registry, toolchain| {
@@ -78,36 +73,42 @@ pub async fn sync_project(
                 context: registry.create_context(),
                 project_dependencies: dependency_fragments.clone(),
                 project: project.to_fragment(),
-                toolchain_config: registry.create_merged_config(
-                    &toolchain.id,
-                    &app_context.toolchains_config,
-                    &project.config,
-                ),
-                toolchain_workspace_config: registry
-                    .create_config(&toolchain.id, &app_context.toolchains_config),
+                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
+                toolchain_workspace_config: registry.create_config(&toolchain.id),
+                ..Default::default()
             }
         })
         .await?
     {
-        if !sync_result.output.changed_files.is_empty() {
-            mutated_files = true;
-        }
+        action
+            .operations
+            .push(finalize_sync_operation(sync_result)?);
+    }
 
-        let op = finalize_sync_operation(sync_result)?;
-
-        if let Some(state) = op.get_file_state() {
-            changed_files.extend(state.changed_files.clone());
-        }
-
-        action.operations.push(op);
+    for sync_result in app_context
+        .extension_registry
+        .sync_project_all(|registry, extension| SyncProjectInput {
+            context: registry.create_context(),
+            project_dependencies: dependency_fragments.clone(),
+            project: project.to_fragment(),
+            extension_config: registry.create_config(&extension.id),
+            ..Default::default()
+        })
+        .await?
+    {
+        action
+            .operations
+            .push(finalize_sync_operation(sync_result)?);
     }
 
     // If files have been modified in CI, we should update the status to warning,
     // as these modifications should be committed to the repo!
-    if mutated_files && is_ci() {
+    let changed_files = action.get_changed_files();
+
+    if !changed_files.is_empty() && is_ci() {
         warn!(
             project_id = project.id.as_str(),
-            files = ?changed_files,
+            changed_files = ?changed_files,
             "Files were modified during project sync that should be committed to the repository"
         );
 

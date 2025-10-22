@@ -151,18 +151,17 @@ impl MoonSession {
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
         let item = self.extension_registry.get_or_init(|| {
-            let mut registry = ExtensionRegistry::new(MoonHostData {
-                moon_env: Arc::clone(&self.moon_env),
-                proto_env: Arc::clone(&self.proto_env),
-                extensions_config: Arc::clone(&self.extensions_config),
-                toolchains_config: Arc::clone(&self.toolchains_config),
-                workspace_config: Arc::clone(&self.workspace_config),
-                workspace_graph: Arc::new(OnceLock::new()),
-            });
-
-            registry.inherit_configs(&self.extensions_config.plugins);
-
-            Arc::new(registry)
+            Arc::new(ExtensionRegistry::new(
+                MoonHostData {
+                    moon_env: Arc::clone(&self.moon_env),
+                    proto_env: Arc::clone(&self.proto_env),
+                    extensions_config: Arc::clone(&self.extensions_config),
+                    toolchains_config: Arc::clone(&self.toolchains_config),
+                    workspace_config: Arc::clone(&self.workspace_config),
+                    workspace_graph: Arc::new(OnceLock::new()),
+                },
+                Arc::clone(&self.extensions_config),
+            ))
         });
 
         Ok(Arc::clone(item))
@@ -186,7 +185,7 @@ impl MoonSession {
 
     pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
         let item = self.toolchain_registry.get_or_init(|| {
-            let mut registry = ToolchainRegistry::new(
+            Arc::new(ToolchainRegistry::new(
                 MoonHostData {
                     moon_env: Arc::clone(&self.moon_env),
                     proto_env: Arc::clone(&self.proto_env),
@@ -195,12 +194,8 @@ impl MoonSession {
                     workspace_config: Arc::clone(&self.workspace_config),
                     workspace_graph: Arc::new(OnceLock::new()),
                 },
-                self.toolchains_config.clone(),
-            );
-
-            registry.inherit_configs(&self.toolchains_config.plugins);
-
-            Arc::new(registry)
+                Arc::clone(&self.toolchains_config),
+            ))
         });
 
         Ok(Arc::clone(item))

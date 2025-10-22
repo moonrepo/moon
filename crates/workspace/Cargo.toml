@@ -13,6 +13,7 @@ moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
+moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }

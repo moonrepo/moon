@@ -209,6 +209,7 @@ impl MoonWasmSandbox {
         let mut funcs = create_host_functions(host_data.clone());
 
         for func_type in [
+            MoonHostFunction::LoadExtensionConfig,
             MoonHostFunction::LoadProject,
             MoonHostFunction::LoadProjects,
             MoonHostFunction::LoadTask,

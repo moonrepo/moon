@@ -66,6 +66,10 @@ impl Plugin for ToolchainPlugin {
         })
     }
 
+    fn get_id(&self) -> &Id {
+        &self.id
+    }
+
     fn get_type(&self) -> PluginType {
         PluginType::Toolchain
     }

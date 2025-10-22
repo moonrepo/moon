@@ -58,6 +58,8 @@ pub async fn create_workspace_graph_context(
     let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
         enabled_toolchains: session.toolchains_config.get_enabled(),
+        extensions_config: &session.extensions_config,
+        extension_registry: session.get_extension_registry().await?,
         inherited_tasks: &session.tasks_config,
         toolchains_config: &session.toolchains_config,
         toolchain_registry: session.get_toolchain_registry().await?,

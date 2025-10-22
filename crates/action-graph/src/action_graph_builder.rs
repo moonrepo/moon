@@ -269,11 +269,8 @@ impl<'query> ActionGraphBuilder<'query> {
             .locate_dependencies_root(LocateDependenciesRootInput {
                 context: toolchain_registry.create_context(),
                 starting_dir: toolchain.to_virtual_path(&project.root),
-                toolchain_config: toolchain_registry.create_merged_config(
-                    &toolchain.id,
-                    &self.app_context.toolchains_config,
-                    &project.config,
-                ),
+                toolchain_config: toolchain_registry
+                    .create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
 
@@ -847,8 +844,7 @@ impl<'query> ActionGraphBuilder<'query> {
             let output = toolchain
                 .define_requirements(DefineRequirementsInput {
                     context: toolchain_registry.create_context(),
-                    toolchain_config: toolchain_registry
-                        .create_config(&toolchain.id, &self.app_context.toolchains_config),
+                    toolchain_config: toolchain_registry.create_config(&toolchain.id),
                 })
                 .await?;
 

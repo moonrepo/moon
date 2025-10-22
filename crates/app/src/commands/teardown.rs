@@ -23,7 +23,7 @@ pub async fn teardown(session: MoonSession) -> AppResult {
                 .get_plugin_config(toolchain.id.as_str())
                 .and_then(|plugin| plugin.version.clone()),
             context: registry.create_context(),
-            toolchain_config: registry.create_config(&toolchain.id, &session.toolchains_config),
+            toolchain_config: registry.create_config(&toolchain.id),
             version: None,
         })
         .await?;

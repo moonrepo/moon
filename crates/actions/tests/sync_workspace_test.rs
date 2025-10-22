@@ -1,17 +1,25 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::actions::sync_workspace;
+use moon_common::is_ci;
 use moon_env_var::GlobalEnvBag;
 use moon_test_utils2::WorkspaceMocker;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 
 fn create_workspace() -> (Sandbox, WorkspaceMocker) {
     let sandbox = create_empty_sandbox();
-    let mocker = WorkspaceMocker::new(sandbox.path())
-        .with_default_projects()
-        .with_test_toolchains();
+    let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
 
     (sandbox, mocker)
+}
+
+// Is invalid in CI because files changed
+fn get_status() -> ActionStatus {
+    if is_ci() {
+        ActionStatus::Invalid
+    } else {
+        ActionStatus::Passed
+    }
 }
 
 mod sync_workspace {
@@ -31,7 +39,6 @@ mod sync_workspace {
             ActionContext::default().into(),
             ws.mock_app_context().into(),
             ws.mock_workspace_graph().await.into(),
-            ws.mock_toolchain_registry().into(),
         )
         .await
         .unwrap();
@@ -43,8 +50,10 @@ mod sync_workspace {
 
     #[serial_test::serial]
     #[tokio::test(flavor = "multi_thread")]
-    async fn runs_all_toolchains() {
-        let (sandbox, ws) = create_workspace();
+    async fn runs_all_extensions() {
+        let (sandbox, mut ws) = create_workspace();
+        ws = ws.with_test_extensions();
+
         let mut action = Action::default();
 
         let status = sync_workspace(
@@ -52,12 +61,60 @@ mod sync_workspace {
             ActionContext::default().into(),
             ws.mock_app_context().into(),
             ws.mock_workspace_graph().await.into(),
-            ws.mock_toolchain_registry().into(),
         )
         .await
         .unwrap();
 
-        assert_eq!(status, ActionStatus::Passed);
+        assert_eq!(status, get_status());
+
+        // All extensions inherit from tc-tier1
+        let mut ids = action
+            .operations
+            .iter()
+            .filter_map(|op| op.plugin.as_ref().map(|id| id.as_str()))
+            .collect::<Vec<_>>();
+        ids.sort();
+
+        assert_eq!(ids, ["ext-sync"]);
+
+        // Verify operation and changed files
+        let op = action
+            .operations
+            .iter()
+            .find(|op| op.plugin.as_ref().is_some_and(|id| id == "ext-sync"))
+            .unwrap();
+
+        assert!(
+            op.get_file_state()
+                .unwrap()
+                .changed_files
+                .contains(&sandbox.path().join("file-ext.txt"))
+        );
+
+        let nested_op = op.operations.first().unwrap();
+
+        assert_eq!(nested_op.status, ActionStatus::Passed);
+        assert_eq!(nested_op.id.as_ref().unwrap(), "sync-workspace-test");
+    }
+
+    #[serial_test::serial]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn runs_all_toolchains() {
+        let (sandbox, mut ws) = create_workspace();
+        ws = ws.with_test_toolchains();
+
+        let mut action = Action::default();
+
+        let status = sync_workspace(
+            &mut action,
+            ActionContext::default().into(),
+            ws.mock_app_context().into(),
+            ws.mock_workspace_graph().await.into(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(status, get_status());
 
         // All toolchains inherit from tc-tier1
         let mut ids = action
@@ -116,7 +173,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -144,7 +200,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -170,7 +225,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -200,7 +254,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -231,7 +284,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -261,7 +313,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -293,7 +344,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();
@@ -322,7 +372,6 @@ mod sync_workspace {
                 ActionContext::default().into(),
                 ws.mock_app_context().into(),
                 ws.mock_workspace_graph().await.into(),
-                ws.mock_toolchain_registry().into(),
             )
             .await
             .unwrap();

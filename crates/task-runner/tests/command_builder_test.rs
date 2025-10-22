@@ -55,8 +55,26 @@ mod command_builder {
         );
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn extensions_can_extend_toolchain_changes() {
+        let container = TaskRunnerContainer::new("toolchain-extension", "test-ext-and-tc").await;
+        let command = container.create_command(ActionContext::default()).await;
+
+        assert_eq!(get_args(&command), vec!["from-ext", "from-tc"]);
+        assert_eq!(get_env(&command, "FROM_TC").unwrap(), "overwritten");
+        assert_eq!(get_env(&command, "FROM_EXT").unwrap(), "original");
+    }
+
     mod command {
         use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_replace_bin_from_extension() {
+            let container = TaskRunnerContainer::new("extension", "command").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(command.bin, "new-command");
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_replace_bin_from_toolchain() {
@@ -69,6 +87,15 @@ mod command_builder {
 
     mod script {
         use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_replace_script_from_extension() {
+            let container =
+                TaskRunnerContainer::new_for_project("extension", "script", "script").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(command.bin, "wrapped=$(bin --flag)");
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_replace_script_from_toolchain() {
@@ -174,36 +201,76 @@ mod command_builder {
             );
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_empty_args_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "args-empty").await;
-            let command = container.create_command(ActionContext::default()).await;
+        mod extension {
+            use super::*;
 
-            assert!(command.args.is_empty());
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_empty_args() {
+                let container = TaskRunnerContainer::new("extension", "args-empty").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert!(command.args.is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_append_args() {
+                let container = TaskRunnerContainer::new("extension", "args-append").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_args(&command), vec!["--flag", "new", "arg"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_prepend_args() {
+                let container = TaskRunnerContainer::new("extension", "args-prepend").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_args(&command), vec!["new", "arg", "--flag"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_replace_args() {
+                let container = TaskRunnerContainer::new("extension", "args-replace").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_args(&command), vec!["new", "arg"]);
+            }
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_append_args_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "args-append").await;
-            let command = container.create_command(ActionContext::default()).await;
+        mod toolchain {
+            use super::*;
 
-            assert_eq!(get_args(&command), vec!["--flag", "new", "arg"]);
-        }
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_empty_args() {
+                let container = TaskRunnerContainer::new("toolchain", "args-empty").await;
+                let command = container.create_command(ActionContext::default()).await;
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_prepend_args_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "args-prepend").await;
-            let command = container.create_command(ActionContext::default()).await;
+                assert!(command.args.is_empty());
+            }
 
-            assert_eq!(get_args(&command), vec!["new", "arg", "--flag"]);
-        }
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_append_args() {
+                let container = TaskRunnerContainer::new("toolchain", "args-append").await;
+                let command = container.create_command(ActionContext::default()).await;
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_replace_args_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "args-replace").await;
-            let command = container.create_command(ActionContext::default()).await;
+                assert_eq!(get_args(&command), vec!["--flag", "new", "arg"]);
+            }
 
-            assert_eq!(get_args(&command), vec!["new", "arg"]);
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_prepend_args() {
+                let container = TaskRunnerContainer::new("toolchain", "args-prepend").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_args(&command), vec!["new", "arg", "--flag"]);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_replace_args() {
+                let container = TaskRunnerContainer::new("toolchain", "args-replace").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_args(&command), vec!["new", "arg"]);
+            }
         }
     }
 
@@ -279,75 +346,154 @@ mod command_builder {
             assert_ne!(get_env(&command, "PROTO_VERSION").unwrap(), "overwritten");
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_extend_env_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "env").await;
-            let command = container.create_command(ActionContext::default()).await;
+        mod toolchain {
+            use super::*;
 
-            assert_eq!(get_env(&command, "EXTENDED_VAR").unwrap(), "tc-tier2");
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_extend_env() {
+                let container = TaskRunnerContainer::new("toolchain", "env").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_env(&command, "EXTENDED_VAR").unwrap(), "tc-tier2");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_extend_env_for_script() {
+                let container =
+                    TaskRunnerContainer::new_for_project("toolchain", "script", "env").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(get_env(&command, "EXTENDED_VAR").unwrap(), "tc-tier2");
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_remove_env() {
+                let container = TaskRunnerContainer::new("toolchain", "env-remove").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
+                    None
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_remove_env_for_script() {
+                let container =
+                    TaskRunnerContainer::new_for_project("toolchain", "script", "env-remove").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
+                    None
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_prepend_path() {
+                let container = TaskRunnerContainer::new("toolchain", "path").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.paths_before.last().unwrap(),
+                    if cfg!(windows) {
+                        "\\extended\\path"
+                    } else {
+                        "/extended/path"
+                    }
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_prepend_path_for_script() {
+                let container =
+                    TaskRunnerContainer::new_for_project("toolchain", "script", "path").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.paths_before.last().unwrap(),
+                    if cfg!(windows) {
+                        "\\extended\\path"
+                    } else {
+                        "/extended/path"
+                    }
+                );
+            }
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_extend_env_from_toolchain_for_script() {
-            let container =
-                TaskRunnerContainer::new_for_project("toolchain", "script", "env").await;
-            let command = container.create_command(ActionContext::default()).await;
+        mod extension {
+            use super::*;
 
-            assert_eq!(get_env(&command, "EXTENDED_VAR").unwrap(), "tc-tier2");
-        }
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_extend_env() {
+                let container = TaskRunnerContainer::new("extension", "env").await;
+                let command = container.create_command(ActionContext::default()).await;
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_remove_env_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "env-remove").await;
-            let command = container.create_command(ActionContext::default()).await;
+                assert_eq!(get_env(&command, "EXTENDED_VAR").unwrap(), "ext-task");
+            }
 
-            assert_eq!(
-                *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                None
-            );
-        }
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_extend_env_for_script() {
+                let container =
+                    TaskRunnerContainer::new_for_project("extension", "script", "env").await;
+                let command = container.create_command(ActionContext::default()).await;
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_remove_env_from_toolchain_for_script() {
-            let container =
-                TaskRunnerContainer::new_for_project("toolchain", "script", "env-remove").await;
-            let command = container.create_command(ActionContext::default()).await;
+                assert_eq!(get_env(&command, "EXTENDED_VAR").unwrap(), "ext-task");
+            }
 
-            assert_eq!(
-                *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                None
-            );
-        }
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_remove_env() {
+                let container = TaskRunnerContainer::new("extension", "env-remove").await;
+                let command = container.create_command(ActionContext::default()).await;
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_prepend_path_from_toolchain() {
-            let container = TaskRunnerContainer::new("toolchain", "path").await;
-            let command = container.create_command(ActionContext::default()).await;
+                assert_eq!(
+                    *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
+                    None
+                );
+            }
 
-            assert_eq!(
-                command.paths_before.last().unwrap(),
-                if cfg!(windows) {
-                    "\\extended\\path"
-                } else {
-                    "/extended/path"
-                }
-            );
-        }
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_remove_env_for_script() {
+                let container =
+                    TaskRunnerContainer::new_for_project("extension", "script", "env-remove").await;
+                let command = container.create_command(ActionContext::default()).await;
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_prepend_path_from_toolchain_for_script() {
-            let container =
-                TaskRunnerContainer::new_for_project("toolchain", "script", "path").await;
-            let command = container.create_command(ActionContext::default()).await;
+                assert_eq!(
+                    *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
+                    None
+                );
+            }
 
-            assert_eq!(
-                command.paths_before.last().unwrap(),
-                if cfg!(windows) {
-                    "\\extended\\path"
-                } else {
-                    "/extended/path"
-                }
-            );
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_prepend_path() {
+                let container = TaskRunnerContainer::new("extension", "path").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.paths_before.last().unwrap(),
+                    if cfg!(windows) {
+                        "\\extended\\path"
+                    } else {
+                        "/extended/path"
+                    }
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_prepend_path_for_script() {
+                let container =
+                    TaskRunnerContainer::new_for_project("extension", "script", "path").await;
+                let command = container.create_command(ActionContext::default()).await;
+
+                assert_eq!(
+                    command.paths_before.last().unwrap(),
+                    if cfg!(windows) {
+                        "\\extended\\path"
+                    } else {
+                        "/extended/path"
+                    }
+                );
+            }
         }
     }
 

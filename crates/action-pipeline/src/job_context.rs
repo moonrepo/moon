@@ -1,6 +1,5 @@
 use crate::event_emitter::EventEmitter;
 use moon_action::Action;
-use moon_toolchain_plugin::ToolchainRegistry;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -30,9 +29,6 @@ pub struct JobContext {
 
     /// Acquires a permit for concurrency
     pub semaphore: Arc<Semaphore>,
-
-    /// The registry of all toolchain plugins
-    pub toolchain_registry: Arc<ToolchainRegistry>,
 
     /// The project and task graphs, for use within actions
     pub workspace_graph: Arc<WorkspaceGraph>,

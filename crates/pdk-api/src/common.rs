@@ -16,11 +16,16 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
+        /// Workspace extension configuration.
+        /// Is null when within toolchains.
+        pub extension_config: serde_json::Value,
+
         /// Map of project IDs to their source location,
         /// relative from the workspace root.
         pub project_sources: BTreeMap<Id, String>,
 
         /// Workspace toolchain configuration.
+        /// Is null when within extensions.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -106,8 +111,12 @@ api_struct!(
         /// The current command (binary/program).
         pub command: String,
 
+        /// Workspace extension configuration.
+        /// Is null when within toolchains.
+        pub extension_config: serde_json::Value,
+
         /// Virtual path to a global executables directory
-        /// for the current toolchain.
+        /// for the current toolchain. Is null when within extensions.
         pub globals_dir: Option<VirtualPath>,
 
         /// Fragment of the project that the task belongs to.
@@ -117,7 +126,8 @@ api_struct!(
         pub task: TaskFragment,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. Is null when
+        /// within extensions.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -159,8 +169,12 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
+        /// Workspace extension configuration.
+        /// Is null when within toolchains.
+        pub extension_config: serde_json::Value,
+
         /// Virtual path to a global executables directory
-        /// for the current toolchain.
+        /// for the current toolchain. Is null when within extensions.
         pub globals_dir: Option<VirtualPath>,
 
         /// Fragment of the project that the task belongs to.
@@ -173,7 +187,8 @@ api_struct!(
         pub task: TaskFragment,
 
         /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence.
+        /// with the latter taking precedence. Is null when
+        /// within extensions.
         pub toolchain_config: serde_json::Value,
     }
 );

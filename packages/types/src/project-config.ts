@@ -59,7 +59,7 @@ export interface ProjectDockerFileConfig {
 export interface ProjectDockerScaffoldConfig {
 	/**
 	 * A list of glob patterns, relative from the project root,
-	 * to include (or exclude) in the sources skeleton.
+	 * to include (or exclude) in the "sources" skeleton.
 	 */
 	include: string[];
 }
@@ -323,7 +323,7 @@ export interface PartialProjectDockerFileConfig {
 export interface PartialProjectDockerScaffoldConfig {
 	/**
 	 * A list of glob patterns, relative from the project root,
-	 * to include (or exclude) in the sources skeleton.
+	 * to include (or exclude) in the "sources" skeleton.
 	 */
 	include?: string[] | null;
 }

@@ -71,16 +71,8 @@ export interface DockerPruneConfig {
 /** Configures aspects of the Docker scaffolding process. */
 export interface DockerScaffoldConfig {
 	/**
-	 * Copy toolchain specific configs/manifests/files into
-	 * the configuration skeleton.
-	 *
-	 * @default true
-	 * @deprecated
-	 */
-	copyToolchainFiles?: boolean;
-	/**
 	 * List of glob patterns, relative from the workspace root,
-	 * to include (or exclude) in the configuration skeleton.
+	 * to include (or exclude) in the "configs" skeleton.
 	 */
 	include: string[];
 }
@@ -611,16 +603,8 @@ export interface PartialDockerPruneConfig {
 /** Configures aspects of the Docker scaffolding process. */
 export interface PartialDockerScaffoldConfig {
 	/**
-	 * Copy toolchain specific configs/manifests/files into
-	 * the configuration skeleton.
-	 *
-	 * @default true
-	 * @deprecated
-	 */
-	copyToolchainFiles?: boolean | null;
-	/**
 	 * List of glob patterns, relative from the workspace root,
-	 * to include (or exclude) in the configuration skeleton.
+	 * to include (or exclude) in the "configs" skeleton.
 	 */
 	include?: string[] | null;
 }

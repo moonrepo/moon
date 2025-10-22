@@ -38,15 +38,8 @@ tasks:
       - '*.js'
       - 'tsconfig.json'
 
-  nv:
-    command: 'node --version'
-
 workspace:
   inheritedTasks:
     exclude:
       - 'build'
       - 'typecheck'
-
-toolchain:
-  node:
-    version: '24.0.0'

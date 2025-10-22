@@ -286,16 +286,9 @@
       "description": "Configures aspects of the Docker scaffolding process.",
       "type": "object",
       "properties": {
-        "copyToolchainFiles": {
-          "title": "copyToolchainFiles",
-          "description": "Copy toolchain specific configs/manifests/files into the configuration skeleton.",
-          "default": true,
-          "deprecated": true,
-          "type": "boolean"
-        },
         "include": {
           "title": "include",
-          "description": "List of glob patterns, relative from the workspace root, to include (or exclude) in the configuration skeleton.",
+          "description": "List of glob patterns, relative from the workspace root, to include (or exclude) in the \"configs\" skeleton.",
           "type": "array",
           "items": {
             "type": "string"

@@ -683,7 +683,7 @@
       "properties": {
         "include": {
           "title": "include",
-          "description": "A list of glob patterns, relative from the project root, to include (or exclude) in the sources skeleton.",
+          "description": "A list of glob patterns, relative from the project root, to include (or exclude) in the \"sources\" skeleton.",
           "type": "array",
           "items": {
             "type": "string"

@@ -65,7 +65,6 @@ pub async fn sync_project(
         dependencies.insert(dep_config.id.to_owned(), dep_project);
     }
 
-    // TODO
     // Sync the projects and return true if any files have been mutated
     for sync_result in app_context
         .toolchain_registry

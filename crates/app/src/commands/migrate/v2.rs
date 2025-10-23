@@ -353,6 +353,7 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
             "constraints.enforceProjectTypeRelationships",
             "constraints.enforceLayerRelationships",
         );
+        remove_setting(root, "docker.scaffold.copyToolchainFiles");
         remove_setting(root, "experiments.gitV2");
         change_setting(root, "extensions", false, |node, key| {
             extensions = node.remove(key);

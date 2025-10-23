@@ -32,6 +32,7 @@ toc_max_heading_level: 6
   - `vcs.manager` -> `vcs.client`
   - `vcs.syncHooks` -> `vcs.sync`
 - Removed settings:
+  - `docker.scaffold.copyToolchainFiles`
   - `experiments.*`
   - `hasher.batchSize`
   - `pipeline.archivableTargets`
@@ -221,6 +222,13 @@ $ moon query touched-files
 # After
 $ moon query changed-files
 ```
+
+### Docker
+
+- The scaffolded `.moon/docker/workspace` directory was renamed to `.moon/docker/configs`.
+- The `moon docker file` command will now loop through all toolchains and use the first image found,
+  otherwise it defaults to "scratch". If you want to be explicit, set the `docker.file.image`
+  setting in `moon.*`.
 
 ### Query language (MQL)
 

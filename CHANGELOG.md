@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-#### 🚀 Updates
+#### 💥 Breaking
 
 - **WASM API**
   - Renamed `ProjectFragment.alias` to `ProjectFragment.aliases` and changed its type from

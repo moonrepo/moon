@@ -10,6 +10,7 @@ pub fn register_toolchain(
         name: input.id.to_string(),
         manifest_file_names: vec!["tc.cfg".into(), "tc.root.cfg".into()],
         lock_file_names: vec!["tc.lock".into()],
+        vendor_dir_name: Some("vendor".into()),
         ..Default::default()
     }))
 }

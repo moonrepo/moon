@@ -18,15 +18,18 @@ struct PruneToolchainInstance {
 }
 
 #[instrument(skip_all)]
-pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) -> AppResult {
-    let project_graph = session.get_project_graph().await?;
+pub async fn prune_toolchains(
+    session: &MoonSession,
+    manifest: &DockerManifest,
+) -> miette::Result<()> {
+    let workspace_graph = session.get_workspace_graph().await?;
     let toolchain_registry = session.get_toolchain_registry().await?;
 
     // Collect all dependency roots and which projects belong to it
     let mut deps_roots: Vec<PruneToolchainInstance> = vec![];
 
     for project_id in &manifest.focused_projects {
-        let project = project_graph.get(project_id)?;
+        let project = workspace_graph.get_project(project_id)?;
 
         for locate_result in toolchain_registry
             .locate_dependencies_root_many(
@@ -65,7 +68,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
     }
 
     if deps_roots.is_empty() {
-        return Ok(None);
+        return Ok(());
     }
 
     // Then prune and install dependencies for each root (and its projects)
@@ -79,8 +82,8 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
 
         set.spawn(async move {
             // Run prune first, so this can remove all development artifacts
-            if toolchain.has_func("prune_docker").await {
-                let _output = toolchain
+            if toolchain.has_func("prune_docker").await && docker_config.delete_vendor_directories {
+                let _ = toolchain
                     .prune_docker(PruneDockerInput {
                         context: toolchain_registry.create_context(),
                         docker_config: docker_config.clone(),
@@ -113,6 +116,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
                 let output = toolchain
                     .install_dependencies(InstallDependenciesInput {
                         context: toolchain_registry.create_context(),
+                        // TODO
                         packages: instance
                             .projects
                             .iter()
@@ -154,7 +158,7 @@ pub async fn prune_toolchains(session: &MoonSession, manifest: &DockerManifest) 
         });
     }
 
-    Ok(None)
+    Ok(())
 }
 
 #[instrument(skip_all)]

@@ -60,9 +60,10 @@ fn copy_files<I: IntoIterator<Item = String>>(
 }
 
 #[instrument(skip(session))]
-async fn scaffold_configs_root(
+async fn scaffold_root(
     session: &MoonSession,
-    docker_configs_root: &Path,
+    docker_root: &Path,
+    phase: ScaffoldDockerPhase,
 ) -> miette::Result<()> {
     let toolchain_registry = session.get_toolchain_registry().await?;
 
@@ -73,8 +74,8 @@ async fn scaffold_configs_root(
                 context: registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&session.workspace_root),
-                output_dir: toolchain.to_virtual_path(docker_configs_root),
-                phase: ScaffoldDockerPhase::Configs,
+                output_dir: toolchain.to_virtual_path(docker_root),
+                phase,
                 project: None,
                 toolchain_config: registry.create_config(&toolchain.id),
             },
@@ -84,7 +85,7 @@ async fn scaffold_configs_root(
     copy_files(
         get_toolchain_globs(session, None).await?,
         &session.workspace_root,
-        docker_configs_root,
+        docker_root,
     )?;
 
     Ok(())
@@ -147,7 +148,7 @@ async fn scaffold_configs(
         scaffold_configs_project(session, &docker_configs_root, &project).await?;
     }
 
-    scaffold_configs_root(session, &docker_configs_root).await?;
+    scaffold_root(session, &docker_configs_root, ScaffoldDockerPhase::Configs).await?;
 
     // Copy moon configuration
     debug!(
@@ -213,18 +214,21 @@ async fn scaffold_sources_project(
     let docker_project_root = project.source.to_logical_path(docker_sources_root);
 
     // Gather globs and copy
-    let mut globs = project
-        .config
-        .docker
-        .scaffold
-        .include
-        .iter()
-        .map(|glob| glob.to_string())
-        .collect::<Vec<_>>();
+    let mut globs = FxHashSet::from_iter(
+        project
+            .config
+            .docker
+            .scaffold
+            .include
+            .iter()
+            .map(|glob| glob.to_string()),
+    );
 
     if globs.is_empty() {
-        globs.push("**/*".into());
+        globs.insert("**/*".into());
     }
+
+    globs.extend(get_toolchain_globs(session, Some(&project)).await?);
 
     debug!(
         scaffold_dir = ?docker_project_root,
@@ -313,6 +317,8 @@ async fn scaffold_sources(
         )
         .await?;
     }
+
+    scaffold_root(session, &docker_sources_root, ScaffoldDockerPhase::Sources).await?;
 
     // Include non-focused projects in the manifest
     for project_id in project_graph.get_node_keys() {

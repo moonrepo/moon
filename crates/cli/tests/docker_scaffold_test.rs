@@ -88,4 +88,76 @@ mod docker_scaffold {
             assert!(!docker.join("scaffold/file.txt").exists());
         }
     }
+
+    mod sources_skeleton {
+        use super::*;
+
+        #[test]
+        fn runs_toolchain_funcs() {
+            let sandbox = create_moon_sandbox("docker");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("scaffold");
+                })
+                .debug();
+
+            let docker = sandbox.path().join(".moon/docker/sources");
+
+            assert!(!docker.join("scaffold/from-configs-phase").exists());
+            assert!(!docker.join("from-configs-phase").exists());
+
+            assert!(docker.join("scaffold/from-sources-phase").exists());
+            assert!(docker.join("from-sources-phase").exists());
+        }
+
+        #[test]
+        fn only_copies_source_files_for_focused_projects() {
+            let sandbox = create_moon_sandbox("docker");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("scaffold");
+                })
+                .success();
+
+            let docker = sandbox.path().join(".moon/docker/sources");
+
+            assert!(docker.join("dep/file.txt").exists());
+            assert!(!docker.join("prune/file.txt").exists());
+            assert!(docker.join("scaffold/file.txt").exists());
+        }
+
+        #[test]
+        fn can_copy_multiple_projects() {
+            let sandbox = create_moon_sandbox("docker");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("dep").arg("prune");
+                })
+                .success();
+
+            let docker = sandbox.path().join(".moon/docker/sources");
+
+            assert!(docker.join("dep/file.txt").exists());
+            assert!(docker.join("prune/file.txt").exists());
+            assert!(!docker.join("scaffold/file.txt").exists());
+        }
+
+        #[test]
+        fn doesnt_copy_vendor_files() {
+            let sandbox = create_moon_sandbox("docker");
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("docker").arg("scaffold").arg("prune");
+                })
+                .success();
+
+            let docker = sandbox.path().join(".moon/docker/sources");
+
+            assert!(!docker.join("prune/vendor").exists());
+        }
+    }
 }

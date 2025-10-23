@@ -18,7 +18,6 @@ docker {
 		installToolchainDeps = false
 	}
 	scaffold {
-		copyToolchainFiles = false
 		include = List("*.js")
 	}
 }

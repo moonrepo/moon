@@ -2,7 +2,7 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::MoonSession;
 use async_recursion::async_recursion;
 use clap::Args;
-use moon_common::{Id, consts::*, path};
+use moon_common::{Id, consts::*};
 use moon_pdk_api::{DefineDockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
 use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
@@ -35,9 +35,12 @@ async fn get_toolchain_globs(
         })
         .await?;
 
-    Ok(FxHashSet::from_iter(
-        outputs.into_iter().flat_map(|output| output.scaffold_globs),
-    ))
+    let mut globs =
+        FxHashSet::from_iter(outputs.into_iter().flat_map(|output| output.scaffold_globs));
+
+    globs.insert(format!("moon.{}", session.config_loader.get_ext_glob()));
+
+    Ok(globs)
 }
 
 fn copy_files<I: IntoIterator<Item = String>>(
@@ -57,9 +60,11 @@ fn copy_files<I: IntoIterator<Item = String>>(
 }
 
 #[instrument(skip(session))]
-async fn scaffold_configs_root(session: &MoonSession, docker_configs_root: &Path) -> AppResult {
+async fn scaffold_configs_root(
+    session: &MoonSession,
+    docker_configs_root: &Path,
+) -> miette::Result<()> {
     let toolchain_registry = session.get_toolchain_registry().await?;
-    let shared_globs = get_toolchain_globs(session, None).await?;
 
     toolchain_registry
         .scaffold_docker_many(
@@ -76,11 +81,13 @@ async fn scaffold_configs_root(session: &MoonSession, docker_configs_root: &Path
         )
         .await?;
 
-    if !shared_globs.is_empty() {
-        copy_files(shared_globs, &session.workspace_root, docker_configs_root)?;
-    }
+    copy_files(
+        get_toolchain_globs(session, None).await?,
+        &session.workspace_root,
+        docker_configs_root,
+    )?;
 
-    Ok(None)
+    Ok(())
 }
 
 #[instrument(skip(session))]
@@ -88,9 +95,8 @@ async fn scaffold_configs_project(
     session: &MoonSession,
     docker_configs_root: &Path,
     project: &Project,
-) -> AppResult {
+) -> miette::Result<()> {
     let docker_project_root = project.source.to_logical_path(docker_configs_root);
-    let shared_globs = get_toolchain_globs(session, Some(project)).await?;
     let toolchains = project.get_enabled_toolchains();
 
     if !toolchains.is_empty() {
@@ -111,11 +117,13 @@ async fn scaffold_configs_project(
             .await?;
     }
 
-    if !shared_globs.is_empty() {
-        copy_files(shared_globs, &project.root, &docker_project_root)?;
-    }
+    copy_files(
+        get_toolchain_globs(session, Some(project)).await?,
+        &project.root,
+        &docker_project_root,
+    )?;
 
-    Ok(None)
+    Ok(())
 }
 
 #[instrument(skip(session, project_graph))]
@@ -123,7 +131,7 @@ async fn scaffold_configs(
     session: &MoonSession,
     project_graph: &ProjectGraph,
     docker_root: &Path,
-) -> AppResult {
+) -> miette::Result<()> {
     let docker_configs_root = docker_root.join("configs");
     let projects = project_graph.get_all()?;
 
@@ -135,19 +143,11 @@ async fn scaffold_configs(
     fs::create_dir_all(&docker_configs_root)?;
 
     // Copy each project and mimic the folder structure
-    let mut has_root_project = false;
-
     for project in projects {
-        if path::is_root_level_source(&project.source) {
-            has_root_project = true;
-        }
-
         scaffold_configs_project(session, &docker_configs_root, &project).await?;
     }
 
-    if !has_root_project {
-        scaffold_configs_root(session, &docker_configs_root).await?;
-    }
+    scaffold_configs_root(session, &docker_configs_root).await?;
 
     // Copy moon configuration
     debug!(
@@ -155,10 +155,12 @@ async fn scaffold_configs(
         "Copying core moon configuration"
     );
 
+    let ext_glob = session.config_loader.get_ext_glob();
+
     copy_files(
         [
-            ".moon/*.{pkl,yml}".to_owned(),
-            ".moon/tasks/**/*.{pkl,yml}".to_owned(),
+            format!(".moon/*.{ext_glob}"),
+            format!(".moon/tasks/**/*.{ext_glob}"),
         ],
         &session.workspace_root,
         &docker_configs_root,
@@ -185,7 +187,7 @@ async fn scaffold_configs(
         copy_files(globs, &session.workspace_root, &docker_configs_root)?;
     }
 
-    Ok(None)
+    Ok(())
 }
 
 #[instrument(skip(session, project_graph, manifest))]
@@ -197,10 +199,10 @@ async fn scaffold_sources_project(
     project_id: &Id,
     manifest: &mut DockerManifest,
     visited: &mut FxHashSet<Id>,
-) -> AppResult {
+) -> miette::Result<()> {
     // Skip if already visited
     if visited.contains(project_id) {
-        return Ok(None);
+        return Ok(());
     }
 
     visited.insert(project_id.to_owned());
@@ -274,7 +276,7 @@ async fn scaffold_sources_project(
         }
     }
 
-    Ok(None)
+    Ok(())
 }
 
 #[instrument(skip(session, project_graph))]
@@ -283,7 +285,7 @@ async fn scaffold_sources(
     project_graph: &ProjectGraph,
     docker_root: &Path,
     project_ids: &[Id],
-) -> AppResult {
+) -> miette::Result<()> {
     let docker_sources_root = docker_root.join("sources");
 
     debug!(
@@ -328,7 +330,7 @@ async fn scaffold_sources(
         true,
     )?;
 
-    Ok(None)
+    Ok(())
 }
 
 fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {

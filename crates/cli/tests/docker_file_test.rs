@@ -2,7 +2,7 @@ use moon_test_utils2::create_moon_sandbox;
 use starbase_sandbox::predicates::prelude::*;
 use std::fs;
 
-mod dockerfile {
+mod docker_file {
     use super::*;
 
     #[test]

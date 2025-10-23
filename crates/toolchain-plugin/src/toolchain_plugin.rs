@@ -168,10 +168,16 @@ impl ToolchainPlugin {
         &self,
         input: DefineDockerMetadataInput,
     ) -> miette::Result<DefineDockerMetadataOutput> {
-        let mut output: DefineDockerMetadataOutput = self
-            .plugin
-            .cache_func_with("define_docker_metadata", input)
-            .await?;
+        let mut output: DefineDockerMetadataOutput =
+            // Do this check within this function so that we can
+            // inherit the other globs below!
+            if self.plugin.has_func("define_docker_metadata").await {
+                self.plugin
+                    .cache_func_with("define_docker_metadata", input)
+                    .await?
+            } else {
+                Default::default()
+            };
 
         // Include toolchain metadata in docker
         let mut add_globs = |globs: &[String]| {
@@ -186,7 +192,7 @@ impl ToolchainPlugin {
         add_globs(&self.metadata.manifest_file_names);
 
         if let Some(name) = &self.metadata.vendor_dir_name {
-            add_globs(&[format!("!{name}/**/*")]);
+            add_globs(&[format!("!{name}/**/*"), format!("!**/{name}/**/*")]);
         }
 
         Ok(output)

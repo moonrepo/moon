@@ -4,14 +4,14 @@ use moon_config::ProjectConfig;
 use moon_pdk_api::ExtendProjectOutput;
 use moon_task::{Target, TaskOptions};
 use petgraph::graph::NodeIndex;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct ProjectBuildData {
-    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
-    pub aliases: FxHashSet<String>,
+    #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+    pub aliases: FxHashMap<String, Id>,
 
     #[serde(skip)]
     pub config: Option<ProjectConfig>,
@@ -34,7 +34,7 @@ impl ProjectBuildData {
             Id::raw(id_or_alias)
         } else {
             match project_data.iter().find_map(|(id, build_data)| {
-                if build_data.aliases.contains(id_or_alias) {
+                if build_data.aliases.contains_key(id_or_alias) {
                     Some(id)
                 } else {
                     None

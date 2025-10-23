@@ -354,7 +354,7 @@ impl ToolchainRegistry {
     pub async fn extend_project_graph_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendProjectGraphOutput>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ExtendProjectGraphOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectGraphInput,
     {
@@ -367,7 +367,7 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().map(|result| result.output).collect())
+        Ok(results)
     }
 
     pub async fn extend_task_command_many<InFn>(

@@ -4,7 +4,7 @@ use moon_config::{
     ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainsConfig,
 };
 use moon_file_group::FileGroup;
-use moon_project::Project;
+use moon_project::{Project, ProjectAlias};
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext, create_project_dep_from_task_dep};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
@@ -35,7 +35,7 @@ pub struct ProjectBuilder<'app> {
     // Values to be continually built
     id: &'app Id,
     source: &'app WorkspaceRelativePath,
-    aliases: Vec<String>,
+    aliases: Vec<ProjectAlias>,
     root: PathBuf,
 
     pub language: LanguageType,
@@ -233,8 +233,8 @@ impl<'app> ProjectBuilder<'app> {
         self
     }
 
-    pub fn set_aliases(&mut self, aliases: Vec<String>) -> &mut Self {
-        self.aliases = aliases.to_owned();
+    pub fn set_aliases(&mut self, aliases: Vec<ProjectAlias>) -> &mut Self {
+        self.aliases = aliases;
         self
     }
 
@@ -417,7 +417,7 @@ fn resolve_project_dependencies(project: &mut Project, root_project_id: Option<&
                         || project
                             .aliases
                             .iter()
-                            .any(|alias| alias.as_str() == dep_project_id.as_str())
+                            .any(|alias| alias.alias.as_str() == dep_project_id.as_str())
                 },
             ) {
                 deps.push(dep_config);

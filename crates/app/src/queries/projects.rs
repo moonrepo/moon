@@ -64,7 +64,10 @@ fn load_with_regex(
         if let Some(regex) = &alias_regex
             && !project.aliases.is_empty()
         {
-            let has_alias = project.aliases.iter().any(|alias| regex.is_match(alias));
+            let has_alias = project
+                .aliases
+                .iter()
+                .any(|alias| regex.is_match(&alias.alias));
 
             if !has_alias {
                 continue;

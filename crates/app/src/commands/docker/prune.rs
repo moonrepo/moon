@@ -116,11 +116,22 @@ pub async fn prune_toolchains(
                 let output = toolchain
                     .install_dependencies(InstallDependenciesInput {
                         context: toolchain_registry.create_context(),
-                        // TODO
                         packages: instance
                             .projects
                             .iter()
-                            .flat_map(|project| project.aliases.clone())
+                            .flat_map(|project| {
+                                project
+                                    .aliases
+                                    .iter()
+                                    .filter_map(|alias| {
+                                        if alias.plugin == toolchain.id {
+                                            Some(alias.alias.clone())
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                            })
                             .collect(),
                         production: true,
                         project: in_project.as_ref().map(|project| project.to_fragment()),

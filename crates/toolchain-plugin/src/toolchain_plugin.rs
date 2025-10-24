@@ -188,6 +188,7 @@ impl ToolchainPlugin {
             }
         };
 
+        add_globs(&self.metadata.config_file_globs);
         add_globs(&self.metadata.lock_file_names);
         add_globs(&self.metadata.manifest_file_names);
 

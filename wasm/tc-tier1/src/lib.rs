@@ -70,3 +70,22 @@ pub fn scaffold_docker(
 
     Ok(Json(output))
 }
+
+#[plugin_fn]
+pub fn prune_docker(Json(input): Json<PruneDockerInput>) -> FnResult<Json<PruneDockerOutput>> {
+    let mut output = PruneDockerOutput::default();
+
+    for project in ["dep", "scaffold", "prune"] {
+        let vendor_dir = input.root.join(project).join("vendor");
+
+        if vendor_dir.exists() && input.docker_config.delete_vendor_directories {
+            fs::remove_dir_all(&vendor_dir)?;
+
+            if let Some(file) = vendor_dir.virtual_path() {
+                output.changed_files.push(file);
+            }
+        }
+    }
+
+    Ok(Json(output))
+}

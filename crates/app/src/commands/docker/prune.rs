@@ -82,7 +82,7 @@ pub async fn prune_toolchains(
 
         set.spawn(async move {
             // Run prune first, so this can remove all development artifacts
-            if toolchain.has_func("prune_docker").await && docker_config.delete_vendor_directories {
+            if toolchain.has_func("prune_docker").await {
                 let _ = toolchain
                     .prune_docker(PruneDockerInput {
                         context: toolchain_registry.create_context(),

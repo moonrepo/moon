@@ -9,53 +9,56 @@ mod docker_file {
     fn errors_for_unknown_project() {
         let sandbox = create_moon_sandbox("dockerfile");
 
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.args(["docker", "file", "missing", "--defaults"]);
-        });
-
-        assert.inner.stderr(predicate::str::contains(
-            "No project has been configured with the identifier or alias missing.",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args(["docker", "file", "missing", "--defaults"]);
+            })
+            .failure()
+            .stderr(predicate::str::contains(
+                "No project has been configured with the identifier or alias missing.",
+            ));
     }
 
     #[test]
     fn errors_for_unknown_build_task() {
         let sandbox = create_moon_sandbox("dockerfile");
 
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.args([
-                "docker",
-                "file",
-                "no-tasks",
-                "--defaults",
-                "--buildTask",
-                "missing",
-            ]);
-        });
-
-        assert.inner.stderr(predicate::str::contains(
-            "Unknown task missing for project no-tasks.",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args([
+                    "docker",
+                    "file",
+                    "no-tasks",
+                    "--defaults",
+                    "--buildTask",
+                    "missing",
+                ]);
+            })
+            .failure()
+            .stderr(predicate::str::contains(
+                "Unknown task missing for project no-tasks.",
+            ));
     }
 
     #[test]
     fn errors_for_unknown_start_task() {
         let sandbox = create_moon_sandbox("dockerfile");
 
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.args([
-                "docker",
-                "file",
-                "no-tasks",
-                "--defaults",
-                "--startTask",
-                "missing",
-            ]);
-        });
-
-        assert.inner.stderr(predicate::str::contains(
-            "Unknown task missing for project no-tasks.",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args([
+                    "docker",
+                    "file",
+                    "no-tasks",
+                    "--defaults",
+                    "--startTask",
+                    "missing",
+                ]);
+            })
+            .failure()
+            .stderr(predicate::str::contains(
+                "Unknown task missing for project no-tasks.",
+            ));
     }
 
     #[test]

@@ -14,7 +14,7 @@ docker {
 		startTask = "start"
 	}
 	scaffold {
-		include = List("*.js")
+		sourcesPhaseGlobs = List("*.js")
 	}
 }
 

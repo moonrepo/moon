@@ -29,7 +29,7 @@ vcs:
 
 docker:
   scaffold:
-    include:
+    configsPhaseGlobs:
       - '*.config.js'
       - '*.json'
 

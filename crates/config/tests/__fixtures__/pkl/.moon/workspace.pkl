@@ -15,10 +15,10 @@ constraints {
 docker {
 	prune {
 		deleteVendorDirectories = false
-		installToolchainDeps = false
+		installToolchainDependencies = false
 	}
 	scaffold {
-		include = List("*.js")
+		configsPhaseGlobs = List("*.js")
 	}
 }
 

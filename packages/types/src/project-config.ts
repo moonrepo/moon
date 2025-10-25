@@ -5,6 +5,12 @@
 import type { Id } from './common';
 import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
 import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchains-config';
+import type {
+	DockerFileConfig,
+	DockerScaffoldConfig,
+	PartialDockerFileConfig,
+	PartialDockerScaffoldConfig,
+} from './workspace-config';
 
 /** The relationship scope of a dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -38,61 +44,6 @@ export interface ProjectDependencyConfig {
 }
 
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
-
-/**
- * Configures `Dockerfile` generation. When configured at the workspace-level,
- * applies to all projects, but can be overridden at the project-level.
- */
-export interface DockerFileConfig {
-	/**
-	 * A task identifier within the current project for building the project.
-	 * If not defined, will skip the build step.
-	 */
-	buildTask: Id | null;
-	/**
-	 * The base Docker image to use. If not defined, will use the provided image
-	 * from the first matching toolchain, otherwise defaults to "scratch".
-	 */
-	image: string | null;
-	/**
-	 * Run the `moon docker prune` command after building the
-	 * project, but before starting it.
-	 * @since 2.0.0
-	 */
-	runPrune: boolean | null;
-	/**
-	 * Run the `moon docker setup` command after scaffolding,
-	 * but before building the project.
-	 * @since 2.0.0
-	 */
-	runSetup: boolean | null;
-	/**
-	 * A task identifier within the current project for starting the project
-	 * within the `CMD` instruction. If not defined, will skip the start step
-	 * and not include the `CMD` instruction.
-	 */
-	startTask: Id | null;
-}
-
-/**
- * Configures aspects of the Docker scaffolding process.
- * When configured at the workspace-level, applies to all projects,
- * but can be overridden at the project-level.
- */
-export interface DockerScaffoldConfig {
-	/**
-	 * List of glob patterns in which to include/exclude files in
-	 * the "configs" skeleton. Applies to both project and
-	 * workspace level scaffolding.
-	 */
-	configsPhaseGlobs: string[];
-	/**
-	 * List of glob patterns in which to include/exclude files in
-	 * the "sources" skeleton. Applies to both project and
-	 * workspace level scaffolding.
-	 */
-	sourcesPhaseGlobs: string[];
-}
 
 /**
  * Configures our Docker integration.
@@ -338,61 +289,6 @@ export interface PartialProjectDependencyConfig {
 }
 
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
-
-/**
- * Configures `Dockerfile` generation. When configured at the workspace-level,
- * applies to all projects, but can be overridden at the project-level.
- */
-export interface PartialDockerFileConfig {
-	/**
-	 * A task identifier within the current project for building the project.
-	 * If not defined, will skip the build step.
-	 */
-	buildTask?: Id | null;
-	/**
-	 * The base Docker image to use. If not defined, will use the provided image
-	 * from the first matching toolchain, otherwise defaults to "scratch".
-	 */
-	image?: string | null;
-	/**
-	 * Run the `moon docker prune` command after building the
-	 * project, but before starting it.
-	 * @since 2.0.0
-	 */
-	runPrune?: boolean | null;
-	/**
-	 * Run the `moon docker setup` command after scaffolding,
-	 * but before building the project.
-	 * @since 2.0.0
-	 */
-	runSetup?: boolean | null;
-	/**
-	 * A task identifier within the current project for starting the project
-	 * within the `CMD` instruction. If not defined, will skip the start step
-	 * and not include the `CMD` instruction.
-	 */
-	startTask?: Id | null;
-}
-
-/**
- * Configures aspects of the Docker scaffolding process.
- * When configured at the workspace-level, applies to all projects,
- * but can be overridden at the project-level.
- */
-export interface PartialDockerScaffoldConfig {
-	/**
-	 * List of glob patterns in which to include/exclude files in
-	 * the "configs" skeleton. Applies to both project and
-	 * workspace level scaffolding.
-	 */
-	configsPhaseGlobs?: string[] | null;
-	/**
-	 * List of glob patterns in which to include/exclude files in
-	 * the "sources" skeleton. Applies to both project and
-	 * workspace level scaffolding.
-	 */
-	sourcesPhaseGlobs?: string[] | null;
-}
 
 /**
  * Configures our Docker integration.

@@ -353,6 +353,11 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
             "constraints.enforceProjectTypeRelationships",
             "constraints.enforceLayerRelationships",
         );
+        rename_setting(
+            root,
+            "docker.prune.installToolchainDeps",
+            "docker.prune.installToolchainDependencies",
+        );
         remove_setting(root, "docker.scaffold.copyToolchainFiles");
         remove_setting(root, "experiments.gitV2");
         change_setting(root, "extensions", false, |node, key| {

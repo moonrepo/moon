@@ -184,6 +184,76 @@
         "implicit"
       ]
     },
+    "DockerFileConfig": {
+      "description": "Configures Dockerfile generation.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task identifier within the current project for building the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image to use.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runPrune": {
+          "title": "runPrune",
+          "description": "Run the moon docker prune command after building the project, but before starting it. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker prune` command after building the project, but before starting it. @since 2.0.0"
+        },
+        "runSetup": {
+          "title": "runSetup",
+          "description": "Run the moon docker setup command after scaffolding, but before building the project. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker setup` command after scaffolding, but before building the project. @since 2.0.0"
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task identifier within the current project for starting the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation."
+    },
     "FileGroupInput": {
       "description": "A file group input.",
       "type": "object",
@@ -613,13 +683,13 @@
       "properties": {
         "file": {
           "title": "file",
-          "description": "Configures aspects of the Dockerfile generation process.",
+          "description": "Configures aspects of the Dockerfile generation process. @since 1.27.0",
           "allOf": [
             {
-              "$ref": "#/definitions/ProjectDockerFileConfig"
+              "$ref": "#/definitions/DockerFileConfig"
             }
           ],
-          "markdownDescription": "Configures aspects of the `Dockerfile` generation process."
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process. @since 1.27.0"
         },
         "scaffold": {
           "title": "scaffold",
@@ -632,50 +702,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "ProjectDockerFileConfig": {
-      "description": "Configures Dockerfile generation. @since 1.27.0",
-      "type": "object",
-      "properties": {
-        "buildTask": {
-          "title": "buildTask",
-          "description": "A task identifier within the current project for building the project.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "image": {
-          "title": "image",
-          "description": "The base Docker image name.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "startTask": {
-          "title": "startTask",
-          "description": "A task identifier within the current project for starting the project.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Configures `Dockerfile` generation. @since 1.27.0"
     },
     "ProjectDockerScaffoldConfig": {
       "description": "Configures aspects of the Docker scaffolding process. @since 1.27.0",

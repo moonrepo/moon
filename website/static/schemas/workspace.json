@@ -242,6 +242,16 @@
       "description": "Configures our Docker integration.",
       "type": "object",
       "properties": {
+        "file": {
+          "title": "file",
+          "description": "Configures aspects of the Dockerfile generation process. @since 2.0.0",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DockerFileConfig"
+            }
+          ],
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process. @since 2.0.0"
+        },
         "prune": {
           "title": "prune",
           "description": "Configures aspects of the Docker pruning process.",
@@ -263,18 +273,88 @@
       },
       "additionalProperties": false
     },
+    "DockerFileConfig": {
+      "description": "Configures Dockerfile generation.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task identifier within the current project for building the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image to use.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runPrune": {
+          "title": "runPrune",
+          "description": "Run the moon docker prune command after building the project, but before starting it. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker prune` command after building the project, but before starting it. @since 2.0.0"
+        },
+        "runSetup": {
+          "title": "runSetup",
+          "description": "Run the moon docker setup command after scaffolding, but before building the project. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker setup` command after scaffolding, but before building the project. @since 2.0.0"
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task identifier within the current project for starting the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation."
+    },
     "DockerPruneConfig": {
       "description": "Configures aspects of the Docker pruning process.",
       "type": "object",
       "properties": {
         "deleteVendorDirectories": {
           "title": "deleteVendorDirectories",
-          "description": "Automatically delete vendor directories (package manager dependencies, build targets, etc) while pruning.",
+          "description": "Automatically delete vendor directories (package manager dependencies, build targets, etc) while pruning. This is handled by each toolchain plugin.",
           "default": true,
           "type": "boolean"
         },
-        "installToolchainDeps": {
-          "title": "installToolchainDeps",
+        "installToolchainDependencies": {
+          "title": "installToolchainDependencies",
           "description": "Automatically install production dependencies for all required toolchain's of the focused projects within the Docker build.",
           "default": true,
           "type": "boolean"

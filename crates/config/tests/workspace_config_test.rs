@@ -784,11 +784,12 @@ vcs:
                 DockerConfig {
                     prune: DockerPruneConfig {
                         delete_vendor_directories: false,
-                        install_toolchain_deps: false
+                        install_toolchain_dependencies: false
                     },
                     scaffold: DockerScaffoldConfig {
                         include: vec![GlobPath("*.js".into())]
-                    }
+                    },
+                    ..Default::default()
                 }
             );
             assert_eq!(

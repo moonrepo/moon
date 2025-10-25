@@ -50,11 +50,34 @@ export interface ConstraintsConfig {
 	tagRelationships: Record<Id, Id[]>;
 }
 
+/** Configures `Dockerfile` generation. */
+export interface DockerFileConfig {
+	/** A task identifier within the current project for building the project. */
+	buildTask: Id | null;
+	/** The base Docker image to use. */
+	image: string | null;
+	/**
+	 * Run the `moon docker prune` command after building the
+	 * project, but before starting it.
+	 * @since 2.0.0
+	 */
+	runPrune: boolean | null;
+	/**
+	 * Run the `moon docker setup` command after scaffolding,
+	 * but before building the project.
+	 * @since 2.0.0
+	 */
+	runSetup: boolean | null;
+	/** A task identifier within the current project for starting the project. */
+	startTask: Id | null;
+}
+
 /** Configures aspects of the Docker pruning process. */
 export interface DockerPruneConfig {
 	/**
 	 * Automatically delete vendor directories (package manager
-	 * dependencies, build targets, etc) while pruning.
+	 * dependencies, build targets, etc) while pruning. This is
+	 * handled by each toolchain plugin.
 	 *
 	 * @default true
 	 */
@@ -65,7 +88,7 @@ export interface DockerPruneConfig {
 	 *
 	 * @default true
 	 */
-	installToolchainDeps?: boolean;
+	installToolchainDependencies?: boolean;
 }
 
 /** Configures aspects of the Docker scaffolding process. */
@@ -79,6 +102,11 @@ export interface DockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface DockerConfig {
+	/**
+	 * Configures aspects of the `Dockerfile` generation process.
+	 * @since 2.0.0
+	 */
+	file: DockerFileConfig;
 	/** Configures aspects of the Docker pruning process. */
 	prune: DockerPruneConfig;
 	/** Configures aspects of the Docker scaffolding process. */
@@ -582,11 +610,34 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<Id, Id[]> | null;
 }
 
+/** Configures `Dockerfile` generation. */
+export interface PartialDockerFileConfig {
+	/** A task identifier within the current project for building the project. */
+	buildTask?: Id | null;
+	/** The base Docker image to use. */
+	image?: string | null;
+	/**
+	 * Run the `moon docker prune` command after building the
+	 * project, but before starting it.
+	 * @since 2.0.0
+	 */
+	runPrune?: boolean | null;
+	/**
+	 * Run the `moon docker setup` command after scaffolding,
+	 * but before building the project.
+	 * @since 2.0.0
+	 */
+	runSetup?: boolean | null;
+	/** A task identifier within the current project for starting the project. */
+	startTask?: Id | null;
+}
+
 /** Configures aspects of the Docker pruning process. */
 export interface PartialDockerPruneConfig {
 	/**
 	 * Automatically delete vendor directories (package manager
-	 * dependencies, build targets, etc) while pruning.
+	 * dependencies, build targets, etc) while pruning. This is
+	 * handled by each toolchain plugin.
 	 *
 	 * @default true
 	 */
@@ -597,7 +648,7 @@ export interface PartialDockerPruneConfig {
 	 *
 	 * @default true
 	 */
-	installToolchainDeps?: boolean | null;
+	installToolchainDependencies?: boolean | null;
 }
 
 /** Configures aspects of the Docker scaffolding process. */
@@ -611,6 +662,11 @@ export interface PartialDockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface PartialDockerConfig {
+	/**
+	 * Configures aspects of the `Dockerfile` generation process.
+	 * @since 2.0.0
+	 */
+	file?: PartialDockerFileConfig | null;
 	/** Configures aspects of the Docker pruning process. */
 	prune?: PartialDockerPruneConfig | null;
 	/** Configures aspects of the Docker scaffolding process. */

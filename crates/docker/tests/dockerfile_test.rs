@@ -44,4 +44,12 @@ mod dockerfile {
 
         assert_snapshot!(generate_dockerfile(options).unwrap());
     }
+
+    #[test]
+    fn with_setup() {
+        let mut options = create_options();
+        options.setup = true;
+
+        assert_snapshot!(generate_dockerfile(options).unwrap());
+    }
 }

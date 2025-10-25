@@ -29,19 +29,8 @@ FROM base AS build
 # Copy workspace configs
 COPY --from=skeleton /app/.moon/docker/configs .
 
+# Install toolchains and dependencies
+RUN moon docker setup
+
 # Copy project sources
 COPY --from=skeleton /app/.moon/docker/sources .
-
-# Build the project
-RUN moon run app:compile
-
-#### START STAGE
-#### Runs the project.
-
-FROM base AS start
-
-# Copy built sources
-COPY --from=build /root/.proto /root/.proto
-COPY --from=build /app /app
-
-CMD moon run app:serve

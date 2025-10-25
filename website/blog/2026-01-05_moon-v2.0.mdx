@@ -93,6 +93,27 @@ tasks:
       mergeToolchains: 'replace'
 ```
 
+## Docker
+
+### Defaults with overrides
+
+To improve customizability of `Dockerfile` generation, and to allow for more flexibility during the
+scaffolding process, we've updated the `docker` settings in `.moon/workspace.*` to act as defaults,
+and the `docker` settings in `moon.*` to act as overrides on a per-project basis. Because of this,
+we've also updated `docker.file` and `docker.scaffold` settings to be the same across both files.
+
+```yaml title=".moon/workspace.yml"
+docker:
+  file:
+    buildTask: 'build'
+```
+
+```yaml title="moon.yml"
+docker:
+  file:
+    buildTask: 'compile'
+```
+
 ## VCS
 
 ### New implementation

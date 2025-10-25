@@ -27,6 +27,7 @@ toc_max_heading_level: 6
 - Renamed settings:
   - `codeowners.syncOnRun` -> `codeowners.sync`
   - `constraints.enforceProjectTypeRelationships` -> `constraints.enforceLayerRelationships`
+  - `docker.prune.installToolchainDeps` -> `docker.prune.installToolchainDependencies`
   - `runner` -> `pipeline`
   - `unstable_remote` -> `remote`
   - `vcs.manager` -> `vcs.client`
@@ -228,7 +229,7 @@ $ moon query changed-files
 - The scaffolded `.moon/docker/workspace` directory was renamed to `.moon/docker/configs`.
 - The `moon docker file` command will now loop through all toolchains and use the first image found,
   otherwise it defaults to "scratch". If you want to be explicit, set the `docker.file.image`
-  setting in `moon.*`.
+  setting.
 
 ### Query language (MQL)
 

@@ -100,7 +100,7 @@ pub async fn prune_toolchains(
 
             // Then run install, so this can only install production dependencies
             if toolchain.has_func("install_dependencies").await
-                && docker_config.install_toolchain_deps
+                && docker_config.install_toolchain_dependencies
             {
                 let in_project = if instance.projects.len() == 1
                     && instance

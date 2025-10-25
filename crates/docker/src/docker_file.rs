@@ -10,6 +10,7 @@ pub struct GenerateDockerfileOptions {
     pub image: String,
     pub project: Id,
     pub prune: bool,
+    pub setup: bool,
     pub start_task: Option<Target>,
 }
 
@@ -27,6 +28,7 @@ pub fn generate_dockerfile(mut options: GenerateDockerfileOptions) -> miette::Re
     context.insert("image", &options.image);
     context.insert("project", &options.project);
     context.insert("prune", &options.prune);
+    context.insert("setup", &options.setup);
 
     if let Some(task) = &options.build_task {
         context.insert("build_task", task);

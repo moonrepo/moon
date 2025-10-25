@@ -27,8 +27,11 @@ pub struct DockerFileArgs {
     #[arg(long, help = "Base Docker image to use")]
     image: Option<String>,
 
-    #[arg(long, help = "Do not prune the workspace in the build stage")]
+    #[arg(long, help = "Do not prune dependencies in the build stage")]
     no_prune: bool,
+
+    #[arg(long, help = "Do not setup dependencies in the build stage")]
+    no_setup: bool,
 
     #[arg(
         long,
@@ -42,11 +45,13 @@ pub struct DockerFileArgs {
 
 #[instrument(skip_all)]
 pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
-    let console = &session.console;
     let workspace_graph = session.get_workspace_graph().await?;
+    let workspace_docker = &session.workspace_config.docker;
+    let console = &session.console;
 
     // Ensure the project exists
     let project = workspace_graph.get_project(&args.id)?;
+    let project_docker = &project.config.docker;
 
     let mut task_ids = project
         .task_targets
@@ -59,19 +64,35 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     let mut options = GenerateDockerfileOptions {
         disable_toolchain: args.no_toolchain,
         project: args.id,
-        prune: !args.no_prune,
+        prune: if args.no_prune {
+            false
+        } else {
+            project_docker
+                .file
+                .run_prune
+                .or(workspace_docker.file.run_prune)
+                .unwrap_or(true)
+        },
+        setup: if args.no_setup {
+            false
+        } else {
+            project_docker
+                .file
+                .run_setup
+                .or(workspace_docker.file.run_setup)
+                .unwrap_or(true)
+        },
         ..GenerateDockerfileOptions::default()
     };
 
     debug!("Gathering Dockerfile options");
 
     let base_image = get_base_image(&session, &project).await?;
-    let default_image = project
-        .config
-        .docker
+    let default_image = project_docker
         .file
         .image
         .clone()
+        .or_else(|| workspace_docker.file.image.clone())
         .unwrap_or(base_image);
 
     if let Some(image) = args.image {
@@ -92,17 +113,18 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
 
     debug!(image = &options.image, "Using Docker image");
 
+    let build_task_setting = project_docker
+        .file
+        .build_task
+        .as_ref()
+        .or(workspace_docker.file.build_task.as_ref());
+
     let build_task_id = if let Some(id) = &args.build_task {
         Some(id)
     } else if args.defaults {
-        project.config.docker.file.build_task.as_ref()
+        build_task_setting
     } else {
-        let default_index = project
-            .config
-            .docker
-            .file
-            .build_task
-            .as_ref()
+        let default_index = build_task_setting
             .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
         let mut index = default_index.unwrap_or(0);
 
@@ -141,17 +163,18 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         debug!("Not using a build task");
     }
 
+    let start_task_setting = project_docker
+        .file
+        .start_task
+        .as_ref()
+        .or(workspace_docker.file.start_task.as_ref());
+
     let start_task_id = if let Some(id) = &args.start_task {
         Some(id)
     } else if args.defaults {
-        project.config.docker.file.start_task.as_ref()
+        start_task_setting
     } else {
-        let default_index = project
-            .config
-            .docker
-            .file
-            .start_task
-            .as_ref()
+        let default_index = start_task_setting
             .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
         let mut index = default_index.unwrap_or(0);
 

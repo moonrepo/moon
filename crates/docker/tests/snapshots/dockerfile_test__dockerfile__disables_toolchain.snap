@@ -32,8 +32,5 @@ FROM base AS build
 # Copy workspace configs
 COPY --from=skeleton /app/.moon/docker/configs .
 
-# Install dependencies
-RUN moon docker setup
-
 # Copy project sources
 COPY --from=skeleton /app/.moon/docker/sources .

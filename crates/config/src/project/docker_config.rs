@@ -1,23 +1,7 @@
 use crate::config_struct;
 use crate::shapes::GlobPath;
-use moon_common::Id;
+use crate::workspace::{DockerFileConfig, PartialDockerFileConfig};
 use schematic::Config;
-
-config_struct!(
-    /// Configures `Dockerfile` generation.
-    /// @since 1.27.0
-    #[derive(Config)]
-    pub struct ProjectDockerFileConfig {
-        /// A task identifier within the current project for building the project.
-        pub build_task: Option<Id>,
-
-        /// The base Docker image name.
-        pub image: Option<String>,
-
-        /// A task identifier within the current project for starting the project.
-        pub start_task: Option<Id>,
-    }
-);
 
 config_struct!(
     /// Configures aspects of the Docker scaffolding process.
@@ -36,8 +20,9 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectDockerConfig {
         /// Configures aspects of the `Dockerfile` generation process.
+        /// @since 1.27.0
         #[setting(nested)]
-        pub file: ProjectDockerFileConfig,
+        pub file: DockerFileConfig,
 
         /// Configures aspects of the Docker scaffolding process.
         #[setting(nested)]

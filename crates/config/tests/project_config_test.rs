@@ -706,10 +706,11 @@ workspace:
                         })
                     ],
                     docker: ProjectDockerConfig {
-                        file: ProjectDockerFileConfig {
+                        file: DockerFileConfig {
                             build_task: Some(Id::raw("build")),
                             image: Some("node:latest".into()),
                             start_task: Some(Id::raw("start")),
+                            ..Default::default()
                         },
                         scaffold: ProjectDockerScaffoldConfig {
                             include: vec![GlobPath("*.js".into())]

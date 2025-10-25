@@ -39,15 +39,24 @@ export interface ProjectDependencyConfig {
 
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
-/**
- * Configures `Dockerfile` generation.
- * @since 1.27.0
- */
-export interface ProjectDockerFileConfig {
+/** Configures `Dockerfile` generation. */
+export interface DockerFileConfig {
 	/** A task identifier within the current project for building the project. */
 	buildTask: Id | null;
-	/** The base Docker image name. */
+	/** The base Docker image to use. */
 	image: string | null;
+	/**
+	 * Run the `moon docker prune` command after building the
+	 * project, but before starting it.
+	 * @since 2.0.0
+	 */
+	runPrune: boolean | null;
+	/**
+	 * Run the `moon docker setup` command after scaffolding,
+	 * but before building the project.
+	 * @since 2.0.0
+	 */
+	runSetup: boolean | null;
 	/** A task identifier within the current project for starting the project. */
 	startTask: Id | null;
 }
@@ -69,8 +78,11 @@ export interface ProjectDockerScaffoldConfig {
  * @since 1.27.0
  */
 export interface ProjectDockerConfig {
-	/** Configures aspects of the `Dockerfile` generation process. */
-	file: ProjectDockerFileConfig;
+	/**
+	 * Configures aspects of the `Dockerfile` generation process.
+	 * @since 1.27.0
+	 */
+	file: DockerFileConfig;
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold: ProjectDockerScaffoldConfig;
 }
@@ -303,15 +315,24 @@ export interface PartialProjectDependencyConfig {
 
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
-/**
- * Configures `Dockerfile` generation.
- * @since 1.27.0
- */
-export interface PartialProjectDockerFileConfig {
+/** Configures `Dockerfile` generation. */
+export interface PartialDockerFileConfig {
 	/** A task identifier within the current project for building the project. */
 	buildTask?: Id | null;
-	/** The base Docker image name. */
+	/** The base Docker image to use. */
 	image?: string | null;
+	/**
+	 * Run the `moon docker prune` command after building the
+	 * project, but before starting it.
+	 * @since 2.0.0
+	 */
+	runPrune?: boolean | null;
+	/**
+	 * Run the `moon docker setup` command after scaffolding,
+	 * but before building the project.
+	 * @since 2.0.0
+	 */
+	runSetup?: boolean | null;
 	/** A task identifier within the current project for starting the project. */
 	startTask?: Id | null;
 }
@@ -333,8 +354,11 @@ export interface PartialProjectDockerScaffoldConfig {
  * @since 1.27.0
  */
 export interface PartialProjectDockerConfig {
-	/** Configures aspects of the `Dockerfile` generation process. */
-	file?: PartialProjectDockerFileConfig | null;
+	/**
+	 * Configures aspects of the `Dockerfile` generation process.
+	 * @since 1.27.0
+	 */
+	file?: PartialDockerFileConfig | null;
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold?: PartialProjectDockerScaffoldConfig | null;
 }

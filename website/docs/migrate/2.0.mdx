@@ -28,6 +28,7 @@ toc_max_heading_level: 6
   - `codeowners.syncOnRun` -> `codeowners.sync`
   - `constraints.enforceProjectTypeRelationships` -> `constraints.enforceLayerRelationships`
   - `docker.prune.installToolchainDeps` -> `docker.prune.installToolchainDependencies`
+  - `docker.scaffold.include` -> `docker.scaffold.configsPhaseGlobs`
   - `runner` -> `pipeline`
   - `unstable_remote` -> `remote`
   - `vcs.manager` -> `vcs.client`
@@ -110,6 +111,7 @@ yarn:
 ### Configuration: `moon.*`
 
 - Renamed settings:
+  - `docker.scaffold.include` -> `docker.scaffold.sourcesPhaseGlobs`
   - `project.name` -> `project.title`
   - `type` -> `layer`
   - `toolchain` -> `toolchains`

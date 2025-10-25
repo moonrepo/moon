@@ -39,11 +39,20 @@ export interface ProjectDependencyConfig {
 
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
-/** Configures `Dockerfile` generation. */
+/**
+ * Configures `Dockerfile` generation. When configured at the workspace-level,
+ * applies to all projects, but can be overridden at the project-level.
+ */
 export interface DockerFileConfig {
-	/** A task identifier within the current project for building the project. */
+	/**
+	 * A task identifier within the current project for building the project.
+	 * If not defined, will skip the build step.
+	 */
 	buildTask: Id | null;
-	/** The base Docker image to use. */
+	/**
+	 * The base Docker image to use. If not defined, will use the provided image
+	 * from the first matching toolchain, otherwise defaults to "scratch".
+	 */
 	image: string | null;
 	/**
 	 * Run the `moon docker prune` command after building the
@@ -57,20 +66,32 @@ export interface DockerFileConfig {
 	 * @since 2.0.0
 	 */
 	runSetup: boolean | null;
-	/** A task identifier within the current project for starting the project. */
+	/**
+	 * A task identifier within the current project for starting the project
+	 * within the `CMD` instruction. If not defined, will skip the start step
+	 * and not include the `CMD` instruction.
+	 */
 	startTask: Id | null;
 }
 
 /**
  * Configures aspects of the Docker scaffolding process.
- * @since 1.27.0
+ * When configured at the workspace-level, applies to all projects,
+ * but can be overridden at the project-level.
  */
-export interface ProjectDockerScaffoldConfig {
+export interface DockerScaffoldConfig {
 	/**
-	 * A list of glob patterns, relative from the project root,
-	 * to include (or exclude) in the "sources" skeleton.
+	 * List of glob patterns in which to include/exclude files in
+	 * the "configs" skeleton. Applies to both project and
+	 * workspace level scaffolding.
 	 */
-	include: string[];
+	configsPhaseGlobs: string[];
+	/**
+	 * List of glob patterns in which to include/exclude files in
+	 * the "sources" skeleton. Applies to both project and
+	 * workspace level scaffolding.
+	 */
+	sourcesPhaseGlobs: string[];
 }
 
 /**
@@ -83,8 +104,11 @@ export interface ProjectDockerConfig {
 	 * @since 1.27.0
 	 */
 	file: DockerFileConfig;
-	/** Configures aspects of the Docker scaffolding process. */
-	scaffold: ProjectDockerScaffoldConfig;
+	/**
+	 * Configures aspects of the Docker scaffolding process.
+	 * @since 1.27.0
+	 */
+	scaffold: DockerScaffoldConfig;
 }
 
 /** Supported programming languages that each project can be written in. */
@@ -315,11 +339,20 @@ export interface PartialProjectDependencyConfig {
 
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
-/** Configures `Dockerfile` generation. */
+/**
+ * Configures `Dockerfile` generation. When configured at the workspace-level,
+ * applies to all projects, but can be overridden at the project-level.
+ */
 export interface PartialDockerFileConfig {
-	/** A task identifier within the current project for building the project. */
+	/**
+	 * A task identifier within the current project for building the project.
+	 * If not defined, will skip the build step.
+	 */
 	buildTask?: Id | null;
-	/** The base Docker image to use. */
+	/**
+	 * The base Docker image to use. If not defined, will use the provided image
+	 * from the first matching toolchain, otherwise defaults to "scratch".
+	 */
 	image?: string | null;
 	/**
 	 * Run the `moon docker prune` command after building the
@@ -333,20 +366,32 @@ export interface PartialDockerFileConfig {
 	 * @since 2.0.0
 	 */
 	runSetup?: boolean | null;
-	/** A task identifier within the current project for starting the project. */
+	/**
+	 * A task identifier within the current project for starting the project
+	 * within the `CMD` instruction. If not defined, will skip the start step
+	 * and not include the `CMD` instruction.
+	 */
 	startTask?: Id | null;
 }
 
 /**
  * Configures aspects of the Docker scaffolding process.
- * @since 1.27.0
+ * When configured at the workspace-level, applies to all projects,
+ * but can be overridden at the project-level.
  */
-export interface PartialProjectDockerScaffoldConfig {
+export interface PartialDockerScaffoldConfig {
 	/**
-	 * A list of glob patterns, relative from the project root,
-	 * to include (or exclude) in the "sources" skeleton.
+	 * List of glob patterns in which to include/exclude files in
+	 * the "configs" skeleton. Applies to both project and
+	 * workspace level scaffolding.
 	 */
-	include?: string[] | null;
+	configsPhaseGlobs?: string[] | null;
+	/**
+	 * List of glob patterns in which to include/exclude files in
+	 * the "sources" skeleton. Applies to both project and
+	 * workspace level scaffolding.
+	 */
+	sourcesPhaseGlobs?: string[] | null;
 }
 
 /**
@@ -359,8 +404,11 @@ export interface PartialProjectDockerConfig {
 	 * @since 1.27.0
 	 */
 	file?: PartialDockerFileConfig | null;
-	/** Configures aspects of the Docker scaffolding process. */
-	scaffold?: PartialProjectDockerScaffoldConfig | null;
+	/**
+	 * Configures aspects of the Docker scaffolding process.
+	 * @since 1.27.0
+	 */
+	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;

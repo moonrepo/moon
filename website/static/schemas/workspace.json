@@ -274,12 +274,12 @@
       "additionalProperties": false
     },
     "DockerFileConfig": {
-      "description": "Configures Dockerfile generation.",
+      "description": "Configures Dockerfile generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
       "type": "object",
       "properties": {
         "buildTask": {
           "title": "buildTask",
-          "description": "A task identifier within the current project for building the project.",
+          "description": "A task identifier within the current project for building the project. If not defined, will skip the build step.",
           "anyOf": [
             {
               "$ref": "#/definitions/Id"
@@ -291,7 +291,7 @@
         },
         "image": {
           "title": "image",
-          "description": "The base Docker image to use.",
+          "description": "The base Docker image to use. If not defined, will use the provided image from the first matching toolchain, otherwise defaults to \"scratch\".",
           "anyOf": [
             {
               "type": "string"
@@ -329,7 +329,7 @@
         },
         "startTask": {
           "title": "startTask",
-          "description": "A task identifier within the current project for starting the project.",
+          "description": "A task identifier within the current project for starting the project within the CMD instruction. If not defined, will skip the start step and not include the CMD instruction.",
           "anyOf": [
             {
               "$ref": "#/definitions/Id"
@@ -337,11 +337,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "A task identifier within the current project for starting the project within the `CMD` instruction. If not defined, will skip the start step and not include the `CMD` instruction."
         }
       },
       "additionalProperties": false,
-      "markdownDescription": "Configures `Dockerfile` generation."
+      "markdownDescription": "Configures `Dockerfile` generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
     },
     "DockerPruneConfig": {
       "description": "Configures aspects of the Docker pruning process.",
@@ -349,7 +350,7 @@
       "properties": {
         "deleteVendorDirectories": {
           "title": "deleteVendorDirectories",
-          "description": "Automatically delete vendor directories (package manager dependencies, build targets, etc) while pruning. This is handled by each toolchain plugin.",
+          "description": "Automatically delete vendor directories (package manager dependencies, build targets, etc) while pruning. This is handled by each toolchain plugin and not moon directly.",
           "default": true,
           "type": "boolean"
         },
@@ -363,19 +364,28 @@
       "additionalProperties": false
     },
     "DockerScaffoldConfig": {
-      "description": "Configures aspects of the Docker scaffolding process.",
+      "description": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
       "type": "object",
       "properties": {
-        "include": {
-          "title": "include",
-          "description": "List of glob patterns, relative from the workspace root, to include (or exclude) in the \"configs\" skeleton.",
+        "configsPhaseGlobs": {
+          "title": "configsPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourcesPhaseGlobs": {
+          "title": "sourcesPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding.",
           "type": "array",
           "items": {
             "type": "string"
           }
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
     },
     "ExperimentsConfig": {
       "description": "Configures experiments across the entire moon workspace.",

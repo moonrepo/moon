@@ -787,7 +787,8 @@ vcs:
                         install_toolchain_dependencies: false
                     },
                     scaffold: DockerScaffoldConfig {
-                        include: vec![GlobPath("*.js".into())]
+                        configs_phase_globs: vec![GlobPath("*.js".into())],
+                        sources_phase_globs: vec![]
                     },
                     ..Default::default()
                 }

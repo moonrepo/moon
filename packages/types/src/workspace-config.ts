@@ -50,11 +50,20 @@ export interface ConstraintsConfig {
 	tagRelationships: Record<Id, Id[]>;
 }
 
-/** Configures `Dockerfile` generation. */
+/**
+ * Configures `Dockerfile` generation. When configured at the workspace-level,
+ * applies to all projects, but can be overridden at the project-level.
+ */
 export interface DockerFileConfig {
-	/** A task identifier within the current project for building the project. */
+	/**
+	 * A task identifier within the current project for building the project.
+	 * If not defined, will skip the build step.
+	 */
 	buildTask: Id | null;
-	/** The base Docker image to use. */
+	/**
+	 * The base Docker image to use. If not defined, will use the provided image
+	 * from the first matching toolchain, otherwise defaults to "scratch".
+	 */
 	image: string | null;
 	/**
 	 * Run the `moon docker prune` command after building the
@@ -68,7 +77,11 @@ export interface DockerFileConfig {
 	 * @since 2.0.0
 	 */
 	runSetup: boolean | null;
-	/** A task identifier within the current project for starting the project. */
+	/**
+	 * A task identifier within the current project for starting the project
+	 * within the `CMD` instruction. If not defined, will skip the start step
+	 * and not include the `CMD` instruction.
+	 */
 	startTask: Id | null;
 }
 
@@ -77,7 +90,7 @@ export interface DockerPruneConfig {
 	/**
 	 * Automatically delete vendor directories (package manager
 	 * dependencies, build targets, etc) while pruning. This is
-	 * handled by each toolchain plugin.
+	 * handled by each toolchain plugin and not moon directly.
 	 *
 	 * @default true
 	 */
@@ -91,13 +104,24 @@ export interface DockerPruneConfig {
 	installToolchainDependencies?: boolean;
 }
 
-/** Configures aspects of the Docker scaffolding process. */
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * When configured at the workspace-level, applies to all projects,
+ * but can be overridden at the project-level.
+ */
 export interface DockerScaffoldConfig {
 	/**
-	 * List of glob patterns, relative from the workspace root,
-	 * to include (or exclude) in the "configs" skeleton.
+	 * List of glob patterns in which to include/exclude files in
+	 * the "configs" skeleton. Applies to both project and
+	 * workspace level scaffolding.
 	 */
-	include: string[];
+	configsPhaseGlobs: string[];
+	/**
+	 * List of glob patterns in which to include/exclude files in
+	 * the "sources" skeleton. Applies to both project and
+	 * workspace level scaffolding.
+	 */
+	sourcesPhaseGlobs: string[];
 }
 
 /** Configures our Docker integration. */
@@ -610,11 +634,20 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<Id, Id[]> | null;
 }
 
-/** Configures `Dockerfile` generation. */
+/**
+ * Configures `Dockerfile` generation. When configured at the workspace-level,
+ * applies to all projects, but can be overridden at the project-level.
+ */
 export interface PartialDockerFileConfig {
-	/** A task identifier within the current project for building the project. */
+	/**
+	 * A task identifier within the current project for building the project.
+	 * If not defined, will skip the build step.
+	 */
 	buildTask?: Id | null;
-	/** The base Docker image to use. */
+	/**
+	 * The base Docker image to use. If not defined, will use the provided image
+	 * from the first matching toolchain, otherwise defaults to "scratch".
+	 */
 	image?: string | null;
 	/**
 	 * Run the `moon docker prune` command after building the
@@ -628,7 +661,11 @@ export interface PartialDockerFileConfig {
 	 * @since 2.0.0
 	 */
 	runSetup?: boolean | null;
-	/** A task identifier within the current project for starting the project. */
+	/**
+	 * A task identifier within the current project for starting the project
+	 * within the `CMD` instruction. If not defined, will skip the start step
+	 * and not include the `CMD` instruction.
+	 */
 	startTask?: Id | null;
 }
 
@@ -637,7 +674,7 @@ export interface PartialDockerPruneConfig {
 	/**
 	 * Automatically delete vendor directories (package manager
 	 * dependencies, build targets, etc) while pruning. This is
-	 * handled by each toolchain plugin.
+	 * handled by each toolchain plugin and not moon directly.
 	 *
 	 * @default true
 	 */
@@ -651,13 +688,24 @@ export interface PartialDockerPruneConfig {
 	installToolchainDependencies?: boolean | null;
 }
 
-/** Configures aspects of the Docker scaffolding process. */
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * When configured at the workspace-level, applies to all projects,
+ * but can be overridden at the project-level.
+ */
 export interface PartialDockerScaffoldConfig {
 	/**
-	 * List of glob patterns, relative from the workspace root,
-	 * to include (or exclude) in the "configs" skeleton.
+	 * List of glob patterns in which to include/exclude files in
+	 * the "configs" skeleton. Applies to both project and
+	 * workspace level scaffolding.
 	 */
-	include?: string[] | null;
+	configsPhaseGlobs?: string[] | null;
+	/**
+	 * List of glob patterns in which to include/exclude files in
+	 * the "sources" skeleton. Applies to both project and
+	 * workspace level scaffolding.
+	 */
+	sourcesPhaseGlobs?: string[] | null;
 }
 
 /** Configures our Docker integration. */

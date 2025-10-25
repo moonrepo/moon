@@ -204,8 +204,8 @@ api_struct!(
         pub default_image: Option<String>,
 
         /// List of files as globs to copy over during the scaffolding
-        /// process, within the configs phase. Applies to both project
-        /// and workspace level scaffolding.
+        /// process, within both "configs" and "sources" phases.
+        /// Applies to both project and workspace level scaffolding.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub scaffold_globs: Vec<String>,
     }

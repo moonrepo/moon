@@ -192,8 +192,8 @@ async fn main() -> MainResult {
                     Some(SyncCommands::ConfigSchemas(args)) => {
                         commands::syncs::config_schemas::sync(session, args).await
                     }
-                    Some(SyncCommands::Hooks(args)) => {
-                        commands::syncs::hooks::sync(session, args).await
+                    Some(SyncCommands::VcsHooks(args)) => {
+                        commands::syncs::vcs_hooks::sync(session, args).await
                     }
                     Some(SyncCommands::Projects) => commands::syncs::projects::sync(session).await,
                     None => commands::sync::sync(session).await,

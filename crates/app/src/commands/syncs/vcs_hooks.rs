@@ -7,7 +7,7 @@ use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
-pub struct SyncHooksArgs {
+pub struct SyncVcsHooksArgs {
     #[arg(long, help = "Clean and remove previously generated hooks")]
     clean: bool,
 
@@ -15,8 +15,8 @@ pub struct SyncHooksArgs {
     force: bool,
 }
 
-#[instrument(skip_all)]
-pub async fn sync(session: MoonSession, args: SyncHooksArgs) -> AppResult {
+#[instrument(skip(session))]
+pub async fn sync(session: MoonSession, args: SyncVcsHooksArgs) -> AppResult {
     if session.workspace_config.vcs.hooks.is_empty() {
         session.console.render(element! {
             Container {

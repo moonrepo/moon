@@ -784,12 +784,13 @@ vcs:
                 DockerConfig {
                     prune: DockerPruneConfig {
                         delete_vendor_directories: false,
-                        install_toolchain_deps: false
+                        install_toolchain_dependencies: false
                     },
                     scaffold: DockerScaffoldConfig {
-                        copy_toolchain_files: false,
-                        include: vec![GlobPath("*.js".into())]
-                    }
+                        configs_phase_globs: vec![GlobPath("*.js".into())],
+                        sources_phase_globs: vec![]
+                    },
+                    ..Default::default()
                 }
             );
             assert_eq!(

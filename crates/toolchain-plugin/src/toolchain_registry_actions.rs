@@ -316,12 +316,10 @@ impl ToolchainRegistry {
     pub async fn define_toolchain_config_all(
         &self,
     ) -> miette::Result<FxHashMap<String, ConfigSchema>> {
-        let ids = self.get_plugin_ids();
-
         let results = self
             .call_func_all(
                 "define_toolchain_config",
-                ids,
+                self.get_plugin_ids(),
                 |_, _| (),
                 |toolchain, _| async move { toolchain.define_toolchain_config().await },
             )
@@ -340,14 +338,13 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineDockerMetadataInput,
     {
-        let ids = self.get_plugin_ids();
-
         let results = self
-            .call_func_all(
+            .call_func_all_with_check(
                 "define_docker_metadata",
-                ids,
+                self.get_plugin_ids(),
                 input_factory,
                 |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
+                true,
             )
             .await?;
 
@@ -357,7 +354,7 @@ impl ToolchainRegistry {
     pub async fn extend_project_graph_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendProjectGraphOutput>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ExtendProjectGraphOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectGraphInput,
     {
@@ -370,7 +367,7 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().map(|result| result.output).collect())
+        Ok(results)
     }
 
     pub async fn extend_task_command_many<InFn>(
@@ -483,11 +480,9 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SetupToolchainInput,
     {
-        let ids = self.get_plugin_ids();
-
         self.call_func_all(
             "setup_toolchain",
-            ids,
+            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.setup_toolchain(input, || Ok(())).await },
         )
@@ -518,11 +513,9 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncWorkspaceInput,
     {
-        let ids = self.get_plugin_ids();
-
         self.call_func_all(
             "sync_workspace",
-            ids,
+            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.sync_workspace(input).await },
         )
@@ -536,11 +529,9 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
     {
-        let ids = self.get_plugin_ids();
-
         self.call_func_all(
             "teardown_toolchain",
-            ids,
+            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
         )

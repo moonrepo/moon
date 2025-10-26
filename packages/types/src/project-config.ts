@@ -5,6 +5,12 @@
 import type { Id } from './common';
 import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
 import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchains-config';
+import type {
+	DockerFileConfig,
+	DockerScaffoldConfig,
+	PartialDockerFileConfig,
+	PartialDockerScaffoldConfig,
+} from './workspace-config';
 
 /** The relationship scope of a dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -40,39 +46,20 @@ export interface ProjectDependencyConfig {
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
 
 /**
- * Configures `Dockerfile` generation.
- * @since 1.27.0
- */
-export interface ProjectDockerFileConfig {
-	/** A task identifier within the current project for building the project. */
-	buildTask: Id | null;
-	/** The base Docker image name. */
-	image: string | null;
-	/** A task identifier within the current project for starting the project. */
-	startTask: Id | null;
-}
-
-/**
- * Configures aspects of the Docker scaffolding process.
- * @since 1.27.0
- */
-export interface ProjectDockerScaffoldConfig {
-	/**
-	 * A list of glob patterns, relative from the project root,
-	 * to include (or exclude) in the sources skeleton.
-	 */
-	include: string[];
-}
-
-/**
  * Configures our Docker integration.
  * @since 1.27.0
  */
 export interface ProjectDockerConfig {
-	/** Configures aspects of the `Dockerfile` generation process. */
-	file: ProjectDockerFileConfig;
-	/** Configures aspects of the Docker scaffolding process. */
-	scaffold: ProjectDockerScaffoldConfig;
+	/**
+	 * Configures aspects of the `Dockerfile` generation process.
+	 * @since 1.27.0
+	 */
+	file: DockerFileConfig;
+	/**
+	 * Configures aspects of the Docker scaffolding process.
+	 * @since 1.27.0
+	 */
+	scaffold: DockerScaffoldConfig;
 }
 
 /** Supported programming languages that each project can be written in. */
@@ -304,39 +291,20 @@ export interface PartialProjectDependencyConfig {
 export type PartialProjectDependsOn = Id | PartialProjectDependencyConfig;
 
 /**
- * Configures `Dockerfile` generation.
- * @since 1.27.0
- */
-export interface PartialProjectDockerFileConfig {
-	/** A task identifier within the current project for building the project. */
-	buildTask?: Id | null;
-	/** The base Docker image name. */
-	image?: string | null;
-	/** A task identifier within the current project for starting the project. */
-	startTask?: Id | null;
-}
-
-/**
- * Configures aspects of the Docker scaffolding process.
- * @since 1.27.0
- */
-export interface PartialProjectDockerScaffoldConfig {
-	/**
-	 * A list of glob patterns, relative from the project root,
-	 * to include (or exclude) in the sources skeleton.
-	 */
-	include?: string[] | null;
-}
-
-/**
  * Configures our Docker integration.
  * @since 1.27.0
  */
 export interface PartialProjectDockerConfig {
-	/** Configures aspects of the `Dockerfile` generation process. */
-	file?: PartialProjectDockerFileConfig | null;
-	/** Configures aspects of the Docker scaffolding process. */
-	scaffold?: PartialProjectDockerScaffoldConfig | null;
+	/**
+	 * Configures aspects of the `Dockerfile` generation process.
+	 * @since 1.27.0
+	 */
+	file?: PartialDockerFileConfig | null;
+	/**
+	 * Configures aspects of the Docker scaffolding process.
+	 * @since 1.27.0
+	 */
+	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;

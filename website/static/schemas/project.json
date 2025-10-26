@@ -184,6 +184,114 @@
         "implicit"
       ]
     },
+    "DockerFileConfig": {
+      "description": "Configures Dockerfile generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task identifier within the current project for building the project. If not defined, will skip the build step.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image to use. If not defined, will use the provided image from the first matching toolchain, otherwise defaults to \"scratch\".",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runPrune": {
+          "title": "runPrune",
+          "description": "Run the moon docker prune command after building the project, but before starting it. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker prune` command after building the project, but before starting it. @since 2.0.0"
+        },
+        "runSetup": {
+          "title": "runSetup",
+          "description": "Run the moon docker setup command after scaffolding, but before building the project. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker setup` command after scaffolding, but before building the project. @since 2.0.0"
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task identifier within the current project for starting the project within the CMD instruction. If not defined, will skip the start step and not include the CMD instruction.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A task identifier within the current project for starting the project within the `CMD` instruction. If not defined, will skip the start step and not include the `CMD` instruction."
+        },
+        "template": {
+          "title": "template",
+          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera."
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
+    },
+    "DockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
+      "type": "object",
+      "properties": {
+        "configsPhaseGlobs": {
+          "title": "configsPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourcesPhaseGlobs": {
+          "title": "sourcesPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
+    },
     "FileGroupInput": {
       "description": "A file group input.",
       "type": "object",
@@ -613,81 +721,22 @@
       "properties": {
         "file": {
           "title": "file",
-          "description": "Configures aspects of the Dockerfile generation process.",
+          "description": "Configures aspects of the Dockerfile generation process. @since 1.27.0",
           "allOf": [
             {
-              "$ref": "#/definitions/ProjectDockerFileConfig"
+              "$ref": "#/definitions/DockerFileConfig"
             }
           ],
-          "markdownDescription": "Configures aspects of the `Dockerfile` generation process."
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process. @since 1.27.0"
         },
         "scaffold": {
           "title": "scaffold",
-          "description": "Configures aspects of the Docker scaffolding process.",
+          "description": "Configures aspects of the Docker scaffolding process. @since 1.27.0",
           "allOf": [
             {
-              "$ref": "#/definitions/ProjectDockerScaffoldConfig"
+              "$ref": "#/definitions/DockerScaffoldConfig"
             }
           ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectDockerFileConfig": {
-      "description": "Configures Dockerfile generation. @since 1.27.0",
-      "type": "object",
-      "properties": {
-        "buildTask": {
-          "title": "buildTask",
-          "description": "A task identifier within the current project for building the project.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "image": {
-          "title": "image",
-          "description": "The base Docker image name.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "startTask": {
-          "title": "startTask",
-          "description": "A task identifier within the current project for starting the project.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Configures `Dockerfile` generation. @since 1.27.0"
-    },
-    "ProjectDockerScaffoldConfig": {
-      "description": "Configures aspects of the Docker scaffolding process. @since 1.27.0",
-      "type": "object",
-      "properties": {
-        "include": {
-          "title": "include",
-          "description": "A list of glob patterns, relative from the project root, to include (or exclude) in the sources skeleton.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "additionalProperties": false

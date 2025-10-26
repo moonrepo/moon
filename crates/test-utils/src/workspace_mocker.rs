@@ -16,7 +16,7 @@ use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::{BoxedVcs, git::Git};
 use moon_workspace::*;
 pub use moon_workspace_graph::WorkspaceGraph;
-use proto_core::{ProtoConfig, ProtoEnvironment, warpgate::find_debug_locator};
+use proto_core::{ProtoConfig, ProtoEnvironment};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
@@ -48,11 +48,12 @@ impl WorkspaceMocker {
             extensions_config: {
                 let mut config = ExtensionsConfig::default();
                 config.inherit_default_plugins();
+                config.inherit_plugin_locators().unwrap();
                 config
             },
             toolchains_config: {
                 let mut config = ToolchainsConfig::default();
-                config.inherit_system_plugin();
+                config.inherit_default_plugins();
                 config.inherit_plugin_locators().unwrap();
                 config
             },
@@ -91,6 +92,11 @@ impl WorkspaceMocker {
         self
     }
 
+    pub fn set_extensions_config(mut self, config: ExtensionsConfig) -> Self {
+        self.extensions_config = config;
+        self.update_extensions_config(|_| {})
+    }
+
     pub fn set_toolchains_config(mut self, config: ToolchainsConfig) -> Self {
         self.toolchains_config = config;
         self.update_toolchains_config(|_| {})
@@ -111,12 +117,13 @@ impl WorkspaceMocker {
     pub fn update_extensions_config(mut self, mut op: impl FnMut(&mut ExtensionsConfig)) -> Self {
         op(&mut self.extensions_config);
         self.extensions_config.inherit_default_plugins();
+        self.extensions_config.inherit_plugin_locators().unwrap();
         self
     }
 
     pub fn update_toolchains_config(mut self, mut op: impl FnMut(&mut ToolchainsConfig)) -> Self {
         op(&mut self.toolchains_config);
-        self.toolchains_config.inherit_system_plugin();
+        self.toolchains_config.inherit_default_plugins();
         self.toolchains_config.inherit_plugin_locators().unwrap();
         self
     }
@@ -154,59 +161,19 @@ impl WorkspaceMocker {
 
     pub fn with_all_toolchains(self) -> Self {
         self.update_toolchains_config(|config| {
-            config.inherit_default_plugins().unwrap();
+            config.inherit_test_builtin_plugins().unwrap();
         })
     }
 
     pub fn with_test_extensions(self) -> Self {
         self.update_extensions_config(|config| {
-            for id in ["ext-sync", "ext-task"] {
-                let file_name = id.replace("-", "_");
-
-                config.plugins.insert(
-                    Id::raw(id),
-                    ExtensionPluginConfig {
-                        plugin: Some(
-                            find_debug_locator(&file_name).expect(
-                                "Development plugins missing, build with `just build-wasm`!",
-                            ),
-                        ),
-                        ..Default::default()
-                    },
-                );
-            }
+            config.inherit_test_plugins().unwrap();
         })
     }
 
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchains_config(|config| {
-            for id in [
-                "tc-tier1",
-                "tc-tier2",
-                "tc-tier2-reqs",
-                "tc-tier2-setup-env",
-                "tc-tier3",
-                "tc-tier3-reqs",
-            ] {
-                let file_name = id.replace("-", "_");
-
-                config.plugins.insert(
-                    Id::raw(id),
-                    ToolchainPluginConfig {
-                        plugin: Some(
-                            find_debug_locator(&file_name).expect(
-                                "Development plugins missing, build with `just build-wasm`!",
-                            ),
-                        ),
-                        version: if id.contains("tc-tier3") {
-                            Some(UnresolvedVersionSpec::parse("1.2.3").unwrap())
-                        } else {
-                            None
-                        },
-                        ..Default::default()
-                    },
-                );
-            }
+            config.inherit_test_plugins().unwrap();
         })
     }
 
@@ -235,7 +202,7 @@ impl WorkspaceMocker {
                         "global".try_into().unwrap(),
                         PartialTaskConfig::default(),
                     )])),
-                    ..PartialInheritedTasksConfig::default()
+                    ..Default::default()
                 },
             },
         );

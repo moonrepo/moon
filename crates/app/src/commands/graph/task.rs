@@ -9,7 +9,7 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct TaskGraphArgs {
-    #[arg(help = "Target of task to *only* graph")]
+    #[arg(help = "Task target to *only* graph")]
     target: Option<Target>,
 
     #[arg(long, help = "Include direct dependents of the focused target")]
@@ -38,7 +38,7 @@ pub struct TaskGraphArgs {
     json: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn task_graph(session: MoonSession, args: TaskGraphArgs) -> AppResult {
     let mut task_graph = session.get_task_graph().await?;
 

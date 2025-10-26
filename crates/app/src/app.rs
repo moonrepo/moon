@@ -42,10 +42,7 @@ pub enum Commands {
     // ENVIRONMENT
 
     // moon init
-    #[command(
-        name = "init",
-        about = "Initialize a new moon repository, or a new toolchain, by scaffolding config files."
-    )]
+    #[command(name = "init", about = "Initialize a new moon repository.")]
     Init(InitArgs),
 
     #[command(name = "debug", about = "Debug internals.", hide = true)]
@@ -84,35 +81,38 @@ pub enum Commands {
     #[command(
         alias = "ag",
         name = "action-graph",
-        about = "Display an interactive dependency graph of all tasks and actions."
+        about = "Display an interactive dependency graph of actions."
     )]
     ActionGraph(ActionGraphArgs),
 
     // moon project <id>
     #[command(
+        alias = "p",
         name = "project",
-        about = "Display information about a single project.",
-        alias = "p"
+        about = "Display information about a single project."
     )]
     Project(ProjectArgs),
 
     // moon project-graph [id]
     #[command(
+        alias = "pg",
         name = "project-graph",
-        about = "Display an interactive graph of projects.",
-        alias = "pg"
+        about = "Display an interactive graph of projects."
     )]
     ProjectGraph(ProjectGraphArgs),
 
     // moon task-graph [id]
     #[command(
+        alias = "tg",
         name = "task-graph",
-        about = "Display an interactive graph of tasks.",
-        alias = "tg"
+        about = "Display an interactive graph of tasks."
     )]
     TaskGraph(TaskGraphArgs),
 
-    #[command(name = "sync", about = "Sync the workspace to a healthy state.")]
+    #[command(
+        name = "sync",
+        about = "Sync the workspace and all projects to a healthy state."
+    )]
     Sync {
         #[command(subcommand)]
         command: Option<SyncCommands>,

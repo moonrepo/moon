@@ -9,7 +9,7 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ProjectGraphArgs {
-    #[arg(help = "ID of project to *only* graph")]
+    #[arg(help = "Project ID to *only* graph")]
     id: Option<Id>,
 
     #[arg(long, help = "Include direct dependents of the focused project")]
@@ -38,7 +38,7 @@ pub struct ProjectGraphArgs {
     json: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn project_graph(session: MoonSession, args: ProjectGraphArgs) -> AppResult {
     let mut project_graph = session.get_project_graph().await?;
 

@@ -3451,6 +3451,7 @@ dependencies = [
  "moon_app_context",
  "moon_common",
  "moon_config",
+ "moon_graph_utils",
  "moon_pdk_api",
  "moon_project",
  "moon_query",
@@ -3933,6 +3934,7 @@ name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_common",
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",

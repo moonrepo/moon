@@ -1,4 +1,5 @@
-import type { Duration, Id, ToolchainSpec } from './common';
+import type { Duration, GraphContainer, Id, ToolchainSpec } from './common';
+import type { TaskDependencyType } from './tasks-config';
 
 export type ActionPipelineStatus =
 	| 'aborted'
@@ -232,21 +233,4 @@ export interface ActionNodeSyncWorkspace {
 	action: 'sync-workspace';
 }
 
-// GRAPH
-
-export interface ActionGraphNode {
-	id: number;
-	label: string;
-}
-
-export interface ActionGraphEdge {
-	id: number;
-	label: string;
-	source: number;
-	target: number;
-}
-
-export interface ActionGraph {
-	edges: ActionGraphEdge[];
-	nodes: ActionGraphNode[];
-}
+export type ActionGraph = GraphContainer<ActionNode, TaskDependencyType>;

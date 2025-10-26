@@ -1,15 +1,14 @@
 use crate::commands::graph::utils::{action_graph_repr, run_server};
 use crate::session::MoonSession;
 use clap::Args;
-use moon_action_graph::RunRequirements;
+use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};
 use moon_task::Target;
 use starbase::AppResult;
-use starbase_utils::json;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ActionGraphArgs {
-    #[arg(help = "Targets to *only* graph")]
+    #[arg(help = "Task targets to *only* graph")]
     targets: Option<Vec<Target>>,
 
     #[arg(long, help = "Include dependents of the focused target(s)")]
@@ -38,7 +37,7 @@ pub struct ActionGraphArgs {
     json: bool,
 }
 
-#[instrument]
+#[instrument(skip(session))]
 pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut action_graph_builder = session.build_action_graph().await?;
@@ -71,18 +70,19 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppRes
         return Ok(None);
     }
 
-    let graph_info = action_graph_repr(&action_graph).await;
-
     if args.json {
-        session
-            .console
-            .out
-            .write_line(json::format(&graph_info, true)?)?;
+        session.console.out.write_line(action_graph.to_json()?)?;
 
         return Ok(None);
     }
 
-    run_server("Action graph", graph_info, args.host, args.port).await?;
+    run_server(
+        "Action graph",
+        action_graph_repr(&action_graph).await,
+        args.host,
+        args.port,
+    )
+    .await?;
 
     Ok(None)
 }

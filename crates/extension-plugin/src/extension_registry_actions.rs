@@ -11,7 +11,7 @@ impl ExtensionRegistry {
     pub async fn extend_project_graph_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendProjectGraphOutput>>
+    ) -> miette::Result<Vec<CallResult<ExtensionPlugin, ExtendProjectGraphOutput>>>
     where
         InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendProjectGraphInput,
     {
@@ -24,7 +24,7 @@ impl ExtensionRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().map(|result| result.output).collect())
+        Ok(results)
     }
 
     pub async fn extend_task_command_all<InFn>(

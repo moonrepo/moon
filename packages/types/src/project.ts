@@ -114,8 +114,13 @@ export interface TaskFragment {
 	toolchains?: Id[];
 }
 
+export interface ProjectAlias {
+	alias: string;
+	plugin: Id;
+}
+
 export interface Project {
-	aliases?: string[] | null;
+	aliases?: ProjectAlias[] | null;
 	config: ProjectConfig;
 	dependencies?: ProjectDependencyConfig[];
 	fileGroups?: Record<string, FileGroup>;

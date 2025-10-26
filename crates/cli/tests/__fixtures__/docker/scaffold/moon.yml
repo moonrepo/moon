@@ -1,0 +1,4 @@
+dependsOn: ['dep']
+
+toolchains:
+  default: ['tc-tier1']

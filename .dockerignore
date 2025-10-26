@@ -36,7 +36,7 @@ packages/*/moon.exe
 /moon
 /moon.exe
 .prototools
-.moon/docker/workspace/.prototools
+.moon/docker/configs/.prototools
 
 # Moon tests/fixtures
 tests/fixtures/*/.moon/cache

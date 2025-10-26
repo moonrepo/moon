@@ -203,9 +203,9 @@ api_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub default_image: Option<String>,
 
-        /// List of files as globs to copy over during
-        /// the scaffolding process. Applies to both project
-        /// and workspace level scaffolding.
+        /// List of files as globs to copy over during the scaffolding
+        /// process, within both "configs" and "sources" phases.
+        /// Applies to both project and workspace level scaffolding.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub scaffold_globs: Vec<String>,
     }
@@ -241,7 +241,7 @@ api_struct!(
         pub phase: ScaffoldDockerPhase,
 
         /// The project being scaffolding.
-        pub project: ProjectFragment,
+        pub project: Option<ProjectFragment>,
 
         /// Workspace and project merged toolchain configuration,
         /// with the latter taking precedence.

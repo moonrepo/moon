@@ -106,10 +106,6 @@ impl ToolchainsConfig {
             .get(&stable_id)
             .or_else(|| self.plugins.get(&unstable_id))
     }
-
-    pub fn is_plugin(&self, id: &str) -> bool {
-        self.plugins.contains_key(id)
-    }
 }
 
 #[cfg(feature = "proto")]
@@ -125,41 +121,7 @@ impl ToolchainsConfig {
     }
 
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
-        use proto_core::warpgate::find_debug_locator_with_url_fallback;
-
-        // TODO remove once v2 plugins are published
-        let locate = |name: &str, version: &str| {
-            #[cfg(debug_assertions)]
-            {
-                use std::env;
-                use std::path::PathBuf;
-
-                let prebuilts_dir = env::var("WASM_PREBUILTS_DIR")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|_| {
-                        let root = env::current_dir().unwrap();
-
-                        // repo root
-                        if root.join("wasm/prebuilts").exists() {
-                            root.join("wasm/prebuilts")
-                        }
-                        // within a crate
-                        else {
-                            root.join("../../wasm/prebuilts")
-                        }
-                    });
-                let wasm_path = prebuilts_dir.join(format!("{name}.wasm"));
-
-                if wasm_path.exists() {
-                    return PluginLocator::File(Box::new(proto_core::FileLocator {
-                        file: format!("file://{}", wasm_path.display()),
-                        path: Some(wasm_path),
-                    }));
-                }
-            }
-
-            find_debug_locator_with_url_fallback(name, version)
-        };
+        use crate::plugin_compat::find_plugin_locator as locate;
 
         match id.as_str() {
             "bun" => Some(locate("bun_toolchain", "0.2.0")),
@@ -177,15 +139,18 @@ impl ToolchainsConfig {
         }
     }
 
-    pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
-        self.inherit_proto_for_plugins(proto_config)?;
-        self.inherit_system_plugin();
+    pub fn inherit_defaults(
+        &mut self,
+        proto_config: &proto_core::ProtoConfig,
+    ) -> miette::Result<()> {
+        self.inherit_proto_versions_for_plugins(proto_config)?;
+        self.inherit_default_plugins();
         self.inherit_plugin_locators()?;
 
         Ok(())
     }
 
-    pub fn inherit_proto_for_plugins(
+    pub fn inherit_proto_versions_for_plugins(
         &mut self,
         proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<()> {
@@ -224,11 +189,26 @@ impl ToolchainsConfig {
         Ok(())
     }
 
-    pub fn inherit_system_plugin(&mut self) {
+    pub fn inherit_default_plugins(&mut self) {
         self.plugins.entry(Id::raw("system")).or_default();
     }
 
-    pub fn inherit_default_plugins(&mut self) -> miette::Result<()> {
+    pub fn inherit_test_plugins(&mut self) -> miette::Result<()> {
+        for id in [
+            "tc-tier1",
+            "tc-tier2",
+            "tc-tier2-reqs",
+            "tc-tier2-setup-env",
+            "tc-tier3",
+            "tc-tier3-reqs",
+        ] {
+            self.plugins.entry(Id::raw(id)).or_default();
+        }
+
+        Ok(())
+    }
+
+    pub fn inherit_test_builtin_plugins(&mut self) -> miette::Result<()> {
         for id in [
             "bun",
             "deno",
@@ -239,9 +219,6 @@ impl ToolchainsConfig {
             "rust",
             "system",
             "typescript",
-            // We only need 1 package manager while testing!
-            // "pnpm",
-            // "yarn",
         ] {
             self.plugins.entry(Id::raw(id)).or_default();
         }
@@ -261,6 +238,20 @@ impl ToolchainsConfig {
                 "bun" | "deno" | "go" | "javascript" | "node" | "npm" | "pnpm" | "rust"
                 | "system" | "typescript" | "yarn" => {
                     config.plugin = Self::get_plugin_locator(id);
+                }
+                #[cfg(debug_assertions)]
+                "tc-tier1" | "tc-tier2" | "tc-tier2-reqs" | "tc-tier2-setup-env" | "tc-tier3"
+                | "tc-tier3-reqs" => {
+                    use proto_core::warpgate::find_debug_locator;
+
+                    config.plugin = Some(
+                        find_debug_locator(&id.replace("-", "_"))
+                            .expect("Development plugins missing, build with `just build-wasm`!"),
+                    );
+
+                    if id.contains("tc-tier3") {
+                        config.version = UnresolvedVersionSpec::parse("1.2.3").ok();
+                    }
                 }
                 other => {
                     return Err(ConfigError::Validator {

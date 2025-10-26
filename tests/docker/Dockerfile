@@ -7,7 +7,7 @@ ENV CI=true
 COPY ./target/debug/moon /usr/bin
 
 # Copy workspace skeleton
-COPY ./.moon/docker/workspace .
+COPY ./.moon/docker/configs .
 COPY ./wasm/prebuilts ./wasm/prebuilts
 
 # Manually copy these since they aren't moon projects

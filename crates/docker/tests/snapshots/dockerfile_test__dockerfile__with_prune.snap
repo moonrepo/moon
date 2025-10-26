@@ -27,10 +27,7 @@ RUN moon docker scaffold app
 FROM base AS build
 
 # Copy workspace configs
-COPY --from=skeleton /app/.moon/docker/workspace .
-
-# Install dependencies
-RUN moon docker setup
+COPY --from=skeleton /app/.moon/docker/configs .
 
 # Copy project sources
 COPY --from=skeleton /app/.moon/docker/sources .

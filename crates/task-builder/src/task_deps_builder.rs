@@ -118,7 +118,7 @@ impl TaskDepsBuilder<'_> {
                             project
                                 .aliases
                                 .iter()
-                                .any(|alias| alias.as_str() == dep_project_id.as_str())
+                                .any(|alias| alias.alias.as_str() == dep_project_id.as_str())
                                 || project
                                     .dependencies
                                     .iter()

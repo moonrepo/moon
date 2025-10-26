@@ -27,11 +27,14 @@ toc_max_heading_level: 6
 - Renamed settings:
   - `codeowners.syncOnRun` -> `codeowners.sync`
   - `constraints.enforceProjectTypeRelationships` -> `constraints.enforceLayerRelationships`
+  - `docker.prune.installToolchainDeps` -> `docker.prune.installToolchainDependencies`
+  - `docker.scaffold.include` -> `docker.scaffold.configsPhaseGlobs`
   - `runner` -> `pipeline`
   - `unstable_remote` -> `remote`
   - `vcs.manager` -> `vcs.client`
   - `vcs.syncHooks` -> `vcs.sync`
 - Removed settings:
+  - `docker.scaffold.copyToolchainFiles`
   - `experiments.*`
   - `hasher.batchSize`
   - `pipeline.archivableTargets`
@@ -108,6 +111,7 @@ yarn:
 ### Configuration: `moon.*`
 
 - Renamed settings:
+  - `docker.scaffold.include` -> `docker.scaffold.sourcesPhaseGlobs`
   - `project.name` -> `project.title`
   - `type` -> `layer`
   - `toolchain` -> `toolchains`
@@ -221,6 +225,13 @@ $ moon query touched-files
 # After
 $ moon query changed-files
 ```
+
+### Docker
+
+- The scaffolded `.moon/docker/workspace` directory was renamed to `.moon/docker/configs`.
+- The `moon docker file` command will now loop through all toolchains and use the first image found,
+  otherwise it defaults to "scratch". If you want to be explicit, set the `docker.file.image`
+  setting.
 
 ### Query language (MQL)
 

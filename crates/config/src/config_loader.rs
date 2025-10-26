@@ -136,7 +136,11 @@ impl ConfigLoader {
         workspace_root: P,
     ) -> miette::Result<ExtensionsConfig> {
         let mut result = self.create_extensions_loader(workspace_root)?.load()?;
-        result.config.inherit_default_plugins();
+
+        #[cfg(feature = "proto")]
+        {
+            result.config.inherit_defaults()?;
+        }
 
         Ok(result.config)
     }
@@ -256,12 +260,7 @@ impl ConfigLoader {
 
         #[cfg(feature = "proto")]
         {
-            result.config.inherit_proto(proto_config)?;
-        }
-
-        #[cfg(not(feature = "proto"))]
-        {
-            result.config.inherit_system_plugin();
+            result.config.inherit_defaults(proto_config)?;
         }
 
         Ok(result.config)

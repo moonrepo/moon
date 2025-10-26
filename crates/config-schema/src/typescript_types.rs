@@ -31,6 +31,8 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
         out_dir.join("project-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
             exclude_references: vec![
+                "DockerFileConfig".into(),
+                "DockerScaffoldConfig".into(),
                 "Id".into(),
                 "Input".into(),
                 "FileInput".into(),
@@ -41,6 +43,8 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "GlobInput".into(),
                 "GlobOutput".into(),
                 "ProjectInput".into(),
+                "PartialDockerFileConfig".into(),
+                "PartialDockerScaffoldConfig".into(),
                 "PartialTaskArgs".into(),
                 "PartialTaskConfig".into(),
                 "PartialTaskDependency".into(),
@@ -81,6 +85,15 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                     vec![
                         "PartialToolchainPluginConfig".into(),
                         "ToolchainPluginConfig".into(),
+                    ],
+                ),
+                (
+                    "./workspace-config".into(),
+                    vec![
+                        "DockerFileConfig".into(),
+                        "DockerScaffoldConfig".into(),
+                        "PartialDockerFileConfig".into(),
+                        "PartialDockerScaffoldConfig".into(),
                     ],
                 ),
                 ("./common".into(), vec!["Id".into()]),

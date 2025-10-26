@@ -27,13 +27,13 @@ pub enum DockerCommands {
 
     #[command(
         name = "scaffold",
-        about = "Scaffold a repository skeleton for use within Dockerfile(s)."
+        about = "Scaffold a repository skeleton for use within a Dockerfile."
     )]
     Scaffold(DockerScaffoldArgs),
 
     #[command(
         name = "setup",
-        about = "Setup a Dockerfile by installing dependencies for necessary projects."
+        about = "Setup a Dockerfile by installing toolchains and dependencies for necessary projects."
     )]
     Setup,
 }

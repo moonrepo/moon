@@ -20,7 +20,7 @@ FROM base AS build
 WORKDIR /app
 
 # Copy workspace skeleton
-COPY --from=workspace /app/.moon/docker/workspace .
+COPY --from=workspace /app/.moon/docker/configs .
 COPY ./wasm/prebuilts ./wasm/prebuilts
 
 # Manually copy these since they aren't moon projects

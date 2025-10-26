@@ -98,7 +98,7 @@ impl ConfigFinder {
 
     pub fn get_debug_label(&self, name: &str, top_level: bool) -> String {
         let mut label = String::new();
-        let ext_glob = format!(".{{{}}}", self.extensions.join(","));
+        let ext_glob = self.get_ext_glob();
 
         if top_level {
             label.push_str(CONFIG_DIRNAME);
@@ -106,9 +106,14 @@ impl ConfigFinder {
         }
 
         label.push_str(name);
+        label.push('.');
         label.push_str(&ext_glob);
 
         label
+    }
+
+    pub fn get_ext_glob(&self) -> String {
+        format!("{{{}}}", self.extensions.join(","))
     }
 
     pub fn get_file_names(&self, name: &str) -> Vec<String> {

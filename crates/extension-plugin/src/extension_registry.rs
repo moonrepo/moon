@@ -9,6 +9,7 @@ use moon_plugin::{
     CallResult, MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config,
 };
 use starbase_utils::json::JsonValue;
+use std::fmt::Debug;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
@@ -159,7 +160,7 @@ impl ExtensionRegistry {
         InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> In,
         OutFn: Fn(Arc<ExtensionPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
-        Out: Send + 'static,
+        Out: Debug + Send + 'static,
     {
         let mut results = vec![];
 

@@ -8,6 +8,7 @@ use scc::hash_map::Entry;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::fmt;
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -258,7 +259,8 @@ impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
     }
 }
 
-pub struct CallResult<P: Plugin, T> {
+#[derive(Debug)]
+pub struct CallResult<P: Plugin, T: Debug> {
     pub id: Id,
     pub operation: Operation,
     pub output: T,

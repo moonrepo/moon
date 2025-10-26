@@ -9,6 +9,7 @@ use moon_plugin::{
 };
 use proto_core::{ToolContext, inject_proto_manifest_config};
 use starbase_utils::json::{self, JsonValue};
+use std::fmt::Debug;
 use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -180,7 +181,7 @@ impl ToolchainRegistry {
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
         OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
-        Out: Send + 'static,
+        Out: Debug + Send + 'static,
     {
         self.call_func_all_with_check(
             func_name,
@@ -206,7 +207,7 @@ impl ToolchainRegistry {
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
         OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
-        Out: Send + 'static,
+        Out: Debug + Send + 'static,
     {
         let mut results = vec![];
 

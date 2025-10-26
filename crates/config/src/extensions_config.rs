@@ -4,7 +4,7 @@ use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, validate};
 use serde_json::Value;
-use warpgate_api::{PluginLocator, UrlLocator};
+use warpgate_api::PluginLocator;
 
 config_struct!(
     /// Configures an individual extension.
@@ -56,49 +56,87 @@ config_struct!(
 );
 
 impl ExtensionsConfig {
-    pub fn inherit_default_plugins(&mut self) {
-        for (id, extension) in default_extensions() {
-            self.plugins.entry(id).or_insert(extension);
-        }
-    }
-
     pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ExtensionPluginConfig> {
         self.plugins.get(id.as_ref())
     }
-
-    pub fn is_plugin(&self, id: &str) -> bool {
-        self.plugins.contains_key(id)
-    }
 }
 
-fn default_extensions() -> FxHashMap<Id, ExtensionPluginConfig> {
-    FxHashMap::from_iter([
-        (
-            Id::raw("download"),
-            ExtensionPluginConfig {
-                plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/download_extension-v0.0.11/download_extension.wasm".into()
-                }))),
-                config: FxHashMap::default(),
-            },
-        ),
-         (
-            Id::raw("migrate-nx"),
-            ExtensionPluginConfig {
-                plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/migrate_nx_extension-v0.0.11/migrate_nx_extension.wasm".into()
-                }))),
-                config: FxHashMap::default(),
-            },
-        ),
-        (
-            Id::raw("migrate-turborepo"),
-            ExtensionPluginConfig {
-                plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/plugins/releases/download/migrate_turborepo_extension-v0.1.8/migrate_turborepo_extension.wasm".into()
-                }))),
-                config: FxHashMap::default(),
-            },
-        ),
-    ])
+#[cfg(feature = "proto")]
+impl ExtensionsConfig {
+    pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
+        use crate::plugin_compat::find_plugin_locator as locate;
+
+        match id.as_str() {
+            "download" => Some(locate("download_extension", "0.0.11")),
+            "migrate-nx" => Some(locate("migrate_nx_extension", "0.0.11")),
+            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "0.1.8")),
+            _ => None,
+        }
+    }
+
+    pub fn inherit_defaults(&mut self) -> miette::Result<()> {
+        self.inherit_default_plugins();
+        self.inherit_plugin_locators()?;
+
+        Ok(())
+    }
+
+    pub fn inherit_default_plugins(&mut self) {
+        for id in ["download", "migrate-nx", "migrate-turborepo"] {
+            self.plugins.entry(Id::raw(id)).or_default();
+        }
+    }
+
+    pub fn inherit_test_plugins(&mut self) -> miette::Result<()> {
+        for id in ["ext-sync", "ext-task"] {
+            self.plugins.entry(Id::raw(id)).or_default();
+        }
+
+        Ok(())
+    }
+
+    pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
+        use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
+
+        for (id, config) in self.plugins.iter_mut() {
+            if config.plugin.is_some() {
+                continue;
+            }
+
+            match id.as_str() {
+                "download" | "migrate-nx" | "migrate-turborepo" => {
+                    config.plugin = Self::get_plugin_locator(id);
+                }
+                #[cfg(debug_assertions)]
+                "ext-sync" | "ext-task" => {
+                    use proto_core::warpgate::find_debug_locator;
+
+                    config.plugin = Some(
+                        find_debug_locator(&id.replace("-", "_"))
+                            .expect("Development plugins missing, build with `just build-wasm`!"),
+                    );
+                }
+                other => {
+                    return Err(ConfigError::Validator {
+                        location: ".moon/extensions.yml".into(),
+                        error: Box::new(ValidatorError {
+                            errors: vec![ValidateError {
+                                message:
+                                    "a locator is required for plugins; accepts file paths and URLs"
+                                        .into(),
+                                path: Path::new(vec![
+                                    PathSegment::Key(other.to_string()),
+                                    PathSegment::Key("plugin".into()),
+                                ]),
+                            }],
+                        }),
+                        help: None,
+                    }
+                    .into());
+                }
+            };
+        }
+
+        Ok(())
+    }
 }

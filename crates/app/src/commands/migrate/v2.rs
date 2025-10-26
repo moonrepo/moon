@@ -353,6 +353,17 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
             "constraints.enforceProjectTypeRelationships",
             "constraints.enforceLayerRelationships",
         );
+        rename_setting(
+            root,
+            "docker.prune.installToolchainDeps",
+            "docker.prune.installToolchainDependencies",
+        );
+        remove_setting(root, "docker.scaffold.copyToolchainFiles");
+        rename_setting(
+            root,
+            "docker.scaffold.include",
+            "docker.scaffold.configsPhaseGlobs",
+        );
         remove_setting(root, "experiments.gitV2");
         change_setting(root, "extensions", false, |node, key| {
             extensions = node.remove(key);
@@ -390,6 +401,11 @@ fn migrate_project_config_files(session: &MoonSession) -> miette::Result<()> {
         let mut config = load_config_file(&config_path)?;
 
         if let Some(root) = config.as_mapping_mut() {
+            rename_setting(
+                root,
+                "docker.scaffold.include",
+                "docker.scaffold.sourcesPhaseGlobs",
+            );
             rename_setting(root, "toolchain", "toolchains");
             rename_setting(root, "platform", "toolchains.default");
             rename_setting(root, "type", "layer");

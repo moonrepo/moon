@@ -5,7 +5,7 @@ use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 pub fn is_glob_like(value: &str) -> bool {
@@ -63,6 +63,12 @@ macro_rules! path_type {
         #[derive(Clone, Debug, Default, Deserialize, Hash, Serialize)]
         #[serde(into = "String", try_from = "String")]
         pub struct $name(pub RelativePathBuf);
+
+        impl $name {
+            pub fn to_path_buf(&self) -> PathBuf {
+                PathBuf::from(self.as_str())
+            }
+        }
 
         impl PartialEq for $name {
             fn eq(&self, other: &Self) -> bool {

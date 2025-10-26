@@ -1,4 +1,4 @@
-use super::utils::{project_graph_repr, run_server};
+use crate::commands::graph::{project_graph_repr, run_server};
 use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;

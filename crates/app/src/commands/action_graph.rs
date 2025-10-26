@@ -1,4 +1,4 @@
-use crate::commands::graph::utils::{action_graph_repr, run_server};
+use crate::commands::graph::{action_graph_repr, run_server};
 use crate::session::MoonSession;
 use clap::Args;
 use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};

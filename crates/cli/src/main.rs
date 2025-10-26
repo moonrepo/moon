@@ -140,7 +140,7 @@ async fn main() -> MainResult {
         .run(MoonSession::new(cli, version), |session| async {
             match session.cli.command.clone() {
                 Commands::ActionGraph(args) => {
-                    commands::graph::action::action_graph(session, args).await
+                    commands::action_graph::action_graph(session, args).await
                 }
                 Commands::Bin(args) => commands::bin::bin(session, args).await,
                 Commands::Ci(args) => commands::ci::ci(session, args).await,
@@ -170,7 +170,7 @@ async fn main() -> MainResult {
                 },
                 Commands::Project(args) => commands::project::project(session, args).await,
                 Commands::ProjectGraph(args) => {
-                    commands::graph::project::project_graph(session, args).await
+                    commands::project_graph::project_graph(session, args).await
                 }
                 Commands::Query { command } => match command {
                     QueryCommands::ChangedFiles(args) => {
@@ -199,7 +199,7 @@ async fn main() -> MainResult {
                     None => commands::sync::sync(session).await,
                 },
                 Commands::Task(args) => commands::task::task(session, args).await,
-                Commands::TaskGraph(args) => commands::graph::task::task_graph(session, args).await,
+                Commands::TaskGraph(args) => commands::task_graph::task_graph(session, args).await,
                 Commands::Teardown => commands::teardown::teardown(session).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
                 Commands::Toolchain { command } => match command {

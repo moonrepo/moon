@@ -339,6 +339,19 @@
             }
           ],
           "markdownDescription": "A task identifier within the current project for starting the project within the `CMD` instruction. If not defined, will skip the start step and not include the `CMD` instruction."
+        },
+        "template": {
+          "title": "template",
+          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera."
         }
       },
       "additionalProperties": false,

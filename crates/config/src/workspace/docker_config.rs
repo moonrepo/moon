@@ -31,8 +31,8 @@ config_struct!(
         /// and not include the `CMD` instruction.
         pub start_task: Option<Id>,
 
-        /// A template file, relative from the workspace root, to use when rendering
-        /// the `Dockerfile`. Powered by Tera.
+        /// A custom template file, relative from the workspace root, to use when
+        /// rendering the `Dockerfile`. Powered by Tera.
         pub template: Option<FilePath>,
     }
 );

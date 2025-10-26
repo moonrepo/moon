@@ -83,6 +83,11 @@ export interface DockerFileConfig {
 	 * and not include the `CMD` instruction.
 	 */
 	startTask: Id | null;
+	/**
+	 * A custom template file, relative from the workspace root, to use when
+	 * rendering the `Dockerfile`. Powered by Tera.
+	 */
+	template: string | null;
 }
 
 /** Configures aspects of the Docker pruning process. */
@@ -667,6 +672,11 @@ export interface PartialDockerFileConfig {
 	 * and not include the `CMD` instruction.
 	 */
 	startTask?: Id | null;
+	/**
+	 * A custom template file, relative from the workspace root, to use when
+	 * rendering the `Dockerfile`. Powered by Tera.
+	 */
+	template?: string | null;
 }
 
 /** Configures aspects of the Docker pruning process. */

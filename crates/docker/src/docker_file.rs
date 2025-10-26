@@ -1,9 +1,8 @@
-use std::path::PathBuf;
-
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_target::Target;
 use starbase_utils::fs;
+use std::path::PathBuf;
 use tera::{Context, Tera};
 
 #[derive(Debug, Default)]

@@ -1,0 +1,2 @@
+toolchains:
+  default: ['tc-tier1']

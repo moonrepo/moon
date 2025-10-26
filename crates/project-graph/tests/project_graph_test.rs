@@ -3,7 +3,7 @@ use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
     WorkspaceProjects, WorkspaceProjectsConfig,
 };
-use moon_project::{FileGroup, Project};
+use moon_project::{FileGroup, Project, ProjectAlias};
 use moon_project_graph::*;
 use moon_query::build_query;
 use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
@@ -1045,7 +1045,16 @@ mod project_graph {
 
             assert_eq!(
                 graph.get_project("multiple").unwrap().aliases,
-                ["rust_toolchain", "js-toolchain"]
+                [
+                    ProjectAlias {
+                        alias: "rust_toolchain".into(),
+                        plugin: Id::raw("rust"),
+                    },
+                    ProjectAlias {
+                        alias: "js-toolchain".into(),
+                        plugin: Id::raw("javascript"),
+                    },
+                ]
             );
         }
 

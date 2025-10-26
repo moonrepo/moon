@@ -1,3 +1,4 @@
+use crate::commands::docker::docker_error::AppDockerError;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -8,6 +9,7 @@ use moon_pdk_api::DefineDockerMetadataInput;
 use moon_project::Project;
 use starbase::AppResult;
 use starbase_utils::fs;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
@@ -16,19 +18,22 @@ pub struct DockerFileArgs {
     id: Id,
 
     #[arg(help = "Destination path, relative from the project root")]
-    dest: Option<String>,
+    dest: Option<PathBuf>,
 
     #[arg(long, help = "Use default options instead of prompting")]
     defaults: bool,
 
-    #[arg(long = "buildTask", help = "ID of a task to build the project")]
+    #[arg(long, help = "ID of a task to build the project")]
     build_task: Option<Id>,
 
     #[arg(long, help = "Base Docker image to use")]
     image: Option<String>,
 
-    #[arg(long, help = "Do not prune the workspace in the build stage")]
+    #[arg(long, help = "Do not prune dependencies in the build stage")]
     no_prune: bool,
+
+    #[arg(long, help = "Do not setup dependencies in the build stage")]
+    no_setup: bool,
 
     #[arg(
         long,
@@ -36,36 +41,100 @@ pub struct DockerFileArgs {
     )]
     no_toolchain: bool,
 
-    #[arg(long = "startTask", help = "ID of a task to run the project")]
+    #[arg(long, help = "ID of a task to run the project")]
     start_task: Option<Id>,
+
+    #[arg(
+        long,
+        help = "Template path, relative from the workspace root, to render the Dockerfile with"
+    )]
+    template: Option<PathBuf>,
 }
 
 #[instrument(skip_all)]
 pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
-    let console = &session.console;
     let workspace_graph = session.get_workspace_graph().await?;
+    let workspace_docker = &session.workspace_config.docker;
+    let console = &session.console;
 
     // Ensure the project exists
     let project = workspace_graph.get_project(&args.id)?;
-    let tasks = workspace_graph.get_tasks_from_project(&project.id)?;
+    let project_docker = &project.config.docker;
+
+    let mut task_ids = project
+        .task_targets
+        .iter()
+        .map(|task| &task.task_id)
+        .collect::<Vec<_>>();
+    task_ids.sort();
 
     // Build the options
     let mut options = GenerateDockerfileOptions {
         disable_toolchain: args.no_toolchain,
         project: args.id,
-        prune: !args.no_prune,
-        ..GenerateDockerfileOptions::default()
+        run_prune: if args.no_prune {
+            false
+        } else {
+            project_docker
+                .file
+                .run_prune
+                .or(workspace_docker.file.run_prune)
+                .unwrap_or(true)
+        },
+        run_setup: if args.no_setup {
+            false
+        } else {
+            project_docker
+                .file
+                .run_setup
+                .or(workspace_docker.file.run_setup)
+                .unwrap_or(true)
+        },
+        ..Default::default()
     };
 
     debug!("Gathering Dockerfile options");
 
+    if let Some(template) = args
+        .template
+        .clone()
+        .or_else(|| {
+            project_docker
+                .file
+                .template
+                .as_ref()
+                .map(|temp| temp.to_path_buf())
+        })
+        .or_else(|| {
+            workspace_docker
+                .file
+                .template
+                .as_ref()
+                .map(|temp| temp.to_path_buf())
+        })
+    {
+        let template_path = if template.is_absolute() {
+            template
+        } else {
+            session.workspace_root.join(template)
+        };
+
+        if template_path.exists() {
+            options.template_path = Some(template_path);
+        } else {
+            return Err(AppDockerError::MissingFileTemplate {
+                path: template_path,
+            }
+            .into());
+        }
+    }
+
     let base_image = get_base_image(&session, &project).await?;
-    let default_image = project
-        .config
-        .docker
+    let default_image = project_docker
         .file
         .image
         .clone()
+        .or_else(|| workspace_docker.file.image.clone())
         .unwrap_or(base_image);
 
     if let Some(image) = args.image {
@@ -86,21 +155,19 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
 
     debug!(image = &options.image, "Using Docker image");
 
+    let build_task_setting = project_docker
+        .file
+        .build_task
+        .as_ref()
+        .or(workspace_docker.file.build_task.as_ref());
+
     let build_task_id = if let Some(id) = &args.build_task {
         Some(id)
     } else if args.defaults {
-        project.config.docker.file.build_task.as_ref()
+        build_task_setting
     } else {
-        let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
-        ids.sort();
-
-        let default_index = project
-            .config
-            .docker
-            .file
-            .build_task
-            .as_ref()
-            .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
+        let default_index = build_task_setting
+            .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
         let mut index = default_index.unwrap_or(0);
 
         console
@@ -108,7 +175,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
                 Select(
                     label: "Build task?",
                     options: {
-                        let mut options = ids.iter().map(SelectOption::new).collect::<Vec<_>>();
+                        let mut options = task_ids.iter().map(SelectOption::new).collect::<Vec<_>>();
                         options.push(SelectOption::new("(none)"));
                         options
                     },
@@ -118,10 +185,10 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
             })
             .await?;
 
-        if index == ids.len() {
+        if index == task_ids.len() {
             None
         } else {
-            Some(ids[index])
+            Some(task_ids[index])
         }
     };
 
@@ -138,21 +205,19 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         debug!("Not using a build task");
     }
 
+    let start_task_setting = project_docker
+        .file
+        .start_task
+        .as_ref()
+        .or(workspace_docker.file.start_task.as_ref());
+
     let start_task_id = if let Some(id) = &args.start_task {
         Some(id)
     } else if args.defaults {
-        project.config.docker.file.start_task.as_ref()
+        start_task_setting
     } else {
-        let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
-        ids.sort();
-
-        let default_index = project
-            .config
-            .docker
-            .file
-            .start_task
-            .as_ref()
-            .and_then(|id| ids.iter().position(|cursor_id| cursor_id == &id));
+        let default_index = start_task_setting
+            .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
         let mut index = default_index.unwrap_or(0);
 
         console
@@ -160,7 +225,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
                 Select(
                     label: "Start task?",
                     options: {
-                        let mut options = ids.iter().map(SelectOption::new).collect::<Vec<_>>();
+                        let mut options = task_ids.iter().map(SelectOption::new).collect::<Vec<_>>();
                         options.push(SelectOption::new("(none)"));
                         options
                     },
@@ -170,10 +235,10 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
             })
             .await?;
 
-        if index == ids.len() {
+        if index == task_ids.len() {
             None
         } else {
-            Some(ids[index])
+            Some(task_ids[index])
         }
     };
 
@@ -193,11 +258,11 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     // Generate the file
     let out_file = project
         .root
-        .join(args.dest.as_deref().unwrap_or("Dockerfile"));
+        .join(args.dest.as_deref().unwrap_or(Path::new("Dockerfile")));
 
     debug!(
         dockerfile = ?out_file,
-        project = options.project.as_str(),
+        project_id = options.project.as_str(),
         "Generating Dockerfile in project",
     );
 
@@ -215,35 +280,23 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
 }
 
 async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Result<String> {
-    let Some(toolchain_id) = project.toolchains.first() else {
-        return Ok("scratch".into());
-    };
-
     let toolchain_registry = session.get_toolchain_registry().await?;
-    let toolchain = toolchain_registry.load(&toolchain_id).await?;
 
-    if toolchain.has_func("define_docker_metadata").await {
-        let metadata = toolchain
-            .define_docker_metadata(DefineDockerMetadataInput {
-                context: toolchain_registry.create_context(),
-                toolchain_config: toolchain_registry
-                    .create_merged_config(toolchain_id, &project.config),
-            })
-            .await?;
+    for toolchain in toolchain_registry.load_many(&project.toolchains).await? {
+        if toolchain.has_func("define_docker_metadata").await {
+            let metadata = toolchain
+                .define_docker_metadata(DefineDockerMetadataInput {
+                    context: toolchain_registry.create_context(),
+                    toolchain_config: toolchain_registry
+                        .create_merged_config(&toolchain.id, &project.config),
+                })
+                .await?;
 
-        if let Some(image) = metadata.default_image {
-            return Ok(image);
+            if let Some(image) = metadata.default_image {
+                return Ok(image);
+            }
         }
     }
 
-    let image = match toolchain_id.as_str() {
-        "bun" => "oven/bun:latest",
-        "deno" => "denoland/deno:latest",
-        "node" => "node:latest",
-        "python" => "python:latest",
-        "rust" => "rust:latest",
-        _ => "scratch",
-    };
-
-    Ok(image.into())
+    Ok("scratch".into())
 }

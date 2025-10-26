@@ -116,7 +116,11 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                             } else {
                                 "Aliases"
                             },
-                            content: project.aliases.join(", "),
+                            content: project.aliases
+                                .iter()
+                                .map(|alias| alias.alias.clone())
+                                .collect::<Vec<_>>()
+                                .join(", "),
                         )
                     }
                 }))

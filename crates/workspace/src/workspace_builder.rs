@@ -17,8 +17,8 @@ use moon_config::{
 };
 use moon_extension_plugin::ExtensionRegistry;
 use moon_feature_flags::glob_walk_with_options;
-use moon_pdk_api::ExtendProjectGraphInput;
-use moon_project::{Project, ProjectError};
+use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
+use moon_project::{Project, ProjectAlias, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
@@ -227,7 +227,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 (
                     id,
                     ProjectMetadata {
-                        aliases: data.aliases,
+                        aliases: data.aliases.keys().cloned().collect(),
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
                         source: data.source,
@@ -434,7 +434,16 @@ impl<'app> WorkspaceBuilder<'app> {
 
         // Inherit aliases before building in case the project
         // references itself in tasks or dependencies
-        builder.set_aliases(build_data.aliases.iter().cloned().collect());
+        builder.set_aliases(
+            build_data
+                .aliases
+                .iter()
+                .map(|(alias, plugin_id)| ProjectAlias {
+                    alias: alias.to_owned(),
+                    plugin: plugin_id.to_owned(),
+                })
+                .collect(),
+        );
 
         let project = builder.build().await?;
 
@@ -816,7 +825,6 @@ impl<'app> WorkspaceBuilder<'app> {
 
     async fn extend_project_build_data(&mut self) -> miette::Result<()> {
         let context = self.context();
-        let mut outputs = vec![];
 
         debug!("Extending project graph");
 
@@ -826,40 +834,16 @@ impl<'app> WorkspaceBuilder<'app> {
             .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
             .collect::<BTreeMap<_, _>>();
 
-        // From toolchains
-        outputs.extend(
-            context
-                .toolchain_registry
-                .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
-                    context: registry.create_context(),
-                    project_sources: project_sources.clone(),
-                    toolchain_config: registry.create_config(&toolchain.id),
-                    ..Default::default()
-                })
-                .await?,
-        );
-
-        // From extensions
-        outputs.extend(
-            context
-                .extension_registry
-                .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
-                    context: registry.create_context(),
-                    project_sources: project_sources.clone(),
-                    extension_config: registry.create_config(&extension.id),
-                    ..Default::default()
-                })
-                .await?,
-        );
-
-        for output in outputs {
+        let mut process_output = |plugin_id: Id,
+                                  output: ExtendProjectGraphOutput|
+         -> miette::Result<()> {
             for (project_id, mut project_extend) in output.extended_projects {
                 if !self.project_data.contains_key(&project_id) {
                     return Err(ProjectGraphError::UnconfiguredID(project_id.to_string()).into());
                 }
 
                 if let Some(alias) = project_extend.alias.take() {
-                    self.track_alias(project_id.clone(), alias)?;
+                    self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
                 }
 
                 if let Some(build_data) = self.project_data.get_mut(&project_id) {
@@ -876,6 +860,36 @@ impl<'app> WorkspaceBuilder<'app> {
                         .into_diagnostic()?,
                 );
             }
+
+            Ok(())
+        };
+
+        // From toolchains
+        for result in context
+            .toolchain_registry
+            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
+                context: registry.create_context(),
+                project_sources: project_sources.clone(),
+                toolchain_config: registry.create_config(&toolchain.id),
+                ..Default::default()
+            })
+            .await?
+        {
+            process_output(result.id.clone(), result.output)?;
+        }
+
+        // From extensions
+        for result in context
+            .extension_registry
+            .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
+                context: registry.create_context(),
+                project_sources: project_sources.clone(),
+                extension_config: registry.create_config(&extension.id),
+                ..Default::default()
+            })
+            .await?
+        {
+            process_output(result.id.clone(), result.output)?;
         }
 
         debug!("Loaded {} project aliases", self.aliases.len());
@@ -883,7 +897,7 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn track_alias(&mut self, id: Id, alias: String) -> miette::Result<()> {
+    fn track_alias(&mut self, id: Id, alias: String, plugin_id: Id) -> miette::Result<()> {
         // Skip aliases that match its own ID
         if alias == id.as_str() {
             return Ok(());
@@ -933,7 +947,7 @@ impl<'app> WorkspaceBuilder<'app> {
             .get_mut(&id)
             .expect("Project build data not found!")
             .aliases
-            .insert(alias.clone());
+            .insert(alias.clone(), plugin_id);
 
         self.aliases.insert(alias, id);
 

@@ -29,10 +29,13 @@ RUN moon docker scaffold {{ project }}
 FROM base AS build
 
 # Copy workspace configs
-COPY --from=skeleton /app/.moon/docker/workspace .
+COPY --from=skeleton /app/.moon/docker/configs .
 
-# Install dependencies
+{%- if run_setup %}
+
+# Install toolchains and dependencies
 RUN moon docker setup
+{%- endif %}
 
 # Copy project sources
 COPY --from=skeleton /app/.moon/docker/sources .
@@ -43,7 +46,7 @@ COPY --from=skeleton /app/.moon/docker/sources .
 RUN moon run {{ build_task }}
 {%- endif %}
 
-{%- if prune %}
+{%- if run_prune %}
 
 # Prune extraneous dependencies
 RUN moon docker prune

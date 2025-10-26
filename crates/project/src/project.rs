@@ -14,13 +14,26 @@ use std::fmt;
 use std::path::PathBuf;
 
 cacheable!(
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct ProjectAlias {
+        pub alias: String,
+        pub plugin: Id,
+    }
+);
+
+impl AsRef<str> for ProjectAlias {
+    fn as_ref(&self) -> &str {
+        &self.alias
+    }
+}
+
+cacheable!(
     #[derive(Clone, Debug, Default)]
     #[serde(default)]
     pub struct Project {
-        /// Unique alias(es) of the project, alongside its official identifier.
-        /// This is typically for language specific semantics, like `name` from `package.json`.
+        /// Unique aliases derived from plugins, typically toolchain manifests.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub aliases: Vec<String>,
+        pub aliases: Vec<ProjectAlias>,
 
         /// Project configuration loaded from "moon.*", if it exists.
         pub config: ProjectConfig,
@@ -132,13 +145,17 @@ impl Project {
     /// Return true if the provided locator string (an ID or alias) matches the
     /// current project.
     pub fn matches_locator(&self, locator: &str) -> bool {
-        self.id.as_str() == locator || self.aliases.iter().any(|alias| alias == locator)
+        self.id.as_str() == locator || self.aliases.iter().any(|alias| alias.alias == locator)
     }
 
     /// Convert the project into a fragment.
     pub fn to_fragment(&self) -> ProjectFragment {
         ProjectFragment {
-            aliases: self.aliases.clone(),
+            aliases: self
+                .aliases
+                .iter()
+                .map(|alias| alias.alias.clone())
+                .collect(),
             dependency_scope: None,
             id: self.id.clone(),
             source: self.source.to_string(),

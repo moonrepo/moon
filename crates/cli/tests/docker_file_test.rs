@@ -30,7 +30,7 @@ mod docker_file {
                     "file",
                     "no-tasks",
                     "--defaults",
-                    "--buildTask",
+                    "--build-task",
                     "missing",
                 ]);
             })
@@ -51,7 +51,7 @@ mod docker_file {
                     "file",
                     "no-tasks",
                     "--defaults",
-                    "--startTask",
+                    "--start-task",
                     "missing",
                 ]);
             })
@@ -110,9 +110,9 @@ mod docker_file {
                     "has-tasks",
                     "--image",
                     "node:latest",
-                    "--buildTask",
+                    "--build-task",
                     "build",
-                    "--startTask",
+                    "--start-task",
                     "start",
                     "--no-prune",
                     "--no-toolchain",
@@ -145,5 +145,43 @@ mod docker_file {
         assert!(file.contains("moon run with-config:compile"));
         assert!(file.contains("moon run with-config:serve"));
         assert!(file.contains("moon docker prune"));
+    }
+
+    #[test]
+    fn can_use_a_custom_template() {
+        let sandbox = create_moon_sandbox("dockerfile");
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args(["docker", "file", "has-tasks", "--template"]);
+                cmd.arg(
+                    std::env::current_dir()
+                        .unwrap()
+                        .join("../docker/templates/CustomTemplate.tera"),
+                );
+            })
+            .success();
+
+        let file = fs::read_to_string(sandbox.path().join("has-tasks/Dockerfile")).unwrap();
+
+        assert!(file.contains("Custom template"));
+    }
+
+    #[test]
+    fn errors_if_template_path_doesnt_exist() {
+        let sandbox = create_moon_sandbox("dockerfile");
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args([
+                    "docker",
+                    "file",
+                    "has-tasks",
+                    "--template",
+                    "unknown-template-file.tera",
+                ]);
+            })
+            .failure()
+            .stderr(predicate::str::contains("unable to generate a Dockerfile"));
     }
 }

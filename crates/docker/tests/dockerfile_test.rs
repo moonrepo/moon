@@ -38,7 +38,7 @@ mod dockerfile {
     #[test]
     fn with_prune() {
         let mut options = create_options();
-        options.prune = true;
+        options.run_prune = true;
         options.build_task = Some(Target::parse("app:compile").unwrap());
         options.start_task = Some(Target::parse("app:serve").unwrap());
 
@@ -48,7 +48,21 @@ mod dockerfile {
     #[test]
     fn with_setup() {
         let mut options = create_options();
-        options.setup = true;
+        options.run_setup = true;
+
+        assert_snapshot!(generate_dockerfile(options).unwrap());
+    }
+
+    #[test]
+    fn renders_a_custom_template() {
+        let mut options = create_options();
+        options.build_task = Some(Target::parse("app:compile").unwrap());
+        options.start_task = Some(Target::parse("app:serve").unwrap());
+        options.template_path = Some(
+            std::env::current_dir()
+                .unwrap()
+                .join("templates/CustomTemplate.tera"),
+        );
 
         assert_snapshot!(generate_dockerfile(options).unwrap());
     }

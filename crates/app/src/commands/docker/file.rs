@@ -1,3 +1,4 @@
+use crate::commands::docker::docker_error::AppDockerError;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -8,6 +9,7 @@ use moon_pdk_api::DefineDockerMetadataInput;
 use moon_project::Project;
 use starbase::AppResult;
 use starbase_utils::fs;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
@@ -16,12 +18,12 @@ pub struct DockerFileArgs {
     id: Id,
 
     #[arg(help = "Destination path, relative from the project root")]
-    dest: Option<String>,
+    dest: Option<PathBuf>,
 
     #[arg(long, help = "Use default options instead of prompting")]
     defaults: bool,
 
-    #[arg(long = "buildTask", help = "ID of a task to build the project")]
+    #[arg(long, help = "ID of a task to build the project")]
     build_task: Option<Id>,
 
     #[arg(long, help = "Base Docker image to use")]
@@ -39,8 +41,14 @@ pub struct DockerFileArgs {
     )]
     no_toolchain: bool,
 
-    #[arg(long = "startTask", help = "ID of a task to run the project")]
+    #[arg(long, help = "ID of a task to run the project")]
     start_task: Option<Id>,
+
+    #[arg(
+        long,
+        help = "Template path, relative from the workspace root, to render the Dockerfile with"
+    )]
+    template: Option<PathBuf>,
 }
 
 #[instrument(skip_all)]
@@ -64,7 +72,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     let mut options = GenerateDockerfileOptions {
         disable_toolchain: args.no_toolchain,
         project: args.id,
-        prune: if args.no_prune {
+        run_prune: if args.no_prune {
             false
         } else {
             project_docker
@@ -73,7 +81,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
                 .or(workspace_docker.file.run_prune)
                 .unwrap_or(true)
         },
-        setup: if args.no_setup {
+        run_setup: if args.no_setup {
             false
         } else {
             project_docker
@@ -82,10 +90,44 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
                 .or(workspace_docker.file.run_setup)
                 .unwrap_or(true)
         },
-        ..GenerateDockerfileOptions::default()
+        ..Default::default()
     };
 
     debug!("Gathering Dockerfile options");
+
+    if let Some(template) = args
+        .template
+        .clone()
+        .or_else(|| {
+            project_docker
+                .file
+                .template
+                .as_ref()
+                .map(|temp| temp.to_path_buf())
+        })
+        .or_else(|| {
+            workspace_docker
+                .file
+                .template
+                .as_ref()
+                .map(|temp| temp.to_path_buf())
+        })
+    {
+        let template_path = if template.is_absolute() {
+            template
+        } else {
+            session.workspace_root.join(template)
+        };
+
+        if template_path.exists() {
+            options.template_path = Some(template_path);
+        } else {
+            return Err(AppDockerError::MissingFileTemplate {
+                path: template_path,
+            }
+            .into());
+        }
+    }
 
     let base_image = get_base_image(&session, &project).await?;
     let default_image = project_docker
@@ -216,7 +258,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     // Generate the file
     let out_file = project
         .root
-        .join(args.dest.as_deref().unwrap_or("Dockerfile"));
+        .join(args.dest.as_deref().unwrap_or(Path::new("Dockerfile")));
 
     debug!(
         dockerfile = ?out_file,

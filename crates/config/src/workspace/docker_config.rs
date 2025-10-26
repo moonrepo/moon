@@ -1,5 +1,5 @@
 use crate::config_struct;
-use crate::shapes::GlobPath;
+use crate::shapes::{FilePath, GlobPath};
 use moon_common::Id;
 use schematic::Config;
 
@@ -30,6 +30,10 @@ config_struct!(
         /// within the `CMD` instruction. If not defined, will skip the start step
         /// and not include the `CMD` instruction.
         pub start_task: Option<Id>,
+
+        /// A template file, relative from the workspace root, to use when rendering
+        /// the `Dockerfile`. Powered by Tera.
+        pub template: Option<FilePath>,
     }
 );
 

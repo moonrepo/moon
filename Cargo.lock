@@ -3865,6 +3865,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "starbase_sandbox",
+ "starbase_utils",
  "tera",
  "tracing",
 ]

@@ -1,6 +1,9 @@
+use std::path::PathBuf;
+
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_target::Target;
+use starbase_utils::fs;
 use tera::{Context, Tera};
 
 #[derive(Debug, Default)]
@@ -9,9 +12,10 @@ pub struct GenerateDockerfileOptions {
     pub disable_toolchain: bool,
     pub image: String,
     pub project: Id,
-    pub prune: bool,
-    pub setup: bool,
+    pub run_prune: bool,
+    pub run_setup: bool,
     pub start_task: Option<Target>,
+    pub template_path: Option<PathBuf>,
 }
 
 pub fn generate_dockerfile(mut options: GenerateDockerfileOptions) -> miette::Result<String> {
@@ -27,8 +31,8 @@ pub fn generate_dockerfile(mut options: GenerateDockerfileOptions) -> miette::Re
     context.insert("disable_toolchain", &options.disable_toolchain);
     context.insert("image", &options.image);
     context.insert("project", &options.project);
-    context.insert("prune", &options.prune);
-    context.insert("setup", &options.setup);
+    context.insert("run_prune", &options.run_prune);
+    context.insert("run_setup", &options.run_setup);
 
     if let Some(task) = &options.build_task {
         context.insert("build_task", task);
@@ -38,12 +42,12 @@ pub fn generate_dockerfile(mut options: GenerateDockerfileOptions) -> miette::Re
         context.insert("start_task", task);
     }
 
-    let result = Tera::one_off(
-        include_str!("../templates/Dockerfile.tera"),
-        &context,
-        false,
-    )
-    .into_diagnostic()?;
+    let content = match options.template_path {
+        Some(path) => fs::read_file(path)?,
+        None => include_str!("../templates/Dockerfile.tera").to_owned(),
+    };
+
+    let result = Tera::one_off(&content, &context, false).into_diagnostic()?;
 
     Ok(result)
 }

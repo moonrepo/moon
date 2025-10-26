@@ -103,15 +103,29 @@ and the `docker` settings in `moon.*` to act as overrides on a per-project basis
 we've also updated `docker.file` and `docker.scaffold` settings to be the same across both files.
 
 ```yaml title=".moon/workspace.yml"
+# Inherited by all projects
 docker:
   file:
     buildTask: 'build'
 ```
 
 ```yaml title="moon.yml"
+# Overridden per project
 docker:
   file:
     buildTask: 'compile'
+```
+
+### Dockerfile templates
+
+To further expand the customizability of `Dockerfile` generation, we've added support for custom
+templates to be used during the rendering process. The template can be provided with the
+`--template` option when running `moon docker file`, or configured with the new
+`docker.file.template` setting. Template rendering is powered by
+[Tera](https://keats.github.io/tera/).
+
+```shell
+$ moon docker file app --template ./Dockerfile.tera
 ```
 
 ## VCS

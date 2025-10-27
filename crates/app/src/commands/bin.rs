@@ -1,5 +1,6 @@
 use crate::session::MoonSession;
 use clap::Args;
+use moon_common::Id;
 use moon_env_var::GlobalEnvBag;
 use moon_process::Command;
 use starbase::AppResult;
@@ -7,8 +8,8 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct BinArgs {
-    #[arg(help = "The toolchain to query")]
-    toolchain: String,
+    #[arg(required = true, help = "The toolchain to query")]
+    toolchain: Id,
 }
 
 #[instrument(skip(session))]

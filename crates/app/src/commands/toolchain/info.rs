@@ -13,14 +13,14 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ToolchainInfoArgs {
-    #[arg(help = "ID of the toolchain to inspect")]
+    #[arg(help = "Toolchain ID to inspect")]
     id: Id,
 
     #[arg(help = "Plugin locator string to find and load the toolchain")]
     plugin: Option<PluginLocator>,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
     let Some(locator) = args
         .plugin
@@ -121,7 +121,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                     }.into_any()
                 )
                 Entry(
-                    name: "Name",
+                    name: "Title",
                     content: toolchain.metadata.name.clone(),
                 )
                 #((!is_test_env()).then(|| {

@@ -19,20 +19,20 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ToolchainAddArgs {
-    #[arg(help = "ID of the toolchain to add")]
+    #[arg(help = "Unique ID of the toolchain to add")]
     id: Id,
 
     #[arg(help = "Plugin locator string to find and load the toolchain")]
     plugin: Option<PluginLocator>,
 
-    #[arg(long, help = "Initialize with minimal configuration and prompts")]
+    #[arg(long, help = "Add with minimal configuration and prompts")]
     minimal: bool,
 
     #[arg(long, help = "Skip prompts and use default values")]
     yes: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
     let Some(locator) = args
         .plugin
@@ -49,7 +49,8 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
         .await?;
 
     // Render config template
-    let template = init_toolchain(&session, &args, &toolchain_registry, &toolchain).await?;
+    let template =
+        create_template_from_prompts(&session, &args, &toolchain_registry, &toolchain).await?;
 
     // Update toolchain file
     let config_paths = &session
@@ -86,7 +87,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
 }
 
 #[instrument(skip_all)]
-pub async fn init_toolchain(
+pub async fn create_template_from_prompts(
     session: &MoonSession,
     args: &ToolchainAddArgs,
     toolchain_registry: &ToolchainRegistry,

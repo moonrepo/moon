@@ -97,7 +97,7 @@ pub async fn render_prompt(
 pub async fn render_version_prompt(
     console: &Console,
     skip_prompts: bool,
-    tool: &str,
+    toolchain: &str,
     op: impl FnOnce() -> miette::Result<Option<UnresolvedVersionSpec>>,
 ) -> miette::Result<Option<UnresolvedVersionSpec>> {
     let default_version = op()?;
@@ -114,11 +114,11 @@ pub async fn render_version_prompt(
             Confirm(
                 label: if let Some(version) = &default_version {
                     format!(
-                        "Manage {tool} {version} through <shell>moon</shell>? <muted>(recommended)</muted>"
+                        "Manage {toolchain} {version} through <shell>moon</shell>? <muted>(recommended)</muted>"
                     )
                 } else {
                     format!(
-                        "Manage {tool} through <shell>moon</shell>? <muted>(recommended)</muted>"
+                        "Manage {toolchain} through <shell>moon</shell>? <muted>(recommended)</muted>"
                     )
                 },
                 description: "Will download and install on-demand.".to_string(),
@@ -131,7 +131,7 @@ pub async fn render_version_prompt(
         console
             .render_interactive(element! {
                 Input(
-                    label: format!("{tool} version?"),
+                    label: format!("{toolchain} version?"),
                     default_value: default_version.map(|v| v.to_string()).unwrap_or_default(),
                     on_value: &mut value,
                     validate: move |input: String| {

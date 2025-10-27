@@ -3,9 +3,10 @@ use moon_console::{
     Console,
     ui::{Confirm, Input, Select, SelectOption},
 };
-use moon_pdk_api::{PromptType, SettingPrompt};
+use moon_pdk_api::{ConditionType, PromptType, SettingCondition, SettingPrompt};
 use proto_core::UnresolvedVersionSpec;
-use starbase_utils::json::JsonValue;
+use starbase_utils::json::{JsonMap, JsonValue};
+use std::collections::VecDeque;
 
 pub async fn render_prompt(
     console: &Console,
@@ -153,6 +154,113 @@ pub async fn render_version_prompt(
     } else {
         UnresolvedVersionSpec::parse(value).ok()
     })
+}
+
+pub async fn evaluate_prompts(
+    console: &Console,
+    prompts: &[SettingPrompt],
+    settings: &mut JsonMap<String, JsonValue>,
+    minimal: bool,
+    skip_prompts: bool,
+) -> miette::Result<()> {
+    for prompt in prompts
+        .iter()
+        .filter(|p| if minimal { p.minimal } else { true })
+    {
+        if let Some(condition) = &prompt.condition
+            && !evaluate_condition(condition, settings)
+        {
+            continue;
+        }
+
+        if let Some(value) = render_prompt(console, skip_prompts, prompt).await? {
+            let falsy = is_json_falsy(&value);
+
+            if prompt.skip_if_falsy && falsy {
+                continue;
+            }
+
+            inject_setting(prompt.setting.clone(), value, settings);
+
+            if !falsy {
+                Box::pin(evaluate_prompts(
+                    console,
+                    &prompt.prompts,
+                    settings,
+                    minimal,
+                    skip_prompts,
+                ))
+                .await?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub fn evaluate_condition(
+    condition: &SettingCondition,
+    settings: &JsonMap<String, JsonValue>,
+) -> bool {
+    let Some(value) = settings.get(&condition.setting) else {
+        return condition.op == ConditionType::NotExists;
+    };
+
+    match (&condition.op, value) {
+        (ConditionType::BoolEquals(expected), JsonValue::Bool(actual)) => expected == actual,
+        (ConditionType::FloatEquals(expected), JsonValue::Number(number)) => {
+            number.as_f64().is_some_and(|actual| expected == &actual)
+        }
+        (ConditionType::IntEquals(expected), JsonValue::Number(number)) => {
+            number.as_i64().is_some_and(|actual| expected == &actual)
+        }
+        (ConditionType::StringContains(needle), JsonValue::String(haystack)) => {
+            haystack.contains(needle)
+        }
+        (ConditionType::StringEquals(expected), JsonValue::String(actual)) => expected == actual,
+        _ => false,
+    }
+}
+
+pub fn inject_setting(key: String, value: JsonValue, settings: &mut JsonMap<String, JsonValue>) {
+    let mut keys = key.split('.').collect::<VecDeque<_>>();
+
+    inject_setting_nested(&mut keys, value, settings);
+}
+
+pub fn inject_setting_nested(
+    keys: &mut VecDeque<&str>,
+    value: JsonValue,
+    settings: &mut JsonMap<String, JsonValue>,
+) {
+    let Some(key) = keys.pop_front() else { return };
+
+    // If no other keys, this is the leaf
+    if keys.is_empty() {
+        settings.insert(key.into(), value);
+        return;
+    }
+
+    // If not an object, change it to one
+    if !settings.contains_key(key) || settings.get(key).is_some_and(|inner| !inner.is_object()) {
+        settings.insert(key.into(), JsonValue::Object(JsonMap::default()));
+    }
+
+    // Traverse another depth
+    if let Some(JsonValue::Object(inner)) = settings.get_mut(key) {
+        inject_setting_nested(keys, value, inner);
+    }
+}
+
+pub fn is_json_falsy(value: &JsonValue) -> bool {
+    match value {
+        JsonValue::Null => true,
+        JsonValue::Bool(boolean) => !(*boolean),
+        JsonValue::Number(number) => number.as_f64().is_some_and(|no| no == 0.0),
+        JsonValue::String(string) => string.is_empty(),
+        JsonValue::Array(list) => list.is_empty(),
+        JsonValue::Object(map) => map.is_empty(),
+    }
 }
 
 pub fn display_json_value(value: &JsonValue) -> String {

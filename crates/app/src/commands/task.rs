@@ -18,14 +18,14 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct TaskArgs {
-    #[arg(help = "Target of task to display")]
+    #[arg(help = "Task target to inspect")]
     target: Target,
 
     #[arg(long, help = "Print in JSON format")]
     json: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
     let TargetScope::Project(project_locator) = &args.target.scope else {
         return Err(AppError::ProjectIdRequired.into());
@@ -266,9 +266,9 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                 Entry(
                     name: "Runs dependencies",
                     content: if task.options.run_deps_in_parallel {
-                        "Concurrently"
+                        "Parallel"
                     } else {
-                        "Serially"
+                        "Serial"
                     }.to_string(),
                 )
                 Entry(

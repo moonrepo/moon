@@ -181,7 +181,7 @@ async fn main() -> MainResult {
                 Commands::ProjectGraph(args) => {
                     commands::project_graph::project_graph(session, args).await
                 }
-                Commands::Projects => commands::projects::projects(session).await,
+                Commands::Projects(args) => commands::projects::projects(session, args).await,
                 Commands::Query { command } => match command {
                     QueryCommands::ChangedFiles(args) => {
                         commands::query::changed_files(session, args).await
@@ -210,6 +210,7 @@ async fn main() -> MainResult {
                 },
                 Commands::Task(args) => commands::task::task(session, args).await,
                 Commands::TaskGraph(args) => commands::task_graph::task_graph(session, args).await,
+                Commands::Tasks(args) => commands::tasks::tasks(session, args).await,
                 Commands::Teardown => commands::teardown::teardown(session).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
                 Commands::Toolchain { command } => match command {

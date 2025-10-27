@@ -23,6 +23,7 @@ pub mod sync;
 pub mod syncs;
 pub mod task;
 pub mod task_graph;
+pub mod tasks;
 pub mod teardown;
 pub mod templates;
 pub mod toolchain;

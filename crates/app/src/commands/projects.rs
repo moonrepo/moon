@@ -3,16 +3,29 @@ use clap::Args;
 use iocraft::prelude::{Size, element};
 use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
 use starbase::AppResult;
+use starbase_utils::json;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
-pub struct ProjectsArgs {}
+pub struct ProjectsArgs {
+    #[arg(long, help = "Print in JSON format")]
+    json: bool,
+}
 
 #[instrument(skip(session))]
-pub async fn projects(session: MoonSession) -> AppResult {
+pub async fn projects(session: MoonSession, args: ProjectsArgs) -> AppResult {
     let mut projects = session.get_workspace_graph().await?.get_projects()?;
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
+
+    if args.json {
+        session
+            .console
+            .out
+            .write_line(json::format(&projects, true)?)?;
+
+        return Ok(None);
+    }
 
     let id_width = projects
         .iter()

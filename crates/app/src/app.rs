@@ -15,11 +15,13 @@ use crate::commands::mcp::McpArgs;
 use crate::commands::migrate::MigrateCommands;
 use crate::commands::project::ProjectArgs;
 use crate::commands::project_graph::ProjectGraphArgs;
+use crate::commands::projects::ProjectsArgs;
 use crate::commands::query::QueryCommands;
 use crate::commands::run::RunArgs;
 use crate::commands::sync::SyncCommands;
 use crate::commands::task::TaskArgs;
 use crate::commands::task_graph::TaskGraphArgs;
+use crate::commands::tasks::TasksArgs;
 use crate::commands::templates::TemplatesArgs;
 use crate::commands::toolchain::ToolchainCommands;
 use crate::systems::bootstrap;
@@ -136,7 +138,7 @@ pub enum Commands {
     ProjectGraph(ProjectGraphArgs),
 
     #[command(name = "projects", about = "Display a table of all projects.")]
-    Projects,
+    Projects(ProjectsArgs),
 
     #[command(
         alias = "q",
@@ -184,6 +186,9 @@ pub enum Commands {
         about = "Display an interactive graph of tasks."
     )]
     TaskGraph(TaskGraphArgs),
+
+    #[command(name = "tasks", about = "Display a table of all tasks.")]
+    Tasks(TasksArgs),
 
     #[command(
         name = "teardown",

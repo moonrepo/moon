@@ -6,12 +6,11 @@ use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;
 use moon_config::{PartialToolchainPluginConfig, ToolchainsConfig};
-use moon_console::ui::{Container, Entry, Notice, Section, Style, StyledText, Variant};
+use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_pdk_api::InitializeToolchainInput;
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
 use proto_core::PluginLocator;
 use starbase::AppResult;
-use starbase_utils::json::JsonMap;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -84,62 +83,6 @@ pub async fn create_config_from_prompts(
 ) -> miette::Result<PartialToolchainPluginConfig> {
     let mut config = PartialToolchainPluginConfig::default();
 
-    // No instructions, so render an empty block
-    if !toolchain.has_func("initialize_toolchain").await {
-        return Ok(config);
-    }
-
-    // Extract information from the plugin
-    let output = toolchain
-        .initialize_toolchain(InitializeToolchainInput {
-            context: toolchain_registry.create_context(),
-        })
-        .await?;
-
-    if !args.yes {
-        session.console.render(element! {
-            Container {
-                Section(title: &toolchain.metadata.name) {
-                    Entry(
-                        name: "Toolchain",
-                        value: element! {
-                            StyledText(
-                                content: "https://moonrepo.dev/docs/concepts/toolchain",
-                                style: Style::Url
-                            )
-                        }.into_any()
-                    )
-                    #(output.docs_url.as_ref().map(|url| {
-                        element! {
-                            Entry(
-                                name: "Handbook",
-                                value: element! {
-                                    StyledText(
-                                        content: url,
-                                        style: Style::Url
-                                    )
-                                }.into_any()
-                            )
-                        }
-                    }))
-                    #(output.config_url.as_ref().map(|url| {
-                        element! {
-                            Entry(
-                                name: "Config",
-                                value: element! {
-                                    StyledText(
-                                        content: url,
-                                        style: Style::Url
-                                    )
-                                }.into_any()
-                            )
-                        }
-                    }))
-                }
-            }
-        })?;
-    }
-
     // Gather built-in settings
     if args.plugin.is_some() {
         config.plugin = Some(toolchain.locator.clone());
@@ -165,13 +108,24 @@ pub async fn create_config_from_prompts(
         }
     }
 
-    // Gather user settings via prompts
-    let mut settings = JsonMap::from_iter(output.default_settings);
+    // No instructions, so return early
+    if !toolchain.has_func("initialize_toolchain").await {
+        return Ok(config);
+    }
 
-    evaluate_prompts(
+    // Extract information from the plugin
+    let output = toolchain
+        .initialize_toolchain(InitializeToolchainInput {
+            context: toolchain_registry.create_context(),
+        })
+        .await?;
+
+    let settings = evaluate_plugin_initialize_prompts(
         &session.console,
-        &output.prompts,
-        &mut settings,
+        &toolchain.metadata.name,
+        "Toolchain",
+        "https://moonrepo.dev/docs/concepts/toolchain",
+        output,
         args.minimal,
         args.yes,
     )

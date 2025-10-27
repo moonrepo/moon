@@ -1,14 +1,18 @@
+use crate::common::{InitializePluginInput, InitializePluginOutput};
 use crate::context::MoonContext;
 use moon_common::Id;
 use schematic::Schema;
 use warpgate_api::*;
+
+pub type InitializeExtensionInput = InitializePluginInput;
+pub type InitializeExtensionOutput = InitializePluginOutput;
 
 // METADATA
 
 api_struct!(
     /// Input passed to the `register_extension` function.
     pub struct RegisterExtensionInput {
-        /// ID of the toolchain, as it was configured.
+        /// ID of the extension, as it was configured.
         pub id: Id,
     }
 );

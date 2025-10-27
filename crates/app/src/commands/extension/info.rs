@@ -40,6 +40,7 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
         &[
             "register_extension",
             "define_extension_config",
+            "initialize_extension",
             "execute_extension",
             "sync_project",
             "sync_workspace",

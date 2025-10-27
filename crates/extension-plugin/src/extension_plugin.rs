@@ -12,6 +12,7 @@ pub type ExtensionMetadata = RegisterExtensionOutput;
 
 pub struct ExtensionPlugin {
     pub id: Id,
+    pub locator: PluginLocator,
     pub metadata: ExtensionMetadata,
 
     plugin: Arc<PluginContainer>,
@@ -33,6 +34,7 @@ impl Plugin for ExtensionPlugin {
 
         Ok(Self {
             id: registration.id,
+            locator: registration.locator,
             metadata,
             plugin,
         })
@@ -111,6 +113,19 @@ impl ExtensionPlugin {
         let output: ExtendTaskScriptOutput = self
             .plugin
             .cache_func_with("extend_task_script", input)
+            .await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn initialize_extension(
+        &self,
+        input: InitializeExtensionInput,
+    ) -> miette::Result<InitializeExtensionOutput> {
+        let output: InitializeExtensionOutput = self
+            .plugin
+            .cache_func_with("initialize_extension", input)
             .await?;
 
         Ok(output)

@@ -164,9 +164,9 @@ async fn main() -> MainResult {
                 },
                 Commands::Ext(args) => commands::ext::ext(session, args).await,
                 Commands::Extension { command } => match command {
-                    // ExtensionCommands::Add(args) => {
-                    //     commands::toolchain::add::add(session, args).await
-                    // }
+                    ExtensionCommands::Add(args) => {
+                        commands::extension::add::add(session, args).await
+                    }
                     ExtensionCommands::Info(args) => {
                         commands::extension::info::info(session, args).await
                     }

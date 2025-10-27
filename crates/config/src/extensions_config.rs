@@ -12,7 +12,6 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ExtensionPluginConfig {
         /// Location of the WASM plugin to use.
-        #[setting(required)]
         pub plugin: Option<PluginLocator>,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.

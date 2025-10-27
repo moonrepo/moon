@@ -1,18 +1,18 @@
+use crate::common::{InitializePluginInput, InitializePluginOutput};
 use crate::context::*;
-use crate::is_false;
-use crate::prompts::*;
 use moon_common::Id;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig, LanguageType};
 use moon_project::ProjectFragment;
-use rustc_hash::FxHashMap;
 use schematic::Schema;
-use serde_json::Value;
 use std::path::PathBuf;
 use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 pub use proto_pdk_api::{
     DetectVersionInput, DetectVersionOutput, ParseVersionFileInput, ParseVersionFileOutput,
 };
+
+pub type InitializeToolchainInput = InitializePluginInput;
+pub type InitializeToolchainOutput = InitializePluginOutput;
 
 // METADATA
 
@@ -75,109 +75,11 @@ api_struct!(
     }
 );
 
-pub type ConfigSchema = Schema;
-
 api_struct!(
     /// Output returned from the `define_toolchain_config` function.
     pub struct DefineToolchainConfigOutput {
         /// Schema shape of the toolchain's configuration.
-        pub schema: ConfigSchema,
-    }
-);
-
-// INIT
-
-api_struct!(
-    /// Input passed to the `initialize_toolchain` function.
-    pub struct InitializeToolchainInput {
-        /// Current moon context.
-        pub context: MoonContext,
-    }
-);
-
-api_struct!(
-    /// Output returned from the `initialize_toolchain` function.
-    #[serde(default)]
-    pub struct InitializeToolchainOutput {
-        /// A URL to documentation about available configuration settings.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub config_url: Option<String>,
-
-        /// Settings to include in the injected toolchain config file.
-        /// Supports dot notation for the keys.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub default_settings: FxHashMap<String, Value>,
-
-        /// A URL to documentation about the toolchain.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub docs_url: Option<String>,
-
-        /// A list of questions to prompt the user about configuration
-        /// settings and the values to inject.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub prompts: Vec<SettingPrompt>,
-    }
-);
-
-// SYNC WORKSPACE / PROJECT
-
-api_struct!(
-    /// Input passed to the `sync_workspace` function.
-    pub struct SyncWorkspaceInput {
-        /// Current moon context.
-        pub context: MoonContext,
-
-        /// Workspace extension configuration.
-        /// Is null when within toolchains.
-        pub extension_config: serde_json::Value,
-
-        /// Workspace toolchain configuration.
-        /// Is null when within extensions.
-        pub toolchain_config: serde_json::Value,
-    }
-);
-
-api_struct!(
-    /// Input passed to the `sync_project` function.
-    pub struct SyncProjectInput {
-        /// Current moon context.
-        pub context: MoonContext,
-
-        /// Workspace extension configuration.
-        /// Is null when within toolchains.
-        pub extension_config: serde_json::Value,
-
-        /// Other projects that the project being synced depends on.
-        pub project_dependencies: Vec<ProjectFragment>,
-
-        /// Fragment of the project being synced.
-        pub project: ProjectFragment,
-
-        /// Workspace and project merged toolchain configuration,
-        /// with the latter taking precedence. Is null when within extensions.
-        pub toolchain_config: serde_json::Value,
-
-        /// Workspace only toolchain configuration.
-        pub toolchain_workspace_config: serde_json::Value,
-    }
-);
-
-api_struct!(
-    /// Output returned from the `sync_workspace` and `sync_project` functions.
-    #[serde(default)]
-    pub struct SyncOutput {
-        /// List of files that have been changed because of the sync.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<PathBuf>,
-
-        /// Operations that were performed. This can be used to track
-        /// metadata like time taken, result status, and more.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub operations: Vec<Operation>,
-
-        /// Whether the action was skipped or not.
-        #[serde(skip_serializing_if = "is_false")]
-        pub skipped: bool,
+        pub schema: Schema,
     }
 );
 

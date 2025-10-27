@@ -14,13 +14,12 @@
 
 - **WASM API**
   - Added a `load_extension_config_by_id` host function.
-  - Added a `define_extension_config` plugin function.
+  - Added `define_extension_config` and `initialize_extension` plugin functions.
   - Added `load_extension_config`, `parse_extension_config` and `parse_extension_config_schema`
     utility functions.
-  - Added `DefineExtensionConfigOutput` type.
-  - Added `ExtendProjectGraphInput.extension_config` field.
-  - Added `ExtendTaskCommandInput.extension_config` field.
-  - Added `ExtendTaskScriptInput.extension_config` field.
+  - Added `DefineExtensionConfigOutput`, `InitializeExtensionInput`, and `InitializeExtensionOutput`
+    types.
+  - Added `ExtendProjectGraphInput.extension_config`, `ExtendTaskCommandInput.extension_config`,
+    `ExtendTaskScriptInput.extension_config`, `SyncProjectInput.extension_config`, and
+    `SyncWorkspaceInput.extension_config` fields.
   - Added `RegisterToolchainOutput.language` field.
-  - Added `SyncProjectInput.extension_config` field.
-  - Added `SyncWorkspaceInput.extension_config` field.

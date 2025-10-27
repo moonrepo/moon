@@ -61,7 +61,10 @@ pub fn append_plugin_to_config_file(
 
     fs::append_file(
         path,
-        serialize_config_based_on_extension(plugin_id, path, config)?,
+        format!(
+            "\n\n{}",
+            serialize_config_based_on_extension(plugin_id, path, config)?
+        ),
     )?;
 
     Ok(path.to_path_buf())

@@ -1,9 +1,8 @@
 use iocraft::prelude::element;
-use moon_console::{
-    Console,
-    ui::{Confirm, Input, Select, SelectOption},
+use moon_console::{Console, ui::*};
+use moon_pdk_api::{
+    ConditionType, InitializePluginOutput, PromptType, SettingCondition, SettingPrompt,
 };
-use moon_pdk_api::{ConditionType, PromptType, SettingCondition, SettingPrompt};
 use proto_core::UnresolvedVersionSpec;
 use starbase_utils::json::{JsonMap, JsonValue};
 use std::collections::VecDeque;
@@ -154,6 +153,73 @@ pub async fn render_version_prompt(
     } else {
         UnresolvedVersionSpec::parse(value).ok()
     })
+}
+
+pub async fn evaluate_plugin_initialize_prompts(
+    console: &Console,
+    title: &str,
+    plugin: &str,
+    url: &str,
+    output: InitializePluginOutput,
+    minimal: bool,
+    skip_prompts: bool,
+) -> miette::Result<JsonMap<String, JsonValue>> {
+    if !skip_prompts {
+        console.render(element! {
+            Container {
+                Section(title) {
+                    Entry(
+                        name: plugin,
+                        value: element! {
+                            StyledText(
+                                content: url,
+                                style: Style::Url
+                            )
+                        }.into_any()
+                    )
+                    #(output.docs_url.as_ref().map(|url| {
+                        element! {
+                            Entry(
+                                name: "Handbook",
+                                value: element! {
+                                    StyledText(
+                                        content: url,
+                                        style: Style::Url
+                                    )
+                                }.into_any()
+                            )
+                        }
+                    }))
+                    #(output.config_url.as_ref().map(|url| {
+                        element! {
+                            Entry(
+                                name: "Config",
+                                value: element! {
+                                    StyledText(
+                                        content: url,
+                                        style: Style::Url
+                                    )
+                                }.into_any()
+                            )
+                        }
+                    }))
+                }
+            }
+        })?;
+    }
+
+    let mut settings = JsonMap::from_iter(output.default_settings);
+
+    evaluate_prompts(
+        console,
+        &output.prompts,
+        &mut settings,
+        minimal,
+        skip_prompts,
+    )
+    .await?;
+
+    Ok(settings)
 }
 
 pub async fn evaluate_prompts(

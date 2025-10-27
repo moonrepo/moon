@@ -32,11 +32,45 @@ change, the `extensions` setting has been removed from the workspace configurati
 With extensions now being first-class citizens in moon, we've expanded the PDK API to allow for more
 functionality. Extensions can now utilize the following API functions, similar to toolchains:
 
+- `define_extension_config` - Define the configuration schema for the extension.
+- `initialize_extension` - Initialize the extension with user prompts.
 - `extend_project_graph` - Extend projects with aliases, dependencies, and tasks.
 - `extend_task_command` - Extend the task command before it's executed.
 - `extend_task_script` - Extend the task script before it's executed.
 - `sync_project` - Run operations during the project sync process.
 - `sync_workspace` - Run operations during the workspace sync process.
+
+### New commands
+
+To easily manage extensions, we've added new commands under the `moon extension` namespace:
+
+- `moon extension add` - Add a new extension to the workspace.
+- `moon extension info` - Show information about an extension.
+
+```shell
+$ moon extension info migrate-nx
+
+Extension ─────────────────────────────────────────────────────────────────
+
+  Migrate an Nx repository to moon by converting all nx.json and
+  project.json files into moon configuration files.
+
+  ID: migrate-nx
+  Title: Migrate Nx
+  Version: 0.0.11
+
+APIs ──────────────────────────────────────────────────────────────────────
+
+  🟢 register_extension (required)
+  ⚫️ define_extension_config
+  ⚫️ initialize_extension
+  🟢 execute_extension
+  ⚫️ sync_project
+  ⚫️ sync_workspace
+  ⚫️ extend_project_graph
+  ⚫️ extend_task_command
+  ⚫️ extend_task_script
+```
 
 ## Toolchains
 

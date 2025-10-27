@@ -79,9 +79,7 @@ impl ExtensionsConfig {
     }
 
     pub fn inherit_default_plugins(&mut self) {
-        for id in ["download", "migrate-nx", "migrate-turborepo"] {
-            self.plugins.entry(Id::raw(id)).or_default();
-        }
+        // N/A
     }
 
     pub fn inherit_test_plugins(&mut self) -> miette::Result<()> {
@@ -90,6 +88,12 @@ impl ExtensionsConfig {
         }
 
         Ok(())
+    }
+
+    pub fn inherit_test_builtin_plugins(&mut self) {
+        for id in ["download", "migrate-nx", "migrate-turborepo"] {
+            self.plugins.entry(Id::raw(id)).or_default();
+        }
     }
 
     pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
@@ -115,7 +119,7 @@ impl ExtensionsConfig {
                 }
                 other => {
                     return Err(ConfigError::Validator {
-                        location: ".moon/extensions.yml".into(),
+                        location: ".moon/extensions.*".into(),
                         error: Box::new(ValidatorError {
                             errors: vec![ValidateError {
                                 message:

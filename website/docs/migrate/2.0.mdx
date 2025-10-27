@@ -108,6 +108,23 @@ yarn:
   version: '4.8.0'
 ```
 
+## Extensions
+
+### Configuration: `.moon/extensions.*`
+
+- The `extensions` setting from `.moon/workspace.*` has been moved (and flattened) to its own file,
+  `.moon/extensions.*`.
+- The built-in extensions `download`, `migrate-nx`, and `migrate-turborepo` must now be enabled in
+  the configuration file before they can be used. Simply set an empty object.
+  - This change was made to reduce the number of extensions that are loaded by default, improving
+    performance.
+
+```yaml title=".moon/extensions.yml"
+download: {}
+
+migrate-nx: {}
+```
+
 ## Project
 
 ### Configuration: `moon.*`

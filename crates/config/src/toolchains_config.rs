@@ -252,7 +252,7 @@ impl ToolchainsConfig {
                 }
                 other => {
                     return Err(ConfigError::Validator {
-                        location: ".moon/toolchains.yml".into(),
+                        location: ".moon/toolchains.*".into(),
                         error: Box::new(ValidatorError {
                             errors: vec![ValidateError {
                                 message:

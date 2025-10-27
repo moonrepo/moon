@@ -7,23 +7,6 @@ use moon_pdk_api::{PromptType, SettingPrompt};
 use proto_core::UnresolvedVersionSpec;
 use starbase_utils::json::JsonValue;
 
-pub fn fully_qualify_version(version: String) -> Option<String> {
-    if version.is_empty() {
-        return None;
-    }
-
-    let mut parts = version.split('.');
-
-    Some(
-        [
-            parts.next().unwrap_or("0"),
-            parts.next().unwrap_or("0"),
-            parts.next().unwrap_or("0"),
-        ]
-        .join("."),
-    )
-}
-
 pub async fn render_prompt(
     console: &Console,
     skip_prompts: bool,

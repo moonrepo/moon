@@ -252,10 +252,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template
     #[derive(Config)]
     pub struct TemplateConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/template.json",
-            rename = "$schema"
-        )]
+        #[setting(rename = "$schema")]
         pub schema: String,
 
         /// A description on what the template scaffolds.

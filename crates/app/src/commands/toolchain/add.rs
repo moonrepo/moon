@@ -1,5 +1,5 @@
 use crate::app_error::AppError;
-use crate::commands::init::prompts::*;
+use crate::prompts::*;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;

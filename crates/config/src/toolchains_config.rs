@@ -65,10 +65,7 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ToolchainsConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/toolchain.json",
-            rename = "$schema"
-        )]
+        #[setting(default = "./cache/schemas/toolchains.json", rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many toolchain configuration files.

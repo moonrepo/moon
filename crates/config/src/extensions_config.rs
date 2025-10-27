@@ -36,10 +36,7 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ExtensionsConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/extensions.json",
-            rename = "$schema"
-        )]
+        #[setting(default = "./cache/schemas/extensions.json", rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many extensions configuration files.

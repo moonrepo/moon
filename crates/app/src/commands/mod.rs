@@ -7,6 +7,7 @@ pub mod completions;
 pub mod debug;
 pub mod docker;
 pub mod ext;
+pub mod extension;
 pub mod generate;
 pub mod graph;
 pub mod init;

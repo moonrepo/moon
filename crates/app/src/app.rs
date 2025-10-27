@@ -8,6 +8,7 @@ use crate::commands::completions::CompletionsArgs;
 use crate::commands::debug::DebugCommands;
 use crate::commands::docker::DockerCommands;
 use crate::commands::ext::ExtArgs;
+use crate::commands::extension::ExtensionCommands;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::mcp::McpArgs;
@@ -173,6 +174,12 @@ pub enum Commands {
     // moon ext
     #[command(name = "ext", about = "Execute an extension plugin.")]
     Ext(ExtArgs),
+
+    #[command(name = "extension", about = "Manage extension plugins.")]
+    Extension {
+        #[command(subcommand)]
+        command: ExtensionCommands,
+    },
 
     #[command(name = "toolchain", about = "Manage toolchain plugins.")]
     Toolchain {

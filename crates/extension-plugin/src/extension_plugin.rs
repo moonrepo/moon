@@ -58,6 +58,14 @@ impl ExtensionPlugin {
         }
     }
 
+    #[instrument(skip(self))]
+    pub async fn define_extension_config(&self) -> miette::Result<DefineExtensionConfigOutput> {
+        let output: DefineExtensionConfigOutput =
+            self.plugin.cache_func("define_extension_config").await?;
+
+        Ok(output)
+    }
+
     #[instrument(skip(self, context))]
     pub async fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
         self.plugin

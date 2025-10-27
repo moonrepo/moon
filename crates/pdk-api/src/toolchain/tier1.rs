@@ -80,7 +80,7 @@ pub type ConfigSchema = Schema;
 api_struct!(
     /// Output returned from the `define_toolchain_config` function.
     pub struct DefineToolchainConfigOutput {
-        /// Schema shape of the tool's configuration.
+        /// Schema shape of the toolchain's configuration.
         pub schema: ConfigSchema,
     }
 );

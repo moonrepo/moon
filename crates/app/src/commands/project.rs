@@ -12,7 +12,7 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ProjectArgs {
-    #[arg(help = "ID of project to display")]
+    #[arg(help = "Project ID to inspect")]
     id: Id,
 
     #[arg(long, help = "Print in JSON format")]
@@ -22,7 +22,7 @@ pub struct ProjectArgs {
     no_tasks: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let project = workspace_graph.get_project_with_tasks(&args.id)?;
@@ -313,28 +313,6 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
             }))
         }
     })?;
-
-    // if !project.file_groups.is_empty() {
-    //     console.print_entry_header("File groups")?;
-
-    //     for group_name in project.file_groups.keys() {
-    //         let mut files = vec![];
-    //         let group = project.file_groups.get(group_name).unwrap();
-
-    //         for file in &group.files {
-    //             files.push(color::file(file));
-    //         }
-
-    //         for file in &group.globs {
-    //             files.push(color::file(file));
-    //         }
-
-    //         console.print_entry_list(group_name, files)?;
-    //     }
-    // }
-
-    // console.write_newline()?;
-    // console.flush()?;
 
     Ok(None)
 }

@@ -1,4 +1,5 @@
 use crate::app_error::AppError;
+use crate::components::{ApiList, ConfigSettings};
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
@@ -7,7 +8,6 @@ use moon_config::ExtensionsConfig;
 use moon_console::ui::*;
 use moon_extension_plugin::ExtensionPlugin;
 use proto_core::PluginLocator;
-use schematic::SchemaType;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -52,13 +52,7 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
     .await;
 
     let config_schema = if extension.has_func("define_extension_config").await {
-        extension
-            .define_extension_config()
-            .await
-            .map(|output| match output.schema.ty {
-                SchemaType::Struct(inner) => Some(inner),
-                _ => None,
-            })?
+        Some(extension.define_extension_config().await?.schema)
     } else {
         None
     };
@@ -103,81 +97,16 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
             }))
         }
 
-        #(config_schema.map(|schema| {
+        #(config_schema.as_ref().map(|schema| {
             element! {
                 Section(title: "Configuration") {
-                    Stack(gap: 1) {
-                        #(schema.fields.into_iter().map(|(field, setting)| {
-                            let mut flags = vec![];
-
-                            if setting.deprecated.is_some() {
-                                flags.push("deprecated");
-                            }
-
-                            if !setting.optional {
-                                flags.push("required");
-                            }
-
-                            element! {
-                                Stack {
-                                    View {
-                                        StyledText(
-                                            content: format!(
-                                                "<property>{}</property><muted>:</muted> {} {}",
-                                                field,
-                                                setting.schema,
-                                                if flags.is_empty() {
-                                                    "".to_string()
-                                                } else {
-                                                    format!(
-                                                        "<muted>({})</muted>",
-                                                        flags.join(", ")
-                                                    )
-                                                }
-                                            )
-                                        )
-                                    }
-                                    #(setting.comment.as_ref().map(|comment| {
-                                        element! {
-                                            View {
-                                                StyledText(
-                                                    content: comment,
-                                                    style: Style::MutedLight
-                                                )
-                                            }
-                                        }
-                                    }))
-                                }
-                            }.into_any()
-                        }))
-                    }
+                    ConfigSettings(schema: Some(schema))
                 }
             }.into_any()
         }))
 
         Section(title: "APIs") {
-            #(apis.into_iter().map(|(api, implemented, required)| {
-                element! {
-                    List {
-                        ListItem(
-                            bullet: if implemented {
-                                "🟢"
-                            } else {
-                                "⚫️"
-                            }.to_owned()
-                        ) {
-                            StyledText(
-                                content: if required {
-                                    format!("{api} <muted>(required)</muted>")
-                                } else {
-                                    api
-                                },
-                                style: Style::MutedLight
-                            )
-                        }
-                    }
-                }
-            }))
+            ApiList(apis)
         }
       }
     })?;

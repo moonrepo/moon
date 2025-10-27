@@ -1,4 +1,4 @@
-use crate::components::run_action_pipeline;
+use crate::helpers::run_action_pipeline;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files_with_stdin};
 use crate::session::MoonSession;
 use clap::Args;

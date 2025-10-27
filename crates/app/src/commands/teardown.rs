@@ -1,4 +1,4 @@
-use crate::components::create_progress_loader;
+use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};

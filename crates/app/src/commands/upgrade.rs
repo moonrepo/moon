@@ -1,5 +1,5 @@
 use crate::app_error::AppError;
-use crate::components::create_progress_loader;
+use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
 use bytes::Buf;
 use iocraft::prelude::element;

@@ -3,6 +3,7 @@ mod app_error;
 mod app_options;
 pub mod commands;
 mod components;
+mod helpers;
 mod prompts;
 pub mod queries;
 mod session;

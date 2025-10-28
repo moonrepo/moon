@@ -60,7 +60,7 @@ pub enum AppError {
     PluginLocatorRequired,
 
     #[diagnostic(code(app::id_required))]
-    #[error("A project ID is required.")]
+    #[error("A project identifier is required.")]
     ProjectIdRequired,
 
     #[diagnostic(code(app::invalid_version))]

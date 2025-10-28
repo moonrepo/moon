@@ -16,6 +16,20 @@ TODO
 
 TODO
 
+## CLI
+
+### New and improved commands
+
+As part of this release, we went through every CLI command and made improvements to their usability,
+functionality, and rendered output. On top of this, we're also introducing a handful of new commands
+to fill some missing gaps. Here are some highlights:
+
+- `moon extension` - Top-level command to [manage extensions](#management-commands) in the
+  workspace.
+- `moon projects` - Display a table of all projects.
+- `moon tasks` - Display a table of all tasks or for a specific project.
+- `moon template` - Display information about a template.
+
 ## Extensions
 
 Extensions are a WASM plugin based system that has existed for some time now, but they only
@@ -40,12 +54,12 @@ functionality. Extensions can now utilize the following API functions, similar t
 - `sync_project` - Run operations during the project sync process.
 - `sync_workspace` - Run operations during the workspace sync process.
 
-### New commands
+### Management commands
 
 To easily manage extensions, we've added new commands under the `moon extension` namespace:
 
 - `moon extension add` - Add a new extension to the workspace.
-- `moon extension info` - Show information about an extension.
+- `moon extension info` - Display information about an extension.
 
 ```shell
 $ moon extension info migrate-nx

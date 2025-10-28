@@ -18,11 +18,7 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct InitArgs {
-    #[arg(
-        long = "to",
-        help = "Destination to initialize into",
-        default_value = "."
-    )]
+    #[arg(help = "Destination to initialize into", default_value = ".")]
     dest: PathBuf,
 
     #[arg(long, help = "Overwrite existing configurations")]

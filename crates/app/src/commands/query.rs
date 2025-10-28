@@ -536,7 +536,7 @@ pub struct QueryChangedFilesArgs {
     base: Option<String>,
 
     #[arg(
-        long = "defaultBranch",
+        long,
         help = "When on the default branch, compare against the previous revision",
         action = ArgAction::SetTrue
     )]

@@ -6,7 +6,7 @@ use moon_pdk_api::TeardownToolchainInput;
 use starbase::AppResult;
 use tracing::instrument;
 
-#[instrument]
+#[instrument(skip(session))]
 pub async fn teardown(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,

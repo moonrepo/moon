@@ -6,7 +6,7 @@ use clap::builder::{
 use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Command};
 use iocraft::prelude::{View, Weight, element};
-use moon_codegen::{CodeGenerator, CodegenError, FileState, Template};
+use moon_codegen::{CodegenError, FileState, Template, TemplateContext};
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
 use moon_console::{
     Console,
@@ -19,8 +19,6 @@ use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_utils::json::{self, JsonValue, serde_json};
 use std::path::PathBuf;
-use std::sync::Arc;
-use tera::Context as TemplateContext;
 use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
@@ -37,10 +35,7 @@ pub struct GenerateArgs {
     )]
     defaults: bool,
 
-    #[arg(
-        long = "dryRun",
-        help = "Run entire generator process without writing files"
-    )]
+    #[arg(long, help = "Run entire generator process without writing files")]
     dry_run: bool,
 
     #[arg(long, help = "Force overwrite any existing files at the destination")]

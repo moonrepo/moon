@@ -49,7 +49,7 @@ pub struct RunArgs {
 
     #[arg(
         short = 'u',
-        long = "updateCache",
+        long,
         help = "Bypass cache and force update any existing items"
     )]
     pub update_cache: bool,

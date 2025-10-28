@@ -1,6 +1,6 @@
 use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
-use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files_with_stdin};
+use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::Args;
@@ -113,9 +113,9 @@ async fn gather_changed_files(
     }
 
     let vcs = session.get_vcs_adapter()?;
-    let result = query_changed_files_with_stdin(
+    let result = query_changed_files(
         &vcs,
-        &QueryChangedFilesOptions {
+        QueryChangedFilesOptions {
             default_branch: true,
             base,
             head,

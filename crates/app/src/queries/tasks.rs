@@ -4,13 +4,13 @@ use moon_common::Id;
 use moon_task::Task;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, sync::Arc};
+use std::collections::BTreeMap;
+use std::sync::Arc;
 use tracing::debug;
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct QueryTasksOptions {
     pub affected: Option<Affected>,
-    pub json: bool,
     pub query: Option<String>,
 
     // Filters
@@ -117,6 +117,8 @@ pub async fn query_tasks(
             })
             .collect::<Vec<_>>();
     }
+
+    tasks.sort_by(|a, d| a.target.cmp(&d.target));
 
     Ok(tasks)
 }

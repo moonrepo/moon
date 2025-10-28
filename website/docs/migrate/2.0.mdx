@@ -10,18 +10,20 @@ toc_max_heading_level: 6
 
 - Changed the output of `moon action-graph --json` to a new JSON structure (now matches the project
   and task graphs).
-- Changed the destination path for `moon init` to an argument instead of the `--to` option.
-- Updated `moon templates` to render a table instead of a list.
+- Changed `moon templates` to render a table instead of a list.
+- Renamed all options and flags to kebab-case instead of camelCase.
+  - Example: `--updateCache` -> `--update-cache`
 - Removed "scaffolding a toolchain" from the `moon init` command. Use the `moon toolchain add`
   command instead.
-- Removed the `moon node` command and sub-commands.
-- Removed the `moon migrate from-package-json` command.
-- Removed the `moon migrate from-turborepo` command. Use the `migrate-turborepo` extension instead.
-
-### Arguments, options, and flags
-
-- Renamed all to kebab-case instead of camelCase (example, `--updateCache` -> `--update-cache`).
-- Removed the `--platform` flag from all applicable commands. Use the `--toolchain` flag instead.
+- Removed commands:
+  - `moon node`
+  - `moon migrate from-package-json` (use the `migrate-turborepo` extension instead)
+  - `moon query hash` (use `moon hash` instead)
+  - `moon query hash-diff` (use `moon hash` instead)
+- Removed arguments, flags, and options:
+  - `--dependents` from `moon query projects`
+  - `--platform` from all commands (use `--toolchain` instead)
+  - `--to` from `moon init` (use a positional argument instead)
 
 ## Workspace
 

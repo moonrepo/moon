@@ -185,14 +185,14 @@ async fn main() -> MainResult {
                 Commands::Projects(args) => commands::projects::projects(session, args).await,
                 Commands::Query { command } => match command {
                     QueryCommands::ChangedFiles(args) => {
-                        commands::query::changed_files(session, args).await
+                        commands::query::changed_files::changed_files(session, args).await
                     }
-                    QueryCommands::Hash(args) => commands::query::hash(session, args).await,
-                    QueryCommands::HashDiff(args) => {
-                        commands::query::hash_diff(session, args).await
+                    QueryCommands::Projects(args) => {
+                        commands::query::projects::projects(session, args).await
                     }
-                    QueryCommands::Projects(args) => commands::query::projects(session, args).await,
-                    QueryCommands::Tasks(args) => commands::query::tasks(session, args).await,
+                    QueryCommands::Tasks(args) => {
+                        commands::query::tasks::tasks(session, args).await
+                    }
                 },
                 Commands::Run(args) => commands::run::run(session, args).await,
                 Commands::Setup => commands::setup::setup(session).await,

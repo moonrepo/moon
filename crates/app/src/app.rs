@@ -152,8 +152,7 @@ pub enum Commands {
     #[command(
         alias = "q",
         name = "query",
-        about = "Query information about moon, the environment, and more.",
-        long_about = "Query information about moon, the environment, and more. Each operation can output JSON so that it may be consumed easily."
+        about = "Query information about moon, the environment, and more as JSON."
     )]
     Query {
         #[command(subcommand)]

@@ -172,6 +172,7 @@ async fn main() -> MainResult {
                     }
                 },
                 Commands::Generate(args) => commands::generate::generate(session, args).await,
+                Commands::Hash(args) => commands::hash::hash(session, args).await,
                 Commands::Init(args) => commands::init::init(session, args).await,
                 Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
                 Commands::Migrate { command, .. } => match command {

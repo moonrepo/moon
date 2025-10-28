@@ -10,6 +10,7 @@ use crate::commands::docker::DockerCommands;
 use crate::commands::ext::ExtArgs;
 use crate::commands::extension::ExtensionCommands;
 use crate::commands::generate::GenerateArgs;
+use crate::commands::hash::HashArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::mcp::McpArgs;
 use crate::commands::migrate::MigrateCommands;
@@ -105,6 +106,13 @@ pub enum Commands {
         about = "Generate and scaffold files from a pre-defined template."
     )]
     Generate(GenerateArgs),
+
+    #[command(
+        alias = "h",
+        name = "hash",
+        about = "Inspect or diff the contents of a generated hashes."
+    )]
+    Hash(HashArgs),
 
     #[command(name = "init", about = "Initialize a new moon repository.")]
     Init(InitArgs),

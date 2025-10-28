@@ -10,6 +10,7 @@ pub mod ext;
 pub mod extension;
 pub mod generate;
 pub mod graph;
+pub mod hash;
 pub mod init;
 pub mod mcp;
 pub mod migrate;

@@ -184,6 +184,9 @@ async fn main() -> MainResult {
                 }
                 Commands::Projects(args) => commands::projects::projects(session, args).await,
                 Commands::Query { command } => match command {
+                    QueryCommands::Affected(args) => {
+                        commands::query::affected::affected(session, args).await
+                    }
                     QueryCommands::ChangedFiles(args) => {
                         commands::query::changed_files::changed_files(session, args).await
                     }

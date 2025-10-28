@@ -1,3 +1,4 @@
+pub mod affected;
 pub mod changed_files;
 pub mod projects;
 pub mod tasks;
@@ -10,6 +11,12 @@ pub(super) const HEADING_FILTERS: &str = "Filters";
 #[derive(Clone, Debug, Subcommand)]
 pub enum QueryCommands {
     #[command(
+        name = "affected",
+        about = "Query affected status for projects and tasks."
+    )]
+    Affected(affected::QueryAffectedArgs),
+
+    #[command(
         name = "changed-files",
         about = "Query for changed files between revisions."
     )]
@@ -21,6 +28,9 @@ pub enum QueryCommands {
     )]
     Projects(projects::QueryProjectsArgs),
 
-    #[command(name = "tasks", about = "Query for tasks, grouped by project.")]
+    #[command(
+        name = "tasks",
+        about = "Query for tasks within the task graph, grouped by project."
+    )]
     Tasks(tasks::QueryTasksArgs),
 }

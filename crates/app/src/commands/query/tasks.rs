@@ -1,4 +1,5 @@
 use super::{HEADING_AFFECTED, HEADING_FILTERS};
+use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
 use crate::queries::tasks::*;
 use crate::session::MoonSession;
@@ -21,7 +22,7 @@ pub struct QueryTasksArgs {
         help_heading = HEADING_AFFECTED,
         group = "affected-args"
     )]
-    affected: bool,
+    affected: Option<Option<AffectedOption>>,
 
     #[arg(
         long,
@@ -77,9 +78,9 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
     };
 
     // Filter down to affected tasks only
-    if args.affected {
+    if let Some(by) = &args.affected {
         let vcs = session.get_vcs_adapter()?;
-        let changed_files = query_changed_files_for_affected(&vcs).await?;
+        let changed_files = query_changed_files_for_affected(&vcs, by.as_ref()).await?;
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
         affected_tracker.with_task_scopes(args.upstream, args.downstream);

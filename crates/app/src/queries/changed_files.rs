@@ -1,3 +1,4 @@
+use crate::app_options::AffectedOption;
 use miette::IntoDiagnostic;
 use moon_common::is_ci;
 use moon_common::path::{WorkspaceRelativePathBuf, standardize_separators};
@@ -196,18 +197,32 @@ async fn query_changed_files_with_stdin(
 
 pub async fn query_changed_files_for_affected(
     vcs: &BoxedVcs,
+    by: Option<&AffectedOption>,
 ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     let ci = is_ci();
+    let mut options = QueryChangedFilesOptions {
+        default_branch: ci,
+        local: !ci,
+        stdin: true,
+        ..Default::default()
+    };
 
-    query_changed_files(
-        vcs,
-        QueryChangedFilesOptions {
-            default_branch: ci,
-            local: !ci,
-            stdin: true,
-            ..Default::default()
-        },
-    )
-    .await
-    .map(|result| result.files)
+    if let Some(by) = by {
+        let local = by.is_local();
+
+        if options.base.is_none() {
+            options.base = by.get_base();
+        }
+
+        if options.head.is_none() {
+            options.head = by.get_head();
+        }
+
+        options.default_branch = !local;
+        options.local = local;
+    }
+
+    query_changed_files(vcs, options)
+        .await
+        .map(|result| result.files)
 }

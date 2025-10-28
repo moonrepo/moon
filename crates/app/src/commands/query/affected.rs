@@ -1,3 +1,4 @@
+use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
 use crate::session::MoonSession;
 use clap::Args;
@@ -8,6 +9,9 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct QueryAffectedArgs {
+    #[arg(help = "Conditions in which to track affected")]
+    by: Option<AffectedOption>,
+
     #[arg(long, default_value_t, help = "Include downstream dependents")]
     downstream: DownstreamScope,
 
@@ -21,7 +25,7 @@ pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> AppResul
 
     let mut affected_tracker = AffectedTracker::new(
         session.get_workspace_graph().await?,
-        query_changed_files_for_affected(&vcs).await?,
+        query_changed_files_for_affected(&vcs, args.by.as_ref()).await?,
     );
     affected_tracker.with_scopes(args.upstream, args.downstream);
     affected_tracker.track_projects()?;

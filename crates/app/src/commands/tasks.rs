@@ -21,14 +21,11 @@ pub async fn tasks(session: MoonSession, args: TasksArgs) -> AppResult {
     let mut tasks = session.get_workspace_graph().await?.get_tasks()?;
 
     if let Some(project_id) = &args.project {
-        tasks = tasks
-            .into_iter()
-            .filter(|task| {
-                task.target
-                    .get_project_id()
-                    .is_ok_and(|id| project_id == id)
-            })
-            .collect();
+        tasks.retain(|task| {
+            task.target
+                .get_project_id()
+                .is_ok_and(|id| project_id == id)
+        });
     }
 
     tasks.sort_by(|a, d| a.target.cmp(&d.target));

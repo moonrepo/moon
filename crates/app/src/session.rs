@@ -7,6 +7,7 @@ use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
+use moon_codegen::CodeGenerator;
 use moon_common::is_formatted_output;
 use moon_config::{
     ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
@@ -115,6 +116,14 @@ impl MoonSession {
         let workspace_graph = self.get_workspace_graph().await?;
 
         ActionGraphBuilder::new(app_context, workspace_graph, options)
+    }
+
+    pub fn build_code_generator(&self) -> CodeGenerator<'_> {
+        CodeGenerator::new(
+            &self.workspace_root,
+            &self.workspace_config.generator,
+            Arc::clone(&self.moon_env),
+        )
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {

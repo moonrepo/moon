@@ -588,11 +588,7 @@ pub async fn gather_variables(
 
 #[instrument(skip_all)]
 pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
-    let mut generator = CodeGenerator::new(
-        &session.workspace_root,
-        &session.workspace_config.generator,
-        Arc::clone(&session.moon_env),
-    );
+    let mut generator = session.build_code_generator();
     let console = &session.console;
 
     // This is a special case for creating a new template with the generator itself!

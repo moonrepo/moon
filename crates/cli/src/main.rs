@@ -212,6 +212,7 @@ async fn main() -> MainResult {
                 Commands::TaskGraph(args) => commands::task_graph::task_graph(session, args).await,
                 Commands::Tasks(args) => commands::tasks::tasks(session, args).await,
                 Commands::Teardown => commands::teardown::teardown(session).await,
+                Commands::Template(args) => commands::template::template(session, args).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
                 Commands::Toolchain { command } => match command {
                     ToolchainCommands::Add(args) => {

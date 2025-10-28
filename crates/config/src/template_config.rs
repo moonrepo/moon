@@ -216,6 +216,17 @@ impl TemplateVariable {
         order.copied().unwrap_or(100)
     }
 
+    pub fn get_prompt(&self) -> Option<&String> {
+        match self {
+            Self::Array(cfg) => cfg.prompt.as_ref(),
+            Self::Boolean(cfg) => cfg.prompt.as_ref(),
+            Self::Enum(cfg) => cfg.prompt.as_ref(),
+            Self::Number(cfg) => cfg.prompt.as_ref(),
+            Self::Object(cfg) => cfg.prompt.as_ref(),
+            Self::String(cfg) => cfg.prompt.as_ref(),
+        }
+    }
+
     pub fn is_internal(&self) -> bool {
         match self {
             Self::Array(cfg) => cfg.internal,

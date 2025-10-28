@@ -22,6 +22,7 @@ use crate::commands::sync::SyncCommands;
 use crate::commands::task::TaskArgs;
 use crate::commands::task_graph::TaskGraphArgs;
 use crate::commands::tasks::TasksArgs;
+use crate::commands::template::TemplateArgs;
 use crate::commands::templates::TemplatesArgs;
 use crate::commands::toolchain::ToolchainCommands;
 use crate::systems::bootstrap;
@@ -195,6 +196,12 @@ pub enum Commands {
         about = "Teardown the environment by uninstalling all toolchains and deleting cache files."
     )]
     Teardown,
+
+    #[command(
+        name = "template",
+        about = "Display information about a single template."
+    )]
+    Template(TemplateArgs),
 
     #[command(
         name = "templates",

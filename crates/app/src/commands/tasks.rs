@@ -2,7 +2,7 @@ use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{Size, element};
 use moon_common::Id;
-use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
+use moon_console::ui::*;
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
@@ -26,6 +26,18 @@ pub async fn tasks(session: MoonSession, args: TasksArgs) -> AppResult {
                 .get_project_id()
                 .is_ok_and(|id| project_id == id)
         });
+
+        if tasks.is_empty() {
+            session.console.render(element! {
+                Container {
+                    Notice(variant: Variant::Caution) {
+                        StyledText(content: "There are no tasks for the project <id>{project_id}</id>")
+                    }
+                }
+            })?;
+
+            return Ok(None);
+        }
     }
 
     tasks.sort_by(|a, d| a.target.cmp(&d.target));

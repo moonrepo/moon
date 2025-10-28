@@ -25,6 +25,7 @@ pub mod task;
 pub mod task_graph;
 pub mod tasks;
 pub mod teardown;
+pub mod template;
 pub mod templates;
 pub mod toolchain;
 pub mod upgrade;

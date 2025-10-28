@@ -42,7 +42,7 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
         Container {
             #(config.project.as_ref().map(|meta| {
                 element! {
-                    Section(title: "Metadata") {
+                    Section(title: meta.title.as_deref().unwrap_or("Metadata")) {
                         #(meta.description.as_ref().map(|description| {
                             element! {
                                 View(margin_bottom: 1) {
@@ -50,14 +50,6 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                                         content: description,
                                     )
                                 }
-                            }
-                        }))
-                        #(meta.title.as_ref().map(|title| {
-                            element! {
-                                Entry(
-                                    name: "Title",
-                                    content: title.to_string(),
-                                )
                             }
                         }))
                         #(meta.channel.as_ref().map(|channel| {

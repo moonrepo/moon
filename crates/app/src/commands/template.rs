@@ -1,10 +1,13 @@
+use crate::prompts::select_identifier;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_codegen::{Template, TemplateContext};
 use moon_common::{Id, is_test_env};
 use moon_config::TemplateVariable;
-use moon_console::ui::{Container, Entry, List, ListItem, Section, Stack, Style, StyledText};
+use moon_console::ui::{
+    Container, Entry, List, ListItem, Section, SelectOption, SelectProps, Stack, Style, StyledText,
+};
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
@@ -12,7 +15,7 @@ use tracing::instrument;
 #[derive(Args, Clone, Debug)]
 pub struct TemplateArgs {
     #[arg(help = "Template ID to inspect")]
-    id: Id,
+    id: Option<Id>,
 
     #[arg(long, help = "Print in JSON format")]
     json: bool,
@@ -23,7 +26,16 @@ pub async fn template(session: MoonSession, args: TemplateArgs) -> AppResult {
     let mut generator = session.build_code_generator();
     generator.load_templates().await?;
 
-    let mut template = generator.get_template(&args.id)?;
+    let id = select_identifier(&session.console, &args.id, || {
+        Ok(SelectProps {
+            label: "Which template to view?".into(),
+            options: generator.templates.keys().map(SelectOption::new).collect(),
+            ..Default::default()
+        })
+    })
+    .await?;
+
+    let mut template = generator.get_template(&id)?;
     let context = create_default_context(&session, &template);
     template.load_files(&session.workspace_root, &context)?;
 

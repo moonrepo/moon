@@ -1,3 +1,5 @@
+use crate::app_error::AppError;
+use crate::prompts::select_identifier;
 use crate::session::MoonSession;
 use clap::{
     Arg, ArgAction, Args, Command as Clap,
@@ -18,7 +20,7 @@ use tracing::{debug, instrument};
 #[derive(Args, Clone, Debug)]
 pub struct GenerateArgs {
     #[arg(help = "Template ID to generate")]
-    id: Id,
+    id: Option<Id>,
 
     #[arg(help = "Destination path, relative from workspace root or working directory")]
     dest: Option<String>,
@@ -45,12 +47,16 @@ pub struct GenerateArgs {
 
 #[instrument(skip(session))]
 pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
-    let mut generator = session.build_code_generator();
     let console = &session.console;
+    let mut generator = session.build_code_generator();
 
     // This is a special case for creating a new template with the generator itself
     if args.template {
-        let template = generator.create_template(&args.id)?;
+        let Some(id) = &args.id else {
+            return Err(AppError::TemplateIdRequired.into());
+        };
+
+        let template = generator.create_template(id)?;
 
         console.render(element! {
             Container {
@@ -73,8 +79,17 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
 
     generator.load_templates().await?;
 
+    let id = select_identifier(&session.console, &args.id, || {
+        Ok(SelectProps {
+            label: "Which template to generate?".into(),
+            options: generator.templates.keys().map(SelectOption::new).collect(),
+            ..Default::default()
+        })
+    })
+    .await?;
+
     // Create the template instance
-    let mut template = generator.get_template(&args.id)?;
+    let mut template = generator.get_template(&id)?;
     let mut has_prompts = !template.config.variables.is_empty();
 
     console.render(element! {

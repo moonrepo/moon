@@ -1,11 +1,60 @@
 use iocraft::prelude::element;
+use miette::IntoDiagnostic;
+use moon_common::Id;
 use moon_console::{Console, ui::*};
 use moon_pdk_api::{
     ConditionType, InitializePluginOutput, PromptType, SettingCondition, SettingPrompt,
 };
+use moon_task::Target;
 use proto_core::UnresolvedVersionSpec;
 use starbase_utils::json::{JsonMap, JsonValue};
 use std::collections::VecDeque;
+
+async fn select_identifier_internal<'a, T: Clone>(
+    console: &Console,
+    id: &'a Option<T>,
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+    output: impl FnOnce(String) -> miette::Result<T>,
+) -> miette::Result<T> {
+    if let Some(id) = id {
+        return Ok(id.to_owned());
+    }
+
+    let mut index = 0;
+    let mut props = input()?;
+
+    props.options.sort_by(|a, d| a.label.cmp(&d.label));
+
+    console
+        .render_interactive(element! {
+            Select(
+                label: props.label,
+                description: props.description,
+                options: props.options.clone(),
+                multiple: props.multiple,
+                on_index: &mut index,
+            )
+        })
+        .await?;
+
+    output(props.options.remove(index).value)
+}
+
+pub async fn select_identifier<'a>(
+    console: &Console,
+    id: &'a Option<Id>,
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+) -> miette::Result<Id> {
+    select_identifier_internal(console, id, input, |value| Id::new(value).into_diagnostic()).await
+}
+
+pub async fn select_target<'a>(
+    console: &Console,
+    target: &'a Option<Target>,
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+) -> miette::Result<Target> {
+    select_identifier_internal(console, target, input, |value| Target::parse(&value)).await
+}
 
 pub async fn render_prompt(
     console: &Console,

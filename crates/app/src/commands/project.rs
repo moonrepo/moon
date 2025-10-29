@@ -1,10 +1,12 @@
+use crate::prompts::select_identifier;
 use crate::session::MoonSession;
 use clap::Args;
 use convert_case::{Case, Casing};
 use iocraft::prelude::{View, element};
 use moon_common::{Id, is_test_env};
 use moon_console::ui::{
-    Container, Entry, List, ListItem, Map, MapItem, Section, Style, StyledText,
+    Container, Entry, List, ListItem, Map, MapItem, Section, SelectOption, SelectProps, Style,
+    StyledText,
 };
 use starbase::AppResult;
 use starbase_utils::json;
@@ -13,7 +15,7 @@ use tracing::instrument;
 #[derive(Args, Clone, Debug)]
 pub struct ProjectArgs {
     #[arg(help = "Project ID to inspect")]
-    id: Id,
+    id: Option<Id>,
 
     #[arg(long, help = "Print in JSON format")]
     json: bool,
@@ -25,7 +27,31 @@ pub struct ProjectArgs {
 #[instrument(skip(session))]
 pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
-    let project = workspace_graph.get_project_with_tasks(&args.id)?;
+
+    let id = select_identifier(&session.console, &args.id, || {
+        let projects = workspace_graph.get_projects()?;
+
+        Ok(SelectProps {
+            label: "Which project to view?".into(),
+            options: projects
+                .into_iter()
+                .map(|project| SelectOption {
+                    description: project
+                        .config
+                        .project
+                        .as_ref()
+                        .and_then(|cfg| cfg.description.clone()),
+                    label: project.id.to_string(),
+                    value: project.id.to_string(),
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        })
+    })
+    .await?;
+
+    let project = workspace_graph.get_project_with_tasks(&id)?;
     let config = &project.config;
     let console = &session.console;
 

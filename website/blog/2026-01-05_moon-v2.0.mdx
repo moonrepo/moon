@@ -32,6 +32,18 @@ to fill some missing gaps. Here are some highlights:
 - `moon tasks` - Display a table of all tasks or for a specific project.
 - `moon template` - Display information about a template.
 
+### Dynamic identifier & target selection
+
+For some commands that require a project, task, or template identifier/target, we've added an
+interactive selection prompt if no value is provided. This makes it easier to explore and use the
+CLI without needing to know specific identifiers ahead of time. The following commands now support
+this:
+
+- `moon generate`
+- `moon project`
+- `moon task`
+- `moon template`
+
 ## Extensions
 
 Extensions are a WASM plugin based system that has existed for some time now, but they only

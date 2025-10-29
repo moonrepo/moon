@@ -59,9 +59,13 @@ pub enum AppError {
     #[error("A plugin locator string is required for non-built-in plugins.")]
     PluginLocatorRequired,
 
-    #[diagnostic(code(app::id_required))]
+    #[diagnostic(code(app::project_id_required))]
     #[error("A project identifier is required.")]
     ProjectIdRequired,
+
+    #[diagnostic(code(app::template_id_required))]
+    #[error("A template identifier is required.")]
+    TemplateIdRequired,
 
     #[diagnostic(code(app::invalid_version))]
     #[error(

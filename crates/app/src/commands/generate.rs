@@ -1,20 +1,14 @@
 use crate::session::MoonSession;
-use clap::Args;
-use clap::builder::{
-    BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser,
+use clap::{
+    Arg, ArgAction, Args, Command as Clap,
+    builder::{BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser},
+    parser::ValueSource,
 };
-use clap::parser::ValueSource;
-use clap::{Arg, ArgAction, Command};
 use iocraft::prelude::{View, Weight, element};
 use moon_codegen::{CodegenError, FileState, Template, TemplateContext};
+use moon_common::*;
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
-use moon_console::{
-    Console,
-    ui::{
-        Confirm, Container, Input, List, ListItem, Notice, Section, Select, SelectOption,
-        StyledText, Variant,
-    },
-};
+use moon_console::{Console, ui::*};
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_utils::json::{self, JsonValue, serde_json};
@@ -23,8 +17,8 @@ use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct GenerateArgs {
-    #[arg(help = "Name of template to generate")]
-    name: String,
+    #[arg(help = "Template ID to generate")]
+    id: Id,
 
     #[arg(help = "Destination path, relative from workspace root or working directory")]
     dest: Option<String>,
@@ -47,6 +41,238 @@ pub struct GenerateArgs {
     // Variable args (after --)
     #[arg(last = true, help = "Arguments to define as variable values")]
     vars: Vec<String>,
+}
+
+#[instrument(skip(session))]
+pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
+    let mut generator = session.build_code_generator();
+    let console = &session.console;
+
+    // This is a special case for creating a new template with the generator itself
+    if args.template {
+        let template = generator.create_template(&args.id)?;
+
+        console.render(element! {
+            Container {
+                Notice(variant: Variant::Success) {
+                    StyledText(content: format!(
+                        "Created a new template <id>{}</id> at <path>{}</path>",
+                        template.id,
+                        template.root.display(),
+                    ))
+                }
+            }
+        })?;
+
+        return Ok(None);
+    }
+
+    if args.dry_run {
+        debug!("Running in DRY MODE");
+    }
+
+    generator.load_templates().await?;
+
+    // Create the template instance
+    let mut template = generator.get_template(&args.id)?;
+    let mut has_prompts = !template.config.variables.is_empty();
+
+    console.render(element! {
+        Container{
+            Section(title: template.id.as_str()) {
+                StyledText(
+                    content: if args.dry_run {
+                        format!("{} <invalid>(dry run)</invalid>", template.config.title)
+                    } else {
+                        template.config.title.clone()
+                    },
+                    weight: Weight::Bold
+                )
+                StyledText(content: &template.config.description)
+            }
+        }
+    })?;
+
+    // Gather variables
+    let mut context = gather_variables(&args, &template, console).await?;
+    context.insert("working_dir", &session.working_dir);
+    context.insert("workspace_root", &session.workspace_root);
+
+    // Determine the destination path
+    let relative_dest = match &args.dest {
+        Some(dest) => dest.to_owned(),
+        None => {
+            if let Some(dest) = &template.config.destination {
+                debug!(dest, "Default destination path provided by template config");
+
+                dest.to_owned()
+            } else {
+                debug!("Destination path not provided, prompting the user");
+
+                let mut value = String::new();
+
+                console
+                    .render_interactive(element! {
+                        Input(
+                            label: "Where to generate code to?",
+                            description: "Relative from the current directory.".to_owned(),
+                            on_value: &mut value,
+                            validate: move |input: String| {
+                                if input.is_empty() {
+                                    Some("Please provide a relative path".into())
+                                } else {
+                                    None
+                                }
+                            }
+                        )
+                    })
+                    .await?;
+
+                value
+            }
+        }
+    };
+    let relative_from_root = relative_dest.starts_with('/');
+    let relative_dest = template.interpolate_path(&PathBuf::from(relative_dest), &context)?;
+    let dest = relative_dest.to_logical_path(if relative_from_root {
+        &session.workspace_root
+    } else {
+        &session.working_dir
+    });
+
+    debug!(dest = ?dest, "Destination path set");
+
+    // Inject built-in context variables
+    context.insert("dest_dir", &dest);
+    context.insert("dest_rel_dir", &relative_dest);
+
+    // Load template files and determine when to overwrite
+    template.load_files(&dest, &context)?;
+
+    for file in template.files.values_mut() {
+        if file.is_skipped() {
+            file.state = FileState::Skip;
+            continue;
+        }
+
+        if file.dest_path.exists() {
+            if args.force || file.is_forced() {
+                file.state = FileState::Replace;
+                continue;
+            }
+
+            // Merge files when applicable
+            if file.is_mergeable().is_some() {
+                let mut index = 2;
+                has_prompts = true;
+
+                console
+                    .render_interactive(element! {
+                        Select(
+                            label: format!(
+                                "File <path>{}</path> already exists, what to do?",
+                                file.dest_path.display()
+                            ),
+                            default_index: 2,
+                            on_index: &mut index,
+                            options: vec![
+                                SelectOption::new("Keep existing file"),
+                                SelectOption::new("Merge new file into existing file"),
+                                SelectOption::new("Replace existing with new file"),
+                            ]
+                        )
+                    })
+                    .await?;
+
+                file.state = match index {
+                    0 => FileState::Skip,
+                    1 => FileState::Merge,
+                    _ => FileState::Replace,
+                };
+
+                continue;
+            }
+
+            // Confirm whether to replace file
+            let mut confirmed = false;
+            has_prompts = true;
+
+            console
+                .render_interactive(element! {
+                    Confirm(
+                        label: format!(
+                            "File <path>{}</path> already exists, overwrite?",
+                            file.dest_path.display()
+                        ),
+                        on_confirm: &mut confirmed
+                    )
+                })
+                .await?;
+
+            if confirmed {
+                file.state = FileState::Replace;
+            }
+        }
+    }
+
+    // Generate the files in the destination and print the results
+    if !args.dry_run {
+        generator.generate(&template)?;
+    }
+
+    console.render(element! {
+        View(
+            margin_top: if has_prompts {
+                1
+            } else {
+                0
+            },
+            margin_bottom: 1
+        ) {
+            List {
+                #(template.files.values().map(|file| {
+                    let (label, arrow, style) = match &file.state {
+                        FileState::Create => ("created", "--➤", "success"),
+                        FileState::Merge => ("merged", "---➤", "success"),
+                        FileState::Replace => ("replaced", "-➤", "failure"),
+                        FileState::Skip => ("skipped", "--➤", "invalid"),
+                    };
+
+                    element! {
+                        ListItem {
+                            StyledText(
+                                content: format!(
+                                    "<{style}>{label}</{style}> <muted>{arrow}</muted> <mutedlight>{}</mutedlight>",
+                                    file.dest_path
+                                        .strip_prefix(&session.working_dir)
+                                        .unwrap_or(&file.dest_path)
+                                        .display()
+                                ),
+                            )
+                        }
+                    }
+                }))
+
+                #(template.assets.values().map(|asset| {
+                    element! {
+                        ListItem {
+                            StyledText(
+                                content: format!(
+                                    "<success>created</success> <muted>--➤</muted> <mutedlight>{}</mutedlight>",
+                                    asset.dest_path
+                                        .strip_prefix(&session.working_dir)
+                                        .unwrap_or(&asset.dest_path)
+                                        .display()
+                                ),
+                            )
+                        }
+                    }
+                }))
+            }
+        }
+    })?;
+
+    Ok(None)
 }
 
 fn is_numeric(value: &str) -> bool {
@@ -86,7 +312,7 @@ pub fn parse_args_into_variables(
 
     // Create a clap command of arguments based on our config
     let command_name = "__generate__".to_owned();
-    let mut command = Command::new(&command_name);
+    let mut command = Clap::new(&command_name);
 
     for (name, cfg) in config {
         if cfg.is_internal() {
@@ -579,236 +805,4 @@ pub async fn gather_variables(
     }
 
     Ok(context)
-}
-
-#[instrument(skip_all)]
-pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
-    let mut generator = session.build_code_generator();
-    let console = &session.console;
-
-    // This is a special case for creating a new template with the generator itself!
-    if args.template {
-        let template = generator.create_template(&args.name)?;
-
-        console.render(element! {
-            Container {
-                Notice(variant: Variant::Success) {
-                    StyledText(content: format!(
-                        "Created a new template <id>{}</id> at <path>{}</path>",
-                        template.id,
-                        template.root.display(),
-                    ))
-                }
-            }
-        })?;
-
-        return Ok(None);
-    }
-
-    if args.dry_run {
-        debug!("Running in DRY MODE");
-    }
-
-    generator.load_templates().await?;
-
-    // Create the template instance
-    let mut template = generator.get_template(&args.name)?;
-    let mut has_prompts = !template.config.variables.is_empty();
-
-    console.render(element! {
-        Container{
-            Section(title: template.id.as_str()) {
-                StyledText(
-                    content: if args.dry_run {
-                        format!("{} <invalid>(dry run)</invalid>", template.config.title)
-                    } else {
-                        template.config.title.clone()
-                    },
-                    weight: Weight::Bold
-                )
-                StyledText(content: &template.config.description)
-            }
-        }
-    })?;
-
-    // Gather variables
-    let mut context = gather_variables(&args, &template, &session.console).await?;
-    context.insert("working_dir", &session.working_dir);
-    context.insert("workspace_root", &session.workspace_root);
-
-    // Determine the destination path
-    let relative_dest = match &args.dest {
-        Some(dest) => dest.to_owned(),
-        None => {
-            if let Some(dest) = &template.config.destination {
-                debug!(dest, "Default destination path provided by template config");
-
-                dest.to_owned()
-            } else {
-                debug!("Destination path not provided, prompting the user");
-
-                let mut value = String::new();
-
-                console
-                    .render_interactive(element! {
-                        Input(
-                            label: "Where to generate code to?",
-                            description: "Relative from the current directory.".to_owned(),
-                            on_value: &mut value,
-                            validate: move |input: String| {
-                                if input.is_empty() {
-                                    Some("Please provide a relative path".into())
-                                } else {
-                                    None
-                                }
-                            }
-                        )
-                    })
-                    .await?;
-
-                value
-            }
-        }
-    };
-    let relative_from_root = relative_dest.starts_with('/');
-    let relative_dest = template.interpolate_path(&PathBuf::from(relative_dest), &context)?;
-    let dest = relative_dest.to_logical_path(if relative_from_root {
-        &session.workspace_root
-    } else {
-        &session.working_dir
-    });
-
-    debug!(dest = ?dest, "Destination path set");
-
-    // Inject built-in context variables
-    context.insert("dest_dir", &dest);
-    context.insert("dest_rel_dir", &relative_dest);
-
-    // Load template files and determine when to overwrite
-    template.load_files(&dest, &context)?;
-
-    for file in template.files.values_mut() {
-        if file.is_skipped() {
-            file.state = FileState::Skip;
-            continue;
-        }
-
-        if file.dest_path.exists() {
-            if args.force || file.is_forced() {
-                file.state = FileState::Replace;
-                continue;
-            }
-
-            // Merge files when applicable
-            if file.is_mergeable().is_some() {
-                let mut index = 2;
-                has_prompts = true;
-
-                console
-                    .render_interactive(element! {
-                        Select(
-                            label: format!(
-                                "File <path>{}</path> already exists, what to do?",
-                                file.dest_path.display()
-                            ),
-                            default_index: 2,
-                            on_index: &mut index,
-                            options: vec![
-                                SelectOption::new("Keep existing file"),
-                                SelectOption::new("Merge new file into existing file"),
-                                SelectOption::new("Replace existing with new file"),
-                            ]
-                        )
-                    })
-                    .await?;
-
-                file.state = match index {
-                    0 => FileState::Skip,
-                    1 => FileState::Merge,
-                    _ => FileState::Replace,
-                };
-
-                continue;
-            }
-
-            // Confirm whether to replace file
-            let mut confirmed = false;
-            has_prompts = true;
-
-            console
-                .render_interactive(element! {
-                    Confirm(
-                        label: format!(
-                            "File <path>{}</path> already exists, overwrite?",
-                            file.dest_path.display()
-                        ),
-                        on_confirm: &mut confirmed
-                    )
-                })
-                .await?;
-
-            if confirmed {
-                file.state = FileState::Replace;
-            }
-        }
-    }
-
-    // Generate the files in the destination and print the results
-    if !args.dry_run {
-        generator.generate(&template)?;
-    }
-
-    console.render(element! {
-        View(
-            margin_top: if has_prompts {
-                1
-            } else {
-                0
-            },
-            margin_bottom: 1
-        ) {
-            List {
-                #(template.files.values().map(|file| {
-                    let (label, arrow, style) = match &file.state {
-                        FileState::Create => ("created", "--➤", "success"),
-                        FileState::Merge => ("merged", "---➤", "success"),
-                        FileState::Replace => ("replaced", "-➤", "failure"),
-                        FileState::Skip => ("skipped", "--➤", "invalid"),
-                    };
-
-                    element! {
-                        ListItem {
-                            StyledText(
-                                content: format!(
-                                    "<{style}>{label}</{style}> <muted>{arrow}</muted> <mutedlight>{}</mutedlight>",
-                                    file.dest_path
-                                        .strip_prefix(&session.working_dir)
-                                        .unwrap_or(&file.dest_path)
-                                        .display()
-                                ),
-                            )
-                        }
-                    }
-                }))
-
-                #(template.assets.values().map(|asset| {
-                    element! {
-                        ListItem {
-                            StyledText(
-                                content: format!(
-                                    "<success>created</success> <muted>--➤</muted> <mutedlight>{}</mutedlight>",
-                                    asset.dest_path
-                                        .strip_prefix(&session.working_dir)
-                                        .unwrap_or(&asset.dest_path)
-                                        .display()
-                                ),
-                            )
-                        }
-                    }
-                }))
-            }
-        }
-    })?;
-
-    Ok(None)
 }

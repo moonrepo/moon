@@ -6664,9 +6664,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.14"
+version = "0.6.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddd6ed554e0849a3cb0d6845b02ab166d2886a5c6d38a25be419cb1d22d8bc58"
+checksum = "e1996dc4c99aafff23bc2a69143d5eda4dc7cd143a59914f3ceac825ada24c32"
 dependencies = [
  "crossterm",
  "iocraft",

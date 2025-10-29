@@ -38,11 +38,8 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
             label: "Which task to view?".into(),
             options: tasks
                 .iter()
-                .map(|task| SelectOption {
-                    description: task.description.clone(),
-                    label: task.target.to_string(),
-                    value: task.target.to_string(),
-                    ..Default::default()
+                .map(|task| {
+                    SelectOption::new(&task.target).description_opt(task.description.clone())
                 })
                 .collect(),
             ..Default::default()

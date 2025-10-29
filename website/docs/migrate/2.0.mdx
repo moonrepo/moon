@@ -10,6 +10,8 @@ toc_max_heading_level: 6
 
 - Changed the output of `moon action-graph --json` to a new JSON structure (now matches the project
   and task graphs).
+- Changed `moon generate` destination from a positional argument, to the `--to` option.
+  - Example: `moon generate <id> ./dist` -> `moon generate <id> --to ./dist`
 - Changed `moon templates` to render a table instead of a list.
 - Renamed all options and flags to kebab-case instead of camelCase.
   - Example: `--updateCache` -> `--update-cache`

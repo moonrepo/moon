@@ -32,11 +32,8 @@ pub async fn template(session: MoonSession, args: TemplateArgs) -> AppResult {
             options: generator
                 .templates
                 .iter()
-                .map(|(id, template)| SelectOption {
-                    description: Some(template.config.description.clone()),
-                    label: id.to_string(),
-                    value: id.to_string(),
-                    ..Default::default()
+                .map(|(id, template)| {
+                    SelectOption::new(id).description(&template.config.description)
                 })
                 .collect(),
             ..Default::default()

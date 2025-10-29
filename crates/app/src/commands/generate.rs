@@ -22,7 +22,10 @@ pub struct GenerateArgs {
     #[arg(help = "Template ID to generate")]
     id: Option<Id>,
 
-    #[arg(help = "Destination path, relative from workspace root or working directory")]
+    #[arg(
+        long = "to",
+        help = "Destination path, relative from workspace root or working directory"
+    )]
     dest: Option<String>,
 
     #[arg(
@@ -85,11 +88,8 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
             options: generator
                 .templates
                 .iter()
-                .map(|(id, template)| SelectOption {
-                    description: Some(template.config.description.clone()),
-                    label: id.to_string(),
-                    value: id.to_string(),
-                    ..Default::default()
+                .map(|(id, template)| {
+                    SelectOption::new(id).description(&template.config.description)
                 })
                 .collect(),
             ..Default::default()

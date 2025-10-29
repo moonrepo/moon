@@ -35,15 +35,14 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
             label: "Which project to view?".into(),
             options: projects
                 .into_iter()
-                .map(|project| SelectOption {
-                    description: project
-                        .config
-                        .project
-                        .as_ref()
-                        .and_then(|cfg| cfg.description.clone()),
-                    label: project.id.to_string(),
-                    value: project.id.to_string(),
-                    ..Default::default()
+                .map(|project| {
+                    SelectOption::new(&project.id).description_opt(
+                        project
+                            .config
+                            .project
+                            .as_ref()
+                            .and_then(|cfg| cfg.description.clone()),
+                    )
                 })
                 .collect(),
             ..Default::default()

@@ -24,7 +24,12 @@ async fn select_identifier_internal<'a, T: Clone>(
     let mut index = 0;
     let mut props = input()?;
 
-    props.options.sort_by(|a, d| a.label.cmp(&d.label));
+    props.options.sort_by(|a, d| {
+        let av = a.label.as_ref().unwrap_or(&a.value);
+        let dv = d.label.as_ref().unwrap_or(&d.value);
+
+        return av.cmp(dv);
+    });
 
     console
         .render_interactive(element! {

@@ -1,3 +1,4 @@
+use crate::components::SignalContainer;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_common::Id;
@@ -27,13 +28,15 @@ async fn select_identifier_internal<'a, T: Clone>(
 
     console
         .render_interactive(element! {
-            Select(
-                label: props.label,
-                description: props.description,
-                options: props.options.clone(),
-                multiple: props.multiple,
-                on_index: &mut index,
-            )
+            SignalContainer {
+                Select(
+                    label: props.label,
+                    description: props.description,
+                    options: props.options.clone(),
+                    multiple: props.multiple,
+                    on_index: &mut index,
+                )
+            }
         })
         .await?;
 
@@ -71,11 +74,13 @@ pub async fn render_prompt(
 
                 console
                     .render_interactive(element! {
-                        Confirm(
-                            label: &prompt.question,
-                            description: prompt.description.clone(),
-                            on_confirm: &mut value
-                        )
+                        SignalContainer {
+                            Confirm(
+                                label: &prompt.question,
+                                description: prompt.description.clone(),
+                                on_confirm: &mut value
+                            )
+                        }
                     })
                     .await?;
 
@@ -93,19 +98,21 @@ pub async fn render_prompt(
 
                 console
                     .render_interactive(element! {
-                        Input(
-                            label: &prompt.question,
-                            description: prompt.description.clone(),
-                            default_value: default,
-                            on_value: &mut value,
-                            validate: move |input: String| {
-                                if input.is_empty() && required {
-                                    Some("Please provide a value".into())
-                                } else {
-                                    None
+                        SignalContainer {
+                            Input(
+                                label: &prompt.question,
+                                description: prompt.description.clone(),
+                                default_value: default,
+                                on_value: &mut value,
+                                validate: move |input: String| {
+                                    if input.is_empty() && required {
+                                        Some("Please provide a value".into())
+                                    } else {
+                                        None
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     })
                     .await?;
 
@@ -125,13 +132,18 @@ pub async fn render_prompt(
 
                 console
                     .render_interactive(element! {
-                        Select(
-                            label: &prompt.question,
-                            description: prompt.description.clone(),
-                            default_index: *default_index,
-                            on_index: &mut index,
-                            options: items.iter().map(|i| SelectOption::new(display_json_value(i))).collect::<Vec<_>>()
-                        )
+                        SignalContainer {
+                            Select(
+                                label: &prompt.question,
+                                description: prompt.description.clone(),
+                                default_index: *default_index,
+                                on_index: &mut index,
+                                options: items
+                                    .iter()
+                                    .map(|i| SelectOption::new(display_json_value(i)))
+                                    .collect::<Vec<_>>()
+                            )
+                        }
                     })
                     .await?;
 
@@ -160,39 +172,43 @@ pub async fn render_version_prompt(
 
     console
         .render_interactive(element! {
-            Confirm(
-                label: if let Some(version) = &default_version {
-                    format!(
-                        "Manage {toolchain} {version} through <shell>moon</shell>? <muted>(recommended)</muted>"
-                    )
-                } else {
-                    format!(
-                        "Manage {toolchain} through <shell>moon</shell>? <muted>(recommended)</muted>"
-                    )
-                },
-                description: "Will download and install on-demand.".to_string(),
-                on_confirm: &mut confirmed,
-            )
+            SignalContainer {
+                Confirm(
+                    label: if let Some(version) = &default_version {
+                        format!(
+                            "Manage {toolchain} {version} through <shell>moon</shell>? <muted>(recommended)</muted>"
+                        )
+                    } else {
+                        format!(
+                            "Manage {toolchain} through <shell>moon</shell>? <muted>(recommended)</muted>"
+                        )
+                    },
+                    description: "Will download and install on-demand.".to_string(),
+                    on_confirm: &mut confirmed,
+                )
+            }
         })
         .await?;
 
     if confirmed {
         console
             .render_interactive(element! {
-                Input(
-                    label: format!("{toolchain} version?"),
-                    default_value: default_version.map(|v| v.to_string()).unwrap_or_default(),
-                    on_value: &mut value,
-                    validate: move |input: String| {
-                        if input.trim().is_empty() {
-                            Some("Please provide a version".into())
-                        } else if let Err(error) = UnresolvedVersionSpec::parse(&input) {
-                            Some(error.to_string())
-                        } else {
-                            None
+                SignalContainer {
+                    Input(
+                        label: format!("{toolchain} version?"),
+                        default_value: default_version.map(|v| v.to_string()).unwrap_or_default(),
+                        on_value: &mut value,
+                        validate: move |input: String| {
+                            if input.trim().is_empty() {
+                                Some("Please provide a version".into())
+                            } else if let Err(error) = UnresolvedVersionSpec::parse(&input) {
+                                Some(error.to_string())
+                            } else {
+                                None
+                            }
                         }
-                    }
-                )
+                    )
+                }
             })
             .await?;
     }

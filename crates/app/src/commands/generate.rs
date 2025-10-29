@@ -82,7 +82,16 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
     let id = select_identifier(&session.console, &args.id, || {
         Ok(SelectProps {
             label: "Which template to generate?".into(),
-            options: generator.templates.keys().map(SelectOption::new).collect(),
+            options: generator
+                .templates
+                .iter()
+                .map(|(id, template)| SelectOption {
+                    description: Some(template.config.description.clone()),
+                    label: id.to_string(),
+                    value: id.to_string(),
+                    ..Default::default()
+                })
+                .collect(),
             ..Default::default()
         })
     })

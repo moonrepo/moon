@@ -4429,6 +4429,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "starbase_sandbox",
+ "starbase_utils",
 ]
 
 [[package]]

@@ -1,6 +1,8 @@
 #![allow(clippy::disallowed_types)]
 
+use moon_config::PartialExtensionsConfig;
 pub use starbase_sandbox::{Sandbox, SandboxAssert, SandboxSettings, create_temp_dir};
+use starbase_utils::yaml;
 use std::collections::HashMap;
 use std::ops::Deref;
 
@@ -24,6 +26,20 @@ impl MoonSandbox {
             "debug",
         )
         .unwrap();
+    }
+
+    pub fn modify_extensions_config(&self, op: impl FnOnce(&mut PartialExtensionsConfig)) {
+        let path = self.path().join(".moon/extensions.yml");
+
+        let mut config: PartialExtensionsConfig = if path.exists() {
+            yaml::read_file(&path).unwrap()
+        } else {
+            Default::default()
+        };
+
+        op(&mut config);
+
+        yaml::write_file(path, &config).unwrap();
     }
 }
 

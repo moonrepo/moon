@@ -74,4 +74,10 @@ pub enum AppError {
         .expected.style(Style::Hash)
     )]
     InvalidMoonVersion { actual: String, expected: String },
+
+    #[diagnostic(code(app::tty::required_id))]
+    #[error(
+        "An identifier is required and must be explicitly provided as a positional argument in non-TTY environments."
+    )]
+    RequiredIdNonTTY,
 }

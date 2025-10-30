@@ -330,8 +330,11 @@ impl AppSession for MoonSession {
         startup::register_feature_flags(&self.workspace_config)?;
 
         // Load singleton components
-        Launchpad::register(self.moon_env.clone())?;
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
+
+        if self.requires_workspace_configured() {
+            Launchpad::register(self.moon_env.clone())?;
+        }
 
         Ok(None)
     }

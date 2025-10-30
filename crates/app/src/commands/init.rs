@@ -75,7 +75,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
                 .await?;
 
             if !force {
-                return Ok(None);
+                return Ok(Some(1));
             }
         }
 

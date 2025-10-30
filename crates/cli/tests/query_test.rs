@@ -3,8 +3,8 @@ use moon_app::queries::projects::*;
 use moon_app::queries::tasks::*;
 use moon_common::is_ci;
 use moon_test_utils::{
-    Sandbox, assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
-    get_cases_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
+    Sandbox, create_sandbox_with_config, get_assert_stdout_output, get_cases_fixture_configs,
+    get_projects_fixture_configs,
 };
 use moon_vcs::ChangedStatus;
 use starbase_utils::{json, string_vec};

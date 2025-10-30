@@ -11,9 +11,12 @@ pub struct MoonSandbox {
 }
 
 impl MoonSandbox {
-    pub fn new(mut sandbox: Sandbox) -> Self {
+    pub fn new(mut sandbox: Sandbox, create: bool) -> Self {
         apply_settings(&mut sandbox);
-        create_workspace_files(&sandbox);
+
+        if create {
+            create_workspace_files(&sandbox);
+        }
 
         Self { sandbox }
     }
@@ -99,10 +102,14 @@ fn create_workspace_files(sandbox: &Sandbox) {
     }
 }
 
+pub fn create_empty_sandbox() -> MoonSandbox {
+    MoonSandbox::new(starbase_sandbox::create_empty_sandbox(), false)
+}
+
 pub fn create_empty_moon_sandbox() -> MoonSandbox {
-    MoonSandbox::new(starbase_sandbox::create_empty_sandbox())
+    MoonSandbox::new(starbase_sandbox::create_empty_sandbox(), true)
 }
 
 pub fn create_moon_sandbox<N: AsRef<str>>(fixture: N) -> MoonSandbox {
-    MoonSandbox::new(starbase_sandbox::create_sandbox(fixture))
+    MoonSandbox::new(starbase_sandbox::create_sandbox(fixture), true)
 }

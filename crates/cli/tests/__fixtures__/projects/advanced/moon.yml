@@ -1,0 +1,4 @@
+language: 'typescript'
+layer: 'application'
+stack: 'frontend'
+tags: ['react']

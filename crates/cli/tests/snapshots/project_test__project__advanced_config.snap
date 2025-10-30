@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────────────────────────────────────────
+
+  Project: advanced
+  Source: advanced
+  Toolchain: system
+  Language: typescript
+  Stack: frontend
+  Layer: application
+  Depends on: —
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags:
+    - react
+  Environment variables: —

@@ -1,6 +1,9 @@
 #![allow(clippy::disallowed_types)]
 
-use moon_config::PartialExtensionsConfig;
+use moon_config::{
+    PartialExtensionsConfig, PartialToolchainsConfig, PartialWorkspaceConfig,
+    PartialWorkspaceProjects, PartialWorkspaceProjectsConfig,
+};
 pub use starbase_sandbox::{Sandbox, SandboxAssert, SandboxSettings, create_temp_dir};
 use starbase_utils::yaml;
 use std::collections::HashMap;
@@ -31,7 +34,7 @@ impl MoonSandbox {
         .unwrap();
     }
 
-    pub fn modify_extensions_config(&self, op: impl FnOnce(&mut PartialExtensionsConfig)) {
+    pub fn update_extensions_config(&self, op: impl FnOnce(&mut PartialExtensionsConfig)) {
         let path = self.path().join(".moon/extensions.yml");
 
         let mut config: PartialExtensionsConfig = if path.exists() {
@@ -43,6 +46,57 @@ impl MoonSandbox {
         op(&mut config);
 
         yaml::write_file(path, &config).unwrap();
+    }
+
+    pub fn update_toolchains_config(&self, op: impl FnOnce(&mut PartialToolchainsConfig)) {
+        let path = self.path().join(".moon/toolchains.yml");
+
+        let mut config: PartialToolchainsConfig = if path.exists() {
+            yaml::read_file(&path).unwrap()
+        } else {
+            Default::default()
+        };
+
+        op(&mut config);
+
+        yaml::write_file(path, &config).unwrap();
+    }
+
+    pub fn update_workspace_config(&self, op: impl FnOnce(&mut PartialWorkspaceConfig)) {
+        let path = self.path().join(".moon/workspace.yml");
+
+        let mut config: PartialWorkspaceConfig = if path.exists() {
+            yaml::read_file(&path).unwrap()
+        } else {
+            Default::default()
+        };
+
+        op(&mut config);
+
+        yaml::write_file(path, &config).unwrap();
+    }
+
+    pub fn with_default_projects(&self) {
+        self.update_workspace_config(|config| {
+            let mut projects = PartialWorkspaceProjectsConfig {
+                globs: Some(vec![
+                    "*".into(),
+                    "!.home".into(),
+                    "!.moon".into(),
+                    "!.proto".into(),
+                ]),
+                ..Default::default()
+            };
+
+            if self.path().join("moon.yml").exists() {
+                projects
+                    .sources
+                    .get_or_insert_default()
+                    .insert("root".try_into().unwrap(), ".".into());
+            }
+
+            config.projects = Some(PartialWorkspaceProjects::Both(projects));
+        });
     }
 }
 

@@ -43,7 +43,7 @@ mod ext_download {
     fn errors_if_no_plugin_locator() {
         let sandbox = create_moon_sandbox("extensions");
 
-        sandbox.modify_extensions_config(|config| {
+        sandbox.update_extensions_config(|config| {
             config
                 .plugins
                 .get_or_insert_default()
@@ -64,7 +64,7 @@ mod ext_download {
     fn errors_if_invalid_plugin_locator() {
         let sandbox = create_moon_sandbox("extensions");
 
-        sandbox.modify_extensions_config(|config| {
+        sandbox.update_extensions_config(|config| {
             config.plugins.get_or_insert_default().insert(
                 Id::raw("example"),
                 PartialExtensionPluginConfig {

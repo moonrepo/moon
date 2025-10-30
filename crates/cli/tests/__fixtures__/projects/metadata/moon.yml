@@ -1,0 +1,18 @@
+project:
+  title: 'Advanced'
+  description: 'Advanced example.'
+  channel: '#infra'
+  owner: '@infra'
+  maintainers: ['@user1', '@user2']
+
+stack: 'infrastructure'
+layer: 'configuration'
+
+tasks:
+  test:
+    description: 'Runs the test runner!'
+    command: 'noop'
+
+  build:
+    description: 'Builds the project!'
+    command: 'noop'

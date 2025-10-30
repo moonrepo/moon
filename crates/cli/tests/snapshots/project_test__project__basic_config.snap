@@ -1,0 +1,26 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────────────────────────────────────────
+
+  Project: basic
+  Source: basic
+  Toolchain: system
+  Language: javascript
+  Stack: unknown
+  Layer: unknown
+  Depends on:
+    - no-config (production)
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags:
+    - vue
+  Environment variables: —
+
+File groups ────────────────────────────────────────────────
+
+  tests:
+    - basic/**/*_test.rs

@@ -60,56 +60,56 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
 
     session.console.render(element! {
         Container {
-        Section(title: "Extension") {
-            #(extension.metadata.description.as_ref().map(|description| {
-                element! {
-                    View(margin_bottom: 1) {
+            Section(title: "Extension") {
+                #(extension.metadata.description.as_ref().map(|description| {
+                    element! {
+                        View(margin_bottom: 1) {
+                            StyledText(
+                                content: description
+                            )
+                        }
+                    }
+                }))
+                Entry(
+                    name: "ID",
+                    value: element! {
                         StyledText(
-                            content: description
+                            content: extension.id.to_string(),
+                            style: Style::Id
+                        )
+                    }.into_any()
+                )
+                Entry(
+                    name: "Title",
+                    content: extension.metadata.name.clone(),
+                )
+                #((!is_test_env()).then(|| {
+                    element! {
+                        Entry(
+                            name: "Version",
+                            value: element! {
+                                StyledText(
+                                    content: extension.metadata.plugin_version.to_string(),
+                                    style: Style::Hash
+                                )
+                            }.into_any()
                         )
                     }
-                }
-            }))
-            Entry(
-                name: "ID",
-                value: element! {
-                    StyledText(
-                        content: extension.id.to_string(),
-                        style: Style::Id
-                    )
-                }.into_any()
-            )
-            Entry(
-                name: "Title",
-                content: extension.metadata.name.clone(),
-            )
-            #((!is_test_env()).then(|| {
+                }))
+            }
+
+            #(config_schema.as_ref().map(|schema| {
                 element! {
-                    Entry(
-                        name: "Version",
-                        value: element! {
-                            StyledText(
-                                content: extension.metadata.plugin_version.to_string(),
-                                style: Style::Hash
-                            )
-                        }.into_any()
-                    )
-                }
+                    Section(title: "Configuration") {
+                        ConfigSettings(schema: Some(schema))
+                    }
+                }.into_any()
             }))
-        }
 
-        #(config_schema.as_ref().map(|schema| {
-            element! {
-                Section(title: "Configuration") {
-                    ConfigSettings(schema: Some(schema))
-                }
-            }.into_any()
-        }))
-
-        Section(title: "APIs") {
-            ApiList(apis)
+            Section(title: "APIs") {
+                ApiList(apis)
+            }
         }
-      }
     })?;
 
     Ok(None)

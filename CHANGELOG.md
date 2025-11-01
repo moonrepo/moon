@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an affected tracking issue where dependencies of already marked projects/tasks were not
+  being traversed correctly.
+
 ## 1.41.5
 
 #### 🚀 Updates

@@ -22,6 +22,7 @@ pub fn is_using_global_toolchain(bag: &GlobalEnvBag, id: impl AsRef<str>) -> boo
             if value == "1"
                 || value == "true"
                 || value == "on"
+                || value == "*"
                 || value == stable_id.as_str()
                 || value == unstable_id.as_str()
             {

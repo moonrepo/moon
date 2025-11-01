@@ -227,6 +227,11 @@ impl AffectedTracker {
         affected: AffectedBy,
     ) -> miette::Result<()> {
         if affected == AffectedBy::AlreadyMarked {
+            // May have been already marked through an indirect dep,
+            // but that doesn't mean its own deps have been checked!
+            self.track_project_dependencies(project, 0, &mut FxHashSet::default())?;
+            self.track_project_dependents(project, 0, &mut FxHashSet::default())?;
+
             return Ok(());
         }
 
@@ -499,6 +504,11 @@ impl AffectedTracker {
 
     pub fn mark_task_affected(&mut self, task: &Task, affected: AffectedBy) -> miette::Result<()> {
         if affected == AffectedBy::AlreadyMarked {
+            // May have been already marked through an indirect dep,
+            // but that doesn't mean its own deps have been checked!
+            self.track_task_dependencies(task, 0, &mut FxHashSet::default())?;
+            self.track_task_dependents(task, 0, &mut FxHashSet::default())?;
+
             return Ok(());
         }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an affected tracking issue where dependencies of already marked projects/tasks were not
+  being traversed correctly.
+- Fixed an issue where unstable toolchains would be installed even when
+  `MOON_TOOLCHAIN_FORCE_GLOBALS` has been set.
+
 ## 1.41.5
 
 #### 🚀 Updates

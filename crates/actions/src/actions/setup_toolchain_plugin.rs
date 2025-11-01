@@ -5,8 +5,10 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_console::Checkpoint;
+use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::SetupToolchainInput;
+use moon_platform::is_using_global_toolchain;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -24,7 +26,9 @@ pub async fn setup_toolchain_plugin(
     node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
     // No version configured, use globals on PATH
-    if node.toolchain.is_global() {
+    if node.toolchain.is_global()
+        || is_using_global_toolchain(GlobalEnvBag::instance(), &node.toolchain.id)
+    {
         debug!(
             toolchain_id = node.toolchain.id.as_str(),
             "Skipping toolchain setup because we'll be using global commands on PATH instead",

@@ -1,11 +1,8 @@
-use moon_test_utils2::{MoonSandbox, create_moon_sandbox, predicates::prelude::*};
-use starbase_sandbox::assert_snapshot;
+mod utils;
 
-fn create_projects_sandbox() -> MoonSandbox {
-    let sandbox = create_moon_sandbox("projects");
-    sandbox.with_default_projects();
-    sandbox
-}
+use moon_test_utils2::predicates::prelude::*;
+use starbase_sandbox::assert_snapshot;
+use utils::create_projects_sandbox;
 
 mod project {
     use super::*;

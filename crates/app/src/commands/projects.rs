@@ -1,7 +1,9 @@
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{Size, element};
-use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
+use moon_console::ui::{
+    Container, Notice, Style, StyledText, Table, TableCol, TableHeader, TableRow, Variant,
+};
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
@@ -27,12 +29,26 @@ pub async fn projects(session: MoonSession, args: ProjectsArgs) -> AppResult {
         return Ok(None);
     }
 
+    if projects.is_empty() {
+        session.console.render(element! {
+            Container {
+                Notice(variant: Variant::Info) {
+                    StyledText(content: "No projects exist. Have any been configured?")
+                }
+            }
+        })?;
+
+        return Ok(None);
+    }
+
     let id_width = projects
         .iter()
-        .fold(0, |acc, project| acc.max(project.id.as_str().len()));
+        .fold(0, |acc, project| acc.max(project.id.as_str().len()))
+        .max(3);
     let source_width = projects
         .iter()
-        .fold(0, |acc, project| acc.max(project.source.as_str().len()));
+        .fold(0, |acc, project| acc.max(project.source.as_str().len()))
+        .max(3);
 
     session.console.render(element! {
         Container {

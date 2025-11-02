@@ -1,11 +1,8 @@
-use moon_test_utils2::{MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox};
-use starbase_sandbox::assert_snapshot;
+mod utils;
 
-fn create_projects_sandbox() -> MoonSandbox {
-    let sandbox = create_moon_sandbox("projects");
-    sandbox.with_default_projects();
-    sandbox
-}
+use moon_test_utils2::create_empty_moon_sandbox;
+use starbase_sandbox::assert_snapshot;
+use utils::create_projects_sandbox;
 
 mod project_graph {
     use super::*;
@@ -73,7 +70,7 @@ mod project_graph {
         let sandbox = create_projects_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("project-graph").arg("dep-foo").arg("--json");
+            cmd.arg("project-graph").arg("--json");
         });
 
         assert_ne!(assert.output(), "{}");

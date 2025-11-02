@@ -97,7 +97,7 @@ pub async fn run_action_pipeline(
             pipeline.bail = !cmd.no_bail;
             pipeline.summarize = cmd.summary;
         }
-        Commands::Sync { .. } => {
+        Commands::Setup | Commands::Sync { .. } => {
             pipeline.summarize = true;
         }
         _ => {}

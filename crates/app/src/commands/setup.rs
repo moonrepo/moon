@@ -30,7 +30,10 @@ pub async fn setup(session: MoonSession) -> AppResult {
     for toolchain_id in session.toolchains_config.plugins.keys() {
         if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
             action_graph_builder.setup_toolchain(&spec, None).await?;
-            toolchain_count += 1;
+
+            if !spec.is_system() {
+                toolchain_count += 1;
+            }
         }
     }
 

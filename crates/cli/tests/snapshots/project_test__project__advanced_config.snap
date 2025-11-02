@@ -18,3 +18,8 @@ Configuration ──────────────────────
   Tags:
     - react
   Environment variables: —
+
+Tasks ──────────────────────────────────────────────────────
+
+  build:
+    › vite build

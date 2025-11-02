@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/tasks_test.rs
+expression: assert.output()
+---
+│ INFO
+│ There are no tasks for the project no-config

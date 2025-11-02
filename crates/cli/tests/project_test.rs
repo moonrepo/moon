@@ -17,7 +17,7 @@ mod project {
             })
             .failure()
             .code(2)
-            .stderr(predicate::str::contains("invalid value '=' for '<ID>'"));
+            .stderr(predicate::str::contains("invalid value '=' for '[ID]'"));
     }
 
     #[test]
@@ -121,5 +121,17 @@ mod project {
         });
 
         assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn can_output_json() {
+        let sandbox = create_projects_sandbox();
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("project").arg("basic").arg("--json");
+            })
+            .success()
+            .stdout(predicate::str::starts_with("{"));
     }
 }

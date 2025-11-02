@@ -30,8 +30,10 @@ pub async fn tasks(session: MoonSession, args: TasksArgs) -> AppResult {
         if tasks.is_empty() {
             session.console.render(element! {
                 Container {
-                    Notice(variant: Variant::Caution) {
-                        StyledText(content: "There are no tasks for the project <id>{project_id}</id>")
+                    Notice(variant: Variant::Info) {
+                        StyledText(
+                            content: format!("There are no tasks for the project <id>{project_id}</id>")
+                        )
                     }
                 }
             })?;
@@ -51,12 +53,26 @@ pub async fn tasks(session: MoonSession, args: TasksArgs) -> AppResult {
         return Ok(None);
     }
 
+    if tasks.is_empty() {
+        session.console.render(element! {
+            Container {
+                Notice(variant: Variant::Info) {
+                    StyledText(content: "No tasks exist. Have any been configured?")
+                }
+            }
+        })?;
+
+        return Ok(None);
+    }
+
     let id_width = tasks
         .iter()
-        .fold(0, |acc, task| acc.max(task.target.as_str().len()));
+        .fold(0, |acc, task| acc.max(task.target.as_str().len()))
+        .max(3);
     let command_width = tasks
         .iter()
-        .fold(0, |acc, task| acc.max(task.command.len()));
+        .fold(0, |acc, task| acc.max(task.command.len()))
+        .max(3);
 
     session.console.render(element! {
         Container {

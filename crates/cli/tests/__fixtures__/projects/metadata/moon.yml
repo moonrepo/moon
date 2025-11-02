@@ -11,6 +11,7 @@ layer: 'configuration'
 tasks:
   test:
     description: 'Runs the test runner!'
+    deps: ['build']
     command: 'noop'
 
   build:

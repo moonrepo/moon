@@ -8,3 +8,8 @@ fileGroups:
 language: javascript
 
 tags: ['vue']
+
+tasks:
+  dev:
+    command: 'vite dev'
+    preset: 'server'

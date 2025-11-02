@@ -1,0 +1,26 @@
+---
+source: crates/cli/tests/task_test.rs
+expression: assert.output_standardized()
+---
+About ──────────────────────────────────────────────────────
+
+  Target: tasks:test
+  Project: tasks
+  Task: test
+  Toolchain: system
+  Type: test
+  Depends on: —
+
+Process ────────────────────────────────────────────────────
+
+  Command: jest --cache --color
+  Environment variables: —
+  Runs dependencies: Parallel
+  Runs in CI: Yes
+
+Configuration ──────────────────────────────────────────────
+
+  Inputs:
+    - .moon/*.{pkl,yml}
+    - tasks/tests/**/*
+  Outputs: —

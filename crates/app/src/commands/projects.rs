@@ -1,9 +1,7 @@
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{Size, element};
-use moon_console::ui::{
-    Container, Notice, Style, StyledText, Table, TableCol, TableHeader, TableRow, Variant,
-};
+use moon_console::ui::*;
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;

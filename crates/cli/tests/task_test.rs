@@ -54,4 +54,16 @@ mod task {
 
         assert_snapshot!(assert.output_standardized());
     }
+
+    #[test]
+    fn can_output_json() {
+        let sandbox = create_projects_sandbox();
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("task").arg("tasks:lint").arg("--json");
+            })
+            .success()
+            .stdout(predicate::str::starts_with("{"));
+    }
 }

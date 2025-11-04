@@ -37,7 +37,7 @@ pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {
-                    StyledText(content: "No templates located. Configure them with the <property>generator.templates</property> setting.")
+                    StyledText(content: format!("No templates located. Configure them with the <property>generator.templates</property> setting."))
                 }
             }
         })?;
@@ -56,7 +56,7 @@ pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
             session.console.render(element! {
                 Container {
                     Notice(variant: Variant::Caution) {
-                        StyledText(content: "There are no templates that match the filter <shell>{filter}</shell>")
+                        StyledText(content: format!("There are no templates that match the filter <shell>{filter}</shell>"))
                     }
                 }
             })?;

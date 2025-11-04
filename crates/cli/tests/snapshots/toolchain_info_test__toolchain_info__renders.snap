@@ -1,0 +1,93 @@
+---
+source: crates/cli/tests/toolchain_info_test.rs
+expression: assert.output_standardized()
+---
+Toolchain ──────────────────────────────────────────────────
+
+  Provides sync operations that keep tsconfig.json's in a healthy state.
+
+  ID: typescript
+  Title: TypeScript
+
+Configuration ──────────────────────────────────────────────
+
+  createMissingConfig: bool
+  When `syncProjectReferences` is enabled, will create a `tsconfig.json`
+  in referenced projects if it does not exist.
+
+  includeProjectReferenceSources: bool
+  Appends sources of project reference to `include` in `tsconfig.json`,
+  for each project.
+
+  includeSharedTypes: bool
+  Appends shared types to `include` in `tsconfig.json`, for each project.
+  If the shared types are a project and `syncProjectReferences` is enabled,
+  they will also be synced as a project reference.
+  Shared types must exist in a "types" folder, relative from the configured
+  `root`.
+
+
+  projectConfigFileName: string
+  Name of the `tsconfig.json` file within each project.
+
+  root: string
+  The relative root to the TypeScript root. Primarily used for
+  resolving project references.
+
+  rootConfigFileName: string
+  Name of the `tsconfig.json` file at the workspace root.
+
+  rootOptionsConfigFileName: string
+  Name of the shared compiler options `tsconfig.json` file
+  at the workspace root.
+
+  routeOutDirToCache: bool
+  Updates and routes `outDir` in `tsconfig.json` to moon's cache,
+  for each project.
+
+  syncProjectReferences: bool
+  Syncs all project dependencies as `references` in `tsconfig.json`,
+  for each project.
+
+  syncProjectReferencesToPaths: bool
+  Syncs all project dependencies as `paths` in `tsconfig.json`,
+  for each project.
+
+Tier 1 - Usage detection ───────────────────────────────────
+
+  Config files: tsconfig.json, tsconfig.*.json, *.tsconfig.json, .tsbuildinfo, *.tsbuildinfo
+
+  🟢 register_toolchain (required)
+  🟢 define_toolchain_config
+  🟢 initialize_toolchain
+  ⚫️ detect_version_files
+  ⚫️ parse_version_file
+  🟢 define_docker_metadata
+  ⚫️ scaffold_docker
+  ⚫️ prune_docker
+  🟢 sync_project
+  ⚫️ sync_workspace
+
+Tier 2 - Ecosystem integration ─────────────────────────────
+
+  ⚫️ extend_project_graph
+  ⚫️ extend_task_command
+  ⚫️ extend_task_script
+  ⚫️ define_requirements
+  ⚫️ locate_dependencies_root
+  ⚫️ install_dependencies
+  ⚫️ hash_task_contents
+  ⚫️ parse_lock
+  ⚫️ parse_manifest
+  ⚫️ setup_environment
+
+Tier 3 - Tool management ───────────────────────────────────
+
+  ⚫️ register_tool (required)
+  ⚫️ load_versions
+  ⚫️ resolve_version
+  ⚫️ download_prebuilt (required)
+  ⚫️ unpack_archive
+  ⚫️ locate_executables (required)
+  ⚫️ setup_toolchain
+  ⚫️ teardown_toolchain

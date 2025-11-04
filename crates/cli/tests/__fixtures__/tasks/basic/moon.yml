@@ -1,0 +1,9 @@
+language: javascript
+
+tasks:
+  build:
+    command: do-build
+  lint:
+    command: do-lint
+  test:
+    command: do-test

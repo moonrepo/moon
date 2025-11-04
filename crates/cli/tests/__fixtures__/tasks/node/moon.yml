@@ -1,0 +1,14 @@
+language: javascript
+
+tasks:
+  a:
+    command: a
+    deps: ['@tasks/node:b']
+  b:
+    command: b
+    deps: ['node:c']
+  c:
+    command: c
+    deps: ['d']
+  d:
+    command: d

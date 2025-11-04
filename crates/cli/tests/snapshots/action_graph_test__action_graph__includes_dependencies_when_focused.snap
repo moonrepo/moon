@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/action_graph_test.rs
+expression: assert.output()
+---
+digraph {
+    0 [ label="SyncWorkspace"]
+    1 [ label="SyncProject(chain)"]
+    2 [ label="SetupProto(1.2.3)"]
+    3 [ label="SetupToolchain(node:24.0.0)"]
+    4 [ label="RunTask(chain:e)"]
+    5 [ label="RunTask(chain:f)"]
+    1 -> 0 [ label="required"]
+    3 -> 0 [ label="required"]
+    3 -> 2 [ label="required"]
+    5 -> 1 [ label="required"]
+    5 -> 3 [ label="required"]
+    4 -> 1 [ label="required"]
+    4 -> 3 [ label="required"]
+    4 -> 5 [ label="required"]
+}

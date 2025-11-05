@@ -35,7 +35,7 @@ async fn select_identifiers_internal<'a, T: Clone>(
         let av = a.label.as_ref().unwrap_or(&a.value);
         let dv = d.label.as_ref().unwrap_or(&d.value);
 
-        return av.cmp(dv);
+        av.cmp(dv)
     });
 
     console

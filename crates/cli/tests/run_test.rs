@@ -464,7 +464,7 @@ mod run {
 
             assert
                 .success()
-                .stdout(predicate::str::contains(format!("MOON_CACHE=write")));
+                .stdout(predicate::str::contains("MOON_CACHE=write"));
         }
 
         #[test]
@@ -644,9 +644,8 @@ mod run {
             });
 
             assert.success().stdout(
-                predicate::str::contains(format!("Args: ./input1.txt ./input2.txt\n")).and(
-                    predicate::str::contains(format!("Env: input1.txt,input2.txt\n")),
-                ),
+                predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
+                    .and(predicate::str::contains("Env: input1.txt,input2.txt\n")),
             );
         }
 
@@ -664,8 +663,8 @@ mod run {
             });
 
             assert.success().stdout(
-                predicate::str::contains(format!("Args: ./input1.txt ./input2.txt\n"))
-                    .and(predicate::str::contains(format!("Env: \n"))),
+                predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
+                    .and(predicate::str::contains("Env: \n")),
             );
         }
 
@@ -682,11 +681,10 @@ mod run {
                     .arg("--affected");
             });
 
-            assert
-                .success()
-                .stdout(predicate::str::contains(format!("Args: \n")).and(
-                    predicate::str::contains(format!("Env: input1.txt,input2.txt\n")),
-                ));
+            assert.success().stdout(
+                predicate::str::contains("Args: \n")
+                    .and(predicate::str::contains("Env: input1.txt,input2.txt\n")),
+            );
         }
     }
 

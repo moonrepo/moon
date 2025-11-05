@@ -57,6 +57,6 @@ mod templates {
                 cmd.arg("templates").arg("--json");
             })
             .success()
-            .stdout(predicate::str::starts_with("["));
+            .stdout(predicate::str::starts_with("{"));
     }
 }

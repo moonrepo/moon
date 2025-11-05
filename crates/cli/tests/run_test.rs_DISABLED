@@ -55,50 +55,6 @@ fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
 }
 
 #[test]
-fn errors_for_unknown_project() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("unknown:test");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn errors_for_unknown_task_in_project() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("base:unknown");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn errors_for_internal_task() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("base:internalOnly");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn errors_for_unknown_all_target() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg(":unknown");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
 fn errors_for_cycle_in_task_deps() {
     let sandbox = cases_sandbox();
 
@@ -109,74 +65,6 @@ fn errors_for_cycle_in_task_deps() {
     assert_snapshot!(assert.output());
 }
 
-#[test]
-fn creates_run_report() {
-    let sandbox = cases_sandbox();
-    sandbox.enable_git();
-
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("base:standard");
-    });
-
-    assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
-}
-
-#[test]
-fn runs_with_shorthand_syntax() {
-    let sandbox = cases_sandbox();
-    sandbox.enable_git();
-
-    sandbox
-        .run_moon(|cmd| {
-            cmd.arg("base:standard");
-        })
-        .success();
-}
-
-#[test]
-fn runs_with_shorthand_syntax_with_leading_option() {
-    let sandbox = cases_sandbox();
-    sandbox.enable_git();
-
-    sandbox
-        .run_moon(|cmd| {
-            cmd.arg("--force").arg("base:standard");
-        })
-        .success();
-}
-
-#[test]
-fn bails_on_failing_task() {
-    let sandbox = cases_sandbox();
-    sandbox.enable_git();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("states:willFail");
-    });
-
-    let output = assert.output();
-
-    assert!(predicate::str::contains("Task states:willFail failed to run.").eval(&output));
-
-    assert.failure();
-}
-
-#[test]
-fn doesnt_bail_on_failing_task_if_allowed_to_fail() {
-    let sandbox = cases_sandbox();
-    sandbox.enable_git();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("states:willFailButAllowed");
-    });
-
-    let output = assert.output();
-
-    assert!(!predicate::str::contains("Task states:willFail failed to run.").eval(&output));
-    assert!(predicate::str::contains("Tasks: 1 failed").eval(&output));
-
-    assert.success();
-}
 
 #[test]
 fn disambiguates_same_tasks_with_diff_args_envs() {
@@ -262,82 +150,6 @@ mod general {
     }
 }
 
-mod configs {
-    use super::*;
-
-    #[test]
-    fn bubbles_up_invalid_workspace_config() {
-        let sandbox = cases_sandbox();
-
-        sandbox.create_file(".moon/workspace.yml", "projects: true");
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("base:noop");
-        });
-
-        let output = assert.output();
-
-        assert!(
-            predicate::str::contains(
-                "projects: expected a list of globs, a map of projects, or both"
-            )
-            .eval(&output)
-        );
-    }
-
-    #[test]
-    fn bubbles_up_invalid_tasks_config() {
-        let sandbox = cases_sandbox();
-
-        sandbox.create_file(".moon/tasks.yml", "tasks: 123");
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("base:noop");
-        });
-
-        let output = assert.output();
-
-        assert!(predicate::str::contains("tasks: invalid type: integer `123`").eval(&output));
-    }
-}
-
-mod logs {
-    use super::*;
-
-    #[test]
-    fn creates_log_file() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("--logFile=output.log")
-                .arg("run")
-                .arg("node:standard");
-        });
-
-        let output_path = sandbox.path().join("output.log");
-
-        assert!(output_path.exists());
-    }
-
-    #[test]
-    fn creates_nested_log_file() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox
-            .run_moon(|cmd| {
-                cmd.arg("--logFile=nested/output.log")
-                    .arg("run")
-                    .arg("node:standard");
-            })
-            .debug();
-
-        let output_path = sandbox.path().join("nested/output.log");
-
-        assert!(output_path.exists());
-    }
-}
 
 mod dependencies {
     use super::*;

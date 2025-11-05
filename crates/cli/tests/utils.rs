@@ -30,3 +30,10 @@ pub fn create_tasks_sandbox() -> MoonSandbox {
     });
     sandbox
 }
+
+pub fn create_pipeline_sandbox() -> MoonSandbox {
+    let sandbox = create_moon_sandbox("pipeline");
+    sandbox.enable_git();
+    sandbox.with_default_projects();
+    sandbox
+}

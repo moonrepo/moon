@@ -33,6 +33,7 @@ digraph {
     27 [ label="RunTask(build-a:build)"]
     28 [ label="RunTask(node:a)"]
     29 [ label="RunTask(basic:test)"]
+    30 [ label="RunTask(node:base)"]
     1 -> 0 [ label="required"]
     3 -> 0 [ label="required"]
     3 -> 2 [ label="required"]
@@ -99,4 +100,6 @@ digraph {
     28 -> 24 [ label="required"]
     29 -> 9 [ label="required"]
     29 -> 3 [ label="required"]
+    30 -> 6 [ label="required"]
+    30 -> 3 [ label="required"]
 }

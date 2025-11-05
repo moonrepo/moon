@@ -1,6 +1,8 @@
 language: javascript
 
 tasks:
+  base:
+    command: exit 0
   a:
     command: a
     deps: ['@tasks/node:b']

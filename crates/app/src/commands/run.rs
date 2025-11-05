@@ -243,7 +243,7 @@ pub async fn run_target(
             }
         })?;
 
-        return Ok(None);
+        return Ok(Some(1));
     }
 
     // Process all tasks in the graph

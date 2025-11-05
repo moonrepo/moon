@@ -1,128 +1,130 @@
-language: bash
+language: powershell
 
 tasks:
   ls:
     command: ls -1 .
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   echo:
-    command: echo
+    command: Write-Output
     args: 'hello'
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   standard:
-    command: bash
-    args: ./standard.sh
+    command: pwsh
+    args: ./standard.ps1
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   exitNonZero:
-    command: bash
-    args: ./exitNonZero.sh
+    command: pwsh
+    args: ./exitNonZero.ps1
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   exitNonZeroInline:
-    command: bash -c 'exit 2'
+    command: pwsh -c 'exit 2'
     options:
       shell: false
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   exitZero:
-    command: bash
-    args: ./exitZero.sh
+    command: pwsh
+    args: ./exitZero.ps1
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   passthroughArgs:
-    command: bash
-    args: ./args.sh
+    command: pwsh
+    args: ./args.ps1
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   envVars:
-    command: bash
-    args: ./envVars.sh
+    command: pwsh
+    args: ./envVars.ps1
     env:
       TEST_FOO: abc
       TEST_BAR: '123'
       TEST_BAZ: 'true'
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   envVarsMoon:
-    command: bash
-    args: ./envVarsMoon.sh
+    command: pwsh
+    args: ./envVarsMoon.ps1
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   runFromProject:
-    command: bash
-    args: ./cwd.sh
+    command: pwsh
+    args: ./cwd.ps1
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   runFromWorkspace:
-    command: bash
-    args: ./unix/cwd.sh
+    command: pwsh
+    args: ./windows/cwd.ps1
     options:
       runFromWorkspaceRoot: true
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   retryCount:
-    command: bash
-    args: ./exitNonZero.sh
+    command: pwsh
+    args: ./exitNonZero.ps1
     options:
       retryCount: 3
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   outputs:
-    command: bash ./outputs.sh
+    command: pwsh ./outputs.ps1
     outputs:
       - 'file.txt'
       - 'folder'
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   affectedFiles:
-    command: bash ./affectedFiles.sh
+    command: pwsh ./affectedFiles.ps1
     options:
       affectedFiles: true
       affectedPassInputs: true
 
   affectedFilesArgs:
-    command: bash ./affectedFiles.sh
+    command: pwsh ./affectedFiles.ps1
     options:
       affectedFiles: 'args'
 
   affectedFilesEnvVar:
-    command: bash ./affectedFiles.sh
+    command: pwsh ./affectedFiles.ps1
     options:
       affectedFiles: 'env'
 
   multiAmpersand:
     command: 'mkdir foo && mkdir bar'
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   multiSemicolon:
     command: 'mkdir foo; mkdir bar'
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   syntaxVar:
-    command: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
+    command:
+      'Write-Output $env:VAR_NAME "in $env:VAR_NAME quotes" prefixed-$env:VAR_NAME
+      "$env:VAR_NAME-suffixed"'
     env:
       VAR_NAME: substituted-value
     options:
       shell: true
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   syntaxExpansion:
     script: 'echo ${VAR_NAME:2:2}'
@@ -131,34 +133,34 @@ tasks:
     options:
       shell: true
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   syntaxSubstitution:
     script: 'echo $(echo subparens)'
     options:
       shell: true
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   syntaxSubstitutionTick:
     script: 'echo `echo subtick`'
     options:
       shell: true
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   noShell:
-    command: bash -c "echo 'hello'"
+    command: pwsh -c "echo 'hello'"
     options:
       shell: false
     inputs:
-      - '*.sh'
+      - '*.ps1'
 
   outFoo:
-    command: echo 'foo'
+    command: Write-Output 'foo'
 
   outBar:
-    command: echo 'bar'
+    command: Write-Output 'bar'
 
   outBaz:
-    command: echo 'baz'
+    command: Write-Output 'baz'

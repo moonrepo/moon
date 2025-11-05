@@ -44,8 +44,7 @@ mod setup_teardown {
             .run_bin(|cmd| {
                 cmd.arg("setup");
             })
-            .success()
-            .code(1);
+            .success();
 
         assert!(node_dir.exists());
 
@@ -53,8 +52,7 @@ mod setup_teardown {
             .run_bin(|cmd| {
                 cmd.arg("teardown");
             })
-            .success()
-            .code(0);
+            .success();
 
         assert!(!node_dir.exists());
     }

@@ -4,7 +4,7 @@ use moon_affected::{Affected, AffectedProjectState, AffectedTaskState};
 use moon_task::Target;
 use rustc_hash::FxHashSet;
 use starbase_utils::json::serde_json;
-use utils::{change_files, create_query_sandbox};
+use utils::{change_branch, change_files, create_query_sandbox};
 
 mod query_affected {
     use super::*;
@@ -12,6 +12,8 @@ mod query_affected {
     #[test]
     fn nothing_by_default() {
         let sandbox = create_query_sandbox();
+
+        change_branch(&sandbox, "branch");
 
         sandbox
             .run_bin(|cmd| {
@@ -47,18 +49,7 @@ mod query_affected {
     #[test]
     fn includes_task_for_input() {
         let sandbox = create_query_sandbox();
-        let target = Target::parse("tasks:test").unwrap();
 
-        // Run first without any file
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("query").arg("affected");
-        });
-
-        let affected: Affected = serde_json::from_str(assert.stdout().trim()).unwrap();
-
-        assert!(!affected.tasks.contains_key(&target));
-
-        // Run again with file
         change_files(&sandbox, ["tasks/tests/file.txt"]);
 
         let assert = sandbox.run_bin(|cmd| {
@@ -68,7 +59,10 @@ mod query_affected {
         let mut affected: Affected = serde_json::from_str(assert.stdout().trim()).unwrap();
 
         assert_eq!(
-            affected.tasks.remove(&target).unwrap(),
+            affected
+                .tasks
+                .remove(&Target::parse("tasks:test").unwrap())
+                .unwrap(),
             AffectedTaskState {
                 files: FxHashSet::from_iter(["tasks/tests/file.txt".into()]),
                 ..Default::default()

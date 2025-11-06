@@ -16,6 +16,8 @@ mod run {
     use super::*;
 
     mod general {
+        use std::path::MAIN_SEPARATOR_STR;
+
         use starbase_utils::fs;
 
         use super::*;
@@ -197,7 +199,8 @@ mod run {
             });
 
             assert.success().stdout(predicate::str::contains(format!(
-                "{}/{PROJECT_DIR}",
+                "{}{}{PROJECT_DIR}",
+                MAIN_SEPARATOR_STR,
                 fs::file_name(sandbox.path())
             )));
         }
@@ -213,7 +216,8 @@ mod run {
             assert.success().stdout(
                 predicate::str::contains(fs::file_name(sandbox.path())).and(
                     predicate::str::contains(format!(
-                        "{}/{PROJECT_DIR}",
+                        "{}{}{PROJECT_DIR}",
+                        MAIN_SEPARATOR_STR,
                         fs::file_name(sandbox.path())
                     ))
                     .not(),

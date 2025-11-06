@@ -2,7 +2,7 @@ language: powershell
 
 tasks:
   ls:
-    command: ls -1 .
+    command: Get-ChildItem
     inputs:
       - '*.ps1'
 

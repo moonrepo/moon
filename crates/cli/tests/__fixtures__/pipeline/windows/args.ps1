@@ -5,5 +5,5 @@ $ErrorActionPreference = 'Stop'
 for ($i = 0; $i -lt $args.Count; $i++) {
     $index = $i + 1
     $val = $args[$i]
-    Write-Output "Arg ${index}: ${val} (`"`${val}`"`)"
+    Write-Output "Arg ${index}: ${val} ('${val}')"
 }

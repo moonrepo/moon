@@ -132,8 +132,8 @@ mod run {
             });
 
             assert.success().stdout(
-                predicate::str::contains("Arg 2: --opt (\"--opt\")")
-                    .and(predicate::str::contains("Arg 7: baz qux (\"baz qux\")")),
+                predicate::str::contains("Arg 2: --opt ('--opt')")
+                    .and(predicate::str::contains("Arg 7: baz qux ('baz qux')")),
             );
         }
 
@@ -158,8 +158,8 @@ mod run {
             });
 
             assert.success().stdout(
-                predicate::str::contains("Arg 4: --optCamel=value (\"--optCamel=value\")")
-                    .and(predicate::str::contains("Arg 6: bar baz (\"bar baz\")")),
+                predicate::str::contains("Arg 4: --optCamel=value ('--optCamel=value')")
+                    .and(predicate::str::contains("Arg 6: bar baz ('bar baz')")),
             );
         }
 
@@ -199,8 +199,7 @@ mod run {
             });
 
             assert.success().stdout(predicate::str::contains(format!(
-                "{}{}{PROJECT_DIR}",
-                MAIN_SEPARATOR_STR,
+                "{}{MAIN_SEPARATOR_STR}{PROJECT_DIR}",
                 fs::file_name(sandbox.path())
             )));
         }
@@ -216,8 +215,7 @@ mod run {
             assert.success().stdout(
                 predicate::str::contains(fs::file_name(sandbox.path())).and(
                     predicate::str::contains(format!(
-                        "{}{}{PROJECT_DIR}",
-                        MAIN_SEPARATOR_STR,
+                        "{}{MAIN_SEPARATOR_STR}{PROJECT_DIR}",
                         fs::file_name(sandbox.path())
                     ))
                     .not(),

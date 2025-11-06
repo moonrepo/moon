@@ -18,6 +18,7 @@ mod projects {
         assert_snapshot!(assert.output());
     }
 
+    #[cfg(unix)]
     #[test]
     fn many_projects() {
         let sandbox = create_projects_sandbox();

@@ -126,7 +126,7 @@ mod run {
                     .arg("--optCamel=value")
                     .arg("foo")
                     .arg("'bar baz'")
-                    .arg("baz qux")
+                    .arg("\"baz qux\"")
                     .arg("--opt-kebab")
                     .arg("123");
             });
@@ -151,7 +151,7 @@ mod run {
                     .arg("--optCamel=value")
                     .arg("foo")
                     .arg("'bar baz'")
-                    .arg("baz qux")
+                    .arg("\"baz qux\"")
                     .arg("--opt-kebab")
                     .arg("123")
                     .current_dir(sandbox.path().join(PROJECT_DIR));

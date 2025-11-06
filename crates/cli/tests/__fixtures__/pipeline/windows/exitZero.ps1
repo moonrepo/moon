@@ -2,7 +2,8 @@
 $ErrorActionPreference = 'Stop'
 
 Write-Output "stdout"
-Write-Error "stderr"
+# Write-Error "stderr"
+[Console]::Error.WriteLine('stderr')
 
 exit 0
 

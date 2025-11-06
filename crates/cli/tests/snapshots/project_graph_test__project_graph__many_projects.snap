@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/project_graph_test.rs
+expression: assert.output()
+---
+digraph {
+    0 [ label="metadata"]
+    1 [ label="no-config"]
+    2 [ label="dep-baz"]
+    3 [ label="dep-bar"]
+    4 [ label="basic"]
+    5 [ label="dep-foo"]
+    6 [ label="tasks"]
+    7 [ label="advanced"]
+    8 [ label="root"]
+    9 [ label="toolchains"]
+    10 [ label="empty-config"]
+    4 -> 1 [ label="production"]
+    5 -> 3 [ label="production"]
+    5 -> 2 [ label="production"]
+}

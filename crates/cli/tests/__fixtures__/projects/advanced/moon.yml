@@ -1,0 +1,9 @@
+language: 'typescript'
+layer: 'application'
+stack: 'frontend'
+tags: ['react']
+
+tasks:
+  build:
+    command: 'vite build'
+    outputs: ['dist']

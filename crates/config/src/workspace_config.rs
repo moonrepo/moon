@@ -101,10 +101,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/workspace
     #[derive(Config)]
     pub struct WorkspaceConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/workspace.json",
-            rename = "$schema"
-        )]
+        #[setting(default = "./cache/schemas/workspace.json", rename = "$schema")]
         pub schema: String,
 
         /// Configures code ownership rules for generating a `CODEOWNERS` file.

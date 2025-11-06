@@ -99,10 +99,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/project
     #[derive(Config)]
     pub struct ProjectConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/project.json",
-            rename = "$schema"
-        )]
+        #[setting(rename = "$schema")]
         pub schema: String,
 
         /// Other projects that this project depends on.

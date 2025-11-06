@@ -1,4 +1,4 @@
-use crate::action_graph::ActionGraph;
+use crate::action_graph::{ActionGraph, ActionGraphType};
 use crate::action_graph_error::ActionGraphError;
 use miette::IntoDiagnostic;
 use moon_action::{
@@ -10,7 +10,7 @@ use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
-use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
+use moon_config::{PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
@@ -89,7 +89,7 @@ impl ActionGraphBuilderOptions {
 pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
-    graph: DiGraph<ActionNode, ()>,
+    graph: ActionGraphType,
     nodes: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -992,7 +992,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
         for edge in edges {
             if self.graph.find_edge(index, edge).is_none() {
-                self.graph.add_edge(index, edge, ());
+                self.graph
+                    .add_edge(index, edge, TaskDependencyType::Required);
                 added_edges.push(edge);
             }
         }

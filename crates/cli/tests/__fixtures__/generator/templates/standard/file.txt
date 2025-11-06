@@ -1,0 +1,2 @@
+{% set my_var = 2 %}
+{{ my_var }}

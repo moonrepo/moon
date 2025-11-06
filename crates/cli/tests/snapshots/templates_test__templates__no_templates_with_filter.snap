@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/templates_test.rs
+expression: assert.output()
+---
+│ CAUTION
+│ There are no templates that match the filter unknown

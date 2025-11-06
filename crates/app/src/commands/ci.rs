@@ -1,6 +1,6 @@
 use crate::app_error::AppError;
-use crate::components::run_action_pipeline;
-use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files_with_stdin};
+use crate::helpers::run_action_pipeline;
+use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::Args;
@@ -35,7 +35,7 @@ pub struct CiArgs {
     #[arg(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
     job: Option<usize>,
 
-    #[arg(long = "jobTotal", help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
+    #[arg(long, help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
     job_total: Option<usize>,
 
     #[arg(long, help = "Accept changed files from stdin for affected checks")]
@@ -113,9 +113,9 @@ async fn gather_changed_files(
     }
 
     let vcs = session.get_vcs_adapter()?;
-    let result = query_changed_files_with_stdin(
+    let result = query_changed_files(
         &vcs,
-        &QueryChangedFilesOptions {
+        QueryChangedFilesOptions {
             default_branch: true,
             base,
             head,

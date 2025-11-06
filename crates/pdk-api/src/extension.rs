@@ -1,14 +1,18 @@
+use crate::common::{InitializePluginInput, InitializePluginOutput};
 use crate::context::MoonContext;
 use moon_common::Id;
 use schematic::Schema;
 use warpgate_api::*;
+
+pub type InitializeExtensionInput = InitializePluginInput;
+pub type InitializeExtensionOutput = InitializePluginOutput;
 
 // METADATA
 
 api_struct!(
     /// Input passed to the `register_extension` function.
     pub struct RegisterExtensionInput {
-        /// ID of the toolchain, as it was configured.
+        /// ID of the extension, as it was configured.
         pub id: Id,
     }
 );
@@ -16,10 +20,6 @@ api_struct!(
 api_struct!(
     /// Output returned from the `register_extension` function.
     pub struct RegisterExtensionOutput {
-        /// Schema shape of the tool's configuration.
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub config_schema: Option<Schema>,
-
         /// Name of the extension.
         pub name: String,
 
@@ -28,6 +28,14 @@ api_struct!(
 
         /// Version of the plugin.
         pub plugin_version: String,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `define_extension_config` function.
+    pub struct DefineExtensionConfigOutput {
+        /// Schema shape of the extension's configuration.
+        pub schema: Schema,
     }
 );
 

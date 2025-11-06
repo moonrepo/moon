@@ -2461,9 +2461,9 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "httpmock"
-version = "0.8.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cccf7d3f1b6ee94515933ed2d24615bc8aa2a68c3858e318422f10f538888f2"
+checksum = "511f510e9b1888d67f10bab4397f8b019d2a9b249a2c10acbce2d705b1b32e26"
 dependencies = [
  "assert-json-diff",
  "async-object-pool",
@@ -2821,9 +2821,9 @@ dependencies = [
 
 [[package]]
 name = "iocraft"
-version = "0.7.13"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e963ffa29832ebf7c92bce51b894a83bb845134748b812a65d4025ebc95c714"
+checksum = "174f7cba88e28ab99df9878b28bf3ac8b471c2edf6a830f02208737ac8af6701"
 dependencies = [
  "any_key",
  "bitflags",
@@ -3451,6 +3451,7 @@ dependencies = [
  "moon_app_context",
  "moon_common",
  "moon_config",
+ "moon_graph_utils",
  "moon_pdk_api",
  "moon_project",
  "moon_query",
@@ -3725,6 +3726,7 @@ dependencies = [
  "httpmock",
  "liblzma",
  "mimalloc",
+ "moon_affected",
  "moon_app",
  "moon_cache",
  "moon_codegen",
@@ -3933,6 +3935,7 @@ name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
+ "moon_common",
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
@@ -4427,6 +4430,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "starbase_sandbox",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -6662,9 +6666,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.13"
+version = "0.6.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34fc06d0117eca9413a949f26de495423d61051716ea7b6dae0b2926642b656a"
+checksum = "e1996dc4c99aafff23bc2a69143d5eda4dc7cd143a59914f3ceac825ada24c32"
 dependencies = [
  "crossterm",
  "iocraft",

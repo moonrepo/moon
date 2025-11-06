@@ -109,6 +109,10 @@ impl Launchpad {
         bypass_cache: bool,
         manifest_url: &str,
     ) -> miette::Result<Option<VersionCheck>> {
+        if is_test_env() || proto_core::is_offline() {
+            return Ok(None);
+        }
+
         let mut state = cache_engine
             .state
             .load_state::<CurrentVersionCacheState>("moonVersionCheck.json")?;

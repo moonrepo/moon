@@ -20,8 +20,6 @@ mod task_config;
 mod task_options_config;
 mod template;
 mod template_config;
-#[cfg(feature = "template")]
-mod templates;
 pub mod test_utils;
 mod toolchain;
 mod toolchains_config;
@@ -44,8 +42,6 @@ pub use task_config::*;
 pub use task_options_config::*;
 pub use template::*;
 pub use template_config::*;
-#[cfg(feature = "template")]
-pub use templates::*;
 pub use toolchain::*;
 pub use toolchains_config::*;
 pub use version_spec::{CalVer, SemVer, UnresolvedVersionSpec, VersionSpec};

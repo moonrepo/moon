@@ -15,8 +15,8 @@ pub enum Field<'l> {
     Language(Vec<LanguageType>),
     Project(FieldValues<'l>),
     ProjectAlias(FieldValues<'l>),
+    ProjectId(FieldValues<'l>),
     ProjectLayer(Vec<LayerType>),
-    ProjectName(FieldValues<'l>),
     ProjectSource(FieldValues<'l>),
     ProjectStack(Vec<StackType>),
     Tag(FieldValues<'l>),
@@ -133,7 +133,7 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     "projectLayer" => {
                         Field::ProjectLayer(build_criteria_enum::<LayerType>(&field, &op, value)?)
                     }
-                    "projectName" => Field::ProjectName(value),
+                    "projectId" => Field::ProjectId(value),
                     "projectSource" => Field::ProjectSource(value),
                     "projectStack" => {
                         Field::ProjectStack(build_criteria_enum::<StackType>(&field, &op, value)?)

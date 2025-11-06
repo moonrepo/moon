@@ -19,7 +19,7 @@ pub struct MigrateV2Args {
     yes: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
     let skip_prompts = args.yes;
 

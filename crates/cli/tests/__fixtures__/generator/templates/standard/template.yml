@@ -1,0 +1,4 @@
+$schema: 'https://moonrepo.dev/schemas/template.json'
+
+title: 'Template title'
+description: 'Some description of the template and its files.'

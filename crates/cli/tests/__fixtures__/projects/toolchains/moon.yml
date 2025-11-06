@@ -1,0 +1,9 @@
+language: unknown
+
+tasks:
+  system:
+    command: noop
+    toolchain: system
+  node:
+    command: node --version
+    toolchain: node

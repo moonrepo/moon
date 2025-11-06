@@ -1,34 +1,27 @@
 use crate::session::MoonSession;
 use clap::Args;
-use iocraft::prelude::element;
+use iocraft::prelude::{Size, element};
 use miette::IntoDiagnostic;
-use moon_codegen::CodeGenerator;
 use moon_console::ui::{
-    Container, Entry, List, ListItem, Notice, Section, Style, StyledText, Variant,
+    Container, Notice, Style, StyledText, Table, TableCol, TableHeader, TableRow, Variant,
 };
 use starbase::AppResult;
 use starbase_utils::json;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct TemplatesArgs {
-    #[arg(long, help = "Filter the templates based on this pattern")]
+    #[arg(long, help = "Filter templates based on this pattern")]
     filter: Option<String>,
 
     #[arg(long, help = "Print in JSON format")]
     json: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
-    let mut generator = CodeGenerator::new(
-        &session.workspace_root,
-        &session.workspace_config.generator,
-        Arc::clone(&session.moon_env),
-    );
-
+    let mut generator = session.build_code_generator();
     generator.load_templates().await?;
 
     if args.json {
@@ -44,7 +37,7 @@ pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {
-                    StyledText(content: "No templates located. Configure them with the <property>generator.templates</property> setting.")
+                    StyledText(content: format!("No templates located. Configure them with the <property>generator.templates</property> setting."))
                 }
             }
         })?;
@@ -63,7 +56,7 @@ pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
             session.console.render(element! {
                 Container {
                     Notice(variant: Variant::Caution) {
-                        StyledText(content: "There are no templates that match the filter <shell>{filter}</shell>")
+                        StyledText(content: format!("There are no templates that match the filter <shell>{filter}</shell>"))
                     }
                 }
             })?;
@@ -72,115 +65,75 @@ pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
         }
     }
 
+    let id_width = templates
+        .iter()
+        .fold(0, |acc, (id, _)| acc.max(id.as_str().len()));
+
+    let title_width = templates
+        .iter()
+        .fold(0, |acc, (_, template)| acc.max(template.config.title.len()));
+
+    let vars_count = templates.iter().fold(0, |acc, (_, template)| {
+        acc.max(template.config.variables.len())
+    });
+
     session.console.render(element! {
         Container {
-            #(templates.iter().map(|(id, template)| {
-                let mut variables = template.config.variables.keys().collect::<Vec<_>>();
-                variables.sort();
+            Table(
+                headers: vec![
+                    TableHeader::new("Template", Size::Length((id_width + 5) as u32)),
+                    TableHeader::new("Title", Size::Length((title_width + 5) as u32)),
+                    TableHeader::new("Location", Size::Length(40)).hide_below(130),
+                    TableHeader::new("Variables", Size::Length((vars_count * 2).clamp(10, 40) as u32)),
+                    TableHeader::new("Description", Size::Auto).hide_below(100),
+                ]
+            ) {
+                #(templates.into_iter().enumerate().map(|(i, (id, template))| {
+                    let mut variables = template.config.variables.keys().collect::<Vec<_>>();
+                    variables.sort();
 
-                element! {
-                    Section(title: id.to_string()) {
-                        Entry(
-                            name: "Title",
-                            value: element! {
+                    element! {
+                        TableRow(row: i as i32) {
+                            TableCol(col: 0) {
+                                StyledText(
+                                    content: id.to_string(),
+                                    style: Style::Id
+                                )
+                            }
+                            TableCol(col: 1) {
                                 StyledText(
                                     content: &template.config.title,
                                     style: Style::Label
                                 )
-                            }.into_any()
-                        )
-                        Entry(
-                            name: "Description",
-                            value: element! {
+                            }
+                            TableCol(col: 2) {
                                 StyledText(
-                                    content: &template.config.description,
-                                    style: Style::MutedLight,
-                                )
-                            }.into_any()
-                        )
-                        Entry(
-                            name: "Source location",
-                            value: element! {
-                                StyledText(
-                                    content: template.root.to_string_lossy(),
+                                    content: match template.root.strip_prefix(&session.workspace_root) {
+                                        Ok(root) => root.to_string_lossy(),
+                                        Err(_) => template.root.to_string_lossy(),
+                                    },
                                     style: Style::Path
                                 )
-                            }.into_any()
-                        )
-                        #(template.config.destination.as_ref().map(|dest| {
-                            element! {
-                                Entry(
-                                    name: "Computed destination",
-                                    value: element! {
-                                        StyledText(
-                                            content: dest,
-                                            style: Style::File
-                                        )
-                                    }.into_any()
+                            }
+                            TableCol(col: 3) {
+                                StyledText(
+                                    content: variables
+                                        .iter()
+                                        .map(|var| format!("<property>{var}</property>"))
+                                        .collect::<Vec<_>>()
+                                        .join(", "),
+                                    style: Style::Muted
                                 )
                             }
-                        }))
-                        #(if template.config.extends.is_empty() {
-                            None
-                        } else {
-                            Some(element! {
-                                Entry(
-                                    name: "Extends from",
-                                    value: element! {
-                                        StyledText(
-                                            content: template
-                                                .config
-                                                .extends
-                                                .to_list()
-                                                .iter()
-                                                .map(|ef| format!("<id>{ef}</id>"))
-                                                .collect::<Vec<_>>()
-                                                .join(", "),
-                                        )
-                                    }.into_any()
+                            TableCol(col: 4) {
+                                StyledText(
+                                    content: &template.config.description,
                                 )
-                            })
-                        })
-                        #(if variables.is_empty() {
-                            None
-                        } else if variables.len() > 5 {
-                            Some(element! {
-                                Entry(
-                                    name: "Supported variables",
-                                ) {
-                                    List {
-                                        #(variables.into_iter().map(|var| {
-                                            element! {
-                                                ListItem {
-                                                    StyledText(
-                                                        content: var,
-                                                        style: Style::Property
-                                                    )
-                                                }
-                                            }
-                                        }))
-                                    }
-                                }
-                            })
-                        } else {
-                            Some(element! {
-                                Entry(
-                                    name: "Supported variables",
-                                    value: element! {
-                                        StyledText(
-                                            content: variables
-                                                .into_iter()
-                                                .map(|var| format!("<property>{var}</property>"))
-                                                .collect::<Vec<_>>()
-                                                .join(", "),
-                                        )
-                                    }.into_any()
-                                )
-                            })
-                        })
+                            }
+                        }
                     }
-                }
-            }))
+                }))
+            }
         }
     })?;
 

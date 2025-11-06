@@ -1,107 +1,113 @@
+mod utils;
+
 use httpmock::prelude::*;
 use moon_config::PartialNotifierConfig;
-use moon_test_utils::{Sandbox, create_sandbox_with_config, get_node_fixture_configs};
+use moon_test_utils2::MoonSandbox;
+use utils::create_tasks_sandbox;
 
-fn sandbox(uri: String) -> Sandbox {
-    let (mut workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
-
-    workspace_config.notifier = Some(PartialNotifierConfig {
-        terminal_notifications: None,
-        webhook_url: Some(format!("{uri}/webhook")),
-        webhook_acknowledge: Some(false),
-    });
-
-    let sandbox = create_sandbox_with_config(
-        "node",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
+fn create_webhooks_sandbox(url: String) -> MoonSandbox {
+    let sandbox = create_tasks_sandbox();
     sandbox.enable_git();
+    sandbox.update_workspace_config(|config| {
+        config.notifier = Some(PartialNotifierConfig {
+            terminal_notifications: None,
+            webhook_url: Some(url),
+            webhook_acknowledge: Some(false),
+        });
+    });
     sandbox
 }
 
-#[tokio::test]
-async fn sends_webhooks() {
-    let server = MockServer::start();
+mod run_webhooks {
+    use super::*;
 
-    let mock = server.mock(|when, then| {
-        when.method(POST).path("/webhook");
-        then.status(200);
-    });
+    #[tokio::test]
+    async fn sends_webhooks() {
+        let server = MockServer::start_async().await;
 
-    let sandbox = sandbox(server.url(""));
+        let mock = server.mock(|when, then| {
+            when.method(POST).path("/webhook");
+            then.status(200).body("{}");
+        });
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("node:cjs");
-    });
+        let sandbox = create_webhooks_sandbox(server.url("/webhook"));
 
-    mock.assert_calls(36);
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("run").arg("node:base");
+            })
+            .success();
 
-    assert.success();
-}
+        mock.assert_calls_async(20).await;
+    }
 
-#[tokio::test]
-async fn sends_webhooks_for_cache_events() {
-    let server = MockServer::start();
+    #[tokio::test]
+    async fn sends_webhooks_for_cache_events() {
+        let server = MockServer::start_async().await;
 
-    let mock = server.mock(|when, then| {
-        when.method(POST).path("/webhook");
-        then.status(200);
-    });
+        let mock = server.mock(|when, then| {
+            when.method(POST).path("/webhook");
+            then.status(200);
+        });
 
-    let sandbox = sandbox(server.url(""));
+        let sandbox = create_webhooks_sandbox(server.url("/webhook"));
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("node:cjs");
-    });
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("run").arg("node:base");
+            })
+            .success();
 
-    // Run again to hit the cache
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("node:cjs");
-    });
+        // Run again to hit the cache
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("run").arg("node:base");
+            })
+            .success();
 
-    mock.assert_calls(72);
+        mock.assert_calls_async(40).await;
+    }
 
-    assert.success();
-}
+    #[tokio::test]
+    async fn doesnt_send_webhooks_if_first_fails() {
+        let server = MockServer::start_async().await;
 
-#[tokio::test]
-async fn doesnt_send_webhooks_if_first_fails() {
-    let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST).path("/webhook");
+            then.status(500);
+        });
 
-    let mock = server.mock(|when, then| {
-        when.method(POST).path("/webhook");
-        then.status(500);
-    });
+        let sandbox = create_webhooks_sandbox(server.url("/webhook"));
 
-    let sandbox = sandbox(server.url(""));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("run").arg("node:base");
+            })
+            .success();
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("node:cjs");
-    });
+        mock.assert_calls_async(1).await;
+    }
 
-    mock.assert_calls(1);
-}
+    #[tokio::test]
+    async fn all_webhooks_have_same_uuid() {
+        let server = MockServer::start_async().await;
 
-#[tokio::test]
-async fn all_webhooks_have_same_uuid() {
-    let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST)
+                .path("/webhook")
+                .json_body_includes(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
 
-    let mock = server.mock(|when, then| {
-        when.method(POST)
-            .path("/webhook")
-            .json_body_includes(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
+            then.status(200);
+        });
 
-        then.status(200);
-    });
+        let sandbox = create_webhooks_sandbox(server.url("/webhook"));
 
-    let sandbox = sandbox(server.url(""));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("run").arg("node:base");
+            })
+            .success();
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("node:cjs");
-    });
-
-    mock.assert_calls(36);
+        mock.assert_calls_async(20).await;
+    }
 }

@@ -12,7 +12,6 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ExtensionPluginConfig {
         /// Location of the WASM plugin to use.
-        #[setting(required)]
         pub plugin: Option<PluginLocator>,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
@@ -36,10 +35,7 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ExtensionsConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/extensions.json",
-            rename = "$schema"
-        )]
+        #[setting(default = "./cache/schemas/extensions.json", rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many extensions configuration files.
@@ -82,9 +78,7 @@ impl ExtensionsConfig {
     }
 
     pub fn inherit_default_plugins(&mut self) {
-        for id in ["download", "migrate-nx", "migrate-turborepo"] {
-            self.plugins.entry(Id::raw(id)).or_default();
-        }
+        // N/A
     }
 
     pub fn inherit_test_plugins(&mut self) -> miette::Result<()> {
@@ -93,6 +87,12 @@ impl ExtensionsConfig {
         }
 
         Ok(())
+    }
+
+    pub fn inherit_test_builtin_plugins(&mut self) {
+        for id in ["download", "migrate-nx", "migrate-turborepo"] {
+            self.plugins.entry(Id::raw(id)).or_default();
+        }
     }
 
     pub fn inherit_plugin_locators(&mut self) -> miette::Result<()> {
@@ -118,7 +118,7 @@ impl ExtensionsConfig {
                 }
                 other => {
                     return Err(ConfigError::Validator {
-                        location: ".moon/extensions.yml".into(),
+                        location: ".moon/extensions.*".into(),
                         error: Box::new(ValidatorError {
                             errors: vec![ValidateError {
                                 message:

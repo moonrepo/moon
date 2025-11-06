@@ -11,7 +11,7 @@ use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporte
 use moon_console::{Console, ConsoleError};
 use moon_workspace::WorkspaceBuilderContext;
 use serde::Serialize;
-use starbase_utils::{fs, json, yaml};
+use starbase_utils::{fs, json, toml, yaml};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -30,14 +30,14 @@ pub fn serialize_config_based_on_extension(
             true,
         )
         .into_diagnostic()?,
-        // Some("toml") => toml::format(
-        //     &toml::TomlTable::from_iter([(
-        //         plugin_id.to_string(),
-        //         toml::TomlValue::try_from(config).into_diagnostic()?,
-        //     )]),
-        //     true,
-        // )
-        // .into_diagnostic()?,
+        Some("toml") => toml::format(
+            &toml::TomlTable::from_iter([(
+                plugin_id.to_string(),
+                toml::TomlValue::try_from(config).into_diagnostic()?,
+            )]),
+            true,
+        )
+        .into_diagnostic()?,
         Some("yml" | "yaml") => yaml::format(&yaml::YamlMapping::from_iter([(
             yaml::YamlValue::String(plugin_id.to_string()),
             yaml::serde_yaml::to_value(config).into_diagnostic()?,

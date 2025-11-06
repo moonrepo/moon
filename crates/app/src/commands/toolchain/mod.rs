@@ -5,10 +5,7 @@ use clap::Subcommand;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum ToolchainCommands {
-    #[command(
-        name = "add",
-        about = "Add and configure a toolchain plugin in `.moon/toolchains.*`."
-    )]
+    #[command(name = "add", about = "Add and configure a toolchain plugin.")]
     Add(add::ToolchainAddArgs),
 
     #[command(

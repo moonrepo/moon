@@ -480,11 +480,12 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SetupToolchainInput,
     {
-        self.call_func_all(
+        self.call_func_all_with_check(
             "setup_toolchain",
             self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.setup_toolchain(input, || Ok(())).await },
+            true,
         )
         .await
     }
@@ -529,11 +530,12 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
     {
-        self.call_func_all(
+        self.call_func_all_with_check(
             "teardown_toolchain",
             self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
+            true,
         )
         .await
     }

@@ -1,0 +1,21 @@
+---
+source: crates/cli/tests/templates_test.rs
+expression: assert.output()
+---
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│Template               Title                  Location                                  Variables                                 Description       │
+│────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│vars                   Variable testing       templates/vars                            array, arrayNotEmpty, arrayReq,           A template for    │
+│                                                                                        arrayReqNotEmpty, boolFalse, boolTrue,    testing all       │
+│                                                                                        enum, enumNotEmpty, internal, multenum,   variable config   │
+│                                                                                        multenumNotEmpty, noPrompt, number,       combinations.     │
+│                                                                                        numberNotEmpty, numberReq,                                  │
+│                                                                                        numberReqNotEmpty, object,                                  │
+│                                                                                        objectNotEmpty, objectReq,                                  │
+│                                                                                        objectReqNotEmpty, string,                                  │
+│                                                                                        stringNotEmpty, stringReq,                                  │
+│                                                                                        stringReqNotEmpty                                           │
+│vars-collections       Variable testing       templates/vars-collections                array, object                             A template for    │
+│                                                                                                                                  testing collection│
+│                                                                                                                                  variables.        │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

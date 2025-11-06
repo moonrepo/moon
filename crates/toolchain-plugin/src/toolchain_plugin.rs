@@ -568,9 +568,11 @@ impl ToolchainPlugin {
             tool.teardown(&spec).await?;
         }
 
-        self.plugin
-            .call_func_without_output("teardown_toolchain", input)
-            .await?;
+        if self.plugin.has_func("teardown_toolchain").await {
+            self.plugin
+                .call_func_without_output("teardown_toolchain", input)
+                .await?;
+        }
 
         Ok(())
     }

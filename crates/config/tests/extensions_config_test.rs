@@ -29,7 +29,7 @@ mod extensions_config {
     //     }
 
     #[test]
-    #[should_panic(expected = "test-id.plugin: this setting is required")]
+    #[should_panic(expected = "test-id.plugin: a locator is required for plugins")]
     fn errors_missing_locator() {
         test_load_config(
             FILENAME,

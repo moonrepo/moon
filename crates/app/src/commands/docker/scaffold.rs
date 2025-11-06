@@ -386,7 +386,7 @@ fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
     Ok(())
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> AppResult {
     check_docker_ignore(&session.workspace_root)?;
 

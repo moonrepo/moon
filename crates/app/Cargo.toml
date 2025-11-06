@@ -62,7 +62,11 @@ proto_core = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
-schematic = { workspace = true, features = ["config"] }
+schematic = { workspace = true, features = [
+    "config",
+    "schema",
+    "renderer_template",
+] }
 semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }

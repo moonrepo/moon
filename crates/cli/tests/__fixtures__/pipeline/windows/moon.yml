@@ -1,0 +1,191 @@
+language: powershell
+
+tasks:
+  ls:
+    command: Get-ChildItem
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  echo:
+    command: Write-Output
+    args: 'hello'
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  standard:
+    command: pwsh
+    args: ./standard.ps1
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  exitNonZero:
+    command: pwsh
+    args: ./exitNonZero.ps1
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  exitZero:
+    command: pwsh
+    args: ./exitZero.ps1
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  passthroughArgs:
+    command: pwsh
+    args: ./args.ps1
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  envVars:
+    command: pwsh
+    args: ./envVars.ps1
+    env:
+      TEST_FOO: abc
+      TEST_BAR: '123'
+      TEST_BAZ: 'true'
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  envVarsMoon:
+    command: pwsh
+    args: ./envVarsMoon.ps1
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  runFromProject:
+    command: pwsh
+    args: ./cwd.ps1
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  runFromWorkspace:
+    command: pwsh
+    args: ./windows/cwd.ps1
+    options:
+      windowsShell: pwsh
+      runFromWorkspaceRoot: true
+    inputs:
+      - '*.ps1'
+
+  retryCount:
+    command: pwsh
+    args: ./exitNonZero.ps1
+    options:
+      windowsShell: pwsh
+      retryCount: 3
+    inputs:
+      - '*.ps1'
+
+  outputs:
+    command: pwsh ./outputs.ps1
+    options:
+      windowsShell: pwsh
+    outputs:
+      - 'file.txt'
+      - 'folder'
+    inputs:
+      - '*.ps1'
+
+  affectedFiles:
+    command: pwsh ./affectedFiles.ps1
+    options:
+      windowsShell: pwsh
+      affectedFiles: true
+      affectedPassInputs: true
+
+  affectedFilesArgs:
+    command: pwsh ./affectedFiles.ps1
+    options:
+      windowsShell: pwsh
+      affectedFiles: 'args'
+
+  affectedFilesEnvVar:
+    command: pwsh ./affectedFiles.ps1
+    options:
+      windowsShell: pwsh
+      affectedFiles: 'env'
+
+  multiAmpersand:
+    command: 'mkdir foo && mkdir bar'
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  multiSemicolon:
+    command: 'mkdir foo; mkdir bar'
+    options:
+      windowsShell: pwsh
+    inputs:
+      - '*.ps1'
+
+  syntaxVar:
+    command:
+      'Write-Output $env:VAR_NAME "in $env:VAR_NAME quotes" prefixed-$env:VAR_NAME
+      "$env:VAR_NAME-suffixed"'
+    env:
+      VAR_NAME: substituted-value
+    options:
+      windowsShell: pwsh
+      shell: true
+    inputs:
+      - '*.ps1'
+
+  syntaxExpansion:
+    script: 'Write-Output $env:VAR_NAME.Substring(2,2)'
+    env:
+      VAR_NAME: abcdef
+    options:
+      windowsShell: pwsh
+      shell: true
+    inputs:
+      - '*.ps1'
+
+  syntaxSubstitution:
+    script: 'Write-Output $(Write-Output "subparens")'
+    options:
+      windowsShell: pwsh
+      shell: true
+    inputs:
+      - '*.ps1'
+
+  noShell:
+    command: pwsh -c "echo 'hello'"
+    options:
+      windowsShell: pwsh
+      shell: false
+    inputs:
+      - '*.ps1'
+
+  outFoo:
+    command: Write-Output 'foo'
+    options:
+      windowsShell: pwsh
+
+  outBar:
+    command: Write-Output 'bar'
+    options:
+      windowsShell: pwsh
+
+  outBaz:
+    command: Write-Output 'baz'
+    options:
+      windowsShell: pwsh

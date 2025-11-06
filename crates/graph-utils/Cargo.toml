@@ -5,6 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

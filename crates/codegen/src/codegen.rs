@@ -3,13 +3,13 @@ use crate::template::Template;
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{PathExt, RelativePathBuf};
-use moon_config::{ConfigFinder, GeneratorConfig, TemplateLocator, load_template_config_template};
+use moon_config::{ConfigFinder, GeneratorConfig, PartialTemplateConfig, TemplateLocator};
 use moon_env::MoonEnvironment;
 use moon_process::{Command, Output};
 use moon_time::now_millis;
 use rustc_hash::FxHashMap;
 use starbase_archive::Archiver;
-use starbase_utils::{fs, glob, net};
+use starbase_utils::{fs, glob, net, yaml};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn;
@@ -117,17 +117,24 @@ impl<'app> CodeGenerator<'app> {
             .workspace_root
             .join(".moon/cache/schemas/template.json");
 
-        let template = load_template_config_template().replace(
-            "{{ schema_path }}",
-            schema_path
-                .relative_to(&template_root)
-                .into_diagnostic()?
-                .as_ref(),
-        );
+        let template = PartialTemplateConfig {
+            schema: Some(
+                schema_path
+                    .relative_to(&template_root)
+                    .into_diagnostic()?
+                    .to_string(),
+            ),
+            title: Some("Title".into()),
+            description: Some("Description of the template.".into()),
+            variables: Some(Default::default()),
+            ..Default::default()
+        };
 
-        fs::write_file(
-            &ConfigFinder::default().get_template_files(&template_root)[0],
-            template,
+        yaml::write_file(
+            ConfigFinder::default()
+                .get_template_files(&template_root)
+                .remove(0),
+            &template,
         )?;
 
         Template::new(id, template_root)

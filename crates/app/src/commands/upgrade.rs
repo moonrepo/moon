@@ -1,5 +1,5 @@
 use crate::app_error::AppError;
-use crate::components::create_progress_loader;
+use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
 use bytes::Buf;
 use iocraft::prelude::element;
@@ -19,14 +19,13 @@ use std::{
 use tracing::{debug, instrument};
 
 pub fn is_musl() -> bool {
-    let Ok(output) = std::process::Command::new("ldd").arg("--version").output() else {
-        return false;
-    };
-
-    String::from_utf8(output.stdout).is_ok_and(|out| out.contains("musl"))
+    match std::process::Command::new("ldd").arg("--version").output() {
+        Ok(output) => String::from_utf8(output.stdout).is_ok_and(|out| out.contains("musl")),
+        Err(_) => false,
+    }
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn upgrade(session: MoonSession) -> AppResult {
     if proto_core::is_offline() {
         return Err(AppError::UpgradeRequiresInternet.into());

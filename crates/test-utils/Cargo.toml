@@ -30,6 +30,7 @@ moon_workspace_graph = { path = "../workspace-graph" }
 extism = { workspace = true }
 proto_core = { workspace = true }
 starbase_sandbox = { workspace = true }
+starbase_utils = { workspace = true, features = ["yaml"] }
 
 [lints]
 workspace = true

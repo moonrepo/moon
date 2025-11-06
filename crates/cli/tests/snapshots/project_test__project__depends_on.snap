@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────────────────────────────────────────
+
+  Project: dep-foo
+  Source: dep-foo
+  Toolchain: system
+  Language: javascript
+  Stack: unknown
+  Layer: application
+  Depends on:
+    - dep-bar (production)
+    - dep-baz (production)
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags:
+    - react
+  Environment variables: —

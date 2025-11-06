@@ -10,7 +10,7 @@ use tracing::{info, instrument};
 #[derive(Args, Clone, Debug)]
 pub struct McpArgs {}
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn mcp(session: MoonSession, _args: McpArgs) -> AppResult {
     info!("MCP integration is currently unstable");
     info!("Please report any issues to GitHub or Discord");

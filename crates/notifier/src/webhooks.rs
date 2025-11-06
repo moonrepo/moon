@@ -27,7 +27,7 @@ pub struct WebhookPayload<'data, T: Serialize> {
 }
 
 pub async fn notify_webhook(
-    url: String,
+    url: &str,
     body: String,
     require_acknowledge: bool,
 ) -> Result<reqwest::Response, reqwest::Error> {
@@ -95,14 +95,12 @@ impl WebhooksNotifier {
             trace: &self.trace,
         };
         let body = json::format(&payload, false)?;
-        let url = self.url.to_owned();
-        let require_acknowledge = self.require_acknowledge.to_owned();
 
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
         // we will disable subsequent requests from being called.
         if !self.verified {
-            let response = notify_webhook(url, body, require_acknowledge).await;
+            let response = notify_webhook(&self.url, body, self.require_acknowledge).await;
 
             if response.is_err() || !response.unwrap().status().is_success() {
                 self.enabled = false;
@@ -114,11 +112,13 @@ impl WebhooksNotifier {
         }
         // For every other event, we will make the request and ignore the result.
         // We will also avoid awaiting the request to not slow down the overall runner.
-        else if require_acknowledge {
-            let _ = notify_webhook(url.clone(), body, true).await;
+        else if self.require_acknowledge {
+            let _ = notify_webhook(&self.url, body, true).await;
         } else {
+            let url = self.url.to_owned();
+
             self.requests.push(tokio::spawn(async move {
-                let _ = notify_webhook(url, body, false).await;
+                let _ = notify_webhook(&url, body, false).await;
             }));
         }
 

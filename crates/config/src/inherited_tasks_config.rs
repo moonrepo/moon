@@ -15,10 +15,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/tasks
     #[derive(Config)]
     pub struct InheritedTasksConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/tasks.json",
-            rename = "$schema"
-        )]
+        #[setting(default = "./cache/schemas/tasks.json", rename = "$schema")]
         pub schema: String,
 
         /// Extends one or many tasks configuration files.

@@ -51,7 +51,7 @@ pub struct DockerFileArgs {
     template: Option<PathBuf>,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let workspace_docker = &session.workspace_config.docker;

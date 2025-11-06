@@ -9,6 +9,7 @@ use moon_config::{
     PipelineActionSwitch, SemVer, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
     UnresolvedVersionSpec, Version, VersionSpec,
 };
+use moon_graph_utils::*;
 use moon_task::{Target, TargetLocator, Task, TaskFileInput};
 use moon_toolchain::ToolchainSpec;
 use rustc_hash::{FxHashMap, FxHashSet};

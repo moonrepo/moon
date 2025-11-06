@@ -1,5 +1,5 @@
-use crate::components::run_action_pipeline;
-use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files_with_stdin};
+use crate::helpers::run_action_pipeline;
+use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
@@ -49,7 +49,7 @@ pub struct RunArgs {
 
     #[arg(
         short = 'u',
-        long = "updateCache",
+        long,
         help = "Bypass cache and force update any existing items"
     )]
     pub update_cache: bool,
@@ -146,9 +146,9 @@ pub async fn run_target(
     // Always query for a changed files list as it'll be used by many actions
     let changed_files = if vcs.is_enabled() {
         let local = is_local(args);
-        let result = query_changed_files_with_stdin(
+        let result = query_changed_files(
             &vcs,
-            &QueryChangedFilesOptions {
+            QueryChangedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,
                 status: args.status.clone(),
@@ -243,7 +243,7 @@ pub async fn run_target(
             }
         })?;
 
-        return Ok(None);
+        return Ok(Some(1));
     }
 
     // Process all tasks in the graph

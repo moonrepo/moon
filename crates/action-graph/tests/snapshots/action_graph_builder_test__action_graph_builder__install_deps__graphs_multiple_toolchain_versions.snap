@@ -3,15 +3,15 @@ source: crates/action-graph/tests/action_graph_builder_test.rs
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="SyncWorkspace" ]
-    1 [ label="SetupProto(1.2.3)" ]
-    2 [ label="SetupToolchain(tc-tier3:1.2.3)" ]
-    3 [ label="InstallDependencies(tc-tier3)" ]
-    4 [ label="SetupToolchain(tc-tier3:4.5.6)" ]
-    2 -> 0 [ ]
-    2 -> 1 [ ]
-    3 -> 2 [ ]
-    4 -> 0 [ ]
-    4 -> 1 [ ]
-    3 -> 4 [ ]
+    0 [ label="SyncWorkspace"]
+    1 [ label="SetupProto(1.2.3)"]
+    2 [ label="SetupToolchain(tc-tier3:1.2.3)"]
+    3 [ label="InstallDependencies(tc-tier3, bar)"]
+    4 [ label="SetupToolchain(tc-tier3:4.5.6)"]
+    2 -> 0 [ label="required"]
+    2 -> 1 [ label="required"]
+    3 -> 2 [ label="required"]
+    4 -> 0 [ label="required"]
+    4 -> 1 [ label="required"]
+    3 -> 4 [ label="required"]
 }

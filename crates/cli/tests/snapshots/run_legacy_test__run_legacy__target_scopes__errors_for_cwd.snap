@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/run_legacy_test.rs
+expression: assert.output()
+---
+Error: project_graph::missing_from_path
+
+  × No project could be located starting from path fakeDir.

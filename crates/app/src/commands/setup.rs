@@ -1,4 +1,4 @@
-use crate::components::run_action_pipeline;
+use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_action::ActionStatus;
@@ -7,7 +7,7 @@ use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
 
-#[instrument]
+#[instrument(skip(session))]
 pub async fn setup(session: MoonSession) -> AppResult {
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions {
@@ -24,13 +24,16 @@ pub async fn setup(session: MoonSession) -> AppResult {
     // First ensure proto is set up (this will be a dependency for toolchain setups)
     action_graph_builder.setup_proto().await?;
 
+    // Add new toolchain plugin setups
     let mut toolchain_count = 0;
 
-    // Add new toolchain plugin setups
     for toolchain_id in session.toolchains_config.plugins.keys() {
         if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
             action_graph_builder.setup_toolchain(&spec, None).await?;
-            toolchain_count += 1;
+
+            if !spec.is_system() {
+                toolchain_count += 1;
+            }
         }
     }
 
@@ -39,7 +42,7 @@ pub async fn setup(session: MoonSession) -> AppResult {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Info) {
-                    StyledText(content: "No toolchains are configured for setup")
+                    StyledText(content: "Unable to setup, no toolchains are configured!")
                 }
             }
         })?;
@@ -83,10 +86,12 @@ pub async fn setup(session: MoonSession) -> AppResult {
 
     let message = if failed_count > 0 {
         format!(
-            "Setup toolchains completed with {passed_count} success, {skipped_count} skipped, {failed_count} failed"
+            "Setup toolchains with {passed_count} passed, {skipped_count} skipped, and {failed_count} failed"
         )
+    } else if passed_count == 1 {
+        format!("Setup {passed_count} toolchain successfully!")
     } else if passed_count > 0 {
-        format!("Setup {passed_count} toolchain(s) successfully!")
+        format!("Setup {passed_count} toolchains successfully!")
     } else {
         "All toolchains are already up to date!".to_string()
     };

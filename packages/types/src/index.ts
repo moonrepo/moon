@@ -5,6 +5,7 @@ export * from './mcp';
 export * from './pipeline';
 export * from './project';
 export * from './project-config';
+export * from './task';
 export * from './tasks-config';
 export * from './template-config';
 export * from './toolchains-config';

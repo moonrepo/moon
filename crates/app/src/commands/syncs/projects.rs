@@ -1,4 +1,4 @@
-use crate::components::run_action_pipeline;
+use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_action_graph::ActionGraphBuilderOptions;

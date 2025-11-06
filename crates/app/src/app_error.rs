@@ -59,9 +59,13 @@ pub enum AppError {
     #[error("A plugin locator string is required for non-built-in plugins.")]
     PluginLocatorRequired,
 
-    #[diagnostic(code(app::id_required))]
-    #[error("A project ID is required.")]
+    #[diagnostic(code(app::project_id_required))]
+    #[error("A project identifier is required.")]
     ProjectIdRequired,
+
+    #[diagnostic(code(app::template_id_required))]
+    #[error("A template identifier is required.")]
+    TemplateIdRequired,
 
     #[diagnostic(code(app::invalid_version))]
     #[error(
@@ -70,4 +74,10 @@ pub enum AppError {
         .expected.style(Style::Hash)
     )]
     InvalidMoonVersion { actual: String, expected: String },
+
+    #[diagnostic(code(app::tty::required_id))]
+    #[error(
+        "An identifier is required and must be explicitly provided as a positional argument in non-TTY environments."
+    )]
+    RequiredIdNonTTY,
 }

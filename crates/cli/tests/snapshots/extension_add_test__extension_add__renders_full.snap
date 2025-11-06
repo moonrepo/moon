@@ -1,0 +1,5 @@
+---
+source: crates/cli/tests/extension_add_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\".moon\").join(\"extensions.yml\")).unwrap()"
+---
+download: {}

@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_legacy_test.rs
+expression: assert.output()
+---
+▪▪▪▪ npm install
+▪▪▪▪ outputStyles:stream
+       outputStyles:stream | stdout
+▪▪▪▪ outputStyles:stream (100ms)
+▪▪▪▪ outputStyles:streamPrimary (no op)
+
+Tasks: 2 completed
+ Time: 100ms
+
+       outputStyles:stream | stderr

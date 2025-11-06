@@ -6,10 +6,7 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
     #[derive(Config)]
     pub struct TemplateFrontmatterConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/template-frontmatter.json",
-            rename = "$schema"
-        )]
+        #[setting(rename = "$schema")]
         pub schema: String,
 
         /// Force overwrite a file at the destination if there is a conflict.

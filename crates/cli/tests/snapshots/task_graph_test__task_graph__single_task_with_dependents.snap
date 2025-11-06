@@ -1,0 +1,9 @@
+---
+source: crates/cli/tests/task_graph_test.rs
+expression: assert.output()
+---
+digraph {
+    0 [ label="metadata:build"]
+    1 [ label="metadata:test"]
+    1 -> 0 [ label="required"]
+}

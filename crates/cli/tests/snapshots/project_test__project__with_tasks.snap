@@ -1,0 +1,26 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────────────────────────────────────────
+
+  Project: tasks
+  Source: tasks
+  Toolchain: system
+  Language: typescript
+  Stack: unknown
+  Layer: unknown
+  Depends on: —
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags: —
+  Environment variables: —
+
+Tasks ──────────────────────────────────────────────────────
+
+  lint:
+    › eslint --cache --report-unused-disable-directives
+  test:
+    › jest --cache --color

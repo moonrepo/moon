@@ -1,0 +1,15 @@
+$schema: 'https://moonrepo.dev/schemas/template.json'
+
+title: 'Variable testing'
+description: 'A template for testing collection variables.'
+variables:
+  object:
+    type: 'object'
+    default: {}
+    prompt: 'Object, required, with default'
+    required: true
+  array:
+    type: 'array'
+    default: []
+    prompt: 'Array, required, with default'
+    required: true

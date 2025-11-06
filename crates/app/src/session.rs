@@ -1,12 +1,13 @@
 use crate::app::{Cli, Commands};
 use crate::app_error::AppError;
-use crate::components::*;
+use crate::helpers::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
+use moon_codegen::CodeGenerator;
 use moon_common::is_formatted_output;
 use moon_config::{
     ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
@@ -115,6 +116,14 @@ impl MoonSession {
         let workspace_graph = self.get_workspace_graph().await?;
 
         ActionGraphBuilder::new(app_context, workspace_graph, options)
+    }
+
+    pub fn build_code_generator(&self) -> CodeGenerator<'_> {
+        CodeGenerator::new(
+            &self.workspace_root,
+            &self.workspace_config.generator,
+            Arc::clone(&self.moon_env),
+        )
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
@@ -321,8 +330,11 @@ impl AppSession for MoonSession {
         startup::register_feature_flags(&self.workspace_config)?;
 
         // Load singleton components
-        Launchpad::register(self.moon_env.clone())?;
         ProcessRegistry::register(self.workspace_config.pipeline.kill_process_threshold);
+
+        if self.requires_workspace_configured() {
+            Launchpad::register(self.moon_env.clone())?;
+        }
 
         Ok(None)
     }

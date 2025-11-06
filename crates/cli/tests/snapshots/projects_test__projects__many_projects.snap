@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/projects_test.rs
+expression: assert.output()
+---
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│Project            Source             Stack             Layer             Toolchains                                Description                     │
+│────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│advanced           advanced           frontend          application       system                                                                    │
+│basic              basic              unknown           unknown           system                                                                    │
+│dep-bar            dep-bar            unknown           unknown           system                                                                    │
+│dep-baz            dep-baz            unknown           unknown           system                                                                    │
+│dep-foo            dep-foo            unknown           application       system                                                                    │
+│empty-config       empty-config       unknown           unknown           system                                                                    │
+│metadata           metadata           infrastructure    configuration     system                                    Advanced example.               │
+│no-config          no-config          unknown           unknown           system                                                                    │
+│root               .                  unknown           unknown           system                                                                    │
+│tasks              tasks              unknown           unknown           system                                                                    │
+│toolchains         toolchains         unknown           unknown           system                                                                    │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

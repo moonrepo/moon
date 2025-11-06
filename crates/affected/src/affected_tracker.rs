@@ -154,7 +154,7 @@ impl AffectedTracker {
             // If at the root, any file affects it
             self.changed_files
                 .iter()
-                .next()
+                .find(|file| !file.as_str().starts_with('.'))
                 .map(|file| AffectedBy::ChangedFile(file.to_owned()))
         } else {
             self.changed_files

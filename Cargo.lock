@@ -3726,6 +3726,7 @@ dependencies = [
  "httpmock",
  "liblzma",
  "mimalloc",
+ "moon_affected",
  "moon_app",
  "moon_cache",
  "moon_codegen",

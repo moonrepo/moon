@@ -50,7 +50,6 @@ digraph {
     8 -> 7 [ label="required"]
     9 -> 0 [ label="required"]
     10 -> 9 [ label="required"]
-    10 -> 3 [ label="required"]
     11 -> 1 [ label="required"]
     11 -> 3 [ label="required"]
     11 -> 4 [ label="required"]
@@ -82,7 +81,6 @@ digraph {
     22 -> 3 [ label="required"]
     22 -> 10 [ label="required"]
     23 -> 9 [ label="required"]
-    23 -> 3 [ label="required"]
     24 -> 6 [ label="required"]
     24 -> 3 [ label="required"]
     24 -> 8 [ label="required"]
@@ -99,7 +97,6 @@ digraph {
     28 -> 3 [ label="required"]
     28 -> 24 [ label="required"]
     29 -> 9 [ label="required"]
-    29 -> 3 [ label="required"]
     30 -> 6 [ label="required"]
     30 -> 3 [ label="required"]
 }

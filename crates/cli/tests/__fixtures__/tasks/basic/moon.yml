@@ -3,7 +3,10 @@ language: javascript
 tasks:
   build:
     command: do-build
+    toolchain: system
   lint:
     command: do-lint
+    toolchain: system
   test:
     command: do-test
+    toolchain: system

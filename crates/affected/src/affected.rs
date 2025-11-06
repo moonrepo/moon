@@ -169,6 +169,7 @@ pub struct Affected {
     #[serde(skip_serializing_if = "FxHashMap::is_empty")]
     pub projects: FxHashMap<Id, AffectedProjectState>,
 
+    #[serde(skip)]
     pub should_check: bool,
 
     #[serde(skip_serializing_if = "FxHashMap::is_empty")]

@@ -273,16 +273,16 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
         &self.graph
     }
 
-    fn get_node_index(&self, node: &Project) -> NodeIndex {
-        self.metadata.get(&node.id).unwrap().index
-    }
-
     fn get_node_key(&self, node: &Project) -> Id {
         node.id.clone()
     }
 }
 
-impl GraphConnections<Project, DependencyScope, Id> for ProjectGraph {}
+impl GraphConnections<Project, DependencyScope, Id> for ProjectGraph {
+    fn get_node_index(&self, node: &Project) -> NodeIndex {
+        self.metadata.get(&node.id).unwrap().index
+    }
+}
 
 impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
 

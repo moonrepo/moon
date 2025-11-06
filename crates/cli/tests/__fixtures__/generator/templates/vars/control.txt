@@ -1,0 +1,18 @@
+{% if boolTrue %}
+Should show
+{% else %}
+Should NOT show
+{% endif %}
+
+Looping multenum:
+{% for i in multenumNotEmpty %}
+{{loop.index}}. {{i}}
+{% endfor %}
+
+Including partial:
+{% include "partial.txt" %}
+
+Filters:
+{{ stringNotEmpty | upper }}
+{{ numberReqNotEmpty * 2 }}
+{{ enum | length }}

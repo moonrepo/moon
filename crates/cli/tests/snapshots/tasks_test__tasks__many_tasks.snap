@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/tasks_test.rs
+expression: assert.output()
+---
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│Task                    Command      Type        Preset      Toolchains                                Description                                  │
+│────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│advanced:build          vite         build                   system                                                                                 │
+│basic:dev               vite         run         server      system                                                                                 │
+│metadata:build          noop         test                    system                                    Builds the project!                          │
+│metadata:test           noop         test                    system                                    Runs the test runner!                        │
+│tasks:lint              eslint       build                   system                                                                                 │
+│tasks:test              jest         test                    system                                                                                 │
+│toolchains:node         node         test                    system                                                                                 │
+│toolchains:system       noop         test                    system                                                                                 │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

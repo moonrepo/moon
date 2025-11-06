@@ -1,4 +1,5 @@
 use crate::app_error::AppError;
+use crate::components::{ApiList, ConfigSettings};
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
@@ -7,20 +8,19 @@ use moon_config::ToolchainsConfig;
 use moon_console::ui::*;
 use moon_toolchain_plugin::ToolchainPlugin;
 use proto_core::PluginLocator;
-use schematic::SchemaType;
 use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ToolchainInfoArgs {
-    #[arg(help = "ID of the toolchain to inspect")]
+    #[arg(help = "Toolchain ID to inspect")]
     id: Id,
 
     #[arg(help = "Plugin locator string to find and load the toolchain")]
     plugin: Option<PluginLocator>,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
     let Some(locator) = args
         .plugin
@@ -34,6 +34,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
         .await?
         .load_without_config(&args.id, &locator)
         .await?;
+    let metadata = &toolchain.metadata;
 
     let tier1_apis = collect_tier_apis(
         &toolchain,
@@ -88,13 +89,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
     .await;
 
     let config_schema = if toolchain.has_func("define_toolchain_config").await {
-        toolchain
-            .define_toolchain_config()
-            .await
-            .map(|output| match output.schema.ty {
-                SchemaType::Struct(inner) => Some(inner),
-                _ => None,
-            })?
+        Some(toolchain.define_toolchain_config().await?.schema)
     } else {
         None
     };
@@ -102,7 +97,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
     session.console.render(element! {
         Container {
             Section(title: "Toolchain") {
-                #(toolchain.metadata.description.as_ref().map(|description| {
+                #(metadata.description.as_ref().map(|description| {
                     element! {
                         View(margin_bottom: 1) {
                             StyledText(
@@ -121,8 +116,8 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                     }.into_any()
                 )
                 Entry(
-                    name: "Name",
-                    content: toolchain.metadata.name.clone(),
+                    name: "Title",
+                    content: metadata.name.clone(),
                 )
                 #((!is_test_env()).then(|| {
                     element! {
@@ -130,7 +125,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                             name: "Version",
                             value: element! {
                                 StyledText(
-                                    content: toolchain.metadata.plugin_version.to_string(),
+                                    content: metadata.plugin_version.to_string(),
                                     style: Style::Hash
                                 )
                             }.into_any()
@@ -139,66 +134,22 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                 }))
             }
 
-            #(config_schema.map(|schema| {
+            #(config_schema.as_ref().map(|schema| {
                 element! {
                     Section(title: "Configuration") {
-                        Stack(gap: 1) {
-                            #(schema.fields.into_iter().map(|(field, setting)| {
-                                let mut flags = vec![];
-
-                                if setting.deprecated.is_some() {
-                                    flags.push("deprecated");
-                                }
-
-                                if !setting.optional {
-                                    flags.push("required");
-                                }
-
-                                element! {
-                                    Stack {
-                                        View {
-                                            StyledText(
-                                                content: format!(
-                                                    "<property>{}</property><muted>:</muted> {} {}",
-                                                    field,
-                                                    setting.schema,
-                                                    if flags.is_empty() {
-                                                        "".to_string()
-                                                    } else {
-                                                        format!(
-                                                            "<muted>({})</muted>",
-                                                            flags.join(", ")
-                                                        )
-                                                    }
-                                                )
-                                            )
-                                        }
-                                        #(setting.comment.as_ref().map(|comment| {
-                                            element! {
-                                                View {
-                                                    StyledText(
-                                                        content: comment,
-                                                        style: Style::MutedLight
-                                                    )
-                                                }
-                                            }
-                                        }))
-                                    }
-                                }.into_any()
-                            }))
-                        }
+                        ConfigSettings(schema: Some(schema))
                     }
                 }.into_any()
             }))
 
             Section(title: "Tier 1 - Usage detection") {
-                #((!toolchain.metadata.config_file_globs.is_empty()).then(|| {
+                #((!metadata.config_file_globs.is_empty()).then(|| {
                     element! {
                         Entry(
                             name: "Config files",
                             value: element! {
                                 StyledText(
-                                    content: toolchain.metadata.config_file_globs
+                                    content: metadata.config_file_globs
                                         .iter()
                                         .map(|file| format!("<file>{file}</file>"))
                                         .collect::<Vec<_>>()
@@ -209,13 +160,13 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                         )
                     }
                 }))
-                #((!toolchain.metadata.exe_names.is_empty()).then(|| {
+                #((!metadata.exe_names.is_empty()).then(|| {
                     element! {
                         Entry(
                             name: "Executable names",
                             value: element! {
                                 StyledText(
-                                    content: toolchain.metadata.exe_names
+                                    content: metadata.exe_names
                                         .iter()
                                         .map(|exe| format!("<shell>{exe}</shell>"))
                                         .collect::<Vec<_>>()
@@ -226,40 +177,26 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                         )
                     }
                 }))
-                Entry(name: "APIs") {
-                    #(tier1_apis.into_iter().map(|(api, implemented, required)| {
-                        element! {
-                            List {
-                                ListItem(
-                                    bullet: if implemented {
-                                        "🟢"
-                                    } else {
-                                        "⚫️"
-                                    }.to_owned()
-                                ) {
-                                    StyledText(
-                                        content: if required {
-                                            format!("{api} <muted>(required)</muted>")
-                                        } else {
-                                            api
-                                        },
-                                        style: Style::MutedLight
-                                    )
-                                }
-                            }
-                        }
-                    }))
+
+                View(
+                    margin_top: if metadata.config_file_globs.is_empty() && metadata.exe_names.is_empty() {
+                        0
+                    } else {
+                        1
+                    }
+                ) {
+                    ApiList(apis: tier1_apis)
                 }
             }
 
             Section(title: "Tier 2 - Ecosystem integration") {
-                #((!toolchain.metadata.manifest_file_names.is_empty()).then(|| {
+                #((!metadata.manifest_file_names.is_empty()).then(|| {
                     element! {
                         Entry(
                             name: "Manifest files",
                             value: element! {
                                 StyledText(
-                                    content: toolchain.metadata.manifest_file_names
+                                    content: metadata.manifest_file_names
                                         .iter()
                                         .map(|file| format!("<file>{file}</file>"))
                                         .collect::<Vec<_>>()
@@ -270,13 +207,13 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                         )
                     }
                 }))
-                #((!toolchain.metadata.lock_file_names.is_empty()).then(|| {
+                #((!metadata.lock_file_names.is_empty()).then(|| {
                     element! {
                         Entry(
                             name: "Lock files",
                             value: element! {
                                 StyledText(
-                                    content: toolchain.metadata.lock_file_names
+                                    content: metadata.lock_file_names
                                         .iter()
                                         .map(|file| format!("<file>{file}</file>"))
                                         .collect::<Vec<_>>()
@@ -287,7 +224,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                         )
                     }
                 }))
-                #(toolchain.metadata.vendor_dir_name.as_ref().map(|vendor_dir_name| {
+                #(metadata.vendor_dir_name.as_ref().map(|vendor_dir_name| {
                     element! {
                         Entry(
                             name: "Vendor directory",
@@ -300,57 +237,20 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
                         )
                     }
                 }))
-                Entry(name: "APIs") {
-                    #(tier2_apis.into_iter().map(|(api, implemented, required)| {
-                        element! {
-                            List {
-                                ListItem(
-                                    bullet: if implemented {
-                                        "🟢"
-                                    } else {
-                                        "⚫️"
-                                    }.to_owned()
-                                ) {
-                                    StyledText(
-                                        content: if required {
-                                            format!("{api} <muted>(required)</muted>")
-                                        } else {
-                                            api
-                                        },
-                                        style: Style::MutedLight
-                                    )
-                                }
-                            }
-                        }
-                    }))
+
+                View(
+                    margin_top: if metadata.manifest_file_names.is_empty() && metadata.lock_file_names.is_empty() && metadata.vendor_dir_name.is_none() {
+                        0
+                    } else {
+                        1
+                    }
+                ) {
+                    ApiList(apis: tier2_apis)
                 }
             }
 
             Section(title: "Tier 3 - Tool management") {
-                Entry(name: "APIs") {
-                    #(tier3_apis.into_iter().map(|(api, implemented, required)| {
-                        element! {
-                            List {
-                                ListItem(
-                                    bullet: if implemented {
-                                        "🟢"
-                                    } else {
-                                        "⚫️"
-                                    }.to_owned()
-                                ) {
-                                    StyledText(
-                                        content: if required {
-                                            format!("{api} <muted>(required)</muted>")
-                                        } else {
-                                            api
-                                        },
-                                        style: Style::MutedLight
-                                    )
-                                }
-                            }
-                        }
-                    }))
-                }
+                ApiList(apis: tier3_apis)
             }
         }
     })?;

@@ -1,0 +1,6 @@
+language: javascript
+
+tasks:
+  build:
+    command: do-build
+    deps: ['basic:build']

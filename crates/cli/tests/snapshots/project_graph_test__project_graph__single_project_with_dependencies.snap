@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/project_graph_test.rs
+expression: assert.output()
+---
+digraph {
+    0 [ label="dep-baz"]
+    1 [ label="dep-bar"]
+    2 [ label="dep-foo"]
+    2 -> 1 [ label="production"]
+    2 -> 0 [ label="production"]
+}

@@ -99,6 +99,11 @@ jobs:
     env:
       # Windows runs out of disk space
       COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
+      # Temporary until we upgrade starbase
+      GIT_AUTHOR_NAME: "Sandbox"
+      GIT_AUTHOR_EMAIL: "fakeemail@somedomain.dev"
+      GIT_COMMITTER_NAME: "Sandbox"
+      GIT_COMMITTER_EMAIL: "fakeemail@somedomain.dev"
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1

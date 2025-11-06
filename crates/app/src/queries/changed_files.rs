@@ -1,3 +1,4 @@
+use crate::app_options::AffectedOption;
 use miette::IntoDiagnostic;
 use moon_common::is_ci;
 use moon_common::path::{WorkspaceRelativePathBuf, standardize_separators};
@@ -8,9 +9,6 @@ use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::json;
 use std::io::{IsTerminal, Read, stdin};
-// use std::time::Duration;
-// use tokio::io::AsyncReadExt;
-// use tokio::time::timeout;
 use tracing::{debug, trace, warn};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
@@ -19,7 +17,6 @@ pub struct QueryChangedFilesOptions {
     pub base: Option<String>,
     pub default_branch: bool,
     pub head: Option<String>,
-    pub json: bool,
     pub local: bool,
     pub status: Vec<ChangedStatus>,
     pub stdin: bool,
@@ -53,10 +50,22 @@ macro_rules! check_shallow {
     };
 }
 
-/// Query a list of files that have been modified between branches.
 pub async fn query_changed_files(
     vcs: &BoxedVcs,
-    options: &QueryChangedFilesOptions,
+    options: QueryChangedFilesOptions,
+) -> miette::Result<QueryChangedFilesResult> {
+    debug!("Querying for changed files");
+
+    if options.stdin {
+        query_changed_files_with_stdin(vcs, options).await
+    } else {
+        query_changed_files_without_stdin(vcs, options).await
+    }
+}
+
+async fn query_changed_files_without_stdin(
+    vcs: &BoxedVcs,
+    options: QueryChangedFilesOptions,
 ) -> miette::Result<QueryChangedFilesResult> {
     let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
@@ -120,7 +129,7 @@ pub async fn query_changed_files(
             options
                 .status
                 .iter()
-                .map(|f| color::symbol(f.to_string()))
+                .map(|status| color::symbol(status.to_string()))
                 .collect::<Vec<_>>()
                 .join(", ")
         );
@@ -132,45 +141,30 @@ pub async fn query_changed_files(
 
     let changed_files: FxHashSet<WorkspaceRelativePathBuf> = changed_files
         .iter()
-        .map(|f| WorkspaceRelativePathBuf::from(standardize_separators(f)))
+        .map(|file| WorkspaceRelativePathBuf::from(standardize_separators(file)))
         .collect();
 
     debug!(
-        files = ?changed_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
+        files = ?changed_files.iter().map(|file| file.as_str()).collect::<Vec<_>>(),
         "Found changed files",
     );
 
     Ok(QueryChangedFilesResult {
         files: changed_files,
-        options: options.to_owned(),
+        options,
         shallow: false,
     })
 }
 
-pub async fn query_changed_files_with_stdin(
+async fn query_changed_files_with_stdin(
     vcs: &BoxedVcs,
-    options: &QueryChangedFilesOptions,
+    options: QueryChangedFilesOptions,
 ) -> miette::Result<QueryChangedFilesResult> {
-    debug!("Querying for changed files");
-
-    if !options.stdin {
-        return query_changed_files(vcs, options).await;
-    }
-
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,
     // otherwise the process will hang indefinitely waiting for EOF.
     if !stdin().is_terminal() {
-        // if let Ok(read_result) = timeout(
-        //     Duration::from_secs(10),
-        //     tokio::io::stdin().read_to_string(&mut buffer),
-        // )
-        // .await
-        // {
-        //     read_result.into_diagnostic()?;
-        // }
-
         stdin().read_to_string(&mut buffer).into_diagnostic()?;
     }
 
@@ -198,23 +192,37 @@ pub async fn query_changed_files_with_stdin(
         }
     }
 
-    query_changed_files(vcs, options).await
+    query_changed_files_without_stdin(vcs, options).await
 }
 
-pub async fn load_changed_files(
+pub async fn query_changed_files_for_affected(
     vcs: &BoxedVcs,
+    by: Option<&AffectedOption>,
 ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
     let ci = is_ci();
+    let mut options = QueryChangedFilesOptions {
+        default_branch: ci,
+        local: !ci,
+        stdin: true,
+        ..Default::default()
+    };
 
-    query_changed_files_with_stdin(
-        vcs,
-        &QueryChangedFilesOptions {
-            default_branch: ci,
-            local: !ci,
-            stdin: true,
-            ..QueryChangedFilesOptions::default()
-        },
-    )
-    .await
-    .map(|result| result.files)
+    if let Some(by) = by {
+        let local = by.is_local();
+
+        if options.base.is_none() {
+            options.base = by.get_base();
+        }
+
+        if options.head.is_none() {
+            options.head = by.get_head();
+        }
+
+        options.default_branch = !local;
+        options.local = local;
+    }
+
+    query_changed_files(vcs, options)
+        .await
+        .map(|result| result.files)
 }

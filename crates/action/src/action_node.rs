@@ -4,6 +4,7 @@ use moon_target::Target;
 use moon_toolchain::{ToolchainSpec, VersionSpec};
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::Serialize;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
@@ -239,6 +240,12 @@ impl ActionNode {
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),
         }
+    }
+}
+
+impl fmt::Display for ActionNode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label())
     }
 }
 

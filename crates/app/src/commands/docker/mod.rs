@@ -10,18 +10,17 @@ pub use scaffold::*;
 pub use setup::*;
 
 use clap::Subcommand;
-use moon_common::Id;
+use moon_common::{Id, cacheable};
 use rustc_hash::FxHashSet;
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DockerCommands {
-    #[command(name = "file", about = "Generate a default Dockerfile for a project.")]
+    #[command(name = "file", about = "Generate a Dockerfile for a project.")]
     File(DockerFileArgs),
 
     #[command(
         name = "prune",
-        about = "Remove extraneous files and folders within a Dockerfile."
+        about = "Remove extraneous dependencies within a Dockerfile."
     )]
     Prune,
 
@@ -38,11 +37,12 @@ pub enum DockerCommands {
     Setup,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DockerManifest {
-    pub focused_projects: FxHashSet<Id>,
-    pub unfocused_projects: FxHashSet<Id>,
-}
+cacheable!(
+    #[derive(Debug)]
+    pub struct DockerManifest {
+        pub focused_projects: FxHashSet<Id>,
+        pub unfocused_projects: FxHashSet<Id>,
+    }
+);
 
 pub const MANIFEST_NAME: &str = "dockerManifest.json";

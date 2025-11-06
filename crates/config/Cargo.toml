@@ -45,7 +45,7 @@ proto_core = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
-moon_config = { path = ".", features = ["proto", "template", "tracing"] }
+moon_config = { path = ".", features = ["proto", "tracing"] }
 httpmock = "0.8.0"
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
@@ -54,7 +54,6 @@ starbase_sandbox = { workspace = true }
 default = []
 loader = ["schematic/url"]
 proto = ["loader", "tracing", "dep:proto_core"]
-template = []
 tracing = ["dep:tracing"]
 
 [lints]

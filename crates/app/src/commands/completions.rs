@@ -14,7 +14,7 @@ pub struct CompletionsArgs {
     shell: Option<ShellType>,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn completions(session: MoonSession, args: CompletionsArgs) -> AppResult {
     let shell = match args.shell {
         Some(value) => value,

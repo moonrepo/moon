@@ -1,0 +1,34 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+Advanced ───────────────────────────────────────────────────
+
+  Advanced example.
+
+  Channel: #infra
+  Owner: @infra
+  Maintainers: @user1, @user2
+
+About ──────────────────────────────────────────────────────
+
+  Project: metadata
+  Source: metadata
+  Toolchain: system
+  Language: unknown
+  Stack: infrastructure
+  Layer: configuration
+  Depends on: —
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags: —
+  Environment variables: —
+
+Tasks ──────────────────────────────────────────────────────
+
+  build:
+    › noop
+  test:
+    › noop

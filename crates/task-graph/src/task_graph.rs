@@ -185,16 +185,16 @@ impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
         &self.graph
     }
 
-    fn get_node_index(&self, node: &Task) -> NodeIndex {
-        self.metadata.get(&node.target).unwrap().index
-    }
-
     fn get_node_key(&self, node: &Task) -> Target {
         node.target.clone()
     }
 }
 
-impl GraphConnections<Task, TaskDependencyType, Target> for TaskGraph {}
+impl GraphConnections<Task, TaskDependencyType, Target> for TaskGraph {
+    fn get_node_index(&self, node: &Task) -> NodeIndex {
+        self.metadata.get(&node.target).unwrap().index
+    }
+}
 
 impl GraphConversions<Task, TaskDependencyType, Target> for TaskGraph {}
 

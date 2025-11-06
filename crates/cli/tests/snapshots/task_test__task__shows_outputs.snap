@@ -1,0 +1,27 @@
+---
+source: crates/cli/tests/task_test.rs
+expression: assert.output_standardized()
+---
+About ──────────────────────────────────────────────────────
+
+  Target: tasks:lint
+  Project: tasks
+  Task: lint
+  Toolchain: system
+  Type: build
+  Depends on: —
+
+Process ────────────────────────────────────────────────────
+
+  Command: eslint --cache --report-unused-disable-directives
+  Environment variables: —
+  Runs dependencies: Parallel
+  Runs in CI: Yes
+
+Configuration ──────────────────────────────────────────────
+
+  Inputs:
+    - .moon/*.{pkl,yml}
+    - tasks/**/*
+  Outputs:
+    - tasks/cache

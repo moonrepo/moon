@@ -15,6 +15,7 @@ moon_affected = { path = "../affected" }
 moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_graph_utils = { path = "../graph-utils" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }

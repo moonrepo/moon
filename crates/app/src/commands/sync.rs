@@ -1,40 +1,11 @@
-use super::syncs::codeowners::SyncCodeownersArgs;
-use super::syncs::config_schemas::SyncConfigSchemasArgs;
-use super::syncs::hooks::SyncHooksArgs;
-use crate::components::run_action_pipeline;
+use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
-use clap::Subcommand;
 use iocraft::prelude::element;
 use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 
-#[derive(Clone, Debug, Subcommand)]
-pub enum SyncCommands {
-    #[command(
-        name = "codeowners",
-        about = "Aggregate and sync code owners to a `CODEOWNERS` file."
-    )]
-    Codeowners(SyncCodeownersArgs),
-
-    #[command(
-        name = "config-schemas",
-        about = "Generate and sync configuration JSON schemas for use within editors."
-    )]
-    ConfigSchemas(SyncConfigSchemasArgs),
-
-    #[command(
-        name = "hooks",
-        about = "Generate and sync hook scripts for the workspace configured VCS."
-    )]
-    Hooks(SyncHooksArgs),
-
-    #[command(
-        name = "projects",
-        about = "Sync all projects and configs in the workspace."
-    )]
-    Projects,
-}
+pub use crate::commands::syncs::SyncCommands;
 
 pub async fn sync(session: MoonSession) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;

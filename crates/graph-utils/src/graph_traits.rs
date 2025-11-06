@@ -6,7 +6,6 @@ use std::hash::Hash;
 
 pub trait GraphData<N, E, K> {
     fn get_graph(&self) -> &DiGraph<N, E>;
-    fn get_node_index(&self, node: &N) -> NodeIndex;
     fn get_node_key(&self, node: &N) -> K;
 }
 
@@ -66,6 +65,8 @@ fn traverse_deep<N, E, K: Hash + Eq, G: GraphConnections<N, E, K> + ?Sized>(
 }
 
 pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
+    fn get_node_index(&self, node: &N) -> NodeIndex;
+
     /// Return a list of direct node keys that the provided node depends on.
     fn dependencies_of(&self, node: &N) -> Vec<K> {
         let graph = self.get_graph();

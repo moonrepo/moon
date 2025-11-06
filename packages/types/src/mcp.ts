@@ -1,5 +1,6 @@
 import type { Action } from './pipeline';
-import type { Project, Task } from './project';
+import type { Project } from './project';
+import type { Task } from './task';
 
 export interface GetProjectTool {
 	id: string;

@@ -127,7 +127,7 @@ tasks:
       - '*.ps1'
 
   syntaxExpansion:
-    script: 'echo ${VAR_NAME:2:2}'
+    script: 'Write-Output $env:VAR_NAME.Substring(2,2)'
     env:
       VAR_NAME: abcdef
     options:
@@ -136,14 +136,7 @@ tasks:
       - '*.ps1'
 
   syntaxSubstitution:
-    script: 'echo $(echo subparens)'
-    options:
-      shell: true
-    inputs:
-      - '*.ps1'
-
-  syntaxSubstitutionTick:
-    script: 'echo `echo subtick`'
+    script: 'Write-Output $(Write-Output "subparens")'
     options:
       shell: true
     inputs:

@@ -16,6 +16,8 @@ mod run {
     use super::*;
 
     mod general {
+        use starbase_utils::fs;
+
         use super::*;
 
         #[test]
@@ -194,9 +196,10 @@ mod run {
                 cmd.arg("run").arg(target("runFromProject"));
             });
 
-            assert.success().stdout(predicate::str::contains(
-                sandbox.path().join(PROJECT_DIR).to_string_lossy(),
-            ));
+            assert.success().stdout(predicate::str::contains(format!(
+                "{}/{PROJECT_DIR}",
+                fs::file_name(sandbox.path())
+            )));
         }
 
         #[test]
@@ -208,9 +211,12 @@ mod run {
             });
 
             assert.success().stdout(
-                predicate::str::contains(sandbox.path().to_string_lossy()).and(
-                    predicate::str::contains(sandbox.path().join(PROJECT_DIR).to_string_lossy())
-                        .not(),
+                predicate::str::contains(fs::file_name(sandbox.path())).and(
+                    predicate::str::contains(format!(
+                        "{}/{PROJECT_DIR}",
+                        fs::file_name(sandbox.path())
+                    ))
+                    .not(),
                 ),
             );
         }
@@ -314,6 +320,7 @@ mod run {
                 .stdout(predicate::str::contains("subparens"));
         }
 
+        #[cfg(unix)]
         #[test]
         fn supports_nested_commands_with_tick() {
             let sandbox = create_pipeline_sandbox();

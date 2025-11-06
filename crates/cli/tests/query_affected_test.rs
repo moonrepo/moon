@@ -4,7 +4,7 @@ use moon_affected::{Affected, AffectedProjectState, AffectedTaskState};
 use moon_task::Target;
 use rustc_hash::FxHashSet;
 use starbase_utils::json::serde_json;
-use utils::create_query_sandbox;
+use utils::{change_files, create_query_sandbox};
 
 mod query_affected {
     use super::*;
@@ -24,7 +24,8 @@ mod query_affected {
     #[test]
     fn includes_project_for_file() {
         let sandbox = create_query_sandbox();
-        sandbox.create_file("basic/file.txt", "");
+
+        change_files(&sandbox, ["basic/file.txt"]);
 
         let assert = sandbox.run_bin(|cmd| {
             cmd.arg("query").arg("affected");
@@ -58,7 +59,7 @@ mod query_affected {
         assert!(!affected.tasks.contains_key(&target));
 
         // Run again with file
-        sandbox.create_file("tasks/tests/file.txt", "");
+        change_files(&sandbox, ["tasks/tests/file.txt"]);
 
         let assert = sandbox.run_bin(|cmd| {
             cmd.arg("query").arg("affected");

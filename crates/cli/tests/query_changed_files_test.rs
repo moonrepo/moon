@@ -3,7 +3,7 @@ mod utils;
 use moon_app::queries::changed_files::QueryChangedFilesResult;
 use moon_vcs::ChangedStatus;
 use starbase_utils::json::serde_json;
-use utils::{change_branch, create_query_sandbox};
+use utils::{change_branch, change_files, create_query_sandbox};
 
 mod query_changed_files {
     use super::*;
@@ -11,7 +11,8 @@ mod query_changed_files {
     #[test]
     fn returns_files() {
         let sandbox = create_query_sandbox();
-        sandbox.create_file("basic/file.txt", "");
+
+        change_files(&sandbox, ["basic/file.txt"]);
 
         let assert = sandbox.run_bin(|cmd| {
             cmd.arg("query").arg("changed-files");

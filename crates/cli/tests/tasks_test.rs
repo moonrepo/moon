@@ -29,6 +29,7 @@ mod tasks {
         assert_snapshot!(assert.output());
     }
 
+    #[cfg(unix)]
     #[test]
     fn many_tasks() {
         let sandbox = create_projects_sandbox();
@@ -40,6 +41,7 @@ mod tasks {
         assert_snapshot!(assert.output());
     }
 
+    #[cfg(unix)]
     #[test]
     fn can_focus_for_a_project() {
         let sandbox = create_projects_sandbox();

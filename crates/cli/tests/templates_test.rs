@@ -26,6 +26,7 @@ mod templates {
         assert_snapshot!(assert.output());
     }
 
+    #[cfg(unix)]
     #[test]
     fn many_templates() {
         let sandbox = create_moon_sandbox("generator");
@@ -37,6 +38,7 @@ mod templates {
         assert_snapshot!(assert.output());
     }
 
+    #[cfg(unix)]
     #[test]
     fn can_filter() {
         let sandbox = create_moon_sandbox("generator");

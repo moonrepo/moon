@@ -40,7 +40,7 @@ pub fn serialize_config_based_on_extension(
         // .into_diagnostic()?,
         Some("yml" | "yaml") => yaml::format(&yaml::YamlMapping::from_iter([(
             yaml::YamlValue::String(plugin_id.to_string()),
-            yaml::serde_yml::to_value(config).into_diagnostic()?,
+            yaml::serde_yaml::to_value(config).into_diagnostic()?,
         )]))
         .into_diagnostic()?,
         _ => unimplemented!(),

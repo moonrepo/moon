@@ -218,7 +218,7 @@ impl<'task> TaskHasher<'task> {
         }
 
         // Remove outputs first
-        if sources_globset.is_negated(workspace_relative_path.as_str()) {
+        if sources_globset.is_excluded(workspace_relative_path.as_str()) {
             return false;
         }
 
@@ -277,7 +277,7 @@ impl<'task> TaskHasher<'task> {
 
                 if self.hasher_config.warn_on_missing_inputs
                     && (self.hasher_config.ignore_missing_patterns.is_empty()
-                        || !ignore_missing.is_match(abs_path))
+                        || !ignore_missing.is_included(abs_path))
                 {
                     warn!(
                         "Attempted to hash input {} but it does not exist, skipping",
@@ -297,7 +297,7 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if ignore.is_match(abs_path) {
+            if ignore.is_included(abs_path) {
                 trace!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),

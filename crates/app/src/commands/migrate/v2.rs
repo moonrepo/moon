@@ -65,7 +65,7 @@ fn load_config_file(config_path: &Path) -> miette::Result<YamlValue> {
         .replace("$projectType", "$projectLayer")
         .replace("$taskPlatform", "$taskToolchain");
 
-    let data: YamlValue = yaml::serde_yml::from_str(&content).into_diagnostic()?;
+    let data: YamlValue = yaml::serde_yaml::from_str(&content).into_diagnostic()?;
 
     Ok(data)
 }

@@ -11,32 +11,32 @@ cached = "0.56.0"
 chrono = { version = "0.4.42", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.46", default-features = false, features = [
+clap = { version = "4.5.51", default-features = false, features = [
     "derive",
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.57"
+clap_complete = "4.5.60"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
 convert_case = "0.8.0"
 dirs = "6.0.0"
 futures = "0.3.31"
-indexmap = "2.11.4"
-iocraft = "0.7.13"
+indexmap = "2.12.0"
+iocraft = "0.7.14"
 md5 = "0.8.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"
-petgraph = { version = "0.8.2", default-features = false, features = [
+petgraph = { version = "0.8.3", default-features = false, features = [
     "serde-1",
 ] }
 relative-path = { version = "2.0.1" }
-regex = { version = "1.11.2", default-features = false, features = [
+regex = { version = "1.12.2", default-features = false, features = [
     "std",
     "perf",
 ] }
-reqwest = { version = "0.12.23", default-features = false, features = [
+reqwest = { version = "0.12.24", default-features = false, features = [
     "rustls-tls-native-roots",
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",
@@ -50,7 +50,6 @@ serial_test = "3.2.0"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-serde_yml = "0.0.12"
 sha2 = "0.10.9"
 starbase = { version = "0.10.7" }
 starbase_archive = { version = "0.12.0", default-features = false, features = [
@@ -68,9 +67,9 @@ starbase_utils = { version = "0.12.0", default-features = false, features = [
     "glob-cache",
     "miette",
 ] }
-tera = { version = "1.20.0", features = ["preserve_order"] }
-thiserror = "2.0.16"
-tokio = { version = "1.47.1", default-features = false, features = [
+tera = { version = "1.20.1", features = ["preserve_order"] }
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", default-features = false, features = [
     "macros",
     "process",
     "rt-multi-thread",
@@ -80,7 +79,7 @@ tokio = { version = "1.47.1", default-features = false, features = [
     "time",
     "tracing",
 ] }
-tokio-util = "0.7.16"
+tokio-util = "0.7.17"
 typescript_tsconfig_json = { version = "0.5.0", features = ["serialize"] }
 tracing = "0.1.41"
 url = "2.5.7"

@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 chrono = { workspace = true }
-humantime = "2.1.0"
+humantime = "2.3.0"
 
 [lints]
 workspace = true

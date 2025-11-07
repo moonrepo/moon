@@ -4,7 +4,7 @@ use assert_cmd::Command;
 pub use assert_fs::TempDir;
 use assert_fs::prelude::*;
 use moon_config::{PartialInheritedTasksConfig, PartialToolchainsConfig, PartialWorkspaceConfig};
-use starbase_utils::glob;
+use starbase_utils::{glob, yaml::serde_yaml};
 use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
@@ -138,16 +138,16 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
 
     sandbox.create_file(
         ".moon/workspace.yml",
-        serde_yml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
+        serde_yaml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
     );
 
     sandbox.create_file(
         ".moon/toolchains.yml",
-        serde_yml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
+        serde_yaml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
     );
 
     if let Some(config) = tasks_config {
-        sandbox.create_file(".moon/tasks.yml", serde_yml::to_string(&config).unwrap());
+        sandbox.create_file(".moon/tasks.yml", serde_yaml::to_string(&config).unwrap());
     }
 
     sandbox

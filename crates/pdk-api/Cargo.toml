@@ -13,7 +13,7 @@ moon_common = { version = "0.2.0", path = "../common" }
 moon_config = { version = "0.2.0", path = "../config" }
 moon_project = { version = "0.2.0", path = "../project" }
 moon_task = { version = "0.2.0", path = "../task" }
-derive_setters = "0.1.7"
+derive_setters = "0.1.8"
 proto_pdk_api = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["schema_serde"] }

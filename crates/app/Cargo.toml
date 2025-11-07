@@ -53,7 +53,7 @@ clap = { workspace = true, features = [
     "wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_complete_nushell = "4.5.8"
+clap_complete_nushell = "4.5.10"
 convert_case = { workspace = true }
 diff = "0.1.13"
 iocraft = { workspace = true }
@@ -72,7 +72,12 @@ serde = { workspace = true }
 starbase = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
-starbase_utils = { workspace = true, features = ["editor-config"] }
+starbase_utils = { workspace = true, features = [
+    "editor-config",
+    "json",
+    "toml",
+    "yaml",
+] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

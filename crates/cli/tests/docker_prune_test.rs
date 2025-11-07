@@ -13,13 +13,11 @@ mod docker_prune {
 
         fs::copy_dir_all(
             sandbox.path().join(".moon/docker/configs"),
-            sandbox.path().join(".moon/docker/configs"),
             sandbox.path().join("work"),
         )
         .unwrap();
 
         fs::copy_dir_all(
-            sandbox.path().join(".moon/docker/sources"),
             sandbox.path().join(".moon/docker/sources"),
             sandbox.path().join("work"),
         )

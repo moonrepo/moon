@@ -128,7 +128,7 @@ mod project_graph {
             let root = sandbox.path().join("dir");
 
             // Move files so that we can infer a compatible root project name
-            fs::copy_dir_all(sandbox.path(), sandbox.path(), &root).unwrap();
+            fs::copy_dir_all(sandbox.path(), &root).unwrap();
 
             let graph = create_workspace_mocker(&root)
                 .update_workspace_config(|config| {

@@ -5,7 +5,7 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/toolchain.json",
+      "default": "./cache/schemas/toolchains.json",
       "type": "string"
     },
     "extends": {

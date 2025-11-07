@@ -100,6 +100,66 @@ export interface TaskDependencyConfig {
 
 export type TaskDependency = string | TaskDependencyConfig;
 
+/** The layer within the technology stack, for categorizing. */
+export type LayerType =
+	| 'application'
+	| 'automation'
+	| 'configuration'
+	| 'library'
+	| 'scaffolding'
+	| 'tool'
+	| 'unknown';
+
+/** The technology stack of the project, for categorizing. */
+export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
+
+/**
+ * A condition that utilizes a combination of logical operators
+ * to match against.
+ */
+export interface InheritedClauseConfig {
+	/** Require all values to match, using an AND operator. */
+	and: Id | Id[] | null;
+	/** Require no values to match, using a NOT operator. */
+	not: Id | Id[] | null;
+	/** Require any values to match, using an OR operator. */
+	or: Id | Id[] | null;
+}
+
+export type InheritedConditionConfig = InheritedClauseConfig | Id[] | Id;
+
+/**
+ * Configures conditions that must match against a project for tasks
+ * to be inherited. If multiple conditions are defined, then all must match
+ * for inheritance to occur. If no conditions are defined, then tasks will
+ * be inherited by all projects.
+ */
+export interface InheritedByConfig {
+	/**
+	 * Condition that matches against literal files within a project.
+	 * If multiple values are provided, at least 1 file needs to exist.
+	 */
+	files: string | string[] | null;
+	/**
+	 * Condition that matches against a project's `layer`.
+	 * If multiple values are provided, it matches using an OR operator.
+	 *
+	 * @default 'unknown'
+	 */
+	layers: LayerType | LayerType[] | null;
+	/**
+	 * Condition that matches against a project's `stack`.
+	 * If multiple values are provided, it matches using an OR operator.
+	 *
+	 * @default 'unknown'
+	 */
+	stacks: StackType | StackType[] | null;
+	/** Condition that matches against a tag within the project. */
+	tags: InheritedConditionConfig | null;
+	/** Condition that matches against a toolchain detected for a project. */
+	toolchains: InheritedConditionConfig | null;
+}
+
 export type TaskOptionEnvFile = boolean | string | string[];
 
 /** The strategy in which to merge a specific task option. */
@@ -418,7 +478,7 @@ export interface TaskConfig {
  * Docs: https://moonrepo.dev/docs/config/tasks
  */
 export interface InheritedTasksConfig {
-	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
+	/** @default './cache/schemas/tasks.json' */
 	$schema?: string;
 	/**
 	 * Extends one or many tasks configuration files.
@@ -441,6 +501,11 @@ export interface InheritedTasksConfig {
 	 * task that inherits this configuration.
 	 */
 	implicitInputs: Input[];
+	/**
+	 * A map of conditions that define which projects will inherit these
+	 * tasks and configuration. If not defined, will be inherited by all projects.
+	 */
+	inheritedBy: InheritedByConfig | null;
 	/**
 	 * Default task options for all inherited tasks.
 	 * @since 1.20.0
@@ -471,6 +536,19 @@ export interface PartialTaskDependencyConfig {
 }
 
 export type PartialTaskDependency = string | PartialTaskDependencyConfig;
+
+/**
+ * A condition that utilizes a combination of logical operators
+ * to match against.
+ */
+export interface PartialInheritedClauseConfig {
+	/** Require all values to match, using an AND operator. */
+	and?: Id | Id[] | null;
+	/** Require no values to match, using a NOT operator. */
+	not?: Id | Id[] | null;
+	/** Require any values to match, using an OR operator. */
+	or?: Id | Id[] | null;
+}
 
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
@@ -728,7 +806,7 @@ export interface PartialTaskConfig {
  * Docs: https://moonrepo.dev/docs/config/tasks
  */
 export interface PartialInheritedTasksConfig {
-	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
+	/** @default './cache/schemas/tasks.json' */
 	$schema?: string | null;
 	/**
 	 * Extends one or many tasks configuration files.
@@ -751,6 +829,11 @@ export interface PartialInheritedTasksConfig {
 	 * task that inherits this configuration.
 	 */
 	implicitInputs?: Input[] | null;
+	/**
+	 * A map of conditions that define which projects will inherit these
+	 * tasks and configuration. If not defined, will be inherited by all projects.
+	 */
+	inheritedBy?: InheritedByConfig | null;
 	/**
 	 * Default task options for all inherited tasks.
 	 * @since 1.20.0

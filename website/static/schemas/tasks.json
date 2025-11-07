@@ -5,7 +5,7 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/tasks.json",
+      "default": "./cache/schemas/tasks.json",
       "type": "string"
     },
     "extends": {
@@ -51,6 +51,18 @@
         "$ref": "#/definitions/Input"
       },
       "markdownDescription": "Task inputs (`inputs`) that will be automatically injected into every task that inherits this configuration."
+    },
+    "inheritedBy": {
+      "title": "inheritedBy",
+      "description": "A map of conditions that define which projects will inherit these tasks and configuration. If not defined, will be inherited by all projects.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/InheritedByConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "taskOptions": {
       "title": "taskOptions",
@@ -246,6 +258,199 @@
     "Id": {
       "type": "string"
     },
+    "InheritedByConfig": {
+      "description": "Configures conditions that must match against a project for tasks to be inherited. If multiple conditions are defined, then all must match for inheritance to occur. If no conditions are defined, then tasks will be inherited by all projects.",
+      "type": "object",
+      "properties": {
+        "files": {
+          "title": "files",
+          "description": "Condition that matches against literal files within a project. If multiple values are provided, at least 1 file needs to exist.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "layers": {
+          "title": "layers",
+          "description": "Condition that matches against a project's layer. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/LayerType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LayerType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `layer`. If multiple values are provided, it matches using an OR operator."
+        },
+        "stacks": {
+          "title": "stacks",
+          "description": "Condition that matches against a project's stack. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/StackType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/StackType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `stack`. If multiple values are provided, it matches using an OR operator."
+        },
+        "tags": {
+          "title": "tags",
+          "description": "Condition that matches against a tag within the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InheritedConditionConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolchains": {
+          "title": "toolchains",
+          "description": "Condition that matches against a toolchain detected for a project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InheritedConditionConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "InheritedClauseConfig": {
+      "description": "A condition that utilizes a combination of logical operators to match against.",
+      "type": "object",
+      "properties": {
+        "and": {
+          "title": "and",
+          "description": "Require all values to match, using an AND operator.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "not": {
+          "title": "not",
+          "description": "Require no values to match, using a NOT operator.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "or": {
+          "title": "or",
+          "description": "Require any values to match, using an OR operator.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "InheritedConditionConfig": {
+      "description": "Patterns in which a condition can be configured as.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/InheritedClauseConfig"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Id"
+          }
+        },
+        {
+          "$ref": "#/definitions/Id"
+        }
+      ]
+    },
     "Input": {
       "anyOf": [
         {
@@ -263,6 +468,19 @@
         {
           "$ref": "#/definitions/ProjectInput"
         }
+      ]
+    },
+    "LayerType": {
+      "description": "The layer within the technology stack, for categorizing.",
+      "type": "string",
+      "enum": [
+        "application",
+        "automation",
+        "configuration",
+        "library",
+        "scaffolding",
+        "tool",
+        "unknown"
       ]
     },
     "Output": {
@@ -321,6 +539,17 @@
         }
       },
       "additionalProperties": false
+    },
+    "StackType": {
+      "description": "The technology stack of the project, for categorizing.",
+      "type": "string",
+      "enum": [
+        "backend",
+        "frontend",
+        "infrastructure",
+        "systems",
+        "unknown"
+      ]
     },
     "TaskArgs": {
       "description": "Configures a command and its arguments to execute.",

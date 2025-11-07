@@ -195,8 +195,7 @@ export interface ProjectWorkspaceConfig {
  * Docs: https://moonrepo.dev/docs/config/project
  */
 export interface ProjectConfig {
-	/** @default 'https://moonrepo.dev/schemas/project.json' */
-	$schema?: string;
+	$schema: string;
 	/** Other projects that this project depends on. */
 	deps?: ProjectDependsOn[];
 	/** Other projects that this project depends on. */
@@ -407,7 +406,6 @@ export interface PartialProjectWorkspaceConfig {
  * Docs: https://moonrepo.dev/docs/config/project
  */
 export interface PartialProjectConfig {
-	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
 	/** Other projects that this project depends on. */
 	deps?: PartialProjectDependsOn[] | null;

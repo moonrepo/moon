@@ -23,3 +23,9 @@
     `ExtendTaskScriptInput.extension_config`, `SyncProjectInput.extension_config`, and
     `SyncWorkspaceInput.extension_config` fields.
   - Added `RegisterToolchainOutput.language` field.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.54.0](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).
+- Updated Rust to v1.91.0.
+- Updated dependencies.

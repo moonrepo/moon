@@ -36,7 +36,6 @@ schematic = { workspace = true, features = [
 semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yml = { workspace = true }
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 
@@ -46,7 +45,7 @@ tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 moon_config = { path = ".", features = ["proto", "tracing"] }
-httpmock = "0.8.0"
+httpmock = "0.8.2"
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 

@@ -18,7 +18,6 @@ use moon_task::Task;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::sync::Arc;
-use std::time::SystemTime;
 use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
@@ -292,7 +291,7 @@ impl<'task> TaskRunner<'task> {
         if archive_file.exists() && self.task.options.cache.is_local_enabled() {
             // Also check if the archive itself is stale
             if let Some(duration) = cache_lifetime
-                && fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some()
+                && fs::is_stale(&archive_file, false, duration)?
             {
                 debug!(
                     task_target = self.task.target.as_str(),

@@ -48,8 +48,8 @@ impl Condition<'_> {
             Condition::Field { op, .. } => match op {
                 ComparisonOperator::Equal => haystack.contains(&Cow::Borrowed(needle)),
                 ComparisonOperator::NotEqual => !haystack.contains(&Cow::Borrowed(needle)),
-                ComparisonOperator::Like => GlobSet::new(haystack)?.is_match(needle),
-                ComparisonOperator::NotLike => !GlobSet::new(haystack)?.is_match(needle),
+                ComparisonOperator::Like => GlobSet::new(haystack)?.is_included(needle),
+                ComparisonOperator::NotLike => !GlobSet::new(haystack)?.is_included(needle),
             },
             Condition::Criteria { .. } => false,
         })

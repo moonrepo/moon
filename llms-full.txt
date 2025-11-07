@@ -12139,7 +12139,7 @@ export default config;
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-In this guide, you'll learn how to integrate [TypeScript](https://eslint.org/) into moon. We'll be
+In this guide, you'll learn how to integrate [TypeScript](https://www.typescriptlang.org/) into moon. We'll be
 using [project references](../javascript/typescript-project-refs), as it ensures that only affected
 projects are built, and not the entire repository.
 

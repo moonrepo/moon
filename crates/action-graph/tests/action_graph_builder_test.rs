@@ -26,7 +26,7 @@ fn create_task(project: &str, id: &str) -> Task {
 }
 
 fn create_proto_version() -> VersionSpec {
-    VersionSpec::parse("0.53.2").unwrap()
+    VersionSpec::parse("0.54.0").unwrap()
 }
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {

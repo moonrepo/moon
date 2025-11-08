@@ -309,6 +309,18 @@
           ],
           "markdownDescription": "Condition that matches against a project's `layer`. If multiple values are provided, it matches using an OR operator."
         },
+        "order": {
+          "title": "order",
+          "description": "The order in which this configuration is inherited by a project. Lower is inherited first, while higher is last.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "stacks": {
           "title": "stacks",
           "description": "Condition that matches against a project's stack. If multiple values are provided, it matches using an OR operator.",
@@ -362,7 +374,7 @@
       "additionalProperties": false
     },
     "InheritedClauseConfig": {
-      "description": "A condition that utilizes a combination of logical operators to match against.",
+      "description": "A condition that utilizes a combination of logical operators to match against. When matching, all clauses must be satisfied.",
       "type": "object",
       "properties": {
         "and": {

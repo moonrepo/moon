@@ -13,7 +13,7 @@ use std::path::Path;
 
 config_struct!(
     /// A condition that utilizes a combination of logical operators
-    /// to match against.
+    /// to match against. When matching, all clauses must be satisfied.
     #[derive(Config)]
     pub struct InheritedClauseConfig {
         /// Require all values to match, using an AND operator.
@@ -29,6 +29,10 @@ config_struct!(
 
 impl InheritedClauseConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
+        if values.is_empty() || self.not.is_none() && self.and.is_none() && self.or.is_none() {
+            return false;
+        }
+
         if let Some(not) = &self.not
             && not.to_list().iter().any(|value| values.contains(value))
         {
@@ -44,10 +48,6 @@ impl InheritedClauseConfig {
         if let Some(or) = &self.or
             && !or.to_list().iter().any(|value| values.contains(value))
         {
-            return false;
-        }
-
-        if self.not.is_none() && self.and.is_none() && self.or.is_none() {
             return false;
         }
 
@@ -91,6 +91,10 @@ config_struct!(
     /// be inherited by all projects.
     #[derive(Config)]
     pub struct InheritedByConfig {
+        /// The order in which this configuration is inherited by a project.
+        /// Lower is inherited first, while higher is last.
+        pub order: Option<u16>,
+
         /// Condition that matches against literal files within a project.
         /// If multiple values are provided, at least 1 file needs to exist.
         pub files: Option<OneOrMany<FilePath>>,
@@ -112,23 +116,60 @@ config_struct!(
 );
 
 impl InheritedByConfig {
+    pub fn order(&self) -> u16 {
+        if let Some(order) = self.order {
+            return order;
+        }
+
+        // 0 - (files)
+        // 50 - node
+        // 100 - frontend
+        // 150 - library
+        // 150 - node-frontend
+        // 200 - node-library
+        // 250 - frontend-library
+        // 300 - node-frontend-library
+        // 500 - (tags)
+        let mut amount = 0;
+
+        // Toolchains are the lowest level
+        if self.toolchains.is_some() {
+            amount += 50;
+        }
+
+        // Stacks are the middle level
+        if self.stacks.is_some() {
+            amount += 100;
+        }
+
+        // Layers are the highest level
+        if self.layers.is_some() {
+            amount += 150;
+        }
+
+        // Tags are their own level (typically)
+        if self.tags.is_some() {
+            amount += 500;
+        }
+
+        amount
+    }
+
     pub fn matches(
         &self,
         root: &Path,
+        toolchains: &[Id],
         stack: &StackType,
         layer: &LayerType,
-        toolchains: &[Id],
         tags: &[Id],
     ) -> bool {
         if let Some(condition) = &self.stacks
-            && *stack != StackType::Unknown
             && !condition.matches(stack)
         {
             return false;
         }
 
         if let Some(condition) = &self.layers
-            && *layer != LayerType::Unknown
             && !condition.matches(layer)
         {
             return false;

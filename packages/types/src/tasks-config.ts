@@ -115,7 +115,7 @@ export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 
 
 /**
  * A condition that utilizes a combination of logical operators
- * to match against.
+ * to match against. When matching, all clauses must be satisfied.
  */
 export interface InheritedClauseConfig {
 	/** Require all values to match, using an AND operator. */
@@ -147,6 +147,11 @@ export interface InheritedByConfig {
 	 * @default 'unknown'
 	 */
 	layers: LayerType | LayerType[] | null;
+	/**
+	 * The order in which this configuration is inherited by a project.
+	 * Lower is inherited first, while higher is last.
+	 */
+	order: number | null;
 	/**
 	 * Condition that matches against a project's `stack`.
 	 * If multiple values are provided, it matches using an OR operator.
@@ -539,7 +544,7 @@ export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 
 /**
  * A condition that utilizes a combination of logical operators
- * to match against.
+ * to match against. When matching, all clauses must be satisfied.
  */
 export interface PartialInheritedClauseConfig {
 	/** Require all values to match, using an AND operator. */

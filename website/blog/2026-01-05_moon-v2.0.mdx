@@ -160,6 +160,36 @@ if it exists.
 
 ### Inheritance via configuration
 
+Our task inheritance system is quite powerful, and one of moon's most compelling features. However,
+it can be rather restrictive as inheritance is based entirely on file naming conventions. To provide
+more flexibility, we've reworked task inheritance to be configuration based, by introducing a new
+`inheritedBy` setting for all `.moon/tasks/**/*` files.
+
+For example, if you had a tasks file named `.moon/tasks/node-frontend-library.yml`, it would now be
+configured like so:
+
+```yaml title=".moon/tasks/node-frontend-library.yml"
+inheritedBy:
+  toolchains: 'node'
+  stacks: 'frontend'
+  layers: 'library'
+```
+
+This new system is very powerful, as you can now mix-and-match different criteria to control how
+tasks are inherited.
+
+```yaml
+inheritedBy:
+  # Project belongs to either javascript or typescript toolchain, but not the ruby toolchain
+  toolchains:
+    or: ['javascript', 'typescript']
+    not: ['ruby']
+  # And project is either a frontend or backend stack
+  stacks: ['frontend', 'backend']
+  # And project is either a library or tool layer
+  layers: ['library', 'tool']
+```
+
 ### Toolchain merging
 
 A task can now be associated with multiple toolchains (javascript, node, npm), unlike the previous

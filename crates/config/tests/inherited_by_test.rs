@@ -379,8 +379,7 @@ mod inherited_by {
             ..Default::default()
         };
 
-        // matches because empty arrays are skipped
-        assert!(config.matches(
+        assert!(!config.matches(
             Path::new(""),
             &[],
             &StackType::Unknown,
@@ -420,8 +419,7 @@ mod inherited_by {
             ..Default::default()
         };
 
-        // matches because empty arrays are skipped
-        assert!(config.matches(
+        assert!(!config.matches(
             Path::new(""),
             &[],
             &StackType::Unknown,

@@ -485,24 +485,19 @@ implicitInputs:
 mod task_manager {
     use super::*;
 
-    fn stub_task(command: &str, toolchains: Vec<Id>) -> TaskConfig {
+    fn stub_task(command: &str, toolchain: Option<Id>) -> TaskConfig {
         let mut global_inputs = vec![];
 
-        if command != "global" {
-            // No .moon prefix since the fixture is contrived
-            global_inputs.push(Input::File(stub_file_input(format!(
-                "/tasks/{command}.yml"
-            ))));
-        }
+        // No .moon prefix since the fixture is contrived
+        global_inputs.push(Input::File(stub_file_input(format!(
+            "/tasks/{}.yml",
+            if command == "global" { "all" } else { command }
+        ))));
 
         TaskConfig {
             command: TaskArgs::String(command.replace("tag-", "")),
             global_inputs,
-            toolchains: if toolchains.is_empty() {
-                None
-            } else {
-                Some(OneOrMany::Many(toolchains))
-            },
+            toolchains: toolchain.map(OneOrMany::One),
             ..TaskConfig::default()
         }
     }
@@ -583,21 +578,15 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("node"),
-                        stub_task("node", vec![Id::raw("node"), Id::raw("javascript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("node"), stub_task("node", Some(Id::raw("node")))),
                     (
                         Id::raw("node-application"),
-                        stub_task(
-                            "node-application",
-                            vec![Id::raw("node"), Id::raw("javascript")]
-                        )
+                        stub_task("node-application", Some(Id::raw("node")))
                     ),
                     (
                         Id::raw("javascript"),
-                        stub_task("javascript", vec![Id::raw("node"), Id::raw("javascript")])
+                        stub_task("javascript", Some(Id::raw("javascript")))
                     ),
                 ]),
             );
@@ -606,8 +595,8 @@ mod task_manager {
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks/all.yml",
-                    "tasks/javascript.yml",
                     "tasks/node.yml",
+                    "tasks/javascript.yml",
                     "tasks/node-application.yml",
                 ]
             );
@@ -631,10 +620,10 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
+                    (Id::raw("global"), stub_task("global", None)),
                     (
                         Id::raw("python"),
-                        stub_task("python", vec![Id::raw("python")])
+                        stub_task("python", Some(Id::raw("python")))
                     ),
                 ]),
             );
@@ -663,14 +652,11 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("bun"),
-                        stub_task("bun", vec![Id::raw("bun"), Id::raw("javascript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("bun"), stub_task("bun", Some(Id::raw("bun")))),
                     (
                         Id::raw("javascript"),
-                        stub_task("javascript", vec![Id::raw("bun"), Id::raw("javascript")])
+                        stub_task("javascript", Some(Id::raw("javascript")))
                     ),
                 ]),
             );
@@ -699,14 +685,11 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("node"),
-                        stub_task("node", vec![Id::raw("node"), Id::raw("typescript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("node"), stub_task("node", Some(Id::raw("node")))),
                     (
                         Id::raw("typescript"),
-                        stub_task("typescript", vec![Id::raw("node"), Id::raw("typescript")])
+                        stub_task("typescript", Some(Id::raw("typescript")))
                     ),
                 ]),
             );
@@ -735,8 +718,8 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (Id::raw("rust"), stub_task("rust", vec![Id::raw("rust")])),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("rust"), stub_task("rust", Some(Id::raw("rust")))),
                 ]),
             );
 
@@ -764,22 +747,13 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("node"),
-                        stub_task("node", vec![Id::raw("node"), Id::raw("typescript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("node"), stub_task("node", Some(Id::raw("node")))),
                     (
                         Id::raw("typescript"),
-                        stub_task("typescript", vec![Id::raw("node"), Id::raw("typescript")])
+                        stub_task("typescript", Some(Id::raw("typescript")))
                     ),
-                    (
-                        Id::raw("tag"),
-                        stub_task(
-                            "tag-kebab-case",
-                            vec![Id::raw("node"), Id::raw("typescript")]
-                        )
-                    ),
+                    (Id::raw("tag"), stub_task("tag-kebab-case", None)),
                 ]),
             );
 
@@ -813,10 +787,10 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
+                    (Id::raw("global"), stub_task("global", None)),
                     (
                         Id::raw("kotlin"),
-                        stub_task("kotlin", vec![Id::raw("kotlin"), Id::raw("system")])
+                        stub_task("kotlin", Some(Id::raw("kotlin")))
                     ),
                 ]),
             );
@@ -836,7 +810,7 @@ mod task_manager {
             let sandbox = create_sandbox("inheritance/override");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-            let mut task = stub_task("node-library", vec![Id::raw("node"), Id::raw("javascript")]);
+            let mut task = stub_task("node-library", Some(Id::raw("node")));
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager
@@ -860,10 +834,7 @@ mod task_manager {
             let sandbox = create_sandbox("inheritance/override");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-            let mut task = stub_task(
-                "dotnet-application",
-                vec![Id::raw("dotnet"), Id::raw("system")],
-            );
+            let mut task = stub_task("dotnet-application", Some(Id::raw("dotnet")));
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager

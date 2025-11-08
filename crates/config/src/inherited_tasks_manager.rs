@@ -1,6 +1,6 @@
 use crate::inherited_tasks_config::*;
 use crate::project_config::{LayerType, StackType};
-use crate::shapes::Input;
+use crate::shapes::{Input, OneOrMany};
 use miette::IntoDiagnostic;
 use moon_common::path::PathExt;
 use moon_common::{
@@ -61,11 +61,23 @@ impl InheritedTasksManager {
             let mut config = config_entry.config.clone();
 
             if let Some(tasks) = &mut config.tasks {
+                let default_toolchain = config
+                    .inherited_by
+                    .as_ref()
+                    .and_then(|by| by.default_toolchain());
+
                 for (task_id, task) in tasks.iter_mut() {
                     // Automatically set this source as an input
                     task.global_inputs
                         .get_or_insert(vec![])
                         .push(Input::parse(format!("/{source_path}"))?);
+
+                    // Automatically set the toolchain
+                    if task.toolchains.is_none()
+                        && let Some(toolchain) = &default_toolchain
+                    {
+                        task.toolchains = Some(OneOrMany::One(toolchain.to_owned()));
+                    }
 
                     // Keep track of what layers a task inherited
                     task_layers
@@ -116,7 +128,7 @@ impl InheritedTasksManager {
         layer: &LayerType,
         tags: &[Id],
     ) -> Vec<&InheritedTasksEntry> {
-        let mut configs = self
+        let mut entries = self
             .configs
             .iter()
             .filter(|entry| {
@@ -128,13 +140,13 @@ impl InheritedTasksManager {
             })
             .collect::<Vec<_>>();
 
-        configs.sort_by(|a, d| {
+        entries.sort_by(|a, d| {
             let a_order = a.config.inherited_by.as_ref().map_or(0, |by| by.order());
             let d_order = d.config.inherited_by.as_ref().map_or(0, |by| by.order());
 
             a_order.cmp(&d_order)
         });
 
-        configs
+        entries
     }
 }

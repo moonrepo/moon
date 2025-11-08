@@ -118,6 +118,20 @@ config_struct!(
 );
 
 impl PartialInheritedByConfig {
+    pub fn default_toolchain(&self) -> Option<Id> {
+        self.toolchains.as_ref().and_then(|entry| match entry {
+            PartialInheritedConditionConfig::One(id) => Some(id.to_owned()),
+            PartialInheritedConditionConfig::Many(ids) => {
+                if ids.len() == 1 {
+                    Some(ids[0].to_owned())
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
+    }
+
     // 0 - (files)
     // 50 - node
     // 100 - frontend
@@ -178,14 +192,12 @@ impl PartialInheritedByConfig {
         }
 
         if let Some(condition) = &self.tags
-            && !tags.is_empty()
             && !condition.matches(tags)
         {
             return false;
         }
 
         if let Some(condition) = &self.toolchains
-            && !toolchains.is_empty()
             && !condition.matches(toolchains)
         {
             return false;

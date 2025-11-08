@@ -3,6 +3,7 @@
 /* eslint-disable */
 
 import type { ExtendsFrom, Id } from './common';
+import type { LayerType, StackType } from './project-config';
 
 /** The task-to-task relationship of the dependency. */
 export type TaskDependencyType = 'cleanup' | 'required' | 'optional';
@@ -99,19 +100,6 @@ export interface TaskDependencyConfig {
 }
 
 export type TaskDependency = string | TaskDependencyConfig;
-
-/** The layer within the technology stack, for categorizing. */
-export type LayerType =
-	| 'application'
-	| 'automation'
-	| 'configuration'
-	| 'library'
-	| 'scaffolding'
-	| 'tool'
-	| 'unknown';
-
-/** The technology stack of the project, for categorizing. */
-export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
 /**
  * A condition that utilizes a combination of logical operators

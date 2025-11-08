@@ -1,4 +1,3 @@
-use crate::config_finder::ConfigFinder;
 use crate::inherited_tasks_config::*;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{Input, OneOrMany};
@@ -19,7 +18,6 @@ pub struct InheritedTasksEntry {
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
     cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
-    config_finder: ConfigFinder,
 
     pub configs: FxHashMap<String, InheritedTasksEntry>,
 }
@@ -86,14 +84,14 @@ impl InheritedTasksManager {
         path: &Path,
         config: PartialInheritedTasksConfig,
     ) {
-        let valid_names = self.config_finder.get_tasks_file_names();
         let name = path
             .file_name()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
 
-        let name = if valid_names.iter().any(|n| n == name) {
+        // TODO: remove after `inheritedBy` implemented for tests
+        let name = if name == "all.yml" {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yaml") {
             stripped_name

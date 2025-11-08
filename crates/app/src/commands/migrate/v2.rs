@@ -62,6 +62,7 @@ fn warn_pkl_config_files() {
 
 fn load_config_file(config_path: &Path) -> miette::Result<YamlValue> {
     let content = fs::read_file(config_path)?
+        .replace("$projectName", "$projectTitle")
         .replace("$projectType", "$projectLayer")
         .replace("$taskPlatform", "$taskToolchain");
 
@@ -166,6 +167,28 @@ fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
         }
 
         yaml::write_file_with_config(&config_path, &config)?;
+    }
+
+    // Rename the old file to a new one
+    for config_path in glob::walk_files(
+        session.workspace_root.join(CONFIG_DIRNAME),
+        ["tasks.{pkl,yml}"],
+    )? {
+        if config_path.exists() {
+            let ext = config_path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("yml");
+
+            fs::rename(
+                &config_path,
+                config_path
+                    .parent()
+                    .unwrap()
+                    .join("tasks")
+                    .join(format!("all.{ext}")),
+            )?;
+        }
     }
 
     Ok(())

@@ -196,7 +196,7 @@ impl WorkspaceMocker {
         self.inherited_tasks.configs.insert(
             "*".into(),
             InheritedTasksEntry {
-                input: ".moon/tasks.yml".into(),
+                input: ".moon/tasks/all.yml".into(),
                 config: PartialInheritedTasksConfig {
                     tasks: Some(BTreeMap::from_iter([(
                         "global".try_into().unwrap(),

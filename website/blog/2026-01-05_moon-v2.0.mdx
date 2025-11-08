@@ -39,8 +39,11 @@ interactive selection prompt if no value is provided. This makes it easier to ex
 CLI without needing to know specific identifiers ahead of time. The following commands now support
 this:
 
+- `moon check`
+- `moon ci`
 - `moon generate`
 - `moon project`
+- `moon run`
 - `moon task`
 - `moon template`
 
@@ -55,10 +58,33 @@ $ moon project
 │   runtime
 │   types
 │   visualizer
-│   website A static website powered by Docusaurus.
+│   website - A static website.
 │
 │ ⎵ select ⁃ ↕ cycle ⁃ ↵ submit
 ```
+
+## Toolchains
+
+The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
+Toolchains are now powered by WASM plugins, instead of hard-coded in core, allowing for more
+flexibility, extensibility, and the ability for the community to create their own toolchains!
+
+Moving to a plugin based system enables us to support more languages, more features, deeper
+integration, as well as more complex workflows. For example, in the future we can now easily support
+release workflows (changelogs, versioning, publishing) as part of a toolchain.
+
+Just to demonstrate how powerful the plugin system is, it currently supports all the following
+features:
+
+- Extending the project graph with project dependencies and aliases
+- Extending task commands and scripts before they're executed
+- Integrates with our Docker flow for pruning and scaffolding
+- Runs operations during the project/workspace sync processes
+- Locates a root dependencies directory for package manager workspaces
+- Parses manifest and lock files to extract dependencies and metadata
+- Sets up the environment and auto-installs dependencies
+- Hook into the task hashing process
+- Manages downloading and installing tools (via proto)
 
 ## Extensions
 
@@ -116,29 +142,6 @@ APIs ─────────────────────────
   ⚫️ extend_task_script
 ```
 
-## Toolchains
-
-The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
-Toolchains are now powered by WASM plugins, instead of hard-coded in core, allowing for more
-flexibility, extensibility, and the ability for the community to create their own toolchains!
-
-Moving to a plugin based system enables us to support more languages, more features, deeper
-integration, as well as more complex workflows. For example, in the future we can now easily support
-release workflows (changelogs, versioning, publishing) as part of a toolchain.
-
-Just to demonstrate how powerful the plugin system is, it currently supports all the following
-features:
-
-- Extending the project graph with project dependencies and aliases
-- Extending task commands and scripts before they're executed
-- Integrates with our Docker flow for pruning and scaffolding
-- Runs operations during the project/workspace sync processes
-- Locates a root dependencies directory for package manager workspaces
-- Parses manifest and lock files to extract dependencies and metadata
-- Sets up the environment and auto-installs dependencies
-- Hook into the task hashing process
-- Manages downloading and installing tools (via proto)
-
 ## Projects
 
 ### Multiple aliases
@@ -154,6 +157,8 @@ comma-separated list of all aliases. The existing `$projectAlias` token now retu
 if it exists.
 
 ## Tasks
+
+### Inheritance via configuration
 
 ### Toolchain merging
 

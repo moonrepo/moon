@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use utils::*;
 
-const FILENAME: &str = "tasks.yml";
+const FILENAME: &str = "tasks/all.yml";
 
 fn load_config_from_file(path: &Path) -> miette::Result<InheritedTasksConfig> {
     ConfigLoader::default().load_tasks_config_from_path(path)
@@ -153,12 +153,12 @@ tasks:
         fn loads_from_file() {
             let sandbox = create_empty_sandbox();
 
-            sandbox.create_file("shared/tasks.yml", SHARED_TASKS);
+            sandbox.create_file("shared/tasks/all.yml", SHARED_TASKS);
 
             sandbox.create_file(
-                "tasks.yml",
+                "tasks/all.yml",
                 r"
-extends: ./shared/tasks.yml
+extends: ../shared/tasks/all.yml
 
 fileGroups:
   sources:
@@ -168,7 +168,7 @@ fileGroups:
 ",
             );
 
-            let config = test_config(sandbox.path().join("tasks.yml"), |path| {
+            let config = test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 load_config_from_file(path)
             });
 
@@ -206,7 +206,7 @@ fileGroups:
             let url = server.url("/config.yml");
 
             sandbox.create_file(
-                "tasks.yml",
+                "tasks/all.yml",
                 format!(
                     r"
 extends: '{url}'
@@ -220,7 +220,7 @@ fileGroups:
                 ),
             );
 
-            let config = test_config(sandbox.path().join("tasks.yml"), |path| {
+            let config = test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 load_config_from_file(path)
             });
 
@@ -258,11 +258,11 @@ fileGroups:
             let temp_dir = sandbox.path().join(".moon/cache/temp");
             let url = server.url("/config.yml");
 
-            sandbox.create_file("tasks.yml", format!(r"extends: '{url}'"));
+            sandbox.create_file("tasks/all.yml", format!(r"extends: '{url}'"));
 
             assert!(!temp_dir.exists());
 
-            test_config(sandbox.path().join("tasks.yml"), |path| {
+            test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 // Use load_partial instead of load since this caches!
                 let partial = ConfigLoader::default()
                     .load_tasks_partial_config_from_path(sandbox.path(), path)
@@ -562,7 +562,7 @@ mod task_manager {
         assert_eq!(
             inputs,
             vec![
-                "tasks.yml",
+                "tasks/all.yml",
                 "tasks/dotnet/dotnet-application.yml",
                 "tasks/dotnet/dotnet.yml",
                 "tasks/node/node-library.yml",
@@ -810,7 +810,7 @@ mod task_manager {
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    "tasks.yml",
+                    "tasks/all.yml",
                     "tasks/javascript.yml",
                     "tasks/node.yml",
                     "tasks/node-application.yml",
@@ -845,7 +845,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/python.yml"]
+                vec!["tasks/all.yml", "tasks/python.yml"]
             );
         }
 
@@ -880,7 +880,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/javascript.yml", "tasks/bun.yml"]
+                vec!["tasks/all.yml", "tasks/javascript.yml", "tasks/bun.yml"]
             );
         }
 
@@ -915,7 +915,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/typescript.yml", "tasks/node.yml"]
+                vec!["tasks/all.yml", "tasks/typescript.yml", "tasks/node.yml"]
             );
         }
 
@@ -943,7 +943,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/rust.yml"]
+                vec!["tasks/all.yml", "tasks/rust.yml"]
             );
         }
 
@@ -986,7 +986,7 @@ mod task_manager {
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    "tasks.yml",
+                    "tasks/all.yml",
                     "tasks/typescript.yml",
                     "tasks/node.yml",
                     "tasks/tag-normal.yml",
@@ -1022,7 +1022,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/kotlin.yml"]
+                vec!["tasks/all.yml", "tasks/kotlin.yml"]
             );
         }
     }

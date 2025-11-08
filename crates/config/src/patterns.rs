@@ -21,11 +21,11 @@ pattern!(TOKEN_FUNC, "@([a-z]+)\\(([0-9A-Za-z_-]+)\\)");
 pattern!(TOKEN_FUNC_DISTINCT, "^@([a-z]+)\\(([0-9A-Za-z_-]+)\\)$");
 pattern!(
     TOKEN_VAR,
-    "\\$(arch|language|osFamily|os|projectAlias|projectAliases|projectChannel|projectId|projectLayer|projectOwner|projectRoot|projectSource|projectStack|project|target|taskToolchain|taskToolchains|taskType|task|timestamp|datetime|date|time|vcsBranch|vcsRepository|vcsRevision|workingDir|workspaceRoot)"
+    "\\$(arch|language|osFamily|os|projectAlias|projectAliases|projectChannel|projectId|projectLayer|projectOwner|projectRoot|projectSource|projectStack|project|target|taskId|taskToolchain|taskToolchains|taskType|task|timestamp|datetime|date|time|vcsBranch|vcsRepository|vcsRevision|workingDir|workspaceRoot)"
 );
 pattern!(
     TOKEN_VAR_DISTINCT,
-    "^\\$(arch|language|osFamily|os|projectAlias|projectAliases|projectChannel|projectId|projectLayer|projectOwner|projectRoot|projectSource|projectStack|project|target|taskToolchain|taskToolchains|taskType|task|timestamp|datetime|date|time|vcsBranch|vcsRepository|vcsRevision|workingDir|workspaceRoot)$"
+    "^\\$(arch|language|osFamily|os|projectAlias|projectAliases|projectChannel|projectId|projectLayer|projectOwner|projectRoot|projectSource|projectStack|project|target|taskId|taskToolchain|taskToolchains|taskType|task|timestamp|datetime|date|time|vcsBranch|vcsRepository|vcsRevision|workingDir|workspaceRoot)$"
 );
 
 pub fn merge_iter<I, V, C>(mut prev: I, next: I, _: &C) -> MergeResult<I>

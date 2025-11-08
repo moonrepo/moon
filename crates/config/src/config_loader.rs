@@ -221,15 +221,9 @@ impl ConfigLoader {
         let workspace_root = workspace_root.as_ref();
         let moon_dir = moon_dir.as_ref();
         let mut manager = InheritedTasksManager::default();
-        let mut files = vec![];
-
-        // tasks.*
-        files.extend(self.finder.get_tasks_files(moon_dir));
 
         // tasks/**/*.*
-        files.extend(self.finder.get_scoped_tasks_files(moon_dir)?);
-
-        for file in files {
+        for file in self.finder.get_tasks_files(moon_dir)? {
             if file.exists() {
                 manager.add_config(
                     workspace_root,

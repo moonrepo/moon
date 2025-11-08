@@ -507,34 +507,40 @@ mod task_manager {
         }
     }
 
+    fn get_config_paths(entries: &[InheritedTasksEntry]) -> Vec<String> {
+        let mut list = entries
+            .iter()
+            .map(|entry| entry.input.as_str().to_string())
+            .collect::<Vec<_>>();
+        list.sort();
+        list
+    }
+
     #[test]
     fn loads_all_task_configs_into_manager() {
         let sandbox = create_sandbox("inheritance/files");
         let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-        let mut keys = manager.configs.keys().collect::<Vec<_>>();
-        keys.sort();
-
         assert_eq!(
-            keys,
+            get_config_paths(&manager.configs),
             vec![
-                "*",
-                "bun",
-                "deno",
-                "javascript",
-                "javascript-library",
-                "javascript-tool",
-                "kotlin",
-                "node",
-                "node-application",
-                "node-library",
-                "python",
-                "rust",
-                "tag-camelCase",
-                "tag-dot.case",
-                "tag-kebab-case",
-                "tag-normal",
-                "typescript",
+                "tasks/all.yml",
+                "tasks/bun.yml",
+                "tasks/deno.yml",
+                "tasks/javascript-library.yml",
+                "tasks/javascript-tool.yml",
+                "tasks/javascript.yml",
+                "tasks/kotlin.yml",
+                "tasks/node-application.yml",
+                "tasks/node-library.yml",
+                "tasks/node.yml",
+                "tasks/python.yml",
+                "tasks/rust.yml",
+                "tasks/tag-camelCase.yml",
+                "tasks/tag-dot.case.yml",
+                "tasks/tag-kebab-case.yml",
+                "tasks/tag-normal.yml",
+                "tasks/typescript.yml",
             ]
         );
     }
@@ -544,23 +550,8 @@ mod task_manager {
         let sandbox = create_sandbox("inheritance/nested");
         let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-        let mut keys = manager.configs.keys().collect::<Vec<_>>();
-        keys.sort();
-
         assert_eq!(
-            keys,
-            vec!["*", "dotnet", "dotnet-application", "node", "node-library"]
-        );
-
-        let mut inputs = manager
-            .configs
-            .values()
-            .map(|c| c.input.to_string_lossy().replace('\\', "/"))
-            .collect::<Vec<_>>();
-        inputs.sort();
-
-        assert_eq!(
-            inputs,
+            get_config_paths(&manager.configs),
             vec![
                 "tasks/all.yml",
                 "tasks/dotnet/dotnet-application.yml",
@@ -571,205 +562,8 @@ mod task_manager {
         );
     }
 
-    mod lookup_order {
-        use super::*;
-
-        #[test]
-        fn includes_bash() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("bash"), Id::raw("system")],
-                    &StackType::Backend,
-                    &LayerType::Library,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-library",
-                    "system",
-                    "bash",
-                    "system-backend",
-                    "bash-backend",
-                    "system-library",
-                    "bash-library",
-                    "system-backend-library",
-                    "bash-backend-library"
-                ]
-            );
-        }
-
-        #[test]
-        fn includes_js() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("node"), Id::raw("javascript")],
-                    &StackType::Frontend,
-                    &LayerType::Application,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "frontend",
-                    "frontend-application",
-                    "javascript",
-                    "node",
-                    "javascript-frontend",
-                    "node-frontend",
-                    "javascript-application",
-                    "node-application",
-                    "javascript-frontend-application",
-                    "node-frontend-application",
-                ]
-            );
-        }
-
-        #[test]
-        fn includes_ts() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("node"), Id::raw("typescript")],
-                    &StackType::Frontend,
-                    &LayerType::Library,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "frontend",
-                    "frontend-library",
-                    "typescript",
-                    "node",
-                    "typescript-frontend",
-                    "node-frontend",
-                    "typescript-library",
-                    "node-library",
-                    "typescript-frontend-library",
-                    "node-frontend-library",
-                ]
-            );
-        }
-
-        #[test]
-        fn supports_langs() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("ruby")],
-                    &StackType::Backend,
-                    &LayerType::Tool,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-tool",
-                    "ruby",
-                    "ruby-backend",
-                    "ruby-tool",
-                    "ruby-backend-tool"
-                ]
-            );
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("rust")],
-                    &StackType::Backend,
-                    &LayerType::Application,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-application",
-                    "rust",
-                    "rust-backend",
-                    "rust-application",
-                    "rust-backend-application"
-                ]
-            );
-        }
-
-        #[test]
-        fn supports_other() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("kotlin")],
-                    &StackType::Backend,
-                    &LayerType::Tool,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-tool",
-                    "kotlin",
-                    "kotlin-backend",
-                    "kotlin-tool",
-                    "kotlin-backend-tool"
-                ]
-            );
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("dotnet"), Id::raw("system")],
-                    &StackType::Backend,
-                    &LayerType::Application,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-application",
-                    "system",
-                    "dotnet",
-                    "system-backend",
-                    "dotnet-backend",
-                    "system-application",
-                    "dotnet-application",
-                    "system-backend-application",
-                    "dotnet-backend-application"
-                ]
-            );
-        }
-
-        #[test]
-        fn includes_tags() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("rust")],
-                    &StackType::Backend,
-                    &LayerType::Application,
-                    &[Id::raw("cargo"), Id::raw("cli-app")]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-application",
-                    "rust",
-                    "rust-backend",
-                    "rust-application",
-                    "rust-backend-application",
-                    "tag-cargo",
-                    "tag-cli-app"
-                ]
-            );
-        }
-    }
-
     mod config_order {
         use super::*;
-        use starbase_sandbox::pretty_assertions::assert_eq;
 
         #[test]
         fn creates_js_config() {
@@ -778,6 +572,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Backend,
                     &LayerType::Application,
@@ -825,6 +620,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("python")],
                     &StackType::Frontend,
                     &LayerType::Library,
@@ -856,6 +652,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("bun"), Id::raw("javascript")],
                     &StackType::Backend,
                     &LayerType::Application,
@@ -891,6 +688,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &LayerType::Tool,
@@ -926,6 +724,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("rust")],
                     &StackType::Frontend,
                     &LayerType::Library,
@@ -954,6 +753,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &LayerType::Tool,
@@ -1002,6 +802,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("kotlin"), Id::raw("system")],
                     &StackType::Frontend,
                     &LayerType::Library,
@@ -1040,6 +841,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &LayerType::Library,
@@ -1066,6 +868,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Frontend,
                     &LayerType::Application,
@@ -1090,12 +893,15 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("rust")],
                     &StackType::Infrastructure,
                     &LayerType::Application,
                     &[],
                 )
                 .unwrap();
+
+            dbg!(&config.order);
 
             let options = config.config.task_options.unwrap();
 
@@ -1111,6 +917,7 @@ mod task_manager {
 
             let config = manager
                 .get_inherited_config(
+                    Path::new(""),
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &LayerType::Library,

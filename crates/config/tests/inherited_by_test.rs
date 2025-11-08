@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{
-    FilePath, InheritedByConfig, InheritedClauseConfig, InheritedConditionConfig, LayerType,
-    OneOrMany, PortablePath, StackType,
+    FilePath, LayerType, OneOrMany, PartialInheritedByConfig, PartialInheritedClauseConfig,
+    PartialInheritedConditionConfig, PortablePath, StackType,
 };
 use starbase_sandbox::create_empty_sandbox;
 use std::path::Path;
@@ -14,14 +14,14 @@ mod inherited_by {
 
         #[test]
         fn doesnt_match_when_empty() {
-            let clause = InheritedClauseConfig::default();
+            let clause = PartialInheritedClauseConfig::default();
 
             assert!(!clause.matches(&[Id::raw("a")]));
         }
 
         #[test]
         fn doesnt_match_when_no_values() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 or: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -31,7 +31,7 @@ mod inherited_by {
 
         #[test]
         fn and_matches_one() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 and: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -42,7 +42,7 @@ mod inherited_by {
 
         #[test]
         fn and_doesnt_match_one() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 and: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -53,7 +53,7 @@ mod inherited_by {
 
         #[test]
         fn and_matches_many() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 ..Default::default()
             };
@@ -64,7 +64,7 @@ mod inherited_by {
 
         #[test]
         fn and_doesnt_match_many() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 ..Default::default()
             };
@@ -78,7 +78,7 @@ mod inherited_by {
 
         #[test]
         fn and_works_with_not() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 not: Some(OneOrMany::Many(vec![Id::raw("c")])),
                 ..Default::default()
@@ -93,7 +93,7 @@ mod inherited_by {
 
         #[test]
         fn or_matches_one() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 or: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -103,7 +103,7 @@ mod inherited_by {
 
         #[test]
         fn or_doesnt_match_one() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 or: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -114,7 +114,7 @@ mod inherited_by {
 
         #[test]
         fn or_matches_many() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 or: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 ..Default::default()
             };
@@ -128,7 +128,7 @@ mod inherited_by {
 
         #[test]
         fn or_works_with_not() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 or: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 not: Some(OneOrMany::Many(vec![Id::raw("c")])),
                 ..Default::default()
@@ -145,7 +145,7 @@ mod inherited_by {
 
         #[test]
         fn not_matches_one() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 not: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -156,7 +156,7 @@ mod inherited_by {
 
         #[test]
         fn not_doesnt_match_one() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 not: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
@@ -167,7 +167,7 @@ mod inherited_by {
 
         #[test]
         fn not_matches_many() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 not: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 ..Default::default()
             };
@@ -179,7 +179,7 @@ mod inherited_by {
 
         #[test]
         fn not_doesnt_match_many() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 not: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 ..Default::default()
             };
@@ -193,7 +193,7 @@ mod inherited_by {
 
         #[test]
         fn can_define_all_together() {
-            let clause = InheritedClauseConfig {
+            let clause = PartialInheritedClauseConfig {
                 and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 or: Some(OneOrMany::Many(vec![Id::raw("c"), Id::raw("d")])),
                 not: Some(OneOrMany::One(Id::raw("e"))),
@@ -226,7 +226,7 @@ mod inherited_by {
 
         #[test]
         fn matches_one() {
-            let con = InheritedConditionConfig::One(Id::raw("a"));
+            let con = PartialInheritedConditionConfig::One(Id::raw("a"));
 
             assert!(con.matches(&[Id::raw("a")]));
             assert!(con.matches(&[Id::raw("a"), Id::raw("b")]));
@@ -237,7 +237,7 @@ mod inherited_by {
 
         #[test]
         fn matches_many() {
-            let con = InheritedConditionConfig::Many(vec![Id::raw("a"), Id::raw("b")]);
+            let con = PartialInheritedConditionConfig::Many(vec![Id::raw("a"), Id::raw("b")]);
 
             assert!(con.matches(&[Id::raw("a")]));
             assert!(con.matches(&[Id::raw("b")]));
@@ -248,7 +248,7 @@ mod inherited_by {
 
         #[test]
         fn matches_clause() {
-            let con = InheritedConditionConfig::Clause(InheritedClauseConfig {
+            let con = PartialInheritedConditionConfig::Clause(PartialInheritedClauseConfig {
                 or: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
                 ..Default::default()
             });
@@ -265,7 +265,7 @@ mod inherited_by {
     fn matches_files() {
         let sandbox = create_empty_sandbox();
 
-        let config = InheritedByConfig {
+        let config = PartialInheritedByConfig {
             files: Some(OneOrMany::One(FilePath::parse("file.txt").unwrap())),
             ..Default::default()
         };
@@ -291,7 +291,7 @@ mod inherited_by {
 
     #[test]
     fn matches_layers() {
-        let config = InheritedByConfig {
+        let config = PartialInheritedByConfig {
             layers: Some(OneOrMany::Many(vec![
                 LayerType::Application,
                 LayerType::Library,
@@ -331,7 +331,7 @@ mod inherited_by {
 
     #[test]
     fn matches_stacks() {
-        let config = InheritedByConfig {
+        let config = PartialInheritedByConfig {
             stacks: Some(OneOrMany::Many(vec![
                 StackType::Frontend,
                 StackType::Backend,
@@ -371,8 +371,8 @@ mod inherited_by {
 
     #[test]
     fn matches_tags() {
-        let config = InheritedByConfig {
-            tags: Some(InheritedConditionConfig::Many(vec![
+        let config = PartialInheritedByConfig {
+            tags: Some(PartialInheritedConditionConfig::Many(vec![
                 Id::raw("a"),
                 Id::raw("b"),
             ])),
@@ -412,8 +412,8 @@ mod inherited_by {
 
     #[test]
     fn matches_toolchains() {
-        let config = InheritedByConfig {
-            toolchains: Some(InheritedConditionConfig::Many(vec![
+        let config = PartialInheritedByConfig {
+            toolchains: Some(PartialInheritedConditionConfig::Many(vec![
                 Id::raw("a"),
                 Id::raw("b"),
             ])),
@@ -453,7 +453,7 @@ mod inherited_by {
 
     #[test]
     fn matches_using_all_params() {
-        let config = InheritedByConfig {
+        let config = PartialInheritedByConfig {
             layers: Some(OneOrMany::Many(vec![
                 LayerType::Application,
                 LayerType::Library,
@@ -462,11 +462,11 @@ mod inherited_by {
                 StackType::Frontend,
                 StackType::Backend,
             ])),
-            tags: Some(InheritedConditionConfig::Many(vec![
+            tags: Some(PartialInheritedConditionConfig::Many(vec![
                 Id::raw("a"),
                 Id::raw("b"),
             ])),
-            toolchains: Some(InheritedConditionConfig::Many(vec![
+            toolchains: Some(PartialInheritedConditionConfig::Many(vec![
                 Id::raw("c"),
                 Id::raw("d"),
             ])),

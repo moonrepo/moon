@@ -193,19 +193,16 @@ impl WorkspaceMocker {
     }
 
     pub fn with_inherited_tasks(mut self) -> Self {
-        self.inherited_tasks.configs.insert(
-            "*".into(),
-            InheritedTasksEntry {
-                input: ".moon/tasks/all.yml".into(),
-                config: PartialInheritedTasksConfig {
-                    tasks: Some(BTreeMap::from_iter([(
-                        "global".try_into().unwrap(),
-                        PartialTaskConfig::default(),
-                    )])),
-                    ..Default::default()
-                },
+        self.inherited_tasks.configs.push(InheritedTasksEntry {
+            input: ".moon/tasks/all.yml".into(),
+            config: PartialInheritedTasksConfig {
+                tasks: Some(BTreeMap::from_iter([(
+                    "global".try_into().unwrap(),
+                    PartialTaskConfig::default(),
+                )])),
+                ..Default::default()
             },
-        );
+        });
 
         self
     }
@@ -292,6 +289,7 @@ impl WorkspaceMocker {
         let global_config = self
             .inherited_tasks
             .get_inherited_config(
+                &project.root,
                 &stable_toolchains,
                 &project.config.stack,
                 &project.config.layer,

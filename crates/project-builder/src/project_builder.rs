@@ -93,6 +93,7 @@ impl<'app> ProjectBuilder<'app> {
             .expect("Local config must be loaded before global config!");
 
         let global_config = tasks_manager.get_inherited_config(
+            &self.root,
             &self.toolchains_inheritance,
             &local_config.stack,
             &local_config.layer,

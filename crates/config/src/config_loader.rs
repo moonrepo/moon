@@ -229,7 +229,7 @@ impl ConfigLoader {
                     workspace_root,
                     &file,
                     self.load_tasks_partial_config_from_path(workspace_root, &file)?,
-                );
+                )?;
             }
         }
 

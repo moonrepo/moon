@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'rust'
+
 tasks:
   rust:
     command: rust

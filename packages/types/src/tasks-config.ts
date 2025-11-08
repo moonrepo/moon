@@ -543,6 +543,45 @@ export interface PartialInheritedClauseConfig {
 	or?: Id | Id[] | null;
 }
 
+export type PartialInheritedConditionConfig = PartialInheritedClauseConfig | Id[] | Id;
+
+/**
+ * Configures conditions that must match against a project for tasks
+ * to be inherited. If multiple conditions are defined, then all must match
+ * for inheritance to occur. If no conditions are defined, then tasks will
+ * be inherited by all projects.
+ */
+export interface PartialInheritedByConfig {
+	/**
+	 * Condition that matches against literal files within a project.
+	 * If multiple values are provided, at least 1 file needs to exist.
+	 */
+	files?: string | string[] | null;
+	/**
+	 * Condition that matches against a project's `layer`.
+	 * If multiple values are provided, it matches using an OR operator.
+	 *
+	 * @default 'unknown'
+	 */
+	layers?: LayerType | LayerType[] | null;
+	/**
+	 * The order in which this configuration is inherited by a project.
+	 * Lower is inherited first, while higher is last.
+	 */
+	order?: number | null;
+	/**
+	 * Condition that matches against a project's `stack`.
+	 * If multiple values are provided, it matches using an OR operator.
+	 *
+	 * @default 'unknown'
+	 */
+	stacks?: StackType | StackType[] | null;
+	/** Condition that matches against a tag within the project. */
+	tags?: PartialInheritedConditionConfig | null;
+	/** Condition that matches against a toolchain detected for a project. */
+	toolchains?: PartialInheritedConditionConfig | null;
+}
+
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
@@ -826,7 +865,7 @@ export interface PartialInheritedTasksConfig {
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
 	 */
-	inheritedBy?: InheritedByConfig | null;
+	inheritedBy?: PartialInheritedByConfig | null;
 	/**
 	 * Default task options for all inherited tasks.
 	 * @since 1.20.0

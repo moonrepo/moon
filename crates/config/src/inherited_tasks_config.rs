@@ -27,7 +27,7 @@ config_struct!(
     }
 );
 
-impl InheritedClauseConfig {
+impl PartialInheritedClauseConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
         if values.is_empty() || self.not.is_none() && self.and.is_none() && self.or.is_none() {
             return false;
@@ -73,7 +73,7 @@ config_struct!(
     }
 );
 
-impl InheritedConditionConfig {
+impl PartialInheritedConditionConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
         match self {
             Self::Clause(inner) => inner.matches(values),
@@ -108,28 +108,30 @@ config_struct!(
         pub stacks: Option<OneOrMany<StackType>>,
 
         /// Condition that matches against a tag within the project.
+        #[setting(nested)]
         pub tags: Option<InheritedConditionConfig>,
 
         /// Condition that matches against a toolchain detected for a project.
+        #[setting(nested)]
         pub toolchains: Option<InheritedConditionConfig>,
     }
 );
 
-impl InheritedByConfig {
+impl PartialInheritedByConfig {
+    // 0 - (files)
+    // 50 - node
+    // 100 - frontend
+    // 150 - library
+    // 150 - node-frontend
+    // 200 - node-library
+    // 250 - frontend-library
+    // 300 - node-frontend-library
+    // 500 - (tags)
     pub fn order(&self) -> u16 {
         if let Some(order) = self.order {
             return order;
         }
 
-        // 0 - (files)
-        // 50 - node
-        // 100 - frontend
-        // 150 - library
-        // 150 - node-frontend
-        // 200 - node-library
-        // 250 - frontend-library
-        // 300 - node-frontend-library
-        // 500 - (tags)
         let mut amount = 0;
 
         // Toolchains are the lowest level
@@ -231,6 +233,7 @@ config_struct!(
 
         /// A map of conditions that define which projects will inherit these
         /// tasks and configuration. If not defined, will be inherited by all projects.
+        #[setting(nested)]
         pub inherited_by: Option<InheritedByConfig>,
 
         /// A map of identifiers to task objects. Tasks represent the work-unit

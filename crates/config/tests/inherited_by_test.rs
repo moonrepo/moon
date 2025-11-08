@@ -1,10 +1,9 @@
 use moon_common::Id;
 use moon_config::{
-    FilePath, LayerType, OneOrMany, PartialInheritedByConfig, PartialInheritedClauseConfig,
-    PartialInheritedConditionConfig, PortablePath, StackType,
+    FilePath, InheritFor, LanguageType, LayerType, OneOrMany, PartialInheritedByConfig,
+    PartialInheritedClauseConfig, PartialInheritedConditionConfig, PortablePath, StackType,
 };
 use starbase_sandbox::create_empty_sandbox;
-use std::path::Path;
 
 mod inherited_by {
     use super::*;
@@ -270,23 +269,27 @@ mod inherited_by {
             ..Default::default()
         };
 
-        assert!(!config.matches(
-            sandbox.path(),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
+        assert!(!config.matches(&InheritFor::default().root(sandbox.path())));
 
         sandbox.create_file("file.txt", "");
 
-        assert!(config.matches(
-            sandbox.path(),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
+        assert!(config.matches(&InheritFor::default().root(sandbox.path())));
+    }
+
+    #[test]
+    fn matches_languages() {
+        let config = PartialInheritedByConfig {
+            languages: Some(OneOrMany::Many(vec![
+                LanguageType::JavaScript,
+                LanguageType::TypeScript,
+            ])),
+            ..Default::default()
+        };
+
+        assert!(!config.matches(&InheritFor::default().language(&LanguageType::Unknown)));
+        assert!(!config.matches(&InheritFor::default().language(&LanguageType::Ruby)));
+        assert!(config.matches(&InheritFor::default().language(&LanguageType::JavaScript)));
+        assert!(config.matches(&InheritFor::default().language(&LanguageType::TypeScript)));
     }
 
     #[test]
@@ -299,34 +302,10 @@ mod inherited_by {
             ..Default::default()
         };
 
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Tool,
-            &[]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Application,
-            &[]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Library,
-            &[]
-        ));
+        assert!(!config.matches(&InheritFor::default().layer(&LayerType::Unknown)));
+        assert!(!config.matches(&InheritFor::default().layer(&LayerType::Tool)));
+        assert!(config.matches(&InheritFor::default().layer(&LayerType::Application)));
+        assert!(config.matches(&InheritFor::default().layer(&LayerType::Library)));
     }
 
     #[test]
@@ -339,34 +318,10 @@ mod inherited_by {
             ..Default::default()
         };
 
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Systems,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Frontend,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Backend,
-            &LayerType::Unknown,
-            &[]
-        ));
+        assert!(!config.matches(&InheritFor::default().stack(&StackType::Unknown)));
+        assert!(!config.matches(&InheritFor::default().stack(&StackType::Systems)));
+        assert!(config.matches(&InheritFor::default().stack(&StackType::Frontend)));
+        assert!(config.matches(&InheritFor::default().stack(&StackType::Backend)));
     }
 
     #[test]
@@ -379,34 +334,10 @@ mod inherited_by {
             ..Default::default()
         };
 
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[Id::raw("c")]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[Id::raw("a")]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[Id::raw("b")]
-        ));
+        assert!(!config.matches(&InheritFor::default().tags(&[])));
+        assert!(!config.matches(&InheritFor::default().tags(&[Id::raw("c")])));
+        assert!(config.matches(&InheritFor::default().tags(&[Id::raw("a")])));
+        assert!(config.matches(&InheritFor::default().tags(&[Id::raw("b")])));
     }
 
     #[test]
@@ -419,34 +350,10 @@ mod inherited_by {
             ..Default::default()
         };
 
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[Id::raw("c")],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[Id::raw("a")],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[Id::raw("b")],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
+        assert!(!config.matches(&InheritFor::default().toolchains(&[])));
+        assert!(!config.matches(&InheritFor::default().toolchains(&[Id::raw("c")])));
+        assert!(config.matches(&InheritFor::default().toolchains(&[Id::raw("a")])));
+        assert!(config.matches(&InheritFor::default().toolchains(&[Id::raw("b")])));
     }
 
     #[test]
@@ -471,40 +378,41 @@ mod inherited_by {
             ..Default::default()
         };
 
-        assert!(!config.matches(
-            Path::new(""),
-            &[],
-            &StackType::Unknown,
-            &LayerType::Unknown,
-            &[]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[Id::raw("z")],
-            &StackType::Frontend,
-            &LayerType::Scaffolding,
-            &[Id::raw("y")]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[Id::raw("d")],
-            &StackType::Frontend,
-            &LayerType::Scaffolding,
-            &[Id::raw("y")]
-        ));
-        assert!(!config.matches(
-            Path::new(""),
-            &[Id::raw("d")],
-            &StackType::Frontend,
-            &LayerType::Scaffolding,
-            &[Id::raw("a")]
-        ));
-        assert!(config.matches(
-            Path::new(""),
-            &[Id::raw("d")],
-            &StackType::Frontend,
-            &LayerType::Application,
-            &[Id::raw("a")]
-        ));
+        assert!(
+            !config.matches(
+                &InheritFor::default()
+                    .toolchains(&[Id::raw("z")])
+                    .stack(&StackType::Frontend)
+                    .layer(&LayerType::Scaffolding)
+                    .tags(&[Id::raw("y")])
+            )
+        );
+        assert!(
+            !config.matches(
+                &InheritFor::default()
+                    .toolchains(&[Id::raw("d")])
+                    .stack(&StackType::Frontend)
+                    .layer(&LayerType::Scaffolding)
+                    .tags(&[Id::raw("y")])
+            )
+        );
+        assert!(
+            !config.matches(
+                &InheritFor::default()
+                    .toolchains(&[Id::raw("d")])
+                    .stack(&StackType::Frontend)
+                    .layer(&LayerType::Scaffolding)
+                    .tags(&[Id::raw("a")])
+            )
+        );
+        assert!(
+            config.matches(
+                &InheritFor::default()
+                    .toolchains(&[Id::raw("d")])
+                    .stack(&StackType::Frontend)
+                    .layer(&LayerType::Application)
+                    .tags(&[Id::raw("a")])
+            )
+        );
     }
 }

@@ -1,7 +1,8 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    ConfigLoader, DependencySource, InheritedTasksManager, InheritedTasksResult, LanguageType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainsConfig,
+    ConfigLoader, DependencySource, InheritFor, InheritedTasksManager, InheritedTasksResult,
+    LanguageType, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig,
+    ToolchainsConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectAlias};
@@ -92,13 +93,14 @@ impl<'app> ProjectBuilder<'app> {
             .as_ref()
             .expect("Local config must be loaded before global config!");
 
-        let global_config = tasks_manager.get_inherited_config(
-            &self.root,
-            &self.toolchains_inheritance,
-            &local_config.stack,
-            &local_config.layer,
-            &local_config.tags,
-        )?;
+        let global_config = tasks_manager.get_inherited_config(InheritFor {
+            language: Some(&local_config.language),
+            layer: Some(&local_config.layer),
+            root: Some(&self.root),
+            stack: Some(&local_config.stack),
+            tags: Some(&local_config.tags),
+            toolchains: Some(&self.toolchains_inheritance),
+        })?;
 
         trace!(
             project_id = self.id.as_str(),

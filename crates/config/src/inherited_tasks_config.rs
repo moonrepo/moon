@@ -1,5 +1,6 @@
 use crate::config_struct;
 use crate::patterns::merge_iter;
+use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
 use crate::task_config::{TaskConfig, TaskDependency, validate_deps};
@@ -10,6 +11,48 @@ use schematic::schema::indexmap::IndexMap;
 use schematic::{Config, merge, validate};
 use std::collections::BTreeMap;
 use std::path::Path;
+
+#[derive(Default)]
+pub struct InheritFor<'a> {
+    pub language: Option<&'a LanguageType>,
+    pub layer: Option<&'a LayerType>,
+    pub root: Option<&'a Path>,
+    pub stack: Option<&'a StackType>,
+    pub tags: Option<&'a [Id]>,
+    pub toolchains: Option<&'a [Id]>,
+}
+
+impl<'a> InheritFor<'a> {
+    pub fn language(mut self, language: &'a LanguageType) -> Self {
+        self.language = Some(language);
+        self
+    }
+
+    pub fn layer(mut self, layer: &'a LayerType) -> Self {
+        self.layer = Some(layer);
+        self
+    }
+
+    pub fn root(mut self, root: &'a Path) -> Self {
+        self.root = Some(root);
+        self
+    }
+
+    pub fn stack(mut self, stack: &'a StackType) -> Self {
+        self.stack = Some(stack);
+        self
+    }
+
+    pub fn tags(mut self, tags: &'a [Id]) -> Self {
+        self.tags = Some(tags);
+        self
+    }
+
+    pub fn toolchains(mut self, toolchains: &'a [Id]) -> Self {
+        self.toolchains = Some(toolchains);
+        self
+    }
+}
 
 config_struct!(
     /// A condition that utilizes a combination of logical operators
@@ -77,7 +120,6 @@ impl PartialInheritedConditionConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
         match self {
             Self::Clause(inner) => inner.matches(values),
-            // OR match
             Self::Many(inner) => values.iter().any(|value| inner.contains(value)),
             Self::One(inner) => values.contains(inner),
         }
@@ -98,6 +140,10 @@ config_struct!(
         /// Condition that matches against literal files within a project.
         /// If multiple values are provided, at least 1 file needs to exist.
         pub files: Option<OneOrMany<FilePath>>,
+
+        /// Condition that matches against a project's `language`.
+        /// If multiple values are provided, it matches using an OR operator.
+        pub languages: Option<OneOrMany<LanguageType>>,
 
         /// Condition that matches against a project's `layer`.
         /// If multiple values are provided, it matches using an OR operator.
@@ -148,8 +194,8 @@ impl PartialInheritedByConfig {
 
         let mut amount = 0;
 
-        // Toolchains are the lowest level
-        if self.toolchains.is_some() {
+        // Toolchains/languages are the lowest level
+        if self.toolchains.is_some() || self.languages.is_some() {
             amount += 50;
         }
 
@@ -171,40 +217,45 @@ impl PartialInheritedByConfig {
         amount
     }
 
-    pub fn matches(
-        &self,
-        root: &Path,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> bool {
+    pub fn matches(&self, input: &InheritFor) -> bool {
         if let Some(condition) = &self.stacks
-            && !condition.matches(stack)
+            && let Some(value) = &input.stack
+            && !condition.matches(value)
+        {
+            return false;
+        }
+
+        if let Some(condition) = &self.languages
+            && let Some(value) = &input.language
+            && !condition.matches(value)
         {
             return false;
         }
 
         if let Some(condition) = &self.layers
-            && !condition.matches(layer)
+            && let Some(value) = &input.layer
+            && !condition.matches(value)
         {
             return false;
         }
 
         if let Some(condition) = &self.tags
-            && !condition.matches(tags)
+            && let Some(value) = &input.tags
+            && !condition.matches(value)
         {
             return false;
         }
 
         if let Some(condition) = &self.toolchains
-            && !condition.matches(toolchains)
+            && let Some(value) = &input.toolchains
+            && !condition.matches(value)
         {
             return false;
         }
 
         if let Some(files) = &self.files
-            && !files.to_list().iter().any(|file| root.join(file).exists())
+            && let Some(value) = &input.root
+            && !files.to_list().iter().any(|file| value.join(file).exists())
         {
             return false;
         }

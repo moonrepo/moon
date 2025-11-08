@@ -21,6 +21,22 @@ fn load_manager_from_root(root: &Path, moon_dir: &Path) -> miette::Result<Inheri
     ConfigLoader::default().load_tasks_manager_from(root, moon_dir)
 }
 
+fn create_inherit_for<'a>(
+    toolchains: &'a [Id],
+    stack: &'a StackType,
+    layer: &'a LayerType,
+    tags: &'a [Id],
+) -> InheritFor<'a> {
+    InheritFor {
+        language: None,
+        layer: Some(layer),
+        root: None,
+        stack: Some(stack),
+        tags: Some(tags),
+        toolchains: Some(toolchains),
+    }
+}
+
 mod tasks_config {
     use super::*;
 
@@ -566,13 +582,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Backend,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -608,13 +623,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("python")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -640,13 +654,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("bun"), Id::raw("javascript")],
                     &StackType::Backend,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -673,13 +686,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &LayerType::Tool,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -706,13 +718,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("rust")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -735,13 +746,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &LayerType::Tool,
                     &[Id::raw("normal"), Id::raw("kebab-case")],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -775,13 +785,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("kotlin"), Id::raw("system")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -814,13 +823,12 @@ mod task_manager {
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -838,13 +846,12 @@ mod task_manager {
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Frontend,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -863,16 +870,13 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("rust")],
                     &StackType::Infrastructure,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
-
-            dbg!(&config.order);
 
             let options = config.config.task_options.unwrap();
 
@@ -887,13 +891,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
-                    Path::new(""),
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             let options = config.config.task_options.unwrap();

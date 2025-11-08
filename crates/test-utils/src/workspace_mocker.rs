@@ -288,13 +288,14 @@ impl WorkspaceMocker {
 
         let global_config = self
             .inherited_tasks
-            .get_inherited_config(
-                &project.root,
-                &stable_toolchains,
-                &project.config.stack,
-                &project.config.layer,
-                &project.config.tags,
-            )
+            .get_inherited_config(InheritFor {
+                language: Some(&project.language),
+                layer: Some(&project.layer),
+                root: Some(&project.root),
+                stack: Some(&project.stack),
+                tags: Some(&project.config.tags),
+                toolchains: Some(&stable_toolchains),
+            })
             .unwrap();
 
         builder.inherit_global_tasks(

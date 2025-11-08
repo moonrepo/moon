@@ -1,11 +1,9 @@
 use crate::inherited_tasks_config::*;
-use crate::project_config::{LayerType, StackType};
 use crate::shapes::{Input, OneOrMany};
 use miette::IntoDiagnostic;
-use moon_common::path::PathExt;
 use moon_common::{
-    Id, color,
-    path::{WorkspaceRelativePathBuf, standardize_separators},
+    color,
+    path::{PathExt, WorkspaceRelativePathBuf, standardize_separators},
 };
 use rustc_hash::FxHashMap;
 use schematic::schema::indexmap::IndexMap;
@@ -38,14 +36,7 @@ impl InheritedTasksManager {
         Ok(())
     }
 
-    pub fn get_inherited_config(
-        &self,
-        root: &Path,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> miette::Result<InheritedTasksResult> {
+    pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasksResult> {
         let mut partial_config = PartialInheritedTasksConfig::default();
         let mut layers = IndexMap::default();
         let mut task_layers = FxHashMap::<String, Vec<String>>::default();
@@ -54,9 +45,7 @@ impl InheritedTasksManager {
         #[allow(clippy::let_unit_value)]
         let context = ();
 
-        for config_entry in
-            self.match_inherited_configs_in_order(root, toolchains, stack, layer, tags)
-        {
+        for config_entry in self.match_inherited_configs_in_order(input) {
             let source_path = standardize_separators(config_entry.input.as_str());
             let mut config = config_entry.config.clone();
 
@@ -98,12 +87,7 @@ impl InheritedTasksManager {
             .validate(&context, true)
             .map_err(|error| match error {
                 ConfigError::Validator { error, .. } => ConfigError::Validator {
-                    location: format!(
-                        "inherited tasks ({}, {}, {})",
-                        toolchains.join(", "),
-                        stack,
-                        layer
-                    ),
+                    location: format!("inherited tasks ({})", lookup_order.join(", ")),
                     error,
                     help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
                 },
@@ -120,20 +104,13 @@ impl InheritedTasksManager {
         Ok(result)
     }
 
-    pub fn match_inherited_configs_in_order(
-        &self,
-        root: &Path,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> Vec<&InheritedTasksEntry> {
+    pub fn match_inherited_configs_in_order(&self, input: InheritFor) -> Vec<&InheritedTasksEntry> {
         let mut entries = self
             .configs
             .iter()
             .filter(|entry| {
                 match &entry.config.inherited_by {
-                    Some(by) => by.matches(root, toolchains, stack, layer, tags),
+                    Some(by) => by.matches(&input),
                     // If no inherited by setting, then it's inherited by all!
                     None => true,
                 }

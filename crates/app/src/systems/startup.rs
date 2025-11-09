@@ -186,7 +186,10 @@ pub async fn load_tasks_configs(
         .await
         .into_diagnostic()??;
 
-    debug!("Loaded {} task configs to inherit", manager.configs.len(),);
+    debug!(
+        "Loaded {} task configs for inheritance",
+        manager.configs.len()
+    );
 
     Ok(Arc::new(manager))
 }

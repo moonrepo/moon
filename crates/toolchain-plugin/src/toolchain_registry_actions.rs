@@ -193,7 +193,7 @@ impl ToolchainRegistry {
     pub async fn detect_project_language(&self, dir: &Path) -> miette::Result<LanguageType> {
         let mut detected = vec![];
 
-        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+        for toolchain in self.load_all().await? {
             if let Some(language) = &toolchain.metadata.language
                 && toolchain.detect_project_usage(dir)?
                 && !language.is_unknown()

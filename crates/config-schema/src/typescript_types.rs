@@ -114,6 +114,7 @@ fn generate_tasks(out_dir: &Path) -> miette::Result<()> {
             exclude_references: vec![
                 "Id".into(),
                 "ExtendsFrom".into(),
+                "LanguageType".into(),
                 "LayerType".into(),
                 "StackType".into(),
             ],
@@ -121,7 +122,11 @@ fn generate_tasks(out_dir: &Path) -> miette::Result<()> {
                 ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),
                 (
                     "./project-config".into(),
-                    vec!["LayerType".into(), "StackType".into()],
+                    vec![
+                        "LanguageType".into(),
+                        "LayerType".into(),
+                        "StackType".into(),
+                    ],
                 ),
             ]),
             ..Default::default()

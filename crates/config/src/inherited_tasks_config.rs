@@ -139,26 +139,30 @@ config_struct!(
 
         /// Condition that matches against literal files within a project.
         /// If multiple values are provided, at least 1 file needs to exist.
+        #[setting(alias = "file")]
         pub files: Option<OneOrMany<FilePath>>,
 
         /// Condition that matches against a project's `language`.
         /// If multiple values are provided, it matches using an OR operator.
+        #[setting(alias = "language")]
         pub languages: Option<OneOrMany<LanguageType>>,
 
         /// Condition that matches against a project's `layer`.
         /// If multiple values are provided, it matches using an OR operator.
+        #[setting(alias = "layer")]
         pub layers: Option<OneOrMany<LayerType>>,
 
         /// Condition that matches against a project's `stack`.
         /// If multiple values are provided, it matches using an OR operator.
+        #[setting(alias = "stack")]
         pub stacks: Option<OneOrMany<StackType>>,
 
         /// Condition that matches against a tag within the project.
-        #[setting(nested)]
+        #[setting(alias = "tag", nested)]
         pub tags: Option<InheritedConditionConfig>,
 
         /// Condition that matches against a toolchain detected for a project.
-        #[setting(nested)]
+        #[setting(alias = "toolchain", nested)]
         pub toolchains: Option<InheritedConditionConfig>,
     }
 );

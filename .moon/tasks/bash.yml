@@ -1,5 +1,5 @@
 inheritedBy:
-  toolchains: 'bash'
+  languages: 'bash'
 
 # This is for testing scenarios
 tasks:

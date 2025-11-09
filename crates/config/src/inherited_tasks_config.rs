@@ -1,5 +1,5 @@
 use crate::config_struct;
-use crate::patterns::merge_iter;
+use crate::patterns::{merge_iter, merge_tasks_partials};
 use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
@@ -305,7 +305,7 @@ config_struct!(
 
         /// A map of identifiers to task objects. Tasks represent the work-unit
         /// of a project, and can be ran in the action pipeline.
-        #[setting(nested, merge = merge::merge_btreemap)]
+        #[setting(nested, merge = merge_tasks_partials)]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         /// Default task options for all inherited tasks.

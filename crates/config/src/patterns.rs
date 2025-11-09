@@ -1,6 +1,7 @@
 pub use regex::{Captures, Regex};
 use rustc_hash::FxHashMap;
 use schematic::{MergeError, MergeResult, PartialConfig};
+use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::sync::LazyLock;
 
@@ -43,6 +44,29 @@ pub fn merge_plugin_partials<K, V>(
 ) -> MergeResult<FxHashMap<K, V>>
 where
     K: Eq + Hash,
+    V: PartialConfig,
+{
+    for (key, value) in next {
+        match prev.get_mut(&key) {
+            Some(existing) => {
+                existing.merge(context, value).map_err(MergeError::new)?;
+            }
+            None => {
+                prev.insert(key, value);
+            }
+        }
+    }
+
+    Ok(Some(prev))
+}
+
+pub fn merge_tasks_partials<K, V>(
+    mut prev: BTreeMap<K, V>,
+    next: BTreeMap<K, V>,
+    context: &V::Context,
+) -> MergeResult<BTreeMap<K, V>>
+where
+    K: Eq + Hash + Ord,
     V: PartialConfig,
 {
     for (key, value) in next {

@@ -159,7 +159,7 @@ tasks:
                 *config.tasks.get("test").unwrap(),
                 TaskConfig {
                     command: TaskArgs::String("noop".to_owned()),
-                    inputs: None,
+                    inputs: Some(vec![Input::File(stub_file_input("tests"))]),
                     ..TaskConfig::default()
                 },
             );
@@ -1237,7 +1237,13 @@ mod task_manager {
                         Id::raw("typescript"),
                         stub_task("typescript", Some(Id::raw("typescript")))
                     ),
-                    (Id::raw("tag"), stub_task("tag-kebab-case", None)),
+                    (Id::raw("tag"), {
+                        let mut task = stub_task("tag-kebab-case", None);
+                        task.command = TaskArgs::String("normal".into());
+                        task.global_inputs
+                            .push(Input::File(stub_file_input("/tasks/tag-normal.yml")));
+                        task
+                    }),
                 ]),
             );
 
@@ -1245,10 +1251,10 @@ mod task_manager {
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks/all.yml",
-                    "tasks/typescript.yml",
                     "tasks/node.yml",
-                    "tasks/tag-normal.yml",
+                    "tasks/typescript.yml",
                     "tasks/tag-kebab-case.yml",
+                    "tasks/tag-normal.yml",
                 ]
             );
         }
@@ -1294,6 +1300,11 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("node-library", Some(Id::raw("node")));
+            task.global_inputs = vec![
+                Input::File(stub_file_input("/tasks/all.yml")),
+                Input::File(stub_file_input("/tasks/node.yml")),
+                Input::File(stub_file_input("/tasks/node-library.yml")),
+            ];
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager
@@ -1317,6 +1328,11 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("dotnet-application", Some(Id::raw("dotnet")));
+            task.global_inputs = vec![
+                Input::File(stub_file_input("/tasks/all.yml")),
+                Input::File(stub_file_input("/tasks/dotnet.yml")),
+                Input::File(stub_file_input("/tasks/dotnet-application.yml")),
+            ];
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager

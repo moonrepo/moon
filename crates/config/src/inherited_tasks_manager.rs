@@ -111,17 +111,21 @@ impl InheritedTasksManager {
             .filter(|entry| {
                 match &entry.config.inherited_by {
                     Some(by) => by.matches(&input),
-                    // If no inherited by setting, then it's inherited by all!
+                    // If no `inheritedBy` setting, then it's inherited by all!
                     None => true,
                 }
             })
             .collect::<Vec<_>>();
 
-        entries.sort_by(|a, d| {
-            let a_order = a.config.inherited_by.as_ref().map_or(0, |by| by.order());
-            let d_order = d.config.inherited_by.as_ref().map_or(0, |by| by.order());
-
-            a_order.cmp(&d_order)
+        entries.sort_by_key(|entry| {
+            (
+                entry
+                    .config
+                    .inherited_by
+                    .as_ref()
+                    .map_or(0, |by| by.order()),
+                entry.input.as_str(),
+            )
         });
 
         entries

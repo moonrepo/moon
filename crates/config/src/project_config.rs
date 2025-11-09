@@ -25,6 +25,7 @@ config_unit_enum!(
     #[derive(ConfigEnum)]
     pub enum StackType {
         Backend,
+        Data,
         Frontend,
         Infrastructure,
         Systems,

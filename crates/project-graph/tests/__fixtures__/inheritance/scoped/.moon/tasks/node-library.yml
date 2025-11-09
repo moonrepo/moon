@@ -1,3 +1,7 @@
+inheritedBy:
+  toolchains: 'node'
+  layers: 'library'
+
 tasks:
   global-node-library:
     command: global-node-library

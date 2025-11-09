@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'node'
+
 tasks:
   global-node:
     command: global-node

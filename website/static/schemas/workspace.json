@@ -5,7 +5,7 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/workspace.json",
+      "default": "./cache/schemas/workspace.json",
       "type": "string"
     },
     "codeowners": {

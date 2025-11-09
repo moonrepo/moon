@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['kebab-case']
+
 tasks:
   tag:
     command: kebab-case

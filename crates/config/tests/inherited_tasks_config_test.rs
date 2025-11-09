@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use utils::*;
 
-const FILENAME: &str = "tasks.yml";
+const FILENAME: &str = "tasks/all.yml";
 
 fn load_config_from_file(path: &Path) -> miette::Result<InheritedTasksConfig> {
     ConfigLoader::default().load_tasks_config_from_path(path)
@@ -19,6 +19,22 @@ fn load_config_from_file(path: &Path) -> miette::Result<InheritedTasksConfig> {
 
 fn load_manager_from_root(root: &Path, moon_dir: &Path) -> miette::Result<InheritedTasksManager> {
     ConfigLoader::default().load_tasks_manager_from(root, moon_dir)
+}
+
+fn create_inherit_for<'a>(
+    toolchains: &'a [Id],
+    stack: &'a StackType,
+    layer: &'a LayerType,
+    tags: &'a [Id],
+) -> InheritFor<'a> {
+    InheritFor {
+        language: None,
+        layer: Some(layer),
+        root: None,
+        stack: Some(stack),
+        tags: Some(tags),
+        toolchains: Some(toolchains),
+    }
 }
 
 mod tasks_config {
@@ -143,7 +159,7 @@ tasks:
                 *config.tasks.get("test").unwrap(),
                 TaskConfig {
                     command: TaskArgs::String("noop".to_owned()),
-                    inputs: None,
+                    inputs: Some(vec![Input::File(stub_file_input("tests"))]),
                     ..TaskConfig::default()
                 },
             );
@@ -153,12 +169,12 @@ tasks:
         fn loads_from_file() {
             let sandbox = create_empty_sandbox();
 
-            sandbox.create_file("shared/tasks.yml", SHARED_TASKS);
+            sandbox.create_file("shared/tasks/all.yml", SHARED_TASKS);
 
             sandbox.create_file(
-                "tasks.yml",
+                "tasks/all.yml",
                 r"
-extends: ./shared/tasks.yml
+extends: ../shared/tasks/all.yml
 
 fileGroups:
   sources:
@@ -168,7 +184,7 @@ fileGroups:
 ",
             );
 
-            let config = test_config(sandbox.path().join("tasks.yml"), |path| {
+            let config = test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 load_config_from_file(path)
             });
 
@@ -206,7 +222,7 @@ fileGroups:
             let url = server.url("/config.yml");
 
             sandbox.create_file(
-                "tasks.yml",
+                "tasks/all.yml",
                 format!(
                     r"
 extends: '{url}'
@@ -220,7 +236,7 @@ fileGroups:
                 ),
             );
 
-            let config = test_config(sandbox.path().join("tasks.yml"), |path| {
+            let config = test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 load_config_from_file(path)
             });
 
@@ -258,11 +274,11 @@ fileGroups:
             let temp_dir = sandbox.path().join(".moon/cache/temp");
             let url = server.url("/config.yml");
 
-            sandbox.create_file("tasks.yml", format!(r"extends: '{url}'"));
+            sandbox.create_file("tasks/all.yml", format!(r"extends: '{url}'"));
 
             assert!(!temp_dir.exists());
 
-            test_config(sandbox.path().join("tasks.yml"), |path| {
+            test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 // Use load_partial instead of load since this caches!
                 let partial = ConfigLoader::default()
                     .load_tasks_partial_config_from_path(sandbox.path(), path)
@@ -480,31 +496,499 @@ implicitInputs:
             );
         }
     }
+
+    mod inherited_by {
+        use super::*;
+
+        #[test]
+        fn one_file() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  file: config.js
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().files.unwrap(),
+                OneOrMany::One(FilePath("config.js".into())),
+            );
+        }
+
+        #[test]
+        fn many_files() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  files: [a.json, b.json]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().files.unwrap(),
+                OneOrMany::Many(vec![FilePath("a.json".into()), FilePath("b.json".into())]),
+            );
+        }
+
+        #[should_panic]
+        #[test]
+        fn errors_for_glob() {
+            test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  file: config.*
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+        }
+
+        #[test]
+        fn one_language() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  language: bash
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().languages.unwrap(),
+                OneOrMany::One(LanguageType::Bash),
+            );
+        }
+
+        #[test]
+        fn many_languages() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  languages: [bash, batch]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().languages.unwrap(),
+                OneOrMany::Many(vec![LanguageType::Bash, LanguageType::Batch]),
+            );
+        }
+
+        #[test]
+        fn one_layer() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  layer: library
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().layers.unwrap(),
+                OneOrMany::One(LayerType::Library),
+            );
+        }
+
+        #[test]
+        fn many_layers() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  layers: [library, application]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().layers.unwrap(),
+                OneOrMany::Many(vec![LayerType::Library, LayerType::Application]),
+            );
+        }
+
+        #[test]
+        fn one_stack() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  stack: frontend
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().stacks.unwrap(),
+                OneOrMany::One(StackType::Frontend),
+            );
+        }
+
+        #[test]
+        fn many_stacks() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  stacks: [frontend, data]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().stacks.unwrap(),
+                OneOrMany::Many(vec![StackType::Frontend, StackType::Data]),
+            );
+        }
+
+        #[test]
+        fn one_tag() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  tag: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().tags.unwrap(),
+                InheritedConditionConfig::One(Id::raw("a"))
+            );
+        }
+
+        #[test]
+        fn many_tags() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  tags: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().tags.unwrap(),
+                InheritedConditionConfig::Many(vec![Id::raw("a"), Id::raw("b")])
+            );
+        }
+
+        #[test]
+        fn clause_tags() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  tags:
+    and: [a, b]
+    or: c
+    not: d
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().tags.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    or: Some(OneOrMany::One(Id::raw("c"))),
+                    not: Some(OneOrMany::One(Id::raw("d")))
+                })
+            );
+        }
+
+        #[test]
+        fn one_toolchain() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchain: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::One(Id::raw("a"))
+            );
+        }
+
+        #[test]
+        fn many_toolchains() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Many(vec![Id::raw("a"), Id::raw("b")])
+            );
+        }
+
+        #[test]
+        fn clause_toolchains() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+    or: c
+    not: d
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    or: Some(OneOrMany::One(Id::raw("c"))),
+                    not: Some(OneOrMany::One(Id::raw("d")))
+                })
+            );
+        }
+
+        #[test]
+        fn clause_one_and() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::One(Id::raw("a"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_many_and() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_one_or() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    or: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    or: Some(OneOrMany::One(Id::raw("a"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_many_or() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    or: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    or: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_one_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    not: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    not: Some(OneOrMany::One(Id::raw("a"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_many_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    not: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    not: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_and_or() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+    or: c
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    or: Some(OneOrMany::One(Id::raw("c"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_and_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+    not: [c, d]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    not: Some(OneOrMany::Many(vec![Id::raw("c"), Id::raw("d")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_or_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    or: a
+    not: b
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    or: Some(OneOrMany::One(Id::raw("a"))),
+                    not: Some(OneOrMany::One(Id::raw("b"))),
+                    ..Default::default()
+                })
+            );
+        }
+    }
 }
 
 mod task_manager {
     use super::*;
 
-    fn stub_task(command: &str, toolchains: Vec<Id>) -> TaskConfig {
+    fn stub_task(command: &str, toolchain: Option<Id>) -> TaskConfig {
         let mut global_inputs = vec![];
 
-        if command != "global" {
-            // No .moon prefix since the fixture is contrived
-            global_inputs.push(Input::File(stub_file_input(format!(
-                "/tasks/{command}.yml"
-            ))));
-        }
+        // No .moon prefix since the fixture is contrived
+        global_inputs.push(Input::File(stub_file_input(format!(
+            "/tasks/{}.yml",
+            if command == "global" { "all" } else { command }
+        ))));
 
         TaskConfig {
             command: TaskArgs::String(command.replace("tag-", "")),
             global_inputs,
-            toolchains: if toolchains.is_empty() {
-                None
-            } else {
-                Some(OneOrMany::Many(toolchains))
-            },
+            toolchains: toolchain.map(OneOrMany::One),
             ..TaskConfig::default()
         }
+    }
+
+    fn get_config_paths(entries: &[InheritedTasksEntry]) -> Vec<String> {
+        let mut list = entries
+            .iter()
+            .map(|entry| entry.input.as_str().to_string())
+            .collect::<Vec<_>>();
+        list.sort();
+        list
     }
 
     #[test]
@@ -512,29 +996,26 @@ mod task_manager {
         let sandbox = create_sandbox("inheritance/files");
         let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-        let mut keys = manager.configs.keys().collect::<Vec<_>>();
-        keys.sort();
-
         assert_eq!(
-            keys,
+            get_config_paths(&manager.configs),
             vec![
-                "*",
-                "bun",
-                "deno",
-                "javascript",
-                "javascript-library",
-                "javascript-tool",
-                "kotlin",
-                "node",
-                "node-application",
-                "node-library",
-                "python",
-                "rust",
-                "tag-camelCase",
-                "tag-dot.case",
-                "tag-kebab-case",
-                "tag-normal",
-                "typescript",
+                "tasks/all.yml",
+                "tasks/bun.yml",
+                "tasks/deno.yml",
+                "tasks/javascript-library.yml",
+                "tasks/javascript-tool.yml",
+                "tasks/javascript.yml",
+                "tasks/kotlin.yml",
+                "tasks/node-application.yml",
+                "tasks/node-library.yml",
+                "tasks/node.yml",
+                "tasks/python.yml",
+                "tasks/rust.yml",
+                "tasks/tag-camelCase.yml",
+                "tasks/tag-dot.case.yml",
+                "tasks/tag-kebab-case.yml",
+                "tasks/tag-normal.yml",
+                "tasks/typescript.yml",
             ]
         );
     }
@@ -544,227 +1025,16 @@ mod task_manager {
         let sandbox = create_sandbox("inheritance/nested");
         let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-        let mut keys = manager.configs.keys().collect::<Vec<_>>();
-        keys.sort();
-
         assert_eq!(
-            keys,
-            vec!["*", "dotnet", "dotnet-application", "node", "node-library"]
-        );
-
-        let mut inputs = manager
-            .configs
-            .values()
-            .map(|c| c.input.to_string_lossy().replace('\\', "/"))
-            .collect::<Vec<_>>();
-        inputs.sort();
-
-        assert_eq!(
-            inputs,
+            get_config_paths(&manager.configs),
             vec![
-                "tasks.yml",
+                "tasks/all.yml",
                 "tasks/dotnet/dotnet-application.yml",
                 "tasks/dotnet/dotnet.yml",
                 "tasks/node/node-library.yml",
                 "tasks/node/node.yml"
             ]
         );
-    }
-
-    mod lookup_order {
-        use super::*;
-
-        #[test]
-        fn includes_bash() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("bash"), Id::raw("system")],
-                    &StackType::Backend,
-                    &LayerType::Library,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-library",
-                    "system",
-                    "bash",
-                    "system-backend",
-                    "bash-backend",
-                    "system-library",
-                    "bash-library",
-                    "system-backend-library",
-                    "bash-backend-library"
-                ]
-            );
-        }
-
-        #[test]
-        fn includes_js() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("node"), Id::raw("javascript")],
-                    &StackType::Frontend,
-                    &LayerType::Application,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "frontend",
-                    "frontend-application",
-                    "javascript",
-                    "node",
-                    "javascript-frontend",
-                    "node-frontend",
-                    "javascript-application",
-                    "node-application",
-                    "javascript-frontend-application",
-                    "node-frontend-application",
-                ]
-            );
-        }
-
-        #[test]
-        fn includes_ts() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("node"), Id::raw("typescript")],
-                    &StackType::Frontend,
-                    &LayerType::Library,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "frontend",
-                    "frontend-library",
-                    "typescript",
-                    "node",
-                    "typescript-frontend",
-                    "node-frontend",
-                    "typescript-library",
-                    "node-library",
-                    "typescript-frontend-library",
-                    "node-frontend-library",
-                ]
-            );
-        }
-
-        #[test]
-        fn supports_langs() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("ruby")],
-                    &StackType::Backend,
-                    &LayerType::Tool,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-tool",
-                    "ruby",
-                    "ruby-backend",
-                    "ruby-tool",
-                    "ruby-backend-tool"
-                ]
-            );
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("rust")],
-                    &StackType::Backend,
-                    &LayerType::Application,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-application",
-                    "rust",
-                    "rust-backend",
-                    "rust-application",
-                    "rust-backend-application"
-                ]
-            );
-        }
-
-        #[test]
-        fn supports_other() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("kotlin")],
-                    &StackType::Backend,
-                    &LayerType::Tool,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-tool",
-                    "kotlin",
-                    "kotlin-backend",
-                    "kotlin-tool",
-                    "kotlin-backend-tool"
-                ]
-            );
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("dotnet"), Id::raw("system")],
-                    &StackType::Backend,
-                    &LayerType::Application,
-                    &[]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-application",
-                    "system",
-                    "dotnet",
-                    "system-backend",
-                    "dotnet-backend",
-                    "system-application",
-                    "dotnet-application",
-                    "system-backend-application",
-                    "dotnet-backend-application"
-                ]
-            );
-        }
-
-        #[test]
-        fn includes_tags() {
-            let manager = InheritedTasksManager::default();
-
-            assert_eq!(
-                manager.get_lookup_order(
-                    &[Id::raw("rust")],
-                    &StackType::Backend,
-                    &LayerType::Application,
-                    &[Id::raw("cargo"), Id::raw("cli-app")]
-                ),
-                vec![
-                    "*",
-                    "backend",
-                    "backend-application",
-                    "rust",
-                    "rust-backend",
-                    "rust-application",
-                    "rust-backend-application",
-                    "tag-cargo",
-                    "tag-cli-app"
-                ]
-            );
-        }
     }
 
     mod config_order {
@@ -777,43 +1047,40 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Backend,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("node"),
-                        stub_task("node", vec![Id::raw("node"), Id::raw("javascript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("node"), stub_task("node", Some(Id::raw("node")))),
                     (
                         Id::raw("node-application"),
-                        stub_task(
-                            "node-application",
-                            vec![Id::raw("node"), Id::raw("javascript")]
-                        )
+                        stub_task("node-application", Some(Id::raw("node")))
                     ),
                     (
                         Id::raw("javascript"),
-                        stub_task("javascript", vec![Id::raw("node"), Id::raw("javascript")])
+                        stub_task("javascript", Some(Id::raw("javascript")))
                     ),
                 ]),
             );
 
+            let mut layers = config.layers.keys().collect::<Vec<_>>();
+            layers.sort();
+
             assert_eq!(
-                config.layers.keys().collect::<Vec<_>>(),
+                layers,
                 vec![
-                    "tasks.yml",
+                    "tasks/all.yml",
                     "tasks/javascript.yml",
-                    "tasks/node.yml",
                     "tasks/node-application.yml",
+                    "tasks/node.yml",
                 ]
             );
         }
@@ -824,28 +1091,28 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("python")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
+                    (Id::raw("global"), stub_task("global", None)),
                     (
                         Id::raw("python"),
-                        stub_task("python", vec![Id::raw("python")])
+                        stub_task("python", Some(Id::raw("python")))
                     ),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/python.yml"]
+                vec!["tasks/all.yml", "tasks/python.yml"]
             );
         }
 
@@ -855,32 +1122,32 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("bun"), Id::raw("javascript")],
                     &StackType::Backend,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("bun"),
-                        stub_task("bun", vec![Id::raw("bun"), Id::raw("javascript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("bun"), stub_task("bun", Some(Id::raw("bun")))),
                     (
                         Id::raw("javascript"),
-                        stub_task("javascript", vec![Id::raw("bun"), Id::raw("javascript")])
+                        stub_task("javascript", Some(Id::raw("javascript")))
                     ),
                 ]),
             );
 
+            let mut layers = config.layers.keys().collect::<Vec<_>>();
+            layers.sort();
+
             assert_eq!(
-                config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/javascript.yml", "tasks/bun.yml"]
+                layers,
+                vec!["tasks/all.yml", "tasks/bun.yml", "tasks/javascript.yml"]
             );
         }
 
@@ -890,32 +1157,32 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &LayerType::Tool,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("node"),
-                        stub_task("node", vec![Id::raw("node"), Id::raw("typescript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("node"), stub_task("node", Some(Id::raw("node")))),
                     (
                         Id::raw("typescript"),
-                        stub_task("typescript", vec![Id::raw("node"), Id::raw("typescript")])
+                        stub_task("typescript", Some(Id::raw("typescript")))
                     ),
                 ]),
             );
 
+            let mut layers = config.layers.keys().collect::<Vec<_>>();
+            layers.sort();
+
             assert_eq!(
-                config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/typescript.yml", "tasks/node.yml"]
+                layers,
+                vec!["tasks/all.yml", "tasks/node.yml", "tasks/typescript.yml"]
             );
         }
 
@@ -925,25 +1192,25 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("rust")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (Id::raw("rust"), stub_task("rust", vec![Id::raw("rust")])),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("rust"), stub_task("rust", Some(Id::raw("rust")))),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/rust.yml"]
+                vec!["tasks/all.yml", "tasks/rust.yml"]
             );
         }
 
@@ -953,44 +1220,41 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("typescript")],
                     &StackType::Frontend,
                     &LayerType::Tool,
                     &[Id::raw("normal"), Id::raw("kebab-case")],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
-                    (
-                        Id::raw("node"),
-                        stub_task("node", vec![Id::raw("node"), Id::raw("typescript")])
-                    ),
+                    (Id::raw("global"), stub_task("global", None)),
+                    (Id::raw("node"), stub_task("node", Some(Id::raw("node")))),
                     (
                         Id::raw("typescript"),
-                        stub_task("typescript", vec![Id::raw("node"), Id::raw("typescript")])
+                        stub_task("typescript", Some(Id::raw("typescript")))
                     ),
-                    (
-                        Id::raw("tag"),
-                        stub_task(
-                            "tag-kebab-case",
-                            vec![Id::raw("node"), Id::raw("typescript")]
-                        )
-                    ),
+                    (Id::raw("tag"), {
+                        let mut task = stub_task("tag-kebab-case", None);
+                        task.command = TaskArgs::String("normal".into());
+                        task.global_inputs
+                            .push(Input::File(stub_file_input("/tasks/tag-normal.yml")));
+                        task
+                    }),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    "tasks.yml",
-                    "tasks/typescript.yml",
+                    "tasks/all.yml",
                     "tasks/node.yml",
-                    "tasks/tag-normal.yml",
+                    "tasks/typescript.yml",
                     "tasks/tag-kebab-case.yml",
+                    "tasks/tag-normal.yml",
                 ]
             );
         }
@@ -1001,28 +1265,28 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("kotlin"), Id::raw("system")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    (Id::raw("global"), stub_task("global", vec![])),
+                    (Id::raw("global"), stub_task("global", None)),
                     (
                         Id::raw("kotlin"),
-                        stub_task("kotlin", vec![Id::raw("kotlin"), Id::raw("system")])
+                        stub_task("kotlin", Some(Id::raw("kotlin")))
                     ),
                 ]),
             );
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks.yml", "tasks/kotlin.yml"]
+                vec!["tasks/all.yml", "tasks/kotlin.yml"]
             );
         }
     }
@@ -1035,16 +1299,21 @@ mod task_manager {
             let sandbox = create_sandbox("inheritance/override");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-            let mut task = stub_task("node-library", vec![Id::raw("node"), Id::raw("javascript")]);
+            let mut task = stub_task("node-library", Some(Id::raw("node")));
+            task.global_inputs = vec![
+                Input::File(stub_file_input("/tasks/all.yml")),
+                Input::File(stub_file_input("/tasks/node.yml")),
+                Input::File(stub_file_input("/tasks/node-library.yml")),
+            ];
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -1058,19 +1327,21 @@ mod task_manager {
             let sandbox = create_sandbox("inheritance/override");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
-            let mut task = stub_task(
-                "dotnet-application",
-                vec![Id::raw("dotnet"), Id::raw("system")],
-            );
+            let mut task = stub_task("dotnet-application", Some(Id::raw("dotnet")));
+            task.global_inputs = vec![
+                Input::File(stub_file_input("/tasks/all.yml")),
+                Input::File(stub_file_input("/tasks/dotnet.yml")),
+                Input::File(stub_file_input("/tasks/dotnet-application.yml")),
+            ];
             task.inputs = Some(vec![Input::File(stub_file_input("c"))]);
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("dotnet"), Id::raw("system")],
                     &StackType::Frontend,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             assert_eq!(
@@ -1089,12 +1360,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("rust")],
                     &StackType::Infrastructure,
                     &LayerType::Application,
                     &[],
-                )
+                ))
                 .unwrap();
 
             let options = config.config.task_options.unwrap();
@@ -1110,12 +1381,12 @@ mod task_manager {
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
-                .get_inherited_config(
+                .get_inherited_config(create_inherit_for(
                     &[Id::raw("node"), Id::raw("javascript")],
                     &StackType::Frontend,
                     &LayerType::Library,
                     &[],
-                )
+                ))
                 .unwrap();
 
             let options = config.config.task_options.unwrap();

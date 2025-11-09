@@ -1,193 +1,93 @@
-use crate::config_finder::ConfigFinder;
 use crate::inherited_tasks_config::*;
-use crate::project_config::{LayerType, StackType};
 use crate::shapes::{Input, OneOrMany};
-use moon_common::{Id, color, path::standardize_separators};
-use rustc_hash::{FxHashMap, FxHasher};
-use schematic::schema::indexmap::{IndexMap, IndexSet};
+use miette::IntoDiagnostic;
+use moon_common::{
+    color,
+    path::{PathExt, WorkspaceRelativePathBuf, standardize_separators},
+};
+use rustc_hash::FxHashMap;
+use schematic::schema::indexmap::IndexMap;
 use schematic::{Config, ConfigError, PartialConfig};
-use std::hash::BuildHasherDefault;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksEntry {
-    pub input: PathBuf,
+    pub input: WorkspaceRelativePathBuf,
     pub config: PartialInheritedTasksConfig,
 }
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
-    cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
-    config_finder: ConfigFinder,
-
-    pub configs: FxHashMap<String, InheritedTasksEntry>,
+    pub configs: Vec<InheritedTasksEntry>,
 }
 
 impl InheritedTasksManager {
-    pub fn get_lookup_order(
-        &self,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> Vec<String> {
-        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
-            IndexSet::from_iter(["*".to_string()]);
-
-        // Reverse the order of the toolchains, as the order in the project/task
-        // is from most important to least important. But for the configuration,
-        // we need the opposite of that, so that the most important is the last
-        // layer to be merged in.
-        let toolchains = toolchains.iter().rev().collect::<Vec<_>>();
-
-        // Order from least to most specific!
-
-        // frontend
-        lookup.insert(format!("{stack}"));
-
-        // frontend-library
-        lookup.insert(format!("{stack}-{layer}"));
-
-        for toolchain in &toolchains {
-            // node
-            lookup.insert(format!("{toolchain}"));
-        }
-
-        for toolchain in &toolchains {
-            // node-frontend
-            lookup.insert(format!("{toolchain}-{stack}"));
-        }
-
-        for toolchain in &toolchains {
-            // node-library
-            lookup.insert(format!("{toolchain}-{layer}"));
-        }
-
-        for toolchain in &toolchains {
-            // node-frontend-library
-            lookup.insert(format!("{toolchain}-{stack}-{layer}"));
-        }
-
-        // tag-foo
-        for tag in tags {
-            lookup.insert(format!("tag-{tag}"));
-        }
-
-        lookup
-            .into_iter()
-            .filter(|item| !item.contains("unknown"))
-            .collect()
-    }
-
     pub fn add_config(
         &mut self,
         workspace_root: &Path,
-        path: &Path,
+        config_path: &Path,
         config: PartialInheritedTasksConfig,
-    ) {
-        let valid_names = self.config_finder.get_tasks_file_names();
-        let name = path
-            .file_name()
-            .unwrap_or_default()
-            .to_str()
-            .unwrap_or_default();
+    ) -> miette::Result<()> {
+        self.configs.push(InheritedTasksEntry {
+            input: config_path.relative_to(workspace_root).into_diagnostic()?,
+            config,
+        });
 
-        let name = if valid_names.iter().any(|n| n == name) {
-            "*"
-        } else if let Some(stripped_name) = name.strip_suffix(".yaml") {
-            stripped_name
-        } else if let Some(stripped_name) = name.strip_suffix(".yml") {
-            stripped_name
-        } else if let Some(stripped_name) = name.strip_suffix(".pkl") {
-            stripped_name
-        } else {
-            return;
-        };
-
-        self.configs.insert(
-            name.to_owned(),
-            InheritedTasksEntry {
-                input: path.strip_prefix(workspace_root).unwrap().to_path_buf(),
-                config,
-            },
-        );
+        Ok(())
     }
 
-    pub fn get_inherited_config(
-        &self,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> miette::Result<InheritedTasksResult> {
-        let lookup_order = self.get_lookup_order(toolchains, stack, layer, tags);
-        let lookup_key = lookup_order.join(":");
-
-        // Check the cache first in read only mode!
-        {
-            if let Some(cache) = self.cache.read().unwrap().get(&lookup_key) {
-                return Ok(cache.to_owned());
-            }
-        }
-
-        // Cache the result as this lookup may be the same for a large number of projects,
-        // and since this clones constantly, we can avoid a lot of allocations and overhead.
+    pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasksResult> {
         let mut partial_config = PartialInheritedTasksConfig::default();
         let mut layers = IndexMap::default();
         let mut task_layers = FxHashMap::<String, Vec<String>>::default();
+        let mut lookup_order = vec![];
 
         #[allow(clippy::let_unit_value)]
         let context = ();
 
-        for lookup in &lookup_order {
-            if let Some(config_entry) = self.configs.get(lookup) {
-                let source_path =
-                    standardize_separators(format!("{}", config_entry.input.display()));
-                let mut managed_config = config_entry.config.clone();
+        for config_entry in self.match_inherited_configs_in_order(input) {
+            let source_path = standardize_separators(config_entry.input.as_str());
+            let mut config = config_entry.config.clone();
 
-                // Only modify tasks for `tasks/**/.*` files instead of `tasks.*`,
-                // as the latter will be globbed alongside toolchain/workspace configs.
-                // We also don't know what toolchain each of the tasks should be yet.
-                if let Some(tasks) = &mut managed_config.tasks {
-                    for (task_id, task) in tasks.iter_mut() {
-                        if lookup != "*" {
-                            // Automatically set this source as an input
-                            task.global_inputs
-                                .get_or_insert(vec![])
-                                .push(Input::parse(format!("/{source_path}"))?);
+            if let Some(tasks) = &mut config.tasks {
+                let default_toolchain = config
+                    .inherited_by
+                    .as_ref()
+                    .and_then(|by| by.default_toolchain());
 
-                            // Automatically set the toolchain
-                            if task.toolchains.is_none() {
-                                task.toolchains = Some(OneOrMany::Many(toolchains.to_owned()));
-                            }
-                        }
+                for (task_id, task) in tasks.iter_mut() {
+                    // Automatically set this source as an input
+                    task.global_inputs
+                        .get_or_insert(vec![])
+                        .push(Input::parse(format!("/{source_path}"))?);
 
-                        // Keep track of what layers a task inherited
-                        task_layers
-                            .entry(task_id.to_string())
-                            .or_default()
-                            .push(source_path.clone());
+                    // Automatically set the toolchain
+                    if task.toolchains.is_none()
+                        && let Some(toolchain) = &default_toolchain
+                    {
+                        task.toolchains = Some(OneOrMany::One(toolchain.to_owned()));
                     }
-                }
 
-                layers.insert(source_path, managed_config.clone());
-                partial_config.merge(&context, managed_config)?;
+                    // Keep track of what layers a task inherited
+                    task_layers
+                        .entry(task_id.to_string())
+                        .or_default()
+                        .push(source_path.clone());
+                }
             }
+
+            layers.insert(source_path.clone(), config.clone());
+            partial_config.merge(&context, config)?;
+            lookup_order.push(source_path);
         }
 
-        let config = partial_config.finalize(&context)?;
+        let full_config = partial_config.finalize(&context)?;
 
-        config
+        full_config
             .validate(&context, true)
             .map_err(|error| match error {
                 ConfigError::Validator { error, .. } => ConfigError::Validator {
-                    location: format!(
-                        "inherited tasks ({}, {}, {})",
-                        toolchains.join(", "),
-                        stack,
-                        layer
-                    ),
+                    location: format!("inherited tasks ({})", lookup_order.join(", ")),
                     error,
                     help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
                 },
@@ -195,17 +95,39 @@ impl InheritedTasksManager {
             })?;
 
         let result = InheritedTasksResult {
-            config: InheritedTasksConfig::from_partial(config),
+            config: InheritedTasksConfig::from_partial(full_config),
             layers,
             order: lookup_order,
             task_layers,
         };
 
-        self.cache
-            .write()
-            .unwrap()
-            .insert(lookup_key, result.clone());
-
         Ok(result)
+    }
+
+    pub fn match_inherited_configs_in_order(&self, input: InheritFor) -> Vec<&InheritedTasksEntry> {
+        let mut entries = self
+            .configs
+            .iter()
+            .filter(|entry| {
+                match &entry.config.inherited_by {
+                    Some(by) => by.matches(&input),
+                    // If no `inheritedBy` setting, then it's inherited by all!
+                    None => true,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        entries.sort_by_key(|entry| {
+            (
+                entry
+                    .config
+                    .inherited_by
+                    .as_ref()
+                    .map_or(0, |by| by.order()),
+                entry.input.as_str(),
+            )
+        });
+
+        entries
     }
 }

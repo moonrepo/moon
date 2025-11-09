@@ -5,7 +5,7 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/extensions.json",
+      "default": "./cache/schemas/extensions.json",
       "type": "string"
     },
     "extends": {

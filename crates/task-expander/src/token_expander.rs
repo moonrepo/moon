@@ -577,7 +577,7 @@ impl<'graph> TokenExpander<'graph> {
             "workspaceRoot" => Cow::Owned(self.stringify_path(&self.context.workspace_root)?),
             // Project
             "language" => Cow::Owned(project.language.to_string()),
-            "project" => Cow::Borrowed(project.id.as_str()),
+            "project" | "projectId" => Cow::Borrowed(project.id.as_str()),
             "projectAlias" => match project.aliases.first() {
                 Some(alias) => Cow::Borrowed(alias.alias.as_str()),
                 None => Cow::Owned(String::new()),
@@ -599,7 +599,7 @@ impl<'graph> TokenExpander<'graph> {
             "projectStack" => Cow::Owned(project.stack.to_string()),
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),
-            "task" => Cow::Borrowed(task.id.as_str()),
+            "task" | "taskId" => Cow::Borrowed(task.id.as_str()),
             "taskToolchain" => match task.toolchains.first() {
                 Some(tc) => Cow::Borrowed(tc.as_str()),
                 None => Cow::Owned("unknown".into()),

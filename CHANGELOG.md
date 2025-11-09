@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `--upstream` (dependencies) and `--downstream` (dependents) options to `moon ci` to control
+  the graph depth for affected tracking.
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task `mutex` would not be respected, and tasks would still run in parallel.
+- Fixed an issue where toolchain dependency install/dedupe would consistently run, because the
+  underlying lockfile timestamp kept changing.
+
 ## 1.41.6
 
 #### 🐞 Fixes

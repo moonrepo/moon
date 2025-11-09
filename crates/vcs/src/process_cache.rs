@@ -119,21 +119,13 @@ impl ProcessCache {
             return Ok(value);
         }
 
-        let cache_key = command.get_cache_key();
-
-        // First check if the data has already been cached
-        if let Some(cache) = self.cache.read_async(&cache_key, |_, v| v.clone()).await {
-            return Ok(cache);
-        }
-
-        // Otherwise acquire an entry to lock the row
-        let cache = match self.cache.entry_async(cache_key).await {
-            Entry::Occupied(o) => o.get().clone(),
-            Entry::Vacant(v) => {
+        let cache = match self.cache.entry_async(command.get_cache_key()).await {
+            Entry::Occupied(entry) => entry.get().clone(),
+            Entry::Vacant(entry) => {
                 let output = command.exec_capture_output().await?;
                 let cache = format_output(output);
 
-                v.put_entry(Arc::clone(&cache));
+                entry.put_entry(Arc::clone(&cache));
 
                 cache
             }

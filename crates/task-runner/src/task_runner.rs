@@ -502,7 +502,7 @@ impl<'task> TaskRunner<'task> {
                 "Waiting to acquire task mutex lock"
             );
 
-            let mutex = context.get_or_create_mutex(mutex_name);
+            let mutex = context.get_or_create_mutex(mutex_name).await;
             let _guard = mutex.lock().await;
 
             trace!(

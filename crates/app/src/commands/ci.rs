@@ -40,6 +40,20 @@ pub struct CiArgs {
 
     #[arg(long, help = "Accept touched files from stdin for affected checks")]
     stdin: bool,
+
+    #[arg(
+        long,
+        default_value_t = DownstreamScope::Direct,
+        help = "Control the depth of downstream dependents"
+    )]
+    downstream: DownstreamScope,
+
+    #[arg(
+        long,
+        default_value_t = UpstreamScope::Deep,
+        help = "Control the depth of upstream dependencies"
+    )]
+    upstream: UpstreamScope,
 }
 
 struct CiConsole {
@@ -220,6 +234,7 @@ fn distribute_targets_across_jobs(
 async fn generate_action_graph(
     console: &mut CiConsole,
     session: &MoonSession,
+    args: &CiArgs,
     targets: &TargetList,
     touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 ) -> miette::Result<(ActionGraph, ActionContext)> {
@@ -227,7 +242,7 @@ async fn generate_action_graph(
 
     let mut action_graph_builder = session.build_action_graph().await?;
     action_graph_builder.set_touched_files(touched_files)?;
-    action_graph_builder.track_affected(UpstreamScope::Deep, DownstreamScope::Deep, true)?;
+    action_graph_builder.track_affected(args.upstream, args.downstream, true)?;
 
     // Always sync workspace in CI
     action_graph_builder.sync_workspace().await?;
@@ -280,7 +295,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
 
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
     let (action_graph, action_context) =
-        generate_action_graph(&mut console, &session, &targets, touched_files).await?;
+        generate_action_graph(&mut console, &session, &args, &targets, touched_files).await?;
 
     // Process all tasks in the graph
     console.print_header("Running pipeline")?;

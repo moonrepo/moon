@@ -3,6 +3,7 @@ use moon_affected::Affected;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
+use scc::hash_map::Entry;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -68,18 +69,15 @@ pub struct ActionContext {
 }
 
 impl ActionContext {
-    pub fn get_or_create_mutex(&self, name: &str) -> Arc<Mutex<()>> {
-        if let Some(value) = self.named_mutexes.read(name, |_, v| v.clone()) {
-            return value;
+    pub async fn get_or_create_mutex(&self, name: &str) -> Arc<Mutex<()>> {
+        match self.named_mutexes.entry_async(name.to_owned()).await {
+            Entry::Occupied(entry) => Arc::clone(&entry),
+            Entry::Vacant(entry) => {
+                let mutex = Arc::new(Mutex::new(()));
+                entry.insert_entry(Arc::clone(&mutex));
+                mutex
+            }
         }
-
-        let mutex = Arc::new(Mutex::new(()));
-
-        let _ = self
-            .named_mutexes
-            .insert(name.to_owned(), Arc::clone(&mutex));
-
-        mutex
     }
 
     pub fn get_target_prefix<T: AsRef<Target>>(&self, target: T) -> String {

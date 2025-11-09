@@ -265,7 +265,7 @@ async fn create_hash_content<'action>(
         {
             let mut lock_hashes = app_context
                 .vcs
-                .get_file_hashes(&[rel_lock_path.clone()], false)
+                .get_file_hashes(std::slice::from_ref(&rel_lock_path), false)
                 .await?;
 
             if let Some(hash) = lock_hashes.remove(&rel_lock_path) {

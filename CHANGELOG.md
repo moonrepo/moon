@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task `mutex` would not be respected, and tasks would still run in parallel.
+
 ## 1.41.6
 
 #### 🐞 Fixes

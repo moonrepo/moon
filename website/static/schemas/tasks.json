@@ -5,7 +5,7 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/tasks.json",
+      "default": "./cache/schemas/tasks.json",
       "type": "string"
     },
     "extends": {
@@ -51,6 +51,18 @@
         "$ref": "#/definitions/Input"
       },
       "markdownDescription": "Task inputs (`inputs`) that will be automatically injected into every task that inherits this configuration."
+    },
+    "inheritedBy": {
+      "title": "inheritedBy",
+      "description": "A map of conditions that define which projects will inherit these tasks and configuration. If not defined, will be inherited by all projects.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/InheritedByConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "taskOptions": {
       "title": "taskOptions",
@@ -246,6 +258,357 @@
     "Id": {
       "type": "string"
     },
+    "InheritedByConfig": {
+      "description": "Configures conditions that must match against a project for tasks to be inherited. If multiple conditions are defined, then all must match for inheritance to occur. If no conditions are defined, then tasks will be inherited by all projects.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "title": "file",
+          "description": "Condition that matches against literal files within a project. If multiple values are provided, at least 1 file needs to exist.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "files": {
+          "title": "files",
+          "description": "Condition that matches against literal files within a project. If multiple values are provided, at least 1 file needs to exist.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "language": {
+          "title": "language",
+          "description": "Condition that matches against a project's language. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/LanguageType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LanguageType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `language`. If multiple values are provided, it matches using an OR operator."
+        },
+        "languages": {
+          "title": "languages",
+          "description": "Condition that matches against a project's language. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/LanguageType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LanguageType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `language`. If multiple values are provided, it matches using an OR operator."
+        },
+        "layer": {
+          "title": "layer",
+          "description": "Condition that matches against a project's layer. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/LayerType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LayerType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `layer`. If multiple values are provided, it matches using an OR operator."
+        },
+        "layers": {
+          "title": "layers",
+          "description": "Condition that matches against a project's layer. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/LayerType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LayerType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `layer`. If multiple values are provided, it matches using an OR operator."
+        },
+        "order": {
+          "title": "order",
+          "description": "The order in which this configuration is inherited by a project. Lower is inherited first, while higher is last.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stack": {
+          "title": "stack",
+          "description": "Condition that matches against a project's stack. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/StackType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/StackType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `stack`. If multiple values are provided, it matches using an OR operator."
+        },
+        "stacks": {
+          "title": "stacks",
+          "description": "Condition that matches against a project's stack. If multiple values are provided, it matches using an OR operator.",
+          "default": "unknown",
+          "anyOf": [
+            {
+              "default": "unknown",
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/StackType"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/StackType"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Condition that matches against a project's `stack`. If multiple values are provided, it matches using an OR operator."
+        },
+        "tag": {
+          "title": "tag",
+          "description": "Condition that matches against a tag within the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InheritedConditionConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tags": {
+          "title": "tags",
+          "description": "Condition that matches against a tag within the project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InheritedConditionConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolchain": {
+          "title": "toolchain",
+          "description": "Condition that matches against a toolchain detected for a project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InheritedConditionConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "toolchains": {
+          "title": "toolchains",
+          "description": "Condition that matches against a toolchain detected for a project.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InheritedConditionConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "InheritedClauseConfig": {
+      "description": "A condition that utilizes a combination of logical operators to match against. When matching, all clauses must be satisfied.",
+      "type": "object",
+      "properties": {
+        "and": {
+          "title": "and",
+          "description": "Require all values to match, using an AND operator.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "not": {
+          "title": "not",
+          "description": "Require no values to match, using a NOT operator.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "or": {
+          "title": "or",
+          "description": "Require any values to match, using an OR operator.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "InheritedConditionConfig": {
+      "description": "Patterns in which a condition can be configured as.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Id"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Id"
+          }
+        },
+        {
+          "$ref": "#/definitions/InheritedClauseConfig"
+        }
+      ]
+    },
     "Input": {
       "anyOf": [
         {
@@ -263,6 +626,94 @@
         {
           "$ref": "#/definitions/ProjectInput"
         }
+      ]
+    },
+    "LanguageType": {
+      "description": "Supported programming languages that each project can be written in.",
+      "anyOf": [
+        {
+          "title": "Bash",
+          "const": "bash"
+        },
+        {
+          "title": "Batch",
+          "const": "batch"
+        },
+        {
+          "title": "CPlusPlus",
+          "const": "cplusplus"
+        },
+        {
+          "title": "CSharp",
+          "const": "csharp"
+        },
+        {
+          "title": "DotNet",
+          "const": "dotnet"
+        },
+        {
+          "title": "Go",
+          "const": "go"
+        },
+        {
+          "title": "Java",
+          "const": "java"
+        },
+        {
+          "title": "JavaScript",
+          "const": "javascript"
+        },
+        {
+          "title": "Kotlin",
+          "const": "kotlin"
+        },
+        {
+          "title": "Php",
+          "const": "php"
+        },
+        {
+          "title": "Python",
+          "const": "python"
+        },
+        {
+          "title": "Ruby",
+          "const": "ruby"
+        },
+        {
+          "title": "Rust",
+          "const": "rust"
+        },
+        {
+          "title": "Swift",
+          "const": "swift"
+        },
+        {
+          "title": "TypeScript",
+          "const": "typescript"
+        },
+        {
+          "title": "Unknown",
+          "description": "Not explicitly set or detected.",
+          "const": "unknown"
+        },
+        {
+          "title": "Other",
+          "description": "A custom language.",
+          "type": "string"
+        }
+      ]
+    },
+    "LayerType": {
+      "description": "The layer within the technology stack, for categorizing.",
+      "type": "string",
+      "enum": [
+        "application",
+        "automation",
+        "configuration",
+        "library",
+        "scaffolding",
+        "tool",
+        "unknown"
       ]
     },
     "Output": {
@@ -321,6 +772,18 @@
         }
       },
       "additionalProperties": false
+    },
+    "StackType": {
+      "description": "The technology stack of the project, for categorizing.",
+      "type": "string",
+      "enum": [
+        "backend",
+        "data",
+        "frontend",
+        "infrastructure",
+        "systems",
+        "unknown"
+      ]
     },
     "TaskArgs": {
       "description": "Configures a command and its arguments to execute.",

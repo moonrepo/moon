@@ -483,7 +483,7 @@ tasks:
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("node")]);
+            assert_eq!(task.toolchains, vec![Id::raw("npm"), Id::raw("node")]);
 
             let task = tasks.get("typescript").unwrap();
 
@@ -512,7 +512,7 @@ tasks:
 
             assert_eq!(
                 task.toolchains,
-                vec![Id::raw("npm"), Id::raw("node"), Id::raw("javascript")]
+                vec![Id::raw("javascript"), Id::raw("npm"), Id::raw("node")]
             );
 
             let task = tasks.get("rust-via-cmd").unwrap();
@@ -991,6 +991,7 @@ tasks:
                     Input::Glob(stub_glob_input("src/**/*")),
                     Input::File(stub_file_input("/workspace-local")),
                     Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1002,6 +1003,7 @@ tasks:
                 vec![
                     Input::File(stub_file_input("local.json")),
                     Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1010,7 +1012,10 @@ tasks:
 
             assert_eq!(
                 task.inputs,
-                vec![Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))]
+                vec![
+                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::File(stub_file_input("/global/tasks/all.yml")),
+                ]
             );
             assert!(task.state.empty_inputs);
         }
@@ -1075,7 +1080,7 @@ tasks:
 
             let task = tasks.get("toolchains").unwrap();
 
-            assert_eq!(task.toolchains, vec!["global", "local"]);
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1124,7 +1129,7 @@ tasks:
                 ]
             );
 
-            assert_eq!(task.toolchains, vec!["global", "local"]);
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

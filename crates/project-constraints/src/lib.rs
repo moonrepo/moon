@@ -93,55 +93,6 @@ pub fn enforce_layer_relationships(
         }
     }
 
-    // let mut allowed = vec![
-    //     LayerType::Configuration.to_string(),
-    //     LayerType::Scaffolding.to_string(),
-    // ];
-
-    // let valid = match source.layer {
-    //     LayerType::Application => {
-    //         allowed.push(LayerType::Library.to_string());
-    //         allowed.push(LayerType::Tool.to_string());
-
-    //         matches!(
-    //             dependency.layer,
-    //             LayerType::Configuration
-    //                 | LayerType::Scaffolding
-    //                 | LayerType::Library
-    //                 | LayerType::Tool
-    //                 | LayerType::Unknown
-    //         )
-    //     }
-    //     LayerType::Automation => {
-    //         allowed.push(LayerType::Application.to_string());
-    //         allowed.push(LayerType::Library.to_string());
-    //         allowed.push(LayerType::Tool.to_string());
-
-    //         !matches!(dependency.layer, LayerType::Automation)
-    //     }
-    //     LayerType::Library | LayerType::Tool => {
-    //         allowed.push(LayerType::Library.to_string());
-
-    //         matches!(
-    //             dependency.layer,
-    //             LayerType::Configuration
-    //                 | LayerType::Scaffolding
-    //                 | LayerType::Library
-    //                 | LayerType::Unknown
-    //         )
-    //     }
-    //     LayerType::Configuration | LayerType::Scaffolding => {
-    //         matches!(
-    //             dependency.layer,
-    //             LayerType::Configuration | LayerType::Scaffolding
-    //         )
-    //     }
-    //     LayerType::Unknown => {
-    //         // Do nothing?
-    //         true
-    //     }
-    // };
-
     let valid = allowed.iter().any(|layer| &dependency.layer == layer);
 
     if !valid {

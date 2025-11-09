@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['merge']
+
 tasks:
   all:
     command: noop

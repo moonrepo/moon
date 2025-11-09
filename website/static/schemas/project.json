@@ -5,7 +5,6 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/project.json",
       "type": "string"
     },
     "dependsOn": {
@@ -1010,6 +1009,7 @@
       "type": "string",
       "enum": [
         "backend",
+        "data",
         "frontend",
         "infrastructure",
         "systems",

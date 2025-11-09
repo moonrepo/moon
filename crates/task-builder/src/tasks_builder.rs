@@ -738,7 +738,16 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Implicitly detected/inherited toolchains
         if task.toolchains.is_empty() {
-            toolchains.extend(self.detect_task_toolchains(task).await?);
+            toolchains.extend(
+                self.context
+                    .toolchain_registry
+                    .detect_task_usage(
+                        self.context.enabled_toolchains.iter().collect(),
+                        &task.command,
+                        &task.args,
+                    )
+                    .await?,
+            );
         }
         // Explicitly configured toolchains
         else {
@@ -750,32 +759,23 @@ impl<'proj> TasksBuilder<'proj> {
             toolchains.extend(self.project_toolchains.to_owned());
         }
 
-        // Resolve them to valid identifiers
-        task.toolchains = filter_and_resolve_toolchain_ids(
-            self.context.enabled_toolchains,
-            toolchains.into_iter().collect(),
-            true,
-        );
-
-        Ok(())
-    }
-
-    async fn detect_task_toolchains(&self, task: &Task) -> miette::Result<Vec<Id>> {
+        // Expand the toolchains list with required/dependency relationships
         let toolchains = self
             .context
             .toolchain_registry
-            .detect_task_usage(
-                self.context.enabled_toolchains.iter().collect(),
-                &task.command,
-                &task.args,
-                |registry, toolchain| DefineRequirementsInput {
+            .expand_task_usage(toolchains.into_iter().collect(), |registry, toolchain| {
+                DefineRequirementsInput {
                     context: registry.create_context(),
                     toolchain_config: registry.create_config(&toolchain.id),
-                },
-            )
+                }
+            })
             .await?;
 
-        Ok(toolchains)
+        // Resolve them to valid identifiers
+        task.toolchains =
+            filter_and_resolve_toolchain_ids(self.context.enabled_toolchains, toolchains, true);
+
+        Ok(())
     }
 
     fn inherit_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {

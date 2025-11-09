@@ -193,7 +193,7 @@ impl ToolchainRegistry {
     pub async fn detect_project_language(&self, dir: &Path) -> miette::Result<LanguageType> {
         let mut detected = vec![];
 
-        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+        for toolchain in self.load_all().await? {
             if let Some(language) = &toolchain.metadata.language
                 && toolchain.detect_project_usage(dir)?
                 && !language.is_unknown()
@@ -221,7 +221,7 @@ impl ToolchainRegistry {
     ) -> miette::Result<Vec<Id>> {
         let mut detected = vec![];
 
-        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+        for toolchain in self.load_all().await? {
             if toolchain
                 .metadata
                 .language
@@ -245,17 +245,17 @@ impl ToolchainRegistry {
     {
         let mut detected = FxHashSet::default();
 
-        for toolchain in self.load_many(self.get_plugin_ids()).await? {
+        for toolchain in self.load_all().await? {
             if toolchain.detect_project_usage(dir)? {
                 detected.insert(toolchain.id.clone());
             }
         }
 
-        for output in self
+        for result in self
             .define_requirements_many(detected.iter().collect(), input_factory)
             .await?
         {
-            for require_id in output.requires {
+            for require_id in result.output.requires {
                 detected.insert(Id::new(require_id)?);
             }
         }
@@ -263,30 +263,17 @@ impl ToolchainRegistry {
         Ok(detected.into_iter().collect())
     }
 
-    pub async fn detect_task_usage<InFn>(
+    pub async fn detect_task_usage(
         &self,
         ids: Vec<&Id>,
         command: &String,
         args: &[String],
-        input_factory: InFn,
-    ) -> miette::Result<Vec<Id>>
-    where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
-    {
+    ) -> miette::Result<Vec<Id>> {
         let mut detected = FxHashSet::default();
 
         for toolchain in self.load_many(ids).await? {
             if toolchain.detect_task_usage(command, args)? {
                 detected.insert(toolchain.id.clone());
-            }
-        }
-
-        for output in self
-            .define_requirements_many(detected.iter().collect(), input_factory)
-            .await?
-        {
-            for require_id in output.requires {
-                detected.insert(Id::new(require_id)?);
             }
         }
 
@@ -297,7 +284,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<DefineRequirementsOutput>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, DefineRequirementsOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
     {
@@ -310,7 +297,7 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().map(|result| result.output).collect())
+        Ok(results)
     }
 
     pub async fn define_toolchain_config_all(
@@ -349,6 +336,38 @@ impl ToolchainRegistry {
             .await?;
 
         Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
+    pub async fn expand_task_usage<InFn>(
+        &self,
+        ids: Vec<Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<Id>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let mut expanded = FxHashSet::from_iter(ids);
+
+        for result in self
+            .define_requirements_many(self.get_plugin_ids(), input_factory)
+            .await?
+        {
+            if expanded.contains(&result.id)
+                || result
+                    .output
+                    .requires
+                    .iter()
+                    .any(|id| expanded.contains(id.as_str()))
+            {
+                for require_id in result.output.requires {
+                    expanded.insert(Id::new(require_id)?);
+                }
+
+                expanded.insert(result.id);
+            }
+        }
+
+        Ok(expanded.into_iter().collect())
     }
 
     pub async fn extend_project_graph_all<InFn>(

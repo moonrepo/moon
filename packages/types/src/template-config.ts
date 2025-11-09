@@ -9,8 +9,7 @@ import type { Id } from './common';
  * Docs: https://moonrepo.dev/docs/config/template#frontmatter
  */
 export interface TemplateFrontmatterConfig {
-	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
-	$schema?: string;
+	$schema: string;
 	/** Force overwrite a file at the destination if there is a conflict. */
 	force: boolean;
 	/** Skip writing this file to the destination. */
@@ -24,7 +23,6 @@ export interface TemplateFrontmatterConfig {
  * Docs: https://moonrepo.dev/docs/config/template#frontmatter
  */
 export interface PartialTemplateFrontmatterConfig {
-	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
 	$schema?: string | null;
 	/** Force overwrite a file at the destination if there is a conflict. */
 	force?: boolean | null;
@@ -159,8 +157,7 @@ export type TemplateVariable =
  * Docs: https://moonrepo.dev/docs/config/template
  */
 export interface TemplateConfig {
-	/** @default 'https://moonrepo.dev/schemas/template.json' */
-	$schema?: string;
+	$schema: string;
 	/** A description on what the template scaffolds. */
 	description: string;
 	/**
@@ -306,7 +303,6 @@ export type PartialTemplateVariable =
  * Docs: https://moonrepo.dev/docs/config/template
  */
 export interface PartialTemplateConfig {
-	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema?: string | null;
 	/** A description on what the template scaffolds. */
 	description?: string | null;

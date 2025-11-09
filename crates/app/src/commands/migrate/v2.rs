@@ -5,11 +5,13 @@ use clap::Args;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_DIRNAME;
+use moon_config::{LayerType, StackType};
 use moon_console::ui::Confirm;
 use starbase::AppResult;
 use starbase_utils::yaml::{self, YamlMapping, YamlValue};
 use starbase_utils::{fs, glob};
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{instrument, warn};
 
@@ -62,6 +64,7 @@ fn warn_pkl_config_files() {
 
 fn load_config_file(config_path: &Path) -> miette::Result<YamlValue> {
     let content = fs::read_file(config_path)?
+        .replace("$projectName", "$projectTitle")
         .replace("$projectType", "$projectLayer")
         .replace("$taskPlatform", "$taskToolchain");
 
@@ -142,6 +145,55 @@ fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
     }
 }
 
+fn migrate_inherited_by_setting(file_name: &str) -> Option<YamlValue> {
+    if file_name.is_empty() {
+        return None;
+    }
+
+    let mut map = YamlMapping::new();
+
+    if let Some(tag) = file_name.strip_prefix("tag-") {
+        map.insert(
+            YamlValue::String("tag".into()),
+            YamlValue::String(tag.into()),
+        );
+    } else {
+        for part in file_name.split('-') {
+            if part == "bun"
+                || part == "deno"
+                || part == "node"
+                || part == "javascript"
+                || part == "typescript"
+                || part == "rust"
+                || part == "python"
+                || part == "go"
+            {
+                map.insert(
+                    YamlValue::String("toolchain".into()),
+                    YamlValue::String(part.into()),
+                );
+            } else if StackType::from_str(part).is_ok() {
+                map.insert(
+                    YamlValue::String("stack".into()),
+                    YamlValue::String(part.into()),
+                );
+            } else if LayerType::from_str(part).is_ok() {
+                map.insert(
+                    YamlValue::String("layer".into()),
+                    YamlValue::String(part.into()),
+                );
+            } else {
+                map.insert(
+                    YamlValue::String("language".into()),
+                    YamlValue::String(part.into()),
+                );
+            }
+        }
+    }
+
+    Some(YamlValue::Mapping(map))
+}
+
 fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
     for config_path in glob::walk_files(
         session.workspace_root.join(CONFIG_DIRNAME),
@@ -155,6 +207,19 @@ fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
         let mut config = load_config_file(&config_path)?;
 
         if let Some(root) = config.as_mapping_mut() {
+            if !root.contains_key("inheritedBy")
+                && let Some(by) = migrate_inherited_by_setting(
+                    config_path
+                        .file_stem()
+                        .and_then(|file| file.to_str())
+                        .unwrap_or_default(),
+                )
+            {
+                change_setting(root, "inheritedBy", true, move |node, key_part| {
+                    node.insert(YamlValue::String(key_part.to_owned()), by.clone());
+                });
+            }
+
             if let Some(tasks) = root
                 .get_mut("tasks")
                 .and_then(|tasks| tasks.as_mapping_mut())
@@ -166,6 +231,28 @@ fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
         }
 
         yaml::write_file_with_config(&config_path, &config)?;
+    }
+
+    // Rename the old file to a new one
+    for config_path in glob::walk_files(
+        session.workspace_root.join(CONFIG_DIRNAME),
+        ["tasks.{pkl,yml}"],
+    )? {
+        if config_path.exists() {
+            let ext = config_path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("yml");
+
+            fs::rename(
+                &config_path,
+                config_path
+                    .parent()
+                    .unwrap()
+                    .join("tasks")
+                    .join(format!("all.{ext}")),
+            )?;
+        }
     }
 
     Ok(())

@@ -1,3 +1,6 @@
+inheritedBy:
+  languages: 'bash'
+
 # This is for testing scenarios
 tasks:
   echo:

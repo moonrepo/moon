@@ -719,7 +719,7 @@ mod run {
         fn bubbles_up_invalid_tasks_config() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(".moon/tasks.yml", "tasks: 123");
+            sandbox.create_file(".moon/tasks/all.yml", "tasks: 123");
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("run").arg("shared:base");

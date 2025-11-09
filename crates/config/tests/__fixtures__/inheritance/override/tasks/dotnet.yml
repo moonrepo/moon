@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'dotnet'
+
 tasks:
   command:
     command: 'node'

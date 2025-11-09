@@ -13,11 +13,9 @@ use moon_feature_flags::glob_walk_with_options;
 use moon_hash::hash_content;
 use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
 use moon_project::ProjectFragment;
-use moon_time::to_millis;
 use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
-use starbase_utils::glob::GlobWalkOptions;
-use starbase_utils::{fs, json::JsonValue};
+use starbase_utils::{glob::GlobWalkOptions, json::JsonValue};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Arc;
@@ -26,7 +24,7 @@ use tracing::{debug, instrument, warn};
 hash_content!(
     struct InstallDependenciesHash<'action> {
         action_node: &'action InstallDependenciesNode,
-        lockfile_timestamp: Option<u128>,
+        lockfile_hash: Option<String>,
         manifest_dependencies: BTreeMap<String, BTreeSet<String>>,
         manifest_paths: BTreeSet<WorkspaceRelativePathBuf>,
         project: Option<&'action ProjectFragment>,
@@ -245,7 +243,7 @@ async fn create_hash_content<'action>(
 ) -> miette::Result<InstallDependenciesHash<'action>> {
     let mut content = InstallDependenciesHash {
         action_node: node,
-        lockfile_timestamp: None,
+        lockfile_hash: None,
         manifest_dependencies: BTreeMap::default(),
         manifest_paths: BTreeSet::default(),
         project: input.project.as_ref(),
@@ -262,11 +260,16 @@ async fn create_hash_content<'action>(
     for lock_file_name in &toolchain.metadata.lock_file_names {
         let lock_path = deps_root.join(lock_file_name);
 
-        if lock_path.exists() {
-            let meta = fs::metadata(&lock_path)?;
+        if lock_path.exists()
+            && let Ok(rel_lock_path) = lock_path.relative_to(&app_context.workspace_root)
+        {
+            let mut lock_hashes = app_context
+                .vcs
+                .get_file_hashes(&[rel_lock_path.clone()], false)
+                .await?;
 
-            if let Ok(timestamp) = meta.modified().or_else(|_| meta.created()) {
-                content.lockfile_timestamp = Some(to_millis(timestamp));
+            if let Some(hash) = lock_hashes.remove(&rel_lock_path) {
+                content.lockfile_hash = Some(hash);
                 break;
             }
         }

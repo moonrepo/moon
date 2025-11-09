@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where a task `mutex` would not be respected, and tasks would still run in parallel.
+- Fixed an issue where toolchain dependency install/dedupe would consistently run, because the
+  underlying lockfile timestamp kept changing.
 
 ## 1.41.6
 

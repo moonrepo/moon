@@ -1,5 +1,8 @@
 $schema: '../../website/static/schemas/tasks.json'
 
+inheritedBy:
+  toolchains: 'node'
+
 implicitDeps:
   - '^:build'
 

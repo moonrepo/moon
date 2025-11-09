@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'node'
+
 fileGroups:
   sources:
     - 'node'

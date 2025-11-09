@@ -145,7 +145,7 @@ export interface ProjectMetadataConfig {
 }
 
 /** The technology stack of the project, for categorizing. */
-export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
+export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
@@ -195,8 +195,7 @@ export interface ProjectWorkspaceConfig {
  * Docs: https://moonrepo.dev/docs/config/project
  */
 export interface ProjectConfig {
-	/** @default 'https://moonrepo.dev/schemas/project.json' */
-	$schema?: string;
+	$schema: string;
 	/** Other projects that this project depends on. */
 	deps?: ProjectDependsOn[];
 	/** Other projects that this project depends on. */
@@ -249,7 +248,7 @@ export interface ProjectConfig {
 	 * @since 1.22.0
 	 *
 	 * @default 'unknown'
-	 * @type {'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown'}
+	 * @type {'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown'}
 	 */
 	stack: StackType;
 	/**
@@ -407,7 +406,6 @@ export interface PartialProjectWorkspaceConfig {
  * Docs: https://moonrepo.dev/docs/config/project
  */
 export interface PartialProjectConfig {
-	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
 	/** Other projects that this project depends on. */
 	deps?: PartialProjectDependsOn[] | null;

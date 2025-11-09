@@ -443,14 +443,6 @@ mod project_graph {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn with_tasks_changes() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/tasks.yml", "# Changes");
-                })
-                .await;
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
             async fn with_scoped_tasks_changes() {
                 test_invalidate(|sandbox| {
                     sandbox.create_file(".moon/tasks/node.yml", "# Changes");

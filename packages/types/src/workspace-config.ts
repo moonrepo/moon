@@ -540,7 +540,7 @@ export interface VcsConfig {
  * Docs: https://moonrepo.dev/docs/config/workspace
  */
 export interface WorkspaceConfig {
-	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
+	/** @default './cache/schemas/workspace.json' */
 	$schema?: string;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
@@ -1089,7 +1089,7 @@ export interface PartialVcsConfig {
  * Docs: https://moonrepo.dev/docs/config/workspace
  */
 export interface PartialWorkspaceConfig {
-	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
+	/** @default './cache/schemas/workspace.json' */
 	$schema?: string | null;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.

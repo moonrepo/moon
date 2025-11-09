@@ -131,8 +131,6 @@ deno: {{}}
                 load_config_from_root(root, &ProtoConfig::default())
             });
 
-            dbg!(&config);
-
             assert!(config.get_plugin_config("bun").is_some());
             assert!(config.get_plugin_config("deno").is_some());
             assert!(config.get_plugin_config("node").is_some());

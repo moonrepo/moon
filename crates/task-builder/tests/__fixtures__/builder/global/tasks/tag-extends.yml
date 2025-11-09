@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['extends']
+
 tasks:
   global-base:
     command: 'global-base'

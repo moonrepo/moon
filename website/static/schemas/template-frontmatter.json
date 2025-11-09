@@ -5,7 +5,6 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/template-frontmatter.json",
       "type": "string"
     },
     "force": {

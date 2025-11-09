@@ -111,11 +111,24 @@ fn generate_tasks(out_dir: &Path) -> miette::Result<()> {
     generator.generate(
         out_dir.join("tasks-config.ts"),
         TypeScriptRenderer::new(TypeScriptOptions {
-            exclude_references: vec!["Id".into(), "ExtendsFrom".into()],
-            external_types: HashMap::from_iter([(
-                "./common".into(),
-                vec!["Id".into(), "ExtendsFrom".into()],
-            )]),
+            exclude_references: vec![
+                "Id".into(),
+                "ExtendsFrom".into(),
+                "LanguageType".into(),
+                "LayerType".into(),
+                "StackType".into(),
+            ],
+            external_types: HashMap::from_iter([
+                ("./common".into(), vec!["Id".into(), "ExtendsFrom".into()]),
+                (
+                    "./project-config".into(),
+                    vec![
+                        "LanguageType".into(),
+                        "LayerType".into(),
+                        "StackType".into(),
+                    ],
+                ),
+            ]),
             ..Default::default()
         }),
     )

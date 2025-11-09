@@ -177,8 +177,7 @@ pub async fn load_tasks_configs(
     workspace_root: &Path,
 ) -> miette::Result<Arc<InheritedTasksManager>> {
     debug!(
-        "Attempting to load {} and {} (optional)",
-        color::file(config_loader.get_debug_label("tasks", true)),
+        "Attempting to load {} (optional)",
         color::file(config_loader.get_debug_label("tasks/**/*", true)),
     );
 
@@ -188,9 +187,8 @@ pub async fn load_tasks_configs(
         .into_diagnostic()??;
 
     debug!(
-        scopes = ?manager.configs.keys(),
-        "Loaded {} task configs to inherit",
-        manager.configs.len(),
+        "Loaded {} task configs for inheritance",
+        manager.configs.len()
     );
 
     Ok(Arc::new(manager))

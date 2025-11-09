@@ -193,6 +193,9 @@ toolchains:
 
 ### Configuration: `moon.*`, `.moon/tasks`
 
+- The file `.moon/tasks.yml` has been removed. If you want to support tasks that are inherited by
+  _all projects_, then move this to `.moon/tasks/all.yml` and _do not_ configure the new
+  `inheritedBy` setting.
 - Renamed tokens:
   - `$projectName` -> `$projectTitle`
   - `$projectType` -> `$projectLayer`

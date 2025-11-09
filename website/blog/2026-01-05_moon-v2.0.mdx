@@ -156,6 +156,17 @@ each applicable toolchain. In addition, we have added a new `$projectAliases` to
 comma-separated list of all aliases. The existing `$projectAlias` token now returns the first alias,
 if it exists.
 
+### New `data` stack
+
+Our stack system represents all aspects of a development stack, except one, the database/data layer!
+To give you more control around categorization, we've added a new `data` stack type, which can be
+used to represent projects that are primarily focused on data storage. This includes databases, ETL
+pipelines, and other data-centric use cases.
+
+```yaml title="moon.yml"
+stack: 'data'
+```
+
 ## Tasks
 
 ### Inheritance via configuration
@@ -170,13 +181,21 @@ configured like so:
 
 ```yaml title=".moon/tasks/node-frontend-library.yml"
 inheritedBy:
-  toolchains: 'node'
-  stacks: 'frontend'
-  layers: 'library'
+  toolchain: 'node'
+  stack: 'frontend'
+  layer: 'library'
 ```
 
 This new system is very powerful, as you can now mix-and-match different criteria to control how
-tasks are inherited.
+tasks are inherited. The following conditions are supported out of the box, providing granular
+control:
+
+- `files` (NEW) - Inherit for projects that contain specific files.
+- `languages` (NEW) - Inherit for projects that belong to specific `language`s.
+- `layers` - Inherit for projects that belong to specific `layer`s.
+- `stacks` - Inherit for projects that belong to specific `stack`s.
+- `tags` - Inherit for projects that have specific `tags`.
+- `toolchains` - Inherit for projects that belong to specific toolchains.
 
 ```yaml
 inheritedBy:

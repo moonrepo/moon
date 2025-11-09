@@ -114,7 +114,7 @@ export interface InheritedClauseConfig {
 	or: Id | Id[] | null;
 }
 
-export type InheritedConditionConfig = InheritedClauseConfig | Id[] | Id;
+export type InheritedConditionConfig = Id | Id[] | InheritedClauseConfig;
 
 /**
  * Configures conditions that must match against a project for tasks
@@ -580,7 +580,7 @@ export interface PartialInheritedClauseConfig {
 	or?: Id | Id[] | null;
 }
 
-export type PartialInheritedConditionConfig = PartialInheritedClauseConfig | Id[] | Id;
+export type PartialInheritedConditionConfig = Id | Id[] | PartialInheritedClauseConfig;
 
 /**
  * Configures conditions that must match against a project for tasks

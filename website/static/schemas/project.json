@@ -1009,6 +1009,7 @@
       "type": "string",
       "enum": [
         "backend",
+        "data",
         "frontend",
         "infrastructure",
         "systems",

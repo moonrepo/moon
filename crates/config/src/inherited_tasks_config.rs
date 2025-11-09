@@ -103,16 +103,16 @@ config_struct!(
     #[derive(Config)]
     #[serde(untagged)]
     pub enum InheritedConditionConfig {
-        /// Condition applies using logical operator clauses.
-        #[setting(nested)]
-        Clause(InheritedClauseConfig),
+        /// Condition applies to a single value.
+        One(Id),
 
         /// Condition applies to multiple values,
         /// and matches using an OR operator.
         Many(Vec<Id>),
 
-        /// Condition applies to a single value.
-        One(Id),
+        /// Condition applies using logical operator clauses.
+        #[setting(nested)]
+        Clause(InheritedClauseConfig),
     }
 );
 

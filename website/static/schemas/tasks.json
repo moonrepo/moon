@@ -596,7 +596,7 @@
       "description": "Patterns in which a condition can be configured as.",
       "anyOf": [
         {
-          "$ref": "#/definitions/InheritedClauseConfig"
+          "$ref": "#/definitions/Id"
         },
         {
           "type": "array",
@@ -605,7 +605,7 @@
           }
         },
         {
-          "$ref": "#/definitions/Id"
+          "$ref": "#/definitions/InheritedClauseConfig"
         }
       ]
     },
@@ -778,6 +778,7 @@
       "type": "string",
       "enum": [
         "backend",
+        "data",
         "frontend",
         "infrastructure",
         "systems",

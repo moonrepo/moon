@@ -496,6 +496,470 @@ implicitInputs:
             );
         }
     }
+
+    mod inherited_by {
+        use super::*;
+
+        #[test]
+        fn one_file() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  file: config.js
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().files.unwrap(),
+                OneOrMany::One(FilePath("config.js".into())),
+            );
+        }
+
+        #[test]
+        fn many_files() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  files: [a.json, b.json]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().files.unwrap(),
+                OneOrMany::Many(vec![FilePath("a.json".into()), FilePath("b.json".into())]),
+            );
+        }
+
+        #[should_panic]
+        #[test]
+        fn errors_for_glob() {
+            test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  file: config.*
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+        }
+
+        #[test]
+        fn one_language() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  language: bash
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().languages.unwrap(),
+                OneOrMany::One(LanguageType::Bash),
+            );
+        }
+
+        #[test]
+        fn many_languages() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  languages: [bash, batch]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().languages.unwrap(),
+                OneOrMany::Many(vec![LanguageType::Bash, LanguageType::Batch]),
+            );
+        }
+
+        #[test]
+        fn one_layer() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  layer: library
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().layers.unwrap(),
+                OneOrMany::One(LayerType::Library),
+            );
+        }
+
+        #[test]
+        fn many_layers() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  layers: [library, application]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().layers.unwrap(),
+                OneOrMany::Many(vec![LayerType::Library, LayerType::Application]),
+            );
+        }
+
+        #[test]
+        fn one_stack() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  stack: frontend
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().stacks.unwrap(),
+                OneOrMany::One(StackType::Frontend),
+            );
+        }
+
+        #[test]
+        fn many_stacks() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  stacks: [frontend, data]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().stacks.unwrap(),
+                OneOrMany::Many(vec![StackType::Frontend, StackType::Data]),
+            );
+        }
+
+        #[test]
+        fn one_tag() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  tag: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().tags.unwrap(),
+                InheritedConditionConfig::One(Id::raw("a"))
+            );
+        }
+
+        #[test]
+        fn many_tags() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  tags: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().tags.unwrap(),
+                InheritedConditionConfig::Many(vec![Id::raw("a"), Id::raw("b")])
+            );
+        }
+
+        #[test]
+        fn clause_tags() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  tags:
+    and: [a, b]
+    or: c
+    not: d
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().tags.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    or: Some(OneOrMany::One(Id::raw("c"))),
+                    not: Some(OneOrMany::One(Id::raw("d")))
+                })
+            );
+        }
+
+        #[test]
+        fn one_toolchain() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchain: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::One(Id::raw("a"))
+            );
+        }
+
+        #[test]
+        fn many_toolchains() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Many(vec![Id::raw("a"), Id::raw("b")])
+            );
+        }
+
+        #[test]
+        fn clause_toolchains() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+    or: c
+    not: d
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    or: Some(OneOrMany::One(Id::raw("c"))),
+                    not: Some(OneOrMany::One(Id::raw("d")))
+                })
+            );
+        }
+
+        #[test]
+        fn clause_one_and() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::One(Id::raw("a"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_many_and() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_one_or() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    or: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    or: Some(OneOrMany::One(Id::raw("a"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_many_or() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    or: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    or: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_one_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    not: a
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    not: Some(OneOrMany::One(Id::raw("a"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_many_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    not: [a, b]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    not: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_and_or() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+    or: c
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    or: Some(OneOrMany::One(Id::raw("c"))),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_and_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    and: [a, b]
+    not: [c, d]
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    and: Some(OneOrMany::Many(vec![Id::raw("a"), Id::raw("b")])),
+                    not: Some(OneOrMany::Many(vec![Id::raw("c"), Id::raw("d")])),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
+        fn clause_or_not() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+inheritedBy:
+  toolchains:
+    or: a
+    not: b
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.inherited_by.unwrap().toolchains.unwrap(),
+                InheritedConditionConfig::Clause(InheritedClauseConfig {
+                    or: Some(OneOrMany::One(Id::raw("a"))),
+                    not: Some(OneOrMany::One(Id::raw("b"))),
+                    ..Default::default()
+                })
+            );
+        }
+    }
 }
 
 mod task_manager {
@@ -575,6 +1039,7 @@ mod task_manager {
 
     mod config_order {
         use super::*;
+        use starbase_sandbox::pretty_assertions::assert_eq;
 
         #[test]
         fn creates_js_config() {
@@ -606,13 +1071,16 @@ mod task_manager {
                 ]),
             );
 
+            let mut layers = config.layers.keys().collect::<Vec<_>>();
+            layers.sort();
+
             assert_eq!(
-                config.layers.keys().collect::<Vec<_>>(),
+                layers,
                 vec![
                     "tasks/all.yml",
-                    "tasks/node.yml",
                     "tasks/javascript.yml",
                     "tasks/node-application.yml",
+                    "tasks/node.yml",
                 ]
             );
         }
@@ -674,9 +1142,12 @@ mod task_manager {
                 ]),
             );
 
+            let mut layers = config.layers.keys().collect::<Vec<_>>();
+            layers.sort();
+
             assert_eq!(
-                config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks/all.yml", "tasks/javascript.yml", "tasks/bun.yml"]
+                layers,
+                vec!["tasks/all.yml", "tasks/bun.yml", "tasks/javascript.yml"]
             );
         }
 
@@ -706,9 +1177,12 @@ mod task_manager {
                 ]),
             );
 
+            let mut layers = config.layers.keys().collect::<Vec<_>>();
+            layers.sort();
+
             assert_eq!(
-                config.layers.keys().collect::<Vec<_>>(),
-                vec!["tasks/all.yml", "tasks/typescript.yml", "tasks/node.yml"]
+                layers,
+                vec!["tasks/all.yml", "tasks/node.yml", "tasks/typescript.yml"]
             );
         }
 

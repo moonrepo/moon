@@ -369,11 +369,15 @@ $ moon ci :build :lint
 
 - `--base ` - Base branch, commit, or revision to compare against
   ([learn more](../guides/ci#comparing-revisions)).
+- `--downstream` - Control the depth of downstream dependents. Defaults to `direct`.
+  
 - `--head ` - Current branch, commit, or revision to compare with
   ([learn more](../guides/ci#comparing-revisions)).
 - `--job ` - Index of the current job.
 - `--jobTotal ` Total amount of jobs to run.
 - `--stdin` - Accept touched files from stdin for affected checks. 
+- `--upstream` - Control the depth of upstream dependencies. Defaults to `deep`.
+  
 
 ### Configuration
 
@@ -12139,9 +12143,9 @@ export default config;
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-In this guide, you'll learn how to integrate [TypeScript](https://www.typescriptlang.org/) into moon. We'll be
-using [project references](../javascript/typescript-project-refs), as it ensures that only affected
-projects are built, and not the entire repository.
+In this guide, you'll learn how to integrate [TypeScript](https://www.typescriptlang.org/) into
+moon. We'll be using [project references](../javascript/typescript-project-refs), as it ensures that
+only affected projects are built, and not the entire repository.
 
 Begin by installing `typescript` and any pre-configured tsconfig packages in your root. We suggest
 using the same version across the entire repository.

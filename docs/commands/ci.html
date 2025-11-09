@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6dcfee5e.css">
-<script src="/assets/js/runtime~main.eb2556b5.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.24598d31.js" defer="defer"></script>
 <script src="/assets/js/main.f98e34e3.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -41,11 +41,17 @@ to utilize this command.</p>
 <ul>
 <li><code>--base &lt;rev&gt;</code> - Base branch, commit, or revision to compare against
 (<a href="/docs/guides/ci#comparing-revisions">learn more</a>).</li>
+<li><code>--downstream</code> - Control the depth of downstream dependents. Defaults to <code>direct</code>.<!-- -->
+<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.41.7</span>
+</li>
 <li><code>--head &lt;rev&gt;</code> - Current branch, commit, or revision to compare with
 (<a href="/docs/guides/ci#comparing-revisions">learn more</a>).</li>
 <li><code>--job &lt;index&gt;</code> - Index of the current job.</li>
 <li><code>--jobTotal &lt;total&gt;</code> Total amount of jobs to run.</li>
 <li><code>--stdin</code> - Accept touched files from stdin for affected checks. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.36.0</span></li>
+<li><code>--upstream</code> - Control the depth of upstream dependencies. Defaults to <code>deep</code>.<!-- -->
+<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.41.7</span>
+</li>
 </ul>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="configuration">Configuration<a href="#configuration" class="hash-link" aria-label="Direct link to Configuration" title="Direct link to Configuration">​</a></h3>
 <ul>

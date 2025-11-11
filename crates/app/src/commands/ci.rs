@@ -283,16 +283,21 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
         last_title: String::new(),
     };
 
+    //
     let workspace_graph = session.get_workspace_graph().await?;
+    //
     let changed_files = gather_changed_files(&mut console, &session, &args).await?;
+    //
     let targets = gather_potential_targets(&mut console, &workspace_graph, &args).await?;
 
+    //
     if targets.is_empty() {
         console.write_line(color::invalid("No tasks to run"))?;
 
         return Ok(None);
     }
 
+    //
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
     let (action_graph, action_context) =
         generate_action_graph(&mut console, &session, &args, &targets, changed_files).await?;

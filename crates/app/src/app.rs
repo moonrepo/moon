@@ -7,6 +7,7 @@ use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
 use crate::commands::debug::DebugCommands;
 use crate::commands::docker::DockerCommands;
+use crate::commands::exec::ExecArgs;
 use crate::commands::ext::ExtArgs;
 use crate::commands::extension::ExtensionCommands;
 use crate::commands::generate::GenerateArgs;
@@ -95,6 +96,12 @@ pub enum Commands {
         #[command(subcommand)]
         command: DockerCommands,
     },
+
+    #[command(
+        name = "exec",
+        about = "Low-level command for executing tasks in the action pipeline."
+    )]
+    Exec(ExecArgs),
 
     #[command(name = "ext", about = "Execute an extension plugin.")]
     Ext(ExtArgs),

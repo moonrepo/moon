@@ -6,6 +6,7 @@ pub mod clean;
 pub mod completions;
 pub mod debug;
 pub mod docker;
+pub mod exec;
 pub mod ext;
 pub mod extension;
 pub mod generate;

@@ -162,6 +162,7 @@ async fn main() -> MainResult {
                     }
                     DockerCommands::Setup => commands::docker::setup(session).await,
                 },
+                Commands::Exec(args) => commands::exec::exec(session, args).await,
                 Commands::Ext(args) => commands::ext::ext(session, args).await,
                 Commands::Extension { command } => match command {
                     ExtensionCommands::Add(args) => {

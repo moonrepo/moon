@@ -93,6 +93,10 @@ pub async fn run_action_pipeline(
             pipeline.report_name = "ciReport.json".into();
             pipeline.summarize = true;
         }
+        Commands::Exec(cmd) => {
+            pipeline.bail = !cmd.no_bail;
+            pipeline.summarize = cmd.summary;
+        }
         Commands::Run(cmd) => {
             pipeline.bail = !cmd.no_bail;
             pipeline.summarize = cmd.summary;

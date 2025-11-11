@@ -13,6 +13,7 @@ moon_actions = { path = "../actions" }
 moon_affected = { path = "../affected" }
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
+moon_app_macros = { path = "../app-macros" }
 moon_cache = { path = "../cache" }
 moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }

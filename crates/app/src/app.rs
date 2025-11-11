@@ -60,7 +60,7 @@ pub enum Commands {
     #[command(
         alias = "c",
         name = "check",
-        about = "Run all build and test related tasks for a project."
+        about = "Run build and test related tasks for one or many projects."
     )]
     Check(CheckArgs),
 

@@ -82,6 +82,17 @@ pub async fn select_identifier<'a>(
     .map(|mut ids| ids.remove(0))
 }
 
+pub async fn select_identifiers<'a>(
+    console: &Console,
+    ids: &'a [Id],
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+) -> miette::Result<Vec<Id>> {
+    select_identifiers_internal(console, Vec::from_iter(ids), input, |value| {
+        Id::new(value).into_diagnostic()
+    })
+    .await
+}
+
 pub async fn select_target<'a>(
     console: &Console,
     target: &'a Option<Target>,

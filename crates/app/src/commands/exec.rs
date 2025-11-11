@@ -1,39 +1,39 @@
 use crate::app_error::AppError;
+use crate::app_options::SummaryLevel;
+use crate::helpers::run_action_pipeline;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use clap::Args;
-use iocraft::prelude::element;
+use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
+use moon_app_macros::with_shared_exec_props;
 use moon_common::{is_ci, is_test_env, path::WorkspaceRelativePathBuf};
-use moon_console::Console;
-use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_task::TargetLocator;
-use moon_vcs::ChangedStatus;
-use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
-use std::sync::Arc;
 use tracing::{debug, instrument};
 
-const HEADING_AFFECTED: &str = "Affected checks";
-const HEADING_GRAPH: &str = "Graph relationships";
-
-#[derive(Args, Clone, Debug)]
+#[with_shared_exec_props]
+#[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {
     #[arg(help = "Task targets to execute in the action pipeline")]
     pub targets: Vec<TargetLocator>,
 
     #[arg(
         long,
-        env = "MOON_NO_ACTIONS",
-        help = "Run the pipeline without sync and setup related actions"
+        env = "MOON_NO_BAIL",
+        help = "When a task fails, continue executing other tasks instead of aborting immediately"
     )]
-    pub no_actions: bool,
+    pub no_bail: bool,
 
-    #[arg(long, help = "Filter task targets based on the result of a query")]
+    #[arg(
+        long,
+        short = 'q',
+        help = "Filter tasks based on the result of a query"
+    )]
     pub query: Option<String>,
 
     // Passthrough args (after --)
@@ -42,78 +42,16 @@ pub struct ExecArgs {
         help = "Arguments to pass through to the underlying command"
     )]
     pub passthrough: Vec<String>,
-
-    // AFFECTED
-    #[arg(
-        long,
-        help = "Base branch, commit, or revision to compare against",
-        help_heading = HEADING_AFFECTED,
-    )]
-    pub base: Option<String>,
-
-    #[arg(
-        long,
-        help = "Current branch, commit, or revision to compare with",
-        help_heading = HEADING_AFFECTED,
-    )]
-    pub head: Option<String>,
-
-    #[arg(
-        long,
-        help = "Filter changed files based on a changed status",
-        help_heading = HEADING_AFFECTED
-    )]
-    pub status: Vec<ChangedStatus>,
-
-    #[arg(
-        long,
-        help = "Accept changed files from stdin for affected checks",
-        help_heading = HEADING_AFFECTED,
-    )]
-    pub stdin: bool,
-
-    // GRAPH
-    #[arg(
-        long,
-        alias = "dependents",
-        default_value_t = DownstreamScope::Direct,
-        help = "Control the depth of downstream dependents",
-        help_heading = HEADING_GRAPH,
-    )]
-    pub downstream: DownstreamScope,
-
-    #[arg(
-        long,
-        alias = "dependencies",
-        default_value_t = UpstreamScope::Deep,
-        help = "Control the depth of upstream dependencies",
-        help_heading = HEADING_GRAPH,
-    )]
-    pub upstream: UpstreamScope,
 }
 
 #[instrument(skip(session))]
 pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
-    if args.targets.is_empty() {
-        session.console.render(element! {
-            Container {
-                Notice(variant: Variant::Caution) {
-                    StyledText(content: "At least 1 task target is required for executing the action pipeline.")
-                }
-            }
-        })?;
-    } else {
-        ExecWorkflow::new(session, args).await?.execute().await?;
-    }
-
-    Ok(None)
+    ExecWorkflow::new(session, args).await?.execute().await
 }
 
 pub struct ExecWorkflow {
     args: ExecArgs,
-    console: Arc<Console>,
     session: MoonSession,
-    workspace_graph: Arc<WorkspaceGraph>,
 
     /// Whether we should run affected logic or not
     affected: bool,
@@ -136,24 +74,42 @@ impl ExecWorkflow {
         let ci_env = is_ci();
 
         Ok(Self {
-            affected: true,
+            affected: false,
+            args,
             ci_check: ci_env,
             ci_env,
-            console: session.get_console()?,
             node_indexes: FxHashSet::default(),
-            test_env: is_test_env(),
-            workspace_graph: session.get_workspace_graph().await?,
-            args,
             session,
+            test_env: is_test_env(),
         })
     }
 
-    pub async fn execute(&mut self) -> miette::Result<()> {
+    pub async fn execute(mut self) -> miette::Result<Option<u8>> {
         let changed_files = self.load_changed_files().await?;
+
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
+
         let action_graph = self.partition_action_graph(action_graph).await?;
 
-        Ok(())
+        let results = self
+            .execute_action_pipeline(action_context, action_graph)
+            .await?;
+
+        if self.args.no_bail {
+            let failed = results.into_iter().any(|result| {
+                if result.has_failed() {
+                    !result.allow_failure
+                } else {
+                    false
+                }
+            });
+
+            if failed {
+                return Ok(Some(1));
+            }
+        }
+
+        Ok(None)
     }
 
     // Step 1
@@ -258,7 +214,7 @@ impl ExecWorkflow {
             ci: self.ci_env,
             ci_check: self.ci_check,
             dependents: self.args.downstream != DownstreamScope::None,
-            interactive: false, // TODO
+            interactive: self.args.interactive,
             skip_affected: !self.affected,
         };
 
@@ -271,11 +227,7 @@ impl ExecWorkflow {
         }
 
         // Build the graph
-        let (mut action_context, action_graph) = action_graph_builder.build();
-
-        action_context
-            .initial_targets
-            .extend(self.args.targets.clone());
+        let (action_context, action_graph) = action_graph_builder.build();
 
         debug!("Target count: {}", self.args.targets.len());
         debug!("Action count: {}", action_graph.get_node_count());
@@ -285,8 +237,26 @@ impl ExecWorkflow {
 
     async fn partition_action_graph(
         &self,
-        mut action_graph: ActionGraph,
+        action_graph: ActionGraph,
     ) -> miette::Result<ActionGraph> {
         Ok(action_graph)
+    }
+
+    // Step 4
+    async fn execute_action_pipeline(
+        &self,
+        mut action_context: ActionContext,
+        action_graph: ActionGraph,
+    ) -> miette::Result<Vec<Action>> {
+        debug!("Step 4: Executing action pipeline");
+
+        action_context
+            .initial_targets
+            .extend(self.args.targets.clone());
+        action_context.passthrough_args = self.args.passthrough.clone();
+
+        let results = run_action_pipeline(&self.session, action_context, action_graph).await?;
+
+        Ok(results)
     }
 }

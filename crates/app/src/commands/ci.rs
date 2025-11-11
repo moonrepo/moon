@@ -299,6 +299,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
 
     //
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
+    //
     let (action_graph, action_context) =
         generate_action_graph(&mut console, &session, &args, &targets, changed_files).await?;
 

@@ -3358,7 +3358,6 @@ dependencies = [
 name = "moon_action_context"
 version = "0.0.1"
 dependencies = [
- "clap",
  "moon_affected",
  "moon_common",
  "moon_target",
@@ -3546,6 +3545,7 @@ dependencies = [
  "moon_affected",
  "moon_api",
  "moon_app_context",
+ "moon_app_macros",
  "moon_cache",
  "moon_codegen",
  "moon_common",
@@ -3607,6 +3607,15 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_vcs",
  "proto_core",
+]
+
+[[package]]
+name = "moon_app_macros"
+version = "0.0.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -4,7 +4,7 @@ use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_file
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
-use moon_action_context::{ActionContext, ProfileType};
+use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_cache::CacheMode;
@@ -17,7 +17,6 @@ use starbase::AppResult;
 use tracing::instrument;
 
 const HEADING_AFFECTED: &str = "Affected by";
-const HEADING_DEBUGGING: &str = "Debugging";
 
 #[derive(Args, Clone, Debug, Default)]
 pub struct RunArgs {
@@ -69,15 +68,6 @@ pub struct RunArgs {
         help = "When a task fails, continue executing other tasks instead of aborting immediately"
     )]
     pub no_bail: bool,
-
-    // Debugging
-    #[arg(
-        value_enum,
-        long,
-        help = "Record and generate a profile for ran tasks",
-        help_heading = HEADING_DEBUGGING,
-    )]
-    pub profile: Option<ProfileType>,
 
     // Affected
     #[arg(
@@ -258,7 +248,6 @@ pub async fn run_target(
         session,
         ActionContext {
             passthrough_args: args.passthrough.to_owned(),
-            profile: args.profile.to_owned(),
             ..action_context
         },
         action_graph,

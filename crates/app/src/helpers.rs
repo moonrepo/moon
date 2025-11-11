@@ -96,6 +96,13 @@ pub async fn run_action_pipeline(
             pipeline.report_name = "ciReport.json".into();
             pipeline.summary = Some(Level::Three);
         }
+        Commands::Exec(cmd) => {
+            pipeline.bail = !cmd.no_bail;
+            pipeline.summary = cmd
+                .summary
+                .clone()
+                .map(|sum| sum.unwrap_or_default().to_level());
+        }
         Commands::Run(cmd) => {
             pipeline.bail = !cmd.no_bail;
             pipeline.summary = cmd

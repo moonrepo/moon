@@ -8,14 +8,24 @@ pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStr
     let shared_fields = [
         // COMMON
         quote! {
-            #[arg(long, short = 'i', help = "Run the tasks interactively")]
+            #[arg(
+                long,
+                short = 'f',
+                env = "MOON_FORCE",
+                help = "Bypass cache and force update any existing items"
+            )]
+            pub force: bool
+        },
+        quote! {
+            #[arg(long, short = 'i', help = "Run the pipeline and tasks interactively")]
             pub interactive: bool
         },
         quote! {
             #[arg(
                 long,
                 env = "MOON_NO_ACTIONS",
-                help = "Run the pipeline without sync and setup related actions"
+                help = "Run the pipeline without sync and setup related actions",
+                help_heading = super::HEADING_WORKFLOW,
             )]
             pub no_actions: bool
         },
@@ -26,16 +36,7 @@ pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStr
                 env = "MOON_SUMMARY",
                 help = "Print a summary of all actions that were ran in the pipeline"
             )]
-            pub summary: Option<Option<SummaryLevel>>
-        },
-        quote! {
-            #[arg(
-                long,
-                short = 'u',
-                env = "MOON_CACHE_UPDATE",
-                help = "Bypass cache and force update any existing items"
-            )]
-            pub update_cache: bool
+            pub summary: Option<Option<crate::app_options::SummaryLevel>>
         },
         // AFFECTED
         quote! {
@@ -90,22 +91,20 @@ pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStr
         quote! {
             #[arg(
                 long,
-                alias = "dependents",
-                default_value_t = DownstreamScope::None,
+                visible_alias = "dependents",
                 help = "Control the depth of downstream dependents",
                 help_heading = super::HEADING_GRAPH,
             )]
-            pub downstream: DownstreamScope
+            pub downstream: Option<DownstreamScope>
         },
         quote! {
             #[arg(
                 long,
-                alias = "dependencies",
-                default_value_t = UpstreamScope::Deep,
+                visible_alias = "dependencies",
                 help = "Control the depth of upstream dependencies",
                 help_heading = super::HEADING_GRAPH,
             )]
-            pub upstream: UpstreamScope
+            pub upstream: Option<UpstreamScope>
         },
         // PARALLELISM
         quote! {

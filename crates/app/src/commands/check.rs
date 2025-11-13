@@ -1,5 +1,4 @@
 use super::exec::*;
-use crate::app_options::SummaryLevel;
 use crate::prompts::select_identifiers;
 use crate::session::MoonSession;
 use clap::Args;
@@ -16,7 +15,7 @@ use tracing::instrument;
 #[with_shared_exec_props]
 #[derive(Args, Clone, Debug)]
 pub struct CheckArgs {
-    #[arg(help = "List of project IDs to explicitly check")]
+    #[arg(help = "List of explicit project IDs to check")]
     #[clap(group = "projects")]
     pub ids: Vec<Id>,
 
@@ -77,6 +76,7 @@ pub async fn check(session: MoonSession, args: CheckArgs) -> AppResult {
     exec(session, {
         let mut args = args.into_exec_args();
         args.targets = targets;
+        args.on_failure = OnFailure::Bail;
         args
     })
     .await

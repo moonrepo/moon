@@ -1,9 +1,9 @@
 use crate::app_error::AppError;
-use crate::app_options::SummaryLevel;
 use crate::helpers::run_action_pipeline;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
-use clap::Args;
+use ci_env::CiOutput;
+use clap::{Args, ValueEnum};
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
@@ -16,6 +16,13 @@ use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use tracing::{debug, instrument};
 
+#[derive(ValueEnum, Clone, Debug, Default, PartialEq)]
+pub enum OnFailure {
+    #[default]
+    Bail,
+    Continue,
+}
+
 #[with_shared_exec_props]
 #[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {
@@ -24,15 +31,23 @@ pub struct ExecArgs {
 
     #[arg(
         long,
-        env = "MOON_NO_BAIL",
-        help = "When a task fails, continue executing other tasks instead of aborting immediately"
+        env = "MOON_ON_FAILURE",
+        help = "When a task fails, either bail the pipeline, or continue executing",
+        help_heading = super::HEADING_WORKFLOW,
     )]
-    pub no_bail: bool,
+    pub on_failure: OnFailure,
 
     #[arg(
         long,
-        short = 'q',
-        help = "Filter tasks based on the result of a query"
+        help = "Filter tasks to those that only run in CI",
+        help_heading = super::HEADING_WORKFLOW,
+    )]
+    pub only_ci_tasks: bool,
+
+    #[arg(
+        long,
+        help = "Filter tasks based on the result of a query",
+        help_heading = super::HEADING_WORKFLOW,
     )]
     pub query: Option<String>,
 
@@ -53,6 +68,9 @@ pub struct ExecWorkflow {
     args: ExecArgs,
     session: MoonSession,
 
+    ui: CiOutput,
+    last_title: String,
+
     /// Whether we should run affected logic or not
     affected: bool,
 
@@ -62,8 +80,11 @@ pub struct ExecWorkflow {
     /// Are we in a CI environment?
     ci_env: bool,
 
-    /// Node indexes for targets inserted into the graph.
+    /// Node indexes for targets inserted into the graph
     node_indexes: FxHashSet<NodeIndex>,
+
+    /// The current step in the process
+    step: u8,
 
     /// Are we in a test environment?
     test_env: bool,
@@ -74,13 +95,19 @@ impl ExecWorkflow {
         let ci_env = is_ci();
 
         Ok(Self {
-            affected: false,
-            args,
-            ci_check: ci_env,
+            affected: args.affected,
+            ci_check: ci_env && args.only_ci_tasks,
             ci_env,
             node_indexes: FxHashSet::default(),
             session,
+            step: 0,
             test_env: is_test_env(),
+            args,
+            ui: ci_env::get_output().unwrap_or(CiOutput {
+                close_log_group: "",
+                open_log_group: "▪▪▪▪ {name}",
+            }),
+            last_title: String::new(),
         })
     }
 
@@ -95,18 +122,16 @@ impl ExecWorkflow {
             .execute_action_pipeline(action_context, action_graph)
             .await?;
 
-        if self.args.no_bail {
-            let failed = results.into_iter().any(|result| {
-                if result.has_failed() {
-                    !result.allow_failure
-                } else {
-                    false
-                }
-            });
-
-            if failed {
-                return Ok(Some(1));
+        let failed = results.into_iter().any(|result| {
+            if result.has_failed() {
+                !result.allow_failure
+            } else {
+                false
             }
+        });
+
+        if failed {
+            return Ok(Some(1));
         }
 
         Ok(None)
@@ -114,7 +139,7 @@ impl ExecWorkflow {
 
     // Step 1
     async fn load_changed_files(&mut self) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
-        debug!("Step 1: Loading changed files");
+        self.print_step("Loading changed files")?;
 
         let vcs = self.session.get_vcs_adapter()?;
 
@@ -148,10 +173,19 @@ impl ExecWorkflow {
             }
         }
 
+        self.print(format!(
+            "Base revision: {}",
+            base.as_deref().unwrap_or("N/A")
+        ))?;
+        self.print(format!(
+            "Head revision: {}",
+            head.as_deref().unwrap_or("HEAD")
+        ))?;
+
         let result = query_changed_files(
             &vcs,
             QueryChangedFilesOptions {
-                default_branch: self.ci_env && !self.test_env,
+                default_branch: !self.test_env,
                 base,
                 head,
                 local: !self.ci_env,
@@ -160,6 +194,15 @@ impl ExecWorkflow {
             },
         )
         .await?;
+
+        let mut files = result
+            .files
+            .iter()
+            .map(|file| file.as_str())
+            .collect::<Vec<_>>();
+        files.sort();
+
+        self.print(files.join("\n"))?;
 
         if result.shallow {
             if self.ci_env {
@@ -177,7 +220,7 @@ impl ExecWorkflow {
         &mut self,
         changed_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<(ActionContext, ActionGraph)> {
-        debug!("Step 2: Building action graph");
+        self.print_step("Building action graph")?;
 
         let mut action_graph_builder = if self.args.no_actions {
             self.session
@@ -198,8 +241,8 @@ impl ExecWorkflow {
         // Only track affected if enabled
         if self.affected {
             action_graph_builder.track_affected(
-                self.args.upstream,
-                self.args.downstream,
+                self.args.upstream.unwrap_or(UpstreamScope::Deep),
+                self.args.downstream.unwrap_or(DownstreamScope::None),
                 self.ci_check,
             )?;
         }
@@ -213,7 +256,10 @@ impl ExecWorkflow {
         let reqs = RunRequirements {
             ci: self.ci_env,
             ci_check: self.ci_check,
-            dependents: self.args.downstream != DownstreamScope::None,
+            dependents: self
+                .args
+                .downstream
+                .is_some_and(|down| down != DownstreamScope::None),
             interactive: self.args.interactive,
             skip_affected: !self.affected,
         };
@@ -229,26 +275,40 @@ impl ExecWorkflow {
         // Build the graph
         let (action_context, action_graph) = action_graph_builder.build();
 
-        debug!("Target count: {}", self.args.targets.len());
-        debug!("Action count: {}", action_graph.get_node_count());
+        self.print(format!("Target count: {}", self.args.targets.len()))?;
+        self.print(format!("Action count: {}", action_graph.get_node_count()))?;
 
         Ok((action_context, action_graph))
     }
 
     async fn partition_action_graph(
-        &self,
+        &mut self,
         action_graph: ActionGraph,
     ) -> miette::Result<ActionGraph> {
+        if self.args.job.is_none() && self.args.job_total.is_none() {
+            return Ok(action_graph);
+        }
+
+        let job_index = self.args.job.unwrap_or_default();
+        let job_total = self.args.job_total.unwrap_or_default();
+        let batch_size = self.args.targets.len().div_ceil(job_total);
+
+        self.print_step("Distibuting actions across jobs")?;
+
+        self.print(format!("Job index: {job_index}"))?;
+        self.print(format!("Job total: {job_total}"))?;
+        self.print(format!("Batch size: {batch_size}"))?;
+
         Ok(action_graph)
     }
 
     // Step 4
     async fn execute_action_pipeline(
-        &self,
+        &mut self,
         mut action_context: ActionContext,
         action_graph: ActionGraph,
     ) -> miette::Result<Vec<Action>> {
-        debug!("Step 4: Executing action pipeline");
+        self.print_step("Executing action pipeline")?;
 
         action_context
             .initial_targets
@@ -258,5 +318,56 @@ impl ExecWorkflow {
         let results = run_action_pipeline(&self.session, action_context, action_graph).await?;
 
         Ok(results)
+    }
+
+    fn print_group_header(&mut self, title: &str) -> miette::Result<()> {
+        self.last_title = title.to_owned();
+
+        if self.ci_env {
+            self.session
+                .console
+                .err
+                .write_line(self.ui.open_log_group.replace("{name}", title))?;
+        } else {
+            debug!("Step {}: {title}", self.step);
+        }
+
+        Ok(())
+    }
+
+    fn print_footer(&mut self) -> miette::Result<()> {
+        if self.ci_env && !self.ui.close_log_group.is_empty() {
+            self.session
+                .console
+                .err
+                .write_line(self.ui.close_log_group.replace("{name}", &self.last_title))?;
+        }
+
+        self.last_title = String::new();
+
+        Ok(())
+    }
+
+    fn print_step(&mut self, message: &str) -> miette::Result<()> {
+        if self.step > 0 {
+            self.print_footer()?;
+        }
+
+        self.step += 1;
+        self.print_group_header(message)?;
+
+        Ok(())
+    }
+
+    fn print(&self, message: impl AsRef<str>) -> miette::Result<()> {
+        let message = message.as_ref();
+
+        if self.ci_env {
+            self.session.console.err.write_line(message)?;
+        } else {
+            debug!("{message}");
+        }
+
+        Ok(())
     }
 }

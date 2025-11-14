@@ -19,9 +19,7 @@ impl fmt::Display for AppTheme {
                 AppTheme::Dark => "dark",
                 AppTheme::Light => "light",
             }
-        )?;
-
-        Ok(())
+        )
     }
 }
 
@@ -57,9 +55,7 @@ impl fmt::Display for LogLevel {
                 // Must map to tracing levels
                 LogLevel::Trace | LogLevel::Verbose => "trace",
             }
-        )?;
-
-        Ok(())
+        )
     }
 }
 
@@ -96,6 +92,13 @@ impl AffectedOption {
         }
 
         None
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            Self::Bool(inner) => *inner,
+            Self::String(_) => true,
+        }
     }
 
     pub fn is_local(&self) -> bool {

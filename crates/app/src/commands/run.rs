@@ -1,10 +1,8 @@
 use super::exec::*;
-use crate::prompts::select_targets;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::with_shared_exec_args;
-use moon_console::ui::{SelectOption, SelectProps};
 use moon_task::TargetLocator;
 use starbase::AppResult;
 use std::mem;
@@ -33,33 +31,9 @@ pub struct RunArgs {
 
 #[instrument(skip(session))]
 pub async fn run(session: MoonSession, mut args: RunArgs) -> AppResult {
-    let mut targets = mem::take(&mut args.targets);
+    let targets = mem::take(&mut args.targets);
     let passthrough = mem::take(&mut args.passthrough);
     let query = args.query.take();
-
-    if targets.is_empty() {
-        let workspace_graph = session.get_workspace_graph().await?;
-        let tasks = workspace_graph.get_tasks()?;
-
-        let run_targets = select_targets(&session.console, &[], || {
-            Ok(SelectProps {
-                label: "Which task(s) to run?".into(),
-                options: tasks
-                    .iter()
-                    .map(|task| {
-                        SelectOption::new(&task.target).description_opt(task.description.clone())
-                    })
-                    .collect(),
-                multiple: true,
-                ..Default::default()
-            })
-        })
-        .await?;
-
-        for target in run_targets {
-            targets.push(TargetLocator::Qualified(target));
-        }
-    }
 
     exec(session, {
         let mut args = args.into_exec_args();

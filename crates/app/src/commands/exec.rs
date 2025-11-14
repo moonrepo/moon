@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
@@ -9,7 +11,9 @@ use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::with_shared_exec_props;
+use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env, path::WorkspaceRelativePathBuf};
+use moon_console::Console;
 use moon_task::TargetLocator;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashSet;
@@ -26,7 +30,10 @@ pub enum OnFailure {
 #[with_shared_exec_props]
 #[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {
-    #[arg(help = "Task targets to execute in the action pipeline")]
+    #[arg(
+        required = true,
+        help = "List of task targets to execute in the action pipeline"
+    )]
     pub targets: Vec<TargetLocator>,
 
     #[arg(
@@ -66,6 +73,7 @@ pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
 
 pub struct ExecWorkflow {
     args: ExecArgs,
+    console: Arc<Console>,
     session: MoonSession,
 
     ui: CiOutput,
@@ -96,8 +104,9 @@ impl ExecWorkflow {
 
         Ok(Self {
             affected: args.affected,
-            ci_check: ci_env && args.only_ci_tasks,
+            ci_check: args.only_ci_tasks,
             ci_env,
+            console: session.get_console()?,
             node_indexes: FxHashSet::default(),
             session,
             step: 0,
@@ -112,12 +121,38 @@ impl ExecWorkflow {
     }
 
     pub async fn execute(mut self) -> miette::Result<Option<u8>> {
+        // Force cache to update using write-only mode
+        if self.args.force {
+            self.affected = false;
+            self.session
+                .get_cache_engine()?
+                .force_mode(CacheMode::Write);
+        }
+
+        // Step 1
         let changed_files = self.load_changed_files().await?;
 
+        // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
+        if self.node_indexes.is_empty() {
+            return Err(if self.affected {
+                AppError::NoExecAffectedTasks {
+                    targets: self.args.targets.clone(),
+                    status: self.args.status.clone(),
+                }
+            } else {
+                AppError::NoExecTasks {
+                    targets: self.args.targets.clone(),
+                }
+            }
+            .into());
+        }
+
+        // Step 3
         let action_graph = self.partition_action_graph(action_graph).await?;
 
+        // Step 4
         let results = self
             .execute_action_pipeline(action_context, action_graph)
             .await?;
@@ -324,8 +359,7 @@ impl ExecWorkflow {
         self.last_title = title.to_owned();
 
         if self.ci_env {
-            self.session
-                .console
+            self.console
                 .err
                 .write_line(self.ui.open_log_group.replace("{name}", title))?;
         } else {
@@ -337,8 +371,7 @@ impl ExecWorkflow {
 
     fn print_footer(&mut self) -> miette::Result<()> {
         if self.ci_env && !self.ui.close_log_group.is_empty() {
-            self.session
-                .console
+            self.console
                 .err
                 .write_line(self.ui.close_log_group.replace("{name}", &self.last_title))?;
         }
@@ -363,7 +396,7 @@ impl ExecWorkflow {
         let message = message.as_ref();
 
         if self.ci_env {
-            self.session.console.err.write_line(message)?;
+            self.console.err.write_line(message)?;
         } else {
             debug!("{message}");
         }

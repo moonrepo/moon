@@ -64,10 +64,7 @@ pub enum Commands {
     )]
     Check(CheckArgs),
 
-    #[command(
-        name = "ci",
-        about = "Run all affected projects and tasks in a CI environment."
-    )]
+    #[command(name = "ci", about = "Run all affected tasks in a CI environment.")]
     Ci(CiArgs),
 
     #[command(
@@ -174,7 +171,7 @@ pub enum Commands {
     #[command(
         alias = "r",
         name = "run",
-        about = "Run one or many project tasks and their dependent tasks."
+        about = "Run one or many tasks in the action pipeline."
     )]
     Run(RunArgs),
 

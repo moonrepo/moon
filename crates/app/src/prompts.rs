@@ -108,6 +108,17 @@ pub async fn select_target<'a>(
     .map(|mut targets| targets.remove(0))
 }
 
+pub async fn select_targets<'a>(
+    console: &Console,
+    targets: &'a [Target],
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+) -> miette::Result<Vec<Target>> {
+    select_identifiers_internal(console, Vec::from_iter(targets), input, |value| {
+        Target::parse(&value)
+    })
+    .await
+}
+
 pub async fn render_prompt(
     console: &Console,
     skip_prompts: bool,

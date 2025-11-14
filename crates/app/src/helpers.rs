@@ -105,7 +105,7 @@ pub async fn run_action_pipeline(
                 .map(|sum| sum.unwrap_or_default().to_level());
         }
         Commands::Run(cmd) => {
-            pipeline.bail = !cmd.no_bail;
+            pipeline.bail = true;
             pipeline.summary = cmd
                 .summary
                 .clone()

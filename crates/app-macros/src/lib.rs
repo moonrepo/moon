@@ -12,7 +12,7 @@ pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStr
                 long,
                 short = 'f',
                 env = "MOON_FORCE",
-                help = "Bypass cache and force update any existing items"
+                help = "Force run and bypass cache, ignore changed files, and skip affected checks"
             )]
             pub force: bool
         },

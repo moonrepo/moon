@@ -2,6 +2,8 @@
 
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
+use moon_task::TargetLocator;
+use moon_vcs::ChangedStatus;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -81,4 +83,38 @@ pub enum AppError {
         "An identifier is required and must be explicitly provided as a positional argument in non-TTY environments."
     )]
     RequiredIdNonTTY,
+
+    #[diagnostic(code(app::exec::no_tasks))]
+    #[error(
+        "Unable to execute action pipeline, no tasks found for provided targets {}.",
+        .targets
+            .iter()
+            .map(|target| format!("<id>{}</id>", target.as_str()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )]
+    NoExecTasks { targets: Vec<TargetLocator> },
+
+    #[diagnostic(code(app::exec::no_affected_tasks))]
+    #[error(
+        "Unable to execute action pipeline, tasks {} not affected by changed files using status {}.",
+        targets
+            .iter()
+            .map(|target| format!("<id>{}</id>", target.as_str()))
+            .collect::<Vec<_>>()
+            .join(", "),
+        if .status.is_empty() {
+            "<symbol>all</symbol>".into()
+        } else {
+            .status
+                .iter()
+                .map(|status| format!("<symbol>{status}</symbol>"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    )]
+    NoExecAffectedTasks {
+        targets: Vec<TargetLocator>,
+        status: Vec<ChangedStatus>,
+    },
 }

@@ -1,5 +1,6 @@
 use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
+use crate::prompts::select_targets;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
@@ -12,6 +13,7 @@ use moon_app_macros::with_shared_exec_args;
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::Console;
+use moon_console::ui::{SelectOption, SelectProps};
 use moon_task::TargetLocator;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashSet;
@@ -43,10 +45,7 @@ impl fmt::Display for OnFailure {
 #[with_shared_exec_args]
 #[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {
-    #[arg(
-        required = true,
-        help = "List of task targets to execute in the action pipeline"
-    )]
+    #[arg(help = "List of task targets to execute in the action pipeline")]
     pub targets: Vec<TargetLocator>,
 
     #[arg(
@@ -81,7 +80,32 @@ pub struct ExecArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
+pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
+    if args.targets.is_empty() {
+        let workspace_graph = session.get_workspace_graph().await?;
+
+        let run_targets = select_targets(&session.console, &[], || {
+            let tasks = workspace_graph.get_tasks()?;
+
+            Ok(SelectProps {
+                label: "Which task(s) to run?".into(),
+                options: tasks
+                    .iter()
+                    .map(|task| {
+                        SelectOption::new(&task.target).description_opt(task.description.clone())
+                    })
+                    .collect(),
+                multiple: true,
+                ..Default::default()
+            })
+        })
+        .await?;
+
+        for target in run_targets {
+            args.targets.push(TargetLocator::Qualified(target));
+        }
+    }
+
     ExecWorkflow::new(session, args).await?.execute().await
 }
 
@@ -211,6 +235,7 @@ impl ExecWorkflow {
 
         // If we're in CI, extract PR information for base and head
         if self.ci_env
+            && !self.test_env
             && let Some(env) = ci_env::get_environment()
         {
             let is_pr = env.request_id.is_some_and(|id| !id.is_empty());
@@ -379,10 +404,14 @@ impl ExecWorkflow {
         Ok(results)
     }
 
+    fn should_print_ci(&self) -> bool {
+        self.ci_env && !self.test_env
+    }
+
     fn print_group_header(&mut self, title: &str) -> miette::Result<()> {
         self.last_title = title.to_owned();
 
-        if self.ci_env {
+        if self.should_print_ci() {
             self.console
                 .err
                 .write_line(self.ui.open_log_group.replace("{name}", title))?;
@@ -394,7 +423,7 @@ impl ExecWorkflow {
     }
 
     fn print_footer(&mut self) -> miette::Result<()> {
-        if self.ci_env && !self.ui.close_log_group.is_empty() {
+        if self.should_print_ci() && !self.ui.close_log_group.is_empty() {
             self.console
                 .err
                 .write_line(self.ui.close_log_group.replace("{name}", &self.last_title))?;
@@ -419,7 +448,7 @@ impl ExecWorkflow {
     fn print(&self, message: impl AsRef<str>) -> miette::Result<()> {
         let message = message.as_ref();
 
-        if self.ci_env {
+        if self.should_print_ci() {
             self.console.err.write_line(message)?;
         } else {
             debug!("{message}");

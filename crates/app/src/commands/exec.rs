@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
@@ -10,7 +8,7 @@ use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
-use moon_app_macros::with_shared_exec_props;
+use moon_app_macros::with_shared_exec_args;
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::Console;
@@ -19,6 +17,7 @@ use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use std::fmt;
+use std::sync::Arc;
 use tracing::{debug, instrument};
 
 #[derive(Clone, Debug, Default, PartialEq, ValueEnum)]
@@ -41,7 +40,7 @@ impl fmt::Display for OnFailure {
     }
 }
 
-#[with_shared_exec_props]
+#[with_shared_exec_args]
 #[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {
     #[arg(

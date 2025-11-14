@@ -29,9 +29,13 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     exec(session, {
         let mut args = args.into_exec_args();
         args.targets = targets;
-        args.affected = true;
         args.on_failure = OnFailure::Continue;
         args.only_ci_tasks = true;
+
+        // If not provided by the user, always check affected
+        if args.affected.is_none() {
+            args.affected = Some(None);
+        }
 
         // Include direct dependents for regression checks
         if args.downstream.is_none() {

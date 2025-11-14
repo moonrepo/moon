@@ -18,13 +18,27 @@ use moon_task::TargetLocator;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
+use std::fmt;
 use tracing::{debug, instrument};
 
-#[derive(ValueEnum, Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, ValueEnum)]
 pub enum OnFailure {
     #[default]
     Bail,
     Continue,
+}
+
+impl fmt::Display for OnFailure {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Bail => "bail",
+                Self::Continue => "continue",
+            }
+        )
+    }
 }
 
 #[with_shared_exec_props]
@@ -41,6 +55,7 @@ pub struct ExecArgs {
         env = "MOON_ON_FAILURE",
         help = "When a task fails, either bail the pipeline, or continue executing",
         help_heading = super::HEADING_WORKFLOW,
+        default_value_t,
     )]
     pub on_failure: OnFailure,
 
@@ -103,7 +118,13 @@ impl ExecWorkflow {
         let ci_env = is_ci();
 
         Ok(Self {
-            affected: args.affected,
+            affected: args
+                .affected
+                .as_ref()
+                .is_some_and(|affected| match affected {
+                    Some(inner) => inner.is_enabled(),
+                    None => true, // no arg value
+                }),
             ci_check: args.only_ci_tasks,
             ci_env,
             console: session.get_console()?,
@@ -217,27 +238,31 @@ impl ExecWorkflow {
             head.as_deref().unwrap_or("HEAD")
         ))?;
 
-        let result = query_changed_files(
-            &vcs,
-            QueryChangedFilesOptions {
-                default_branch: !self.test_env,
-                base,
-                head,
-                local: !self.ci_env,
-                status: self.args.status.clone(),
-                stdin: self.args.stdin,
-            },
-        )
-        .await?;
+        let mut options = QueryChangedFilesOptions {
+            default_branch: !self.test_env,
+            base,
+            head,
+            local: !self.ci_env,
+            status: self.args.status.clone(),
+            stdin: self.args.stdin,
+        };
 
-        let mut files = result
-            .files
-            .iter()
-            .map(|file| file.as_str())
-            .collect::<Vec<_>>();
-        files.sort();
+        if let Some(Some(by)) = &self.args.affected {
+            options.apply_affected(by);
+        }
 
-        self.print(files.join("\n"))?;
+        let result = query_changed_files(&vcs, options).await?;
+
+        if self.ci_env {
+            let mut files = result
+                .files
+                .iter()
+                .map(|file| file.as_str())
+                .collect::<Vec<_>>();
+            files.sort();
+
+            self.print(files.join("\n"))?;
+        }
 
         if result.shallow {
             if self.ci_env {

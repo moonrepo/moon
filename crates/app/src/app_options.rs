@@ -130,6 +130,13 @@ impl AffectedOption {
         None
     }
 
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            Self::Bool(inner) => *inner,
+            Self::String(_) => true,
+        }
+    }
+
     pub fn is_local(&self) -> bool {
         let mut local = !is_ci();
 

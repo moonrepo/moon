@@ -47,7 +47,7 @@ pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStr
                 help_heading = super::HEADING_AFFECTED,
                 group = "affected-args"
             )]
-            pub affected: bool
+            pub affected: Option<Option<crate::app_options::AffectedOption>>
         },
         quote! {
              #[arg(

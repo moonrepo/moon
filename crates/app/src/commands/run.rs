@@ -23,14 +23,6 @@ pub struct RunArgs {
     )]
     pub query: Option<String>,
 
-    // #[arg(
-    //     long,
-    //     help = "Determine affected against remote by comparing against a base revision",
-    //     help_heading = HEADING_AFFECTED,
-    //     requires = "affected-args",
-    // )]
-    // pub remote: bool,
-
     // Passthrough args (after --)
     #[arg(
         last = true,

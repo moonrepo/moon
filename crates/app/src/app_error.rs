@@ -86,10 +86,10 @@ pub enum AppError {
 
     #[diagnostic(code(app::exec::no_tasks))]
     #[error(
-        "Unable to execute action pipeline, no tasks found for provided targets {}.",
+        "No tasks found for provided targets {}, unable to execute action pipeline.",
         .targets
             .iter()
-            .map(|target| format!("<id>{}</id>", target.as_str()))
+            .map(|target| target.as_str().to_string().style(Style::Id))
             .collect::<Vec<_>>()
             .join(", ")
     )]
@@ -97,18 +97,18 @@ pub enum AppError {
 
     #[diagnostic(code(app::exec::no_affected_tasks))]
     #[error(
-        "Unable to execute action pipeline, tasks {} not affected by changed files using status {}.",
-        targets
+        "Tasks {} not affected by changed files using status {}, unable to execute action pipeline.",
+        .targets
             .iter()
-            .map(|target| format!("<id>{}</id>", target.as_str()))
+            .map(|target| target.as_str().to_string().style(Style::Id))
             .collect::<Vec<_>>()
             .join(", "),
         if .status.is_empty() {
-            "<symbol>all</symbol>".into()
+            "all".style(Style::Symbol)
         } else {
             .status
                 .iter()
-                .map(|status| format!("<symbol>{status}</symbol>"))
+                .map(|status| status.to_string().style(Style::Symbol))
                 .collect::<Vec<_>>()
                 .join(", ")
         }

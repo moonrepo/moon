@@ -8,27 +8,67 @@ toc_max_heading_level: 6
 
 ### Commands
 
-- Removed the shorthand run target syntax from `moon`, use `moonx` instead.
-  - Example: `moon <target>` -> `moonx <target>`
-- Changed the output of `moon action-graph --json` to a new JSON structure (now matches the project
-  and task graphs).
-- Changed `moon generate` destination from a positional argument, to the `--to` option.
-  - Example: `moon generate <id> ./dist` -> `moon generate <id> --to ./dist`
-- Changed `moon templates` to render a table instead of a list.
+- Updated the `moonx` binary and task running shorthand syntax (`moon <task>`) to use `moon exec`
+  instead of `moon run` under the hood.
+  - Example: `moonx app:build` / `moon app:build` now runs `moon exec app:build`
 - Renamed all options and flags to kebab-case instead of camelCase.
-  - Example: `--updateCache` -> `--update-cache`
-- Removed "scaffolding a toolchain" from the `moon init` command. Use the `moon toolchain add`
-  command instead.
+  - Example: `--logLevel` -> `--log-level`
+- Renamed options for all commands:
+  - `--platform` -> `--toolchain`
 - Removed commands:
   - `moon node`
   - `moon migrate from-package-json` (use the `migrate-turborepo` extension instead)
   - `moon query hash` (use `moon hash` instead)
   - `moon query hash-diff` (use `moon hash` instead)
-- Removed arguments, flags, and options:
-  - `--dependents` from `moon query projects`
-  - `--platform` from all commands (use `--toolchain` instead)
-  - `--profile` from `moon run`
-  - `--to` from `moon init` (use a positional argument instead)
+
+#### `moon action-graph`
+
+- Changed the output of `--json` to a new JSON structure (now matches the project and task graphs).
+
+#### `moon check`
+
+- Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- Renamed options:
+  - `--update-cache, -u` -> `--force, -f`
+
+#### `moon ci`
+
+- Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- Renamed options:
+  - `--update-cache, -u` -> `--force, -f`
+
+#### `moon generate`
+
+- Changed the destination from a positional argument, to the `--to` option.
+  - Example: `moon generate <id> ./dist` -> `moon generate <id> --to ./dist`
+
+#### `moon init`
+
+- Removed "scaffolding a toolchain" functionality from the command. Use the `moon toolchain add`
+  command instead.
+- Removed options:
+  - `--to` (use a positional argument instead)
+
+#### `moon query projects`
+
+- Removed options:
+  - `--dependents`
+
+#### `moon run`
+
+- Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- Updated options:
+  - `--dependents` now requires a value, either `deep` or `direct`
+- Renamed options:
+  - `--update-cache, -u` -> `--force, -f`
+- Removed options:
+  - `--no-bail` (use `moon exec` instead)
+  - `--profile`
+  - `--remote` (use `--affected remote` instead)
+
+#### `moon templates`
+
+- Changed the output to render a table instead of a list.
 
 #### `moon run`
 

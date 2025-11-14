@@ -4,7 +4,7 @@ use syn::parse::Parser;
 use syn::{DeriveInput, parse_macro_input};
 
 #[proc_macro_attribute]
-pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let shared_fields = [
         // COMMON
         quote! {
@@ -161,6 +161,6 @@ pub fn with_shared_exec_props(_attr: TokenStream, item: TokenStream) -> TokenStr
             }
             .into()
         }
-        _ => panic!("`with_shared_exec_props` can only be used with structs!"),
+        _ => panic!("`with_shared_exec_args` can only be used with structs!"),
     }
 }

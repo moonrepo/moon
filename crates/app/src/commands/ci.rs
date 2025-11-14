@@ -2,12 +2,12 @@ use super::exec::*;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
-use moon_app_macros::with_shared_exec_props;
+use moon_app_macros::with_shared_exec_args;
 use moon_task::TargetLocator;
 use starbase::AppResult;
 use tracing::instrument;
 
-#[with_shared_exec_props]
+#[with_shared_exec_args]
 #[derive(Args, Clone, Debug)]
 pub struct CiArgs {
     #[arg(help = "List of explicit task targets to run")]

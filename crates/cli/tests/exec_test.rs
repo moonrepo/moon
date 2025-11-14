@@ -382,11 +382,7 @@ mod exec {
             });
 
             assert.failure().stderr(predicate::str::contains(
-<<<<<<< HEAD:crates/cli/tests/run_test.rs
-                "No tasks found for target(s) :unknown",
-=======
                 "No tasks found for provided targets :unknown",
->>>>>>> 5498913a81 (Polish.):crates/cli/tests/exec_test.rs
             ));
         }
 
@@ -508,14 +504,12 @@ mod exec {
                 })
                 .success();
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/states")
-                    .join(PROJECT_DIR)
-                    .join("snapshot.json")
-                    .exists()
-            );
+            assert!(sandbox
+                .path()
+                .join(".moon/cache/states")
+                .join(PROJECT_DIR)
+                .join("snapshot.json")
+                .exists());
         }
 
         #[test]
@@ -528,14 +522,12 @@ mod exec {
                 })
                 .success();
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/states")
-                    .join(PROJECT_DIR)
-                    .join("outputs/lastRun.json")
-                    .exists()
-            );
+            assert!(sandbox
+                .path()
+                .join(".moon/cache/states")
+                .join(PROJECT_DIR)
+                .join("outputs/lastRun.json")
+                .exists());
         }
 
         #[test]
@@ -558,20 +550,16 @@ mod exec {
 
             let state: TaskRunCacheState = json::read_file(cache_path).unwrap();
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/outputs")
-                    .join(format!("{}.tar.gz", state.hash))
-                    .exists()
-            );
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{}.json", state.hash))
-                    .exists()
-            );
+            assert!(sandbox
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{}.tar.gz", state.hash))
+                .exists());
+            assert!(sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{}.json", state.hash))
+                .exists());
         }
     }
 

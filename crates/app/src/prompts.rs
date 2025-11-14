@@ -58,7 +58,7 @@ async fn select_identifiers_internal<'a, T: Clone>(
 
     if props.multiple {
         for index in indexes {
-            ids.push(output(props.options.remove(index).value)?);
+            ids.push(output(props.options.get(index).cloned().unwrap().value)?);
         }
     } else {
         ids.push(output(props.options.remove(index).value)?);

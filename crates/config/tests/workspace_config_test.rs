@@ -4,7 +4,7 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     ConfigLoader, FilePath, GlobPath, TemplateLocator, VcsProvider, WorkspaceConfig,
-    WorkspaceProjects,
+    WorkspaceProjectGlobFormat, WorkspaceProjects,
 };
 use rustc_hash::FxHashMap;
 use schematic::ConfigLoader as BaseLoader;
@@ -139,8 +139,6 @@ telemetry: false
     }
 
     mod projects {
-        use moon_config::WorkspaceProjectGlobFormat;
-
         use super::*;
 
         #[test]

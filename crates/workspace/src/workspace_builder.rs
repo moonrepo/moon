@@ -671,7 +671,7 @@ impl<'app> WorkspaceBuilder<'app> {
     /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload_build_data(&mut self) -> miette::Result<()> {
         let context = self.context();
-        let mut glob_format = WorkspaceProjectGlobFormat::DirName;
+        let mut glob_format = WorkspaceProjectGlobFormat::default();
         let mut globs = vec![];
         let mut sources = vec![];
 
